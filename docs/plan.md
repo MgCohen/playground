@@ -96,3 +96,28 @@ orchestrator/
 | `ask_user` with `waitSeconds` > 0 | Short decisions, a quick answer is likely | Stays open; the answer is the tool result |
 | `ask_user` with `waitSeconds` 0 | Long decisions | Ends; the answer wakes the session through the inbox |
 | `AskUserQuestion` redirect | A model that uses the built-in tool | Waits up to 300 s for the store; then the app card |
+
+## P1 result (2026-11-15)
+
+The mod `mod/orch` replaces `mod/orch-spike` in `CLAUDE_CODE_PLUGIN_DIRS`. The store contract is in `docs/store.md`.
+
+| Part | Result | Evidence |
+|---|---|---|
+| `report` tool, lease, filtered mirror | ✅ In `claude -p` and in the app | Session `989d112c`, `report.json` |
+| Inbox turn in an idle app session | ✅ | Session `ff9d65e6`, `inbox/1.txt` to `4.txt` |
+| `ask_user` pending, answer by inbox | ✅ | T1: LIME |
+| `ask_user` blocking, answer in time | ✅ | T2: CASHEW after 24 s |
+| `ask_user` blocking, timeout, then answer by inbox | ✅ The mode changes to `pending` | T4: FLAX |
+| `AskUserQuestion` from the store | ✅ | T3: ACAI |
+| `AskUserQuestion` with no answer | ✅ The app card shows after 300 s | Session `989d112c` |
+| Hot reload | ✅ The mod loads the cursor and the state from the store | `activate ... cursor=3.txt` |
+| `/orch-enable` command | Written, not tested in the app | |
+| One branch | ✅ One leaf after all tests | `p1-app.sh` |
+
+Test script: `spikes/p1-app.sh` (it reads the session id from `spikes/p1.id`).
+
+### Findings
+
+1. After the user presses Stop, the engine refuses each plugin submit until the person types. A message from another session does not clear the Stop. The mod keeps the inbox file and the answer, tries again every 3 s, and writes `blocked.json`. The supervisor must show this state to the user, and must not use a peer message to go around the Stop.
+2. `$.prompt.submit` resolves when its turn starts. The mod submits only when the session is idle, and the heartbeat has its own timer.
+3. `tsc` gives TS2589 (type instantiation too deep) on `on('tool.call', { tool: 'mcp__...' })`. The spike mod has the same error and loads correctly. This is a limit of the type checker.
