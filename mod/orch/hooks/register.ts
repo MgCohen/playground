@@ -3,6 +3,7 @@ import type { Register } from 'claude-code'
 const DEFAULT_STORE = 'C:/Users/matheus.cohen/Documents/Projects/claude-orchestrator/store'
 const ASK_TOOL = 'mcp__orch__ask_user'
 const REPORT_TOOL = 'mcp__orch__report'
+const SPAWN_TOOL = 'mcp__orch__spawn_child'
 const MIRROR_DOORS = ['prompt', 'response', 'tool-result']
 const TICK_MS = 3000
 const REDIRECT_WAIT_SECONDS = 300
@@ -23,7 +24,7 @@ type Decision = {
   asked: string
 }
 
-const S: { id?: string; dir?: string; holder: string; cursor: string; busy: boolean; idle: boolean; dropped: string } = {
+const S: { id?: string; dir?: string; store?: string; cwd?: string; holder: string; cursor: string; busy: boolean; idle: boolean; dropped: string } = {
   dropped: '',
   holder: 'live',
   cursor: '',
@@ -55,7 +56,7 @@ async function writeJson($: any, path: string, value: unknown): Promise<void> {
 
 async function log($: any, line: string): Promise<void> {
   if (!S.dir) return
-  const path = `${S.dir}/log.txt`
+  const path = `${S.dir}/log-${S.holder}.txt`
   const old = (await readText($, path)) ?? ''
   const kept = old.length > 200000 ? old.slice(-100000) : old
   await $.fs.write(path, `${kept}${await now($)} ${line}\n`)
@@ -143,10 +144,18 @@ async function deliverAnswers($: any): Promise<void> {
 async function beat($: any): Promise<void> {
   if (!S.dir) return
   await $.fs.write(`${S.dir}/heartbeat.txt`, await now($))
+  const lease = await readJson($, `${S.dir}/lease.json`)
+  if (lease?.holder === S.holder) return
+  if (lease?.holder === 'none') {
+    await writeLease($, S.holder, { event: 'lease taken back', was: lease })
+    await log($, 'lease taken back')
+    return
+  }
+  await log($, `lease conflict: the store says ${lease?.holder}, this process is ${S.holder}`)
 }
 
 async function tick($: any): Promise<void> {
-  if (!S.dir || S.busy || !S.idle) return
+  if (!S.dir || S.busy || !S.idle || S.holder !== 'live') return
   S.busy = true
   try {
     await drainInbox($)
@@ -195,6 +204,21 @@ async function registerTools($: any): Promise<void> {
     },
     isDeferred: false,
   })
+  await $.tool.register({
+    name: 'spawn_child',
+    description:
+      'Start a child session under the orchestrator. Give it a short title and a complete brief: the child knows only the brief. The child starts at once and works by itself. When the child reports done or blocked, you get a new message that starts with "Report from child".',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        brief: { type: 'string' },
+        cwd: { type: 'string', description: 'The folder of the child. Default: the folder of this session.' },
+      },
+      required: ['title', 'brief'],
+    },
+    isDeferred: false,
+  })
 }
 
 async function newDecision($: any, e: any, kind: Decision['kind'], wait: number): Promise<Decision> {
@@ -215,18 +239,32 @@ async function newDecision($: any, e: any, kind: Decision['kind'], wait: number)
   return decision
 }
 
+async function storeRoot($: any): Promise<string> {
+  return (await $.env.get('ORCH_STORE')) ?? DEFAULT_STORE
+}
+
 async function sessionDir($: any): Promise<string> {
-  const store = (await $.env.get('ORCH_STORE')) ?? DEFAULT_STORE
-  return `${store}/sessions/${await $.session.id()}`
+  return `${await storeRoot($)}/sessions/${await $.session.id()}`
+}
+
+function newId(): string {
+  const hex = Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16))
+  hex[12] = '4'
+  hex[16] = '89ab'.charAt(Math.floor(Math.random() * 4))
+  const h = hex.join('')
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`
 }
 
 async function activate($: any, dir: string, reason: unknown): Promise<void> {
   S.id = await $.session.id()
   S.dir = dir
+  S.store = await storeRoot($)
+  S.cwd = await $.session.cwd()
   S.holder = (await $.env.get('ORCH_HOLDER')) ?? 'live'
   S.cursor = ((await readText($, `${dir}/cursor.txt`)) ?? '').trim()
   const status = await readJson($, `${dir}/status.json`)
   S.idle = status?.state !== 'running'
+  await $.fs.write(`${dir}/heartbeat.txt`, await now($))
   await writeLease($, S.holder, reason)
   await log($, `activate holder=${S.holder} cursor=${S.cursor} ${JSON.stringify(reason)}`)
   await registerTools($)
@@ -293,6 +331,18 @@ export const register: Register = on => {
     await writeJson($, `${S.dir}/report.json`, report)
     return { result: 'Recorded.' }
   }).catch((_$: any, _e: any) => ({ result: 'orch: the report was not recorded. Continue your work.' }))
+
+  on('tool.call', { tool: SPAWN_TOOL }, async ($, e: any) => {
+    if (!S.dir || !S.store) return { deny: 'orch: this session is not enabled' }
+    const child = newId()
+    const dir = `${S.store}/sessions/${child}`
+    const meta = { id: child, parent: S.id, title: e.title, cwd: e.cwd ?? S.cwd, createdBy: 'spawn_child', createdAt: await now($) }
+    await writeJson($, `${dir}/meta.json`, meta)
+    await $.fs.write(`${dir}/inbox/1.txt`, String(e.brief))
+    await $.fs.write(`${dir}/enabled`, '')
+    await log($, `spawn_child ${child} ${e.title}`)
+    return { result: `Started child "${e.title}" (${child}). It reports back as a new message that starts with "Report from child". If you have nothing else to do now, end your turn.` }
+  }).catch((_$: any, _e: any) => ({ result: 'orch: spawn_child failed. Do the work yourself or report blocked.' }))
 
   on('tool.call', { tool: ASK_TOOL }, async ($, e: any) => {
     if (!S.dir) return { deny: 'orch: this session is not enabled' }

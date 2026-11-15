@@ -121,3 +121,26 @@ Test script: `spikes/p1-app.sh` (it reads the session id from `spikes/p1.id`).
 1. After the user presses Stop, the engine refuses each plugin submit until the person types. A message from another session does not clear the Stop. The mod keeps the inbox file and the answer, tries again every 3 s, and writes `blocked.json`. The supervisor must show this state to the user, and must not use a peer message to go around the Stop.
 2. `$.prompt.submit` resolves when its turn starts. The mod submits only when the session is idle, and the heartbeat has its own timer.
 3. `tsc` gives TS2589 (type instantiation too deep) on `on('tool.call', { tool: 'mcp__...' })`. The spike mod has the same error and loads correctly. This is a limit of the type checker.
+
+## P2 result (2026-11-15)
+
+The supervisor is in `supervisor/` (Node 26 runs the TypeScript files directly). Start: `npm start` in `supervisor/`. The store contract and the HTTP API are in `docs/store.md`.
+
+| Part | Result | Evidence |
+|---|---|---|
+| Unit tests (fake runner, temporary store) | ✅ 9 tests | `npm test` |
+| Session tree: root + 2 children with `spawn_child`, a decision through the API, reports to the parent | ✅ About 90 s from start to the root report `done` | Root `b5f12905`, children `249fb7b0` and `48d13d06` |
+| Resume of idle sessions: inbox, answers and child reports go to a session that is not live | ✅ | `store/supervisor/log.txt` |
+| Hand-off supervisor → app: the session opens in the app, then a supervisor message goes through the mod | ✅ After the fix, one leaf | `249fb7b0` |
+
+### Findings
+
+1. Lease race (fixed). When an app process opened a session, the heartbeat file still had the old time of the SDK run. The supervisor released the new lease before the first beat and started an SDK turn, so the transcript got two leaves (`48d13d06`). Fix: the mod writes the heartbeat at activation and takes back a released lease; a lease younger than 15 s counts as live.
+2. Two processes that write one log file lose lines. The mod now writes `log-<holder>.txt`.
+3. In an SDK session, the `AskUserQuestion` fallback has no app card. Briefs must tell sessions to use `ask_user`.
+
+### Open for later phases
+
+- P3: the decision policy (risk, timeout, default) uses `risk` and `defaultOption` of each decision.
+- A session that the supervisor starts is not in the app sidebar. To show it, open it with `claude --desktop --resume <id>`.
+- The supervisor does not restart a failed turn after `maxFailures` (3) until it restarts.
