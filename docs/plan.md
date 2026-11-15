@@ -87,7 +87,7 @@ orchestrator/
 | S8 | ✅ Redirect of the built-in `AskUserQuestion`: the mod writes the questions to the store, waits, and returns `{ questions, answers }`. With no answer in time, it calls `next(e)` and the app card shows | MANGO from the store, no card |
 | S9 | ✅ Six SDK sessions in parallel: 17 s, each with a correct lease, state and mirror | `spikes/sdk/s9.mjs` |
 | S10 | ✅ The phone (Remote Control) shows each turn live: app messages, inbox turns and the question card. A phone answer to the card reaches the session | FIG and KIWI answered on the phone |
-| S11 | ⏳ An idle app session process stays alive for 50 minutes or more. The watch still runs | S2 heartbeat at 16:57, last turn at 16:04 |
+| S11 | ✅ An idle app session process stays alive for 2 hours or more. The watch still runs | S2 heartbeat at 18:05, last turn at 16:04 |
 
 ### Decision modes for the orchestrator
 
