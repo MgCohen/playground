@@ -118,7 +118,16 @@ export class Store {
     return name
   }
 
-  answer(id: string, decision: string, value: { answer?: string; answers?: Record<string, string> }): void {
+  isAnswered(id: string, decision: string): boolean {
+    return existsSync(this.path(id, 'answers', `${decision}.json`))
+  }
+
+  ledger(entry: Record<string, unknown>): void {
+    const path = join(this.root, 'ledger.jsonl')
+    writeFileSync(path, `${JSON.stringify({ at: new Date().toISOString(), ...entry })}\n`, { flag: 'a' })
+  }
+
+  answer(id: string, decision: string, value: { answer?: string; answers?: Record<string, string>; by?: string; source?: string; note?: string }): void {
     this.writeJson(this.path(id, 'answers', `${decision}.json`), value)
   }
 
@@ -153,7 +162,8 @@ export class Store {
       const answer = this.readJson<any>(this.path(id, 'answers', `${d.id}.json`))
       if (answer === undefined) continue
       answers.push(d.id)
-      texts.push(`Answer to decision ${d.id} (${d.question ?? 'question'}): ${answer.answer ?? JSON.stringify(answer.answers ?? answer)}`)
+      const note = answer.note ? `\n\n${answer.note}` : ''
+      texts.push(`Answer to decision ${d.id} (${d.question ?? 'question'}): ${answer.answer ?? JSON.stringify(answer.answers ?? answer)}${note}`)
     }
     return { text: texts.join('\n\n---\n\n'), inbox, answers }
   }

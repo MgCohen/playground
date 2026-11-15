@@ -50,9 +50,20 @@ export function startHttp(supervisor: Supervisor, port: number): Server {
         supervisor.tick()
         return reply(202, { inbox: name })
       }
+      if (request.method === 'GET' && url.pathname === '/api/ledger') {
+        const text = store.readText(`${store.root}/ledger.jsonl`) ?? ''
+        return reply(200, text.split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line)))
+      }
+      if (request.method === 'POST' && parts[0] === 'api' && parts[1] === 'decisions' && parts[2] && parts[3] && parts[4] === 'review') {
+        const input = await body(request)
+        if (!['approve', 'change', 'refuse'].includes(input.verdict)) return reply(400, { error: 'verdict is approve, change or refuse' })
+        const name = supervisor.review(parts[2], parts[3], input.verdict, String(input.text ?? ''))
+        supervisor.tick()
+        return reply(202, { inbox: name })
+      }
       if (request.method === 'POST' && parts[0] === 'api' && parts[1] === 'decisions' && parts[2] && parts[3]) {
         const input = await body(request)
-        store.answer(parts[2], parts[3], input)
+        store.answer(parts[2], parts[3], { answer: String(input.answer ?? ''), by: 'user' })
         supervisor.tick()
         return reply(202, { answered: parts[3] })
       }

@@ -1,10 +1,15 @@
-import { Store, type Pending } from './store.ts'
+import { Store, type Decision, type Pending } from './store.ts'
+import { defaultNote, levelOf, reviewText, type Policy, type Verdict } from './policy.ts'
 
 export type TurnRequest = { id: string; cwd: string; prompt: string; isNew: boolean }
 export type TurnResult = { ok: boolean; text?: string; error?: string; seconds: number }
 export type RunTurn = (request: TurnRequest) => Promise<TurnResult>
 
-export type SupervisorOptions = { maxRuns: number; maxFailures: number; now?: () => number }
+export type DocsRequest = { cwd: string; question: string; options: string[]; docs: string[] }
+export type DocsResult = { answered: boolean; answer?: string; source?: string }
+export type CheckDocs = (request: DocsRequest) => Promise<DocsResult>
+
+export type SupervisorOptions = { maxRuns: number; maxFailures: number; maxChecks: number; policy: Policy; checkDocs: CheckDocs; now?: () => number }
 
 type Forwarded = { at: string }
 
@@ -14,6 +19,7 @@ export class Supervisor {
   readonly options: SupervisorOptions
   readonly running = new Map<string, Promise<void>>()
   readonly failures = new Map<string, number>()
+  readonly checks = new Map<string, Promise<void>>()
 
   constructor(store: Store, runTurn: RunTurn, options: SupervisorOptions) {
     this.store = store
@@ -30,6 +36,7 @@ export class Supervisor {
     for (const id of this.store.sessions()) {
       this.releaseStaleLease(id, now)
       this.forwardReport(id)
+      this.applyPolicy(id, now)
     }
     for (const id of this.store.sessions()) {
       if (this.running.size >= this.options.maxRuns) return
@@ -54,6 +61,49 @@ export class Supervisor {
     this.store.send(meta.parent, `Report from child "${meta.title ?? id}" (${id}): ${report.state}. ${report.summary}${details}`)
     this.store.writeJson(path, { at: report.at })
     this.store.log(`${id} report ${report.state} forwarded to ${meta.parent}`)
+  }
+
+  applyPolicy(id: string, now: number): void {
+    for (const decision of this.store.openDecisions(id)) {
+      const level = levelOf(this.options.policy, decision.risk)
+      if (level.checkDocs) this.startDocsCheck(id, decision)
+      if (level.timeoutSeconds === null || !decision.defaultOption) continue
+      if (now - Date.parse(decision.asked) < level.timeoutSeconds * 1000) continue
+      if (this.store.isAnswered(id, decision.id)) continue
+      const reason = `level ${level.name}, no answer in ${level.timeoutSeconds} s`
+      this.store.answer(id, decision.id, { answer: decision.defaultOption, by: 'policy', note: defaultNote(this.options.policy, decision.id, reason) })
+      this.store.ledger({ session: id, decision: decision.id, question: decision.question, answer: decision.defaultOption, by: 'policy', reason })
+      this.store.log(`${id} decision ${decision.id} default ${decision.defaultOption} (${reason})`)
+    }
+  }
+
+  startDocsCheck(id: string, decision: Decision): void {
+    const key = `${id}/${decision.id}`
+    const path = this.store.path(id, 'docs-checks', `${decision.id}.json`)
+    if (this.checks.has(key) || this.store.readText(path) !== undefined || this.checks.size >= this.options.maxChecks) return
+    const cwd = this.store.cwd(id)
+    if (!cwd) return
+    const request = { cwd, question: decision.question ?? '', options: decision.options ?? [], docs: this.options.policy.docs }
+    const work = this.options
+      .checkDocs(request)
+      .catch(error => ({ answered: false, error: String(error) }) as DocsResult)
+      .then(result => {
+        this.store.writeJson(path, { ...result, at: new Date().toISOString() })
+        if (!result.answered || !result.answer || this.store.isAnswered(id, decision.id)) return
+        const note = `This answer comes from the documentation (${result.source ?? 'no source given'}), not from the user. The user can review it later.`
+        this.store.answer(id, decision.id, { answer: result.answer, by: 'docs', source: result.source, note })
+        this.store.ledger({ session: id, decision: decision.id, question: decision.question, answer: result.answer, by: 'docs', source: result.source })
+        this.store.log(`${id} decision ${decision.id} answered from the docs: ${result.answer} (${result.source})`)
+      })
+    this.checks.set(key, work)
+    void work.finally(() => this.checks.delete(key))
+  }
+
+  review(id: string, decision: string, verdict: Verdict, text: string): string {
+    const question = this.store.readJson<Decision>(this.store.path(id, 'decisions', `${decision}.json`))?.question ?? 'question'
+    this.store.writeJson(this.store.path(id, 'reviews', `${decision}.json`), { verdict, text, at: new Date().toISOString() })
+    this.store.ledger({ session: id, decision, review: verdict, text })
+    return this.store.send(id, reviewText(decision, question, verdict, text))
   }
 
   canRun(id: string, now: number): boolean {
@@ -97,6 +147,6 @@ export class Supervisor {
   }
 
   async idle(): Promise<void> {
-    while (this.running.size > 0) await Promise.all(this.running.values())
+    while (this.running.size > 0 || this.checks.size > 0) await Promise.all([...this.running.values(), ...this.checks.values()])
   }
 }

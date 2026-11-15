@@ -4,20 +4,55 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Store } from '../src/store.ts'
-import { Supervisor, type TurnRequest } from '../src/supervisor.ts'
+import { Supervisor, type DocsResult, type TurnRequest } from '../src/supervisor.ts'
+import type { Policy } from '../src/policy.ts'
 
-function setup(ok = true) {
+const POLICY: Policy = {
+  levels: [
+    { name: 'low', description: 'small', timeoutSeconds: 60, checkDocs: true },
+    { name: 'medium', description: 'design', timeoutSeconds: 600, checkDocs: false },
+    { name: 'high', description: 'hard to undo', timeoutSeconds: null, checkDocs: false },
+  ],
+  docs: ['AGENTS.md'],
+  onDefault: 'stacked-pr',
+}
+
+function setup(ok = true, docs: DocsResult = { answered: false }) {
   const store = new Store(mkdtempSync(join(tmpdir(), 'orch-')))
   const turns: TurnRequest[] = []
+  const clock = { now: Date.now() }
+  const checked: string[] = []
   const supervisor = new Supervisor(
     store,
     async request => {
       turns.push(request)
       return ok ? { ok: true, text: 'done', seconds: 0 } : { ok: false, error: 'boom', seconds: 0 }
     },
-    { maxRuns: 2, maxFailures: 2 },
+    {
+      maxRuns: 2,
+      maxFailures: 2,
+      maxChecks: 2,
+      policy: POLICY,
+      checkDocs: async request => {
+        checked.push(request.question)
+        return docs
+      },
+      now: () => clock.now,
+    },
   )
-  return { store, turns, supervisor }
+  return { store, turns, supervisor, clock, checked }
+}
+
+function decide(store: Store, id: string, decision: string, risk: string, defaultOption: string | undefined, asked: number) {
+  const value = { id: decision, session: id, kind: 'ask_user', question: `Q ${decision}`, options: ['A', 'B'], risk, defaultOption, mode: 'pending', waitSeconds: 0, asked: new Date(asked).toISOString() }
+  store.writeJson(store.path(id, 'decisions', `${decision}.json`), value)
+}
+
+async function started(t: ReturnType<typeof setup>): Promise<string> {
+  const id = t.store.create({ cwd: 'C:/x', createdBy: 'supervisor' }, 'start')
+  t.supervisor.tick()
+  await t.supervisor.idle()
+  return id
 }
 
 function makeLive(store: Store, id: string) {
@@ -133,4 +168,96 @@ test('a new live lease with an old heartbeat counts as live', async () => {
   await supervisor.idle()
   assert.equal(store.lease(id).holder, 'live')
   assert.equal(turns.length, 0)
+})
+test('a medium decision gets its default after its timeout, not before, with a note and a ledger line', async () => {
+  const t = setup()
+  const id = await started(t)
+  decide(t.store, id, 'd1', 'medium', 'B', t.clock.now)
+  t.clock.now += 599000
+  t.supervisor.tick()
+  await t.supervisor.idle()
+  assert.equal(t.store.isAnswered(id, 'd1'), false)
+  t.clock.now += 2000
+  t.supervisor.tick()
+  await t.supervisor.idle()
+  const answer = t.store.readJson<any>(t.store.path(id, 'answers', 'd1.json'))
+  assert.equal(answer.answer, 'B')
+  assert.equal(answer.by, 'policy')
+  assert.match(answer.note, /orch\/decision-d1/)
+  assert.match(t.turns.at(-1)?.prompt ?? '', /^Answer to decision d1 \(Q d1\): B\n\nThis is a default decision/)
+  const ledger = (t.store.readText(join(t.store.root, 'ledger.jsonl')) ?? '').trim().split('\n').map(line => JSON.parse(line))
+  assert.equal(ledger[0].by, 'policy')
+  assert.equal(ledger[0].answer, 'B')
+})
+
+test('a high decision and a decision with no default never get a default', async () => {
+  const t = setup()
+  const id = await started(t)
+  decide(t.store, id, 'd1', 'high', 'A', t.clock.now)
+  decide(t.store, id, 'd2', 'medium', undefined, t.clock.now)
+  t.clock.now += 10 * 24 * 3600 * 1000
+  t.supervisor.tick()
+  await t.supervisor.idle()
+  assert.equal(t.store.openDecisions(id).length, 2)
+})
+
+test('an unknown level counts as the strictest level', async () => {
+  const t = setup()
+  const id = await started(t)
+  decide(t.store, id, 'd1', 'tiny', 'A', t.clock.now)
+  t.clock.now += 10 * 24 * 3600 * 1000
+  t.supervisor.tick()
+  await t.supervisor.idle()
+  assert.equal(t.store.isAnswered(id, 'd1'), false)
+})
+
+test('a low decision that the docs answer gets that answer at once, with its source', async () => {
+  const t = setup(true, { answered: true, answer: 'A', source: 'AGENTS.md, Rules' })
+  const id = await started(t)
+  decide(t.store, id, 'd1', 'low', 'B', t.clock.now)
+  t.supervisor.tick()
+  await t.supervisor.idle()
+  const answer = t.store.readJson<any>(t.store.path(id, 'answers', 'd1.json'))
+  assert.deepEqual([answer.answer, answer.by, answer.source], ['A', 'docs', 'AGENTS.md, Rules'])
+  assert.deepEqual(t.checked, ['Q d1'])
+  t.supervisor.tick()
+  await t.supervisor.idle()
+  assert.deepEqual(t.checked, ['Q d1'])
+  assert.match(t.turns.at(-1)?.prompt ?? '', /comes from the documentation \(AGENTS\.md, Rules\)/)
+})
+
+test('a low decision that the docs do not answer waits for its timeout', async () => {
+  const t = setup()
+  const id = await started(t)
+  decide(t.store, id, 'd1', 'low', 'B', t.clock.now)
+  t.supervisor.tick()
+  await t.supervisor.idle()
+  assert.equal(t.store.isAnswered(id, 'd1'), false)
+  t.clock.now += 61000
+  t.supervisor.tick()
+  await t.supervisor.idle()
+  assert.equal(t.store.readJson<any>(t.store.path(id, 'answers', 'd1.json')).by, 'policy')
+  assert.equal(t.checked.length, 1)
+})
+
+test('a medium decision does not check the docs', async () => {
+  const t = setup(true, { answered: true, answer: 'A', source: 'x' })
+  const id = await started(t)
+  decide(t.store, id, 'd1', 'medium', 'B', t.clock.now)
+  t.supervisor.tick()
+  await t.supervisor.idle()
+  assert.deepEqual(t.checked, [])
+})
+
+test('a review sends the instruction for its verdict to the session', async () => {
+  const t = setup()
+  const id = await started(t)
+  decide(t.store, id, 'd1', 'medium', 'B', t.clock.now)
+  t.supervisor.review(id, 'd1', 'refuse', 'use A')
+  t.supervisor.tick()
+  await t.supervisor.idle()
+  const prompt = t.turns.at(-1)?.prompt ?? ''
+  assert.match(prompt, /^Review of decision d1 \(Q d1\): refused\. The user said: use A/)
+  assert.match(prompt, /each PR stacked above it/)
+  assert.equal(t.store.readJson<any>(t.store.path(id, 'reviews', 'd1.json')).verdict, 'refuse')
 })

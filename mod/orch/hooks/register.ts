@@ -85,7 +85,7 @@ async function waitForFile($: any, path: string, seconds: number): Promise<strin
 
 function answerText(answer: any): string {
   if (answer === undefined || answer === null) return ''
-  if (typeof answer.answer === 'string') return answer.answer
+  if (typeof answer.answer === 'string') return typeof answer.note === 'string' ? `${answer.answer}\n\n${answer.note}` : answer.answer
   if (typeof answer.text === 'string') return answer.text
   return JSON.stringify(answer.answers ?? answer)
 }
@@ -175,17 +175,25 @@ async function writeStatus($: any, state: string, turnId: unknown): Promise<void
   await writeJson($, `${S.dir}/status.json`, { state, turnId, at: await now($) })
 }
 
+async function riskLevels($: any): Promise<{ names: string[]; text: string }> {
+  const policy = S.store ? await readJson($, `${S.store}/policy.json`) : undefined
+  const levels: any[] = Array.isArray(policy?.levels) && policy.levels.length > 0 ? policy.levels : [{ name: 'low' }, { name: 'medium' }, { name: 'high' }]
+  const text = levels.map(level => `${level.name}: ${level.description ?? ''}`).join(' ')
+  return { names: levels.map(level => String(level.name)), text }
+}
+
 async function registerTools($: any): Promise<void> {
+  const risk = await riskLevels($)
   await $.tool.register({
     name: 'ask_user',
     description:
-      'Put one decision in the user queue. Give the context in the question, the options as suggestions, the risk and your default option. The user answers in free text, which can be one of the options or something else. With waitSeconds 0 it returns PENDING at once: end your turn, and the answer arrives later as a new message that starts with "Answer to decision". With waitSeconds more than 0 it blocks up to that time (maximum 580) and returns ANSWER: <text>, or PENDING when no answer came.',
+      'Put one decision in the user queue. If no answer comes in time, the orchestrator can apply your default option, by the risk level. Give the context in the question, the options as suggestions, the risk and your default option. The user answers in free text, which can be one of the options or something else. With waitSeconds 0 it returns PENDING at once: end your turn, and the answer arrives later as a new message that starts with "Answer to decision". With waitSeconds more than 0 it blocks up to that time (maximum 580) and returns ANSWER: <text>, or PENDING when no answer came.',
     inputSchema: {
       type: 'object',
       properties: {
         question: { type: 'string', description: 'The question, with the context the user needs and your recommendation.' },
         options: { type: 'array', items: { type: 'string' } },
-        risk: { type: 'string', enum: ['low', 'medium', 'high'] },
+        risk: { type: 'string', enum: risk.names, description: `Pick the level that fits. ${risk.text}` },
         defaultOption: { type: 'string', description: 'The option you pick if the user gives no answer.' },
         waitSeconds: { type: 'number', description: '0 (default): return PENDING at once. More than 0: block up to this many seconds.' },
       },

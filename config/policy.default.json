@@ -1,0 +1,24 @@
+{
+  "levels": [
+    {
+      "name": "low",
+      "description": "Easy to undo, local to this task, and no effect on other people or on public interfaces. Examples: a name inside one module, the order of steps, a test detail.",
+      "timeoutSeconds": 1800,
+      "checkDocs": true
+    },
+    {
+      "name": "medium",
+      "description": "Changes a design, a public API, a file layout or a convention, but a review can still undo it.",
+      "timeoutSeconds": 14400,
+      "checkDocs": true
+    },
+    {
+      "name": "high",
+      "description": "Hard to undo, or with an effect outside the repository: deletes data, publishes, sends, spends money, or changes security. Never applied by default.",
+      "timeoutSeconds": null,
+      "checkDocs": false
+    }
+  ],
+  "docs": ["AGENTS.md", "CLAUDE.md", "README.md", "docs/"],
+  "onDefault": "stacked-pr"
+}

@@ -148,3 +148,17 @@ The supervisor is in `supervisor/` (Node 26 runs the TypeScript files directly).
 ## Change: no click questions (2026-11-15)
 
 The user answers by voice and in free text, so click questions (A, B, C or other) are not used. The `AskUserQuestion` redirect from S8 is removed. A deny rule in the user settings removes the tool, and the mod refuses it as a fallback. Questions go to the reply text (normal sessions) or to `ask_user` (orchestrator sessions). P3 and P4 must show free-text answers, with the options as suggestions only.
+
+## P3 result (2026-11-15)
+
+The policy is configurable (`config/policy.default.json`, copied to `store/policy.json`): any number of levels, a definition and a timeout for each level, and a docs check for each level. See `docs/store.md`.
+
+| Part | Result | Evidence |
+|---|---|---|
+| Unit tests | ✅ 16 tests (7 new): timeout, no default for `null` or no `defaultOption`, unknown level, docs answer, docs miss then timeout, no docs check for a level without it, review | `npm test` |
+| Docs answer | ✅ A `low` question that `AGENTS.md` answers got the answer in about 20 s, with the source | Test repo: LIME from "AGENTS.md, Rules" |
+| Default after timeout, stacked branch | ✅ A `medium` question got its default after 30 s. The session put the work on `orch/decision-<id>` on top of `main` | Test repo: BLUE |
+| Review: refuse | ✅ The session went back to `main`, did the work again with the direction of the user, and kept the refused branch | Test repo: RED |
+| Ledger | ✅ One line for the docs answer and one for the default, then one for the review | `store/ledger.jsonl` |
+
+Not tested yet: a draft PR on a repository with a GitHub remote, and the `change` and `approve` verdicts in a live session.
