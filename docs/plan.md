@@ -161,4 +161,20 @@ The policy is configurable (`config/policy.default.json`, copied to `store/polic
 | Review: refuse | ✅ The session went back to `main`, did the work again with the direction of the user, and kept the refused branch | Test repo: RED |
 | Ledger | ✅ One line for the docs answer and one for the default, then one for the review | `store/ledger.jsonl` |
 
-Not tested yet: a draft PR on a repository with a GitHub remote, and the `change` and `approve` verdicts in a live session.
+### PR stack test (2026-11-15)
+
+A supervisor session on a private GitHub test repository (`MgCohen/orch-pr-test`). Three `medium` questions, timeout 30 s.
+
+| Step | Result |
+|---|---|
+| Three defaults | Pass. Three draft PRs: `main` ← #1 ← #2 ← #3, each base the branch below it |
+| Approve #1 | Pass. #1 is ready for review, not merged |
+| Change #2 ("use SMALL") | Pass. A new commit on #2. #3 is rebased on it and pushed with `--force-with-lease` |
+| Refuse #2 | Pass. #2 and #3 are closed with a comment, and their branches stay. New branches `…-v2` start from #1: #4 has the direction of the user, #5 reuses the BLUE commit of #3 |
+| Ledger | Pass. One line for each default and each review |
+
+Findings:
+
+- Two reviews that arrive 2 s apart run as two turns, because a POST starts a tick at once. This is correct.
+- The rebuilt PRs (#4, #5) have no decision in the store, so the review API cannot reach them. #5 holds a default (BLUE) that the user did not review. Fix in a later phase: a rebuilt PR keeps the decision id of the closed PR, and the refuse text names the branch suffix.
+- The session saw a conflict between the direction of the user and `AGENTS.md`. It followed the user and wrote a comment on the PR. This is the correct order.
