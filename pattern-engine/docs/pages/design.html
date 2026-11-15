@@ -1,0 +1,956 @@
+<title>Pattern Engine</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of raised panels on the VSA canvas; two main tabs, sub-tabs in "Elements"; folds for detail. */
+:root {
+  --bg: #eceae6;
+  --raised: #fbfbfa;
+  --lowered: #e4e2de;
+  --text: #1b1a18;
+  --quiet: #5f5b55;
+  --border: rgba(27, 26, 24, 0.1);
+  --accent: #ff6a1a;
+  --accent-text: #a44a19;
+  --accent-fill: rgba(255, 106, 26, 0.12);
+  --ok: #2f7d4a;
+  --ok-fill: rgba(47, 125, 74, 0.12);
+  --red: #c8402b;
+  --code-bg: #151517;
+  --code-text: #e4e2de;
+  --code-quiet: #a8a49d;
+  --code-key: #ff955a;
+  --code-val: #7fd18f;
+  --shadow-raised: inset 0 0.0625rem 0 rgba(255,255,255,0.63), 0 0.125rem 0.1875rem rgba(27,26,24,0.06), 0 0.6875rem 1.3125rem -0.5rem rgba(27,26,24,0.24);
+  --shadow-carve: inset 0 0.125rem 0.375rem rgba(27,26,24,0.14), inset 0 -0.0625rem 0 rgba(255,255,255,0.7);
+  --font-display: Doto, 'Cascadia Mono', monospace;
+  --font-body: Inter, system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', 'Cascadia Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --raised: #26262a; --lowered: #151517; --text: #fbfbfa; --quiet: #a8a49d;
+    --border: rgba(251,251,250,0.1); --accent-text: #ff955a; --accent-fill: rgba(255,106,26,0.16);
+    --ok: #7fd18f; --ok-fill: rgba(127,209,143,0.14); --red: #ff7a63;
+    --code-bg: #0f0f10;
+    --shadow-raised: inset 0 0.0625rem 0 rgba(255,255,255,0.06), 0 0.6875rem 1.3125rem -0.5rem rgba(0,0,0,0.6);
+    --shadow-carve: inset 0 0.125rem 0.375rem rgba(0,0,0,0.5), inset 0 -0.0625rem 0 rgba(255,255,255,0.04);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --raised: #26262a; --lowered: #151517; --text: #fbfbfa; --quiet: #a8a49d;
+  --border: rgba(251,251,250,0.1); --accent-text: #ff955a; --accent-fill: rgba(255,106,26,0.16);
+  --ok: #7fd18f; --ok-fill: rgba(127,209,143,0.14); --red: #ff7a63;
+  --code-bg: #0f0f10;
+  --shadow-raised: inset 0 0.0625rem 0 rgba(255,255,255,0.06), 0 0.6875rem 1.3125rem -0.5rem rgba(0,0,0,0.6);
+  --shadow-carve: inset 0 0.125rem 0.375rem rgba(0,0,0,0.5), inset 0 -0.0625rem 0 rgba(255,255,255,0.04);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text); font: 400 1rem/1.6 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 2.5rem 4rem;
+}
+.wrap { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+h1, h2 { font-family: var(--font-display); font-weight: 800; text-wrap: balance; margin: 0; letter-spacing: 0.01em; }
+h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: 1.05; }
+h2 { font-size: 1.4rem; line-height: 1.2; }
+h3 { font-size: 1rem; margin: 0; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+ul, ol { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.eyebrow { font: 500 0.75rem/1 var(--font-code); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-text); }
+.quiet { color: var(--quiet); }
+.small { font-size: 0.88rem; }
+code { font: 0.86em var(--font-code); background: var(--lowered); padding: 0.05em 0.35em; border-radius: 0.3rem; }
+kbd { font: 500 0.75rem/1 var(--font-code); background: var(--raised); box-shadow: var(--shadow-raised); border-radius: 0.35rem; padding: 0.25rem 0.45rem; }
+header { display: flex; flex-direction: column; gap: 0.9rem; }
+header p { font-size: 1.06rem; }
+.keys { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.82rem; color: var(--quiet); align-items: center; }
+.keys span { display: inline-flex; gap: 0.35rem; align-items: center; }
+
+/* Tabs */
+.tabs { display: flex; flex-wrap: wrap; gap: 0.35rem; background: var(--lowered); box-shadow: var(--shadow-carve); border-radius: 0.8rem; padding: 0.3rem; width: fit-content; max-width: 100%; }
+.tabs button { font: 600 0.9rem/1 var(--font-body); color: var(--quiet); background: transparent; border: 0; border-radius: 0.55rem; padding: 0.65rem 0.95rem; cursor: pointer; display: inline-flex; gap: 0.45rem; align-items: center; }
+.tabs button .k { font: 500 0.7rem/1 var(--font-code); opacity: 0.7; }
+.tabs button[aria-selected="true"] { background: var(--raised); color: var(--text); box-shadow: var(--shadow-raised); }
+.tabs button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tabs.sub button { font-size: 0.84rem; padding: 0.55rem 0.8rem; }
+.view { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.panel { background: var(--raised); border-radius: 1rem; box-shadow: var(--shadow-raised); padding: clamp(1.1rem, 3vw, 1.6rem); display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.panel > .head { display: flex; flex-direction: column; gap: 0.4rem; }
+
+/* Folds */
+details.fold { background: var(--raised); border-radius: 1rem; box-shadow: var(--shadow-raised); min-width: 0; }
+details.fold > summary { list-style: none; cursor: pointer; padding: 1rem clamp(1.1rem, 3vw, 1.6rem); display: flex; gap: 0.75rem; align-items: baseline; justify-content: space-between; }
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary .t { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+details.fold > summary .t b { font: 800 1.1rem/1.2 var(--font-display); }
+details.fold > summary .t span { font-size: 0.86rem; color: var(--quiet); }
+details.fold > summary .chev { font: 600 1rem var(--font-code); color: var(--accent); transition: transform 0.15s; flex: none; }
+details.fold[open] > summary .chev { transform: rotate(90deg); }
+details.fold > .body { padding: 0 clamp(1.1rem, 3vw, 1.6rem) clamp(1.1rem, 3vw, 1.6rem); display: flex; flex-direction: column; gap: 1rem; }
+@media (prefers-reduced-motion: reduce) { details.fold > summary .chev { transition: none; } }
+
+/* Flow */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.45rem; }
+.node { flex: 1 1 8rem; min-width: 0; background: var(--lowered); box-shadow: var(--shadow-carve); border-radius: 0.75rem; padding: 0.75rem 0.85rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.node b { font-size: 0.9rem; }
+.node span { font-size: 0.8rem; color: var(--quiet); line-height: 1.45; }
+.node.hot { background: var(--accent-fill); box-shadow: inset 0 0 0 1px var(--accent); }
+.node.okn { background: var(--ok-fill); box-shadow: inset 0 0 0 1px var(--ok); }
+.arrow { align-self: center; color: var(--accent); font: 600 1.05rem var(--font-code); }
+@media (max-width: 44rem) { .flow { flex-direction: column; } .arrow { transform: rotate(90deg); } }
+.branch { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.75rem; }
+@media (max-width: 44rem) { .branch { grid-template-columns: minmax(0, 1fr); } }
+.lane { border: 1px dashed var(--border); border-radius: 0.75rem; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.lane > .lbl { font: 500 0.74rem/1.2 var(--font-code); letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent-text); }
+
+/* Core vs pack */
+.split2 { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0.75rem; align-items: stretch; }
+@media (max-width: 44rem) { .split2 { grid-template-columns: minmax(0, 1fr); } .plug { flex-direction: row !important; justify-content: center; } }
+.side { border-radius: 0.85rem; padding: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.side.core { background: var(--lowered); box-shadow: var(--shadow-carve); }
+.side.pack { border: 1px dashed var(--accent); background: var(--accent-fill); }
+.side h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; }
+.item { display: flex; flex-direction: column; gap: 0.1rem; }
+.item b { font: 500 0.82rem var(--font-code); }
+.item span { font-size: 0.82rem; color: var(--quiet); }
+.plug { display: flex; flex-direction: column; gap: 0.35rem; justify-content: center; align-items: center; }
+.plug code { background: var(--accent); color: #1b1a18; font-weight: 500; }
+.plug .lbl { font: 500 0.7rem/1.2 var(--font-code); color: var(--quiet); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Tables */
+.tw { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+th { text-align: left; font: 500 0.72rem/1.2 var(--font-code); letter-spacing: 0.06em; text-transform: uppercase; color: var(--quiet); padding: 0 0.75rem 0.55rem 0; border-bottom: 1px solid var(--border); }
+td { padding: 0.55rem 0.75rem 0.55rem 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill { display: inline-block; font: 500 0.7rem/1 var(--font-code); padding: 0.28rem 0.5rem; border-radius: 99rem; white-space: nowrap; }
+.pill.core { background: var(--lowered); color: var(--quiet); }
+.pill.dom { background: var(--accent-fill); color: var(--accent-text); }
+.pill.ok { background: var(--ok-fill); color: var(--ok); }
+
+/* Code */
+pre { margin: 0; background: var(--code-bg); color: var(--code-text); border-radius: 0.75rem; padding: 1rem 1.1rem; overflow-x: auto; font: 0.78rem/1.6 var(--font-code); min-width: 0; }
+pre .k { color: var(--code-key); } pre .v { color: var(--code-val); } pre .c { color: var(--code-quiet); font-style: italic; }
+.codehead { display: flex; justify-content: space-between; gap: 0.5rem; align-items: center; font: 500 0.76rem var(--font-code); color: var(--quiet); }
+.pair { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 1rem; }
+@media (max-width: 50rem) { .pair { grid-template-columns: minmax(0, 1fr); } }
+.stack { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+
+/* Folder tree: each folder is a fold */
+.ftree { background: var(--lowered); box-shadow: var(--shadow-carve); border-radius: 0.75rem; padding: 0.6rem; font: 0.82rem/1.5 var(--font-code); min-width: 0; }
+.ftree summary, .ftree .file { display: grid; grid-template-columns: 1rem auto minmax(0, 1fr); gap: 0.6rem; align-items: baseline; padding: 0.28rem 0.45rem; border-radius: 0.45rem; }
+.ftree summary { list-style: none; cursor: pointer; }
+.ftree summary::-webkit-details-marker { display: none; }
+.ftree summary:hover { background: var(--accent-fill); }
+.ftree summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ftree .ic { color: var(--accent); font-weight: 600; transition: transform 0.15s; display: inline-block; text-align: center; }
+.ftree details[open] > summary .ic { transform: rotate(90deg); }
+.ftree .file .ic { color: var(--quiet); font-weight: 400; }
+.ftree .nm { overflow-wrap: anywhere; }
+.ftree summary .nm { color: var(--accent-text); font-weight: 500; }
+.ftree .nt { font: 0.78rem/1.45 var(--font-body); color: var(--quiet); min-width: 0; }
+.ftree .kids { margin-left: 0.95rem; padding-left: 0.55rem; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+.ftree .empty { padding: 0.28rem 0.45rem 0.28rem 2.05rem; font: 0.78rem var(--font-body); color: var(--quiet); font-style: italic; }
+@media (max-width: 40rem) {
+  .ftree summary, .ftree .file { grid-template-columns: 1rem minmax(0, 1fr); row-gap: 0.05rem; }
+  .ftree .nt { grid-column: 2; }
+}
+@media (prefers-reduced-motion: reduce) { .ftree .ic { transition: none; } }
+pre.fold-lines { white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Phone: code gets more width; each table row becomes a labeled block */
+@media (max-width: 40rem) {
+  pre { padding: 0.75rem 0.7rem; }
+  .tw table, .tw tbody, .tw tr, .tw td { display: block; width: 100%; }
+  .tw thead { display: none; }
+  .tw tr { padding: 0.6rem 0; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.2rem; }
+  .tw tr:last-child { border-bottom: 0; }
+  .tw td { border: 0; padding: 0; display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.6rem; }
+  .tw td::before { content: attr(data-label); font: 500 0.68rem/1.7 var(--font-code); letter-spacing: 0.05em; text-transform: uppercase; color: var(--quiet); }
+  .tw td:first-child { font-weight: 600; }
+  .tw td.num { white-space: normal; }
+  .tw .cv { min-width: 0; }
+}
+
+/* Graph levels */
+.levels { display: flex; flex-direction: column; gap: 0.5rem; }
+.level { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 0.75rem; align-items: center; }
+@media (max-width: 40rem) { .level { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; } }
+.level > .lbl { font: 500 0.74rem/1.2 var(--font-code); color: var(--quiet); text-transform: uppercase; letter-spacing: 0.05em; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip { font: 500 0.8rem/1 var(--font-code); padding: 0.45rem 0.65rem; border-radius: 0.5rem; background: var(--lowered); box-shadow: var(--shadow-carve); }
+.chip.on { background: var(--accent-fill); box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent-text); }
+.chip.prop { background: transparent; box-shadow: none; border: 1px dashed var(--quiet); color: var(--quiet); }
+.edges { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.6rem; }
+.edge { background: var(--lowered); border-radius: 0.7rem; padding: 0.7rem 0.8rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.edge b { font: 500 0.82rem var(--font-code); color: var(--accent-text); }
+.edge span { font-size: 0.82rem; color: var(--quiet); }
+
+/* Domain cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.75rem; }
+.card { background: var(--lowered); border-radius: 0.85rem; padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.card h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; }
+.card dl { margin: 0; display: grid; grid-template-columns: 5.2rem minmax(0, 1fr); gap: 0.3rem 0.6rem; font-size: 0.84rem; }
+.card dt { font: 500 0.74rem/1.6 var(--font-code); color: var(--quiet); }
+.card dd { margin: 0; min-width: 0; }
+
+/* Steps */
+.steps { display: flex; flex-direction: column; gap: 0.5rem; }
+.step { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 0.75rem; align-items: start; padding: 0.7rem 0.85rem; border-radius: 0.7rem; background: var(--lowered); }
+.step .n { font: 800 1.3rem/1.2 var(--font-display); color: var(--accent-text); }
+.step .s { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.step .s span { font-size: 0.86rem; color: var(--quiet); }
+
+/* Drawing */
+.canvas { background: var(--lowered); box-shadow: var(--shadow-carve); border-radius: 0.75rem; padding: 0.75rem; }
+.canvas svg { display: block; width: 100%; height: auto; max-width: 100%; }
+.sv-line { stroke: var(--text); stroke-width: 2; fill: none; }
+.sv-body { fill: var(--raised); stroke: var(--text); stroke-width: 2; }
+.sv-roof { fill: var(--quiet); stroke: var(--text); stroke-width: 2; }
+.sv-door { fill: var(--lowered); stroke: var(--text); stroke-width: 2; }
+.sv-red { fill: var(--red); stroke: var(--text); stroke-width: 2; }
+.sv-win { fill: var(--accent-fill); stroke: var(--text); stroke-width: 2; }
+.sv-tag { font: 500 13px var(--font-code); fill: var(--accent-text); }
+.quote { font: 600 1.15rem/1.45 var(--font-body); text-wrap: balance; max-width: 60ch; }
+
+.answer { border-left: 3px solid var(--accent); padding: 0.2rem 0 0.2rem 0.9rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.answer b { font-size: 1.05rem; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.6rem; }
+.stat { background: var(--lowered); border-radius: 0.75rem; padding: 0.75rem 0.85rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.stat b { font: 800 1.6rem/1.1 var(--font-display); color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 0.8rem; color: var(--quiet); }
+.foldbar { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.foldbar button { font: 500 0.78rem/1 var(--font-code); color: var(--quiet); background: transparent; border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.45rem 0.65rem; cursor: pointer; }
+.foldbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+footer { font-size: 0.8rem; color: var(--quiet); }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Proposal · generic engine</span>
+    <h1>Pattern Engine</h1>
+    <p>One engine selects patterns, composes them and evaluates the result. A domain pack sets the subject. To change the subject from shapes to UI or code, change the pack. The core does not change.</p>
+    <div class="keys" aria-label="Keyboard shortcuts">
+      <span><kbd>1</kbd><kbd>2</kbd> main tab</span>
+      <span><kbd>[</kbd><kbd>]</kbd> sub-tab</span>
+      <span><kbd>E</kbd> open all</span>
+      <span><kbd>C</kbd> close all</span>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Main sections">
+    <button role="tab" id="t-how" aria-controls="v-how" data-main="how"><span class="k">1</span>How it works</button>
+    <button role="tab" id="t-elements" aria-controls="v-elements" data-main="elements"><span class="k">2</span>Elements and samples</button>
+  </div>
+
+  <!-- ============ TAB 1 ============ -->
+  <section class="view" id="v-how" role="tabpanel" aria-labelledby="t-how">
+
+    <div class="panel">
+      <div class="head">
+        <span class="eyebrow">The split</span>
+        <h2>A fixed core and a swappable pack</h2>
+        <p class="quiet">The core calls only four adapter functions. That is the swap point.</p>
+      </div>
+      <div class="split2">
+        <div class="side core">
+          <h3>Core · fixed</h3>
+          <div class="item"><b>pattern schema</b><span>Fields, links, variants, status</span></div>
+          <div class="item"><b>graph builder</b><span>Index and graph from the pattern files; checks links and cycles</span></div>
+          <div class="item"><b>navigate skill</b><span>Select, divide, compose, verify, no-fit</span></div>
+          <div class="item"><b>author skill</b><span>Write a pattern from the template; novelty check</span></div>
+          <div class="item"><b>trace format</b><span>The pattern tree, changes and attempts of one run</span></div>
+          <div class="item"><b>eval runner + graders</b><span>Cases × k runs; selection and judge graders; report</span></div>
+        </div>
+        <div class="plug" aria-label="Adapter functions">
+          <span class="lbl">adapter</span>
+          <code>parse</code><code>assert</code><code>lint</code><code>render</code>
+        </div>
+        <div class="side pack">
+          <h3>Domain pack · swap</h3>
+          <div class="item"><b>domain.yaml</b><span>Output type and render command</span></div>
+          <div class="item"><b>instructions.md</b><span>Subject rules, as <code>vsa/DESIGN.md</code> is for UI</span></div>
+          <div class="item"><b>patterns/*.md</b><span>Patterns in the core template</span></div>
+          <div class="item"><b>adapter.mjs</b><span>The four functions for this subject</span></div>
+          <div class="item"><b>asserts/*.yaml</b><span>Anatomy checks for each pattern</span></div>
+          <div class="item"><b>cases/*.yaml</b><span>Hand-written eval cases</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <span class="eyebrow">One run</span>
+        <h2>From a request to a verified output</h2>
+        <p class="quiet">The agent follows the navigate skill. Each step writes into the trace.</p>
+      </div>
+      <div class="flow">
+        <div class="node"><b>Request</b><span>"Draw a street with three houses"</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>Index</b><span>Match the request to <code>use_when</code></span></div>
+        <div class="arrow">→</div>
+        <div class="node hot"><b>Select</b><span>Pattern, then variant. Read <code>do_not_use_when</code></span></div>
+        <div class="arrow">→</div>
+        <div class="node hot"><b>Divide</b><span>For each part: ask again (recursive)</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>Compose</b><span>Build with the pack instructions</span></div>
+        <div class="arrow">→</div>
+        <div class="node okn"><b>Verify</b><span>Adapter checks. Max 3 attempts</span></div>
+      </div>
+      <div class="branch">
+        <div class="lane">
+          <span class="lbl">Two patterns match</span>
+          <p class="small">Read <code>do_not_use_when</code> of both. If both still match, ask the user. Record the question in the trace.</p>
+        </div>
+        <div class="lane">
+          <span class="lbl">No pattern matches</span>
+          <p class="small">Select the nearest pattern. List each change from it. Verify. Write a <code>proposed</code> pattern file.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head">
+        <span class="eyebrow">Fixed or swapped</span>
+        <h2>What the pack changes</h2>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Element</th><th>Owner</th><th>Change in a new pack</th></tr></thead>
+          <tbody>
+            <tr><td>Pattern template (front matter, sections)</td><td><span class="pill core">core</span></td><td>Nothing. The Example section holds SVG, HTML or code</td></tr>
+            <tr><td>Graph: levels, parts, variants, links</td><td><span class="pill core">core</span></td><td>Nothing. Only the pattern names change</td></tr>
+            <tr><td>Navigate workflow and no-fit rule</td><td><span class="pill core">core</span></td><td>Nothing</td></tr>
+            <tr><td>Trace format</td><td><span class="pill core">core</span></td><td>Nothing</td></tr>
+            <tr><td>Selection grader, judge grader, report</td><td><span class="pill core">core</span></td><td>Nothing. The judge rubric comes from the pattern rules</td></tr>
+            <tr><td>Subject rules</td><td><span class="pill dom">pack</span></td><td><code>instructions.md</code></td></tr>
+            <tr><td>The patterns</td><td><span class="pill dom">pack</span></td><td><code>patterns/*.md</code></td></tr>
+            <tr><td>Structure and rules checks</td><td><span class="pill dom">pack</span></td><td><code>adapter.mjs</code> and <code>asserts/*.yaml</code></td></tr>
+            <tr><td>Eval cases</td><td><span class="pill dom">pack</span></td><td>Hand cases. The generator in the core makes the rest from the graph</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="foldbar"><button type="button" data-fold="open">Open all</button><button type="button" data-fold="close">Close all</button></div>
+
+    <details class="fold" open>
+      <summary><span class="t"><b>Folder structure</b><span>A new repository. <code>vsa-design</code> uses it later as the <code>ui</code> pack</span></span><span class="chev">›</span></summary>
+      <div class="body">
+<div class="ftree" id="ftree" aria-label="Folder structure"></div>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>The no-fit loop</b><span>How a new pattern starts, and how it becomes stable</span></span><span class="chev">›</span></summary>
+      <div class="body">
+        <div class="flow">
+          <div class="node"><b>No match</b><span>No <code>use_when</code> fits</span></div>
+          <div class="arrow">→</div>
+          <div class="node hot"><b>Nearest</b><span>The pattern with the most shared parts</span></div>
+          <div class="arrow">→</div>
+          <div class="node hot"><b>Delta</b><span>List each change from the nearest</span></div>
+          <div class="arrow">→</div>
+          <div class="node okn"><b>Verify</b><span>Adapter checks on the result</span></div>
+          <div class="arrow">→</div>
+          <div class="node"><b>Record</b><span><code>status: proposed</code> file</span></div>
+        </div>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Status</th><th>Gate to reach it</th><th>Agent use</th></tr></thead>
+            <tbody>
+              <tr><td><span class="pill core">proposed</span></td><td>The agent writes it after a no-fit run</td><td>Not in the index. Shown as "nearest" only</td></tr>
+              <tr><td><span class="pill dom">trial</span></td><td>You accept it. It has 2 cases and its asserts</td><td>In the index, with a "trial" label</td></tr>
+              <tr><td><span class="pill ok">stable</span></td><td>Its cases pass at pass^5 in two evals in a row</td><td>Full use</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>The swap</b><span>From shapes to UI to code: what you write for each new pack</span></span><span class="chev">›</span></summary>
+      <div class="body">
+        <ol>
+          <li>Copy <code>domains/shapes/</code> to the new name.</li>
+          <li>Write <code>instructions.md</code> for the subject.</li>
+          <li>Write the four adapter functions.</li>
+          <li>Write the patterns in the same template. Write the asserts for each pattern.</li>
+          <li>Write about 20 hand cases. Run the generator for the rest.</li>
+          <li>Run the eval. Compare the scores with the shapes scores.</li>
+        </ol>
+        <p class="small quiet">If the new pack scores much lower than shapes, examine the pack first. The core passed its tests on shapes.</p>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>Build plan</b><span>Six steps. Steps 1–4 use shapes only</span></span><span class="chev">›</span></summary>
+      <div class="body">
+        <div class="steps">
+          <div class="step"><span class="n">1</span><div class="s"><b>Schema and graph</b><span>Pattern schema, graph builder, shapes pack with about 10 patterns on 4 levels</span></div></div>
+          <div class="step"><span class="n">2</span><div class="s"><b>Navigate skill and trace</b><span>The workflow above. The agent writes a trace for each run</span></div></div>
+          <div class="step"><span class="n">3</span><div class="s"><b>Eval runner</b><span>Graders, case generator, grader fixtures, report. Run k=5</span></div></div>
+          <div class="step"><span class="n">4</span><div class="s"><b>Tune the core</b><span>Change the core until the shapes scores reach the targets and stay there</span></div></div>
+          <div class="step"><span class="n">5</span><div class="s"><b>UI pack</b><span>Adapter on Playwright, <code>check.mjs</code> and <code>screenshots.mjs</code>. Patterns from the Web Awesome recipes</span></div></div>
+          <div class="step"><span class="n">6</span><div class="s"><b>Code pack</b><span>Adapter on the AST, the type checker and the tests</span></div></div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ============ TAB 2 ============ -->
+  <section class="view" id="v-elements" role="tabpanel" aria-labelledby="t-elements" hidden>
+
+    <div class="tabs sub" role="tablist" aria-label="Elements">
+      <button role="tab" data-sub="pattern">Pattern file</button>
+      <button role="tab" data-sub="graph">Graph</button>
+      <button role="tab" data-sub="domains">Domains</button>
+      <button role="tab" data-sub="example">Worked example</button>
+      <button role="tab" data-sub="validation">Validation</button>
+    </div>
+
+    <!-- Pattern -->
+    <div class="view" data-subview="pattern">
+      <div class="panel">
+        <div class="head">
+          <span class="eyebrow">Element · pattern definition</span>
+          <h2>One pattern file</h2>
+          <p class="quiet">Front matter for the machine, sections for the agent. The core owns all fields. The pack owns only the content.</p>
+        </div>
+        <div class="pair">
+          <div class="stack">
+            <div class="codehead"><span>domains/shapes/patterns/house.md</span></div>
+<pre><span class="c">---</span>
+<span class="k">id</span>: <span class="v">house</span>
+<span class="k">kind</span>: <span class="v">composition</span>  <span class="c"># primitive|composition|scene</span>
+<span class="k">level</span>: <span class="v">2</span>
+<span class="k">status</span>: <span class="v">stable</span>       <span class="c"># proposed|trial|stable</span>
+<span class="k">use_when</span>:
+  - <span class="v">The request names a house, a home or a hut.</span>
+<span class="k">do_not_use_when</span>:
+  - <span class="v">Taller than 2× its width. Use tower.</span>
+<span class="k">variants</span>:
+  - <span class="k">id</span>: <span class="v">plain</span>
+    <span class="k">when</span>: <span class="v">No extra part is named.</span>
+  - <span class="k">id</span>: <span class="v">chimney</span>
+    <span class="k">when</span>: <span class="v">The request names a chimney or smoke.</span>
+<span class="k">parts</span>:
+  - { <span class="k">ref</span>: <span class="v">body</span>,    <span class="k">count</span>: <span class="v">1</span> }
+  - { <span class="k">ref</span>: <span class="v">roof</span>,    <span class="k">count</span>: <span class="v">1</span> }
+  - { <span class="k">ref</span>: <span class="v">door</span>,    <span class="k">count</span>: <span class="v">1</span> }
+  - { <span class="k">ref</span>: <span class="v">window</span>,  <span class="k">count</span>: <span class="v">"0..4"</span> }
+  - { <span class="k">ref</span>: <span class="v">chimney</span>, <span class="k">count</span>: <span class="v">1</span>, <span class="k">only</span>: <span class="v">chimney</span> }
+<span class="k">params</span>:
+  <span class="k">door_fill</span>: { <span class="k">default</span>: <span class="v">brown</span> }
+<span class="k">related</span>: [<span class="v">street</span>, <span class="v">tower</span>]
+<span class="k">asserts</span>: <span class="v">asserts/house.yaml</span>
+<span class="c">---</span>
+<span class="k">## Intent</span>
+One house, seen from the front.
+
+<span class="k">## Rules</span>
+- Do: the roof base is as wide as the body.
+- Do not: put the door above the body bottom.
+
+<span class="k">## Rationale</span>
+A child reads this shape as "house" at once.
+
+<span class="k">## Example</span>
+&lt;svg viewBox="0 0 120 120"&gt; … &lt;/svg&gt;</pre>
+          </div>
+          <div class="stack">
+            <div class="tw">
+              <table>
+                <thead><tr><th>Field</th><th>Used by</th></tr></thead>
+                <tbody>
+                  <tr><td><code>id</code>, <code>kind</code>, <code>level</code></td><td>Graph builder, index</td></tr>
+                  <tr><td><code>status</code></td><td>Index: only trial and stable go in</td></tr>
+                  <tr><td><code>use_when</code></td><td>Agent: select step</td></tr>
+                  <tr><td><code>do_not_use_when</code></td><td>Agent: select step. Near-miss cases</td></tr>
+                  <tr><td><code>variants</code></td><td>Agent: variant step. Selection grader</td></tr>
+                  <tr><td><code>parts</code></td><td>Agent: divide step. Graph edges. Case generator</td></tr>
+                  <tr><td><code>params</code></td><td>Agent: compose step. Case generator</td></tr>
+                  <tr><td><code>related</code></td><td>Agent: no-fit nearest. Two-way links</td></tr>
+                  <tr><td><code>asserts</code></td><td>Structure grader, through the adapter</td></tr>
+                  <tr><td>Rules (Do / Do not)</td><td>Agent: compose. Judge rubric</td></tr>
+                  <tr><td>Intent, Rationale</td><td>Agent: context. Kept from the Web Awesome recipe</td></tr>
+                  <tr><td>Example</td><td>Agent: a starting point. Optional until stable</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="codehead"><span>domains/shapes/asserts/house.yaml</span><span class="pill dom">pack</span></div>
+<pre><span class="c"># the adapter reads these, not the core</span>
+- <span class="v">roof.bottom == body.top</span>
+- <span class="v">roof.width  >= body.width</span>
+- <span class="v">door.bottom == body.bottom</span>
+- <span class="v">door inside body</span>
+- <span class="v">window inside body</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graph -->
+    <div class="view" data-subview="graph" hidden>
+      <div class="panel">
+        <div class="head">
+          <span class="eyebrow">Element · pattern graph</span>
+          <h2>The shapes graph</h2>
+          <p class="quiet">The graph builder makes this from the <code>parts</code> and <code>related</code> fields. A pattern at one level is made of patterns at the levels below it.</p>
+        </div>
+        <div class="levels">
+          <div class="level"><span class="lbl">L0 scene</span><div class="chips"><span class="chip">village</span><span class="chip">harbor</span></div></div>
+          <div class="level"><span class="lbl">L1 group</span><div class="chips"><span class="chip on">street</span><span class="chip">garden</span><span class="chip">fence-line</span></div></div>
+          <div class="level"><span class="lbl">L2 object</span><div class="chips"><span class="chip on">house</span><span class="chip">tower</span><span class="chip">tree</span><span class="chip">boat</span><span class="chip prop">lighthouse · proposed</span></div></div>
+          <div class="level"><span class="lbl">L3 part</span><div class="chips"><span class="chip on">body</span><span class="chip on">roof</span><span class="chip on">door</span><span class="chip on">window</span><span class="chip on">chimney</span><span class="chip">trunk</span><span class="chip">crown</span></div></div>
+          <div class="level"><span class="lbl">L4 primitive</span><div class="chips"><span class="chip on">rect</span><span class="chip on">triangle</span><span class="chip">circle</span><span class="chip">line</span></div></div>
+        </div>
+        <p class="small quiet">Orange: the path for the worked example. Dashed: a proposed pattern from a no-fit run.</p>
+      </div>
+      <div class="panel">
+        <div class="head">
+          <span class="eyebrow">Edges</span>
+          <h2>Four kinds of link</h2>
+        </div>
+        <div class="edges">
+          <div class="edge"><b>parts</b><span>"is made of". <code>house → roof</code>. The agent follows it in the divide step</span></div>
+          <div class="edge"><b>variants</b><span>"a form of". <code>house → chimney</code>. Each variant has its own trigger</span></div>
+          <div class="edge"><b>do_not_use_when → id</b><span>"use that one". <code>house → tower</code>. Separates near patterns</span></div>
+          <div class="edge"><b>related</b><span>"close to". Two-way. The no-fit step uses it to find the nearest</span></div>
+        </div>
+        <p class="small">The graph builder fails the build for a link to a missing pattern, a <code>parts</code> cycle, or a level that is not lower than its parent.</p>
+      </div>
+    </div>
+
+    <!-- Domains -->
+    <div class="view" data-subview="domains" hidden>
+      <div class="panel">
+        <div class="head">
+          <span class="eyebrow">Element · domain packs</span>
+          <h2>Three packs, one engine</h2>
+          <p class="quiet">A rough view of the UI and code packs. Only shapes is detailed for v1.</p>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <h3>shapes</h3>
+            <dl>
+              <dt>output</dt><dd><code>.svg</code></dd>
+              <dt>primitive</dt><dd>rect, triangle, circle, line</dd>
+              <dt>pattern</dt><dd><code>house</code>, <code>street</code></dd>
+              <dt>parse</dt><dd>SVG → shapes with boxes and fills</dd>
+              <dt>assert</dt><dd>Geometry: <code>door inside body</code></dd>
+              <dt>lint</dt><dd>Valid SVG, all inside the canvas</dd>
+              <dt>render</dt><dd>PNG for the judge</dd>
+              <dt>rules</dt><dd>"Use a 400 × 200 canvas. y grows down."</dd>
+            </dl>
+          </div>
+          <div class="card">
+            <h3>ui</h3>
+            <dl>
+              <dt>output</dt><dd><code>.html</code></dd>
+              <dt>primitive</dt><dd><code>wa-button</code>, <code>wa-input</code>, tokens</dd>
+              <dt>pattern</dt><dd>Settings section, App shell</dd>
+              <dt>parse</dt><dd>Playwright DOM tree</dd>
+              <dt>assert</dt><dd>Each row is a <code>wa-split</code> with label and control</dd>
+              <dt>lint</dt><dd><code>check.mjs</code></dd>
+              <dt>render</dt><dd><code>screenshots.mjs</code>: 390 / 1440, light / dark</dd>
+              <dt>rules</dt><dd><code>vsa/DESIGN.md</code></dd>
+            </dl>
+          </div>
+          <div class="card">
+            <h3>code</h3>
+            <dl>
+              <dt>output</dt><dd>A TypeScript module and its tests</dd>
+              <dt>primitive</dt><dd>function, type, test</dd>
+              <dt>pattern</dt><dd>Repository + service, retry with backoff</dd>
+              <dt>parse</dt><dd>AST</dd>
+              <dt>assert</dt><dd>"The service gets the repository as a parameter"</dd>
+              <dt>lint</dt><dd>Type checker, linter, the tests</dd>
+              <dt>render</dt><dd>Not used. The test output goes to the judge</dd>
+              <dt>rules</dt><dd>"Return a Result. Do not throw."</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="head"><span class="eyebrow">Same pattern file, other pack</span><h2>The ui form of a pattern</h2></div>
+<pre><span class="c">---</span>
+<span class="k">id</span>: <span class="v">settings-section</span>
+<span class="k">kind</span>: <span class="v">composition</span>
+<span class="k">level</span>: <span class="v">1</span>
+<span class="k">use_when</span>:
+  - <span class="v">A list of options with on/off switches.</span>
+<span class="k">do_not_use_when</span>:
+  - <span class="v">All values submit together. Use form.</span>
+<span class="k">parts</span>:
+  - { <span class="k">ref</span>: <span class="v">heading</span>,     <span class="k">count</span>: <span class="v">1</span> }
+  - { <span class="k">ref</span>: <span class="v">setting-row</span>, <span class="k">count</span>: <span class="v">"1..n"</span> }
+<span class="c"># DOM selectors, not geometry:</span>
+<span class="k">asserts</span>: <span class="v">asserts/settings-section.yaml</span>
+<span class="c">---</span></pre>
+      </div>
+    </div>
+
+    <!-- Worked example -->
+    <div class="view" data-subview="example" hidden>
+      <div class="panel">
+        <div class="head">
+          <span class="eyebrow">Worked example · composition</span>
+          <p class="quote">“Draw a street with three houses. The middle house has a red door and a chimney.”</p>
+        </div>
+        <div class="steps">
+          <div class="step"><span class="n">1</span><div class="s"><b>Index</b><span>"street" matches <code>street.use_when</code>. "houses" matches <code>house.use_when</code></span></div></div>
+          <div class="step"><span class="n">2</span><div class="s"><b>Select</b><span>Top pattern: <code>street</code>, variant <code>row</code>. Its parts: <code>house</code> × 1..n</span></div></div>
+          <div class="step"><span class="n">3</span><div class="s"><b>Divide</b><span>Three <code>house</code> parts. Ask again for each: 1 and 3 are <code>plain</code>. 2 is <code>chimney</code> with <code>door_fill: red</code></span></div></div>
+          <div class="step"><span class="n">4</span><div class="s"><b>Divide again</b><span>Each house → body, roof, door, window (+ chimney). Each part → rect or triangle</span></div></div>
+          <div class="step"><span class="n">5</span><div class="s"><b>Compose</b><span>Write the SVG from the bottom up. Follow <code>instructions.md</code> and the Rules of each pattern</span></div></div>
+          <div class="step"><span class="n">6</span><div class="s"><b>Verify</b><span>Adapter: parse → run <code>street.yaml</code> and <code>house.yaml</code> × 3 → lint. All pass on attempt 1</span></div></div>
+        </div>
+      </div>
+      <div class="pair">
+        <div class="panel">
+          <div class="head"><span class="eyebrow">Output</span><h3>street.svg</h3></div>
+          <div class="canvas">
+            <svg viewBox="0 0 400 205" role="img" aria-label="Three houses in a row. The middle house has a red door and a chimney.">
+              <line class="sv-line" x1="10" y1="170" x2="390" y2="170"/>
+              <rect class="sv-body" x="30" y="105" width="80" height="65"/>
+              <polygon class="sv-roof" points="24,105 70,64 116,105"/>
+              <rect class="sv-door" x="60" y="135" width="20" height="35"/>
+              <rect class="sv-win" x="38" y="115" width="16" height="16"/>
+              <rect class="sv-body" x="220" y="56" width="14" height="30"/>
+              <rect class="sv-body" x="160" y="100" width="80" height="70"/>
+              <polygon class="sv-roof" points="154,100 200,56 246,100"/>
+              <rect class="sv-red" x="190" y="132" width="20" height="38"/>
+              <rect class="sv-win" x="168" y="112" width="16" height="16"/>
+              <rect class="sv-win" x="216" y="112" width="16" height="16"/>
+              <rect class="sv-body" x="290" y="105" width="80" height="65"/>
+              <polygon class="sv-roof" points="284,105 330,64 376,105"/>
+              <rect class="sv-door" x="320" y="135" width="20" height="35"/>
+              <rect class="sv-win" x="348" y="115" width="16" height="16"/>
+              <text class="sv-tag" x="70" y="195" text-anchor="middle">house · plain</text>
+              <text class="sv-tag" x="200" y="195" text-anchor="middle">house · chimney</text>
+              <text class="sv-tag" x="330" y="195" text-anchor="middle">house · plain</text>
+            </svg>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="head"><span class="eyebrow">Trace</span><h3>trace.json</h3></div>
+<pre>{
+  <span class="k">"tree"</span>: { <span class="k">"p"</span>: <span class="v">"street"</span>, <span class="k">"v"</span>: <span class="v">"row"</span>, <span class="k">"parts"</span>: [
+    { <span class="k">"p"</span>: <span class="v">"house"</span>, <span class="k">"v"</span>: <span class="v">"plain"</span> },
+    { <span class="k">"p"</span>: <span class="v">"house"</span>, <span class="k">"v"</span>: <span class="v">"chimney"</span>,
+      <span class="k">"params"</span>: { <span class="k">"door_fill"</span>: <span class="v">"red"</span> } },
+    { <span class="k">"p"</span>: <span class="v">"house"</span>, <span class="k">"v"</span>: <span class="v">"plain"</span> }
+  ]},
+  <span class="k">"questions"</span>: [],
+  <span class="k">"deltas"</span>: [],
+  <span class="k">"attempts"</span>: <span class="v">1</span>,
+  <span class="k">"checks"</span>: { <span class="k">"street"</span>: <span class="v">"pass"</span>, <span class="k">"house"</span>: <span class="v">"pass ×3"</span> }
+}</pre>
+        </div>
+      </div>
+      <details class="fold">
+        <summary><span class="t"><b>The no-fit case: "Draw a lighthouse"</b><span>No pattern matches. The agent starts from the nearest one</span></span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="pair">
+            <ol>
+              <li>The index has no <code>use_when</code> for "lighthouse".</li>
+              <li>Nearest by shared parts and <code>related</code>: <code>tower</code>.</li>
+              <li>The agent lists the changes from <code>tower</code>: add a lamp room (circle) on top, add light rays (lines), add stripes on the body.</li>
+              <li>The agent verifies with the <code>tower</code> asserts that still apply.</li>
+              <li>The agent writes <code>lighthouse.md</code> with <code>status: proposed</code> and <code>related: [tower]</code>.</li>
+            </ol>
+<pre>{
+  <span class="k">"outcome"</span>: <span class="v">"no-fit"</span>,
+  <span class="k">"nearest"</span>: <span class="v">"tower"</span>,
+  <span class="k">"deltas"</span>: [
+    <span class="v">"add part lamp-room (circle) above body"</span>,
+    <span class="v">"add part rays (line × 4)"</span>,
+    <span class="v">"body fill: stripes"</span>
+  ],
+  <span class="k">"proposed"</span>: <span class="v">"patterns/lighthouse.md"</span>
+}</pre>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Validation -->
+    <div class="view" data-subview="validation" hidden>
+      <div class="panel">
+        <div class="head">
+          <span class="eyebrow">Validation · v1 on shapes</span>
+          <h2>Do we need 100 golden fixtures?</h2>
+        </div>
+        <div class="answer">
+          <b>No. Use about 20 golden files, and only to test the graders.</b>
+          <p>A drawing has many correct forms, so a fixed golden output fails good results. Check properties instead: the trace tree and the asserts. The graph gives the expected tree, so a generator makes most cases with no hand work.</p>
+        </div>
+        <div class="stats">
+          <div class="stat"><b>20</b><span>grader fixtures (good and bad SVG)</span></div>
+          <div class="stat"><b>60</b><span>generated cases</span></div>
+          <div class="stat"><b>20</b><span>hand cases</span></div>
+          <div class="stat"><b>30</b><span>outputs that you label for the judge</span></div>
+          <div class="stat"><b>400</b><span>runs in a full eval (80 cases × k=5)</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="head"><span class="eyebrow">Inputs</span><h2>What each part of the eval set tests</h2></div>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Set</th><th>Count</th><th>Who makes it</th><th>What it tests</th></tr></thead>
+            <tbody>
+              <tr><td>Grader fixtures</td><td class="num">20</td><td>Hand, once</td><td>That each grader passes good output and fails bad output. These are the only golden files</td></tr>
+              <tr><td>Generated cases</td><td class="num">60</td><td><code>generate-cases.mjs</code></td><td>Selection, divide and compose on the normal paths. The generator computes the expected tree and asserts</td></tr>
+              <tr><td>Near-miss cases</td><td class="num">8</td><td>Hand</td><td><code>do_not_use_when</code>: "a tall narrow building" must give <code>tower</code>, not <code>house</code></td></tr>
+              <tr><td>No-fit cases</td><td class="num">6</td><td>Hand</td><td>Nearest, delta and a proposed record. The agent must not force a pattern</td></tr>
+              <tr><td>Deep cases</td><td class="num">6</td><td>Hand</td><td>Recursion to L4: "a village with two streets and a garden"</td></tr>
+              <tr><td>Judge labels</td><td class="num">30</td><td>You</td><td>That the judge agrees with you. Do this before you trust its score</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pair">
+          <div class="stack">
+            <div class="codehead"><span>generated case</span><span class="pill core">core</span></div>
+<pre><span class="k">id</span>: <span class="v">gen-street-0042</span>
+<span class="k">source</span>: <span class="v">generator</span>
+<span class="k">request</span>: <span class="v">"Draw a street with 3 houses.
+  The second house has a red door."</span>
+<span class="k">expect</span>:
+  <span class="k">tree</span>: <span class="v">street(row)</span>
+    - <span class="v">house</span>
+    - <span class="v">house {door_fill: red}</span>
+    - <span class="v">house</span>
+  <span class="k">asserts</span>: [<span class="v">street</span>, <span class="v">house</span>]</pre>
+          </div>
+          <div class="stack">
+            <div class="codehead"><span>hand case · near-miss</span><span class="pill dom">pack</span></div>
+<pre><span class="k">id</span>: <span class="v">hand-near-007</span>
+<span class="k">request</span>: <span class="v">"Draw a tall narrow building
+  with a pointed roof."</span>
+<span class="k">expect</span>:
+  <span class="k">tree</span>: <span class="v">tower</span>
+  <span class="k">not</span>: [<span class="v">house</span>]</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="head"><span class="eyebrow">Graders and targets</span><h2>When v1 "works"</h2><p class="quiet">Proposed targets. We set the real ones after the first baseline.</p></div>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Metric</th><th>Grader</th><th>Target</th></tr></thead>
+            <tbody>
+              <tr><td>Selection accuracy (pattern + variant)</td><td>selection · deterministic</td><td class="num">≥ 90%</td></tr>
+              <tr><td>Structure pass@1</td><td>structure · deterministic</td><td class="num">≥ 85%</td></tr>
+              <tr><td>pass^5: all 5 runs of a case pass</td><td>all graders</td><td class="num">≥ 70%</td></tr>
+              <tr><td>Near-miss accuracy</td><td>selection</td><td class="num">≥ 80%</td></tr>
+              <tr><td>No-fit precision: no forced pattern</td><td>selection + trace</td><td class="num">≥ 80%</td></tr>
+              <tr><td>Rubric score</td><td>judge · LLM</td><td class="num">≥ 1.5 / 2</td></tr>
+              <tr><td>Judge agreement with your labels</td><td>calibration</td><td class="num">≥ 80%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small quiet">With 400 runs, a pass rate near 85% has a 95% interval of about ±3.5 points. That finds a drop of 10 points with confidence. To find smaller drops, add cases.</p>
+      </div>
+
+      <details class="fold" open>
+        <summary><span class="t"><b>Test the evals: break a part on purpose</b><span>If a score does not drop, that eval does not test that part</span></span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="tw">
+            <table>
+              <thead><tr><th>Change for the test</th><th>Score that must drop</th></tr></thead>
+              <tbody>
+                <tr><td>Remove all <code>do_not_use_when</code> fields</td><td>Near-miss accuracy</td></tr>
+                <tr><td>Remove the divide step from the navigate skill</td><td>Deep cases, structure pass@1</td></tr>
+                <tr><td>Remove the no-fit rule</td><td>No-fit precision</td></tr>
+                <tr><td>Shuffle the <code>use_when</code> text between patterns</td><td>Selection accuracy</td></tr>
+                <tr><td>Remove the Rules sections</td><td>Rubric score</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <details class="fold">
+        <summary><span class="t"><b>When to run</b><span>A small set on each change, the full set each night</span></span><span class="chev">›</span></summary>
+        <div class="body">
+          <div class="tw">
+            <table>
+              <thead><tr><th>Trigger</th><th>Set</th><th>Result</th></tr></thead>
+              <tbody>
+                <tr><td>Change to the core or a pack</td><td>Grader fixtures + 20 cases, k=1</td><td>Fail the PR if a fixture fails</td></tr>
+                <tr><td>Each night</td><td>All 80 cases, k=5</td><td><code>results/&lt;date&gt;.json</code> and a diff to the baseline</td></tr>
+                <tr><td>You accept a new baseline</td><td>The last nightly result</td><td><code>results/baseline.json</code></td></tr>
+                <tr><td>A pattern goes from trial to stable</td><td>Its cases, k=5, two nights in a row</td><td>The status changes</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <footer>Proposal only. Nothing is built yet. Counts and targets are first values for v1.</footer>
+</div>
+
+<script>
+(function () {
+  var mains = Array.prototype.slice.call(document.querySelectorAll('[data-main]'));
+  var subs = Array.prototype.slice.call(document.querySelectorAll('[data-sub]'));
+  var subNames = subs.map(function (b) { return b.getAttribute('data-sub'); });
+  var state = { main: 'how', sub: 'pattern' };
+
+  function render() {
+    mains.forEach(function (b) {
+      var on = b.getAttribute('data-main') === state.main;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+      document.getElementById('v-' + b.getAttribute('data-main')).hidden = !on;
+    });
+    subs.forEach(function (b) {
+      var on = b.getAttribute('data-sub') === state.sub;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+    });
+    document.querySelectorAll('[data-subview]').forEach(function (v) {
+      v.hidden = v.getAttribute('data-subview') !== state.sub;
+    });
+    if (typeof fit === 'function') fit();
+  }
+  function go(main, sub, push) {
+    state.main = main;
+    if (sub) state.sub = sub;
+    render();
+    if (push) {
+      var h = main === 'how' ? 'how' : state.sub;
+      if (location.hash !== '#' + h) history.replaceState(null, '', '#' + h);
+    }
+  }
+  function fromHash() {
+    var h = (location.hash || '').slice(1);
+    if (subNames.indexOf(h) >= 0) go('elements', h, false);
+    else if (h === 'elements') go('elements', null, false);
+    else go('how', null, false);
+  }
+  mains.forEach(function (b) { b.addEventListener('click', function () { go(b.getAttribute('data-main'), null, true); }); });
+  subs.forEach(function (b) { b.addEventListener('click', function () { go('elements', b.getAttribute('data-sub'), true); }); });
+  function folds(open) {
+    var scope = document.getElementById('v-' + state.main);
+    scope.querySelectorAll('details.fold, .ftree details').forEach(function (d) { d.open = open; });
+    fit();
+  }
+
+  /* Folder tree: [name, note, children]. A folder has a children array. */
+  var TREE = ['pattern-engine/', 'a new repository', [
+    ['core/', 'fixed for all domains', [
+      ['schema/', '', [
+        ['pattern.schema.json', 'front matter: fields, links, status'],
+        ['trace.schema.json', 'what one run records'],
+        ['case.schema.json', 'one eval case']]],
+      ['graph/', '', [
+        ['build.mjs', 'patterns → index.json + graph.json; link and cycle checks'],
+        ['generate-cases.mjs', 'walks the graph; writes cases with computed expectations']]],
+      ['skills/', '', [
+        ['navigate/SKILL.md', 'select → divide → compose → verify → no-fit'],
+        ['author/SKILL.md', 'write a pattern from the template; novelty check']]],
+      ['eval/', '', [
+        ['run.mjs', 'cases × k runs, clean sandbox for each run'],
+        ['agent.mjs', 'the one place that calls the agent (claude -p)'],
+        ['graders/', '', [
+          ['selection.mjs', 'trace tree vs expected tree'],
+          ['structure.mjs', 'calls adapter.assert with the pattern asserts'],
+          ['rules.mjs', 'calls adapter.lint'],
+          ['judge.mjs', 'LLM rubric from the pattern rules']]],
+        ['report.mjs', 'pass@1, pass^k, accuracy for each pattern, diff to baseline']]]]],
+    ['domains/', 'one folder for each subject', [
+      ['shapes/', 'first pack: SVG drawings', [
+        ['domain.yaml', 'output type, render command'],
+        ['instructions.md', 'subject rules'],
+        ['adapter.mjs', 'parse, assert, lint, render'],
+        ['patterns/', 'about 10 files', [['house.md'], ['street.md'], ['tower.md'], ['roof.md']]],
+        ['asserts/', 'one file for each pattern', [['house.yaml'], ['street.yaml']]],
+        ['cases/', 'about 20 hand cases', [['hand-near-007.yaml'], ['hand-nofit-003.yaml']]],
+        ['fixtures/', 'tests for the graders only', [['good-*.svg'], ['bad-*.svg']]]]],
+      ['ui/', 'later: Web Awesome recipes', []],
+      ['code/', 'later', []]]],
+    ['results/', 'one JSON file for each eval', [['baseline.json'], ['<date>.json']]]]];
+  var OPEN = { 'pattern-engine/': 1, 'core/': 1, 'domains/': 1, 'shapes/': 1 };
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+  function row(parent, icon, name, note) {
+    parent.appendChild(el('span', 'ic', icon));
+    parent.appendChild(el('span', 'nm', name));
+    parent.appendChild(el('span', 'nt', note || ''));
+  }
+  function build(node) {
+    var name = node[0], note = node[1], kids = node[2];
+    if (!kids) { var f = el('div', 'file'); row(f, '·', name, note); return f; }
+    var d = el('details'); if (OPEN[name]) d.open = true;
+    var s = el('summary'); row(s, '›', name, note); d.appendChild(s);
+    var box = el('div', 'kids');
+    if (!kids.length) box.appendChild(el('div', 'empty', 'empty in v1'));
+    kids.forEach(function (k) { box.appendChild(build(k)); });
+    d.appendChild(box);
+    return d;
+  }
+  /* Tables: each cell gets its column name, for the stacked phone layout. */
+  document.querySelectorAll('.tw table').forEach(function (t) {
+    var names = Array.prototype.map.call(t.querySelectorAll('thead th'), function (th) { return th.textContent; });
+    t.querySelectorAll('tbody tr').forEach(function (tr) {
+      Array.prototype.forEach.call(tr.children, function (td, i) {
+        td.setAttribute('data-label', names[i] || '');
+        var box = document.createElement('span'); box.className = 'cv';
+        while (td.firstChild) box.appendChild(td.firstChild);
+        td.appendChild(box);
+      });
+    });
+  });
+  var host = document.getElementById('ftree');
+  if (host) host.appendChild(build(TREE));
+
+  /* Code blocks: scale the font down to fit the width; wrap only below the minimum size. */
+  var MIN = 9;
+  function fit() {
+    document.querySelectorAll('pre').forEach(function (p) {
+      if (!p.offsetParent) return;
+      p.classList.remove('fold-lines');
+      p.style.fontSize = '';
+      var s = parseFloat(getComputedStyle(p).fontSize);
+      while (p.scrollWidth > p.clientWidth + 1 && s > MIN) { s -= 0.5; p.style.fontSize = s + 'px'; }
+      if (p.scrollWidth > p.clientWidth + 1) p.classList.add('fold-lines');
+    });
+  }
+  var raf = 0;
+  window.addEventListener('resize', function () { cancelAnimationFrame(raf); raf = requestAnimationFrame(fit); });
+  document.addEventListener('toggle', fit, true);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  document.querySelectorAll('[data-fold]').forEach(function (b) {
+    b.addEventListener('click', function () { folds(b.getAttribute('data-fold') === 'open'); });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA') return;
+    var k = e.key;
+    if (k === '1') go('how', null, true);
+    else if (k === '2') go('elements', null, true);
+    else if (k === '[' || k === ']') {
+      var i = subNames.indexOf(state.sub) + (k === ']' ? 1 : -1);
+      i = (i + subNames.length) % subNames.length;
+      go('elements', subNames[i], true);
+    }
+    else if (k === 'e' || k === 'E') folds(true);
+    else if (k === 'c' || k === 'C') folds(false);
+  });
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+})();
+</script>

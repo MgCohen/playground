@@ -1,0 +1,17 @@
+{
+  "name": "pattern-engine",
+  "version": "1.0.0",
+  "description": "Pattern, composition and evaluation engine (spike)",
+  "scripts": {
+    "build": "node core/graph/build.mjs shapes",
+    "cases": "node core/graph/generate-cases.mjs shapes",
+    "test:graders": "node core/eval/self-test.mjs shapes",
+    "eval": "node core/eval/run.mjs shapes"
+  },
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "yaml": "^2.9.1"
+  },
+  "private": true
+}

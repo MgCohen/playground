@@ -1,0 +1,679 @@
+{
+  "runId": "2026-11-15T16-22-12-no-nofit",
+  "domain": "shapes",
+  "label": "ablate-nofit",
+  "k": 3,
+  "ablate": [
+    "no-nofit"
+  ],
+  "model": "sonnet",
+  "cases": 3,
+  "runs": [
+    {
+      "case": "hand-nofit-001",
+      "run": 3,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "body"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            },
+            {
+              "p": "window"
+            },
+            {
+              "p": "window"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "No lighthouse pattern exists; 'tower' matches as a tall, narrow building. Stripes, lantern room and light beam are not expressible with these patterns."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "expected outcome \"no-fit\", got \"match\"",
+            "expected nearest tower, got \"-\"",
+            "no deltas listed"
+          ]
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": false,
+          "failures": [
+            "no proposed pattern file"
+          ]
+        }
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 34922,
+        "turns": 12,
+        "cost": 0.10327230000000001,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "body"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            },
+            {
+              "p": "window"
+            },
+            {
+              "p": "window"
+            },
+            {
+              "p": "window"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "A lighthouse is a tall, narrow building, so I chose tower (not house, which excludes tall buildings). The shape set has no lamp room, light beam or sea, so the lighthouse is a white tower with a red roof and three windows.",
+          "Tower has only a plain variant. No param was named, so door fill stays brown."
+        ],
+        "attempts": 2
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "expected outcome \"no-fit\", got \"match\"",
+            "expected nearest tower, got \"-\"",
+            "no deltas listed"
+          ]
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": false,
+          "failures": [
+            "no proposed pattern file"
+          ]
+        }
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 41179,
+        "turns": 10,
+        "cost": 0.1126946,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Selected tower: a lighthouse is a tall, narrow building, which matches the use-when of tower. No pattern has a lantern or stripes, so the lighthouse is drawn as a plain tower with a red roof and two windows.",
+          "verify.mjs was not run: the sandbox blocked every way to run it from the task folder, so attempts is 0."
+        ],
+        "attempts": 0
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "expected outcome \"no-fit\", got \"match\"",
+            "expected nearest tower, got \"-\"",
+            "no deltas listed"
+          ]
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": false,
+          "failures": [
+            "no proposed pattern file"
+          ]
+        }
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 46844,
+        "turns": 13,
+        "cost": 0.1249536,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-nofit-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a windmill.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "windmill",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": "tower",
+        "deltas": [
+          "No pattern names a windmill.",
+          "A windmill needs blades (4 lines from a hub), and no pattern has a line part.",
+          "tower has body, roof, door and window, which fit, but not blades."
+        ],
+        "proposed": "patterns/windmill.md",
+        "questions": [
+          "Also added leaf patterns/blade.md (primitive: line), because windmill needs it and verify rejects unknown parts. This is a second new file beyond the one allowed.",
+          "Dropped a free-text assert about the blade hub, because verify cannot read it."
+        ],
+        "attempts": 2
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 47248,
+        "turns": 13,
+        "cost": 0.1315935,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-nofit-002",
+      "run": 2,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a windmill.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": "tower",
+        "deltas": [
+          "No pattern names a windmill.",
+          "A windmill needs sails (lines radiating from a hub), and no leaf part exists for them.",
+          "Shapes must sit in a pattern group, so sails could not be drawn without a new leaf pattern."
+        ],
+        "proposed": "patterns/windmill.md",
+        "questions": [
+          "Chose tower as the nearest pattern: a windmill is a tall, narrow building with a pointed roof. The output is a tower without sails."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 39354,
+        "turns": 16,
+        "cost": 0.11740460000000003,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-nofit-003",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a camping tent.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "house",
+          "tower"
+        ]
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "tent",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "ground"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            }
+          ]
+        },
+        "nearest": "house",
+        "deltas": [
+          "No pattern uses when a tent is named; house is for buildings with a body.",
+          "A tent has no body: the triangle roof reaches the ground and is the whole shape.",
+          "The door sits on the triangle base, inside the triangle, instead of on a body."
+        ],
+        "proposed": "patterns/tent.md",
+        "questions": [
+          "No pattern matched 'camping tent'. house is the nearest (roof + door) but needs a body. I built the tent from the leaf parts ground, roof and door and proposed a new tent pattern."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 32870,
+        "turns": 12,
+        "cost": 0.10101690000000002,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-nofit-003",
+      "run": 2,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a camping tent.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "house",
+          "tower"
+        ]
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "tent",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "ground"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            }
+          ]
+        },
+        "nearest": "house",
+        "deltas": [
+          "house needs a body, a rect with walls; a tent has none, only a triangle canopy on the ground",
+          "house has no ground part; the tent adds one",
+          "house roof sits on the body top; the tent canopy sits on the ground top"
+        ],
+        "proposed": "patterns/tent.md",
+        "questions": [
+          "No pattern names a tent. I used the existing leaf parts ground, roof and door in a new tent pattern. The roof triangle is the canopy and the door is the entrance."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 33428,
+        "turns": 10,
+        "cost": 0.10568540000000001,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-nofit-002",
+      "run": 3,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a windmill.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "windmill",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "tower",
+              "v": "plain",
+              "parts": [
+                {
+                  "p": "body"
+                },
+                {
+                  "p": "roof"
+                },
+                {
+                  "p": "door"
+                }
+              ]
+            }
+          ]
+        },
+        "nearest": "tower",
+        "deltas": [
+          "No windmill pattern exists",
+          "Needs four blade lines crossing at a hub, which tower lacks",
+          "No blade leaf part exists; the 4 blade lines sit directly in the windmill group until a blade leaf is defined"
+        ],
+        "proposed": "patterns/windmill.md",
+        "questions": [
+          "Used tower as the base and added blade lines in the windmill group, because only one new pattern file is allowed and verify rejected an undefined blade part"
+        ],
+        "attempts": 3
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 54815,
+        "turns": 18,
+        "cost": 0.16013690000000003,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-nofit-003",
+      "run": 3,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a camping tent.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "house",
+          "tower"
+        ]
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "tent",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "ground"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            }
+          ]
+        },
+        "nearest": "house",
+        "deltas": [
+          "No pattern names a tent; house requires a body and tent has no walls",
+          "Tent has a ground part, house does not",
+          "Tent has no body, windows or chimney; the roof triangle sits directly on the ground"
+        ],
+        "proposed": "patterns/tent.md",
+        "questions": [
+          "No pattern matched 'tent'. house is the nearest (triangle roof plus door), but it needs a body, so I built tent from the leaf parts ground, roof and door."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 36861,
+        "turns": 10,
+        "cost": 0.11292479999999999,
+        "error": null
+      }
+    }
+  ]
+}

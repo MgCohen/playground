@@ -1,0 +1,237 @@
+{
+  "runId": "2026-11-15T16-32-11",
+  "domain": "shapes",
+  "mode": "smoke",
+  "label": "smoke-haiku",
+  "k": 1,
+  "ablate": [],
+  "model": "haiku",
+  "cases": 3,
+  "runs": [
+    {
+      "case": "hand-near-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a tall, narrow building with a pointed roof and a door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request names no windows, so the tower has none (the window count allows 0..6). The door uses the default color, brown.",
+          "The request names no size, so the body is 100 wide and 200 tall (height is twice the width). The roof is a triangle 120 wide with its apex 50 above the body top."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 31690,
+        "turns": 13,
+        "cost": 0.014053290000000003,
+        "error": null
+      }
+    },
+    {
+      "case": "gen-006",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "deep"
+      ],
+      "request": "Draw a street with, from left to right: a tree; a house with a yellow door; a house; and a tower.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "plain",
+              "params": {
+                "door_fill": "yellow"
+              }
+            },
+            {
+              "p": "house",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "plain",
+              "params": {
+                "door_fill": "yellow"
+              }
+            },
+            {
+              "p": "house",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request names a yellow door for the first house only, so door_fill=yellow is set on that house. The second house keeps the default brown door.",
+          "The request does not name windows, so the houses have 2 windows each and the tower has 2 windows, to make the buildings read as buildings. The window parts are optional in the patterns.",
+          "The street pattern lists its parts as ground, house, tower, tree. The output order follows the request instead (tree, house, house, tower), as the subject rules require. The ground is drawn first, as the street rules require."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 50516,
+        "turns": 21,
+        "cost": 0.01801905,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "lighthouse",
+          "v": "plain",
+          "params": {},
+          "parts": []
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Added a lit lamp: the top window is yellow and stands for the lamp room. Tower has no lamp.",
+          "Changed the roof: a small red cap at least as wide as the body, instead of a pointed roof. Its base still sits on the body top.",
+          "Fixed the window count at 2, instead of tower's 0..6 stacked windows."
+        ],
+        "proposed": "patterns/lighthouse.md",
+        "questions": [
+          "No pattern's use_when names a lighthouse. Tower is the nearest, but its pointed roof and lack of a lamp do not fit a lighthouse, so this is a no-fit run.",
+          "The lamp is drawn as a yellow window, not a circle, because the circle leaf (crown) is defined as the crown of a tree. No lamp leaf exists, and only one new file is allowed for a no-fit run, so the lamp is not a separate part."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 64523,
+        "turns": 17,
+        "cost": 0.020477590000000004,
+        "error": null
+      }
+    }
+  ]
+}

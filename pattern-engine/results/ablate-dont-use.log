@@ -1,0 +1,31 @@
+Run 2026-11-15T16-22-11-no-dont-use: 3 cases × k=3 = 9 agent runs, concurrency 4, ablate no-dont-use
+[1/9] PASS hand-near-001#3 28s
+[2/9] PASS hand-near-001#1 30s
+[3/9] PASS hand-near-001#2 36s
+[4/9] PASS hand-near-002#1 36s
+[5/9] PASS hand-near-002#2 33s
+[6/9] PASS hand-near-002#3 34s
+[7/9] PASS hand-near-003#1 28s
+[8/9] PASS hand-near-003#2 29s
+[9/9] PASS hand-near-003#3 30s
+
+Report 2026-11-15T16-22-11-no-dont-use (ablate no-dont-use): 3 cases, 9 runs
+
+metric                            score         
+selection accuracy                100% (9/9)    
+built tree matches                100% (9/9)    
+structure pass                    100% (9/9)    
+rules pass                        100% (9/9)    
+pass@1 (all checks)               100% (9/9)    
+pass^3 (all runs of a case)       100% (3/3)    
+near-miss accuracy                100% (9/9)    
+no-fit precision                  — (0/0)       
+no-fit full pass                  — (0/0)       
+agent errors                      0% (0/9)      
+
+by top pattern                    pass@1
+  tower                           100% (6/6)
+  house                           100% (3/3)
+
+Results: results\2026-11-15T16-22-11-no-dont-use.json
+Outputs: results\runs\2026-11-15T16-22-11-no-dont-use

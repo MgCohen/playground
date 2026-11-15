@@ -1,0 +1,98 @@
+Run 2026-11-15T16-12-29: 21 cases × k=3 = 63 agent runs, concurrency 4
+[1/63] PASS gen-001#2 26s
+[2/63] PASS gen-001#3 29s
+[3/63] PASS gen-001#1 32s
+[4/63] PASS gen-002#1 43s
+[5/63] PASS gen-003#1 26s
+[6/63] PASS gen-002#2 35s
+[7/63] PASS gen-002#3 35s
+[8/63] PASS gen-003#2 37s
+[9/63] PASS gen-003#3 22s
+[10/63] PASS gen-004#1 31s
+[11/63] PASS gen-004#2 33s
+[12/63] PASS gen-004#3 31s
+[13/63] PASS gen-005#1 32s
+[14/63] PASS gen-005#2 33s
+[15/63] PASS gen-005#3 43s
+[16/63] PASS gen-006#1 43s
+[17/63] PASS gen-006#2 44s
+[18/63] PASS gen-006#3 43s
+[19/63] PASS gen-007#1 30s
+[20/63] PASS gen-007#2 34s
+[21/63] PASS gen-007#3 34s
+[22/63] PASS gen-008#1 33s
+[23/63] PASS gen-008#2 33s
+[24/63] PASS gen-008#3 31s
+[25/63] PASS gen-009#1 39s
+[26/63] PASS gen-009#2 36s
+[27/63] PASS gen-009#3 35s
+[28/63] PASS gen-010#1 34s
+[29/63] PASS gen-010#2 28s
+[30/63] PASS gen-010#3 28s
+[31/63] PASS gen-011#1 44s
+[32/63] PASS gen-011#2 36s
+[33/63] PASS gen-011#3 39s
+[34/63] PASS gen-012#1 36s
+[35/63] PASS gen-012#2 32s
+[36/63] PASS gen-012#3 32s
+[37/63] PASS gen-013#1 32s
+[38/63] PASS gen-013#2 31s
+[39/63] PASS gen-014#1 29s
+[40/63] PASS gen-013#3 41s
+[41/63] PASS gen-014#2 27s
+[42/63] PASS gen-014#3 26s
+[43/63] PASS gen-015#1 26s
+[44/63] PASS gen-015#2 26s
+[45/63] PASS gen-015#3 27s
+[46/63] PASS hand-near-001#1 29s
+[47/63] PASS hand-near-001#2 29s
+[48/63] PASS hand-near-001#3 28s
+[49/63] PASS hand-near-002#1 29s
+[50/63] PASS hand-near-002#2 32s
+[51/63] PASS hand-near-003#1 36s
+[52/63] PASS hand-near-002#3 40s
+[53/63] PASS hand-near-003#3 30s
+[54/63] PASS hand-near-003#2 36s
+[55/63] FAIL hand-nofit-001#1 30s
+      selection: expected outcome "no-fit", got "match"
+      proposed: no proposed pattern file
+[56/63] FAIL hand-nofit-001#2 34s
+      selection: expected outcome "no-fit", got "match"
+      proposed: no proposed pattern file
+[57/63] FAIL hand-nofit-001#3 37s
+      selection: expected outcome "no-fit", got "match"
+      proposed: no proposed pattern file
+[58/63] PASS hand-nofit-002#1 52s
+[59/63] PASS hand-nofit-003#1 36s
+[60/63] PASS hand-nofit-002#2 57s
+[61/63] PASS hand-nofit-002#3 52s
+[62/63] PASS hand-nofit-003#2 43s
+[63/63] PASS hand-nofit-003#3 35s
+
+Report 2026-11-15T16-12-29: 21 cases, 63 runs
+
+metric                            score         
+selection accuracy                95% (60/63)   
+built tree matches                100% (54/54)  
+structure pass                    100% (63/63)  
+rules pass                        100% (63/63)  
+pass@1 (all checks)               95% (60/63)   
+pass^3 (all runs of a case)       95% (20/21)   
+near-miss accuracy                100% (9/9)    
+no-fit precision                  67% (6/9)     
+no-fit full pass                  67% (6/9)     
+agent errors                      0% (0/63)     
+
+by top pattern                    pass@1
+  house                           100% (12/12)
+  street                          100% (30/30)
+  tree                            100% (3/3)
+  tower                           100% (9/9)
+  no-fit                          67% (6/9)
+
+most common failures
+    3× selection: expected outcome "no-fit", got "match"
+    3× proposed: no proposed pattern file
+
+Results: results\2026-11-15T16-12-29.json
+Outputs: results\runs\2026-11-15T16-12-29

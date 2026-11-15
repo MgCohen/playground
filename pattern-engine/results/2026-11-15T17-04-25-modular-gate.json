@@ -1,0 +1,630 @@
+{
+  "runId": "2026-11-15T17-04-25-modular-gate",
+  "domain": "shapes",
+  "harness": "modular",
+  "gate": true,
+  "mode": "dev",
+  "label": "dev-modular-gate",
+  "k": 1,
+  "ablate": [],
+  "model": "haiku",
+  "cases": 8,
+  "runs": [
+    {
+      "case": "gen-004",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "deep"
+      ],
+      "request": "Draw a street with, from left to right: a tree; a shed with a blue door; a house; and a tower with a green door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            },
+            {
+              "p": "house",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            },
+            {
+              "p": "house",
+              "v": "plain",
+              "params": {
+                "door_fill": "brown"
+              }
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          {
+            "choice": "house door color",
+            "reason": "The request names no door color for the house, so the default brown was kept."
+          },
+          {
+            "choice": "house and tower window counts",
+            "reason": "The request names no windows, so the minimum count of 0 was used."
+          }
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 101128,
+        "turns": 6,
+        "cost": 0.02029644,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a narrow house, four floors tall, with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Tower was chosen over house because the request describes a narrow, tall building, and the house pattern excludes those.",
+          "Four floors was mapped to four stacked windows, because the tower pattern has no floor-count param and its window part is the only repeating element."
+        ],
+        "attempts": 2
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 114634,
+        "turns": 4,
+        "cost": 0.021694920000000006,
+        "subagents": 3,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-002",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "medium"
+      ],
+      "request": "Draw a street with, from left to right: a house with a chimney; a tower; and a tree.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "house",
+              "v": "chimney"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "brown"
+              }
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "brown"
+              }
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request does not name windows. The house and tower have window counts of 0..4 and 0..6, so the minimum rule gave 0 windows. A house and a tower with no windows may look bare; set the count by hand if windows are wanted.",
+          "The verifier agent could not run its Bash commands (permission denied), so its trace and parts checks were not confirmed. I ran `node pe.mjs verify --json` myself and it returned ok with no failures."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 89799,
+        "turns": 5,
+        "cost": 0.01972481,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-001",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Draw a house with a chimney.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney",
+          "params": {
+            "door_fill": "brown"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          {
+            "question": "How many windows should the house have?",
+            "reason": "The request names no windows. The window part is 0..4, so the plan uses the minimum, 0."
+          }
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 84091,
+        "turns": 17,
+        "cost": 0.01655552,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "lighthouse",
+          "v": "plain"
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add a crown part: the lantern room, a yellow rect on top of the body, narrower than the body.",
+          "Add a ground part: a rect under the body.",
+          "Move the roof from the body to the crown, so the roof sits on the lantern room.",
+          "Keep the body, door and windows from tower."
+        ],
+        "proposed": "patterns/lighthouse.md",
+        "questions": [
+          {
+            "question": "Whether to draw the light beam.",
+            "reason": "No leaf part draws light. A beam would need a polygon with no matching part, so it is left out."
+          },
+          {
+            "question": "Whether the lantern room is a crown or a new part.",
+            "reason": "No lantern part exists. The leaf part crown is the nearest fit, so it is used for the lantern room."
+          }
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 222182,
+        "turns": 2,
+        "cost": 0.023628225,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-near-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Draw a tall, narrow building with a pointed roof and a door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "brown"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request names no number of windows, so the tower has 0 windows (the minimum of 0..6).",
+          "The request names no door color, so the door uses the default brown."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 90697,
+        "turns": 12,
+        "cost": 0.020981930000000003,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 1
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a little house where we keep our bikes.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain",
+          "params": {
+            "door_fill": "brown"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          {
+            "question": "The request says house, but the building is for keeping bikes. Should it be a house or a shed?",
+            "reason": "The house rule excludes buildings for bikes, tools, storage or a car, so the pattern is shed. The request's wording points to house."
+          }
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 77763,
+        "turns": 4,
+        "cost": 0.017096419999999998,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a windmill.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "windmill",
+          "v": "plain"
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add: a sail part (4 blades). No sail leaf pattern exists, so the sails are not drawn.",
+          "Change: the roof is a cap on top of the body; the rest is unchanged."
+        ],
+        "proposed": "patterns/windmill.md",
+        "questions": [
+          "The request names a windmill, but tower excludes windmills (do_not_use_when: the tower holds sails). No pattern fits, so the nearest pattern is tower.",
+          "Sails are part of a windmill, but no leaf pattern exists for them. The output has the tower body, roof, door and windows, and no sails."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 101224,
+        "turns": 12,
+        "cost": 0.02277535,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 1
+      },
+      "consistent": true
+    }
+  ]
+}

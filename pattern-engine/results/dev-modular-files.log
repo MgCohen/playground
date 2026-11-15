@@ -1,0 +1,55 @@
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+Run 2026-11-15T17-10-56-modular [dev]: harness modular, model haiku, 8 cases × k=2 = 16 agent runs, concurrency 4
+[1/16] PASS hand-rule-001#1 79s
+[2/16] PASS hand-rule-001#2 83s
+[3/16] PASS hand-nofit-001#1 98s
+[4/16] PASS hand-nofit-001#2 100s
+[5/16] PASS gen-004#2 96s
+[6/16] PASS gen-004#1 104s
+[7/16] PASS gen-002#2 90s
+[8/16] PASS gen-002#1 93s
+[9/16] PASS hand-near-001#1 70s
+[10/16] PASS gen-001#2 82s
+[11/16] PASS gen-001#1 88s
+[12/16] PASS hand-near-001#2 79s
+[13/16] PASS hand-rule-002#2 75s
+[14/16] PASS hand-rule-002#1 78s
+[15/16] FAIL hand-nofit-002#1 118s
+      structure: windmill: part "sails": count 0, allowed 1..4
+[16/16] PASS hand-nofit-002#2 167s
+
+Report 2026-11-15T17-10-56-modular: 8 cases, 16 runs
+harness modular, mode dev, model haiku, k=2
+API-equivalent cost $0.34 ($0.021 per run), 94 s per run, 4.9 turns per run, 2.1 subagents per run
+
+Note: a dev run is a sample. Use --mode full to validate.
+
+metric                            score         
+selection accuracy                100% (16/16)  
+built tree matches                100% (12/12)  
+structure pass                    94% (15/16)   
+rules pass                        100% (16/16)  
+pass@1 (all checks)               94% (15/16)   
+pass^2 (all runs of a case)       88% (7/8)     
+near-miss accuracy                100% (4/4)    
+no-fit precision                  100% (4/4)    
+no-fit full pass                  75% (3/4)     
+agent errors                      0% (0/16)     
+trace matches output              100% (16/16)  
+gate retries                      0% (0/16)     
+
+by top pattern                    pass@1
+  tower                           100% (4/4)
+  no-fit                          75% (3/4)
+  street                          100% (4/4)
+  house                           100% (2/2)
+  shed                            100% (2/2)
+
+most common failures
+    1× structure: windmill: part "sails": count #, allowed #..#
+
+Results: results\2026-11-15T17-10-56-modular.json
+Outputs: results\runs\2026-11-15T17-10-56-modular

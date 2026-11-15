@@ -1,0 +1,591 @@
+{
+  "runId": "2026-11-15T17-04-25-modular",
+  "domain": "shapes",
+  "harness": "modular",
+  "gate": false,
+  "mode": "dev",
+  "label": "dev-modular",
+  "k": 1,
+  "ablate": [],
+  "model": "haiku",
+  "cases": 8,
+  "runs": [
+    {
+      "case": "gen-004",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "deep"
+      ],
+      "request": "Draw a street with, from left to right: a tree; a shed with a blue door; a house; and a tower with a green door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            },
+            {
+              "p": "house",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        }
+      },
+      "trace": null,
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "no trace.json"
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "rules": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 28126,
+        "turns": 8,
+        "cost": 0.0049045799999999995,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      }
+    },
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a narrow house, four floors tall, with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": null,
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "no trace.json"
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "rules": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 29064,
+        "turns": 8,
+        "cost": 0.00512937,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      }
+    },
+    {
+      "case": "gen-001",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Draw a house with a chimney.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney",
+          "params": {
+            "door_fill": "brown"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          {
+            "choice": "Window count",
+            "reason": "The request names no number of windows. The house part allows 0..4, so the minimum rule gave 0 windows."
+          },
+          {
+            "choice": "Verifier rubric C4",
+            "reason": "The verifier was given no request text, so it could not check the request details. It marked C4 as pass with no evidence."
+          }
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 85278,
+        "turns": 4,
+        "cost": 0.01697935,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-002",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "medium"
+      ],
+      "request": "Draw a street with, from left to right: a house with a chimney; a tower; and a tree.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "house",
+              "v": "chimney"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "brown"
+              }
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "brown"
+              }
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "window count: the house and tower have 0 windows because the request names no count and the rule is to use the minimum count (0..4 and 0..6). Confirm if windows are wanted."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 108352,
+        "turns": 4,
+        "cost": 0.020988989999999996,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "lighthouse",
+          "v": "plain"
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add crown (circle) on top of the body. It is the known leaf for the lamp room.",
+          "Change roof to sit on the crown, not on the body.",
+          "Keep body, door and window as they are."
+        ],
+        "proposed": "patterns/lighthouse.md",
+        "questions": [
+          "Tower excludes lighthouses (its do_not_use_when names them), so the no-fit route was taken. Nearest is tower because a lighthouse is a tall tower.",
+          "The lamp and light parts from the first plan are not in the pattern index, so the verifier rejected them. The lamp room is drawn with the existing crown leaf and the separate light was dropped. Adding lamp and light to the index would need a decision.",
+          "The body is white on a white canvas, so it may be hard to see in a viewer. The request did not name colors, so the composer's choice was kept.",
+          "The verifier cannot check window stacking or shape overlap from trace output. Both were checked by reading output.svg."
+        ],
+        "attempts": 2
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 167716,
+        "turns": 5,
+        "cost": 0.03247407,
+        "subagents": 4,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-near-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Draw a tall, narrow building with a pointed roof and a door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "brown"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          {
+            "choice": "window count",
+            "reason": "The request names no windows, so the window count is the minimum, 0."
+          },
+          {
+            "choice": "door color",
+            "reason": "The request names no door color, so the default brown is used."
+          }
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 79911,
+        "turns": 4,
+        "cost": 0.01624989,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a little house where we keep our bikes.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain",
+          "params": {
+            "door_fill": "brown"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          {
+            "choice": "The request says house, but the output is a shed.",
+            "reason": "The house rules exclude buildings for bikes or storage, so the candidate was replaced by shed. The request was not clear about whether the building is a house or a shed."
+          },
+          {
+            "choice": "The verifier agent reported failures.",
+            "reason": "Its Bash commands were denied. I ran node pe.mjs verify --json myself and it passed with no failures."
+          }
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 71219,
+        "turns": 6,
+        "cost": 0.01757674,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a windmill.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "windmill",
+          "v": "plain"
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add sails: four lines from the top corners of the body, running outward and down. No known leaf part exists for sails, so a new leaf `sail` is needed.",
+          "Keep body, roof (as the cap), door and window from tower.",
+          "Window count is 2 (tower allows 0..6)."
+        ],
+        "proposed": "patterns/windmill.md",
+        "questions": [
+          "Windmill is excluded from tower by its do_not_use_when rule, since a windmill holds sails. So no existing pattern fits.",
+          "Sails are drawn as lines, but no known leaf part exists for them. They are not in plan.json and carry no data-p tag, so the trace cannot show them.",
+          "Verifier round 3 could not run Bash, so its report is not a real check. I ran `node pe.mjs verify --json` myself and it passed.",
+          "Sail placement took three attempts. The first placement overlapped the roof. The second started mid-body, which broke the top-of-body rule. The third starts at the body's top corners, runs outward and down, and passes verify."
+        ],
+        "attempts": 3
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 179200,
+        "turns": 5,
+        "cost": 0.038818759999999994,
+        "subagents": 6,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    }
+  ]
+}

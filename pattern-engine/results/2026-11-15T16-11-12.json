@@ -1,0 +1,72 @@
+{
+  "runId": "2026-11-15T16-11-12",
+  "domain": "shapes",
+  "label": "smoke",
+  "k": 1,
+  "ablate": [],
+  "model": "default",
+  "cases": 1,
+  "runs": [
+    {
+      "case": "gen-001",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Draw a house with a chimney.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney",
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Output file name is not given in SKILL.md; used output.svg (the name verify.mjs expects).",
+          "Window count (0..4) is not named in the request; drew 2 windows, one on each side of the door.",
+          "No ground is named and house has no ground part; drew none.",
+          "First verify run failed only because output.svg had not been written yet (file write was blocked on the short path); no content changes were needed."
+        ],
+        "attempts": 2
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 44501,
+        "turns": 10,
+        "cost": 0.52333,
+        "error": null
+      }
+    }
+  ]
+}

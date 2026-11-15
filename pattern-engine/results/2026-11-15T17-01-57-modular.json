@@ -1,0 +1,252 @@
+{
+  "runId": "2026-11-15T17-01-57-modular",
+  "domain": "shapes",
+  "harness": "modular",
+  "gate": false,
+  "mode": "smoke",
+  "label": "smoke-modular",
+  "k": 1,
+  "ablate": [],
+  "model": "haiku",
+  "cases": 3,
+  "runs": [
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a narrow house, four floors tall, with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": null,
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "no trace.json"
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "rules": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 29138,
+        "turns": 8,
+        "cost": 0.00538655,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      }
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "lighthouse",
+          "v": "plain"
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add a crown leaf (the lamp room) directly on top of the body.",
+          "Keep body, roof, door and window from tower; windows stay 0..6 in the pattern, 2 in the plan.",
+          "Asserts for the lamp room added: crown bottom meets body top, roof bottom meets crown top."
+        ],
+        "proposed": "patterns/lighthouse.md",
+        "questions": [
+          "tower's do_not_use_when routes a lighthouse to no-fit, so no pattern fits and lighthouse was proposed from tower.",
+          "No light leaf exists; crown is used as the lamp room housing.",
+          "Body is drawn as the tower's rect; a tapered lighthouse body would need a polygon, which the pattern set does not define.",
+          "verifier agent could not run Bash (permission denied); verify --json was run directly by the navigator and passed.",
+          "Verifier's rubric items C1, C3 and C4 were unverified for that reason; C4 needs the request text, which the verifier did not receive."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 101629,
+        "turns": 5,
+        "cost": 0.020745549999999998,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-004",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "deep"
+      ],
+      "request": "Draw a street with, from left to right: a tree; a shed with a blue door; a house; and a tower with a green door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            },
+            {
+              "p": "house",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            },
+            {
+              "p": "house",
+              "v": "plain",
+              "params": {
+                "door_fill": "brown"
+              }
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Verifier check C4 failed only because the verifier did not receive the request text. The request names no windows, and output.svg has none, so no composer round was run. The house door uses the default brown, because the request gives no door color for the house."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 110236,
+        "turns": 4,
+        "cost": 0.02134616,
+        "subagents": 2,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    }
+  ]
+}

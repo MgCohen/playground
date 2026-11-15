@@ -1,0 +1,433 @@
+{
+  "runId": "2026-11-15T17-12-35-monolith-no-nofit",
+  "domain": "shapes",
+  "harness": "monolith",
+  "gate": false,
+  "mode": "dev",
+  "label": "abl-nofit",
+  "k": 2,
+  "ablate": [
+    "no-nofit"
+  ],
+  "model": "haiku",
+  "cases": 3,
+  "runs": [
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": null,
+        "nearest": "tower",
+        "deltas": [
+          "A lighthouse has a light at the top of the tower. No pattern draws a light, a lamp or sails on a tower.",
+          "The tower pattern's do_not_use rule names this case: 'The tower holds a light, a lamp or sails, for example a lighthouse or a windmill.' → no-fit."
+        ],
+        "proposed": null,
+        "questions": [
+          "The request 'Draw a lighthouse' matches no pattern. The nearest pattern is tower, but tower excludes buildings that hold a light, so it is not used. No output.svg was written, because the shapes rules require every shape to sit in a pattern group and no pattern covers a lamp or light. A lighthouse pattern would need to be added to the pattern set; I did not change pattern files, as the rules forbid it."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "rules": {
+          "ok": false,
+          "failures": [
+            "no output file"
+          ]
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 45114,
+        "turns": 14,
+        "cost": 0.010771400000000002,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      }
+    },
+    {
+      "case": "hand-nofit-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a windmill.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add a pattern for a windmill: a tower body with a hub and four sails (lines or rects) at the top.",
+          "Add a leaf part for the sails, since no leaf part draws blades or a hub.",
+          "Add a variant or rule for a tower that holds sails, which the tower pattern's do-not-use rule currently sends to no-fit."
+        ],
+        "proposed": null,
+        "questions": [
+          "The request is a windmill. The tower pattern's do-not-use rule says a tower that holds sails fits no pattern, so the outcome is no-fit with tower as the nearest pattern.",
+          "The output draws the tower only (body, roof, door, two windows). The sails are left out, because no pattern covers them and every shape must sit in a pattern group.",
+          "No proposed pattern file is written, because the skill allows writing only output files and trace.json."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": false,
+          "failures": [
+            "no proposed pattern file"
+          ]
+        }
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 47783,
+        "turns": 15,
+        "cost": 0.011167330000000003,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-002",
+      "run": 2,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a windmill.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": null,
+        "nearest": "tower",
+        "deltas": [
+          "A windmill has sails and a hub on its tower. The tower pattern's do_not_use_when says a tower that holds sails is no-fit.",
+          "No pattern covers sails or a hub. The leaf parts are body, chimney, crown, door, ground, roof, trunk and window.",
+          "The output uses the tower layout (tall body, cap roof, door, windows) plus hub and sail groups, which have no pattern id. verify.mjs reports them as unknown patterns."
+        ],
+        "proposed": null,
+        "questions": [
+          "Request: 'Draw a windmill'. The index and the tower pattern name no fit for a tower that holds sails, so the outcome is no-fit and tree is null.",
+          "Nearest pattern is tower. I used its layout for the windmill body, but I did not use the tower pattern as the root, because its do_not_use_when excludes sails.",
+          "The output groups hub and sail with data-p ids that have no pattern file. I did not add pattern files, because the rules say not to change the existing pattern files and only write output and trace.json.",
+          "verify.mjs was run once and reports 3 unknown-pattern failures (hub, sail, sail). I did not change the output to hide them, since the only way to make it pass would be to drop the sails or give them an unrelated leaf id such as crown.",
+          "proposed is null. A windmill pattern would need a proposal file, which the rules do not let me write."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "windmill: unknown pattern \"windmill\""
+          ]
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": false,
+          "failures": [
+            "no proposed pattern file"
+          ]
+        }
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 60710,
+        "turns": 16,
+        "cost": 0.012289310000000001,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": false
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "lighthouse"
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add a light on top: the tower's do-not-use rule sends a building that holds a light to no-fit, so the tower pattern is not used.",
+          "Add a ground part, which the tower does not have.",
+          "Add a roof that is a small lamp cap, and draw the light as a yellow circle in it."
+        ],
+        "proposed": null,
+        "questions": [
+          "No pattern fits: the tower's do-not-use rule names no-fit for a building that holds a light, and the request is a lighthouse. Nearest pattern is tower.",
+          "The root is drawn as an unknown pattern id 'lighthouse' with leaf parts only (ground, body, window, door, roof, crown). It is not a registered pattern.",
+          "There is no leaf part for a lamp, and only crown is a circle, so the light uses the crown leaf. The crown leaf name means a tree top, so it is a stretch.",
+          "proposed is null: this skill allows writing only output.svg and trace.json, so no patterns/lighthouse.md was written. A proposed pattern file is needed if the lighthouse should become a pattern."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "lighthouse: unknown pattern \"lighthouse\""
+          ]
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": false,
+          "failures": [
+            "no proposed pattern file"
+          ]
+        }
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 70570,
+        "turns": 16,
+        "cost": 0.01596084,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-003",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a camping tent.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "house",
+          "tower"
+        ]
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "tent",
+          "v": "plain"
+        },
+        "nearest": "house",
+        "deltas": [
+          "No pattern in index.md draws a camping tent. Add a composed pattern `tent` with leaf parts `ground` (rect), `roof` (triangle, the cloth) and `door` (rect, the entrance).",
+          "Its use-when: the request names a tent, a camping tent or a tent shelter.",
+          "Nearest is `house` because both are a shelter for people with a triangle roof, a door and a ground line; a tent is low, wide at the base and has no windows or chimney."
+        ],
+        "proposed": null,
+        "questions": [
+          "No pattern fits 'a camping tent'. The nearest is `house`, but a house has a rectangular body, a window and a chimney option, and a tent has none of these.",
+          "I drew the tent with the leaf parts that exist (`ground`, `roof` as the triangle cloth, `door` as the entrance) inside a group `data-p=\"tent\"`, because no pattern id exists for it.",
+          "I did not write `patterns/tent.md`: the rules allow writing only output files and trace.json. The new pattern is described in `deltas` instead; `proposed` is null for that reason.",
+          "Colors were chosen by me: orange cloth, black entrance, green ground."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "tent: unknown pattern \"tent\""
+          ]
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": false,
+          "failures": [
+            "no proposed pattern file"
+          ]
+        }
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 44300,
+        "turns": 12,
+        "cost": 0.0105273,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-003",
+      "run": 2,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a camping tent.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "house",
+          "tower"
+        ]
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": null,
+        "nearest": "house",
+        "deltas": [
+          "Add a tent pattern: one front-facing triangle canopy on the ground, with a door opening on its base and no body, roof or windows; related to house."
+        ],
+        "proposed": null,
+        "questions": [
+          "No pattern in index.md fits a camping tent. The nearest is house (a triangle roof over a body, with a door), but a tent has no body and no windows, so house does not fit.",
+          "output.svg draws the tent from leaf parts only (ground, roof as a triangle, door as a rectangle), grouped at the top level. It has no composed root pattern, so verify.mjs reports 'expected one top pattern, got 3'.",
+          "A proposed pattern file would need writing patterns/<id>.md, which the rules forbid here (only output files and trace.json may be written), so proposed is null."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "output: expected one top pattern, got 3"
+          ]
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": false,
+          "failures": [
+            "no proposed pattern file"
+          ]
+        }
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 72329,
+        "turns": 24,
+        "cost": 0.01791053,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": false
+    }
+  ]
+}

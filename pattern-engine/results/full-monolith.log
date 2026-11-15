@@ -1,0 +1,112 @@
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+Run 2026-11-15T17-45-02-monolith [full]: harness monolith, model sonnet, 25 cases × k=3 = 75 agent runs, concurrency 3
+[1/75] PASS gen-001#2 31s
+[2/75] PASS gen-001#1 33s
+[3/75] PASS gen-001#3 33s
+[4/75] PASS gen-002#2 41s
+[5/75] PASS gen-002#3 44s
+[6/75] PASS gen-002#1 47s
+[7/75] PASS gen-003#1 36s
+[8/75] PASS gen-003#2 41s
+[9/75] PASS gen-003#3 41s
+[10/75] PASS gen-004#1 36s
+[11/75] PASS gen-004#2 35s
+[12/75] PASS gen-004#3 38s
+[13/75] PASS gen-005#1 39s
+[14/75] PASS gen-005#2 36s
+[15/75] PASS gen-005#3 37s
+[16/75] PASS gen-006#1 37s
+[17/75] PASS gen-006#3 34s
+[18/75] PASS gen-006#2 46s
+[19/75] PASS gen-007#1 42s
+[20/75] PASS gen-007#2 41s
+[21/75] PASS gen-007#3 41s
+[22/75] PASS gen-008#1 29s
+[23/75] PASS gen-008#2 31s
+[24/75] PASS gen-008#3 28s
+[25/75] PASS gen-009#1 35s
+[26/75] PASS gen-009#2 33s
+[27/75] PASS gen-009#3 47s
+[28/75] PASS gen-010#2 29s
+[29/75] PASS gen-010#1 36s
+[30/75] PASS gen-010#3 36s
+[31/75] PASS gen-011#1 40s
+[32/75] PASS gen-011#2 49s
+[33/75] PASS gen-011#3 40s
+[34/75] PASS gen-012#1 32s
+[35/75] PASS gen-012#2 34s
+[36/75] PASS gen-012#3 35s
+[37/75] PASS gen-013#1 41s
+[38/75] PASS gen-013#2 31s
+[39/75] PASS gen-013#3 42s
+[40/75] PASS gen-014#2 33s
+[41/75] PASS gen-014#1 42s
+[42/75] PASS gen-015#2 29s
+[43/75] PASS gen-014#3 39s
+[44/75] PASS gen-015#1 34s
+[45/75] PASS hand-near-001#1 26s
+[46/75] PASS gen-015#3 30s
+[47/75] PASS hand-near-001#2 29s
+[48/75] PASS hand-near-001#3 27s
+[49/75] PASS hand-near-002#2 32s
+[50/75] PASS hand-near-002#1 37s
+[51/75] PASS hand-near-002#3 41s
+[52/75] PASS hand-near-003#2 31s
+[53/75] PASS hand-near-003#1 36s
+[54/75] PASS hand-near-003#3 37s
+[55/75] PASS hand-nofit-001#1 41s
+[56/75] PASS hand-nofit-001#2 50s
+[57/75] PASS hand-nofit-001#3 38s
+[58/75] PASS hand-nofit-002#1 61s
+[59/75] PASS hand-nofit-002#2 63s
+[60/75] PASS hand-nofit-002#3 62s
+[61/75] FAIL hand-nofit-003#1 37s
+      selection: expected nearest house or tower, got "shed"
+[62/75] PASS hand-nofit-003#2 38s
+[63/75] PASS hand-nofit-003#3 36s
+[64/75] PASS hand-rule-001#1 35s
+[65/75] PASS hand-rule-001#2 31s
+[66/75] PASS hand-rule-001#3 32s
+[67/75] PASS hand-rule-002#1 29s
+[68/75] PASS hand-rule-002#2 27s
+[69/75] PASS hand-rule-002#3 29s
+[70/75] PASS hand-rule-003#1 32s
+[71/75] PASS hand-rule-003#2 32s
+[72/75] PASS hand-rule-004#1 31s
+[73/75] PASS hand-rule-003#3 37s
+[74/75] PASS hand-rule-004#2 35s
+[75/75] PASS hand-rule-004#3 33s
+
+Report 2026-11-15T17-45-02-monolith: 25 cases, 75 runs
+harness monolith, mode full, model sonnet, k=3
+API-equivalent cost $9.20 ($0.123 per run), 37 s per run, 13.7 turns per run, 0.0 subagents per run
+
+metric                            score         
+selection accuracy                99% (74/75)   
+built tree matches                100% (66/66)  
+structure pass                    100% (75/75)  
+rules pass                        100% (75/75)  
+pass@1 (all checks)               99% (74/75)   
+pass^3 (all runs of a case)       96% (24/25)   
+near-miss accuracy                100% (12/12)  
+no-fit precision                  100% (9/9)    
+no-fit full pass                  89% (8/9)     
+agent errors                      0% (0/75)     
+trace matches output              73% (55/75)   
+gate retries                      0% (0/75)     
+
+by top pattern                    pass@1
+  house                           100% (15/15)
+  street                          100% (36/36)
+  tower                           100% (12/12)
+  no-fit                          89% (8/9)
+  shed                            100% (3/3)
+
+most common failures
+    1× selection: expected nearest house or tower, got "shed"
+
+Results: results\2026-11-15T17-45-02-monolith.json
+Outputs: results\runs\2026-11-15T17-45-02-monolith

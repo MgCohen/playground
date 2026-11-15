@@ -1,0 +1,3 @@
+name: shapes
+description: Simple SVG drawings made from rectangles, triangles, circles and lines.
+output: output.svg

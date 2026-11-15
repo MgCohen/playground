@@ -1,0 +1,554 @@
+{
+  "runId": "2026-11-15T17-10-06-monolith-no-dont-use",
+  "domain": "shapes",
+  "harness": "monolith",
+  "gate": false,
+  "mode": "dev",
+  "label": "abl-dontuse",
+  "k": 2,
+  "ablate": [
+    "no-dont-use"
+  ],
+  "model": "haiku",
+  "cases": 4,
+  "runs": [
+    {
+      "case": "hand-rule-002",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a little house where we keep our bikes.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request says 'little house', which matches the house pattern (level 2, 'names a house'). The request's purpose is keeping bikes, which matches the shed pattern ('a shed, a garage or a tool hut'; its intent names bikes). I chose shed because the building is a storage hut, not a home. The house pattern would also fit by name, so this is a judgment call."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 41350,
+        "turns": 14,
+        "cost": 0.009148469999999999,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a little house where we keep our bikes.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request says 'a little house' and also describes a place to keep bikes. 'house' matches by name ('The request names a house'). 'shed' lists a shed, garage or tool hut, which the request does not name, so house was chosen. Its intent mentions bikes, so shed is the alternative if a bike store was meant.",
+          "Variant 'plain' chosen: the request names no chimney or smoke.",
+          "Windows: the request names none, so the house default range was used with 2 windows, one on each side of the door.",
+          "Door: no fill color was named, so the default brown was used.",
+          "No params: the request names no value for a param.",
+          "Ground and other street objects were not added: the request names only one house."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "shed: expected \"shed\", got \"house\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "shed: expected \"shed\", got \"house\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 44540,
+        "turns": 17,
+        "cost": 0.01001023,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a narrow house, four floors tall, with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          },
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Both 'house' (the request names a house) and 'tower' (the request names a tall or narrow building) match. I chose 'tower', because the house pattern asserts body.height <= body.width, and a four-floor-tall body cannot satisfy that. The tower pattern asserts body.height >= 1.5 * body.width, and it matches the narrow, four-floor shape. If a house-named result is required instead, the house pattern would need a taller body, which it does not allow.",
+          "Four floors: the door sits on the ground floor, and one window is placed on each of the three upper floors, stacked above one another as the tower rules require.",
+          "Colors were not named in the request, so the body is gray, the roof is brown and the windows are yellow. The door is red, as requested."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 45254,
+        "turns": 8,
+        "cost": 0.009443179999999999,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a narrow house, four floors tall, with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          },
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request names a house, so house (plain) was chosen over tower. Tower's use_when also matches 'narrow' and 'tall', but house is the more specific match.",
+          "House's assert body.height <= body.width conflicts with 'narrow' and 'four floors tall'. The body was kept wider than tall, as the pattern requires, so the house is not literally tall or narrow.",
+          "'Four floors' is shown as four windows, one per floor, staggered in two columns. House allows at most four windows.",
+          "No chimney is named, so the plain variant was used."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "tower: expected \"tower\", got \"house\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "tower: expected \"tower\", got \"house\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 66030,
+        "turns": 20,
+        "cost": 0.013916340000000001,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-004",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a garage that a family has made into their home.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Both `shed` (use when: garage) and `house` (use when: home) match. I chose `house` because the request ends with a family living in the building, and `shed` says nobody lives in it and forbids windows. To keep the garage origin, the door is a wide garage-style door (0.4 times the body width, as `shed` requires). If the garage look should dominate, `shed` with its no-window rule would be the alternative, but it cannot show a home.",
+          "The request does not name a chimney or a color, so the `plain` variant is used, the default door fill (brown) and no params."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 45806,
+        "turns": 16,
+        "cost": 0.010365680000000002,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-003",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a tower that is low and wide, where a family lives.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "low-tower",
+          "v": "plain",
+          "params": {},
+          "parts": []
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Changed the height rule: body.width >= body.height * 1.5 instead of body.height >= body.width * 1.5, because the request asks for a low, wide tower.",
+          "Changed the window layout: windows side by side in one row, not one above the other, because a low, wide building has no stack of floors.",
+          "Added the family as the use: the building is drawn as a home with several windows and a door."
+        ],
+        "proposed": "patterns/low-tower.md",
+        "questions": [
+          "The request names a tower, so tower's use_when matches, but tower's asserts require a tall body. Tower does not fit a low, wide request, so I treated this as no-fit and proposed low-tower as the nearest variant. If you want the plain tall tower instead, the output would need to be redrawn with a tall body."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "expected outcome \"match\", got \"no-fit\"",
+            "house: expected \"house\", got \"low-tower\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "house: expected \"house\", got \"low-tower\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 52784,
+        "turns": 18,
+        "cost": 0.011770940000000002,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-004",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a garage that a family has made into their home.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Two patterns matched: shed (use when: garage) and house (use when: home). Both are level 2. I chose house because the request describes a family living in the building, and shed's rules say no windows and that nobody lives in it. The garage origin is shown by the wide door and the body proportions, not by a separate pattern. If the user wants the garage look kept as a shed, use shed instead.",
+          "The house pattern has no variant for a garage conversion, so I used plain (no chimney named).",
+          "No door color was named, so door_fill uses the default (brown). Two windows were added to show the building is lived in; the house pattern allows 0 to 4."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 39525,
+        "turns": 15,
+        "cost": 0.00898242,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-003",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a tower that is low and wide, where a family lives.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "lowtower",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": "tower",
+        "deltas": [
+          "tower asserts body.height >= body.width * 1.5 (tall and narrow); request is low and wide, so the body is made at least 1.5 times as wide as it is tall",
+          "tower rule puts windows one above the other; request is low and wide, so the windows are put in one row",
+          "request names a family living there, so the door and windows are kept as the home signs (no chimney)"
+        ],
+        "proposed": "patterns/lowtower.md",
+        "questions": [
+          "The request names a tower, so tower matched by name. Its intent and asserts require a tall, narrow body, which contradicts 'low and wide'. I took the no-fit path with tower as the nearest pattern rather than forcing tower or house.",
+          "house also matches ('a home'), but it is a house, not a tower, and the request names a tower; the output keeps the tower parts instead.",
+          "Colors were not named in the request: body yellow, roof red, windows blue, door brown (the default door_fill)."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "expected outcome \"match\", got \"no-fit\"",
+            "house: expected \"house\", got \"lowtower\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "house: expected \"house\", got \"lowtower\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 64316,
+        "turns": 11,
+        "cost": 0.013058610000000002,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    }
+  ]
+}

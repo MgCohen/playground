@@ -1,0 +1,339 @@
+<title>{{TITLE}}</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one review card at a time (Tinder style). Output and expected side by side on wide screens, stacked on a phone. Details and report open in a sheet. */
+:root {
+  --bg: #eceae6; --raised: #fbfbfa; --lowered: #e4e2de; --text: #1b1a18; --quiet: #5f5b55;
+  --border: rgba(27, 26, 24, 0.1); --accent: #ff6a1a; --accent-text: #a44a19; --accent-fill: rgba(255, 106, 26, 0.12);
+  --ok: #2f7d4a; --ok-fill: rgba(47, 125, 74, 0.13); --bad: #b8382a; --bad-fill: rgba(184, 56, 42, 0.13);
+  --canvas: #ffffff; --prompt: #fff1c7; --prompt-text: #5b4a12; --scrim: rgba(27, 26, 24, 0.45);
+  --shadow-raised: inset 0 0.0625rem 0 rgba(255,255,255,0.63), 0 0.125rem 0.1875rem rgba(27,26,24,0.06), 0 0.6875rem 1.3125rem -0.5rem rgba(27,26,24,0.24);
+  --shadow-carve: inset 0 0.125rem 0.375rem rgba(27,26,24,0.14), inset 0 -0.0625rem 0 rgba(255,255,255,0.7);
+  --font-display: Doto, 'Cascadia Mono', monospace; --font-body: Inter, system-ui, sans-serif; --font-code: 'JetBrains Mono', 'Cascadia Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --raised: #26262a; --lowered: #151517; --text: #fbfbfa; --quiet: #a8a49d; --border: rgba(251,251,250,0.1);
+    --accent-text: #ff955a; --accent-fill: rgba(255,106,26,0.16); --ok: #7fd18f; --ok-fill: rgba(127,209,143,0.15); --bad: #ff8a7a; --bad-fill: rgba(255,138,122,0.15);
+    --canvas: #f4f3f0; --prompt: #3a3220; --prompt-text: #f3dfa2; --scrim: rgba(0, 0, 0, 0.6);
+    --shadow-raised: inset 0 0.0625rem 0 rgba(255,255,255,0.06), 0 0.6875rem 1.3125rem -0.5rem rgba(0,0,0,0.6);
+    --shadow-carve: inset 0 0.125rem 0.375rem rgba(0,0,0,0.5), inset 0 -0.0625rem 0 rgba(255,255,255,0.04);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --raised: #26262a; --lowered: #151517; --text: #fbfbfa; --quiet: #a8a49d; --border: rgba(251,251,250,0.1);
+  --accent-text: #ff955a; --accent-fill: rgba(255,106,26,0.16); --ok: #7fd18f; --ok-fill: rgba(127,209,143,0.15); --bad: #ff8a7a; --bad-fill: rgba(255,138,122,0.15);
+  --canvas: #f4f3f0; --prompt: #3a3220; --prompt-text: #f3dfa2; --scrim: rgba(0, 0, 0, 0.6);
+  --shadow-raised: inset 0 0.0625rem 0 rgba(255,255,255,0.06), 0 0.6875rem 1.3125rem -0.5rem rgba(0,0,0,0.6);
+  --shadow-carve: inset 0 0.125rem 0.375rem rgba(0,0,0,0.5), inset 0 -0.0625rem 0 rgba(255,255,255,0.04);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--text); font: 400 0.95rem/1.5 var(--font-body); margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0.75rem 0; }
+.app { max-width: 56rem; min-height: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 0.7rem; }
+code, pre, kbd { font-family: var(--font-code); font-variant-ligatures: none; }
+kbd { font-size: 0.7rem; background: var(--raised); box-shadow: var(--shadow-raised); border-radius: 0.3rem; padding: 0.12rem 0.38rem; }
+
+.topbar { display: flex; align-items: center; gap: 0.6rem; }
+.counter { font: 800 1.15rem/1 var(--font-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.progress { flex: 1; height: 0.4rem; border-radius: 99rem; background: var(--lowered); box-shadow: var(--shadow-carve); overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--accent); border-radius: 99rem; transition: width 0.2s; }
+.icon-btn { font: 600 0.8rem/1 var(--font-body); color: var(--text); background: var(--raised); box-shadow: var(--shadow-raised); border: 0; border-radius: 0.6rem; padding: 0.55rem 0.75rem; cursor: pointer; white-space: nowrap; }
+
+.card { position: relative; background: var(--raised); box-shadow: var(--shadow-raised); border-radius: 1.1rem; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.7rem; touch-action: pan-y; transition: transform 0.18s ease, opacity 0.18s; min-width: 0; }
+.card.dragging { transition: none; }
+.prompt { background: var(--prompt); color: var(--prompt-text); border-radius: 0.75rem; padding: 0.7rem 0.85rem; font-weight: 600; font-size: 1rem; text-wrap: pretty; }
+.pair { display: flex; flex-direction: column; gap: 0.7rem; }
+.pane { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+.pane-head { display: flex; align-items: center; min-height: 1.2rem; }
+.result { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; border-radius: 0.7rem; padding: 0.55rem 0.75rem; font-size: 0.85rem; }
+.result.pass { background: var(--ok-fill); color: var(--ok); }
+.result.fail { background: var(--bad-fill); color: var(--bad); }
+.result b { font: 700 0.8rem/1 var(--font-code); letter-spacing: 0.04em; }
+.result .why { color: inherit; opacity: 0.85; font-size: 0.78rem; text-align: right; overflow-wrap: anywhere; min-width: 0; }
+.lbl { font: 500 0.68rem/1.2 var(--font-code); letter-spacing: 0.06em; text-transform: uppercase; color: var(--quiet); }
+.pic { background: var(--lowered); box-shadow: var(--shadow-carve); border-radius: 0.75rem; padding: 0.45rem; min-width: 0; }
+.svg-frame { background: var(--canvas); border-radius: 0.5rem; overflow: hidden; }
+.svg-frame svg { display: block; width: 100%; height: auto; }
+.svg-frame.faded { opacity: 0.45; }
+.caption { font-size: 0.8rem; color: var(--quiet); margin: 0.4rem 0.1rem 0.1rem; }
+.none { color: var(--quiet); font-style: italic; margin: 0; padding: 2rem 0.5rem; text-align: center; }
+.pic pre { margin: 0; white-space: pre-wrap; font-size: 0.76rem; max-height: 18rem; overflow: auto; }
+.badge { font: 700 0.72rem/1 var(--font-code); border-radius: 0.4rem; padding: 0.3rem 0.5rem; }
+.badge.pass { background: var(--ok-fill); color: var(--ok); }
+.badge.fail { background: var(--bad-fill); color: var(--bad); }
+.stamp { position: absolute; top: 0.85rem; right: 0.85rem; font: 800 0.95rem/1 var(--font-display); letter-spacing: 0.04em; padding: 0.45rem 0.6rem; border-radius: 0.5rem; border: 2px solid currentColor; transform: rotate(6deg); pointer-events: none; }
+.stamp.approve { color: var(--ok); background: var(--ok-fill); }
+.stamp.reject { color: var(--bad); background: var(--bad-fill); }
+.note-mark { font-size: 0.8rem; color: var(--accent-text); background: var(--accent-fill); border-radius: 0.5rem; padding: 0.4rem 0.6rem; }
+
+.app { padding-bottom: calc(8.6rem + env(safe-area-inset-bottom, 0px)); }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 0.7rem max(16px, env(safe-area-inset-left, 0px)) max(0.8rem, env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, transparent, var(--bg) 22%); }
+.bar-in { max-width: 56rem; margin: 0 auto; display: flex; flex-direction: column; gap: 0.45rem; }
+.bar-row { display: grid; gap: 0.45rem; }
+.bar-row.main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.bar-row.nav { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.help { position: relative; }
+.help .tip { position: absolute; right: 0; top: calc(100% + 0.4rem); z-index: 15; width: max-content; max-width: min(18rem, 80vw); background: var(--raised); box-shadow: var(--shadow-raised); border-radius: 0.7rem; padding: 0.65rem 0.75rem; font-size: 0.8rem; display: none; flex-direction: column; gap: 0.35rem; }
+.help:hover .tip, .help:focus-within .tip, .help.open .tip { display: flex; }
+.help .tip span { display: flex; gap: 0.5rem; align-items: center; }
+.btn { font: 700 0.95rem/1 var(--font-body); border: 0; border-radius: 0.85rem; padding: 0.95rem 0.7rem; cursor: pointer; background: var(--raised); color: var(--text); box-shadow: var(--shadow-raised); display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; }
+.btn.reject { background: var(--bad-fill); color: var(--bad); }
+.btn.approve { background: var(--ok-fill); color: var(--ok); }
+.btn.small { font-weight: 600; font-size: 0.82rem; color: var(--quiet); padding-inline: 0.75rem; }
+.btn .k { font: 500 0.66rem var(--font-code); opacity: 0.7; }
+@media (max-width: 30rem) { .btn .k, .btn .t { display: none; } }
+.btn:focus-visible, .icon-btn:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.done { text-align: center; padding: 2rem 1rem; display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+.done b { font: 800 1.6rem/1.1 var(--font-display); }
+
+/* Sheet: details and report */
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 20; display: flex; align-items: flex-end; justify-content: center; padding-top: env(safe-area-inset-top, 0px); }
+.sheet { background: var(--raised); width: 100%; max-width: 44rem; max-height: 88vh; overflow: auto; border-radius: 1.1rem 1.1rem 0 0; padding: 1rem max(16px, env(safe-area-inset-left, 0px)) max(1.2rem, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 0.85rem; box-shadow: var(--shadow-raised); }
+@media (min-width: 44rem) { .scrim { align-items: center; } .sheet { border-radius: 1.1rem; padding-inline: 1.2rem; } }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.sheet-head h2 { font: 800 1.15rem/1.2 var(--font-display); margin: 0; }
+.sec { display: flex; flex-direction: column; gap: 0.35rem; }
+.box { background: var(--lowered); box-shadow: var(--shadow-carve); border-radius: 0.7rem; padding: 0.65rem 0.75rem; overflow-wrap: anywhere; font-size: 0.86rem; }
+.box p { margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.chip { font: 500 0.72rem/1 var(--font-code); padding: 0.32rem 0.5rem; border-radius: 99rem; background: var(--lowered); color: var(--quiet); }
+.chip.acc { background: var(--accent-fill); color: var(--accent-text); }
+.graders { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.graders li { display: grid; grid-template-columns: 1.1rem 6.5rem minmax(0, 1fr); gap: 0.4rem; }
+.g-ok { color: var(--ok); } .g-bad { color: var(--bad); } .why { color: var(--quiet); }
+.tree, .tree ol { list-style: none; margin: 0; padding-left: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.tree ol { padding-left: 1rem; border-left: 1px solid var(--border); margin-top: 0.25rem; }
+.pat { font: 600 0.82rem var(--font-code); }
+.var { font: 500 0.72rem var(--font-code); color: var(--quiet); margin-left: 0.4rem; }
+.param { font: 500 0.7rem var(--font-code); background: var(--accent-fill); color: var(--accent-text); border-radius: 99rem; padding: 0.1rem 0.45rem; margin-left: 0.4rem; }
+.hint { font-size: 0.76rem; color: var(--quiet); margin: 0.4rem 0 0 !important; }
+.qs { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.8rem; color: var(--quiet); }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; }
+.stat { background: var(--lowered); border-radius: 0.6rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; }
+.stat b { font: 800 1.15rem/1.15 var(--font-display); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 0.72rem; color: var(--quiet); }
+.agree { border-radius: 0.6rem; padding: 0.5rem 0.65rem; font-size: 0.85rem; font-weight: 600; }
+.agree.yes { background: var(--ok-fill); color: var(--ok); } .agree.no { background: var(--bad-fill); color: var(--bad); }
+textarea { width: 100%; min-height: 6rem; resize: vertical; font: 0.92rem/1.45 var(--font-body); color: var(--text); background: var(--lowered); border: 1px solid var(--border); border-radius: 0.7rem; padding: 0.6rem 0.7rem; }
+.row { display: flex; gap: 0.45rem; justify-content: flex-end; }
+.store { font-size: 0.74rem; color: var(--quiet); }
+@media (prefers-reduced-motion: reduce) { .card, .progress i { transition: none; } }
+</style>
+
+<div class="app">
+  <div class="topbar">
+    <span class="counter" id="counter">0/0</span>
+    <span class="progress" aria-hidden="true"><i id="prog" style="width:0"></i></span>
+    <button type="button" class="icon-btn" id="detailsBtn">Details</button>
+    <span class="help" id="help">
+      <button type="button" class="icon-btn" id="helpBtn" aria-label="Keys and gestures">?</button>
+      <span class="tip" role="tooltip">
+        <span><kbd>→</kbd> or swipe right: approve</span>
+        <span><kbd>←</kbd> or swipe left: reject</span>
+        <span><kbd>↑</kbd> back · <kbd>↓</kbd> skip</span>
+        <span><kbd>R</kbd> report · <kbd>D</kbd> details · <kbd>Esc</kbd> close</span>
+        <span>Approve when the agent output matches the expected drawing.</span>
+      </span>
+    </span>
+  </div>
+
+  <article class="card" id="card" aria-live="polite"></article>
+</div>
+
+<div class="bar" id="bar">
+  <div class="bar-in">
+    <div class="bar-row main">
+      <button type="button" class="btn reject" id="reject">✕ Reject <span class="k">←</span></button>
+      <button type="button" class="btn approve" id="approve">✓ Approve <span class="k">→</span></button>
+    </div>
+    <div class="bar-row nav">
+      <button type="button" class="btn small" id="back">↶ Back</button>
+      <button type="button" class="btn small" id="reportBtn" aria-label="Report">⚑ Report</button>
+      <button type="button" class="btn small" id="skip">Skip ↷</button>
+    </div>
+  </div>
+</div>
+<div id="overlay"></div>
+
+<script>
+(function () {
+  var DATA = /*__DATA__*/null;
+  var items = DATA.items;
+  var verdicts = {};               // key -> { human: 'approve'|'reject'|null, note }
+  var db = null, idx = 0, sheet = null, storeMsg = 'Connecting to the shared store…';
+  var LS = 'review:' + DATA.title;
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function v(it) { return verdicts[it.key] || {}; }
+  function reviewed() { return items.filter(function (it) { return v(it).human; }).length; }
+  function firstOpen(from) { for (var i = from; i < items.length; i++) if (!v(items[i]).human) return i; for (var j = 0; j < from; j++) if (!v(items[j]).human) return j; return -1; }
+
+  document.title = DATA.title;
+
+  function render() {
+    var n = reviewed();
+    $('prog').style.width = (100 * n / items.length) + '%';
+    var card = $('card');
+    card.style.transform = ''; card.style.opacity = '';
+    if (idx < 0 || idx >= items.length) {
+      $('counter').textContent = n + '/' + items.length;
+      card.innerHTML = '<div class="done"><b>All ' + items.length + ' runs reviewed</b><span>' + esc(agreementText()) + '</span><button type="button" class="btn small" id="restart">Review again from the start</button></div>';
+      $('restart').onclick = function () { idx = 0; render(); };
+      $('bar').hidden = true;
+      return;
+    }
+    $('bar').hidden = false;
+    var it = items[idx], x = v(it);
+    $('counter').textContent = (idx + 1) + '/' + items.length;
+    card.innerHTML =
+      (x.human ? '<span class="stamp ' + x.human + '">' + (x.human === 'approve' ? 'APPROVED' : 'REJECTED') + '</span>' : '') +
+      '<div class="prompt">' + esc(it.request) + '</div>' +
+      (function () {
+        var bad = it.engine.graders.filter(function (g) { return !g.ok; })[0];
+        return '<div class="result ' + (it.engine.pass ? 'pass' : 'fail') + '"><span>Engine verdict: <b>' + (it.engine.pass ? 'PASS' : 'FAIL') + '</b></span>' +
+          (bad ? '<span class="why">' + esc(bad.name + ': ' + bad.why) + '</span>' : '') + '</div>';
+      })() +
+      '<div class="pair">' +
+        '<div class="pane"><div class="pane-head"><span class="lbl">Agent output</span></div><div class="pic">' + it.output + '</div></div>' +
+        '<div class="pane"><div class="pane-head"><span class="lbl">Expected · one correct form</span></div><div class="pic">' + it.expectedVisual + '</div></div>' +
+      '</div>' +
+      (x.note ? '<div class="note-mark">⚑ ' + esc(x.note) + '</div>' : '');
+  }
+
+  function agreementText() {
+    var done = items.filter(function (it) { return v(it).human; });
+    if (!done.length) return 'No verdicts yet.';
+    var agree = done.filter(function (it) { return (v(it).human === 'approve') === it.engine.pass; }).length;
+    return 'You agree with the engine on ' + agree + ' of ' + done.length + ' runs (' + Math.round(100 * agree / done.length) + '%).';
+  }
+
+  function openSheet(kind) {
+    if (idx < 0 || idx >= items.length) { if (kind !== 'details') return; }
+    sheet = kind;
+    var it = items[idx] || null, x = it ? v(it) : {};
+    var html = '';
+    if (kind === 'report') {
+      html = '<div class="sheet-head"><h2>Report</h2><button type="button" class="icon-btn" data-close>Close <kbd>Esc</kbd></button></div>' +
+        '<div class="sec"><span class="lbl">What is wrong or worth a look?</span><textarea id="noteText" placeholder="For example: the yellow door is hard to see on the yellow body.">' + esc(x.note || '') + '</textarea></div>' +
+        '<div class="row"><button type="button" class="btn small" data-close>Cancel</button><button type="button" class="btn" id="noteSave">Save note</button></div>';
+    } else {
+      var done = items.filter(function (y) { return v(y).human; });
+      var fp = done.filter(function (y) { return y.engine.pass && v(y).human === 'reject'; }).length;
+      var ff = done.filter(function (y) { return !y.engine.pass && v(y).human === 'approve'; }).length;
+      var agree = done.filter(function (y) { return (v(y).human === 'approve') === y.engine.pass; }).length;
+      html = '<div class="sheet-head"><h2>Details</h2><button type="button" class="icon-btn" data-close>Close <kbd>Esc</kbd></button></div>';
+      if (it) {
+        var graders = it.engine.graders.map(function (g) { return '<li><span class="' + (g.ok ? 'g-ok">✓' : 'g-bad">✕') + '</span><span>' + esc(g.name) + '</span><span class="why">' + esc(g.why) + '</span></li>'; }).join('');
+        var ag = x.human ? ((x.human === 'approve') === it.engine.pass) : null;
+        html +=
+          '<div class="chips"><span class="chip acc">' + esc(it.case) + ' #' + it.run + '</span><span class="chip acc">' + esc(it.harness) + '</span><span class="chip">' + esc(it.model) + '</span>' +
+            it.tags.map(function (t) { return '<span class="chip">' + esc(t) + '</span>'; }).join('') + '</div>' +
+          (ag === null ? '' : '<div class="agree ' + (ag ? 'yes">You agree with the engine on this run.' : 'no">You disagree with the engine: it said ' + (it.engine.pass ? 'pass' : 'fail') + ', you said ' + x.human + '.') + '</div>') +
+          '<div class="sec"><span class="lbl">Engine verdict: ' + (it.engine.pass ? 'pass' : 'fail') + '</span><div class="box"><ul class="graders">' + graders + '</ul></div></div>' +
+          '<div class="sec"><span class="lbl">Expected tree</span><div class="box">' + it.expected + '</div></div>' +
+          '<div class="sec"><span class="lbl">What the agent reported</span><div class="box">' + it.trace + '<p class="hint">' + it.agent.secs + ' s · ' + (it.agent.turns == null ? '?' : it.agent.turns) + ' turns · ' + it.agent.subagents + ' subagents · the trace ' + (it.engine.traceMatches ? 'matches' : 'does not match') + ' the output</p></div></div>' +
+          (x.note ? '<div class="sec"><span class="lbl">Your note</span><div class="box">' + esc(x.note) + '</div></div>' : '');
+      }
+      html +=
+        '<div class="sec"><span class="lbl">All runs</span><div class="stats">' +
+          '<div class="stat"><b>' + done.length + '/' + items.length + '</b><span>reviewed</span></div>' +
+          '<div class="stat"><b>' + (done.length ? Math.round(100 * agree / done.length) + '%' : '—') + '</b><span>you agree with the engine</span></div>' +
+          '<div class="stat"><b>' + fp + '</b><span>engine passed, you rejected</span></div>' +
+          '<div class="stat"><b>' + ff + '</b><span>engine failed, you approved</span></div>' +
+        '</div><div class="chips">' + DATA.runs.map(function (r) { return '<span class="chip">' + esc(r.harness) + ' · ' + esc(r.model) + ' · k=' + r.k + ' · ' + r.runs + ' runs</span>'; }).join('') + '</div>' +
+        '<p class="store">' + esc(storeMsg) + '</p></div>';
+    }
+    $('overlay').innerHTML = '<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true">' + html + '</div></div>';
+    $('scrim').addEventListener('click', function (e) { if (e.target.id === 'scrim' || e.target.hasAttribute('data-close')) closeSheet(); });
+    if (kind === 'report') {
+      var ta = $('noteText'); ta.focus();
+      $('noteSave').onclick = function () { save(items[idx], { note: ta.value.trim() }); closeSheet(); };
+    }
+  }
+  function closeSheet() { sheet = null; $('overlay').innerHTML = ''; render(); }
+
+  function save(it, patch) {
+    var next = Object.assign({ human: null, note: '' }, v(it), patch, { at: Date.now(), runId: it.runId, case: it.case, run: it.run, harness: it.harness, engine: it.engine.pass });
+    verdicts[it.key] = next;
+    try { localStorage.setItem(LS, JSON.stringify(verdicts)); } catch (e) { /* no storage */ }
+    if (db) db.collection('verdicts').doc(it.key).set(next).catch(function (e) { storeMsg = 'Not saved to the shared store (' + (e && e.code || 'error') + '). Saved in this browser only.'; });
+  }
+
+  function vote(kind) {
+    if (idx < 0 || idx >= items.length) return;
+    var it = items[idx], card = $('card');
+    card.style.transform = 'translateX(' + (kind === 'approve' ? 60 : -60) + 'px) rotate(' + (kind === 'approve' ? 3 : -3) + 'deg)'; card.style.opacity = '0.3';
+    save(it, { human: kind });
+    setTimeout(function () { var n = firstOpen(idx + 1); idx = n; render(); window.scrollTo({ top: 0 }); }, 170);
+  }
+  function move(d) { if (idx < 0) idx = items.length; idx = Math.max(0, Math.min(items.length - 1, idx + d)); render(); window.scrollTo({ top: 0 }); }
+
+  $('approve').onclick = function () { vote('approve'); };
+  $('reject').onclick = function () { vote('reject'); };
+  $('back').onclick = function () { move(-1); };
+  $('skip').onclick = function () { move(1); };
+  $('reportBtn').onclick = function () { openSheet('report'); };
+  $('detailsBtn').onclick = function () { openSheet('details'); };
+  $('helpBtn').onclick = function (e) { e.stopPropagation(); $('help').classList.toggle('open'); };
+  document.addEventListener('click', function (e) { if (!e.target.closest('#help')) $('help').classList.remove('open'); });
+
+  document.addEventListener('keydown', function (e) {
+    var t = e.target && e.target.tagName;
+    if (e.key === 'Escape' && sheet) { closeSheet(); return; }
+    if (t === 'TEXTAREA' || t === 'INPUT' || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (sheet) { if (e.key === 'd' || e.key === 'D') closeSheet(); return; }
+    if (e.key === 'ArrowRight') { e.preventDefault(); vote('approve'); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); vote('reject'); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+    else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); openSheet('report'); }
+    else if (e.key === 'd' || e.key === 'D') { e.preventDefault(); openSheet('details'); }
+  });
+
+  // Swipe: drag the card left to reject, right to approve.
+  var card = $('card'), sx = null, sy = null, dx = 0, drag = false;
+  card.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('button, textarea, a') || e.pointerType === 'mouse') return;
+    sx = e.clientX; sy = e.clientY; dx = 0; drag = false;
+  });
+  card.addEventListener('pointermove', function (e) {
+    if (sx === null) return;
+    dx = e.clientX - sx;
+    if (!drag && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(e.clientY - sy)) { drag = true; card.classList.add('dragging'); }
+    if (drag) card.style.transform = 'translateX(' + dx + 'px) rotate(' + (dx / 40) + 'deg)';
+  });
+  function end() {
+    if (sx === null) return;
+    card.classList.remove('dragging');
+    if (drag && Math.abs(dx) > 90) vote(dx > 0 ? 'approve' : 'reject'); else card.style.transform = '';
+    sx = null; drag = false;
+  }
+  card.addEventListener('pointerup', end);
+  card.addEventListener('pointercancel', end);
+
+  // Start: verdicts from this browser at once, then the shared store when it answers.
+  try { var saved = JSON.parse(localStorage.getItem(LS) || '{}'); Object.keys(saved).forEach(function (k) { verdicts[k] = saved[k]; }); } catch (e) { /* none */ }
+  idx = Math.max(0, firstOpen(0));
+  render();
+  var timer = setTimeout(function () { if (!db) storeMsg = 'The shared store did not answer. Verdicts are saved in this browser only.'; }, 10000);
+  var use = window.claude && window.claude.use ? window.claude.use('db') : Promise.resolve(null);
+  var first = true;
+  use.then(function (d) {
+    if (!d) { clearTimeout(timer); storeMsg = 'Shared store not available here. Verdicts are saved in this browser only.'; return; }
+    db = d;
+    db.collection('verdicts').onSnapshot(function (snap) {
+      clearTimeout(timer);
+      snap.docs.forEach(function (doc) { var x = doc.data(); if (x) verdicts[doc.id] = x; });
+      storeMsg = 'Verdicts are saved to the shared store of this page.';
+      if (first) { first = false; if (!v(items[idx] || {}).human) { /* keep position */ } else idx = firstOpen(idx); }
+      if (!sheet) render();
+    }, function (e) { clearTimeout(timer); storeMsg = 'The shared store failed (' + (e && e.code || 'error') + '). Verdicts are saved in this browser only.'; });
+  }).catch(function () { storeMsg = 'Shared store not available here. Verdicts are saved in this browser only.'; });
+})();
+</script>

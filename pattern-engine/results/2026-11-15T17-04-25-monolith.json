@@ -1,0 +1,615 @@
+{
+  "runId": "2026-11-15T17-04-25-monolith",
+  "domain": "shapes",
+  "harness": "monolith",
+  "gate": false,
+  "mode": "dev",
+  "label": "dev-monolith",
+  "k": 1,
+  "ablate": [],
+  "model": "haiku",
+  "cases": 8,
+  "runs": [
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a narrow house, four floors tall, with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          },
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Chose tower over house: the request says narrow, and house's do-not-use rule sends narrow or tall buildings to tower. The tower use-when also names a tall or narrow building.",
+          "Read four floors as four stacked levels: the door fills the ground floor and windows sit on floors 2, 3 and 4 (three windows). The tower pattern has no fourth window slot on the ground floor.",
+          "Fill colors not named in the request were chosen by me: body gray, roof black, windows yellow. Door red is from the request."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 46624,
+        "turns": 15,
+        "cost": 0.009095170000000001,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-004",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "deep"
+      ],
+      "request": "Draw a street with, from left to right: a tree; a shed with a blue door; a house; and a tower with a green door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            },
+            {
+              "p": "house",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            },
+            {
+              "p": "house",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request gives no ground color, so the ground is green (grass). Building colors were not named and were chosen by me.",
+          "The request lists the objects tree, shed, house, tower. I drew them in that order from left to right; the pattern's own part order (house, tower, tree, shed) was not followed for placement.",
+          "The house has no chimney because the request does not name one, so the plain variant was used."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 61747,
+        "turns": 23,
+        "cost": 0.012881250000000002,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "lighthouse",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Added part: ground (a strip of ground under the body). tower has no ground part.",
+          "Changed the lantern: the top window of the body is the light. It is a window leaf, not a new part.",
+          "Added the lantern roof as the roof part, on the lantern top, not on the body top.",
+          "Added the light as a yellow window at the top of the body. tower has no light.",
+          "Kept body, door and window parts from tower."
+        ],
+        "proposed": "patterns/lighthouse.md",
+        "questions": [
+          "The request names no size, color or position, so the defaults are used: red body, yellow lantern, brown door, blue windows, green ground.",
+          "No leaf part is a light, so the lantern is drawn as a window leaf. A lamp shape would need a new leaf part.",
+          "The tower pattern says a lighthouse is no-fit, so the nearest pattern is tower and the new pattern is lighthouse."
+        ],
+        "attempts": 2
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 91230,
+        "turns": 24,
+        "cost": 0.01819394,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-001",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Draw a house with a chimney.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney",
+          "params": {},
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request names a house with a chimney, so the house pattern uses the chimney variant (the request names a chimney). Not street, tower or shed: it names one building and no tools or storage.",
+          "The request names no window count. The house pattern allows 0..4 windows; I drew 2 (one on each side of the door).",
+          "The request names no door color, so door_fill uses its default, brown.",
+          "The request names no colors. I chose yellow body, red roof, brown door, blue windows and gray chimney.",
+          "The chimney is placed on the right slope of the roof: x 240-264, y 80-130. Its bottom is inside the roof, and its top sticks out above the roof edge."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 43296,
+        "turns": 9,
+        "cost": 0.009014360000000003,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-002",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "medium"
+      ],
+      "request": "Draw a street with, from left to right: a house with a chimney; a tower; and a tree.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "house",
+              "v": "chimney"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "house",
+              "v": "chimney"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request names no colors. I chose them: ground gray, house body yellow, roof red, door brown (the default), windows blue, chimney gray, tower body orange, tower roof black, tower windows yellow, trunk brown, crown green.",
+          "The request names no door color, so the door uses the default brown.",
+          "The request names no window count. The house has 2 windows and the tower has 2 windows, both inside the body.",
+          "The request order (house, tower, tree) is the left-to-right order of the output."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 59341,
+        "turns": 20,
+        "cost": 0.012633390000000001,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-near-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Draw a tall, narrow building with a pointed roof and a door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request names no windows, so the tower has none (the pattern allows 0 to 6). Chose 0 to match the request.",
+          "The request names no colors. Used gray for the body and red for the roof; the door uses the default brown.",
+          "Parts are drawn in the order of the pattern (body, roof, door), since the request gives no left-to-right order for them."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 37756,
+        "turns": 8,
+        "cost": 0.0075888299999999995,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a little house where we keep our bikes.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "The request says 'a little house' but names bikes and storage. shed matches 'a building for tools, bikes or a car' and house has 'People live in the building' as a do-not-use case, so shed was chosen over house.",
+          "The shed pattern has no part for bikes, and bikes cannot be drawn with rect, polygon, circle or line in this subject. No bikes are drawn.",
+          "No colors were named in the request. body is gray, roof is red, and door uses the default door_fill brown."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 35937,
+        "turns": 14,
+        "cost": 0.008120430000000001,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a windmill.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "windmill",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Added two sail blades: two crossed trunk (rect) leaves, centered on the hub. No leaf has a line primitive, so rects were used.",
+          "Added a hub: a crown (circle) leaf on the front of the body top, drawn after the blades.",
+          "Kept the tower body, cap roof, door and window parts unchanged."
+        ],
+        "proposed": "patterns/windmill.md",
+        "questions": [
+          "No pattern covers a windmill: tower's do_not_use_when names no-fit for a tower that holds sails. The nearest pattern is tower.",
+          "The request does not name a color, a size or a number of sails. Chose gray body, red cap, brown door, yellow window, black sails and hub, and two crossed blades."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 61852,
+        "turns": 15,
+        "cost": 0.01284649,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    }
+  ]
+}

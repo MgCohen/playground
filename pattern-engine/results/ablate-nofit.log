@@ -1,0 +1,40 @@
+Run 2026-11-15T16-22-12-no-nofit: 3 cases × k=3 = 9 agent runs, concurrency 4, ablate no-nofit
+[1/9] FAIL hand-nofit-001#3 35s
+      selection: expected outcome "no-fit", got "match"
+      proposed: no proposed pattern file
+[2/9] FAIL hand-nofit-001#2 41s
+      selection: expected outcome "no-fit", got "match"
+      proposed: no proposed pattern file
+[3/9] FAIL hand-nofit-001#1 47s
+      selection: expected outcome "no-fit", got "match"
+      proposed: no proposed pattern file
+[4/9] PASS hand-nofit-002#1 47s
+[5/9] PASS hand-nofit-002#2 39s
+[6/9] PASS hand-nofit-003#1 33s
+[7/9] PASS hand-nofit-003#2 33s
+[8/9] PASS hand-nofit-002#3 55s
+[9/9] PASS hand-nofit-003#3 37s
+
+Report 2026-11-15T16-22-12-no-nofit (ablate no-nofit): 3 cases, 9 runs
+
+metric                            score         
+selection accuracy                67% (6/9)     
+built tree matches                — (0/0)       
+structure pass                    100% (9/9)    
+rules pass                        100% (9/9)    
+pass@1 (all checks)               67% (6/9)     
+pass^3 (all runs of a case)       67% (2/3)     
+near-miss accuracy                — (0/0)       
+no-fit precision                  67% (6/9)     
+no-fit full pass                  67% (6/9)     
+agent errors                      0% (0/9)      
+
+by top pattern                    pass@1
+  no-fit                          67% (6/9)
+
+most common failures
+    3× selection: expected outcome "no-fit", got "match"
+    3× proposed: no proposed pattern file
+
+Results: results\2026-11-15T16-22-12-no-nofit.json
+Outputs: results\runs\2026-11-15T16-22-12-no-nofit

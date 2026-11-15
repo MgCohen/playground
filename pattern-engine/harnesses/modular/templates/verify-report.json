@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "commands": { "verify": [], "trace_matches_plan": true },
+  "rubric": [ { "id": "C1", "result": "pass", "evidence": "" } ],
+  "failures": []
+}

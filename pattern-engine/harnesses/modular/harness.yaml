@@ -1,0 +1,7 @@
+# A router skill, step skills, two agents, a rubric, templates and the pe commands.
+name: modular
+prompt: |
+  Use the pattern-navigate skill for this request.
+  Request: {{request}}
+  The output file is {{output}}. The trace file is trace.json. Both go in this folder.
+tools: [Read, Write, Edit, Glob, Grep, Skill, Agent, "Bash(node pe.mjs:*)", "Bash(node pe.mjs)"]

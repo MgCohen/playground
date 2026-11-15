@@ -1,0 +1,30 @@
+# Eval settings. Change the values here, not in code.
+# A domain can override any key in domains/<name>/eval.config.yaml.
+
+# Run modes: the defaults for --mode. A flag (--sample, --k, --model) changes one value.
+modes:
+  smoke: { sample: 3, k: 1, model: haiku }
+  dev:   { sample: 8, k: 1, model: haiku }
+  full:  { sample: 0, k: 3, model: sonnet }   # sample 0 = all cases
+
+# Agent targets. A number is a minimum rate (0..1). { max: x } is a maximum rate.
+# A run below a target prints "BELOW TARGET" and exits with code 1.
+# The key is the mode; "default" applies to a mode with no entry. null = no targets.
+targets:
+  smoke: null
+  default:
+    pass@1: 0.85
+    pass^k: 0.70
+    near-miss: 0.80
+    no-fit: 0.80
+    agent-errors: { max: 0.05 }
+
+# Grader targets: the self-test checks the graders against known outputs.
+grader_tests:
+  reference_pass_rate: 1.0     # fixtures rendered as known good must pass
+  mutation_catch_rate: 1.0     # generated known-bad outputs must fail
+  right_reason_rate: 1.0       # ... and fail in the grader that the mutation names
+  mutations: all               # or a list of operator ids from domains/<name>/mutations.mjs
+  case_sets:                   # the cases whose expected trees become known-good drawings
+    - { gen: 15, seed: 7,  max_children: 4 }   # the tuned set
+    - { gen: 60, seed: 42, max_children: 6 }   # the held-out set

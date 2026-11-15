@@ -1,0 +1,1093 @@
+<title>Pattern Engine Spike</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of raised panels on the VSA canvas; four tabs; folds for detail. */
+:root {
+  --bg: #eceae6;
+  --raised: #fbfbfa;
+  --lowered: #e4e2de;
+  --text: #1b1a18;
+  --quiet: #5f5b55;
+  --border: rgba(27, 26, 24, 0.1);
+  --accent: #ff6a1a;
+  --accent-text: #a44a19;
+  --accent-fill: rgba(255, 106, 26, 0.12);
+  --ok: #2f7d4a;
+  --ok-fill: rgba(47, 125, 74, 0.12);
+  --red: #c8402b;
+  --code-bg: #151517;
+  --code-text: #e4e2de;
+  --code-quiet: #a8a49d;
+  --code-key: #ff955a;
+  --code-val: #7fd18f;
+  --shadow-raised: inset 0 0.0625rem 0 rgba(255,255,255,0.63), 0 0.125rem 0.1875rem rgba(27,26,24,0.06), 0 0.6875rem 1.3125rem -0.5rem rgba(27,26,24,0.24);
+  --shadow-carve: inset 0 0.125rem 0.375rem rgba(27,26,24,0.14), inset 0 -0.0625rem 0 rgba(255,255,255,0.7);
+  --font-display: Doto, 'Cascadia Mono', monospace;
+  --font-body: Inter, system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', 'Cascadia Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a; --raised: #26262a; --lowered: #151517; --text: #fbfbfa; --quiet: #a8a49d;
+    --border: rgba(251,251,250,0.1); --accent-text: #ff955a; --accent-fill: rgba(255,106,26,0.16);
+    --ok: #7fd18f; --ok-fill: rgba(127,209,143,0.14); --red: #ff7a63;
+    --code-bg: #0f0f10;
+    --shadow-raised: inset 0 0.0625rem 0 rgba(255,255,255,0.06), 0 0.6875rem 1.3125rem -0.5rem rgba(0,0,0,0.6);
+    --shadow-carve: inset 0 0.125rem 0.375rem rgba(0,0,0,0.5), inset 0 -0.0625rem 0 rgba(255,255,255,0.04);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181a; --raised: #26262a; --lowered: #151517; --text: #fbfbfa; --quiet: #a8a49d;
+  --border: rgba(251,251,250,0.1); --accent-text: #ff955a; --accent-fill: rgba(255,106,26,0.16);
+  --ok: #7fd18f; --ok-fill: rgba(127,209,143,0.14); --red: #ff7a63;
+  --code-bg: #0f0f10;
+  --shadow-raised: inset 0 0.0625rem 0 rgba(255,255,255,0.06), 0 0.6875rem 1.3125rem -0.5rem rgba(0,0,0,0.6);
+  --shadow-carve: inset 0 0.125rem 0.375rem rgba(0,0,0,0.5), inset 0 -0.0625rem 0 rgba(255,255,255,0.04);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text); font: 400 1rem/1.6 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 2.5rem 4rem;
+}
+.wrap { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+h1, h2 { font-family: var(--font-display); font-weight: 800; text-wrap: balance; margin: 0; letter-spacing: 0.01em; }
+h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: 1.05; }
+h2 { font-size: 1.4rem; line-height: 1.2; }
+h3 { font-size: 1rem; margin: 0; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+ul, ol { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.eyebrow { font: 500 0.75rem/1 var(--font-code); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-text); }
+.quiet { color: var(--quiet); }
+.small { font-size: 0.88rem; }
+code { font: 0.86em var(--font-code); background: var(--lowered); padding: 0.05em 0.35em; border-radius: 0.3rem; }
+kbd { font: 500 0.75rem/1 var(--font-code); background: var(--raised); box-shadow: var(--shadow-raised); border-radius: 0.35rem; padding: 0.25rem 0.45rem; }
+header { display: flex; flex-direction: column; gap: 0.9rem; }
+header p { font-size: 1.06rem; }
+.keys { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.82rem; color: var(--quiet); align-items: center; }
+.keys span { display: inline-flex; gap: 0.35rem; align-items: center; }
+
+/* Tabs */
+.tabs { display: flex; flex-wrap: wrap; gap: 0.35rem; background: var(--lowered); box-shadow: var(--shadow-carve); border-radius: 0.8rem; padding: 0.3rem; width: fit-content; max-width: 100%; }
+.tabs button { font: 600 0.9rem/1 var(--font-body); color: var(--quiet); background: transparent; border: 0; border-radius: 0.55rem; padding: 0.65rem 0.95rem; cursor: pointer; display: inline-flex; gap: 0.45rem; align-items: center; }
+.tabs button .k { font: 500 0.7rem/1 var(--font-code); opacity: 0.7; }
+.tabs button[aria-selected="true"] { background: var(--raised); color: var(--text); box-shadow: var(--shadow-raised); }
+.tabs button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tabs.sub button { font-size: 0.84rem; padding: 0.55rem 0.8rem; }
+.view { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.panel { background: var(--raised); border-radius: 1rem; box-shadow: var(--shadow-raised); padding: clamp(1.1rem, 3vw, 1.6rem); display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.panel > .head { display: flex; flex-direction: column; gap: 0.4rem; }
+
+/* Folds */
+details.fold { background: var(--raised); border-radius: 1rem; box-shadow: var(--shadow-raised); min-width: 0; }
+details.fold > summary { list-style: none; cursor: pointer; padding: 1rem clamp(1.1rem, 3vw, 1.6rem); display: flex; gap: 0.75rem; align-items: baseline; justify-content: space-between; }
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary .t { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+details.fold > summary .t b { font: 800 1.1rem/1.2 var(--font-display); }
+details.fold > summary .t span { font-size: 0.86rem; color: var(--quiet); }
+details.fold > summary .chev { font: 600 1rem var(--font-code); color: var(--accent); transition: transform 0.15s; flex: none; }
+details.fold[open] > summary .chev { transform: rotate(90deg); }
+details.fold > .body { padding: 0 clamp(1.1rem, 3vw, 1.6rem) clamp(1.1rem, 3vw, 1.6rem); display: flex; flex-direction: column; gap: 1rem; }
+@media (prefers-reduced-motion: reduce) { details.fold > summary .chev { transition: none; } }
+
+/* Flow */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.45rem; }
+.node { flex: 1 1 8rem; min-width: 0; background: var(--lowered); box-shadow: var(--shadow-carve); border-radius: 0.75rem; padding: 0.75rem 0.85rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.node b { font-size: 0.9rem; }
+.node span { font-size: 0.8rem; color: var(--quiet); line-height: 1.45; }
+.node.hot { background: var(--accent-fill); box-shadow: inset 0 0 0 1px var(--accent); }
+.node.okn { background: var(--ok-fill); box-shadow: inset 0 0 0 1px var(--ok); }
+.arrow { align-self: center; color: var(--accent); font: 600 1.05rem var(--font-code); }
+@media (max-width: 44rem) { .flow { flex-direction: column; } .arrow { transform: rotate(90deg); } }
+.branch { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.75rem; }
+@media (max-width: 44rem) { .branch { grid-template-columns: minmax(0, 1fr); } }
+.lane { border: 1px dashed var(--border); border-radius: 0.75rem; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.lane > .lbl { font: 500 0.74rem/1.2 var(--font-code); letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent-text); }
+
+/* Core vs pack */
+.split2 { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0.75rem; align-items: stretch; }
+@media (max-width: 44rem) { .split2 { grid-template-columns: minmax(0, 1fr); } .plug { flex-direction: row !important; justify-content: center; } }
+.side { border-radius: 0.85rem; padding: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.side.core { background: var(--lowered); box-shadow: var(--shadow-carve); }
+.side.pack { border: 1px dashed var(--accent); background: var(--accent-fill); }
+.side h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; }
+.item { display: flex; flex-direction: column; gap: 0.1rem; }
+.item b { font: 500 0.82rem var(--font-code); }
+.item span { font-size: 0.82rem; color: var(--quiet); }
+.plug { display: flex; flex-direction: column; gap: 0.35rem; justify-content: center; align-items: center; }
+.plug code { background: var(--accent); color: #1b1a18; font-weight: 500; }
+.plug .lbl { font: 500 0.7rem/1.2 var(--font-code); color: var(--quiet); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Tables */
+.tw { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+th { text-align: left; font: 500 0.72rem/1.2 var(--font-code); letter-spacing: 0.06em; text-transform: uppercase; color: var(--quiet); padding: 0 0.75rem 0.55rem 0; border-bottom: 1px solid var(--border); }
+td { padding: 0.55rem 0.75rem 0.55rem 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill { display: inline-block; font: 500 0.7rem/1 var(--font-code); padding: 0.28rem 0.5rem; border-radius: 99rem; white-space: nowrap; }
+.pill.core { background: var(--lowered); color: var(--quiet); }
+.pill.dom { background: var(--accent-fill); color: var(--accent-text); }
+.pill.ok { background: var(--ok-fill); color: var(--ok); }
+
+/* Code */
+pre { margin: 0; background: var(--code-bg); color: var(--code-text); border-radius: 0.75rem; padding: 1rem 1.1rem; overflow-x: auto; font: 0.78rem/1.6 var(--font-code); min-width: 0; }
+pre .k { color: var(--code-key); } pre .v { color: var(--code-val); } pre .c { color: var(--code-quiet); font-style: italic; }
+.codehead { display: flex; justify-content: space-between; gap: 0.5rem; align-items: center; font: 500 0.76rem var(--font-code); color: var(--quiet); }
+.pair { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 1rem; }
+@media (max-width: 50rem) { .pair { grid-template-columns: minmax(0, 1fr); } }
+.stack { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+
+/* Folder tree: each folder is a fold */
+.ftree { background: var(--lowered); box-shadow: var(--shadow-carve); border-radius: 0.75rem; padding: 0.6rem; font: 0.82rem/1.5 var(--font-code); min-width: 0; }
+.ftree summary, .ftree .file { display: grid; grid-template-columns: 1rem auto minmax(0, 1fr); gap: 0.6rem; align-items: baseline; padding: 0.28rem 0.45rem; border-radius: 0.45rem; }
+.ftree summary { list-style: none; cursor: pointer; }
+.ftree summary::-webkit-details-marker { display: none; }
+.ftree summary:hover { background: var(--accent-fill); }
+.ftree summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ftree .ic { color: var(--accent); font-weight: 600; transition: transform 0.15s; display: inline-block; text-align: center; }
+.ftree details[open] > summary .ic { transform: rotate(90deg); }
+.ftree .file .ic { color: var(--quiet); font-weight: 400; }
+.ftree .nm { overflow-wrap: anywhere; }
+.ftree summary .nm { color: var(--accent-text); font-weight: 500; }
+.ftree .nt { font: 0.78rem/1.45 var(--font-body); color: var(--quiet); min-width: 0; }
+.ftree .kids { margin-left: 0.95rem; padding-left: 0.55rem; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+.ftree .empty { padding: 0.28rem 0.45rem 0.28rem 2.05rem; font: 0.78rem var(--font-body); color: var(--quiet); font-style: italic; }
+@media (max-width: 40rem) {
+  .ftree summary, .ftree .file { grid-template-columns: 1rem minmax(0, 1fr); row-gap: 0.05rem; }
+  .ftree .nt { grid-column: 2; }
+}
+@media (prefers-reduced-motion: reduce) { .ftree .ic { transition: none; } }
+pre.fold-lines { white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Phone: code gets more width; each table row becomes a labeled block */
+@media (max-width: 40rem) {
+  pre { padding: 0.75rem 0.7rem; }
+  .tw table, .tw tbody, .tw tr, .tw td { display: block; width: 100%; }
+  .tw thead { display: none; }
+  .tw tr { padding: 0.6rem 0; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.2rem; }
+  .tw tr:last-child { border-bottom: 0; }
+  .tw td { border: 0; padding: 0; display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.6rem; }
+  .tw td::before { content: attr(data-label); font: 500 0.68rem/1.7 var(--font-code); letter-spacing: 0.05em; text-transform: uppercase; color: var(--quiet); }
+  .tw td:first-child { font-weight: 600; }
+  .tw td.num { white-space: normal; }
+  .tw .cv { min-width: 0; }
+}
+
+/* Graph levels */
+.levels { display: flex; flex-direction: column; gap: 0.5rem; }
+.level { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 0.75rem; align-items: center; }
+@media (max-width: 40rem) { .level { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; } }
+.level > .lbl { font: 500 0.74rem/1.2 var(--font-code); color: var(--quiet); text-transform: uppercase; letter-spacing: 0.05em; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip { font: 500 0.8rem/1 var(--font-code); padding: 0.45rem 0.65rem; border-radius: 0.5rem; background: var(--lowered); box-shadow: var(--shadow-carve); }
+.chip.on { background: var(--accent-fill); box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent-text); }
+.chip.prop { background: transparent; box-shadow: none; border: 1px dashed var(--quiet); color: var(--quiet); }
+.edges { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.6rem; }
+.edge { background: var(--lowered); border-radius: 0.7rem; padding: 0.7rem 0.8rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.edge b { font: 500 0.82rem var(--font-code); color: var(--accent-text); }
+.edge span { font-size: 0.82rem; color: var(--quiet); }
+
+/* Domain cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.75rem; }
+.card { background: var(--lowered); border-radius: 0.85rem; padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.card h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; }
+.card dl { margin: 0; display: grid; grid-template-columns: 5.2rem minmax(0, 1fr); gap: 0.3rem 0.6rem; font-size: 0.84rem; }
+.card dt { font: 500 0.74rem/1.6 var(--font-code); color: var(--quiet); }
+.card dd { margin: 0; min-width: 0; }
+
+/* Steps */
+.steps { display: flex; flex-direction: column; gap: 0.5rem; }
+.step { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 0.75rem; align-items: start; padding: 0.7rem 0.85rem; border-radius: 0.7rem; background: var(--lowered); }
+.step .n { font: 800 1.3rem/1.2 var(--font-display); color: var(--accent-text); }
+.step .s { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.step .s span { font-size: 0.86rem; color: var(--quiet); }
+
+/* Drawing */
+.canvas { background: var(--lowered); box-shadow: var(--shadow-carve); border-radius: 0.75rem; padding: 0.75rem; }
+.canvas svg { display: block; width: 100%; height: auto; max-width: 100%; }
+.sv-line { stroke: var(--text); stroke-width: 2; fill: none; }
+.sv-body { fill: var(--raised); stroke: var(--text); stroke-width: 2; }
+.sv-roof { fill: var(--quiet); stroke: var(--text); stroke-width: 2; }
+.sv-door { fill: var(--lowered); stroke: var(--text); stroke-width: 2; }
+.sv-red { fill: var(--red); stroke: var(--text); stroke-width: 2; }
+.sv-win { fill: var(--accent-fill); stroke: var(--text); stroke-width: 2; }
+.sv-tag { font: 500 13px var(--font-code); fill: var(--accent-text); }
+.quote { font: 600 1.15rem/1.45 var(--font-body); text-wrap: balance; max-width: 60ch; }
+
+.answer { border-left: 3px solid var(--accent); padding: 0.2rem 0 0.2rem 0.9rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.answer b { font-size: 1.05rem; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.6rem; }
+.stat { background: var(--lowered); border-radius: 0.75rem; padding: 0.75rem 0.85rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.stat b { font: 800 1.6rem/1.1 var(--font-display); color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 0.8rem; color: var(--quiet); }
+.foldbar { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.foldbar button { font: 500 0.78rem/1 var(--font-code); color: var(--quiet); background: transparent; border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.45rem 0.65rem; cursor: pointer; }
+.foldbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+footer { font-size: 0.8rem; color: var(--quiet); }
+</style>
+<style>.step .s pre { margin-top: 0.35rem; } code { overflow-wrap: anywhere; } code, pre, kbd, .ftree { font-variant-ligatures: none; } @media (max-width: 40rem) { .step { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; } .step .n { font-size: 1rem; } }</style>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">playground / pattern-engine · spike v0</span>
+    <h1>Pattern Engine Spike</h1>
+    <p>What runs today, how to run it, how to extend it, what moves into C# code next, and the modular harness of spike 2. The spike works from start to end on the <code>shapes</code> domain.</p>
+    <div class="keys" aria-label="Keyboard shortcuts">
+      <span><kbd>1</kbd>–<kbd>5</kbd> tab</span>
+      <span><kbd>E</kbd> open all</span>
+      <span><kbd>C</kbd> close all</span>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="t-how" aria-controls="v-how" data-main="how"><span class="k">1</span>How it works</button>
+    <button role="tab" id="t-run" aria-controls="v-run" data-main="run"><span class="k">2</span>Run it</button>
+    <button role="tab" id="t-extend" aria-controls="v-extend" data-main="extend"><span class="k">3</span>Extend it</button>
+    <button role="tab" id="t-next" aria-controls="v-next" data-main="next"><span class="k">4</span>Deterministic core</button>
+    <button role="tab" id="t-modular" aria-controls="v-modular" data-main="modular"><span class="k">5</span>Modular harness</button>
+  </div>
+
+  <!-- ================= 1 HOW ================= -->
+  <section class="view" id="v-how" role="tabpanel" aria-labelledby="t-how">
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Status · 2026-11-15</span><h2>What exists</h2></div>
+      <div class="stats">
+        <div class="stat"><b>12</b><span>patterns on 3 levels</span></div>
+        <div class="stat"><b>21</b><span>cases: 15 generated, 6 hand</span></div>
+        <div class="stat"><b>22</b><span>grader self-checks, all pass</span></div>
+        <div class="stat"><b>95%</b><span>pass@1, full run, Sonnet, k=3</span></div>
+        <div class="stat"><b>$0.05</b><span>a smoke run on Haiku</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">One eval run</span><h2>From a case to a score</h2><p class="quiet">Orange steps are the agent. Green steps are code.</p></div>
+      <div class="flow">
+        <div class="node okn"><b>Cases</b><span>Generated from the graph + hand YAML</span></div>
+        <div class="arrow">→</div>
+        <div class="node okn"><b>Sandbox</b><span>A new temp folder for each run</span></div>
+        <div class="arrow">→</div>
+        <div class="node hot"><b>Agent</b><span><code>claude -p</code> follows <code>SKILL.md</code></span></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>Output</b><span><code>output.svg</code> + <code>trace.json</code></span></div>
+        <div class="arrow">→</div>
+        <div class="node okn"><b>Graders</b><span>5 checks for each run</span></div>
+        <div class="arrow">→</div>
+        <div class="node okn"><b>Report</b><span>Metrics, failures, cost</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Who does what today</span><h2>Code and agent</h2><p class="quiet">Today the agent runs the whole workflow from instructions. Code checks the result only after the run. Tab 4 moves the loop into code.</p></div>
+      <div class="tw"><table>
+        <thead><tr><th>Step</th><th>Done by</th><th>File</th></tr></thead>
+        <tbody>
+          <tr><td>Load and validate patterns</td><td><span class="pill ok">code</span></td><td><code>core/lib/patterns.mjs</code></td></tr>
+          <tr><td>Build the graph and the index</td><td><span class="pill ok">code</span></td><td><code>core/graph/build.mjs</code></td></tr>
+          <tr><td>Make cases</td><td><span class="pill ok">code</span></td><td><code>core/graph/generate-cases.mjs</code></td></tr>
+          <tr><td>Prepare the sandbox</td><td><span class="pill ok">code</span></td><td><code>core/eval/agent.mjs</code></td></tr>
+          <tr><td>Select, exclude, variant, params</td><td><span class="pill dom">agent</span></td><td><code>core/skills/navigate/SKILL.md</code></td></tr>
+          <tr><td>Divide into parts (recursive)</td><td><span class="pill dom">agent</span></td><td><code>SKILL.md</code> step 7</td></tr>
+          <tr><td>Compose the SVG</td><td><span class="pill dom">agent</span></td><td><code>domains/shapes/instructions.md</code></td></tr>
+          <tr><td>Verify (max 3 times)</td><td><span class="pill dom">agent</span> calls <span class="pill ok">code</span></td><td><code>core/eval/verify.mjs</code></td></tr>
+          <tr><td>Write the trace</td><td><span class="pill dom">agent</span></td><td><code>trace.json</code></td></tr>
+          <tr><td>Grade and report</td><td><span class="pill ok">code</span></td><td><code>core/eval/graders/</code>, <code>report.mjs</code></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="foldbar"><button type="button" data-fold="open">Open all</button><button type="button" data-fold="close">Close all</button></div>
+
+    <details class="fold" open>
+      <summary><span class="t"><b>Folder structure</b><span><code>playground/</code></span></span><span class="chev">›</span></summary>
+      <div class="body"><div class="ftree" data-tree="repo" aria-label="Folder structure"></div></div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>The graders</b><span>A run passes only when all of them pass</span></span><span class="chev">›</span></summary>
+      <div class="body"><div class="tw"><table>
+        <thead><tr><th>Grader</th><th>Owner</th><th>Reads</th><th>Checks</th></tr></thead>
+        <tbody>
+          <tr><td>selection</td><td><span class="pill core">core</span></td><td><code>trace.json</code></td><td>Outcome, pattern tree, variants, params, nearest pattern</td></tr>
+          <tr><td>built</td><td><span class="pill core">core</span></td><td>output</td><td>The tree that is really in the output, against the case</td></tr>
+          <tr><td>structure</td><td><span class="pill core">core</span> + <span class="pill dom">pack</span></td><td>output</td><td>Known patterns, variants, part counts, leaf form, pattern asserts</td></tr>
+          <tr><td>rules</td><td><span class="pill dom">pack</span></td><td>output</td><td>Subject rules: canvas, allowed shapes, fills</td></tr>
+          <tr><td>proposed</td><td><span class="pill core">core</span></td><td>new pattern file</td><td>No-fit cases only: a <code>proposed</code> file that names the nearest pattern</td></tr>
+        </tbody>
+      </table></div></div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>The sandbox</b><span>What the agent can see and do</span></span><span class="chev">›</span></summary>
+      <div class="body">
+        <div class="pair">
+          <div class="stack">
+            <p class="small">Each run gets a new folder in the system temp folder. The agent cannot read the cases or the graders.</p>
+<pre><span class="c"># in the sandbox</span>
+SKILL.md          <span class="c"># the navigate workflow</span>
+instructions.md   <span class="c"># the subject rules</span>
+index.md          <span class="c"># made from the patterns</span>
+patterns/*.md     <span class="c"># copies; ablations change them</span>
+verify.mjs        <span class="c"># calls core/eval/verify.mjs</span></pre>
+          </div>
+          <div class="stack">
+            <p class="small">The agent call has no user settings, plugins, MCP servers or skills.</p>
+<pre>claude -p "&lt;prompt&gt;"
+  --output-format json
+  --setting-sources project
+  --strict-mcp-config
+  --disable-slash-commands
+  --no-session-persistence
+  --permission-mode acceptEdits
+  --allowedTools Read Write Edit Glob Grep
+                 "Bash(node verify.mjs)"
+  --model haiku</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>Findings so far</b><span>What the first runs showed</span></span><span class="chev">›</span></summary>
+      <div class="body"><div class="tw"><table>
+        <thead><tr><th>Finding</th><th>Evidence</th><th>Next step</th></tr></thead>
+        <tbody>
+          <tr><td>The loop works from start to end</td><td>Full run: 60 of 63 runs pass. Structure and rules: 100%</td><td>—</td></tr>
+          <tr><td><code>tower.use_when</code> is too broad</td><td>Sonnet selects <code>tower</code> for "a lighthouse" in 3 of 3 runs, with a valid reason</td><td>Make the text narrower, or accept the result</td></tr>
+          <tr><td>The near-miss cases are too easy</td><td>Ablation without <code>do_not_use_when</code>: still 9 of 9</td><td>Write cases that only the rule can solve</td></tr>
+          <tr><td>The no-fit ablation is not complete</td><td>Ablation without the no-fit section: no change (6 of 9)</td><td>Remove all no-fit text from the skill</td></tr>
+          <tr><td>Haiku is enough for tests</td><td>Smoke: 3 of 3 pass, $0.018 for each run, 25× cheaper than Opus</td><td>Haiku is the default</td></tr>
+        </tbody>
+      </table></div></div>
+    </details>
+  </section>
+
+  <!-- ================= 2 RUN ================= -->
+  <section class="view" id="v-run" role="tabpanel" aria-labelledby="t-run" hidden>
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Run modes</span><h2>Small and cheap by default</h2><p class="quiet">Use <code>smoke</code> and <code>dev</code> while you change the system. Use <code>full</code> only to validate.</p></div>
+      <div class="tw"><table>
+        <thead><tr><th>Mode</th><th>Use it to</th><th>Cases</th><th>k</th><th>Model</th><th>Runs</th><th>Cost</th></tr></thead>
+        <tbody>
+          <tr><td><code>smoke</code></td><td>Check that the loop runs</td><td class="num">3</td><td class="num">1</td><td>haiku</td><td class="num">3</td><td class="num">≈ $0.05</td></tr>
+          <tr><td><code>dev</code> (default)</td><td>See if a change is better or worse</td><td class="num">8</td><td class="num">1</td><td>haiku</td><td class="num">8</td><td class="num">≈ $0.15</td></tr>
+          <tr><td><code>full</code></td><td>Validate, set a baseline</td><td class="num">21</td><td class="num">3</td><td>sonnet</td><td class="num">63</td><td class="num">≈ $6</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small quiet">Costs are API-equivalent values from the agent log. A flag changes one value of the mode: <code>--sample n</code>, <code>--k n</code>, <code>--model haiku|sonnet|opus</code>. The sample takes rare cases first: no-fit, near-miss, deep, group, object.</p>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Commands</span><h2>Run from <code>playground/pattern-engine</code></h2></div>
+      <div class="steps">
+        <div class="step"><span class="n">1</span><div class="s"><b>First time: install</b><pre>npm install</pre></div></div>
+        <div class="step"><span class="n">2</span><div class="s"><b>Validate the patterns, build the index</b><pre>node core/graph/build.mjs shapes</pre></div></div>
+        <div class="step"><span class="n">3</span><div class="s"><b>Test the graders on the fixtures</b><pre>node core/eval/self-test.mjs shapes</pre></div></div>
+        <div class="step"><span class="n">4</span><div class="s"><b>See what a run will do, with no cost</b><pre>node core/eval/run.mjs shapes \
+  --mode dev --dry</pre></div></div>
+        <div class="step"><span class="n">5</span><div class="s"><b>Run a smoke or dev eval</b><pre>node core/eval/run.mjs shapes \
+  --mode smoke</pre></div></div>
+        <div class="step"><span class="n">6</span><div class="s"><b>Test one part: break it on purpose</b><pre>node core/eval/run.mjs shapes \
+  --only near-miss \
+  --ablate no-dont-use</pre></div></div>
+        <div class="step"><span class="n">7</span><div class="s"><b>Validate: full run, then compare</b><pre>node core/eval/run.mjs shapes \
+  --mode full --label baseline
+
+node core/eval/report.mjs \
+  results/&lt;new&gt;.json \
+  results/&lt;old&gt;.json</pre></div></div>
+      </div>
+    </div>
+
+    <details class="fold" open>
+      <summary><span class="t"><b>Read a report</b><span>The real smoke run on Haiku</span></span><span class="chev">›</span></summary>
+      <div class="body">
+<pre>Run 2026-11-15T16-32-11 [smoke]: model haiku,
+  3 cases × k=1 = 3 agent runs
+[1/3] PASS hand-near-001#1 32s
+[2/3] PASS gen-006#1 51s
+[3/3] PASS hand-nofit-001#1 65s
+mode smoke, model haiku, k=1,
+  cost $0.05 ($0.018 per run), 49 s per run
+
+metric                     score
+selection accuracy         100% (3/3)
+built tree matches         100% (2/2)
+structure pass             100% (3/3)
+rules pass                 100% (3/3)
+pass@1 (all checks)        100% (3/3)
+near-miss accuracy         100% (1/1)
+no-fit precision           100% (1/1)</pre>
+        <div class="tw"><table>
+          <thead><tr><th>Line</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>selection accuracy</td><td>The trace names the expected patterns, variants and params</td></tr>
+            <tr><td>built tree matches</td><td>The output really contains that tree</td></tr>
+            <tr><td>pass^k</td><td>Cases where all k runs pass. This measures consistency</td></tr>
+            <tr><td>near-miss accuracy</td><td>Cases where only <code>do_not_use_when</code> gives the correct pattern</td></tr>
+            <tr><td>no-fit precision</td><td>No-fit cases where the agent did not force a pattern</td></tr>
+            <tr><td>most common failures</td><td>The first failure of each failed check, grouped. Read this first</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>Where the results go</b><span>JSON for each run, outputs for each case</span></span><span class="chev">›</span></summary>
+      <div class="body"><div class="tw"><table>
+        <thead><tr><th>Path</th><th>Content</th><th>In git</th></tr></thead>
+        <tbody>
+          <tr><td><code>results/&lt;runId&gt;.json</code></td><td>All runs: case, trace, grader results, agent time and cost</td><td>Yes</td></tr>
+          <tr><td><code>results/runs/&lt;runId&gt;/&lt;case&gt;-&lt;n&gt;/</code></td><td><code>output.svg</code>, <code>trace.json</code>, <code>agent.log.json</code>, a proposed pattern</td><td>No</td></tr>
+          <tr><td><code>domains/shapes/build/</code></td><td><code>graph.json</code>, <code>index.md</code>, <code>cases.generated.json</code></td><td>No</td></tr>
+        </tbody>
+      </table></div></div>
+    </details>
+  </section>
+
+  <!-- ================= 3 EXTEND ================= -->
+  <section class="view" id="v-extend" role="tabpanel" aria-labelledby="t-extend" hidden>
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Key shape · pattern file</span><h2><code>domains/shapes/patterns/house.md</code></h2><p class="quiet">Front matter for the code, sections for the agent. The core validates every field.</p></div>
+      <div class="pair">
+<pre><span class="c">---</span>
+<span class="k">id</span>: <span class="v">house</span>
+<span class="k">kind</span>: <span class="v">object</span>          <span class="c"># leaf|object|group</span>
+<span class="k">level</span>: <span class="v">2</span>
+<span class="k">status</span>: <span class="v">stable</span>        <span class="c"># proposed|trial|stable</span>
+<span class="k">phrase</span>: <span class="v">a house</span>       <span class="c"># for the case generator</span>
+<span class="k">use_when</span>:
+  - <span class="v">The request names a house or a home.</span>
+<span class="k">do_not_use_when</span>:
+  - <span class="k">when</span>: <span class="v">The building is tall or narrow.</span>
+    <span class="k">use</span>: <span class="v">tower</span>
+<span class="k">variants</span>:
+  - { <span class="k">id</span>: <span class="v">plain</span>, <span class="k">when</span>: <span class="v">No chimney is named.</span> }
+  - { <span class="k">id</span>: <span class="v">chimney</span>, <span class="k">when</span>: <span class="v">...</span>,
+      <span class="k">phrase</span>: <span class="v">with a chimney</span> }
+<span class="k">parts</span>:
+  - { <span class="k">ref</span>: <span class="v">body</span>, <span class="k">count</span>: <span class="v">1</span> }
+  - { <span class="k">ref</span>: <span class="v">window</span>, <span class="k">count</span>: <span class="v">"0..4"</span> }
+  - { <span class="k">ref</span>: <span class="v">chimney</span>, <span class="k">count</span>: <span class="v">1</span>, <span class="k">only</span>: <span class="v">chimney</span> }
+<span class="k">params</span>:
+  <span class="k">door_fill</span>: { <span class="k">part</span>: <span class="v">door</span>, <span class="k">attr</span>: <span class="v">fill</span>,
+    <span class="k">default</span>: <span class="v">brown</span>, <span class="k">values</span>: [<span class="v">red</span>, <span class="v">blue</span>] }
+<span class="k">asserts</span>:
+  - <span class="v">roof.bottom == body.top</span>
+  - <span class="v">door inside body</span>
+<span class="c">---</span>
+<span class="k">## Intent</span>
+<span class="k">## Rules</span>
+<span class="k">## Rationale</span></pre>
+        <div class="tw"><table>
+          <thead><tr><th>Field</th><th>Rule that the build checks</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td>Same as the file name</td></tr>
+            <tr><td><code>kind</code>, <code>level</code></td><td>A part has a higher level than its parent</td></tr>
+            <tr><td><code>use_when</code>, <code>phrase</code></td><td>Required for object and group</td></tr>
+            <tr><td><code>do_not_use_when.use</code></td><td>Points to a pattern that exists</td></tr>
+            <tr><td><code>variants</code></td><td>At least one. Unique ids</td></tr>
+            <tr><td><code>parts</code></td><td>Each ref exists. <code>only</code> names a variant. No cycles</td></tr>
+            <tr><td><code>params.part</code></td><td>Is one of the parts</td></tr>
+            <tr><td><code>related</code></td><td>Exists. A warning if it does not link back</td></tr>
+            <tr><td>Sections</td><td>Intent always. Rules for object and group</td></tr>
+            <tr><td>Leaf</td><td><code>primitive</code>, no parts</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Key shapes · trace and case</span><h2>What the agent writes, what the case expects</h2></div>
+      <div class="pair">
+        <div class="stack">
+          <div class="codehead"><span>trace.json</span><span class="pill dom">agent</span></div>
+<pre>{
+  <span class="k">"outcome"</span>: <span class="v">"match"</span>,
+  <span class="k">"tree"</span>: { <span class="k">"p"</span>: <span class="v">"street"</span>, <span class="k">"v"</span>: <span class="v">"row"</span>, <span class="k">"parts"</span>: [
+    { <span class="k">"p"</span>: <span class="v">"house"</span>, <span class="k">"v"</span>: <span class="v">"chimney"</span> },
+    { <span class="k">"p"</span>: <span class="v">"tower"</span>, <span class="k">"v"</span>: <span class="v">"plain"</span>,
+      <span class="k">"params"</span>: { <span class="k">"door_fill"</span>: <span class="v">"green"</span> } }
+  ]},
+  <span class="k">"nearest"</span>: <span class="v">null</span>, <span class="k">"deltas"</span>: [],
+  <span class="k">"proposed"</span>: <span class="v">null</span>,
+  <span class="k">"questions"</span>: [], <span class="k">"attempts"</span>: <span class="v">1</span>
+}</pre>
+        </div>
+        <div class="stack">
+          <div class="codehead"><span>domains/shapes/cases/hand.yaml</span><span class="pill core">case</span></div>
+<pre>- <span class="k">id</span>: <span class="v">hand-near-001</span>
+  <span class="k">tags</span>: [<span class="v">near-miss</span>]
+  <span class="k">request</span>: <span class="v">Draw a tall, narrow building
+    with a pointed roof and a door.</span>
+  <span class="k">expect</span>:
+    <span class="k">outcome</span>: <span class="v">match</span>
+    <span class="k">tree</span>: { <span class="k">p</span>: <span class="v">tower</span>, <span class="k">v</span>: <span class="v">plain</span> }
+
+- <span class="k">id</span>: <span class="v">hand-nofit-001</span>
+  <span class="k">tags</span>: [<span class="v">no-fit</span>]
+  <span class="k">request</span>: <span class="v">Draw a lighthouse.</span>
+  <span class="k">expect</span>:
+    <span class="k">outcome</span>: <span class="v">no-fit</span>
+    <span class="k">nearest</span>: <span class="v">tower</span>   <span class="c"># or a list</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Key shape · adapter</span><h2>The contract of a domain pack</h2><p class="quiet">The core calls only these five functions. They are the swap point.</p></div>
+      <div class="tw"><table>
+        <thead><tr><th>Function</th><th>Returns</th><th>shapes</th></tr></thead>
+        <tbody>
+          <tr><td><code>parse(text)</code></td><td><code>{ roots, errors }</code>. A node has <code>p</code>, <code>v</code>, <code>children</code></td><td><code>&lt;g data-p data-v&gt;</code> groups, boxes from the shapes</td></tr>
+          <tr><td><code>lint(parsed)</code></td><td><code>{ ok, failures }</code></td><td>viewBox, allowed elements, fills, canvas</td></tr>
+          <tr><td><code>assert(node, list)</code></td><td><code>[{ assert, ok, detail }]</code></td><td>The geometry DSL below</td></tr>
+          <tr><td><code>checkLeaf(node, def)</code></td><td>A list of problems</td><td>One shape of the correct primitive</td></tr>
+          <tr><td><code>readParam(node, key, def)</code></td><td>A value</td><td>Fill of a part, as a color name</td></tr>
+        </tbody>
+      </table></div>
+      <div class="tw"><table>
+        <thead><tr><th>Assert form (shapes)</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><code>A.prop OP B.prop [* k]</code></td><td><code>body.height &gt;= body.width * 1.5</code></td></tr>
+          <tr><td><code>all A.prop OP B.prop</code></td><td><code>all house.bottom == ground.top</code></td></tr>
+          <tr><td><code>[all] A inside B</code></td><td><code>all window inside body</code></td></tr>
+          <tr><td><code>no-overlap A B …</code></td><td><code>no-overlap house tower tree</code></td></tr>
+          <tr><td><code>count(A,B) OP n</code></td><td><code>count(house,tower,tree) &gt;= 2</code></td></tr>
+        </tbody>
+      </table></div>
+      <p class="small quiet">Props: top, bottom, left, right, width, height, cx, cy. <code>==</code> has a tolerance of 4 px. An assert on a missing optional part is skipped.</p>
+    </div>
+
+    <div class="foldbar"><button type="button" data-fold="open">Open all</button><button type="button" data-fold="close">Close all</button></div>
+
+    <details class="fold" open>
+      <summary><span class="t"><b>Add a pattern</b><span>To an existing domain</span></span><span class="chev">›</span></summary>
+      <div class="body"><ol>
+        <li>Copy a pattern of the same kind in <code>domains/&lt;domain&gt;/patterns/</code>. Name the file <code>&lt;id&gt;.md</code>.</li>
+        <li>Write <code>use_when</code>, <code>do_not_use_when</code>, variants, parts, params and asserts.</li>
+        <li>Add the new id to <code>parts</code> of its parent, and to <code>related</code> of the near patterns.</li>
+        <li>Run <code>node core/graph/build.mjs &lt;domain&gt;</code>. Fix each error.</li>
+        <li>Add a good and a bad fixture to <code>fixtures/</code> and <code>expect.yaml</code>. Run the self-test.</li>
+        <li>Add 1 near-miss hand case. The generator adds the other cases from <code>phrase</code>.</li>
+        <li>Run <code>--mode dev --only &lt;case ids&gt;</code>.</li>
+      </ol></div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>Add a case</b><span>Hand cases for what the generator cannot make</span></span><span class="chev">›</span></summary>
+      <div class="body">
+        <ol>
+          <li>Add an entry to <code>domains/&lt;domain&gt;/cases/*.yaml</code>: <code>id</code>, <code>tags</code>, <code>request</code>, <code>expect</code>.</li>
+          <li>Use the tag <code>near-miss</code> or <code>no-fit</code>. The sample and the report use these tags.</li>
+          <li>For a near-miss case, make sure that the plain words point to the wrong pattern and only the rule gives the correct one.</li>
+          <li>Run <code>--dry</code> to see it in the case list.</li>
+        </ol>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>Add an ablation</b><span>Prove that an eval tests a part</span></span><span class="chev">›</span></summary>
+      <div class="body">
+        <ol>
+          <li>In <code>SKILL.md</code>, put the text between <code>&lt;!-- ablate:name --&gt;</code> and <code>&lt;!-- /ablate --&gt;</code>. For a pattern field, add a rule to <code>prepareSandbox</code> in <code>core/eval/agent.mjs</code>.</li>
+          <li>Run the cases that must fail with <code>--ablate name</code>.</li>
+          <li>If the score does not go down, the cases do not test that part. Write harder cases.</li>
+        </ol>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>Add a domain pack</b><span>For example <code>ui</code> or <code>code</code></span></span><span class="chev">›</span></summary>
+      <div class="body">
+        <div class="ftree" data-tree="pack" aria-label="Domain pack structure"></div>
+        <ol>
+          <li>Copy <code>domains/shapes/</code> to <code>domains/&lt;name&gt;/</code>.</li>
+          <li>Set the output file in <code>domain.yaml</code>.</li>
+          <li>Write the subject rules in <code>instructions.md</code>. Tell the agent how to mark each pattern in the output, as <code>data-p</code> does for SVG.</li>
+          <li>Write the five adapter functions.</li>
+          <li>Write the patterns, the fixtures and the hand cases. Run the build and the self-test.</li>
+          <li>Run <code>--mode smoke</code>, then <code>--mode dev</code>.</li>
+        </ol>
+      </div>
+    </details>
+  </section>
+
+  <!-- ================= 4 NEXT ================= -->
+  <section class="view" id="v-next" role="tabpanel" aria-labelledby="t-next" hidden>
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Principle</span><h2>Code owns the loop. The model owns only the judgment.</h2></div>
+      <div class="answer">
+        <b>Today the agent follows a workflow that it reads. Next, C# code runs the workflow and calls the model for one decision at a time.</b>
+        <p>Each call has a JSON schema, so the answer is typed. The code writes the trace, so the trace is exact. The engine can run with a scripted judge, so the tests need no model.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">The orchestrator loop</span><h2>One request in the C# core</h2><p class="quiet">Green: code. Orange: one model call with a schema.</p></div>
+      <div class="flow">
+        <div class="node okn"><b>Load</b><span>Typed graph from the pattern files</span></div>
+        <div class="arrow">→</div>
+        <div class="node hot"><b>Select</b><span>Schema: one id of the index, or <code>no-fit</code> + nearest</span></div>
+        <div class="arrow">→</div>
+        <div class="node hot"><b>Exclude</b><span>Schema: true / false for each <code>do_not_use_when</code></span></div>
+        <div class="arrow">→</div>
+        <div class="node hot"><b>Variant + params</b><span>Schema: enums from the pattern file</span></div>
+        <div class="arrow">→</div>
+        <div class="node okn"><b>Divide</b><span>Code makes a slot for each part. Recursion in code</span></div>
+        <div class="arrow">→</div>
+        <div class="node hot"><b>Compose</b><span>One node at a time</span></div>
+        <div class="arrow">→</div>
+        <div class="node okn"><b>Verify</b><span>After each node. Max 3 tries, with the failures</span></div>
+        <div class="arrow">→</div>
+        <div class="node okn"><b>Trace</b><span>Written by code</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Move to code</span><h2>Each step, today and next</h2></div>
+      <div class="tw"><table>
+        <thead><tr><th>Step</th><th>Today (spike)</th><th>C# core</th></tr></thead>
+        <tbody>
+          <tr><td>Workflow order</td><td><span class="pill dom">agent</span> reads <code>SKILL.md</code></td><td><span class="pill ok">code</span> <code>Orchestrator</code></td></tr>
+          <tr><td>Candidate patterns</td><td><span class="pill dom">agent</span> reads <code>index.md</code></td><td><span class="pill ok">code</span> filters by level and parent; <span class="pill dom">model</span> picks one id</td></tr>
+          <tr><td>do_not_use_when</td><td><span class="pill dom">agent</span></td><td><span class="pill dom">model</span> answers true/false per rule; <span class="pill ok">code</span> applies <code>use</code></td></tr>
+          <tr><td>Variant, params</td><td><span class="pill dom">agent</span></td><td><span class="pill dom">model</span> with enum schema; <span class="pill ok">code</span> applies defaults</td></tr>
+          <tr><td>Divide, part counts</td><td><span class="pill dom">agent</span></td><td><span class="pill ok">code</span>; <span class="pill dom">model</span> only plans the children of a group</td></tr>
+          <tr><td>Compose</td><td><span class="pill dom">agent</span> writes the whole file</td><td><span class="pill dom">model</span> one node at a time; <span class="pill ok">code</span> assembles the file</td></tr>
+          <tr><td>Verify loop</td><td><span class="pill dom">agent</span> decides to run it</td><td><span class="pill ok">code</span> always runs it</td></tr>
+          <tr><td>Trace</td><td><span class="pill dom">agent</span> writes it</td><td><span class="pill ok">code</span> writes it</td></tr>
+          <tr><td>No-fit record</td><td><span class="pill dom">agent</span> writes a file</td><td><span class="pill dom">model</span> gives the deltas; <span class="pill ok">code</span> writes the file</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Key types</span><h2>The two interfaces</h2><p class="quiet"><code>IDomainAdapter</code> is the swap point for a subject. <code>IJudge</code> is the only place that calls a model.</p></div>
+<pre><span class="k">public sealed record</span> <span class="v">Pattern</span>(
+    string Id, Kind Kind, int Level, Status Status,
+    IReadOnlyList&lt;string&gt; UseWhen,
+    IReadOnlyList&lt;Exclusion&gt; DoNotUseWhen,
+    IReadOnlyList&lt;Variant&gt; Variants,
+    IReadOnlyList&lt;PartSpec&gt; Parts,
+    IReadOnlyDictionary&lt;string, ParamDef&gt; Params,
+    IReadOnlyList&lt;string&gt; Asserts);
+
+<span class="c">// the swap point for a subject</span>
+<span class="k">public interface</span> <span class="v">IDomainAdapter</span>
+{
+    ParsedOutput Parse(string text);
+    Problems Lint(ParsedOutput output);
+    AssertResults Assert(Node node, Asserts asserts);
+    Problems CheckLeaf(Node node, Pattern leaf);
+    string? ReadParam(Node node, string key,
+                      ParamDef def);
+    string Assemble(BuiltNode root); <span class="c">// new</span>
+}
+
+<span class="c">// the only model boundary</span>
+<span class="k">public interface</span> <span class="v">IJudge</span>
+{
+    Task&lt;Selection&gt; Select(string request,
+        IReadOnlyList&lt;IndexRow&gt; candidates);
+    Task&lt;bool[]&gt; Exclude(string request, Pattern p);
+    Task&lt;VariantChoice&gt; ChooseVariant(
+        string request, Pattern p);
+    Task&lt;ChildRequest[]&gt; PlanChildren(
+        string request, Pattern group);
+    Task&lt;string&gt; Compose(NodeContext ctx,
+        Problems lastFailures);
+}</pre>
+      <div class="tw"><table>
+        <thead><tr><th>IJudge implementation</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td><code>ScriptedJudge</code></td><td>Unit tests. Fixed answers. No model, no cost</td></tr>
+          <tr><td><code>ClaudeCliJudge</code></td><td><code>claude -p --json-schema … --model haiku</code>. Uses your Claude login</td></tr>
+          <tr><td><code>AnthropicApiJudge</code></td><td>Later, if an API key is available. Faster, can run many calls in parallel</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <details class="fold" open>
+      <summary><span class="t"><b>Solution layout</b><span>.NET 10, one solution in <code>playground/pattern-engine/</code></span></span><span class="chev">›</span></summary>
+      <div class="body"><div class="ftree" data-tree="cs" aria-label="C# solution structure"></div></div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>Migration plan</b><span>The Node spike stays until the C# scores are the same</span></span><span class="chev">›</span></summary>
+      <div class="body"><div class="steps">
+        <div class="step"><span class="n">1</span><div class="s"><b>Types, loader, validator</b><span>Read the same YAML pattern files. xUnit tests on the same rules</span></div></div>
+        <div class="step"><span class="n">2</span><div class="s"><b>Shapes adapter and graders</b><span>Run the same 7 fixtures and <code>expect.yaml</code>. All 22 checks must pass</span></div></div>
+        <div class="step"><span class="n">3</span><div class="s"><b>Orchestrator with ScriptedJudge</b><span>Test the loop, the recursion, the verify retries and the trace with no model</span></div></div>
+        <div class="step"><span class="n">4</span><div class="s"><b>ClaudeCliJudge</b><span>One schema for each judgment. Haiku by default</span></div></div>
+        <div class="step"><span class="n">5</span><div class="s"><b>Runner and report</b><span>Same modes: smoke, dev, full. Same result JSON</span></div></div>
+        <div class="step"><span class="n">6</span><div class="s"><b>Compare, then remove Node</b><span>A dev run on both. Then a full run on C#</span></div></div>
+      </div></div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>What changes for the evals</b><span>Better signal, and a lower cost</span></span><span class="chev">›</span></summary>
+      <div class="body"><div class="tw"><table>
+        <thead><tr><th>Effect</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>The selection grader becomes exact</td><td>The code writes the trace from the real decisions</td></tr>
+          <tr><td>Each judgment gets its own score</td><td>Select, exclude, variant and compose are separate calls</td></tr>
+          <tr><td>Ablations are clean</td><td>Code removes one input from one call. No text is left behind</td></tr>
+          <tr><td>Fewer tokens for each run</td><td>Each call gets only the patterns it needs, not the whole folder</td></tr>
+          <tr><td>Engine tests cost nothing</td><td><code>ScriptedJudge</code> replaces the model</td></tr>
+          <tr><td>Less freedom for the model</td><td>A risk: the agent cannot fix a bad plan by itself. The verify loop and the no-fit path must cover that</td></tr>
+        </tbody>
+      </table></div></div>
+    </details>
+  </section>
+
+  <!-- ================= 5 MODULAR ================= -->
+  <section class="view" id="v-modular" role="tabpanel" aria-labelledby="t-modular" hidden>
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Spike 2 · modular harness</span><h2>One file for each role, step, rubric and output shape</h2><p class="quiet">A harness is the set of agent files that the sandbox gets. The cases, graders and model stay the same, so two harnesses can be compared. Select one with <code>--harness monolith|modular</code>.</p></div>
+      <div class="stats">
+        <div class="stat"><b>5</b><span>skills: 1 router, 4 steps</span></div>
+        <div class="stat"><b>2</b><span>agents: composer, verifier</span></div>
+        <div class="stat"><b>1</b><span>rubric, separate from its agent</span></div>
+        <div class="stat"><b>4</b><span>templates for fixed output shapes</span></div>
+        <div class="stat"><b>5</b><span><code>pe</code> commands for agent and system</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">The chain</span><h2>Router, step skills, agents</h2><p class="quiet">Orange: model. Green: a command that the agent runs and that the system can also run. Each step writes a file; the next step reads it.</p></div>
+      <div class="flow">
+        <div class="node hot"><b>pattern-navigate</b><span>Router skill. Fixed order of 8 steps</span></div>
+        <div class="arrow">→</div>
+        <div class="node hot"><b>pattern-select</b><span>Writes <code>steps/select-top.json</code></span></div>
+        <div class="arrow">→</div>
+        <div class="node hot"><b>pattern-divide</b><span>Calls select for each part. Writes <code>plan.json</code></span></div>
+        <div class="arrow">→</div>
+        <div class="node hot"><b>composer agent</b><span>Skill <code>pattern-compose</code>. Writes the output</span></div>
+        <div class="arrow">→</div>
+        <div class="node hot"><b>verifier agent</b><span><code>pe verify</code> + rubric. No Write tool</span></div>
+        <div class="arrow">→</div>
+        <div class="node okn"><b>pe trace --write</b><span>The tree in <code>trace.json</code> comes from the output</span></div>
+      </div>
+      <div class="branch">
+        <div class="lane"><span class="lbl">No pattern fits</span><p class="small">Skill <code>pattern-nofit</code>: nearest, deltas, <code>pe scaffold</code> from the template, <code>steps/nofit.json</code>, then <code>plan.json</code>.</p></div>
+        <div class="lane"><span class="lbl">Gate (system side, <code>--gate</code>)</span><p class="small">After the agent stops, the runner runs the same <code>verify</code>. On a failure, it starts the agent once more with the failures.</p></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Deterministic weave</span><h2>The same commands on both sides</h2></div>
+      <div class="tw"><table>
+        <thead><tr><th>Command</th><th>The agent runs it to</th><th>The system runs it to</th></tr></thead>
+        <tbody>
+          <tr><td><code>pe index</code></td><td>Get the pattern index as JSON</td><td>—</td></tr>
+          <tr><td><code>pe parts &lt;id&gt; [v]</code></td><td>Get parts, counts, params, asserts and rules, with no YAML to read</td><td>—</td></tr>
+          <tr><td><code>pe verify</code></td><td>Check its output (composer and verifier)</td><td>Gate before the grade</td></tr>
+          <tr><td><code>pe trace</code></td><td>Write the tree into <code>trace.json</code></td><td>Compare the trace with the output: "trace matches output"</td></tr>
+          <tr><td><code>pe scaffold</code></td><td>Make a proposed pattern from the template</td><td>Validate the file in the grade</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <details class="fold" open>
+      <summary><span class="t"><b>Harness files</b><span><code>harnesses/</code> in the spike</span></span><span class="chev">›</span></summary>
+      <div class="body"><div class="ftree" data-tree="harness" aria-label="Harness structure"></div></div>
+    </details>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Results · dev mode, Haiku</span><h2>Monolith and modular</h2><p class="quiet">Small samples: a direction, not a validation. The cases now include 4 near-miss cases that depend on a rule.</p></div>
+      <div class="tw"><table>
+        <thead><tr><th>Arm</th><th>Runs</th><th>pass@1</th><th>Early stops</th><th>Cost / run</th><th>Time / run</th><th>Turns</th><th>Subagents</th></tr></thead>
+        <tbody>
+          <tr><td>monolith</td><td class="num">8</td><td class="num">8/8</td><td class="num">0</td><td class="num">$0.011</td><td class="num">55 s</td><td class="num">16.0</td><td class="num">0</td></tr>
+          <tr><td>modular, first version</td><td class="num">8</td><td class="num">6/8</td><td class="num">2</td><td class="num">$0.019</td><td class="num">94 s</td><td class="num">5.5</td><td class="num">2.3</td></tr>
+          <tr><td>modular + gate</td><td class="num">8</td><td class="num">8/8</td><td class="num">0 (2 repaired)</td><td class="num">$0.020</td><td class="num">110 s</td><td class="num">7.8</td><td class="num">2.1</td></tr>
+          <tr><td>modular, file hand-offs</td><td class="num">16</td><td class="num">15/16</td><td class="num">0</td><td class="num">$0.021</td><td class="num">94 s</td><td class="num">4.9</td><td class="num">2.1</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Results · full mode, Sonnet, k=3</span><h2>Full compare on the tuned set</h2><p class="quiet">25 cases, 75 runs for each arm. Both arms are close to 100%, so this set cannot show a difference in quality. A held-out set of new random cases is the next test.</p></div>
+      <div class="tw"><table>
+        <thead><tr><th>Metric</th><th>monolith</th><th>modular</th></tr></thead>
+        <tbody>
+          <tr><td>pass@1</td><td class="num">99% (74/75)</td><td class="num">100% (75/75)</td></tr>
+          <tr><td>pass^3</td><td class="num">96% (24/25)</td><td class="num">100% (25/25)</td></tr>
+          <tr><td>near-miss accuracy</td><td class="num">100% (12/12)</td><td class="num">100% (12/12)</td></tr>
+          <tr><td>no-fit full pass</td><td class="num">89% (8/9)</td><td class="num">100% (9/9)</td></tr>
+          <tr><td><b>trace matches output</b></td><td class="num"><b>73% (55/75)</b></td><td class="num"><b>100% (75/75)</b></td></tr>
+          <tr><td>cost / run (API-equivalent)</td><td class="num">$0.12</td><td class="num">$0.24</td></tr>
+          <tr><td>time / run</td><td class="num">37 s</td><td class="num">79 s</td></tr>
+          <tr><td>turns / run</td><td class="num">13.7</td><td class="num">9.1</td></tr>
+          <tr><td>wall time, 3 at a time</td><td class="num">≈ 16 min</td><td class="num">≈ 33 min</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small quiet">The one monolith failure: "a camping tent" gave nearest <code>shed</code>. That is a fair answer; the case now accepts it. The trace gap: in 20 runs the monolith agent put leaf parts into <code>trace.json</code>, against the skill. The modular harness writes the tree with <code>pe trace</code>, so it cannot drift.</p>
+    </div>
+
+    <details class="fold" open>
+      <summary><span class="t"><b>Why a run takes 35–80 s</b><span>From the CLI logs of the full compare</span></span><span class="chev">›</span></summary>
+      <div class="body">
+        <div class="tw"><table>
+          <thead><tr><th>Cause</th><th>Evidence</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td>A run is a chain of model turns, one after the other</td><td>9–14 turns for each run, about 2 s each, plus a tool call after each</td><td>Fewer turns: give the index and the needed patterns in the prompt</td></tr>
+            <tr><td>Each turn sends the full context again</td><td>About 300k cached input tokens for each run, mostly the default Claude Code system prompt and tools</td><td>The C# core: small <code>--json-schema</code> calls with a short system prompt</td></tr>
+            <tr><td>Each subagent starts a new context</td><td>Modular: 2 subagents for each run; 58 s of model time against 24 s</td><td>Fewer agent hops, or the gate in place of the verifier agent</td></tr>
+            <tr><td>Low concurrency</td><td>3 runs at a time for each arm</td><td>6–8 at a time, if the usage limits allow it</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </details>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Ablations · monolith, Haiku, k=2</span><h2>The evals now test the rules</h2></div>
+      <div class="tw"><table>
+        <thead><tr><th>Ablation</th><th>Cases</th><th>Metric</th><th>Baseline</th><th>Ablated</th></tr></thead>
+        <tbody>
+          <tr><td>No <code>do_not_use_when</code></td><td>4 rule near-miss</td><td>near-miss accuracy</td><td class="num">100%</td><td class="num"><b>50%</b></td></tr>
+          <tr><td>No no-fit text</td><td>3 no-fit</td><td>no-fit precision</td><td class="num">100%</td><td class="num">100%</td></tr>
+          <tr><td>No no-fit text</td><td>3 no-fit</td><td>no-fit full pass</td><td class="num">100%</td><td class="num"><b>0%</b></td></tr>
+        </tbody>
+      </table></div>
+      <p class="small quiet">The model refuses to force a pattern by common sense. The procedure (nearest, deltas, a valid proposed file) comes only from the skill.</p>
+    </div>
+
+    <details class="fold" open>
+      <summary><span class="t"><b>Grader tests and settings</b><span>The graders are tested before they grade an agent. All values are settings.</span></span><span class="chev">›</span></summary>
+      <div class="body">
+        <div class="tw"><table>
+          <thead><tr><th>Test</th><th>Mechanism</th><th>Must be</th></tr></thead>
+          <tbody>
+            <tr><td>Known good</td><td><code>reference.mjs</code> draws each expected tree; the graders grade it</td><td>Pass</td></tr>
+            <tr><td>Known bad, generated</td><td>Each operator in <code>mutations.mjs</code> breaks each reference in one way</td><td>Fail, in the grader that the operator names</td></tr>
+            <tr><td>Known bad, by hand</td><td><code>fixtures/*.svg</code> + <code>expect.yaml</code></td><td>The listed verdict</td></tr>
+            <tr><td>People</td><td>The review page: approve or reject each agent output</td><td>Agree with the engine</td></tr>
+          </tbody>
+        </table></div>
+        <div class="tw"><table>
+          <thead><tr><th>Setting in <code>eval.config.yaml</code></th><th>Controls</th></tr></thead>
+          <tbody>
+            <tr><td><code>modes</code></td><td>Sample, k and model of <code>smoke</code>, <code>dev</code>, <code>full</code></td></tr>
+            <tr><td><code>targets</code></td><td>Minimum or maximum rate for each metric and mode. Below target: exit code 1</td></tr>
+            <tr><td><code>grader_tests</code></td><td>Target rates, the operators to use, the case sets</td></tr>
+          </tbody>
+        </table></div>
+        <p class="small">First run: 13 operators. 12 were caught each time, by the grader that they name. <code>window-over-door</code> was missed in every case: no assert checked it. One line in the pattern files fixed it (<code>no-overlap door window</code>). <code>regrade.mjs</code> then graded the 150 saved agent outputs again: none had the problem.</p>
+      </div>
+    </details>
+
+    <details class="fold" open>
+      <summary><span class="t"><b>Findings</b><span>What spike 2 showed</span></span><span class="chev">›</span></summary>
+      <div class="body"><div class="tw"><table>
+        <thead><tr><th>Finding</th><th>Evidence</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td>A step that replies with a message ends a headless run</td><td>2 of 8 modular runs stopped after <code>pattern-select</code> printed its JSON</td><td>Step skills write to <code>steps/*.json</code>. 0 of 16 stops after</td></tr>
+          <tr><td>The system gate repairs what the agent misses</td><td>2 of 8 runs retried, both repaired</td><td>Keep <code>--gate</code> as a safety net</td></tr>
+          <tr><td>Two rules can point at each other</td><td><code>house</code> → tower and <code>tower</code> → house for "a home"; the agent looped and chose the noun</td><td>Validator warning; rule text made exclusive</td></tr>
+          <tr><td>A bad agent output crashed the eval</td><td>An ablated agent wrote <code>proposed</code> as an object</td><td>Grader errors become failed runs; <code>verify</code> checks the field</td></tr>
+          <tr><td>Modular costs about 2× and is about 2× slower</td><td>Full mode: $0.24 against $0.12 for each run; 79 s against 37 s</td><td>Worth it only if a held-out set shows more consistency</td></tr>
+          <tr><td>A trace written by the agent drifts from its output</td><td>Monolith: 20 of 75 traces had leaf parts; modular: 0 of 75</td><td>Code writes the trace, in each harness</td></tr>
+        </tbody>
+      </table></div></div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="t"><b>Next</b><span>Before the C# port</span></span><span class="chev">›</span></summary>
+      <div class="body"><div class="steps">
+        <div class="step"><span class="n">1</span><div class="s"><b>Held-out pass</b><span>60 new random cases (seed 42, streets up to 6 objects) + 10 hand cases, 3 arms, k=2. Ready with <code>--gen 60 --seed 42 --max-children 6</code>; not run yet</span></div></div>
+        <div class="step"><span class="n">2</span><div class="s"><b>Harder cases</b><span>Both harnesses are close to the ceiling. Add cases where they can differ: long streets, mixed rules, conflicting details</span></div></div>
+        <div class="step"><span class="n">3</span><div class="s"><b>C# core</b><span>The chain of skills maps to the orchestrator. The file hand-offs map to typed records. The agents map to <code>IJudge</code> calls</span></div></div>
+      </div></div>
+    </details>
+  </section>
+
+  <footer>Spike v0 + spike 2 (modular harness) · Node.js · Claude CLI. The C# core is a plan, not built yet.</footer>
+</div>
+
+<script>
+(function () {
+  var mains = Array.prototype.slice.call(document.querySelectorAll('[data-main]'));
+  var names = mains.map(function (b) { return b.getAttribute('data-main'); });
+  var current = 'how';
+
+  /* Folder trees: [name, note, children]. A folder has a children array. */
+  var TREES = {
+    repo: ['playground/', 'local git repo, quick projects', [
+      ['README.md'],
+      ['pattern-engine/', 'this spike', [
+        ['package.json', 'one dependency: yaml'],
+        ['README.md', 'commands, modes, contract'],
+        ['core/', 'same for every domain', [
+          ['lib/', '', [
+            ['patterns.mjs', 'load, validate, graph, index'],
+            ['domain.mjs', 'load a pack and its adapter'],
+            ['tree.mjs', 'compare pattern trees']]],
+          ['graph/', '', [
+            ['build.mjs', 'validate; write build/graph.json + index.md'],
+            ['generate-cases.mjs', 'cases from the graph and the phrase fields']]],
+          ['skills/navigate/SKILL.md', 'the workflow the agent follows'],
+          ['eval/', '', [
+            ['run.mjs', 'modes, sample, sandbox, grade, results'],
+            ['agent.mjs', 'sandbox + the claude -p call; ablations'],
+            ['verify.mjs', 'the check the agent runs'],
+            ['self-test.mjs', 'graders against the fixtures'],
+            ['report.mjs', 'metrics, failures, cost, baseline diff'],
+            ['graders/', '', [
+              ['structure.mjs', 'patterns, variants, counts, asserts'],
+              ['selection.mjs', 'trace vs case; built tree vs case']]]]]]],
+        ['domains/', '', [
+          ['shapes/', 'the first pack', [
+            ['domain.yaml', 'output: output.svg'],
+            ['instructions.md', 'canvas, shapes, data-p groups'],
+            ['adapter.mjs', 'parse, lint, assert, checkLeaf, readParam'],
+            ['patterns/', '12 files', [['street.md', 'group, level 1'], ['house.md', 'object, level 2'], ['tower.md', 'object, level 2'], ['tree.md', 'object, level 2'], ['body.md … crown.md', '8 leaf parts, level 3']]],
+            ['cases/hand.yaml', '3 near-miss, 3 no-fit'],
+            ['fixtures/', 'grader tests only', [['good-house.svg'], ['bad-house-*.svg', 'floating door, no roof'], ['good-street.svg'], ['bad-street-overlap.svg'], ['bad-lint-*.svg', 'path, viewBox'], ['expect.yaml', 'the verdict for each file']]],
+            ['build/', 'made by build.mjs; not in git', []]]]]],
+        ['results/', '', [
+          ['<runId>.json', 'one file for each run'],
+          ['runs/', 'outputs for each case; not in git', []]]]]]]],
+    pack: ['domains/<name>/', 'a new domain pack', [
+      ['domain.yaml', 'name, description, output file'],
+      ['instructions.md', 'subject rules for the agent'],
+      ['adapter.mjs', 'the five functions'],
+      ['patterns/', 'one .md file for each pattern', []],
+      ['cases/', 'hand cases (YAML)', []],
+      ['fixtures/', 'good and bad outputs + expect.yaml', []]]],
+    cs: ['PatternEngine.sln', '.NET 10', [
+      ['src/', '', [
+        ['PatternEngine.Core/', 'no model, no I/O beyond files', [
+          ['Model/', 'Pattern, Variant, PartSpec, Node, Trace records', []],
+          ['Graph/', 'loader, validator, index, case generator', []],
+          ['Orchestrator/', 'the loop: select → divide → compose → verify', []],
+          ['Grading/', 'selection, built, structure graders', []],
+          ['IDomainAdapter.cs'],
+          ['IJudge.cs']]],
+        ['PatternEngine.Judges/', 'the model boundary', [
+          ['ScriptedJudge.cs', 'tests'],
+          ['ClaudeCliJudge.cs', 'claude -p --json-schema'],
+          ['Schemas/', 'one JSON schema for each judgment', []]]],
+        ['PatternEngine.Domains.Shapes/', 'the shapes adapter', [
+          ['ShapesAdapter.cs', 'parse, lint, assert, leaf, param, assemble'],
+          ['AssertDsl.cs', 'the geometry asserts']]],
+        ['PatternEngine.Cli/', 'pe build | self-test | run --mode dev | report', []]]],
+      ['tests/', '', [
+        ['PatternEngine.Core.Tests/', 'validator, graph, orchestrator with ScriptedJudge', []],
+        ['PatternEngine.Domains.Shapes.Tests/', 'the same fixtures and expect.yaml', []]]],
+      ['domains/', 'the same pattern files as the spike', []]]]
+  };
+  TREES.harness = ['harnesses/', 'the agent files a sandbox gets', [
+    ['monolith/', 'the control', [
+      ['harness.yaml', 'prompt and allowed tools'],
+      ['SKILL.md', 'one skill with the full workflow']]],
+    ['modular/', 'one file for each role and step', [
+      ['harness.yaml', 'prompt and allowed tools: Skill, Agent, pe'],
+      ['.claude/', '', [
+        ['skills/', 'a chain', [
+          ['pattern-navigate/SKILL.md', 'router: 8 steps in a fixed order'],
+          ['pattern-select/SKILL.md', 'select, exclude, variant, params → steps/select-*.json'],
+          ['pattern-divide/SKILL.md', 'parts, recursive → plan.json'],
+          ['pattern-compose/SKILL.md', 'build one node at a time; used by composer'],
+          ['pattern-nofit/SKILL.md', 'nearest, deltas, scaffold → steps/nofit.json']]],
+        ['agents/', 'one file for each role', [
+          ['composer.md', 'tools: Read, Write, Edit, Skill, pe'],
+          ['verifier.md', 'tools: Read, pe verify/trace/parts; no Write']]]]],
+      ['rubrics/composition.md', 'C1–C5, scored by the verifier'],
+      ['templates/', 'fixed output shapes', [
+        ['plan.json'], ['trace.json'], ['verify-report.json'], ['pattern.proposed.md', 'used by pe scaffold']]]]]]];
+  var OPEN = { 'playground/': 1, 'pattern-engine/': 1, 'core/': 1, 'domains/': 1, 'shapes/': 1, 'domains/<name>/': 1, 'PatternEngine.sln': 1, 'src/': 1, 'PatternEngine.Core/': 1, 'harnesses/': 1, 'modular/': 1, '.claude/': 1, 'skills/': 1, 'agents/': 1 };
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+  function row(parent, icon, name, note) {
+    parent.appendChild(el('span', 'ic', icon));
+    parent.appendChild(el('span', 'nm', name));
+    parent.appendChild(el('span', 'nt', note || ''));
+  }
+  function build(node) {
+    var name = node[0], note = node[1], kids = node[2];
+    if (!kids) { var f = el('div', 'file'); row(f, '·', name, note); return f; }
+    var d = el('details'); if (OPEN[name]) d.open = true;
+    var s = el('summary'); row(s, '›', name, note); d.appendChild(s);
+    var box = el('div', 'kids');
+    if (!kids.length) box.appendChild(el('div', 'empty', 'contents not shown'));
+    kids.forEach(function (k) { box.appendChild(build(k)); });
+    d.appendChild(box);
+    return d;
+  }
+  document.querySelectorAll('[data-tree]').forEach(function (host) {
+    var t = TREES[host.getAttribute('data-tree')];
+    if (t) host.appendChild(build(t));
+  });
+
+  /* Tables: each cell gets its column name, for the stacked phone layout. */
+  document.querySelectorAll('.tw table').forEach(function (t) {
+    var heads = Array.prototype.map.call(t.querySelectorAll('thead th'), function (th) { return th.textContent; });
+    t.querySelectorAll('tbody tr').forEach(function (tr) {
+      Array.prototype.forEach.call(tr.children, function (td, i) {
+        td.setAttribute('data-label', heads[i] || '');
+        var box = document.createElement('span'); box.className = 'cv';
+        while (td.firstChild) box.appendChild(td.firstChild);
+        td.appendChild(box);
+      });
+    });
+  });
+
+  /* Code blocks: scale the font down to fit the width; wrap only below the minimum size. */
+  var MIN = 9;
+  function fit() {
+    document.querySelectorAll('pre').forEach(function (p) {
+      if (!p.offsetParent) return;
+      p.classList.remove('fold-lines');
+      p.style.fontSize = '';
+      var s = parseFloat(getComputedStyle(p).fontSize);
+      while (p.scrollWidth > p.clientWidth + 1 && s > MIN) { s -= 0.5; p.style.fontSize = s + 'px'; }
+      if (p.scrollWidth > p.clientWidth + 1) p.classList.add('fold-lines');
+    });
+  }
+
+  function render() {
+    mains.forEach(function (b) {
+      var on = b.getAttribute('data-main') === current;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+      document.getElementById('v-' + b.getAttribute('data-main')).hidden = !on;
+    });
+    fit();
+  }
+  function go(name, push) {
+    if (names.indexOf(name) < 0) name = 'how';
+    current = name;
+    render();
+    if (push && location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+  }
+  function folds(open) {
+    document.getElementById('v-' + current).querySelectorAll('details').forEach(function (d) { d.open = open; });
+    fit();
+  }
+  mains.forEach(function (b) { b.addEventListener('click', function () { go(b.getAttribute('data-main'), true); }); });
+  document.querySelectorAll('[data-fold]').forEach(function (b) {
+    b.addEventListener('click', function () { folds(b.getAttribute('data-fold') === 'open'); });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA') return;
+    var i = ['1', '2', '3', '4', '5'].indexOf(e.key);
+    if (i >= 0 && names[i]) go(names[i], true);
+    else if (e.key === 'e' || e.key === 'E') folds(true);
+    else if (e.key === 'c' || e.key === 'C') folds(false);
+  });
+  var raf = 0;
+  window.addEventListener('resize', function () { cancelAnimationFrame(raf); raf = requestAnimationFrame(fit); });
+  document.addEventListener('toggle', fit, true);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  window.addEventListener('hashchange', function () { go(location.hash.slice(1), false); });
+  go(location.hash.slice(1), false);
+})();
+</script>

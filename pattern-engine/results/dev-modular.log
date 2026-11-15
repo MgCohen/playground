@@ -1,0 +1,57 @@
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+Run 2026-11-15T17-04-25-modular [dev]: harness modular, model haiku, 8 cases × k=1 = 8 agent runs, concurrency 3
+[1/8] FAIL gen-004#1 28s
+      selection: no trace.json
+      built: no output file
+      structure: no output file
+      rules: no output file
+[2/8] FAIL hand-rule-001#1 29s
+      selection: no trace.json
+      built: no output file
+      structure: no output file
+      rules: no output file
+[3/8] PASS gen-001#1 85s
+[4/8] PASS gen-002#1 108s
+[5/8] PASS hand-nofit-001#1 168s
+[6/8] PASS hand-near-001#1 80s
+[7/8] PASS hand-rule-002#1 71s
+[8/8] PASS hand-nofit-002#1 179s
+
+Report 2026-11-15T17-04-25-modular: 8 cases, 8 runs
+harness modular, mode dev, model haiku, k=1
+API-equivalent cost $0.15 ($0.019 per run), 94 s per run, 5.5 turns per run, 2.3 subagents per run
+
+Note: a dev run is a sample. Use --mode full to validate.
+
+metric                            score         
+selection accuracy                75% (6/8)     
+built tree matches                67% (4/6)     
+structure pass                    75% (6/8)     
+rules pass                        75% (6/8)     
+pass@1 (all checks)               75% (6/8)     
+pass^1 (all runs of a case)       75% (6/8)     
+near-miss accuracy                50% (1/2)     
+no-fit precision                  100% (2/2)    
+no-fit full pass                  100% (2/2)    
+agent errors                      0% (0/8)      
+trace matches output              75% (6/8)     
+gate retries                      0% (0/8)      
+
+by top pattern                    pass@1
+  street                          50% (1/2)
+  tower                           50% (1/2)
+  house                           100% (1/1)
+  no-fit                          100% (2/2)
+  shed                            100% (1/1)
+
+most common failures
+    2× selection: no trace.json
+    2× built: no output file
+    2× structure: no output file
+    2× rules: no output file
+
+Results: results\2026-11-15T17-04-25-modular.json
+Outputs: results\runs\2026-11-15T17-04-25-modular

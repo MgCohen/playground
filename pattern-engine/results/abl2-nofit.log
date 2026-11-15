@@ -1,0 +1,59 @@
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+Run 2026-11-15T17-12-35-monolith-no-nofit [dev]: harness monolith, model haiku, 3 cases × k=2 = 6 agent runs, concurrency 4, ablate no-nofit
+[1/6] FAIL hand-nofit-001#1 45s
+      built: no output file
+      structure: no output file
+      rules: no output file
+[2/6] FAIL hand-nofit-002#1 48s
+      proposed: no proposed pattern file
+[3/6] FAIL hand-nofit-002#2 61s
+      structure: windmill: unknown pattern "windmill"
+      proposed: no proposed pattern file
+[4/6] FAIL hand-nofit-001#2 71s
+      structure: lighthouse: unknown pattern "lighthouse"
+      proposed: no proposed pattern file
+[5/6] FAIL hand-nofit-003#1 44s
+      structure: tent: unknown pattern "tent"
+      proposed: no proposed pattern file
+[6/6] FAIL hand-nofit-003#2 72s
+      structure: output: expected one top pattern, got 3
+      proposed: no proposed pattern file
+
+Report 2026-11-15T17-12-35-monolith-no-nofit (ablate no-nofit): 3 cases, 6 runs
+harness monolith, mode dev, model haiku, k=2
+API-equivalent cost $0.08 ($0.013 per run), 57 s per run, 16.2 turns per run, 0.0 subagents per run
+
+Note: a dev run is a sample. Use --mode full to validate.
+
+metric                            score         
+selection accuracy                100% (6/6)    
+built tree matches                — (0/0)       
+structure pass                    17% (1/6)     
+rules pass                        83% (5/6)     
+pass@1 (all checks)               0% (0/6)      
+pass^2 (all runs of a case)       0% (0/3)      
+near-miss accuracy                — (0/0)       
+no-fit precision                  100% (6/6)    
+no-fit full pass                  0% (0/6)      
+agent errors                      0% (0/6)      
+trace matches output              50% (3/6)     
+gate retries                      0% (0/6)      
+
+by top pattern                    pass@1
+  no-fit                          0% (0/6)
+
+most common failures
+    5× proposed: no proposed pattern file
+    1× built: no output file
+    1× structure: no output file
+    1× rules: no output file
+    1× structure: windmill: unknown pattern "windmill"
+    1× structure: lighthouse: unknown pattern "lighthouse"
+    1× structure: tent: unknown pattern "tent"
+    1× structure: output: expected one top pattern, got #
+
+Results: results\2026-11-15T17-12-35-monolith-no-nofit.json
+Outputs: results\runs\2026-11-15T17-12-35-monolith-no-nofit

@@ -1,0 +1,629 @@
+{
+  "runId": "2026-11-15T16-22-11-no-dont-use",
+  "domain": "shapes",
+  "label": "ablate-dont-use",
+  "k": 3,
+  "ablate": [
+    "no-dont-use"
+  ],
+  "model": "sonnet",
+  "cases": 3,
+  "runs": [
+    {
+      "case": "hand-near-001",
+      "run": 3,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a tall, narrow building with a pointed roof and a door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "body"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 28137,
+        "turns": 11,
+        "cost": 0.0847948,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-near-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a tall, narrow building with a pointed roof and a door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "body"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 29619,
+        "turns": 12,
+        "cost": 0.09141350000000001,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-near-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a tall, narrow building with a pointed roof and a door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "body"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 36167,
+        "turns": 12,
+        "cost": 0.1055405,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-near-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a small cottage with a chimney.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney",
+          "parts": [
+            {
+              "p": "body"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            },
+            {
+              "p": "window"
+            },
+            {
+              "p": "window"
+            },
+            {
+              "p": "chimney"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Treated 'cottage' as a house (small home); chose variant chimney because a chimney is named. Used two windows."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 36490,
+        "turns": 16,
+        "cost": 0.11144240000000001,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-near-002",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a small cottage with a chimney.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney",
+          "parts": [
+            {
+              "p": "body"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            },
+            {
+              "p": "window"
+            },
+            {
+              "p": "window"
+            },
+            {
+              "p": "chimney"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "No pattern names a cottage. A cottage is a small home, so I chose house (use when: house or home). The request names a chimney, so I chose variant chimney."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 32632,
+        "turns": 15,
+        "cost": 0.103152,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-near-002",
+      "run": 3,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a small cottage with a chimney.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney",
+          "parts": [
+            {
+              "p": "body"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            },
+            {
+              "p": "window"
+            },
+            {
+              "p": "chimney"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "'cottage' is not named in the index; treated as a house (variant chimney) because a cottage is a small house and a chimney is named."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 34086,
+        "turns": 9,
+        "cost": 0.0995267,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-near-003",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a skinny building, three times as tall as it is wide, with two windows.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Chose tower over house: the request names a skinny (narrow) building, not a house. Body is 60x180 (3x as tall as wide); roof and door are required parts of tower, so they were added with default colors."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 28098,
+        "turns": 12,
+        "cost": 0.08951239999999999,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-near-003",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a skinny building, three times as tall as it is wide, with two windows.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "body"
+            },
+            {
+              "p": "roof"
+            },
+            {
+              "p": "door"
+            },
+            {
+              "p": "window"
+            },
+            {
+              "p": "window"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "'skinny building' matched tower (tall or narrow building); body 60x180 (3:1)."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 29236,
+        "turns": 10,
+        "cost": 0.09199570000000001,
+        "error": null
+      }
+    },
+    {
+      "case": "hand-near-003",
+      "run": 3,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a skinny building, three times as tall as it is wide, with two windows.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": []
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Request names a skinny building (narrow building): matched tower/plain. Body 60x180 (3:1, satisfies >= 1.5). Roof, door and the two windows use defaults."
+        ],
+        "attempts": 1
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 29991,
+        "turns": 13,
+        "cost": 0.0959646,
+        "error": null
+      }
+    }
+  ]
+}
