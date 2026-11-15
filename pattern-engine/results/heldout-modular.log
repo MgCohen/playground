@@ -1,0 +1,17 @@
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+Run 2026-11-15T21-54-22-modular [dev]: harness modular, model haiku, 20 cases × k=2 = 40 agent runs, concurrency 4
+[1/40] PASS hand-nofit-001#1 85s
+[2/40] PASS hand-rule-001#1 85s
+[3/40] PASS hand-rule-001#2 85s
+[4/40] PASS hand-nofit-001#2 94s
+[5/40] PASS gen-s42-003#2 83s
+[6/40] PASS gen-s42-003#1 92s
+[7/40] FAIL gen-s42-001#1 113s
+      selection: street: missing
+[8/40] PASS gen-s42-001#2 136s
+[9/40] PASS gen-s42-005#1 69s
+[10/40] PASS gen-s42-005#2 70s
+[11/40] PASS hand-near-001#1 71s

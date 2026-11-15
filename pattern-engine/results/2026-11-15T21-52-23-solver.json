@@ -1,0 +1,260 @@
+{
+  "runId": "2026-11-15T21-52-23-solver",
+  "domain": "shapes",
+  "harness": "solver",
+  "gate": false,
+  "mode": "smoke",
+  "label": "smoke-solver",
+  "k": 1,
+  "ablate": [],
+  "model": "haiku",
+  "cases": 3,
+  "runs": [
+    {
+      "case": "gen-004",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "deep"
+      ],
+      "request": "Draw a street with, from left to right: a tree; a shed with a blue door; a house; and a tower with a green door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            },
+            {
+              "p": "house",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": null,
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a tree; a shed with a blue door; a house; and a tower with a green door. → unresolved: pattern \"undefined\" is not allowed here"
+        ],
+        "attempts": 0,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a tree; a shed with a blue door; a house; and a tower with a green door.",
+            "status": "unresolved",
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "street: missing"
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "no top pattern"
+          ]
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "output: no pattern found"
+          ]
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 6740,
+        "turns": 1,
+        "cost": 0.0009128000000000001,
+        "subagents": 0,
+        "error": "no output",
+        "gateRetries": 0
+      },
+      "consistent": false
+    },
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a narrow house, four floors tall, with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": null,
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a narrow house, four floors tall, with a red door. → unresolved: pattern \"undefined\" is not allowed here"
+        ],
+        "attempts": 0,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a narrow house, four floors tall, with a red door.",
+            "status": "unresolved",
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "tower: missing"
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "no top pattern"
+          ]
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "output: no pattern found"
+          ]
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 6830,
+        "turns": 1,
+        "cost": 0.0009213000000000001,
+        "subagents": 0,
+        "error": "no output",
+        "gateRetries": 0
+      },
+      "consistent": false
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "lighthouse",
+          "v": "plain"
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add a light or lamp housing at the top of the tall structure, which the tower pattern does not cover."
+        ],
+        "proposed": "patterns/lighthouse.md",
+        "questions": [
+          "Draw a lighthouse. → none: The request matches the tower candidate's use_when as a tall structure, but the tower's exclusion rule applies because a lighthouse holds a light, so no pattern fits."
+        ],
+        "attempts": 2,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a lighthouse.",
+            "status": "none",
+            "children": [],
+            "depth": 0,
+            "nearest": "tower",
+            "newId": "lighthouse"
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 30693,
+        "turns": 3,
+        "cost": 0.0036885399999999997,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    }
+  ]
+}

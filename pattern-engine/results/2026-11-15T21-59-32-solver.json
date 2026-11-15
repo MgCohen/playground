@@ -1,0 +1,95 @@
+{
+  "runId": "2026-11-15T21-59-32-solver",
+  "domain": "shapes",
+  "harness": "solver",
+  "gate": false,
+  "mode": "dev",
+  "label": "fix-tent",
+  "k": 1,
+  "ablate": [],
+  "model": "haiku",
+  "cases": 1,
+  "runs": [
+    {
+      "case": "hand-nofit-003",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a camping tent.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "house",
+          "tower",
+          "shed"
+        ]
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "camping-tent",
+          "v": "plain"
+        },
+        "nearest": "house",
+        "deltas": [
+          "Replace the gabled roof with a pointed tent roof",
+          "Remove windows and chimney",
+          "Make the door an entrance flap instead of a house door",
+          "Ground-level fabric shelter rather than a permanent building"
+        ],
+        "proposed": "patterns/camping-tent.md",
+        "questions": [
+          "Draw a camping tent. → none: The request names a tent, which none of the candidates (street, house, shed, tower, tree) covers, so no pattern fits and house is the closest shape-based match."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a camping tent.",
+            "status": "none",
+            "children": [],
+            "depth": 0,
+            "nearest": "house",
+            "newId": "camping-tent"
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 16403,
+        "turns": 2,
+        "cost": 0.00145739,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    }
+  ]
+}

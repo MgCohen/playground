@@ -1,0 +1,4297 @@
+{
+  "runId": "2026-11-15T21-54-22-solver",
+  "domain": "shapes",
+  "harness": "solver",
+  "gate": false,
+  "mode": "dev",
+  "label": "heldout-solver",
+  "k": 2,
+  "ablate": [],
+  "model": "haiku",
+  "cases": 20,
+  "runs": [
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a narrow house, four floors tall, with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a narrow house, four floors tall, with a red door. → solved tower: The request asks for a narrow, four-floor building, which the house exclusion routes to tower, and no tower exclusion applies, so the plain tower variant is used with a red door."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a narrow house, four floors tall, with a red door.",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 16704,
+        "turns": 2,
+        "cost": 0.0011569,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "lighthouse",
+          "v": "plain"
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add a light or lamp at the top of the tower, which the tower pattern does not include."
+        ],
+        "proposed": "patterns/lighthouse.md",
+        "questions": [
+          "Draw a lighthouse. → none: The request names a lighthouse, which is a tower that holds a light, and the tower pattern's do_not_use_when rule maps that case to no-fit, so no candidate applies and the closest pattern is tower."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a lighthouse.",
+            "status": "none",
+            "children": [],
+            "depth": 0,
+            "nearest": "tower",
+            "newId": "lighthouse"
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 18836,
+        "turns": 2,
+        "cost": 0.0015303,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a narrow house, four floors tall, with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a narrow house, four floors tall, with a red door. → solved tower: The request asks for a narrow, four-floor-tall building, which the house exclusion routes to tower; no tower exclusion applies and the red door is a listed door_fill value."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a narrow house, four floors tall, with a red door.",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 18845,
+        "turns": 2,
+        "cost": 0.0014196,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a lighthouse.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "lighthouse",
+          "v": "plain"
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add a lamp room with a light at the top of the tower",
+          "Add a gallery or railing around the lamp room"
+        ],
+        "proposed": "patterns/lighthouse.md",
+        "questions": [
+          "Draw a lighthouse. → none: The request names a lighthouse, a tall tower-like building, but the tower pattern's do_not_use_when excludes any tower that holds a light, so no candidate fits."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a lighthouse.",
+            "status": "none",
+            "children": [],
+            "depth": 0,
+            "nearest": "tower",
+            "newId": "lighthouse"
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 22587,
+        "turns": 2,
+        "cost": 0.00210807,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-003",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "medium",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a tree; and a house with a chimney and a green door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a tree; and a house with a chimney and a green door. → solved street: The request names a row of two objects, a tree and a house, so the street group fits, and the house's chimney and green door are covered by the house pattern's chimney variant and door_fill parameter.",
+          "a tree → solved tree: The request names a tree, the only candidate whose use_when matches, it has no do_not_use_when conditions that apply, and its plain variant always applies with no params.",
+          "a house with a chimney and a green door → solved house: The request names a house, the building is not tall or a storage building, and it names a chimney, so the house pattern's chimney variant applies with a green door fill."
+        ],
+        "attempts": 2,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a tree; and a house with a chimney and a green door.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a house with a chimney and a green door",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "chimney",
+            "params": {
+              "door_fill": "green"
+            },
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 25422,
+        "turns": 5,
+        "cost": 0.0030739799999999996,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-001",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "deep",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a tree; a tree; a tree; a tower; a tree; and a house with a chimney.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a tree; a tree; a tree; a tower; a tree; and a house with a chimney. → solved street: The request names a row of several trees and buildings, which matches the street pattern's row variant, and every listed object is one of its child patterns (tree, tower, house).",
+          "a tree → solved tree: The request names a tree, the tree pattern has no do_not_use_when exclusions, and its plain variant always applies with no params or child patterns.",
+          "a tree → solved tree: The request names a tree, the tree pattern has no do_not_use_when exclusions, and its only variant \"plain\" always applies.",
+          "a tree → solved tree: The request names a tree, the only candidate whose use_when matches, and the tree pattern has no do_not_use_when exclusions, no params, and no child patterns.",
+          "a tower → solved tower: The request names a tower, and none of the tower's exclusion conditions (a low wide building or a light, lamp or sails) apply, so the plain tower variant fits.",
+          "a tree → solved tree: The request names a tree, which matches the tree pattern's use_when, and no do_not_use_when entries apply since that list is empty.",
+          "a house with a chimney → solved house: The request names a house and a chimney, the house pattern's use_when matches, no do_not_use_when condition applies, and the chimney variant matches the named chimney."
+        ],
+        "attempts": 7,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a tree; a tree; a tree; a tower; a tree; and a house with a chimney.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 3,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 4,
+            "text": "a tower",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 5,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 6,
+            "text": "a house with a chimney",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "chimney",
+            "params": {},
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 30163,
+        "turns": 14,
+        "cost": 0.00819647,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-001",
+      "run": 2,
+      "tags": [
+        "generated",
+        "group",
+        "deep",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a tree; a tree; a tree; a tower; a tree; and a house with a chimney.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a tree; a tree; a tree; a tower; a tree; and a house with a chimney. → solved street: The request names a row of several buildings and trees standing on the ground, which matches the street pattern in its row variant, and each named object maps to a listed child pattern in request order.",
+          "tree → solved tree: The request names a tree, the only candidate whose use_when matches, and it has no do_not_use_when conditions, so the plain variant applies with no params or child patterns.",
+          "tree → solved tree: The request names a tree, the only candidate whose use_when matches, and tree has no do_not_use_when exclusions, so the plain variant applies.",
+          "tree → solved tree: The request names a tree, the only candidate whose use_when matches, and it has no do_not_use_when exclusions, so the plain variant applies with no params or children.",
+          "tower → solved tower: The request names a tower, and none of tower's exclusion conditions apply (no low wide building and no light, lamp, or sails are mentioned), so the plain tower variant is used with no params set.",
+          "tree → solved tree: The request names a tree, the only matching candidate, and its do_not_use_when list is empty, so the plain variant applies with no params set.",
+          "house with a chimney → solved house: The request names a house and a chimney, so the house pattern applies with its chimney variant, and no exclusion or extra param value is named."
+        ],
+        "attempts": 6,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a tree; a tree; a tree; a tower; a tree; and a house with a chimney.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 3,
+            "text": "tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 4,
+            "text": "tower",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 5,
+            "text": "tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 6,
+            "text": "house with a chimney",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "chimney",
+            "params": {},
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 29380,
+        "turns": 13,
+        "cost": 0.00829977,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-003",
+      "run": 2,
+      "tags": [
+        "generated",
+        "group",
+        "medium",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a tree; and a house with a chimney and a green door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "green"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a tree; and a house with a chimney and a green door. → solved street: The request names two or more objects standing in a row, so the street group fits with a tree and a chimney house whose door is green, in the request's left-to-right order.",
+          "a tree → solved tree: The request names a tree, the tree pattern has no do-not-use exclusions, and its plain variant always applies.",
+          "a house with a chimney and a green door → solved house: The request names a house, the building is not tall or a storage building, and it names a chimney, so the house pattern's chimney variant applies with a green door fill."
+        ],
+        "attempts": 2,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a tree; and a house with a chimney and a green door.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a house with a chimney and a green door",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "chimney",
+            "params": {
+              "door_fill": "green"
+            },
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 26466,
+        "turns": 5,
+        "cost": 0.00253004,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-005",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object",
+        "heldout"
+      ],
+      "request": "Draw a house with a yellow door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain",
+          "params": {
+            "door_fill": "yellow"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain",
+          "params": {
+            "door_fill": "yellow"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a house with a yellow door. → solved house: The request names a house, which matches only the house pattern; no chimney is named, so the plain variant applies, and the yellow door sets door_fill."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a house with a yellow door.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {
+              "door_fill": "yellow"
+            },
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 14000,
+        "turns": 2,
+        "cost": 0.00144977,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-005",
+      "run": 2,
+      "tags": [
+        "generated",
+        "object",
+        "heldout"
+      ],
+      "request": "Draw a house with a yellow door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain",
+          "params": {
+            "door_fill": "yellow"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain",
+          "params": {
+            "door_fill": "yellow"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a house with a yellow door. → solved house: The request names a house, no exclusion applies, no chimney is named so the plain variant is used, and the requested yellow door sets door_fill."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a house with a yellow door.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {
+              "door_fill": "yellow"
+            },
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 16768,
+        "turns": 2,
+        "cost": 0.0009999499999999999,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-near-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Draw a tall, narrow building with a pointed roof and a door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a tall, narrow building with a pointed roof and a door. → solved tower: The request describes a tall, narrow building, which matches the tower use_when; it holds no light, lamp or sails, and the pointed roof and door are details the tower pattern covers, with no door color named."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a tall, narrow building with a pointed roof and a door.",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 15116,
+        "turns": 2,
+        "cost": 0.0011451500000000002,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-near-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Draw a tall, narrow building with a pointed roof and a door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a tall, narrow building with a pointed roof and a door. → solved tower: The request describes a tall, narrow building, which matches the tower use_when, and house is excluded because the building is taller than it is wide; no light, lamp or sails are named, so the plain tower variant applies with no door color specified."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a tall, narrow building with a pointed roof and a door.",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 22042,
+        "turns": 2,
+        "cost": 0.0011464500000000002,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a little house where we keep our bikes.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a little house where we keep our bikes. → solved shed: The request names a little house, but the building is for storing bikes, which the house exclusion routes to shed, and no one lives in it, so the plain shed variant fits."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a little house where we keep our bikes.",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 13491,
+        "turns": 2,
+        "cost": 0.00099759,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-002",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a little house where we keep our bikes.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a little house where we keep our bikes. → solved shed: The request names a house, but the house pattern excludes buildings used for bikes, so the exclusion routes it to shed, whose plain variant is the only one and which has no door color named in the request."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a little house where we keep our bikes.",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 13803,
+        "turns": 2,
+        "cost": 0.00097659,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a windmill.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "windmill",
+          "v": "plain"
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add rotating sails (blades) on top of the tower body."
+        ],
+        "proposed": "patterns/windmill.md",
+        "questions": [
+          "Draw a windmill. → none: The request names a windmill, which no catalog pattern covers: the tower pattern's exclusion rule sends towers that hold sails to no-fit, so the nearest pattern is tower with sails added on top."
+        ],
+        "attempts": 2,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a windmill.",
+            "status": "none",
+            "children": [],
+            "depth": 0,
+            "nearest": "tower",
+            "newId": "windmill"
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 39516,
+        "turns": 3,
+        "cost": 0.0040606900000000005,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-002",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "deep",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a shed; a house with a yellow door; a tree; and a house with a chimney and a blue door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "plain",
+              "params": {
+                "door_fill": "yellow"
+              }
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "blue"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "plain",
+              "params": {
+                "door_fill": "yellow"
+              }
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "blue"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a shed; a house with a yellow door; a tree; and a house with a chimney and a blue door. → solved street: The request names four objects in one row on the ground, so the street group pattern in its row variant fits, with each object listed in left-to-right order.",
+          "a shed → solved shed: The request names a shed, and the shed's exclusion (people living in the building) does not apply, so the shed pattern fits with its plain variant and no params set.",
+          "a house with a yellow door → solved house: The request names a house, the building is not tall or a shed, no chimney is named, and the yellow door maps to the door_fill param.",
+          "a tree → solved tree: The request names a tree, the tree pattern has no do_not_use_when exclusions, and the plain variant always applies.",
+          "a house with a chimney and a blue door → solved house: The request names a house, a chimney, and a blue door, none of which trigger the tower or shed exclusions, so the house pattern's chimney variant with door_fill set to blue applies."
+        ],
+        "attempts": 4,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a shed; a house with a yellow door; a tree; and a house with a chimney and a blue door.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a house with a yellow door",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {
+              "door_fill": "yellow"
+            },
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 3,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 4,
+            "text": "a house with a chimney and a blue door",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "chimney",
+            "params": {
+              "door_fill": "blue"
+            },
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 29200,
+        "turns": 9,
+        "cost": 0.00608036,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-002",
+      "run": 2,
+      "tags": [
+        "generated",
+        "group",
+        "deep",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a shed; a house with a yellow door; a tree; and a house with a chimney and a blue door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "plain",
+              "params": {
+                "door_fill": "yellow"
+              }
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "blue"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "plain",
+              "params": {
+                "door_fill": "yellow"
+              }
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "blue"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a shed; a house with a yellow door; a tree; and a house with a chimney and a blue door. → solved street: The request names a row of four objects along a street, which matches the street pattern's row variant, and no do_not_use_when rule excludes it, with each named object listed in request order as a child.",
+          "a shed → solved shed: The request names a shed, which matches the shed pattern's use_when, and its do_not_use_when (people living in the building) does not apply, so the plain variant fits with no params named.",
+          "a house with a yellow door → solved house: The request names a house, no exclusion applies, no chimney is named, and the yellow door maps to the door_fill param.",
+          "a tree → solved tree: The request names a tree, the tree pattern has no do_not_use_when exclusions, and its only variant (plain) always applies.",
+          "a house with a chimney and a blue door → solved house: The request names a house, none of the exclusion conditions apply, and it names a chimney, so the chimney variant is used with the door fill set to blue."
+        ],
+        "attempts": 4,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a shed; a house with a yellow door; a tree; and a house with a chimney and a blue door.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a house with a yellow door",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {
+              "door_fill": "yellow"
+            },
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 3,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 4,
+            "text": "a house with a chimney and a blue door",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "chimney",
+            "params": {
+              "door_fill": "blue"
+            },
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 27467,
+        "turns": 9,
+        "cost": 0.00470759,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-002",
+      "run": 2,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a windmill.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": "tower"
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "windmill",
+          "v": "plain"
+        },
+        "nearest": "tower",
+        "deltas": [
+          "Add sails (rotating blades) on top of the tower body, which the tower pattern does not have."
+        ],
+        "proposed": "patterns/windmill.md",
+        "questions": [
+          "Draw a windmill. → none: The request is a windmill, which the tower pattern matches on use_when, but the tower's do_not_use_when excludes towers that hold sails, so no catalog pattern fits."
+        ],
+        "attempts": 3,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a windmill.",
+            "status": "none",
+            "children": [],
+            "depth": 0,
+            "nearest": "tower",
+            "newId": "windmill"
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 49560,
+        "turns": 4,
+        "cost": 0.005105159999999999,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-004",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "medium",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a tower with a green door; a tree; and a house with a chimney and a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "red"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "red"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a tower with a green door; a tree; and a house with a chimney and a red door. → solved street: The request names three objects in a row along a street, so the street pattern in its row variant fits, with the tower, tree and house listed in request order and their details kept.",
+          "a tower with a green door → solved tower: The request names a tower, and no exclusion applies because it is not a low wide building and holds no light, lamp, or sails.",
+          "a tree → solved tree: The request names a tree, the only candidate whose use_when matches, and it has no do_not_use_when exclusions, so the plain variant applies with no params or children.",
+          "a house with a chimney and a red door → solved house: The request names a house, is not tall or narrow, is not a shed, and names a chimney, so the house pattern's chimney variant applies with a red door."
+        ],
+        "attempts": 3,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a tower with a green door; a tree; and a house with a chimney and a red door.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2,
+              3
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a tower with a green door",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "green"
+            },
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 3,
+            "text": "a house with a chimney and a red door",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "chimney",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 25260,
+        "turns": 7,
+        "cost": 0.00455933,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-006",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object",
+        "heldout"
+      ],
+      "request": "Draw a tower with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a tower with a red door. → solved tower: The request names a tower, and no exclusion applies since it has no light, lamp, or sails and is not a low, wide building; the red door maps to the door_fill param."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a tower with a red door.",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 14636,
+        "turns": 2,
+        "cost": 0.00144547,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-006",
+      "run": 2,
+      "tags": [
+        "generated",
+        "object",
+        "heldout"
+      ],
+      "request": "Draw a tower with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a tower with a red door. → solved tower: The request names a tower, and no do_not_use_when condition applies (it is not low and wide, and holds no light or sails), so the tower pattern with a red door fits."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a tower with a red door.",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 14626,
+        "turns": 2,
+        "cost": 0.0010418200000000002,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-004",
+      "run": 2,
+      "tags": [
+        "generated",
+        "group",
+        "medium",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a tower with a green door; a tree; and a house with a chimney and a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "red"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "house",
+              "v": "chimney",
+              "params": {
+                "door_fill": "red"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a tower with a green door; a tree; and a house with a chimney and a red door. → solved street: The request names a street holding several buildings and trees in one row, so the street pattern applies with the row variant, and each object is listed in left-to-right order with its details.",
+          "a tower with a green door → solved tower: The request names a tower, which matches only the tower pattern, and no exclusion applies because it is not low and wide and holds no light, lamp, or sails; the green door sets door_fill to green.",
+          "a tree → solved tree: The request names a tree, the only candidate whose use_when matches, it has no do_not_use_when exclusions, and its plain variant always applies.",
+          "a house with a chimney and a red door → solved house: The request names a house, and no exclusion applies (the building is not tall or narrow and is not a shed), so the house pattern is used with the chimney variant because a chimney is named and the door fill is set to red."
+        ],
+        "attempts": 3,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a tower with a green door; a tree; and a house with a chimney and a red door.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2,
+              3
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a tower with a green door",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "green"
+            },
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 3,
+            "text": "a house with a chimney and a red door",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "chimney",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 26746,
+        "turns": 7,
+        "cost": 0.0035809400000000003,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-near-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Draw a small cottage with a chimney.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a small cottage with a chimney. → solved house: A cottage is a home, so the house candidate matches; it is low and wide rather than tall or narrow, and not a storage building, so no exclusion applies, and the request names a chimney, which selects the chimney variant."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a small cottage with a chimney.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "chimney",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 16326,
+        "turns": 2,
+        "cost": 0.00171687,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-near-002",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Draw a small cottage with a chimney.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "chimney"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a small cottage with a chimney. → solved house: A small cottage is a house-type dwelling, the request names a chimney so the chimney variant applies, and none of the house exclusions (tall or narrow, or a storage building) match."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a small cottage with a chimney.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "chimney",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 15334,
+        "turns": 2,
+        "cost": 0.00119099,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-003",
+      "run": 2,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a camping tent.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "house",
+          "tower",
+          "shed"
+        ]
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "camping-tent",
+          "v": "plain"
+        },
+        "nearest": "house",
+        "deltas": [
+          "Roof slopes up to a single peak instead of a pitched house roof",
+          "Entrance is a flap instead of a door",
+          "No windows",
+          "No chimney",
+          "Not a building for people to live in as a permanent home"
+        ],
+        "proposed": "patterns/camping-tent.md",
+        "questions": [
+          "Draw a camping tent. → none: The request names a camping tent, which matches no candidate's use_when, so no existing pattern fits and house is the nearest because it shares a roof and an entrance."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a camping tent.",
+            "status": "none",
+            "children": [],
+            "depth": 0,
+            "nearest": "house",
+            "newId": "camping-tent"
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "camping-tent: part \"chimney\": count 0, allowed 1"
+          ]
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 17399,
+        "turns": 2,
+        "cost": 0.00177121,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-003",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a tower that is low and wide, where a family lives.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a tower that is low and wide, where a family lives. → solved house: The request says \"tower\", but it describes a low, wide building where a family lives, which the tower exclusion routes to house, and no chimney is named, so the plain house variant applies."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a tower that is low and wide, where a family lives.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 13051,
+        "turns": 2,
+        "cost": 0.00140587,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-nofit-003",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Draw a camping tent.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "house",
+          "tower",
+          "shed"
+        ]
+      },
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "camping-tent",
+          "v": "plain"
+        },
+        "nearest": "house",
+        "deltas": [
+          "Fabric peaked canopy instead of rigid walls and a pitched roof",
+          "No chimney",
+          "Door is a fabric flap instead of a solid door"
+        ],
+        "proposed": "patterns/camping-tent.md",
+        "questions": [
+          "Draw a camping tent. → none: No candidate's use_when matches a camping tent, which is neither a house, shed, tower, tree, nor a street, so the closest pattern is house."
+        ],
+        "attempts": 2,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a camping tent.",
+            "status": "none",
+            "children": [],
+            "depth": 0,
+            "nearest": "house",
+            "newId": "camping-tent"
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": [],
+          "skipped": true
+        },
+        "structure": {
+          "ok": false,
+          "failures": [
+            "camping-tent: part \"chimney\": count 0, allowed 1"
+          ]
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": {
+          "ok": true,
+          "failures": []
+        }
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 27119,
+        "turns": 3,
+        "cost": 0.0029933800000000003,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-003",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a tower that is low and wide, where a family lives.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a tower that is low and wide, where a family lives. → solved house: The request describes a low, wide building where a family lives, which is a home, so the house pattern fits; the tower pattern is excluded because the building is wider than it is tall, and no chimney, door color or other child objects are named."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a tower that is low and wide, where a family lives.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 18786,
+        "turns": 2,
+        "cost": 0.00104528,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-008",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "deep",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a shed; a shed; a tower; and a tower.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a shed; a shed; a tower; and a tower. → solved street: The request names a street with a row of four buildings (two sheds and two towers), which matches the street pattern's row variant, and no exclusion applies.",
+          "a shed → solved shed: The request names a shed, which matches the shed use_when, and no do_not_use_when condition applies since no one lives in the building, so the plain variant is used with no params or children.",
+          "a shed → solved shed: The request names a shed, which matches the shed use_when, and the shed exclusion (people living in the building) does not apply, so the plain shed variant is used with no params since none are named.",
+          "a tower → solved tower: The request names a tower, which matches the tower use_when, and none of its do_not_use_when conditions apply (no low wide building and no light, lamp, or sails are mentioned).",
+          "a tower → solved tower: The request names a tower, and no exclusion applies because it is not a low building wider than tall and holds no light, lamp, or sails."
+        ],
+        "attempts": 4,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a shed; a shed; a tower; and a tower.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 3,
+            "text": "a tower",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 4,
+            "text": "a tower",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 22589,
+        "turns": 9,
+        "cost": 0.005091490000000001,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-008",
+      "run": 2,
+      "tags": [
+        "generated",
+        "group",
+        "deep",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a shed; a shed; a tower; and a tower.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a shed; a shed; a tower; and a tower. → solved street: The request names a street with a row of four buildings (two sheds and two towers), which matches the street pattern's row variant, and every object is one of its allowed child patterns.",
+          "shed → solved shed: The request names a shed, which matches only the shed pattern's use_when, and its do_not_use_when (people living in the building) is not named, so the plain variant applies with no params or children.",
+          "shed → solved shed: The request names a shed, its use_when matches, and the do_not_use_when check does not apply because the request does not say people live in the building.",
+          "tower → solved tower: The request names a tower, which matches the tower use_when, and none of its do_not_use_when conditions (a low wide building or a light-bearing tower) apply, so the plain variant is used with no params set.",
+          "tower → solved tower: The request names a tower, which matches only the tower candidate, and none of its do-not-use conditions apply (no low wide building, no light, lamp or sails)."
+        ],
+        "attempts": 4,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a shed; a shed; a tower; and a tower.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 3,
+            "text": "tower",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 4,
+            "text": "tower",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 21194,
+        "turns": 9,
+        "cost": 0.00523263,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-007",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "medium",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a shed; and a tower with a blue door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a shed; and a tower with a blue door. → solved street: The request names a street with two buildings standing in one row, so the street group pattern in its row variant fits, with the shed on the left and the blue-door tower on the right.",
+          "a shed → solved shed: The request names a shed, which matches the shed pattern's use_when, and no do_not_use_when condition applies since no one lives in the building.",
+          "a tower with a blue door → solved tower: The request names a tower with no light, lamp, or sails, and it specifies a blue door, which is a listed door_fill value, so the plain tower variant fits."
+        ],
+        "attempts": 2,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a shed; and a tower with a blue door.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a tower with a blue door",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "blue"
+            },
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 20813,
+        "turns": 5,
+        "cost": 0.0032103800000000005,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-007",
+      "run": 2,
+      "tags": [
+        "generated",
+        "group",
+        "medium",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a shed; and a tower with a blue door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "blue"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a shed; and a tower with a blue door. → solved street: The request names a row of two buildings (a shed and a tower), so the street pattern applies in its row variant, with the shed and tower as children in request order.",
+          "a shed → solved shed: The request names a shed, which matches the shed use_when, and nothing in it says people live in the building, so the shed exclusion does not apply.",
+          "a tower with a blue door → solved tower: The request names a tower, and none of its exclusion conditions apply (it is not a low wide building and holds no light, lamp, or sails), so the tower pattern is used with its plain variant and a blue door."
+        ],
+        "attempts": 2,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a shed; and a tower with a blue door.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a tower with a blue door",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "blue"
+            },
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 22267,
+        "turns": 5,
+        "cost": 0.0025004,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-009",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object",
+        "heldout"
+      ],
+      "request": "Draw a shed with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a shed with a red door. → solved shed: The request names a shed, only one building, and nobody lives in it, so the shed pattern applies with its plain variant and a red door_fill."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a shed with a red door.",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 12672,
+        "turns": 2,
+        "cost": 0.00128817,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-009",
+      "run": 2,
+      "tags": [
+        "generated",
+        "object",
+        "heldout"
+      ],
+      "request": "Draw a shed with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a shed with a red door. → solved shed: The request names a shed, its use_when matches, no do_not_use_when applies since no one lives in it, and the requested red door is a listed door_fill value."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a shed with a red door.",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 13781,
+        "turns": 2,
+        "cost": 0.00135047,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-near-003",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Draw a skinny building, three times as tall as it is wide, with two windows.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a skinny building, three times as tall as it is wide, with two windows. → solved tower: The request describes a tall, narrow building (three times as tall as wide), which matches the tower use_when, and house is excluded because the building is taller than it is wide; the two windows are details the tower pattern covers, so no leftover applies."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a skinny building, three times as tall as it is wide, with two windows.",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 13956,
+        "turns": 2,
+        "cost": 0.00141607,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-near-003",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Draw a skinny building, three times as tall as it is wide, with two windows.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a skinny building, three times as tall as it is wide, with two windows. → solved tower: The request describes a tall, narrow building (three times as tall as wide), which matches the tower use_when and the house exclusion, and its two windows are details the tower pattern already covers."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a skinny building, three times as tall as it is wide, with two windows.",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 14649,
+        "turns": 2,
+        "cost": 0.00111911,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-004",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a garage that a family has made into their home.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a garage that a family has made into their home. → solved house: The request names a garage that a family lives in, so the shed pattern's exclusion (\"People live in the building\") applies and the house pattern is used, with the plain variant because no chimney is named."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a garage that a family has made into their home.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 14485,
+        "turns": 2,
+        "cost": 0.00154327,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-004",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a garage that a family has made into their home.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a garage that a family has made into their home. → solved house: The request names a garage, which matches shed, but the family lives in it, so shed's exclusion routes it to house, and no chimney is named, so the plain variant applies."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a garage that a family has made into their home.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 18974,
+        "turns": 2,
+        "cost": 0.0011017000000000002,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-011",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "deep",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a tower; a tree; a shed; a tower with a green door; a tower with a red door; and a shed.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "red"
+              }
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "red"
+              }
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a tower; a tree; a shed; a tower with a green door; a tower with a red door; and a shed. → solved street: The request names a row of several buildings and a tree on one ground line, which matches the street group in its row variant, and each object is listed in request order with its door details.",
+          "a tower → solved tower: The request names a tower, and no do_not_use_when condition applies (it is not low and wide, and it holds no light, lamp or sails), so the tower pattern's plain variant fits.",
+          "a tree → solved tree: The request names a tree, the tree pattern has no do_not_use_when exclusions, and its only variant \"plain\" always applies.",
+          "a shed → solved shed: The request names a shed, which matches the shed use_when, and the shed do_not_use_when (people living in the building) does not apply, so the plain shed variant is used with no params set.",
+          "a tower with a green door → solved tower: The request names a tower, and neither exclusion applies (it is not low and wide, and it holds no light, lamp, or sails), so the plain tower variant is used with a green door.",
+          "a tower with a red door → solved tower: The request names a tower, and none of its exclusion conditions apply (it is not low and wide, and it holds no light, lamp or sails), so the plain tower variant is used with a red door.",
+          "a shed → solved shed: The request names a shed, which matches the shed use_when, and nothing in the request says people live in the building, so the shed do_not_use_when does not apply and the plain variant is used with no params set."
+        ],
+        "attempts": 6,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a tower; a tree; a shed; a tower with a green door; a tower with a red door; and a shed.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a tower",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 3,
+            "text": "a shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 4,
+            "text": "a tower with a green door",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "green"
+            },
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 5,
+            "text": "a tower with a red door",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 6,
+            "text": "a shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 25512,
+        "turns": 13,
+        "cost": 0.007999140000000002,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "gen-s42-011",
+      "run": 2,
+      "tags": [
+        "generated",
+        "group",
+        "deep",
+        "heldout"
+      ],
+      "request": "Draw a street with, from left to right: a tower; a tree; a shed; a tower with a green door; a tower with a red door; and a shed.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "red"
+              }
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "tower",
+              "v": "plain"
+            },
+            {
+              "p": "tree",
+              "v": "plain"
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "green"
+              }
+            },
+            {
+              "p": "tower",
+              "v": "plain",
+              "params": {
+                "door_fill": "red"
+              }
+            },
+            {
+              "p": "shed",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a street with, from left to right: a tower; a tree; a shed; a tower with a green door; a tower with a red door; and a shed. → solved street: The request names a row of several buildings and trees along a street, and the street pattern's row variant places them in one line on the ground, with each child listed in the requested left-to-right order.",
+          "a tower → solved tower: The request names a tower, which matches the tower use_when, no do_not_use_when condition applies (it is not low and wide, and it holds no light, lamp or sails), and the plain variant always applies.",
+          "a tree → solved tree: The request names a tree, the only candidate whose use_when matches, and it has no do_not_use_when conditions that apply, so the plain variant is used with no params or child patterns.",
+          "a shed → solved shed: The request names a shed, which matches the shed use_when, and no do_not_use_when condition applies since no one is said to live in the building, so the plain variant is used with no params set.",
+          "a tower with a green door → solved tower: The request names a tower, the tower pattern's exclusions (a low wide building or a light/lamp/sail tower) do not apply, and the green door is a listed door_fill value.",
+          "a tower with a red door → solved tower: The request names a tower, and none of its exclusion conditions apply (it is not low and wide, and it holds no light, lamp or sails), so the plain tower variant is used with the door filled red.",
+          "a shed → solved shed: The request names a shed, which matches only the shed pattern's use_when, and no do_not_use_when condition applies since no one lives in the building."
+        ],
+        "attempts": 6,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a street with, from left to right: a tower; a tree; a shed; a tower with a green door; a tower with a red door; and a shed.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": {},
+            "children": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a tower",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a tree",
+            "status": "solved",
+            "pattern": "tree",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 3,
+            "text": "a shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 4,
+            "text": "a tower with a green door",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "green"
+            },
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 5,
+            "text": "a tower with a red door",
+            "status": "solved",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 1
+          },
+          {
+            "id": 6,
+            "text": "a shed",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 1
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": true,
+          "failures": []
+        },
+        "built": {
+          "ok": true,
+          "failures": []
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": true,
+      "agent": {
+        "code": 0,
+        "ms": 25222,
+        "turns": 13,
+        "cost": 0.00664765,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+# Code drives the loop (core/solve/solve.mjs). The model answers one small question per call:
+# no tools, a short system prompt from prompts/, a JSON schema for the answer.
+name: solver
+type: solver

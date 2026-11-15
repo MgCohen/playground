@@ -73,8 +73,22 @@ A harness is the set of agent files that the sandbox gets. The cases, graders an
 |---|---|---|
 | `monolith` | `harnesses/monolith/SKILL.md`: one skill with the full workflow | Frozen control. Do not change it. Use it only to compare |
 | `modular` | `harnesses/modular/`: a router skill, 4 step skills, a `composer` and a `verifier` agent, a rubric, 4 templates | **The default.** One file for each role, step, rubric and output shape |
+| `solver` | `harnesses/solver/`: prompt files and a template. The loop is code: `core/solve/` | Spike: code runs the loop, the model answers one question per call |
 
-Select one with `--harness monolith|modular`. Add `--gate` to make the system run `pe verify` after the agent and, on a failure, start the agent once more with the failures.
+Select one with `--harness monolith|modular|solver`. Add `--gate` to make the system run `pe verify` after the agent and, on a failure, start the agent once more with the failures.
+
+### The solver
+
+Code runs the loop. The model gets one small question per call, with no tools, a short system prompt and a JSON schema (`core/solve/judge.mjs`).
+
+1. A work queue starts with the request.
+2. For each node, code finds the candidates: all patterns for the request, or only the parts that the parent allows.
+3. One decide call for each node: `solved`, `partial` (a leftover node), or `none` (nearest pattern and deltas). Code checks the answer against the catalog.
+4. Code makes the child nodes from the pattern parts, and the queue goes to the next level. A node deeper than `max_depth` is `unresolved`.
+5. The pack gives a box for each object (`domains/<name>/solve.mjs`). One compose call draws each node in its box. Code checks each node and retries with the failures, up to `compose_retries`.
+6. Code assembles the groups and writes the output and the trace from the graph state.
+
+The settings are in `eval.config.yaml` under `solver`. The prompts are in `harnesses/solver/prompts/`.
 
 ### The `pe` commands
 

@@ -11,6 +11,7 @@ import { ENGINE_ROOT, domainDir } from '../lib/patterns.mjs';
 import { loadDomain, assertValid } from '../lib/domain.mjs';
 import { generate } from '../graph/generate-cases.mjs';
 import { prepareSandbox, runAgent } from './agent.mjs';
+import { solve } from '../solve/solve.mjs';
 import { check } from './verify.mjs';
 import { diffTrees } from '../lib/tree.mjs';
 import { gradeStructure, builtTree } from './graders/structure.mjs';
@@ -144,7 +145,9 @@ if (process.argv[1]?.endsWith('run.mjs')) {
     const sandbox = path.join(tmp, `${c.id}-${i + 1}`);
     const harness = prepareSandbox(domain, sandbox, { ablate: o.ablate, harness: o.harness });
     const opts = { model: o.model, output: dom.config.output, harness };
-    const agent = await runAgent(sandbox, c.request, opts);
+    const agent = harness.type === 'solver'
+      ? await solve(domain, sandbox, c.request, { model: o.model, ablate: o.ablate, settings: o.config.solver }).catch((e) => ({ ms: 0, cost: 0, turns: 0, subagents: 0, error: 'solver: ' + e.message }))
+      : await runAgent(sandbox, c.request, opts);
     // Gate (outside the agent): the system runs the same check. On a failure, one more agent run with the failures.
     let gateRetries = 0;
     if (o.gate && !agent.error) {

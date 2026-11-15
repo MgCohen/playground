@@ -1,0 +1,710 @@
+{
+  "runId": "2026-11-15T21-58-05-solver-no-dont-use",
+  "domain": "shapes",
+  "harness": "solver",
+  "gate": false,
+  "mode": "dev",
+  "label": "abl-solver-dontuse",
+  "k": 2,
+  "ablate": [
+    "no-dont-use"
+  ],
+  "model": "haiku",
+  "cases": 4,
+  "runs": [
+    {
+      "case": "hand-rule-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a little house where we keep our bikes.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a little house where we keep our bikes. → solved house: The request names a little house, which matches the house pattern; no chimney is named, so the plain variant applies, and the bikes describe the house's purpose rather than a separate object to draw."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a little house where we keep our bikes.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "shed: expected \"shed\", got \"house\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "shed: expected \"shed\", got \"house\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 15176,
+        "turns": 2,
+        "cost": 0.0014293700000000001,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-002",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a little house where we keep our bikes.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a little house where we keep our bikes. → solved house: The request names a house, no chimney is mentioned, and the bikes are only the house's purpose rather than a separate object to draw, so the plain house pattern fits."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a little house where we keep our bikes.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "shed: expected \"shed\", got \"house\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "shed: expected \"shed\", got \"house\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 16208,
+        "turns": 2,
+        "cost": 0.0015874700000000001,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a narrow house, four floors tall, with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a narrow house, four floors tall, with a red door. → solved house: The request names a house, which matches the house pattern's use_when more specifically than tower's tall-or-narrow descriptor; no chimney is named, so the plain variant applies, and the red door sets door_fill."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a narrow house, four floors tall, with a red door.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "tower: expected \"tower\", got \"house\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "tower: expected \"tower\", got \"house\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 17443,
+        "turns": 2,
+        "cost": 0.00173177,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a narrow house, four floors tall, with a red door.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain",
+          "params": {
+            "door_fill": "red"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a narrow house, four floors tall, with a red door. → solved house: The request names a house, which is more specific than the tower candidate's broader \"tall or narrow building\" match, and no chimney is named, so the plain variant with a red door fits."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a narrow house, four floors tall, with a red door.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": {
+              "door_fill": "red"
+            },
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "tower: expected \"tower\", got \"house\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "tower: expected \"tower\", got \"house\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 19207,
+        "turns": 2,
+        "cost": 0.00190287,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-004",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a garage that a family has made into their home.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a garage that a family has made into their home. → solved shed: The request names a garage, which matches the shed pattern's use_when more specifically than the house pattern's generic \"home\" match, and the family's conversion of it into a home is the same building, not a separate object the pattern lacks."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a garage that a family has made into their home.",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "house: expected \"house\", got \"shed\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "house: expected \"house\", got \"shed\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 15875,
+        "turns": 2,
+        "cost": 0.0015616700000000002,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-004",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a garage that a family has made into their home.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "shed",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a garage that a family has made into their home. → solved shed: The request names a garage, which matches the shed pattern's use_when more specifically than the house pattern's \"house or home,\" and the family-converted-home detail describes the same single building rather than a separate object."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a garage that a family has made into their home.",
+            "status": "solved",
+            "pattern": "shed",
+            "variant": "plain",
+            "params": {},
+            "children": [],
+            "depth": 0
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "house: expected \"house\", got \"shed\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "house: expected \"house\", got \"shed\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 14606,
+        "turns": 2,
+        "cost": 0.00119056,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": true
+    },
+    {
+      "case": "hand-rule-003",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a tower that is low and wide, where a family lives.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "family",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a tower that is low and wide, where a family lives. → partial tower: The request names a tower, so the tower pattern applies, and its low, wide size is a detail the pattern covers, but the family is a named object the tower pattern does not contain.",
+          "a family → none: The request \"a family\" matches no candidate's use_when, since it names no house, home, street, shed, tower or tree, so no pattern fits and the nearest is house."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a tower that is low and wide, where a family lives.",
+            "status": "partial",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [
+              1
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a family",
+            "status": "none",
+            "children": [],
+            "depth": 1,
+            "nearest": "house",
+            "newId": "family"
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "house: expected \"house\", got \"tower\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "house: expected \"house\", got \"tower\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 26555,
+        "turns": 3,
+        "cost": 0.0026021000000000004,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": false
+    },
+    {
+      "case": "hand-rule-003",
+      "run": 2,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Draw a tower that is low and wide, where a family lives.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        }
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "tower",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "tower",
+              "v": "plain",
+              "parts": [
+                {
+                  "p": "tower",
+                  "v": "plain",
+                  "parts": [
+                    {
+                      "p": "family",
+                      "v": "plain"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          "Draw a tower that is low and wide, where a family lives. → partial tower: The request names a tower, so the tower pattern (plain variant) fits, while the family living in it is not an object this pattern contains and is recorded as leftover.",
+          "a family living in the tower → partial tower: The request names a tower, which matches the tower pattern's plain variant, but the family of people is an object the pattern does not contain, so the request is only partly covered.",
+          "a family living in the tower → partial tower: The request names a tower, so the tower pattern (plain variant) applies, but the family living in it is an object the pattern does not contain and is reported as leftover.",
+          "a family → none: No candidate's use_when matches \"a family\": street covers rows of buildings or trees, and the object patterns cover a single house, shed, tower, or tree, so the nearest group pattern is street and a new family pattern is needed."
+        ],
+        "attempts": 1,
+        "graph": [
+          {
+            "id": 0,
+            "text": "Draw a tower that is low and wide, where a family lives.",
+            "status": "partial",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [
+              1
+            ],
+            "depth": 0
+          },
+          {
+            "id": 1,
+            "text": "a family living in the tower",
+            "status": "partial",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [
+              2
+            ],
+            "depth": 1
+          },
+          {
+            "id": 2,
+            "text": "a family living in the tower",
+            "status": "partial",
+            "pattern": "tower",
+            "variant": "plain",
+            "params": {},
+            "children": [
+              3
+            ],
+            "depth": 2
+          },
+          {
+            "id": 3,
+            "text": "a family",
+            "status": "none",
+            "children": [],
+            "depth": 3,
+            "nearest": "street",
+            "newId": "family"
+          }
+        ]
+      },
+      "res": {
+        "selection": {
+          "ok": false,
+          "failures": [
+            "house: expected \"house\", got \"tower\""
+          ]
+        },
+        "built": {
+          "ok": false,
+          "failures": [
+            "house: expected \"house\", got \"tower\""
+          ]
+        },
+        "structure": {
+          "ok": true,
+          "failures": []
+        },
+        "rules": {
+          "ok": true,
+          "failures": []
+        },
+        "proposed": null
+      },
+      "pass": false,
+      "agent": {
+        "code": 0,
+        "ms": 35429,
+        "turns": 5,
+        "cost": 0.00281101,
+        "subagents": 0,
+        "error": null,
+        "gateRetries": 0
+      },
+      "consistent": false
+    }
+  ]
+}

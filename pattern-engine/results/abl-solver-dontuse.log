@@ -1,0 +1,74 @@
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+Run 2026-11-15T21-58-05-solver-no-dont-use [dev]: harness solver, model haiku, 4 cases × k=2 = 8 agent runs, concurrency 4, ablate no-dont-use
+[1/8] FAIL hand-rule-002#1 15s
+      selection: shed: expected "shed", got "house"
+      built: shed: expected "shed", got "house"
+[2/8] FAIL hand-rule-002#2 16s
+      selection: shed: expected "shed", got "house"
+      built: shed: expected "shed", got "house"
+[3/8] FAIL hand-rule-001#1 17s
+      selection: tower: expected "tower", got "house"
+      built: tower: expected "tower", got "house"
+[4/8] FAIL hand-rule-001#2 19s
+      selection: tower: expected "tower", got "house"
+      built: tower: expected "tower", got "house"
+[5/8] FAIL hand-rule-004#1 16s
+      selection: house: expected "house", got "shed"
+      built: house: expected "house", got "shed"
+[6/8] FAIL hand-rule-004#2 15s
+      selection: house: expected "house", got "shed"
+      built: house: expected "house", got "shed"
+[7/8] FAIL hand-rule-003#1 27s
+      selection: house: expected "house", got "tower"
+      built: house: expected "house", got "tower"
+[8/8] FAIL hand-rule-003#2 35s
+      selection: house: expected "house", got "tower"
+      built: house: expected "house", got "tower"
+
+Report 2026-11-15T21-58-05-solver-no-dont-use (ablate no-dont-use): 4 cases, 8 runs
+harness solver, mode dev, model haiku, k=2
+API-equivalent cost $0.01 ($0.002 per run), 20 s per run, 2.5 turns per run, 0.0 subagents per run
+
+Note: a dev run is a sample. Use --mode full to validate.
+
+metric                            score         
+selection accuracy                0% (0/8)      
+built tree matches                0% (0/8)      
+structure pass                    100% (8/8)    
+rules pass                        100% (8/8)    
+pass@1 (all checks)               0% (0/8)      
+pass^2 (all runs of a case)       0% (0/4)      
+near-miss accuracy                0% (0/8)      
+no-fit precision                  — (0/0)       
+no-fit full pass                  — (0/0)       
+agent errors                      0% (0/8)      
+trace matches output              75% (6/8)     
+gate retries                      0% (0/8)      
+
+by top pattern                    pass@1
+  shed                            0% (0/2)
+  tower                           0% (0/2)
+  house                           0% (0/4)
+
+most common failures
+    2× selection: shed: expected "shed", got "house"
+    2× built: shed: expected "shed", got "house"
+    2× selection: tower: expected "tower", got "house"
+    2× built: tower: expected "tower", got "house"
+    2× selection: house: expected "house", got "shed"
+    2× built: house: expected "house", got "shed"
+    2× selection: house: expected "house", got "tower"
+    2× built: house: expected "house", got "tower"
+
+Results: results\2026-11-15T21-58-05-solver-no-dont-use.json
+Outputs: results\runs\2026-11-15T21-58-05-solver-no-dont-use
+
+Targets (mode dev): BELOW TARGET
+  LOW  pass@1: 0% (0/8), target >= 85%
+  LOW  pass^k: 0% (0/4), target >= 70%
+  LOW  near-miss: 0% (0/8), target >= 80%
+  -    no-fit: no runs to measure
+  ok   agent-errors: 0% (0/8), target <= 5%

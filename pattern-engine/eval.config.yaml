@@ -4,10 +4,17 @@
 # The default harness for --harness. monolith is a frozen control: do not change it.
 harness: modular
 
+# Settings of the solver harness (--harness solver). Models default to the mode model.
+solver:
+  max_depth: 4          # deeper nodes become unresolved
+  compose_retries: 3    # compose + check rounds for each node
+  # select_model: haiku
+  # compose_model: haiku
+
 # Run modes: the defaults for --mode. A flag (--sample, --k, --model) changes one value.
 modes:
   smoke: { sample: 3, k: 1, model: haiku }
-  dev:   { sample: 8, k: 1, model: haiku }
+  dev:   { sample: 5, k: 1, model: haiku }
   full:  { sample: 0, k: 3, model: sonnet }   # sample 0 = all cases
 
 # Agent targets. A number is a minimum rate (0..1). { max: x } is a maximum rate.

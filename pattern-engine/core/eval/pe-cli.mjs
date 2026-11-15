@@ -54,7 +54,8 @@ export async function scaffold(domain, dir, id, from) {
   const tplFile = path.join(dir, 'templates', 'pattern.proposed.md');
   const tpl = fs.existsSync(tplFile) ? fs.readFileSync(tplFile, 'utf8') : null;
   if (!tpl) throw new Error('no templates/pattern.proposed.md');
-  const partsYaml = (near.parts || []).map(pt => `  - { ref: ${pt.ref}, count: "${pt.count ?? 1}" }`).join('\n');
+  // Parts that belong to one variant only (`only`) are not copied: the new pattern has one plain variant.
+  const partsYaml = (near.parts || []).filter(pt => !pt.only).map(pt => `  - { ref: ${pt.ref}, count: "${pt.count ?? 1}" }`).join('\n');
   const text = tpl.replaceAll('{{id}}', id).replaceAll('{{from}}', from).replaceAll('{{kind}}', near.kind)
     .replaceAll('{{level}}', String(near.level)).replaceAll('{{parts}}', partsYaml);
   parsePatternText(text, `${id}.md`); // fails early if the template is broken

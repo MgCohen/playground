@@ -1,0 +1,87 @@
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+warn: house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.
+Run 2026-11-15T21-54-22-solver [dev]: harness solver, model haiku, 20 cases × k=2 = 40 agent runs, concurrency 4
+[1/40] PASS hand-rule-001#1 17s
+[2/40] PASS hand-nofit-001#1 19s
+[3/40] PASS hand-rule-001#2 19s
+[4/40] PASS hand-nofit-001#2 23s
+[5/40] PASS gen-s42-003#1 25s
+[6/40] PASS gen-s42-001#1 30s
+[7/40] PASS gen-s42-001#2 29s
+[8/40] PASS gen-s42-003#2 26s
+[9/40] PASS gen-s42-005#1 14s
+[10/40] PASS gen-s42-005#2 17s
+[11/40] PASS hand-near-001#2 15s
+[12/40] PASS hand-near-001#1 22s
+[13/40] PASS hand-rule-002#1 13s
+[14/40] PASS hand-rule-002#2 14s
+[15/40] PASS hand-nofit-002#1 40s
+[16/40] PASS gen-s42-002#1 29s
+[17/40] PASS gen-s42-002#2 27s
+[18/40] PASS hand-nofit-002#2 50s
+[19/40] PASS gen-s42-004#1 25s
+[20/40] PASS gen-s42-006#1 15s
+[21/40] PASS gen-s42-006#2 15s
+[22/40] PASS gen-s42-004#2 27s
+[23/40] PASS hand-near-002#1 16s
+[24/40] PASS hand-near-002#2 15s
+[25/40] FAIL hand-nofit-003#2 17s
+      structure: camping-tent: part "chimney": count 0, allowed 1
+[26/40] PASS hand-rule-003#1 13s
+[27/40] FAIL hand-nofit-003#1 27s
+      structure: camping-tent: part "chimney": count 0, allowed 1
+[28/40] PASS hand-rule-003#2 19s
+[29/40] PASS gen-s42-008#1 23s
+[30/40] PASS gen-s42-008#2 21s
+[31/40] PASS gen-s42-007#1 21s
+[32/40] PASS gen-s42-007#2 22s
+[33/40] PASS gen-s42-009#1 13s
+[34/40] PASS gen-s42-009#2 14s
+[35/40] PASS hand-near-003#1 14s
+[36/40] PASS hand-near-003#2 15s
+[37/40] PASS hand-rule-004#2 14s
+[38/40] PASS hand-rule-004#1 19s
+[39/40] PASS gen-s42-011#1 26s
+[40/40] PASS gen-s42-011#2 25s
+
+Report 2026-11-15T21-54-22-solver: 20 cases, 40 runs
+harness solver, mode dev, model haiku, k=2
+API-equivalent cost $0.11 ($0.003 per run), 21 s per run, 4.5 turns per run, 0.0 subagents per run
+
+Note: a dev run is a sample. Use --mode full to validate.
+
+metric                            score         
+selection accuracy                100% (40/40)  
+built tree matches                100% (34/34)  
+structure pass                    95% (38/40)   
+rules pass                        100% (40/40)  
+pass@1 (all checks)               95% (38/40)   
+pass^2 (all runs of a case)       95% (19/20)   
+near-miss accuracy                100% (8/8)    
+no-fit precision                  100% (6/6)    
+no-fit full pass                  67% (4/6)     
+agent errors                      0% (0/40)     
+trace matches output              100% (40/40)  
+gate retries                      0% (0/40)     
+
+by top pattern                    pass@1
+  tower                           100% (8/8)
+  no-fit                          67% (4/6)
+  street                          100% (14/14)
+  house                           100% (8/8)
+  shed                            100% (4/4)
+
+most common failures
+    2× structure: camping-tent: part "chimney": count #, allowed #
+
+Results: results\2026-11-15T21-54-22-solver.json
+Outputs: results\runs\2026-11-15T21-54-22-solver
+
+Targets (mode dev): BELOW TARGET
+  ok   pass@1: 95% (38/40), target >= 85%
+  ok   pass^k: 95% (19/20), target >= 70%
+  ok   near-miss: 100% (8/8), target >= 80%
+  LOW  no-fit: 67% (4/6), target >= 80%
+  ok   agent-errors: 0% (0/40), target <= 5%
