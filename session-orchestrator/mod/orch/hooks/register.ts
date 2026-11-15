@@ -1,6 +1,6 @@
 import type { Register } from 'claude-code'
 
-const DEFAULT_STORE = 'C:/Users/matheus.cohen/Documents/Projects/claude-orchestrator/store'
+const DEFAULT_STORE = 'C:/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator/store'
 const ASK_TOOL = 'mcp__orch__ask_user'
 const REPORT_TOOL = 'mcp__orch__report'
 const SPAWN_TOOL = 'mcp__orch__spawn_child'

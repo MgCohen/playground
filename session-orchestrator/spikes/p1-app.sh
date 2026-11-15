@@ -1,6 +1,6 @@
 #!/bin/bash
-ID=$(cat /c/Users/matheus.cohen/Documents/Projects/claude-orchestrator/spikes/p1.id | tr -d '\r\n ')
-D=/c/Users/matheus.cohen/Documents/Projects/claude-orchestrator/store/sessions/$ID
+ID=$(cat /c/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator/spikes/p1.id | tr -d '\r\n ')
+D=/c/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator/store/sessions/$ID
 T=$(ls -d /c/Users/matheus.cohen/.claude/projects/*/$ID.jsonl | head -1)
 idle() { for i in $(seq 1 120); do grep -q '"idle"' $D/status.json 2>/dev/null && return 0; sleep 2; done; echo "TIMEOUT idle"; }
 running_then_idle() { for i in $(seq 1 30); do grep -q '"running"' $D/status.json && break; sleep 1; done; idle; }

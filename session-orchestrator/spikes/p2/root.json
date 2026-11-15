@@ -1,5 +1,5 @@
 {
   "title": "P2 root",
-  "cwd": "C:/Users/matheus.cohen/Documents/Projects/claude-orchestrator/spikes/p2",
+  "cwd": "C:/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator/spikes/p2",
   "brief": "You are the root session of an orchestrator test. Do these steps. 1) Call mcp__orch__report with state working and summary 'root started'. 2) Call mcp__orch__spawn_child two times. First: title 'child A', brief: 'You are child A. Call mcp__orch__ask_user with question Pick a color, options RED and BLUE, risk low, defaultOption RED, waitSeconds 0. Then end your turn. When the answer message arrives, call mcp__orch__report with state done and summary: child A picked <the color>.' Second: title 'child B', brief: 'You are child B. Call mcp__orch__report with state done and summary: child B ok.' 3) End your turn. 4) Each child report arrives later as a new message. When you have the reports of both children, call mcp__orch__report with state done and a summary that gives both child summaries. Until then, end each turn with no other action."
 }

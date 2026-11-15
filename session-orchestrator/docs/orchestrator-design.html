@@ -81,7 +81,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">claude-orchestrator · design</div>
+  <div class="eyebrow">playground · session-orchestrator</div>
   <h1>Session Orchestrator Design</h1>
   <p class="summary">One local supervisor controls many Claude Code sessions through a shared file store. Each session has one writer at a time, so a session moves between the desktop app and the supervisor with no lost message. Decisions go to the user as free-text cards: a default applies after a timeout by risk level, and each default lands as a stacked draft PR that the user reviews later.</p>
 </header>
@@ -411,7 +411,7 @@ flowchart LR
   </section>
 </div>
 
-<footer>Sources: <code>docs/plan.md</code> and <code>docs/store.md</code> in the claude-orchestrator repository.</footer>
+<footer>Sources: <code>docs/plan.md</code> and <code>docs/store.md</code> in <code>session-orchestrator/</code> of the playground repository.</footer>
 </div>
 
 <script>

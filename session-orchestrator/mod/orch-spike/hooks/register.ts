@@ -1,6 +1,6 @@
 import type { Register } from 'claude-code'
 
-const ROOT = 'C:/Users/matheus.cohen/Documents/Projects/claude-orchestrator/store/sessions'
+const ROOT = 'C:/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator/store/sessions'
 const TOOL = 'mcp__orch-spike__ask_user'
 
 const S: { dir?: string; cursor: number; draining: boolean } = { cursor: 0, draining: false }

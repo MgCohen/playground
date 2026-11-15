@@ -2,8 +2,8 @@ import { query } from '@anthropic-ai/claude-agent-sdk'
 import { randomUUID } from 'node:crypto'
 import { mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs'
 
-const store = 'C:/Users/matheus.cohen/Documents/Projects/claude-orchestrator/store/sessions'
-const cwd = 'C:/Users/matheus.cohen/Documents/Projects/claude-orchestrator/spikes'
+const store = 'C:/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator/store/sessions'
+const cwd = 'C:/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator/spikes'
 const count = Number(process.argv[2] ?? 6)
 
 async function one(n) {
