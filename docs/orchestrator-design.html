@@ -1,0 +1,435 @@
+<title>Session Orchestrator Design</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one column of reading width, a tab bar, each tab one topic with its visual first. */
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --fg: #1b2126;
+  --muted: #5b6670;
+  --line: #d9dee3;
+  --accent: #0f6e78;
+  --accent-soft: #e2f1f2;
+  --ok: #2c7a3f;
+  --warn: #9a6200;
+  --bad: #b0322b;
+  --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --ok: #6cc684; --warn: #e0a548; --bad: #ef7d74;
+    --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --ok: #6cc684; --warn: #e0a548; --bad: #ef7d74;
+  --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; color: var(--fg); }
+p { margin: 0; max-width: 68ch; }
+.summary { color: var(--muted); max-width: 68ch; }
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+nav button {
+  font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 22px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 10px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.vtitle { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); white-space: nowrap; }
+td code, p code, li code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre.code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); padding: 12px; border-radius: 6px; margin: 0; overflow-x: auto; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; max-width: 68ch; }
+.pill { display: inline-block; font: 500 12px var(--font-mono); padding: 1px 8px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+.pill.ok { color: var(--ok); } .pill.warn { color: var(--warn); } .pill.bad { color: var(--bad); } .pill.todo { color: var(--muted); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+details { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+details[open] { padding-bottom: 14px; }
+summary { cursor: pointer; font-weight: 500; }
+details > div { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 12px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">claude-orchestrator · design</div>
+  <h1>Session Orchestrator Design</h1>
+  <p class="summary">One local supervisor controls many Claude Code sessions through a shared file store. Each session has one writer at a time, so a session moves between the desktop app and the supervisor with no lost message. Decisions go to the user as free-text cards: a default applies after a timeout by risk level, and each default lands as a stacked draft PR that the user reviews later.</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+  <button role="tab" data-tab="topology" aria-selected="false">Topology</button>
+  <button role="tab" data-tab="flows" aria-selected="false">Flows</button>
+  <button role="tab" data-tab="decisions" aria-selected="false">Decisions</button>
+  <button role="tab" data-tab="operate" aria-selected="false">Operate</button>
+  <button role="tab" data-tab="roadmap" aria-selected="false">Roadmap</button>
+</nav>
+
+<!-- OVERVIEW -->
+<div class="panel" id="overview" role="tabpanel">
+  <div class="card">
+    <div class="vtitle">All parts talk through the store, never directly</div>
+    <div class="scroll"><pre class="mermaid">
+flowchart LR
+  U[User: phone or desktop] -->|answers, reviews| UI[Phone UI]
+  UI -->|HTTP| SV[Supervisor]
+  SV -->|reads, writes| ST[(Store: files)]
+  M[Mod in each session] -->|reads, writes| ST
+  SV -->|Agent SDK turn| S1[Session, holder supervisor]
+  M --- S2[Session, holder live]
+  S2 --- APP[Desktop app or Remote Control]
+  APP --- U
+    </pre></div>
+  </div>
+
+  <section>
+    <h2>Parts</h2>
+    <div class="scroll"><table>
+      <tr><th>Part</th><th>Path</th><th>Job</th><th>State</th></tr>
+      <tr><td>Mod</td><td><code>mod/orch</code></td><td>Inbox, heartbeat, lease, mirror, tools</td><td><span class="pill ok">built</span></td></tr>
+      <tr><td>Supervisor</td><td><code>supervisor/</code></td><td>Scheduler, SDK turns, policy, HTTP API</td><td><span class="pill ok">built</span></td></tr>
+      <tr><td>Store</td><td><code>store/</code></td><td>One folder for each session, ledger</td><td><span class="pill ok">built</span></td></tr>
+      <tr><td>Policy</td><td><code>store/policy.json</code></td><td>Risk levels, timeouts, docs check</td><td><span class="pill ok">built</span></td></tr>
+      <tr><td>Phone UI</td><td><code>ui/</code></td><td>Session tree, decision cards, reviews</td><td><span class="pill todo">P4</span></td></tr>
+      <tr><td>Tunnel</td><td>None yet</td><td>Phone access to the local API</td><td><span class="pill todo">P4</span></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Five rules that the tests taught</h2>
+    <div class="scroll"><table>
+      <tr><th>Rule</th><th>Reason</th><th>Proof</th></tr>
+      <tr><td>One writer for each session</td><td>Two writers split the transcript</td><td>Spike S0: lost turn</td></tr>
+      <tr><td>Questions never block a process</td><td>A hook stops after about 10 s</td><td>Spike S4</td></tr>
+      <tr><td>State lives in the store</td><td>A mod reload clears memory</td><td>P1 hot reload</td></tr>
+      <tr><td>No click questions</td><td>The user answers by voice</td><td>Deny rule, P3</td></tr>
+      <tr><td>Each default is a branch</td><td>The user can refuse it alone</td><td>PR stack test</td></tr>
+    </table></div>
+  </section>
+</div>
+
+<!-- TOPOLOGY -->
+<div class="panel off" id="topology" role="tabpanel">
+  <div class="card">
+    <div class="vtitle">The lease decides who sends the next turn</div>
+    <div class="scroll"><pre class="mermaid">
+stateDiagram-v2
+  [*] --> none
+  none --> live: app opens session
+  none --> supervisor: SDK turn starts
+  supervisor --> none: SDK turn ends
+  live --> none: session.end or stale heartbeat
+  none --> live: mod takes it back
+    </pre></div>
+  </div>
+
+  <section>
+    <h2>Lease holders</h2>
+    <div class="scroll"><table>
+      <tr><th>Holder</th><th>Who sends turns</th><th>How</th></tr>
+      <tr><td><code>live</code></td><td>The open app, phone or terminal</td><td>The mod submits inbox files when idle</td></tr>
+      <tr><td><code>supervisor</code></td><td>The supervisor</td><td>Agent SDK resume of the session id</td></tr>
+      <tr><td><code>none</code></td><td>Nobody</td><td>The next writer takes the lease</td></tr>
+    </table></div>
+    <p>A <code>live</code> lease counts as live while its heartbeat or the lease is less than 15 s old. After that, the supervisor releases it. The mod writes a heartbeat every 3 s on its own timer.</p>
+  </section>
+
+  <section>
+    <h2>Session folder</h2>
+    <div class="scroll"><table>
+      <tr><th>File</th><th>Writer</th><th>Content</th></tr>
+      <tr><td><code>meta.json</code></td><td>Supervisor</td><td>Title, parent, folder, start flag</td></tr>
+      <tr><td><code>lease.json</code>, <code>heartbeat.txt</code></td><td>Mod</td><td>Holder and last beat</td></tr>
+      <tr><td><code>inbox/</code>, <code>cursor.txt</code></td><td>Supervisor, UI / mod</td><td>Turns to send, last turn sent</td></tr>
+      <tr><td><code>decisions/</code>, <code>answers/</code></td><td>Mod / supervisor, UI</td><td>Questions and their answers</td></tr>
+      <tr><td><code>reviews/</code>, <code>report.json</code></td><td>Supervisor / mod</td><td>Verdicts, last session report</td></tr>
+      <tr><td><code>blocked.json</code>, <code>mirror/</code></td><td>Mod</td><td>Block reason, transcript rows</td></tr>
+    </table></div>
+    <p>The full contract is in <code>docs/store.md</code>. Each file has one write, and inbox names sort in time order.</p>
+  </section>
+
+  <section>
+    <h2>Session tools from the mod</h2>
+    <div class="scroll"><table>
+      <tr><th>Tool</th><th>Use</th></tr>
+      <tr><td><code>ask_user</code></td><td>Ask one question with a risk level and a default</td></tr>
+      <tr><td><code>report</code></td><td>Give the state: working, blocked or done</td></tr>
+      <tr><td><code>spawn_child</code></td><td>Start a child session with a brief</td></tr>
+    </table></div>
+  </section>
+</div>
+
+<!-- FLOWS -->
+<div class="panel off" id="flows" role="tabpanel">
+  <div class="card">
+    <div class="vtitle">Each message reaches its session by one of two paths</div>
+    <div class="scroll"><pre class="mermaid">
+flowchart TD
+  A[Text from UI, parent or answer] --> B[New file in inbox]
+  B --> C{Lease holder?}
+  C -->|live| D[Mod waits for idle]
+  D --> E[Mod submits the turn]
+  C -->|none| F[Supervisor resumes with SDK]
+  C -->|supervisor| G[Wait for the turn to end]
+  G --> F
+  E --> H[cursor.txt moves]
+  F --> H
+    </pre></div>
+  </div>
+
+  <section>
+    <h2>Start a session tree</h2>
+    <ol>
+      <li>Send <code>POST /api/sessions</code> with a title, a folder and a brief.</li>
+      <li>The supervisor writes <code>meta.json</code> and <code>inbox/1.txt</code>.</li>
+      <li>The next tick starts a new SDK session with that id.</li>
+      <li>The session calls <code>spawn_child</code> for each piece of parallel work.</li>
+      <li>Each child runs in its own SDK turn, up to <code>maxRuns</code> at one time.</li>
+      <li>A child calls <code>report</code> with <code>done</code> or <code>blocked</code>.</li>
+      <li>The supervisor writes that report to the inbox of the parent.</li>
+    </ol>
+  </section>
+
+  <div class="card">
+    <div class="vtitle">A hand-off moves only the lease, so the transcript stays one branch</div>
+    <div class="scroll"><pre class="mermaid">
+sequenceDiagram
+  participant SV as Supervisor
+  participant ST as Store
+  participant APP as Desktop app
+  SV->>ST: lease supervisor, SDK turn
+  SV->>ST: lease none at turn end
+  APP->>ST: open session, mod writes lease live
+  ST-->>SV: lease live, skip SDK
+  APP->>ST: mod submits inbox turns
+  APP->>ST: session.end, lease none
+  SV->>ST: next inbox file, SDK resume
+    </pre></div>
+  </div>
+
+  <section>
+    <h2>Special cases</h2>
+    <div class="scroll"><table>
+      <tr><th>Case</th><th>Behavior</th></tr>
+      <tr><td>User pressed Stop</td><td>Mod keeps the file, writes <code>blocked.json</code></td></tr>
+      <tr><td>Idle app process ends</td><td>Lease becomes <code>none</code>, SDK takes over</td></tr>
+      <tr><td>SDK turn fails</td><td>Inbox stays; stop after 3 failures</td></tr>
+      <tr><td>Two messages close together</td><td>Two turns, in order</td></tr>
+    </table></div>
+    <p>After a Stop, the engine refuses plugin turns until the user types. The supervisor shows this state and never goes around the Stop.</p>
+  </section>
+</div>
+
+<!-- DECISIONS -->
+<div class="panel off" id="decisions" role="tabpanel">
+  <div class="card">
+    <div class="vtitle">A question always gets an answer, from the user, the docs or the policy</div>
+    <div class="scroll"><pre class="mermaid">
+flowchart TD
+  A[Session calls ask_user] --> B[Decision file, turn ends]
+  B --> C{Level checks docs?}
+  C -->|yes| D{Docs answer it?}
+  D -->|yes| E[Answer by docs, with source]
+  C -->|no| F{User answers in time?}
+  D -->|no| F
+  F -->|yes| G[Answer by user]
+  F -->|no, timeout| H{Level has a timeout and default?}
+  H -->|no| I[Wait for the user]
+  H -->|yes| J[Default answer and stacked PR]
+  E --> K[Inbox turn to the session]
+  G --> K
+  J --> K
+    </pre></div>
+  </div>
+
+  <section>
+    <h2>Policy levels</h2>
+    <p>The levels are data in <code>store/policy.json</code>. You set how many levels, the definition, the timeout and the docs check of each. The session picks a level from the definitions.</p>
+    <div class="scroll"><table>
+      <tr><th>Level</th><th>Timeout</th><th>Docs check</th><th>Example</th></tr>
+      <tr><td><code>low</code></td><td>30 min</td><td>Yes</td><td>A name or a file place</td></tr>
+      <tr><td><code>medium</code></td><td>4 h</td><td>Yes</td><td>A design choice that a review can undo</td></tr>
+      <tr><td><code>high</code></td><td>Never</td><td>No</td><td>Hard to undo, outward actions</td></tr>
+    </table></div>
+    <p>An unknown level counts as the strictest level. A decision with no default always waits for the user.</p>
+  </section>
+
+  <div class="card">
+    <div class="vtitle">Each default is one draft PR on top of the one before it</div>
+    <div class="scroll"><pre class="mermaid">
+flowchart LR
+  M[main] --> P1[PR 1: decision A]
+  P1 --> P2[PR 2: decision B]
+  P2 --> P3[PR 3: decision C]
+    </pre></div>
+  </div>
+
+  <section>
+    <h2>Review verdicts</h2>
+    <div class="scroll"><table>
+      <tr><th>Verdict</th><th>Session does</th><th>Stack above</th></tr>
+      <tr><td><code>approve</code></td><td>Marks the PR ready, no merge</td><td>Stays</td></tr>
+      <tr><td><code>change</code></td><td>Commits the change on that branch</td><td>Rebased on the change</td></tr>
+      <tr><td><code>refuse</code></td><td>Closes the PR, keeps the branch</td><td>Closed, rebuilt from the base</td></tr>
+    </table></div>
+    <p>After a refuse, the session starts again from the base branch in the new direction. It reuses commits from the closed branches where they still fit. Each answer, default and review adds one line to <code>store/ledger.jsonl</code>.</p>
+  </section>
+
+  <section>
+    <h2>Question rules</h2>
+    <ul>
+      <li>The user answers in free text or by voice. Options are suggestions only.</li>
+      <li>A deny rule removes the built-in click question tool from all sessions.</li>
+      <li>In a normal session, the model asks in its reply text.</li>
+      <li>In an orchestrator session, the model calls <code>ask_user</code>.</li>
+    </ul>
+  </section>
+</div>
+
+<!-- OPERATE -->
+<div class="panel off" id="operate" role="tabpanel">
+  <section>
+    <h2>Communication channels</h2>
+    <div class="scroll"><table>
+      <tr><th>From</th><th>To</th><th>Channel</th></tr>
+      <tr><td>User</td><td>Session</td><td>UI → <code>/send</code> → inbox file</td></tr>
+      <tr><td>Session</td><td>User</td><td><code>ask_user</code> → decision card</td></tr>
+      <tr><td>User</td><td>Decision</td><td>UI → answer file or review</td></tr>
+      <tr><td>Parent</td><td>Child</td><td><code>spawn_child</code> brief, then inbox</td></tr>
+      <tr><td>Child</td><td>Parent</td><td><code>report</code> → parent inbox</td></tr>
+      <tr><td>Session</td><td>Everyone</td><td><code>report.json</code>, PRs, mirror</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>What keeps track of what</h2>
+    <div class="scroll"><table>
+      <tr><th>Question</th><th>Source</th></tr>
+      <tr><td>Is the session alive?</td><td><code>heartbeat.txt</code>, <code>lease.json</code></td></tr>
+      <tr><td>Is it running or idle?</td><td><code>status.json</code>, supervisor runs</td></tr>
+      <tr><td>What did it say last?</td><td><code>report.json</code>, <code>mirror/</code></td></tr>
+      <tr><td>Why does it not move?</td><td><code>blocked.json</code>, open decisions</td></tr>
+      <tr><td>Which defaults wait for review?</td><td><code>ledger.jsonl</code>, draft PRs</td></tr>
+      <tr><td>What happened when?</td><td>Supervisor log, <code>log-&lt;holder&gt;.txt</code></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Parallel sessions</h2>
+    <div class="scroll"><table>
+      <tr><th>Limit</th><th>Rule</th></tr>
+      <tr><td>Turns at one time</td><td><code>maxRuns</code> (4); six tested</td></tr>
+      <tr><td>Writers for each session</td><td>One, by the lease</td></tr>
+      <tr><td>Writers for each folder</td><td>One code writer; others read only</td></tr>
+      <tr><td>Branches</td><td>Each session has its own stack</td></tr>
+      <tr><td>Results</td><td>Children report up to the parent</td></tr>
+    </table></div>
+    <p>Two code sessions in one folder share one working tree and break each other's branches. Give each code session its own git worktree. The supervisor does not make worktrees yet: see Roadmap.</p>
+  </section>
+
+  <section>
+    <h2>How a change is validated</h2>
+    <ol>
+      <li>Run the unit tests: <code>npm test</code> in <code>supervisor/</code> (16 tests, a fake runner).</li>
+      <li>Make a test repository in the scratchpad, with short policy timeouts.</li>
+      <li>Start a test supervisor with its own <code>ORCH_STORE</code> and <code>ORCH_PORT</code>.</li>
+      <li>Send a scripted brief through <code>POST /api/sessions</code>.</li>
+      <li>Send scripted answers and reviews through the API, as the user.</li>
+      <li>Examine the store, the ledger, the git graph and the PRs.</li>
+      <li>Make sure that each transcript has one leaf.</li>
+      <li>Record each result and each finding in <code>docs/plan.md</code>.</li>
+    </ol>
+  </section>
+</div>
+
+<!-- ROADMAP -->
+<div class="panel off" id="roadmap" role="tabpanel">
+  <section>
+    <h2>Phases</h2>
+    <div class="scroll"><table>
+      <tr><th>Phase</th><th>Work</th><th>State</th></tr>
+      <tr><td>P0</td><td>Spikes S0 to S11</td><td><span class="pill ok">done</span></td></tr>
+      <tr><td>P1</td><td>Mod: inbox, lease, heartbeat, tools</td><td><span class="pill ok">done</span></td></tr>
+      <tr><td>P2</td><td>Supervisor, session tree, hand-off</td><td><span class="pill ok">done</span></td></tr>
+      <tr><td>P3</td><td>Policy, defaults, stacked PRs, reviews</td><td><span class="pill ok">done</span></td></tr>
+      <tr><td>P4</td><td>Phone UI, tunnel, decision versions</td><td><span class="pill todo">next</span></td></tr>
+      <tr><td>P5</td><td>Run vsa-template work under it</td><td><span class="pill todo">later</span></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Known gaps</h2>
+    <div class="scroll"><table>
+      <tr><th>Gap</th><th>Effect</th><th>Plan</th></tr>
+      <tr><td>Rebuilt PR has no decision version</td><td>A review cannot reach it</td><td><span class="pill warn">P4</span></td></tr>
+      <tr><td>Rebuilt PR keeps old text</td><td>Wrong question in the body</td><td><span class="pill warn">P4</span></td></tr>
+      <tr><td>No worktree for each session</td><td>Parallel code sessions collide</td><td><span class="pill warn">P4</span></td></tr>
+      <tr><td>PR comments show the user</td><td>No sign of the orchestrator</td><td><span class="pill todo">later</span></td></tr>
+      <tr><td>SDK sessions not in sidebar</td><td>Open with <code>--resume</code></td><td><span class="pill todo">later</span></td></tr>
+      <tr><td>No restart after 3 failures</td><td>Session stays blocked</td><td><span class="pill todo">later</span></td></tr>
+      <tr><td><code>/orch-enable</code> not tested</td><td>Unknown in the app</td><td><span class="pill todo">later</span></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Open questions</h2>
+    <ul>
+      <li>Tunnel: which tool, and which sign-in protects the phone page?</li>
+      <li>Worktrees: does the supervisor make them, or does each brief ask the session?</li>
+      <li>Store: files only, or SQLite after P4?</li>
+    </ul>
+  </section>
+</div>
+
+<footer>Sources: <code>docs/plan.md</code> and <code>docs/store.md</code> in the claude-orchestrator repository.</footer>
+</div>
+
+<script>
+(function () {
+  var names = ["overview", "topology", "flows", "decisions", "operate", "roadmap"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "overview";
+    names.forEach(function (n) {
+      document.getElementById(n).classList.toggle("off", n !== name);
+    });
+    document.querySelectorAll("nav button").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
+    });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>

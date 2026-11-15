@@ -1,5 +1,7 @@
 # Session orchestrator: implementation plan
 
+Design page: https://claude.ai/artifact/EggEYH4ivUuPGG9Pw4k1y1 (source `docs/orchestrator-design.html`).
+
 ## Goal
 
 One local system controls all Claude Code sessions of the user:
