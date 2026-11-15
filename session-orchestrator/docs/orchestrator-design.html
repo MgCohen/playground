@@ -408,6 +408,11 @@ flowchart LR
       <li>Worktrees: does the supervisor make them, or does each brief ask the session? Recommendation: the supervisor makes them and records the folder in <code>meta.json</code>.</li>
       <li>Store: files only, or SQLite after P4? Recommendation: files until P5 shows a real problem.</li>
       <li>Docs check for <code>medium</code>: keep it on? Recommendation: keep it, and ask at the P4 start.</li>
+      <li>UI stack: plain HTML from <code>http.ts</code>, or a separate app? Recommendation: plain HTML and JS from <code>http.ts</code>, no build step.</li>
+      <li>Sign-in for the API, which has no auth on 127.0.0.1? Recommendation: Cloudflare Access in front of the tunnel, plus a token header.</li>
+      <li>Swipe meaning on a card? Recommendation: right accepts the default, left opens the free-text answer.</li>
+      <li>Voice input: browser speech or phone dictation? Recommendation: phone dictation in the text field.</li>
+      <li>Delete the old folder <code>claude-orchestrator</code>? Recommendation: yes, after the next app restart.</li>
     </ul>
   </section>
 </div>
