@@ -9,7 +9,7 @@ One local system controls all Claude Code sessions of the user:
 - It starts, nests, watches, stops and archives sessions.
 - It delivers each message. No message gets lost.
 - It keeps one flat queue of decisions for the user, with the path of each decision.
-- It applies a default decision after a timeout, by risk level. It records the decision and makes a commit or a tag.
+- It applies a default decision after a timeout, by risk level. It records the decision and puts its work on a stacked draft PR (`onDefault`: `stacked-pr`, `commit` or `none`).
 - A phone UI shows the queue (swipe cards) and the state of each session.
 
 The main problem: in nested sessions, decisions get lost in the middle of the tree, and the user does not see them. The tool is local and personal, not a product. It runs on the subscription of the user through the Agent SDK and `claude -p`, with no API key.
@@ -44,7 +44,7 @@ session-orchestrator/
 
 | Phase | Work | Done when |
 |---|---|---|
-| P0 | Spikes S1 to S7 (below) | Each spike has a result in this file |
+| P0 | Spikes S0 to S11 (below) | Each spike has a result in this file |
 | P1 | Mod: inbox, mirror, heartbeat, lease, `ask_user`, `report` | A desktop session gets inbox turns and its rows are in the store |
 | P2 | Supervisor: store, SDK runner, lease rules, heartbeat check, `spawn_child` | The supervisor starts a session tree and resumes idle sessions |
 | P3 | Decision policy: risk levels, timeouts, default, record, commit or tag | An unanswered low-risk decision gets its default and a record |
@@ -101,7 +101,7 @@ session-orchestrator/
 |---|---|---|
 | `ask_user` with `waitSeconds` > 0 | Short decisions, a quick answer is likely | Stays open; the answer is the tool result |
 | `ask_user` with `waitSeconds` 0 | Long decisions | Ends; the answer wakes the session through the inbox |
-| `AskUserQuestion` redirect | A model that uses the built-in tool | Waits up to 300 s for the store; then the app card |
+| `AskUserQuestion` redirect | Removed (no click questions) | None |
 
 ## P1 result (2026-11-15)
 
@@ -114,8 +114,8 @@ The mod `mod/orch` replaces `mod/orch-spike` in `CLAUDE_CODE_PLUGIN_DIRS`. The s
 | `ask_user` pending, answer by inbox | ✅ | T1: LIME |
 | `ask_user` blocking, answer in time | ✅ | T2: CASHEW after 24 s |
 | `ask_user` blocking, timeout, then answer by inbox | ✅ The mode changes to `pending` | T4: FLAX |
-| `AskUserQuestion` from the store | ✅ | T3: ACAI |
-| `AskUserQuestion` with no answer | ✅ The app card shows after 300 s | Session `989d112c` |
+| `AskUserQuestion` from the store (removed later) | ✅ | T3: ACAI |
+| `AskUserQuestion` with no answer (removed later) | ✅ The app card shows after 300 s | Session `989d112c` |
 | Hot reload | ✅ The mod loads the cursor and the state from the store | `activate ... cursor=3.txt` |
 | `/orch-enable` command | Written, not tested in the app | |
 | One branch | ✅ One leaf after all tests | `p1-app.sh` |
@@ -130,11 +130,11 @@ Test script: `spikes/p1-app.sh` (it reads the session id from `spikes/p1.id`).
 
 ## P2 result (2026-11-15)
 
-The supervisor is in `supervisor/` (Node 26 runs the TypeScript files directly). Start: `npm start` in `supervisor/`. The store contract and the HTTP API are in `docs/store.md`.
+The supervisor is in `supervisor/` (Node 26 runs the TypeScript files directly). Start: `node src/main.ts` in `supervisor/`. The store contract and the HTTP API are in `docs/store.md`.
 
 | Part | Result | Evidence |
 |---|---|---|
-| Unit tests (fake runner, temporary store) | ✅ 9 tests | `npm test` |
+| Unit tests (fake runner, temporary store) | ✅ 9 tests | `node --test test/` |
 | Session tree: root + 2 children with `spawn_child`, a decision through the API, reports to the parent | ✅ About 90 s from start to the root report `done` | Root `b5f12905`, children `249fb7b0` and `48d13d06` |
 | Resume of idle sessions: inbox, answers and child reports go to a session that is not live | ✅ | `store/supervisor/log.txt` |
 | Hand-off supervisor → app: the session opens in the app, then a supervisor message goes through the mod | ✅ After the fix, one leaf | `249fb7b0` |
@@ -148,7 +148,7 @@ The supervisor is in `supervisor/` (Node 26 runs the TypeScript files directly).
 ### Open for later phases
 
 - P3: the decision policy (risk, timeout, default) uses `risk` and `defaultOption` of each decision.
-- A session that the supervisor starts is not in the app sidebar. To show it, open it with `claude --desktop --resume <id>`.
+- A session that the supervisor starts is not in the app sidebar. To show it, open it with `claude.exe --desktop --resume <id>` through PowerShell `Start-Process` (see `docs/know-how.md`).
 - The supervisor does not restart a failed turn after `maxFailures` (3) until it restarts.
 
 ## Change: no click questions (2026-11-15)
@@ -161,7 +161,7 @@ The policy is configurable (`config/policy.default.json`, copied to `store/polic
 
 | Part | Result | Evidence |
 |---|---|---|
-| Unit tests | ✅ 16 tests (7 new): timeout, no default for `null` or no `defaultOption`, unknown level, docs answer, docs miss then timeout, no docs check for a level without it, review | `npm test` |
+| Unit tests | ✅ 16 tests (7 new): timeout, no default for `null` or no `defaultOption`, unknown level, docs answer, docs miss then timeout, no docs check for a level without it, review | `node --test test/` |
 | Docs answer | ✅ A `low` question that `AGENTS.md` answers got the answer in about 20 s, with the source | Test repo: LIME from "AGENTS.md, Rules" |
 | Default after timeout, stacked branch | ✅ A `medium` question got its default after 30 s. The session put the work on `orch/decision-<id>` on top of `main` | Test repo: BLUE |
 | Review: refuse | ✅ The session went back to `main`, did the work again with the direction of the user, and kept the refused branch | Test repo: RED |
@@ -169,7 +169,7 @@ The policy is configurable (`config/policy.default.json`, copied to `store/polic
 
 ### PR stack test (2026-11-15)
 
-A supervisor session on a private GitHub test repository (`MgCohen/orch-pr-test`). Three `medium` questions, timeout 30 s.
+A supervisor session on a private GitHub test repository (`MgCohen/orch-pr-test`). Three `medium` questions, timeout 30 s. In this test, "the user" is the test script: the reviews and their texts came from `curl` calls, not from the real user.
 
 | Step | Result |
 |---|---|
@@ -217,6 +217,14 @@ Run one vsa-template stream under the orchestrator from start to merge. The supe
 - Archive a child session when it is done and nobody needs it. Keep it while its PR is open. Put this rule in each child brief.
 - Archive only the sessions that the user names, and never a session that waits for the user.
 - One decision group for each session. The title names all of its scope.
+- If an archive is refused, turn off Remote Control, then rename the session with `[archive/done]`.
+- Detach exploration sessions, and relay their results only when the user asks.
+
+Rules of the vsa-template work that the P5 stream must obey:
+
+- The orchestrator may review and merge PRs, except PR #8 (rules and analyzers).
+- Run CI only at the end of a stream, one manual run (no CI on each PR before 0.1.0).
+- Run only the tests that a change can affect. The full suite runs in CI.
 
 ### Open questions
 
@@ -226,7 +234,11 @@ Run one vsa-template stream under the orchestrator from start to merge. The supe
 | Tunnel: which tool and which sign-in? | Cloudflare Tunnel with Cloudflare Access |
 | Store: files, or SQLite after P4? | Files until P5 shows a real problem |
 | `medium` has `checkDocs: true`. The user named the docs answer only for `low` | Keep it, and ask the user at the P4 start |
-| Delete the old folder `Projects/claude-orchestrator`? | Yes, after the next app restart, when the user says so |
+| Delete the old folder `Projects/claude-orchestrator`? It also holds a stray `session-orchestrator/` subfolder with copied type files | Yes, after the next app restart, when the user says so |
+| UI stack: plain HTML from `http.ts`, or a separate app? | Plain HTML and JS served by `http.ts`, no build step |
+| Sign-in for the API (it listens on 127.0.0.1 with no auth) | Cloudflare Access in front of the tunnel, plus a token header |
+| Swipe meaning on a decision card | Right: accept the default. Left: open the free-text answer |
+| Voice input: browser speech or phone dictation? | Phone dictation in the text field: no extra code |
 
 ### Known gaps
 
@@ -234,6 +246,7 @@ Run one vsa-template stream under the orchestrator from start to merge. The supe
 - Supervisor sessions are not in the app sidebar. Open them with the app import (`docs/know-how.md`).
 - The supervisor does not restart a session after `maxFailures` (3) until the supervisor restarts.
 - `/orch-enable` is not tested in the app.
+- The supervisor has no API to stop or archive a session, but the goal needs both.
 
 ## Test sessions in the app sidebar
 
@@ -245,8 +258,8 @@ None of these is archived. Archive them only when the user says so.
 | Spike S1 cli | `f5034f63` | Done |
 | Spike S2: inbox | `6ad6c434` | Remote Control on |
 | Spike S8: ask | `3df803ac` | Remote Control on |
-| Test P1: orch mod | `ff9d65e6` | In the Stop state |
-| Test P1: orch mod 2 | `989d112c` | Done |
+| Test P1: orch mod | `989d112c` | In the Stop state |
+| Test P1: orch mod 2 | `ff9d65e6` | Done |
 | Test P2: child A hand-off | `249fb7b0` | Done |
 | Test P2: child B hand-off | `48d13d06` | Split transcript (lease race) |
 

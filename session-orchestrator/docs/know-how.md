@@ -23,21 +23,23 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - `tsc` gives TS2589 on `on('tool.call', { tool: 'mcp__...' })`. This is a limit of the type checker. The mod loads correctly.
 - The engine writes `mod/orch/.claude-plugin/types/` when it loads the mod. Git ignores that folder. `tsconfig.json` needs it, so `tsc` works only after one load.
 - Check the mod with `claude plugin validate mod/orch`.
+- Type-check the mod: `npx -y --package=typescript@5.6.3 -- tsc -p .` in `mod/orch`. Exit 2 with only TS2589 is a pass.
 
 ## Node and the SDK
 
 - Node 26 runs `.ts` files directly (type stripping). There is no build step.
 - npm scripts fail, because the cmd shell of npm cannot find `node`. Run `node --test test/` and `node src/main.ts`.
+- `spikes/sdk` has no `node_modules`. Run `npm i` there before `s5.mjs`, `s6.mjs` or `s9.mjs`.
 - The Agent SDK (`@anthropic-ai/claude-agent-sdk` 0.3.325) uses the local login of the subscription (`apiKeySource: none`). No API key.
 - The supervisor sets `ORCH_HOLDER=supervisor` and `ORCH_STORE` for each SDK turn. `ORCH_PORT` sets the HTTP port (default 7777).
 
 ## Live test recipe
 
 1. Make a git repository in the scratchpad. Put an `AGENTS.md` with one rule in it, for the docs check.
-2. If the test needs PRs, make a private GitHub repository with `gh repo create --private --source . --push`. Delete it after the test.
+2. If the test needs PRs, make a private GitHub repository with `gh repo create --private --source . --push`. Before you delete it, copy the PR bodies and comments into `plan.md`: GitHub holds the only copy. The user also allows a public test repository if a private one is blocked.
 3. Copy `config/policy.test.json` into a new store folder as `policy.json` (medium: 30 s).
 4. Start the supervisor in the background: `ORCH_STORE=<store> ORCH_PORT=7779 node src/main.ts` in `supervisor/`.
-5. Change the `cwd` in `spikes/p3/root.json` (one repository) or `spikes/p4/root.json` (PR stack), then send it: `curl -X POST -H 'content-type: application/json' --data @root.json http://127.0.0.1:7779/api/sessions`.
+5. Copy `spikes/p3/root.json` (one repository) or `spikes/p4/root.json` (PR stack) to the scratchpad, change its `cwd`, then send it: `curl -X POST -H 'content-type: application/json' --data @root.json http://127.0.0.1:7779/api/sessions`.
 6. Play the user with `POST /api/decisions/<session>/<id>` (answer) and `.../review` (`approve`, `change`, `refuse`).
 7. Watch `answers/`, `report.json` and `blocked.json` of the session. A POST starts a tick at once, so two close reviews run as two turns.
 8. Examine the ledger, the git graph and the PRs. Stop the supervisor.
@@ -46,7 +48,7 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 
 - To open a supervisor session in the desktop app, run `claude.exe --desktop --resume <id>` with PowerShell `Start-Process`. From bash it gives exit 1.
 - Then send one message to the session (`send_message`) to start its process. `set_remote_control` makes it visible on the phone.
-- The app keeps transcripts under `~/.claude/projects/<folder key>/`, keyed to the folder of the session. The spike sessions are under the keys of `claude-orchestrator/spikes`. A resume from another folder may not find them (not tested).
+- The app keeps transcripts under `~/.claude/projects/<folder key>/`, keyed to the folder of the session. The spike sessions are under the keys of their folders, for example `claude-orchestrator-spikes-p2`. `dee17212` is under a scratchpad key of the build session. A resume from another folder may not find them (not tested).
 
 ## Settings history
 
