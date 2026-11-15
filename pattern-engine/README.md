@@ -71,8 +71,8 @@ A harness is the set of agent files that the sandbox gets. The cases, graders an
 
 | Harness | Files | Use |
 |---|---|---|
-| `monolith` | `harnesses/monolith/SKILL.md`: one skill with the full workflow | The control |
-| `modular` | `harnesses/modular/`: a router skill, 4 step skills, a `composer` and a `verifier` agent, a rubric, 4 templates | One file for each role, step, rubric and output shape |
+| `monolith` | `harnesses/monolith/SKILL.md`: one skill with the full workflow | Frozen control. Do not change it. Use it only to compare |
+| `modular` | `harnesses/modular/`: a router skill, 4 step skills, a `composer` and a `verifier` agent, a rubric, 4 templates | **The default.** One file for each role, step, rubric and output shape |
 
 Select one with `--harness monolith|modular`. Add `--gate` to make the system run `pe verify` after the agent and, on a failure, start the agent once more with the failures.
 

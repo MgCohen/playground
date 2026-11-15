@@ -21,7 +21,7 @@ import { loadConfig, targetsFor } from '../lib/config.mjs';
 // Modes (smoke, dev, full) and targets come from eval.config.yaml.
 
 function args(argv) {
-  const o = { mode: 'dev', concurrency: 4, ablate: [], only: [], harness: 'monolith', gate: false };
+  const o = { mode: 'dev', concurrency: 4, ablate: [], only: [], harness: null, gate: false };
   const set = {};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i], v = argv[i + 1];
@@ -44,6 +44,7 @@ function args(argv) {
   }
   o.config = loadConfig(o.domain || 'shapes');
   const MODES = o.config.modes || {};
+  o.harness ||= o.config.harness || 'modular';
   if (!MODES[o.mode]) throw new Error(`--mode must be one of ${Object.keys(MODES).join(', ')}`);
   return { ...o, ...MODES[o.mode], ...set };
 }

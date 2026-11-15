@@ -1,6 +1,9 @@
 # Eval settings. Change the values here, not in code.
 # A domain can override any key in domains/<name>/eval.config.yaml.
 
+# The default harness for --harness. monolith is a frozen control: do not change it.
+harness: modular
+
 # Run modes: the defaults for --mode. A flag (--sample, --k, --model) changes one value.
 modes:
   smoke: { sample: 3, k: 1, model: haiku }
