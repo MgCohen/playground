@@ -238,7 +238,7 @@ footer { font-size: 0.8rem; color: var(--quiet); }
     <h1>Pattern Engine Spike</h1>
     <p>What runs today, how to run it, how to extend it, what moves into C# code next, and the modular harness of spike 2. The spike works from start to end on the <code>shapes</code> domain.</p>
     <div class="keys" aria-label="Keyboard shortcuts">
-      <span><kbd>1</kbd>–<kbd>5</kbd> tab</span>
+      <span><kbd>1</kbd>–<kbd>6</kbd> tab</span>
       <span><kbd>E</kbd> open all</span>
       <span><kbd>C</kbd> close all</span>
     </div>
@@ -250,6 +250,7 @@ footer { font-size: 0.8rem; color: var(--quiet); }
     <button role="tab" id="t-extend" aria-controls="v-extend" data-main="extend"><span class="k">3</span>Extend it</button>
     <button role="tab" id="t-next" aria-controls="v-next" data-main="next"><span class="k">4</span>Deterministic core</button>
     <button role="tab" id="t-modular" aria-controls="v-modular" data-main="modular"><span class="k">5</span>Modular harness</button>
+    <button role="tab" id="t-flow" aria-controls="v-flow" data-main="flow"><span class="k">6</span>Flow</button>
   </div>
 
   <!-- ================= 1 HOW ================= -->
@@ -908,8 +909,111 @@ no-fit precision           100% (1/1)</pre>
     </details>
   </section>
 
+  <!-- ================= 6 FLOW ================= -->
+  <section class="view" id="v-flow" role="tabpanel" aria-labelledby="t-flow" hidden>
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Flow · one request, modular harness, today</span><h2>Branches, loops and contexts</h2><p class="quiet">The domain is a folder that a flag names: no model decides it. The left band shows which context runs each step. Skills run inside the main context; only the composer and the verifier get their own.</p></div>
+      <div class="fl-legend">
+  <span><i class="sw sw-code"></i>code (deterministic)</span>
+  <span><i class="sw sw-main"></i>main session</span>
+  <span><i class="sw sw-sub"></i>subagent (own context)</span>
+  <span><i class="sw sw-file"></i>file</span>
+  <span><i class="sw sw-person"></i>a person</span>
+  <span><i class="sw sw-loop"></i>loop</span>
+</div>
+      <svg class="flowsvg" viewBox="0 0 420 1040" role="img" aria-label="The flow of one request: runner, main session with select and divide skills, a no-fit branch, plan file, composer and verifier subagents with a retry loop, trace, gate with a retry loop, graders and report."><defs>
+  <marker id="fa-q" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="fl-mq" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="fa-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="fl-ma" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs><rect class="fl-in" x="44" y="20" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="42">Draw a house with a chimney.</text><text class="fl-s" x="56" y="60">request + flag --domain shapes</text><rect class="fl-code" x="44" y="106" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="128">① Runner prepares a sandbox</text><text class="fl-s" x="56" y="146">copies domains/shapes/ + the harness. No inference</text><rect class="fl-main" x="44" y="192" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="214">② Main session starts</text><text class="fl-s" x="56" y="232">router skill pattern-navigate · runs pe index</text><rect class="fl-main" x="44" y="278" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="300">③ Select (skill)</text><text class="fl-s" x="56" y="318">use_when → do_not_use_when → variant, params</text><rect class="fl-main" x="44" y="364" width="150" height="54" rx="9"/><text class="fl-t" x="56" y="386">No-fit (skill)</text><text class="fl-s" x="56" y="404">nearest, deltas, scaffold</text><rect class="fl-main" x="206" y="364" width="150" height="54" rx="9"/><text class="fl-t" x="218" y="386">④ Divide (skill)</text><text class="fl-s" x="218" y="404">pe parts for each part</text><rect class="fl-file" x="44" y="450" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="472">plan.json</text><text class="fl-s" x="56" y="490">the full pattern tree, as a file</text><rect class="fl-sub" x="44" y="536" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="558">⑤ Composer (subagent)</text><text class="fl-s" x="56" y="576">builds output.svg from plan.json</text><rect class="fl-sub" x="44" y="622" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="644">⑥ Verifier (subagent, no Write)</text><text class="fl-s" x="56" y="662">pe verify + rubric → JSON report</text><rect class="fl-code" x="44" y="708" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="730">⑦ pe trace --write</text><text class="fl-s" x="56" y="748">code writes the tree into trace.json</text><rect class="fl-code" x="44" y="794" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="816">⑧ Gate (runner)</text><text class="fl-s" x="56" y="834">runs verify again, outside the agent</text><rect class="fl-code" x="44" y="880" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="902">⑨ Graders (code)</text><text class="fl-s" x="56" y="920">vs the fixture JSON; the agent never sees it</text><rect class="fl-code" x="44" y="966" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="988">⑩ result.json → report, targets</text><text class="fl-s" x="56" y="1006">one row for each run</text><path class="fl-e" d="M200,74 L200,106" marker-end="url(#fa-q)"/><path class="fl-e" d="M200,160 L200,192" marker-end="url(#fa-q)"/><path class="fl-e" d="M200,246 L200,278" marker-end="url(#fa-q)"/><path class="fl-e" d="M200,504 L200,536" marker-end="url(#fa-q)"/><path class="fl-e" d="M200,590 L200,622" marker-end="url(#fa-q)"/><path class="fl-e" d="M200,676 L200,708" marker-end="url(#fa-q)"/><path class="fl-e" d="M200,762 L200,794" marker-end="url(#fa-q)"/><path class="fl-e" d="M200,848 L200,880" marker-end="url(#fa-q)"/><path class="fl-e" d="M200,934 L200,966" marker-end="url(#fa-q)"/><path class="fl-e" d="M119,332 L119,364" marker-end="url(#fa-q)"/><text class="fl-l" x="125" y="352" text-anchor="start">no match</text><path class="fl-e" d="M281,332 L281,364" marker-end="url(#fa-q)"/><text class="fl-l" x="287" y="352" text-anchor="start">match</text><path class="fl-e" d="M119,418 L119,450" marker-end="url(#fa-q)"/><path class="fl-e" d="M281,418 L281,450" marker-end="url(#fa-q)"/><path class="fl-loop" d="M356,391 L368,391 L368,305 L358,305" marker-end="url(#fa-a)"/><text class="fl-l" x="386" y="348" text-anchor="middle" transform="rotate(-90 386 348)">each part: select again</text><path class="fl-loop" d="M356,649 L368,649 L368,563 L358,563" marker-end="url(#fa-a)"/><text class="fl-l" x="386" y="606" text-anchor="middle" transform="rotate(-90 386 606)">fail · max 3 rounds</text><path class="fl-loop" d="M356,821 L398,821 L398,219 L358,219" marker-end="url(#fa-a)"/><text class="fl-l" x="413" y="523" text-anchor="middle" transform="rotate(-90 413 523)">gate fails · one more agent run</text><path class="fl-band-code" d="M34,110 L28,110 L28,156 L34,156"/><text class="fl-bl fl-bl-code" x="20" y="133" text-anchor="middle" transform="rotate(-90 20 133)">code</text><path class="fl-band-main" d="M34,196 L28,196 L28,500 L34,500"/><text class="fl-bl fl-bl-main" x="20" y="348" text-anchor="middle" transform="rotate(-90 20 348)">context 1 · main</text><path class="fl-band-sub" d="M34,540 L28,540 L28,586 L34,586"/><text class="fl-bl fl-bl-sub" x="20" y="563" text-anchor="middle" transform="rotate(-90 20 563)">ctx 2</text><path class="fl-band-sub" d="M34,626 L28,626 L28,672 L34,672"/><text class="fl-bl fl-bl-sub" x="20" y="649" text-anchor="middle" transform="rotate(-90 20 649)">ctx 3</text><path class="fl-band-main" d="M34,712 L28,712 L28,758 L34,758"/><text class="fl-bl fl-bl-main" x="20" y="735" text-anchor="middle" transform="rotate(-90 20 735)">ctx 1</text><path class="fl-band-code" d="M34,798 L28,798 L28,1016 L34,1016"/><text class="fl-bl fl-bl-code" x="20" y="907" text-anchor="middle" transform="rotate(-90 20 907)">code</text></svg>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Flow · many entries</span><h2>Code is the orchestrator for many entries</h2><p class="quiet">No agent sees two entries. The runner starts one small session for each run, and code grades them. Two loops improve the system: one for the agent side, one for the graders.</p></div>
+      <div class="fl-legend">
+  <span><i class="sw sw-code"></i>code (deterministic)</span>
+  <span><i class="sw sw-main"></i>main session</span>
+  <span><i class="sw sw-sub"></i>subagent (own context)</span>
+  <span><i class="sw sw-file"></i>file</span>
+  <span><i class="sw sw-person"></i>a person</span>
+  <span><i class="sw sw-loop"></i>loop</span>
+</div>
+      <svg class="flowsvg" viewBox="0 0 420 596" role="img" aria-label="Many entries: the runner starts one session for each run in parallel, code graders and targets, an improvement loop below target, and a trust loop from the self-test and the review page back to the graders."><defs>
+  <marker id="fb-q" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="fl-mq" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="fb-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="fl-ma" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs><rect class="fl-code" x="44" y="20" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="42">Runner (code)</text><text class="fl-s" x="56" y="60">cases × k · one new session each · in parallel</text><rect class="fl-main" x="44" y="116" width="96" height="54" rx="9"/><text class="fl-t" x="56" y="138">Session 1</text><text class="fl-s" x="56" y="156">one request</text><rect class="fl-main" x="152" y="116" width="96" height="54" rx="9"/><text class="fl-t" x="164" y="138">Session 2</text><text class="fl-s" x="164" y="156">one request</text><rect class="fl-main" x="260" y="116" width="96" height="54" rx="9"/><text class="fl-t" x="272" y="138">Session N</text><text class="fl-s" x="272" y="156">one request</text><path class="fl-e" d="M92,74 L92,116" marker-end="url(#fb-q)"/><path class="fl-e" d="M92,170 L92,206" marker-end="url(#fb-q)"/><path class="fl-e" d="M200,74 L200,116" marker-end="url(#fb-q)"/><path class="fl-e" d="M200,170 L200,206" marker-end="url(#fb-q)"/><path class="fl-e" d="M308,74 L308,116" marker-end="url(#fb-q)"/><path class="fl-e" d="M308,170 L308,206" marker-end="url(#fb-q)"/><rect class="fl-code" x="44" y="206" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="228">Graders (code)</text><text class="fl-s" x="56" y="246">each output vs its own fixture</text><rect class="fl-code" x="44" y="292" width="312" height="54" rx="9"/><text class="fl-t" x="56" y="314">Report + targets (code)</text><text class="fl-s" x="56" y="332">eval.config.yaml · below target → exit 1</text><path class="fl-e" d="M200,260 L200,292" marker-end="url(#fb-q)"/><rect class="fl-person" x="44" y="378" width="150" height="54" rx="9"/><text class="fl-t" x="56" y="400">Below target</text><text class="fl-s" x="56" y="418">fix patterns or harness</text><rect class="fl-code" x="206" y="378" width="150" height="54" rx="9"/><text class="fl-t" x="218" y="400">All targets met</text><text class="fl-s" x="218" y="418">a new baseline</text><path class="fl-e" d="M119,346 L119,378" marker-end="url(#fb-q)"/><text class="fl-l" x="125" y="366" text-anchor="start">below</text><path class="fl-e" d="M281,346 L281,378" marker-end="url(#fb-q)"/><text class="fl-l" x="287" y="366" text-anchor="start">met</text><path class="fl-loop" d="M44,405 L26,405 L26,47 L42,47" marker-end="url(#fb-a)"/><text class="fl-l" x="15" y="239" text-anchor="middle" transform="rotate(-90 15 239)">next run</text><rect class="fl-code" x="44" y="476" width="140" height="54" rx="9"/><text class="fl-t" x="56" y="498">Self-test (code)</text><text class="fl-s" x="56" y="516">refs pass, mutants fail</text><rect class="fl-person" x="216" y="476" width="140" height="54" rx="9"/><text class="fl-t" x="228" y="498">Review page (you)</text><text class="fl-s" x="228" y="516">approve / reject, notes</text><path class="fl-e" d="M216,503 L186,503" marker-end="url(#fb-q)"/><path class="fl-e" d="M114,530 L114,556 L384,556"/><path class="fl-e" d="M286,530 L286,556"/><path class="fl-loop" d="M384,556 L384,233 L358,233" marker-end="url(#fb-a)"/><text class="fl-l" x="402" y="381" text-anchor="middle" transform="rotate(-90 402 381)">keep the graders honest</text><text class="fl-l" x="200" y="578" text-anchor="middle">your notes become new asserts and mutation operators</text></svg>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Your picture and today</span><h2>Where the two differ</h2></div>
+      <div class="tw"><table>
+        <thead><tr><th>Your picture</th><th>Today</th></tr></thead>
+        <tbody>
+          <tr><td>A subagent selects and decomposes</td><td>Skills in the main context. Only compose and verify are subagents</td></tr>
+          <tr><td>The main session orchestrates many steps</td><td>It orchestrates 2 subagents. The skills run in its own context</td></tr>
+          <tr><td>A validator agent spawns one subagent for each entry</td><td>Code does it: one session for each entry, and code graders</td></tr>
+          <tr><td>The verifier checks against the fixture</td><td>The verifier checks structure, rules and rubric. Only the code graders see the fixture</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="eyebrow">Rule</span><h2>When a step gets its own session</h2><p class="quiet">A new context costs about 20k tokens on each turn. Keep the files modular; add a session only for one of these reasons.</p></div>
+      <div class="tw"><table>
+        <thead><tr><th>Reason</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>Large input, small result</td><td>Read a codebase, return the 3 files that matter</td></tr>
+          <tr><td>Parallel work</td><td>Many entries, or independent parts</td></tr>
+          <tr><td>Independent judgment</td><td>A reviewer that must not see the author's reasoning</td></tr>
+          <tr><td>Other tools or permissions</td><td>A verifier that cannot write</td></tr>
+        </tbody>
+      </table></div>
+      <div class="pair">
+<pre><span class="c"># proposed: a setting for each step</span>
+<span class="k">select</span>:  { <span class="k">run</span>: <span class="v">skill</span> }
+<span class="k">divide</span>:  { <span class="k">run</span>: <span class="v">skill</span> }
+<span class="k">compose</span>: { <span class="k">run</span>: <span class="v">skill</span> }
+<span class="k">verify</span>:  { <span class="k">run</span>: <span class="v">code+agent</span> }
+<span class="c"># a code pack could set:</span>
+<span class="k">divide</span>:  { <span class="k">run</span>: <span class="v">subagent</span> }</pre>
+        <div class="tw"><table>
+          <thead><tr><th>Level</th><th>Orchestrator</th><th>Sessions</th></tr></thead>
+          <tbody>
+            <tr><td>Many entries</td><td>Code (the runner)</td><td>One for each entry, in parallel</td></tr>
+            <tr><td>One entry</td><td>The main session</td><td>One, plus a subagent only for a step with a reason above</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
   <footer>Spike v0 + spike 2 (modular harness) · Node.js · Claude CLI. The C# core is a plan, not built yet.</footer>
 </div>
+
+<style>
+.flowsvg { display: block; width: 100%; max-width: 32rem; height: auto; margin: 0 auto; }
+.fl-t { font: 600 13px var(--font-body); fill: var(--text); }
+.fl-s { font: 400 11px var(--font-body); fill: var(--quiet); }
+.fl-l { font: 500 10px var(--font-code); fill: var(--accent-text); }
+.fl-bl { font: 500 9.5px var(--font-code); letter-spacing: 0.04em; }
+.fl-bl-code { fill: var(--ok); } .fl-bl-main { fill: var(--accent-text); } .fl-bl-sub { fill: var(--quiet); }
+.fl-in { fill: var(--lowered); stroke: var(--text); stroke-width: 1.2; }
+.fl-code { fill: var(--ok-fill); stroke: var(--ok); stroke-width: 1.2; }
+.fl-main { fill: var(--accent-fill); stroke: var(--accent); stroke-width: 1.2; }
+.fl-sub { fill: var(--raised); stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.fl-file { fill: var(--lowered); stroke: var(--quiet); stroke-width: 1.2; }
+.fl-person { fill: var(--raised); stroke: var(--text); stroke-width: 1.6; }
+.fl-e { fill: none; stroke: var(--quiet); stroke-width: 1.4; }
+.fl-loop { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 3; }
+.fl-mq { fill: var(--quiet); } .fl-ma { fill: var(--accent); }
+.fl-band-code, .fl-band-main, .fl-band-sub { fill: none; stroke-width: 2; }
+.fl-band-code { stroke: var(--ok); } .fl-band-main { stroke: var(--accent); } .fl-band-sub { stroke: var(--quiet); }
+.fl-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.8rem; color: var(--quiet); }
+.fl-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.sw { width: 1.1rem; height: 0.8rem; border-radius: 0.25rem; display: inline-block; border: 1.5px solid; }
+.sw-code { background: var(--ok-fill); border-color: var(--ok); } .sw-main { background: var(--accent-fill); border-color: var(--accent); }
+.sw-sub { background: var(--raised); border: 1.5px dashed var(--accent); } .sw-file { background: var(--lowered); border-color: var(--quiet); }
+.sw-person { background: var(--raised); border-color: var(--text); } .sw-loop { border: 0; border-top: 2px dashed var(--accent); height: 0; border-radius: 0; }
+</style>
 
 <script>
 (function () {
@@ -1078,7 +1182,7 @@ no-fit precision           100% (1/1)</pre>
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     var t = e.target && e.target.tagName;
     if (t === 'INPUT' || t === 'TEXTAREA') return;
-    var i = ['1', '2', '3', '4', '5'].indexOf(e.key);
+    var i = ['1', '2', '3', '4', '5', '6'].indexOf(e.key);
     if (i >= 0 && names[i]) go(names[i], true);
     else if (e.key === 'e' || e.key === 'E') folds(true);
     else if (e.key === 'c' || e.key === 'C') folds(false);
