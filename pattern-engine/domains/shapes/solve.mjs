@@ -46,9 +46,3 @@ export function checkBox(parsedRoot, b) {
   return out;
 }
 
-/** JSON schema of one composed fragment. */
-export const fragmentSchema = {
-  type: 'object',
-  properties: { svg: { type: 'string', description: 'One <g data-p="..." data-v="..."> group with its leaf part groups inside. Each leaf part group holds exactly one shape.' } },
-  required: ['svg'],
-};

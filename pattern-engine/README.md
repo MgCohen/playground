@@ -73,13 +73,22 @@ A harness is the set of agent files that the sandbox gets. The cases, graders an
 |---|---|---|
 | `monolith` | `harnesses/monolith/SKILL.md`: one skill with the full workflow | Frozen control. Do not change it. Use it only to compare |
 | `modular` | `harnesses/modular/`: a router skill, 4 step skills, a `composer` and a `verifier` agent, a rubric, 4 templates | **The default.** One file for each role, step, rubric and output shape |
-| `solver` | `harnesses/solver/`: prompt files and a template. The loop is code: `core/solve/` | Spike: code runs the loop, the model answers one question per call |
+| `solver` | `harnesses/solver/`: one agent file for each judgment, its schemas, a template. The loop is code: `core/solve/` | Spike: code runs the loop, the model answers one question per call |
 
 Select one with `--harness monolith|modular|solver`. Add `--gate` to make the system run `pe verify` after the agent and, on a failure, start the agent once more with the failures.
 
 ### The solver
 
-Code runs the loop. The model gets one small question per call, with no tools, a short system prompt and a JSON schema (`core/solve/judge.mjs`).
+Code runs the loop. The model gets one small question per call. Each kind of question is one agent file in `harnesses/solver/.claude/agents/`. The engine reads the file and builds the call from it (`core/solve/judge.mjs`):
+
+| Front matter | Becomes |
+|---|---|
+| `model` | The model (a run setting can override it) |
+| `tools: StructuredOutput` | The only tool. It lets the CLI enforce the schema. Without it, the schema is not enforced |
+| `output_schema` | Our own field (Claude Code ignores it): a schema file, passed as `--json-schema` |
+| The body | The system prompt. `--agent` replaces the default one |
+
+The call is `claude -p <input> --agent <name> --json-schema <schema>`, about 1.5k tokens. To change a judgment, change its agent file, not the code.
 
 1. A work queue starts with the request.
 2. For each node, code finds the candidates: all patterns for the request, or only the parts that the parent allows.
@@ -88,7 +97,7 @@ Code runs the loop. The model gets one small question per call, with no tools, a
 5. The pack gives a box for each object (`domains/<name>/solve.mjs`). One compose call draws each node in its box. Code checks each node and retries with the failures, up to `compose_retries`.
 6. Code assembles the groups and writes the output and the trace from the graph state.
 
-The settings are in `eval.config.yaml` under `solver`. The prompts are in `harnesses/solver/prompts/`.
+The settings are in `eval.config.yaml` under `solver`.
 
 ### The `pe` commands
 

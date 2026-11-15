@@ -1,4 +1,5 @@
-# Code drives the loop (core/solve/solve.mjs). The model answers one small question per call:
-# no tools, a short system prompt from prompts/, a JSON schema for the answer.
+# Code drives the loop (core/solve/solve.mjs). Each judgment is one agent file in .claude/agents/:
+# its front matter sets the model, the tools and the output schema; its body is the system prompt.
+# The engine reads the file and builds the call from it.
 name: solver
 type: solver

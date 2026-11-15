@@ -7,7 +7,8 @@
 //   The graph state is the trace.
 //
 // The domain pack gives the layout and assembly hooks (domains/<name>/solve.mjs).
-// The harness gives the prompts (harnesses/solver/prompts/*.md, copied into the sandbox).
+// The harness gives one agent file for each judgment (harnesses/solver/.claude/agents/*.md): model, tools,
+// output schema and system prompt. The engine builds each call from that file (judge.mjs).
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -32,40 +33,19 @@ function candidates(ids, patterns) {
   }));
 }
 
-function decideSchema(ids, allowNoFit) {
-  return {
-    type: 'object',
-    properties: {
-      status: { type: 'string', enum: allowNoFit ? ['solved', 'partial', 'none'] : ['solved', 'partial'] },
-      pattern: { type: 'string', enum: ids },
-      variant: { type: 'string' },
-      params: { type: 'object', additionalProperties: { type: 'string' } },
-      children: { type: 'array', items: { type: 'string' } },
-      leftover: { type: 'string' },
-      nearest: { type: 'string' },
-      new_id: { type: 'string' },
-      deltas: { type: 'array', items: { type: 'string' } },
-      reason: { type: 'string' },
-    },
-    required: ['status', 'pattern', 'reason'],
-  };
-}
-
 export async function solve(domainName, sandbox, request, opts = {}) {
   const t0 = Date.now();
   const settings = { max_depth: 4, compose_retries: 3, concurrency: 4, ...(opts.settings || {}) };
-  const judge = opts.judge || claudeJudge({ model: opts.model, cwd: sandbox });
-  const models = { select: settings.select_model || opts.model, compose: settings.compose_model || opts.model };
+  const judge = opts.judge || claudeJudge({ dir: sandbox, model: opts.model });
   const allowNoFit = !(opts.ablate || []).includes('no-nofit');
   const d = await loadDomain(domainName, { patternsDir: path.join(sandbox, 'patterns') });
   const pack = await import(pathToFileURL(path.join(d.dir, 'solve.mjs')).href);
-  const prompts = { select: read(path.join(sandbox, 'prompts', 'select.md')), compose: read(path.join(sandbox, 'prompts', 'compose.md')) };
   const rules = read(path.join(sandbox, 'instructions.md'));
   const stats = { calls: 0, cost: 0, log: [] };
-  const ask = async (role, req) => {
-    const r = await judge.call({ role, model: models[role], ...req });
+  const ask = async (agent, prompt) => {
+    const r = await judge.call({ agent, prompt });
     stats.calls++; stats.cost += r.cost || 0;
-    stats.log.push({ role, ms: r.ms, cost: r.cost, error: r.error, data: r.data });
+    stats.log.push({ agent, ms: r.ms, cost: r.cost, error: r.error, data: r.data });
     return r;
   };
 
@@ -80,14 +60,11 @@ export async function solve(domainName, sandbox, request, opts = {}) {
     await Promise.all(level.map(async (n) => {
       if (n.depth > settings.max_depth) { n.status = 'unresolved'; n.reason = 'too deep'; return; }
       const cands = candidates(n.allowed, d.patterns);
-      const r = await ask('select', {
-        system: prompts.select,
-        prompt: `Request: ${n.text}\n\nCandidates:\n${JSON.stringify(cands, null, 1)}`,
-        schema: decideSchema(n.allowed, allowNoFit),
-      });
+      const r = await ask('decider', `Request: ${n.text}\n\nCandidates:\n${JSON.stringify(cands, null, 1)}`);
       const a = r.data;
       if (!a) { n.status = 'unresolved'; n.reason = `no answer: ${r.error}`; return; }
       n.reason = a.reason;
+      if (a.status === 'none' && !allowNoFit) { n.status = 'unresolved'; n.reason = 'no-fit is switched off (ablation)'; return; }
       if (a.status === 'none') {
         n.status = 'none';
         n.nearest = n.allowed.includes(a.nearest) ? a.nearest : n.allowed.includes(a.pattern) ? a.pattern : n.allowed[0];
@@ -133,18 +110,15 @@ export async function solve(domainName, sandbox, request, opts = {}) {
     let fragment = '';
     for (let i = 0; i < settings.compose_retries; i++) {
       attempts++;
-      const r = await ask('compose', {
-        system: `${prompts.compose}\n\n# Subject rules\n${rules}`,
-        prompt: [
+      const r = await ask('composer', [
+          `# Subject rules\n${rules}`,
           `Request: ${n.text}`,
           n.status === 'none'
             ? `No pattern fits. Draw a new pattern with the id "${name}". Start from the nearest pattern "${n.nearest}" and apply these changes: ${n.deltas.join('; ') || 'none'}. Use data-p="${name}" data-v="plain". Use only known leaf parts.\n\nNearest pattern file:\n${patternText(n.nearest)}\n\nNew pattern file:\n${proposedText}`
             : `Pattern: ${n.pattern}, variant: ${n.variant}, params: ${JSON.stringify(n.params)}.\n\nPattern file:\n${patternText(n.pattern)}`,
           pack.boxText(box),
           failures.length ? `The last attempt failed these checks. Fix them:\n- ${failures.join('\n- ')}\n\nThe last attempt:\n${fragment}` : '',
-        ].filter(Boolean).join('\n\n'),
-        schema: pack.fragmentSchema,
-      });
+        ].filter(Boolean).join('\n\n'));
       fragment = (r.data?.svg || '').trim();
       const parsed = d.adapter.parse(pack.wrap(fragment));
       const s = gradeStructure(parsed, d.patterns, d.adapter, { proposedId: n.status === 'none' ? name : undefined });
