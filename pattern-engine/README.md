@@ -1,5 +1,7 @@
 # Pattern engine (spike)
 
+Design: [docs/design/](docs/design/README.md): features, architecture, plan, open questions.
+
 Explainer pages: [the spike](https://claude.ai/artifact/9BzBheCKxpXHhxLXBnrFhH) and [the design](https://claude.ai/artifact/CzP6ottg8Wt9Aa5oMR7Gkd).
 
 An agent selects patterns, divides a request into parts, composes an output, verifies it and writes a trace. The eval runs the agent many times and grades each run. A **domain pack** sets the subject. The **core** does not change between domains.
