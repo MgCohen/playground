@@ -144,3 +144,7 @@ The supervisor is in `supervisor/` (Node 26 runs the TypeScript files directly).
 - P3: the decision policy (risk, timeout, default) uses `risk` and `defaultOption` of each decision.
 - A session that the supervisor starts is not in the app sidebar. To show it, open it with `claude --desktop --resume <id>`.
 - The supervisor does not restart a failed turn after `maxFailures` (3) until it restarts.
+
+## Change: no click questions (2026-11-15)
+
+The user answers by voice and in free text, so click questions (A, B, C or other) are not used. The `AskUserQuestion` redirect from S8 is removed. A deny rule in the user settings removes the tool, and the mod refuses it as a fallback. Questions go to the reply text (normal sessions) or to `ask_user` (orchestrator sessions). P3 and P4 must show free-text answers, with the options as suggestions only.

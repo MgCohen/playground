@@ -16,7 +16,7 @@ The mod `mod/orch` and the supervisor share one folder for each session: `store/
 | `mirror/<ms>-<uuid>.json` | Mod | `{ door, origin, uuid, message }` for the doors `prompt`, `response` and `tool-result`. `message` is JSON, cut to 4000 characters |
 | `decisions/<id>.json` | Mod | One decision (below) |
 | `answers/<id>.json` | Supervisor, UI | The answer (below) |
-| `delivered/<id>.json` | Mod | `{ by, at }`. `by` is `tool-result`, `inbox` or `app-card` |
+| `delivered/<id>.json` | Mod | `{ by, at }`. `by` is `tool-result`, `inbox` or `supervisor` |
 | `report.json`, `reports/<ms>.json` | Mod | `{ state: working \| blocked \| done, summary, details, at }` from the `report` tool |
 | `log-<holder>.txt` | Mod | Log lines of one holder (`live` or `supervisor`), cut to the last 100 000 characters |
 | `meta.json` | Supervisor, `spawn_child` | `{ id, parent, title, cwd, createdBy, createdAt, started }`. A session with `createdBy` and no `started` gets a new SDK session with this id |
@@ -29,10 +29,9 @@ The mod `mod/orch` and the supervisor share one folder for each session: `store/
 {
   "id": "toolu_...",
   "session": "<session id>",
-  "kind": "ask_user | AskUserQuestion",
+  "kind": "ask_user",
   "question": "Pick a fruit",
   "options": ["PLUM", "LIME"],
-  "questions": [ "AskUserQuestion only: the questions as the tool got them" ],
   "risk": "low | medium | high",
   "defaultOption": "PLUM",
   "mode": "wait | pending",
@@ -48,7 +47,6 @@ A decision is open while `delivered/<id>.json` does not exist.
 | Kind | `answers/<id>.json` |
 |---|---|
 | `ask_user` | `{ "answer": "LIME" }` |
-| `AskUserQuestion` | `{ "answers": { "<question text>": "<label>" } }` |
 
 ## Delivery
 
@@ -56,7 +54,6 @@ A decision is open while `delivered/<id>.json` does not exist.
 |---|---|
 | `wait` | The tool returns `ANSWER: <text>`. If no answer comes in `waitSeconds` (580 maximum), the mod changes the mode to `pending` |
 | `pending` | The mod submits the turn `Answer to decision <id> (<question>): <text>` when the answer file appears |
-| `AskUserQuestion` | The tool waits 300 s, then returns the answers. With no answer, the app card shows and `delivered` is `app-card` |
 
 ## Supervisor files
 
@@ -73,6 +70,15 @@ A decision is open while `delivered/<id>.json` does not exist.
 | `POST /api/sessions` | `{ title, cwd, brief, parent? }` | `{ id }`. The supervisor starts the session with the brief |
 | `POST /api/sessions/<id>/send` | `{ text }` | `{ inbox }`. A new inbox file |
 | `POST /api/decisions/<session>/<id>` | `{ answer }` or `{ answers }` | `{ answered }`. The answer file |
+
+## Questions to the user
+
+The user answers in free text, never with a click. The `options` of a decision are suggestions only.
+
+| Layer | What it does |
+|---|---|
+| `~/.claude/settings.json` | `permissions.deny: ["AskUserQuestion"]` removes the built-in question tool from all sessions |
+| Mod, fallback | `tool.describe` moves `AskUserQuestion` behind ToolSearch with "Do not use this tool". `tool.call` refuses it: in a normal session the model asks in its reply text; in an orchestrator session it calls `ask_user` |
 
 ## Rules
 

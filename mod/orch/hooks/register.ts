@@ -6,9 +6,12 @@ const REPORT_TOOL = 'mcp__orch__report'
 const SPAWN_TOOL = 'mcp__orch__spawn_child'
 const MIRROR_DOORS = ['prompt', 'response', 'tool-result']
 const TICK_MS = 3000
-const REDIRECT_WAIT_SECONDS = 300
 const MAX_WAIT_SECONDS = 580
 const ROW_CHARS = 4000
+const ASK_IN_TEXT =
+  'The user does not use this tool, because it allows only a click on fixed options. Write each question in your reply text: the question, the context, the options and your recommendation. Then end your turn. The user answers in free text.'
+const ASK_IN_ORCH =
+  'The user does not use this tool, because it allows only a click on fixed options. In this session, call mcp__orch__ask_user one time for each question. The user answers in free text.'
 
 type Decision = {
   id: string
@@ -176,11 +179,11 @@ async function registerTools($: any): Promise<void> {
   await $.tool.register({
     name: 'ask_user',
     description:
-      'Put one decision in the user queue. Give the risk and your default option. With waitSeconds 0 it returns PENDING at once: end your turn, and the answer arrives later as a new message that starts with "Answer to decision". With waitSeconds more than 0 it blocks up to that time (maximum 580) and returns ANSWER: <text>, or PENDING when no answer came.',
+      'Put one decision in the user queue. Give the context in the question, the options as suggestions, the risk and your default option. The user answers in free text, which can be one of the options or something else. With waitSeconds 0 it returns PENDING at once: end your turn, and the answer arrives later as a new message that starts with "Answer to decision". With waitSeconds more than 0 it blocks up to that time (maximum 580) and returns ANSWER: <text>, or PENDING when no answer came.',
     inputSchema: {
       type: 'object',
       properties: {
-        question: { type: 'string' },
+        question: { type: 'string', description: 'The question, with the context the user needs and your recommendation.' },
         options: { type: 'array', items: { type: 'string' } },
         risk: { type: 'string', enum: ['low', 'medium', 'high'] },
         defaultOption: { type: 'string', description: 'The option you pick if the user gives no answer.' },
@@ -365,23 +368,7 @@ export const register: Register = on => {
     return { result: `ANSWER: ${answerText(JSON.parse(answer))}` }
   }).catch((_$: any, _e: any) => ({ result: 'orch: ask_user failed. Ask the question in your reply text and end your turn.' }))
 
-  on('tool.call', { tool: 'AskUserQuestion' }, async ($, e: any, next) => {
-    if (!S.dir) return next(e)
-    const decision = await newDecision($, e, 'AskUserQuestion', REDIRECT_WAIT_SECONDS)
-    await log($, `AskUserQuestion ${decision.id} redirected`)
-    let answer: string | undefined
-    try {
-      answer = await waitForFile($, `${S.dir}/answers/${decision.id}.json`, REDIRECT_WAIT_SECONDS)
-    } catch (error) {
-      await log($, `AskUserQuestion ${decision.id} wait failed: ${String(error)}`)
-    }
-    if (answer === undefined) {
-      await markDelivered($, decision.id, 'app-card')
-      await log($, `AskUserQuestion ${decision.id} no answer, app card`)
-      return next(e)
-    }
-    await markDelivered($, decision.id, 'tool-result')
-    await log($, `AskUserQuestion ${decision.id} answered from the store`)
-    return { result: { questions: e.questions, answers: JSON.parse(answer).answers } }
-  }).catch((_$: any, e: any, next: any) => next(e))
+  on('tool.describe', { tool: 'AskUserQuestion' }, async () => ({ description: `Do not use this tool. ${ASK_IN_TEXT}`, isDeferred: true }))
+
+  on('tool.call', { tool: 'AskUserQuestion' }, async () => ({ deny: S.dir ? ASK_IN_ORCH : ASK_IN_TEXT }))
 }
