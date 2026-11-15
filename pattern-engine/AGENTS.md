@@ -7,7 +7,7 @@ Read `README.md` first. It has the layout, the commands, the adapter contract an
 - Keep all files of this project in this folder.
 - Put values in `eval.config.yaml`, not in code: run modes, targets, grader-test settings.
 - The core (`core/`) must not know a domain. Put subject logic in `domains/<name>/`.
-- `harnesses/modular/` is the harness that we develop. `harnesses/monolith/` is a frozen control: do not change it.
+- Two harnesses: `harnesses/modular/` (an agent session) and `harnesses/solver/` (code-led). The monolith harness is removed; old results still name it.
 - Do not edit the agent files of a harness to make one case pass. Fix the pattern, the case or the graders.
 
 ## Before you report a change

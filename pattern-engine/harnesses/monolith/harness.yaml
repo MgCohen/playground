@@ -1,7 +1,0 @@
-# One skill file that the agent reads and follows.
-name: monolith
-prompt: |
-  Read SKILL.md in this folder and follow it exactly.
-  Request: {{request}}
-  Write the output to {{output}} and the trace to trace.json, in this folder.
-tools: [Read, Write, Edit, Glob, Grep, "Bash(node verify.mjs)", "Bash(node verify.mjs:*)"]

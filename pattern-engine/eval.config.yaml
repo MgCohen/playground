@@ -1,7 +1,7 @@
 # Eval settings. Change the values here, not in code.
 # A domain can override any key in domains/<name>/eval.config.yaml.
 
-# The default harness for --harness. monolith is a frozen control: do not change it.
+# The default harness for --harness: modular or solver. Results before 2026-11-16 also have "monolith" (removed).
 harness: modular
 
 # Settings of the solver harness (--harness solver). Models default to the mode model.

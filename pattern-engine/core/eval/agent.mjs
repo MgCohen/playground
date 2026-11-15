@@ -31,7 +31,7 @@ function copyTree(src, dst, ablate) {
 }
 
 /** Copy what the agent may read into a new folder. Ablations change the copies only. */
-export function prepareSandbox(domain, dir, { ablate = [], harness = 'monolith' } = {}) {
+export function prepareSandbox(domain, dir, { ablate = [], harness = 'modular' } = {}) {
   const src = path.join(ENGINE_ROOT, 'domains', domain);
   fs.mkdirSync(path.join(dir, 'patterns'), { recursive: true });
   const patterns = loadPatterns(path.join(src, 'patterns'), { includeProposed: false });

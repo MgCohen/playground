@@ -1,5 +1,5 @@
 // Run the eval: cases × k agent runs, each in a clean sandbox, then grade and report.
-// Usage: node core/eval/run.mjs <domain> [--harness monolith|modular] [--gate] [--mode smoke|dev|full] [--sample n] [--k n] [--model haiku|sonnet|opus]
+// Usage: node core/eval/run.mjs <domain> [--harness modular|solver] [--gate] [--mode smoke|dev|full] [--sample n] [--k n] [--model haiku|sonnet|opus]
 //        [--only gen|hand|<tag>|<case id>,...] [--limit n] [--concurrency 4] [--ablate a,b] [--label text] [--dry]
 // Case set: [--gen 15] [--seed 7] [--max-children 4]. Another seed gives a held-out set (tag "heldout").
 // A mode sets sample, k and model. A flag that you give changes only that value.
