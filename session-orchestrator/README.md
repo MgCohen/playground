@@ -16,5 +16,5 @@ Design page: https://claude.ai/artifact/EggEYH4ivUuPGG9Pw4k1y1 (source `docs/orc
 Start the supervisor:
 
 ```bash
-cd supervisor && npm install && npm start
+cd supervisor && npm install && node src/main.ts
 ```

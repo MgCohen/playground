@@ -1,0 +1,26 @@
+{
+  "levels": [
+    {
+      "name": "low",
+      "description": "Easy to undo and local to this task.",
+      "timeoutSeconds": 120,
+      "checkDocs": true
+    },
+    {
+      "name": "medium",
+      "description": "Changes a design or a file layout, but a review can undo it.",
+      "timeoutSeconds": 30,
+      "checkDocs": false
+    },
+    {
+      "name": "high",
+      "description": "Hard to undo. Never applied by default.",
+      "timeoutSeconds": null,
+      "checkDocs": false
+    }
+  ],
+  "docs": [
+    "AGENTS.md"
+  ],
+  "onDefault": "stacked-pr"
+}

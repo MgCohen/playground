@@ -12,6 +12,8 @@ One local system controls all Claude Code sessions of the user:
 - It applies a default decision after a timeout, by risk level. It records the decision and makes a commit or a tag.
 - A phone UI shows the queue (swipe cards) and the state of each session.
 
+The main problem: in nested sessions, decisions get lost in the middle of the tree, and the user does not see them. The tool is local and personal, not a product. It runs on the subscription of the user through the Agent SDK and `claude -p`, with no API key.
+
 ## Main rule: one writer for each session (the lease)
 
 The spike `Spike: two writers` showed this fact. If the app process and a CLI process write to one session, the transcript gets two branches, and each writer sees only its own branch.
@@ -27,13 +29,15 @@ A hand-off only moves the lease. The transcript stays one branch.
 ## Parts
 
 ```
-orchestrator/
-├─ mod/            Claude Code mod; loads in each session; inert unless the session is enabled
+session-orchestrator/
+├─ mod/orch/       Claude Code mod; loads in each session; inert unless the session is enabled
 │   inbox → $.prompt.submit, mirror rows, heartbeat, status, lease, tools (ask_user, report, spawn_child)
 ├─ supervisor/     Node process, Agent SDK
 │   store, scheduler, heartbeat check, decision policy, SDK runner, HTTP API
-├─ ui/             local web app (phone through a tunnel): session tree, decision cards
-└─ store/          files (later SQLite): sessions/<id>/{enabled, lease, status, inbox, mirror, decisions, answers}
+├─ config/         policy.default.json, policy.test.json
+├─ spikes/         spike scripts and the test briefs (p2, p3, p4)
+├─ ui/             (P4, not made) local web app for the phone: session tree, decision cards
+└─ store/          runtime files, ignored by git: sessions/<id>/..., ledger.jsonl, policy.json
 ```
 
 ## Phases
@@ -191,3 +195,59 @@ PR format that the session used (the GitHub test repository is deleted):
 - Close comment of a PR above it: "Closed: this PR is stacked on PR #2, and the user refused the size decision of PR #2. The branch stays."
 - Rebuilt PR body: "It replaces PR #2, which is closed." #5 adds "reuses the commit of PR #3" and "Not reviewed yet."
 - The session saw a conflict between the direction of the user and `AGENTS.md`. It followed the user and wrote a comment on the PR. This is the correct order.
+
+## Next steps
+
+Status: the user reviews the design page. Wait for those notes before P4 starts.
+
+### P4 scope (agreed)
+
+1. Decision versions first: a rebuild after a refuse makes `<id>-v2` in the store, the refuse text names the `-v2` branch, and `reviewText` uses the newest version.
+2. A rebuilt PR gets a new title and body.
+3. Phone UI: the session tree and the decision cards. Each card has a free-text field and voice input. The options show as suggestions only. A default decision has the buttons approve, change and refuse.
+4. A tunnel from the phone to the local API.
+5. One git worktree for each code session (see the open questions).
+
+### P5 scope
+
+Run one vsa-template stream under the orchestrator from start to merge. The supervisor must copy these habits of the manual orchestrator session:
+
+- A status check every 5 minutes. Examine each session yourself, because messages can get lost.
+- If a question has no answer after 2 checks, decide it with the recommendation, and report it later.
+- Archive a child session when it is done and nobody needs it. Keep it while its PR is open. Put this rule in each child brief.
+- Archive only the sessions that the user names, and never a session that waits for the user.
+- One decision group for each session. The title names all of its scope.
+
+### Open questions
+
+| Question | Recommendation |
+|---|---|
+| Worktrees: does the supervisor make them, or each brief? | The supervisor makes them and records the folder in `meta.json` |
+| Tunnel: which tool and which sign-in? | Cloudflare Tunnel with Cloudflare Access |
+| Store: files, or SQLite after P4? | Files until P5 shows a real problem |
+| `medium` has `checkDocs: true`. The user named the docs answer only for `low` | Keep it, and ask the user at the P4 start |
+| Delete the old folder `Projects/claude-orchestrator`? | Yes, after the next app restart, when the user says so |
+
+### Known gaps
+
+- PR comments show the user (`MgCohen`) as author. Start each orchestrator text with `[orch]`.
+- Supervisor sessions are not in the app sidebar. Open them with the app import (`docs/know-how.md`).
+- The supervisor does not restart a session after `maxFailures` (3) until the supervisor restarts.
+- `/orch-enable` is not tested in the app.
+
+## Test sessions in the app sidebar
+
+None of these is archived. Archive them only when the user says so.
+
+| Title | Session | State |
+|---|---|---|
+| Spike: two writers | `dee17212` | Split transcript (S0) |
+| Spike S1 cli | `f5034f63` | Done |
+| Spike S2: inbox | `6ad6c434` | Remote Control on |
+| Spike S8: ask | `3df803ac` | Remote Control on |
+| Test P1: orch mod | `ff9d65e6` | In the Stop state |
+| Test P1: orch mod 2 | `989d112c` | Done |
+| Test P2: child A hand-off | `249fb7b0` | Done |
+| Test P2: child B hand-off | `48d13d06` | Split transcript (lease race) |
+
+The store folders of the P2 sessions (`b5f12905`, `249fb7b0`, `48d13d06`) are in `store/old-spikes/`, so the supervisor does not watch them. The build session of this project is `15fac584` (a vsa-template worktree).

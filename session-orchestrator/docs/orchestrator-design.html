@@ -360,7 +360,7 @@ flowchart LR
   <section>
     <h2>How a change is validated</h2>
     <ol>
-      <li>Run the unit tests: <code>npm test</code> in <code>supervisor/</code> (16 tests, a fake runner).</li>
+      <li>Run the unit tests: <code>node --test test/</code> in <code>supervisor/</code> (16 tests, a fake runner).</li>
       <li>Make a test repository in the scratchpad, with short policy timeouts.</li>
       <li>Start a test supervisor with its own <code>ORCH_STORE</code> and <code>ORCH_PORT</code>.</li>
       <li>Send a scripted brief through <code>POST /api/sessions</code>.</li>
