@@ -79,8 +79,20 @@ orchestrator/
 4. The mirror must keep only the `prompt`, `response` and `tool-result` doors. The other doors are system rows.
 5. `canUseTool` did not fire, because the user settings use auto mode. Approvals go through `ask_user` and the risk policy, not through permission prompts.
 
-### Not tested yet
+### Second round (2026-11-15)
 
-- The phone view of an inbox turn through Remote Control.
-- How long the app keeps an idle session process alive. If the app stops it, the supervisor must resume the session or unarchive it before an inbox turn.
-- Many sessions at the same time, and the timer cost of the mod in each one.
+| Id | Result | Evidence |
+|---|---|---|
+| S4c | ✅ A tool can block for minutes. The mod waits inside `$.process.run`, and a `$` call in flight does not count against the hook budget. `$.process.run` takes `timeoutMs` up to 600 000 | Session `3df803ac`: `ask_user` waited 120 s, `ANSWER: DATE` |
+| S8 | ✅ Redirect of the built-in `AskUserQuestion`: the mod writes the questions to the store, waits, and returns `{ questions, answers }`. With no answer in time, it calls `next(e)` and the app card shows | MANGO from the store, no card |
+| S9 | ✅ Six SDK sessions in parallel: 17 s, each with a correct lease, state and mirror | `spikes/sdk/s9.mjs` |
+| S10 | ✅ The phone (Remote Control) shows each turn live: app messages, inbox turns and the question card. A phone answer to the card reaches the session | FIG and KIWI answered on the phone |
+| S11 | ⏳ An idle app session process stays alive for 50 minutes or more. The watch still runs | S2 heartbeat at 16:57, last turn at 16:04 |
+
+### Decision modes for the orchestrator
+
+| Mode | Use | Turn |
+|---|---|---|
+| `ask_user` with `waitSeconds` > 0 | Short decisions, a quick answer is likely | Stays open; the answer is the tool result |
+| `ask_user` with `waitSeconds` 0 | Long decisions | Ends; the answer wakes the session through the inbox |
+| `AskUserQuestion` redirect | A model that uses the built-in tool | Waits up to 300 s for the store; then the app card |
