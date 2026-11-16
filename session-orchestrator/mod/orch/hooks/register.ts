@@ -65,6 +65,25 @@ async function log($: any, line: string): Promise<void> {
   await $.fs.write(path, `${kept}${await now($)} ${line}\n`)
 }
 
+async function emit($: any, kind: string, from: string, to: string, data: Record<string, unknown>, refs: Record<string, unknown> = {}): Promise<void> {
+  if (!S.store) return
+  const ms = await $.clock.now()
+  const at = new Date(ms).toISOString()
+  const id = `${ms}-${newId().slice(0, 8)}-${S.holder}`
+  await writeJson($, `${S.store}/events/${at.slice(0, 10)}/${id}.json`, { id, at, session: S.id, kind, from, to, data, refs })
+}
+
+function rowText(message: any): string {
+  const content = message?.content ?? message?.message?.content
+  if (typeof content === 'string') return content
+  if (!Array.isArray(content)) return JSON.stringify(message).slice(0, 2000)
+  return content
+    .map((block: any) => (block.type === 'text' ? block.text : block.type === 'tool_use' ? `[tool ${block.name}]` : block.type === 'tool_result' ? '[tool result]' : ''))
+    .filter((text: string) => text !== '')
+    .join(' ')
+    .slice(0, 2000)
+}
+
 function byName(a: string, b: string): number {
   return a.localeCompare(b, 'en', { numeric: true })
 }
@@ -322,6 +341,9 @@ export const register: Register = on => {
     if (S.dir && e.agentId === undefined && MIRROR_DOORS.includes(e.door)) {
       const row = { door: e.door, origin: e.origin, uuid: e.uuid, message: JSON.stringify(e.message).slice(0, ROW_CHARS) }
       await writeJson($, `${S.dir}/mirror/${await $.clock.now()}-${e.uuid}.json`, row)
+      const origin = String((e.origin as any)?.kind ?? 'unknown')
+      if (e.door === 'prompt') await emit($, 'session.input', origin, `session:${S.id}`, { text: rowText(e.message), origin }, { row: e.uuid })
+      if (e.door === 'response') await emit($, 'session.output', `session:${S.id}`, S.holder === 'live' ? 'user' : 'supervisor', { text: rowText(e.message) }, { row: e.uuid })
     }
     return next(e)
   })
@@ -340,6 +362,8 @@ export const register: Register = on => {
     const report = { state: e.state, summary: e.summary, details: e.details, at: await now($) }
     await writeJson($, `${S.dir}/reports/${await $.clock.now()}.json`, report)
     await writeJson($, `${S.dir}/report.json`, report)
+    const meta = await readJson($, `${S.dir}/meta.json`)
+    await emit($, 'report', `session:${S.id}`, meta?.parent ? `session:${meta.parent}` : 'user', { state: e.state, summary: e.summary, details: e.details })
     return { result: 'Recorded.' }
   }).catch((_$: any, _e: any) => ({ result: 'orch: the report was not recorded. Continue your work.' }))
 
@@ -351,6 +375,7 @@ export const register: Register = on => {
     await writeJson($, `${dir}/meta.json`, meta)
     await $.fs.write(`${dir}/inbox/1.txt`, String(e.brief))
     await $.fs.write(`${dir}/enabled`, '')
+    await emit($, 'brief', `session:${S.id}`, `session:${child}`, { title: e.title, cwd: meta.cwd, text: String(e.brief).slice(0, 2000) }, { child })
     await log($, `spawn_child ${child} ${e.title}`)
     return { result: `Started child "${e.title}" (${child}). It reports back as a new message that starts with "Report from child". If you have nothing else to do now, end your turn.` }
   }).catch((_$: any, _e: any) => ({ result: 'orch: spawn_child failed. Do the work yourself or report blocked.' }))
@@ -359,6 +384,7 @@ export const register: Register = on => {
     if (!S.dir) return { deny: 'orch: this session is not enabled' }
     const wait = Math.max(0, Math.min(MAX_WAIT_SECONDS, Number(e.waitSeconds ?? 0)))
     const decision = await newDecision($, e, 'ask_user', wait)
+    await emit($, 'decision', `session:${S.id}`, 'user', { question: e.question, options: e.options, risk: decision.risk, defaultOption: e.defaultOption, mode: decision.mode }, { decision: decision.id })
     const later = `Decision ${decision.id} stays in the user queue. End your turn now. The answer arrives as a new message that starts with "Answer to decision ${decision.id}".`
     if (wait === 0) {
       await log($, `ask_user ${decision.id} pending`)

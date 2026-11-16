@@ -60,6 +60,7 @@ export class Supervisor {
     const details = report.details ? `\n\n${report.details}` : ''
     this.store.send(meta.parent, `Report from child "${meta.title ?? id}" (${id}): ${report.state}. ${report.summary}${details}`)
     this.store.writeJson(path, { at: report.at })
+    this.store.event('report.forward', `session:${id}`, `session:${meta.parent}`, { state: report.state, summary: report.summary }, { child: id }, meta.parent)
     this.store.log(`${id} report ${report.state} forwarded to ${meta.parent}`)
   }
 
@@ -73,6 +74,7 @@ export class Supervisor {
       const reason = `level ${level.name}, no answer in ${level.timeoutSeconds} s`
       this.store.answer(id, decision.id, { answer: decision.defaultOption, by: 'policy', note: defaultNote(this.options.policy, decision.id, reason) })
       this.store.ledger({ session: id, decision: decision.id, question: decision.question, answer: decision.defaultOption, by: 'policy', reason })
+      this.store.event('answer', 'policy', `session:${id}`, { text: decision.defaultOption, reason }, { decision: decision.id }, id)
       this.store.log(`${id} decision ${decision.id} default ${decision.defaultOption} (${reason})`)
     }
   }
@@ -93,6 +95,7 @@ export class Supervisor {
         const note = `This answer comes from the documentation (${result.source ?? 'no source given'}), not from the user. The user can review it later.`
         this.store.answer(id, decision.id, { answer: result.answer, by: 'docs', source: result.source, note })
         this.store.ledger({ session: id, decision: decision.id, question: decision.question, answer: result.answer, by: 'docs', source: result.source })
+        this.store.event('answer', 'docs', `session:${id}`, { text: result.answer, source: result.source }, { decision: decision.id }, id)
         this.store.log(`${id} decision ${decision.id} answered from the docs: ${result.answer} (${result.source})`)
       })
     this.checks.set(key, work)
@@ -103,6 +106,7 @@ export class Supervisor {
     const question = this.store.readJson<Decision>(this.store.path(id, 'decisions', `${decision}.json`))?.question ?? 'question'
     this.store.writeJson(this.store.path(id, 'reviews', `${decision}.json`), { verdict, text, at: new Date().toISOString() })
     this.store.ledger({ session: id, decision, review: verdict, text })
+    this.store.event('review', 'user', `session:${id}`, { verdict, text }, { decision }, id)
     return this.store.send(id, reviewText(decision, question, verdict, text))
   }
 
@@ -132,10 +136,12 @@ export class Supervisor {
   async run(id: string, request: TurnRequest, pending: Pending): Promise<void> {
     this.store.log(`${id} turn start new=${request.isNew} inbox=${pending.inbox.join(',')} answers=${pending.answers.join(',')}`)
     if (request.isNew) this.store.saveMeta({ ...this.store.meta(id), started: true })
+    this.store.event('turn.start', 'supervisor', `session:${id}`, { isNew: request.isNew, prompt: request.prompt.slice(0, 2000) }, { inbox: pending.inbox, answers: pending.answers }, id)
     const result = await this.runTurn(request).catch(error => ({ ok: false, error: String(error), seconds: 0 }))
     if (result.ok) {
       this.store.markSent(id, pending)
       this.failures.delete(id)
+      this.store.event('turn.end', `session:${id}`, 'supervisor', { ok: true, seconds: result.seconds, text: String(result.text ?? '').slice(0, 2000) }, {}, id)
       this.store.log(`${id} turn done ${result.seconds}s: ${String(result.text ?? '').slice(0, 200)}`)
       return
     }
@@ -143,6 +149,7 @@ export class Supervisor {
     const count = (this.failures.get(id) ?? 0) + 1
     this.failures.set(id, count)
     this.store.writeJson(this.store.path(id, 'blocked.json'), { reason: `supervisor turn failed ${count} times: ${result.error}`, since: new Date().toISOString() })
+    this.store.event('turn.fail', `session:${id}`, 'supervisor', { count, error: result.error }, {}, id)
     this.store.log(`${id} turn failed (${count}): ${result.error}`)
   }
 

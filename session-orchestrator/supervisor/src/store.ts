@@ -174,6 +174,22 @@ export class Store {
     for (const decision of pending.answers) this.writeJson(this.path(id, 'delivered', `${decision}.json`), { by: 'supervisor', at: new Date().toISOString() })
   }
 
+  event(kind: string, from: string, to: string, data: Record<string, unknown>, refs: Record<string, unknown> = {}, session?: string): void {
+    const at = new Date()
+    const id = `${at.getTime()}-${randomUUID().slice(0, 8)}-supervisor`
+    const day = at.toISOString().slice(0, 10)
+    this.write(join(this.root, 'events', day, `${id}.json`), JSON.stringify({ id, at: at.toISOString(), session, kind, from, to, data, refs }, null, 2))
+  }
+
+  events(): any[] {
+    const root = join(this.root, 'events')
+    return this.names(root).flatMap(day =>
+      this.names(join(root, day))
+        .map(name => this.readJson<any>(join(root, day, name)))
+        .filter(e => e !== undefined),
+    ).sort((a, b) => byName(a.id, b.id))
+  }
+
   log(line: string): void {
     const path = join(this.root, 'supervisor', 'log.txt')
     mkdirSync(dirname(path), { recursive: true })

@@ -246,6 +246,31 @@ PR format that the session used (the GitHub test repository is deleted):
 - Rebuilt PR body: "It replaces PR #2, which is closed." #5 adds "reuses the commit of PR #3" and "Not reviewed yet."
 - The session saw a conflict between the direction of the user and `AGENTS.md`. It followed the user and wrote a comment on the PR. This is the correct order.
 
+## Event stream spike (2026-11-16)
+
+The TypeScript supervisor and the mod write one event file for each message, in each direction, to `store/events/<day>/<id>.json`. `GET /api/events` returns the stream. Each event has `id`, `at`, `session`, `kind`, `from`, `to`, `data`, `refs`. The brief, the stream and the timeline printer are in `spikes/p5/`.
+
+Test: a root session starts a child, the child asks the user a `high` question, the user answers "GREEN" (not one of the options), the child reports to the root, the root reports done, then the user sends a question to the root. Result: 38 events in 149 s, and each direction is in the stream.
+
+| Direction | Event kinds |
+|---|---|
+| User → session | `brief`, `message`, `answer`, `review` |
+| Session → user | `decision`, `report` (root), `session.output` (live holder) |
+| Parent → child | `brief` |
+| Child → parent | `report`, `report.forward` |
+| Supervisor → session | `turn.start` with the prompt; `answer` by `policy` or `docs` |
+| Session → supervisor | `session.output`, `turn.end` with the last text |
+| Received by a session | `session.input`: each prompt that the session got, from any sender |
+
+Findings:
+
+- A free-text answer that is not one of the options works: the child used GREEN and told the user.
+- `session.output` has empty rows (thinking blocks with no text). Leave them out.
+- `session.input` has the origin `unclassified` in an SDK turn. Use the `turn.start` before it to name the sender.
+- Tool calls show as `[tool <name>]` in `session.output`. Make them a separate kind, `session.tool`, so a filter can hide them.
+- Some events repeat one fact from two sides (`report` and `report.forward`, the last `session.output` and `turn.end`). Keep both, and link them with `refs`, because each side is a different direction.
+- The `orch events` query and the C# port are still to do (M1).
+
 ## Next steps
 
 Status: the user reviewed the design page and accepted it. The user then asked for the folder structure, the code topology and a roadmap to a stable version. They are on the page (tabs Code and Roadmap) and in this file. The next work is M0, after the user accepts the roadmap. The notes arrive in the chat, or as comments on the page: read them with the `ArtifactComments` tool on the page URL. After a design change, edit `docs/orchestrator-design.html` and publish it with the `Artifact` tool and `url` set to the page URL.
