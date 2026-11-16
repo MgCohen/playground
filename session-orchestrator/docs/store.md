@@ -64,6 +64,7 @@ A decision is open while `delivered/<id>.json` does not exist.
 | `store/supervisor/log.txt` | One line for each turn, lease release, report forward, docs answer and default |
 | `store/policy.json` | The policy in use. The supervisor writes it at start from `config/policy.default.json` if it does not exist. The mod reads the levels from it |
 | `store/ledger.jsonl` | One line for each answer from the docs, each default and each review |
+| `store/events/<day>/<id>.json` | Planned for M0 (not built): one file for each event of the append-only stream. See `plan.md`, Parts |
 
 ## HTTP API (supervisor, `http://127.0.0.1:7777`)
 

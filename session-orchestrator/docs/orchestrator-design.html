@@ -112,7 +112,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
   <button role="tab" data-tab="topology" aria-selected="false">Runtime</button>
   <button role="tab" data-tab="flows" aria-selected="false">Flows</button>
   <button role="tab" data-tab="decisions" aria-selected="false">Decisions</button>
-  <button role="tab" data-tab="templates" aria-selected="false">Templates</button>
+  <button role="tab" data-tab="templates" aria-selected="false">Messages</button>
   <button role="tab" data-tab="build" aria-selected="false">Build</button>
 </nav>
 
@@ -139,7 +139,7 @@ flowchart LR
       <tr><th>Part</th><th>Path</th><th>Job</th><th>State</th></tr>
       <tr><td>Mod</td><td><code>mod/orch</code></td><td>Inbox, heartbeat, lease, mirror, tools</td><td><span class="pill ok">built</span></td></tr>
       <tr><td>Supervisor</td><td><code>supervisor/</code></td><td>Scheduler, SDK turns, policy, HTTP API</td><td><span class="pill ok">built</span></td></tr>
-      <tr><td>Store</td><td><code>store/</code></td><td>One folder for each session, ledger</td><td><span class="pill ok">built</span></td></tr>
+      <tr><td>Store</td><td><code>store/</code></td><td>One folder for each session, the event stream</td><td><span class="pill ok">built</span></td></tr>
       <tr><td>Policy</td><td><code>store/policy.json</code></td><td>Risk levels, timeouts, docs check</td><td><span class="pill ok">built</span></td></tr>
       <tr><td>Phone UI</td><td><code>ui/</code></td><td>Session tree, decision cards, reviews</td><td><span class="pill todo">P4</span></td></tr>
       <tr><td>Tunnel</td><td>None yet</td><td>Phone access to the local API</td><td><span class="pill todo">P4</span></td></tr>
@@ -217,7 +217,7 @@ stateDiagram-v2
       <tr><td>Is it running or idle?</td><td><code>status.json</code>, supervisor runs</td></tr>
       <tr><td>What did it say last?</td><td><code>report.json</code>, <code>mirror/</code></td></tr>
       <tr><td>Why does it not move?</td><td><code>blocked.json</code>, open decisions</td></tr>
-      <tr><td>Which defaults wait for review?</td><td><code>ledger.jsonl</code>, draft PRs</td></tr>
+      <tr><td>Which defaults wait for review?</td><td>Event stream (<code>orch events</code>), draft PRs</td></tr>
       <tr><td>What happened when?</td><td>Supervisor log, <code>log-&lt;holder&gt;.txt</code></td></tr>
     </table></div>
   </section>
@@ -362,7 +362,7 @@ flowchart LR
       <tr><td><code>change</code></td><td>Commits the change on that branch</td><td>Rebased on the change</td></tr>
       <tr><td><code>refuse</code></td><td>Closes the PR, keeps the branch</td><td>Closed, rebuilt from the base</td></tr>
     </table></div>
-    <p>After a refuse, the session starts again from the base branch in the new direction. It reuses commits from the closed branches where they still fit. Each answer, default and review adds one line to <code>store/ledger.jsonl</code>.</p>
+    <p>After a refuse, the session starts again from the base branch in the new direction. It reuses commits from the closed branches where they still fit. Each answer, default and review is an event in the stream (today: one line in <code>store/ledger.jsonl</code>).</p>
   </section>
 
   <section>
@@ -528,6 +528,71 @@ flowchart LR
     </table></div>
     <p>To add a template, add its folder in <code>templates/</code> with these four files, and add one row to the table above. A test examines each <code>example.json</code> against its <code>schema.json</code>, so a template cannot drift from its example.</p>
   </section>
+
+  <section>
+    <h2>Event stream</h2>
+    <p>Each message and each change of state is also an event in one stream. Nothing is lost: a reader picks what it needs with a query.</p>
+  </section>
+
+  <div class="card">
+    <div class="vtitle">One stream records everything; each reader filters it</div>
+    <div class="scroll"><pre class="mermaid">
+flowchart LR
+  P[Plugin in sessions] -->|append| EV[(store/events)]
+  SV[Supervisor] -->|append| EV
+  CL[orch command] -->|append| EV
+  EV -->|kind = decision| Q[UI decision queue]
+  EV -->|last 3 hours| TL[UI timeline]
+  EV -->|session = X| ST[Session history]
+  EV -->|by = policy| RV[Defaults to review]
+    </pre></div>
+  </div>
+
+  <section>
+    <h2>Event envelope</h2>
+    <div class="scroll"><table>
+      <tr><th>Field</th><th>Content</th></tr>
+      <tr><td><code>id</code></td><td>Time in ms, a random part, the writer</td></tr>
+      <tr><td><code>at</code></td><td>ISO time</td></tr>
+      <tr><td><code>session</code></td><td>The session id, or none for the supervisor</td></tr>
+      <tr><td><code>kind</code></td><td>A template name or a system kind</td></tr>
+      <tr><td><code>by</code></td><td><code>user</code>, <code>session</code>, <code>supervisor</code>, <code>docs</code>, <code>policy</code></td></tr>
+      <tr><td><code>data</code></td><td>The fields of the template</td></tr>
+      <tr><td><code>refs</code></td><td>Related ids: decision, parent, child, PR</td></tr>
+    </table></div>
+    <pre class="code">{ "id": "1794796528000-a1b2-supervisor", "at": "2026-11-16T10:02:08Z",
+  "session": "eae5b144", "kind": "answer", "by": "policy",
+  "data": { "decision": "toolu_01RAQ", "text": "LARGE" },
+  "refs": { "decision": "toolu_01RAQ" } }</pre>
+  </section>
+
+  <section>
+    <h2>Event kinds</h2>
+    <div class="scroll"><table>
+      <tr><th>Group</th><th>Kinds</th></tr>
+      <tr><td>Templates</td><td><code>decision</code>, <code>answer</code>, <code>review</code>, <code>report</code>, <code>update</code>, <code>brief</code>, <code>notice</code></td></tr>
+      <tr><td>Session life</td><td><code>session.start</code>, <code>session.end</code>, <code>session.archive</code></td></tr>
+      <tr><td>Turns</td><td><code>turn.start</code>, <code>turn.end</code>, <code>turn.fail</code></td></tr>
+      <tr><td>Lease</td><td><code>lease.take</code>, <code>lease.release</code></td></tr>
+      <tr><td>Problems</td><td><code>blocked</code>, <code>unblocked</code>, <code>lease.conflict</code></td></tr>
+      <tr><td>Git</td><td><code>branch.create</code>, <code>pr.open</code>, <code>pr.ready</code>, <code>pr.close</code></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Stream rules</h2>
+    <ul>
+      <li>Write each event as one new file: <code>store/events/&lt;day&gt;/&lt;id&gt;.json</code>. Two writers never write one file, so no line gets lost.</li>
+      <li>Never change or delete an event. A correction is a new event with a <code>refs</code> link.</li>
+      <li><code>core</code> writes the event first, then the state file of the session. The state files are for fast reads; the stream is the record.</li>
+      <li>The ledger of today is a query: the events with <code>by</code> = <code>docs</code> or <code>policy</code>, and the <code>review</code> events.</li>
+      <li>From M6, the supervisor can build the state files again from the stream after a crash.</li>
+    </ul>
+    <pre class="code">orch events --since 3h                       # timeline of the last 3 hours
+orch events --kind decision,report --open    # what needs the user
+orch events --session eae5b144 --follow      # one session, live</pre>
+  </section>
+
 </div>
 
 <!-- BUILD -->
@@ -583,7 +648,8 @@ flowchart TD
       <tr><td><code>orch new</code>, <code>orch send</code></td><td>User, scripts</td><td>Start a session from a brief, add an inbox message</td></tr>
       <tr><td><code>orch tree</code>, <code>orch status</code></td><td>User, sessions</td><td>Show the session tree and states</td></tr>
       <tr><td><code>orch decisions</code>, <code>orch answer</code></td><td>User, scripts</td><td>List and answer decisions</td></tr>
-      <tr><td><code>orch review</code>, <code>orch ledger</code></td><td>User</td><td>Give a verdict, show the record</td></tr>
+      <tr><td><code>orch review</code></td><td>User</td><td>Give a verdict on a default</td></tr>
+      <tr><td><code>orch events</code></td><td>User, UI, sessions</td><td>Query the stream: time, session, kind</td></tr>
       <tr><td><code>orch decision start</code>, <code>pr</code></td><td>Sessions</td><td>Make the branch and the draft PR</td></tr>
       <tr><td><code>orch stack rebase</code>, <code>close</code></td><td>Sessions</td><td>Do the git part of a verdict</td></tr>
       <tr><td><code>orch stop</code>, <code>archive</code>, <code>open</code></td><td>User</td><td>Stop, archive, open in the app</td></tr>
@@ -698,10 +764,11 @@ flowchart LR
     ["packages/core/src/order.ts", "M0", "Inbox names and their order", "Makes a new inbox name that sorts after all earlier names, and sorts names in numeric order. Today the mod and the supervisor each have a copy."],
     ["packages/core/src/lease.ts", "M0", "The lease rules", "isLive: a live lease counts while its heartbeat or the lease is less than 15 s old. Who may write which turn."],
     ["packages/core/src/policy.ts", "M0", "Policy levels and the default rule", "Loads and validates a policy, finds the level of a decision (an unknown level is the strictest), and decides when a default applies."],
+    ["packages/core/src/events.ts", "M0", "The event envelope and kinds", "The fields of each event (id, at, session, kind, by, data, refs) and the list of kinds: the seven templates and the system events."],
     ["packages/core/src/templates.ts", "M0", "Validate and render a template", "Reads schema.json and render.md of a template, validates the fields of a message, and makes the text for a session."],
-    ["packages/store", "M0", "File IO of the contract for Node", "Atomic write (temporary file, then rename), read, list, the ledger file. The supervisor and the CLI use it."],
+    ["packages/store", "M0", "File IO of the contract for Node", "Atomic write (temporary file, then rename), read, list, the event stream. The supervisor and the CLI use it."],
     ["packages/store/src/fs-store.ts", "M0", "Read and write store files", "The Store class of today without the rules, which move to core."],
-    ["packages/store/src/ledger.ts", "M0", "Append to ledger.jsonl", "One line for each docs answer, default and review, with the time."],
+    ["packages/store/src/events.ts", "M0", "Append and query events", "Writes each event as one file in store/events/<day>/, and reads them back by time, session and kind. ledger.jsonl of today becomes a query of this stream."],
     ["packages/supervisor", "today", "The scheduler process", "Today it is supervisor/ at the root. M0 moves it here and splits it into one file for each job."],
     ["packages/supervisor/src/tick.ts", "M0", "One pass over all sessions", "Releases stale leases, forwards child reports, applies the policy and starts turns, up to maxRuns at one time."],
     ["packages/supervisor/src/policy-runner.ts", "M0", "Docs answers and default answers", "Runs the docs check for each level with checkDocs, and writes a default answer after the timeout of its level."],
@@ -710,10 +777,10 @@ flowchart LR
     ["packages/supervisor/src/main.ts", "today", "Start of the process", "Reads ORCH_STORE and ORCH_PORT, loads the policy, starts the tick timer and the HTTP server."],
     ["packages/cli", "M1", "The orch command", "One command for each operation. The user, the test scripts and the sessions use the same commands, so nobody writes store files by hand."],
     ["packages/cli/src/main.ts", "M1", "Argument parse and help", "Finds the command and its options, and prints the help of each command."],
-    ["packages/cli/src/commands", "M1", "One file for each command", "new, send, tree, status, decisions, answer, review, ledger, decision, stack, stop, archive, open, template, doctor."],
+    ["packages/cli/src/commands", "M1", "One file for each command", "new, send, tree, status, decisions, answer, review, events, decision, stack, stop, archive, open, template, doctor."],
     ["packages/cli/src/git.ts", "M1", "Git and gh steps of a stack", "Makes decision branches, opens draft PRs with the PR template, rebases the branches above a change, and closes the PRs above a refuse."],
     ["packages/ui", "M4", "The phone page", "Plain HTML and JS with no build step. The supervisor serves it. Reached through the tunnel."],
-    ["packages/ui/index.html", "M4", "Session tree and decision queue", "Two views: the tree of sessions with their last update, and the queue of open decisions and default reviews."],
+    ["packages/ui/index.html", "M4", "Session tree and decision queue", "Three views: the tree of sessions with their last update, the queue of open decisions and default reviews, and the timeline of all events with filters."],
     ["packages/ui/app.js", "M4", "Reads the API, draws the cards", "Gets the sessions and the decisions, and draws each message with the card.js of its template."],
     ["plugin", "today", "The plugin that each session loads", "Today it is mod/orch. M0 moves it here. CLAUDE_CODE_PLUGIN_DIRS in the user settings points to this folder."],
     ["plugin/.claude-plugin/plugin.json", "today", "Plugin name and version", "The manifest of the plugin."],
@@ -735,7 +802,7 @@ flowchart LR
     ["plugin/agents/worker.md", "M2", "Child session role", "Does one task in its scope, asks with the decision template, ends with a report."],
     ["plugin/agents/docs-checker.md", "M2", "Read-only docs answer", "Reads the docs paths of the policy and answers a decision only if the docs answer it, with the source. The supervisor runs it."],
     ["plugin/commands/orch-enable.md", "M2", "Put a session under the orchestrator", "The slash command that writes the enabled file for the current session."],
-    ["templates", "M0", "One folder for each message kind", "decision, answer, review, report, update, brief, notice. Each folder has schema.json, render.md, card.js and example.json. See the Templates tab."],
+    ["templates", "M0", "One folder for each message kind", "decision, answer, review, report, update, brief, notice. Each folder has schema.json, render.md, card.js and example.json. See the Messages tab."],
     ["templates/decision", "M0", "Session asks the user", "Fields: question, context, snippet, options, recommendation, risk, defaultOption."],
     ["templates/answer", "M0", "Answer to a decision", "Fields: decision, text, by, source, note."],
     ["templates/review", "M0", "Verdict on a default", "Fields: decision, verdict, text."],
@@ -743,15 +810,16 @@ flowchart LR
     ["templates/update", "M0", "Progress, no action needed", "Fields: step, progress, summary."],
     ["templates/brief", "M0", "Start of a session", "Fields: title, goal, scope, doneWhen, skills, agent, cwd, worktree."],
     ["templates/notice", "M0", "Supervisor text to a session", "One render.md for each kind: default, review, child-report, blocked. These are the texts that are in the code today."],
+    ["store/events", "M0", "The event stream", "One JSON file for each event, in one folder for each day. Append only: nobody changes or deletes an event. The UI, the CLI and the sessions read it with a query."],
     ["config", "today", "Policies", "policy.default.json (low 30 min, medium 4 h, high never) and policy.test.json (short timeouts for live tests)."],
     ["tests", "M0", "All tests in one place", "Today the tests are in supervisor/test. M0 moves them."],
     ["tests/unit", "M0", "Unit tests with a fake runner", "core, store, supervisor and cli. The 16 tests of today are the start."],
     ["tests/templates", "M0", "Template tests", "Each example.json against its schema.json, and each render.md with its example."],
     ["tests/contract", "M1", "Plugin and supervisor agree", "Writes store files with one side and reads them with the other side."],
-    ["tests/e2e", "M6", "The live test as one script", "The recipe of know-how.md: a test repository, a test supervisor, scripted answers and reviews, checks of the ledger and the PRs."],
+    ["tests/e2e", "M6", "The live test as one script", "The recipe of know-how.md: a test repository, a test supervisor, scripted answers and reviews, checks of the event stream and the PRs."],
     ["docs", "today", "Plan, contract, know-how, design page", "plan.md (goal, phases, results, next steps), store.md (contract and API), know-how.md (limits and recipes), orchestrator-design.html (this page)."],
     ["spikes", "today", "Spike scripts and test briefs", "Frozen. The briefs p3 and p4 of the live tests stay here until tests/e2e replaces them."],
-    ["store", "today", "Runtime data", "One folder for each session, the ledger and policy.json. Git ignores it. Tests use their own store in the scratchpad."]
+    ["store", "today", "Runtime data", "One folder for each session (the current state), events/ (the stream of all that happened) and policy.json. Git ignores it. Tests use their own store in the scratchpad."]
   ];
   var box = document.getElementById("ftree");
   if (!box) return;

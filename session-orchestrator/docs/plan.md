@@ -76,7 +76,9 @@ Each message is a filled template. A sender gives the fields, `core` validates t
 | `brief` | User, parent → new session | `spawn_child`, `orch new`: title, goal, scope, doneWhen, skills, agent, cwd, worktree |
 | `notice` | Supervisor → session | default, review, child-report, blocked |
 
-The `orch` command (M1) does each read and write of the store, for the user, the scripts and the sessions: `new`, `send`, `tree`, `status`, `decisions`, `answer`, `review`, `ledger`, `decision start`, `decision pr`, `stack rebase`, `stack close`, `stop`, `archive`, `open`, `template`, `doctor`. The stack commands replace the 5 steps of the default note.
+Each template message, and each change of state, is also an event in one append-only stream, `store/events/<day>/<id>.json`. A reader picks what it needs with a query: the UI queue takes `decision` events, the timeline takes all events of the last hours, and the ledger of today becomes the query `by = docs or policy, or kind = review`. The event envelope: `id`, `at`, `session`, `kind`, `by`, `data` (the template fields), `refs`. Rules: one new file for each event, so two writers never write one file; never change or delete an event; `core` writes the event first, then the state file. The design page, tab Messages, gives the event kinds and the queries.
+
+The `orch` command (M1) does each read and write of the store, for the user, the scripts and the sessions: `new`, `send`, `tree`, `status`, `decisions`, `answer`, `review`, `events`, `decision start`, `decision pr`, `stack rebase`, `stack close`, `stop`, `archive`, `open`, `template`, `doctor`. The stack commands replace the 5 steps of the default note.
 
 ## Phases
 
@@ -91,7 +93,7 @@ After P3, the work continues in milestones to the stable version 1.0:
 
 | Milestone | Work | Done when |
 |---|---|---|
-| M0 | Packages, `core`, templates, plugin split | The same 16 tests pass, with no behavior change |
+| M0 | Packages, `core`, templates, event stream, plugin split | The same 16 tests pass, with no behavior change |
 | M1 | `orch` command, stack commands, decision versions, new PR bodies, `[orch]` tag | The PR stack test runs on `orch` commands |
 | M2 | Agents, skills and commands in the plugin | Briefs refer to skills, not long texts |
 | M3 | Stop, archive, worktrees, restart after failures, app import | Two code sessions run in one repository |
