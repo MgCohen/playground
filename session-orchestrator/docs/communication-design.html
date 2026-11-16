@@ -216,13 +216,42 @@ sequenceDiagram
   <div class="scroll">
   <table>
     <tr><th>Step</th><th>Receiver state</th><th>Channel</th><th>Native</th><th>Wait for ack</th></tr>
-    <tr><td>1</td><td>Process runs</td><td>Plugin timer or file watcher, then <code>$.prompt.submit</code></td><td>Submit: yes. Timer: plugin API</td><td>15 s</td></tr>
+    <tr><td>1</td><td>Process runs</td><td><code>orch watch</code> line, then <code>$.prompt.submit</code></td><td>Yes: <code>$.process.spawn</code>, submit</td><td>15 s</td></tr>
     <tr><td>2</td><td>App session, process ended</td><td>App peer message "look at the stream"</td><td>Yes: app <code>send_message</code></td><td>60 s</td></tr>
     <tr><td>3</td><td>Not live</td><td>Supervisor turn, <code>claude -p --resume</code></td><td>Yes: CLI</td><td>Turn time</td></tr>
     <tr><td>4</td><td>No ack after step 3</td><td><code>delivery.blocked</code> card to the user</td><td>Built</td><td>None</td></tr>
   </table>
   </div>
   <p>The wait times are examples. A2 puts them in <code>policy.json</code>. The lease (stream B) decides the first step for a session.</p>
+</section>
+
+<section>
+  <h2>Subscriptions with push, not a 3 s poll</h2>
+  <div class="box">
+<pre class="mermaid">
+flowchart LR
+  EV[("events/")] -->|file event| W["orch watch<br/>FileSystemWatcher"]
+  W -->|one line per envelope| PL["Plugin<br/>process.spawn loop"]
+  EV -->|file event| SV["Supervisor<br/>FileSystemWatcher"]
+  SV -->|SSE| UI["Web UI"]
+  PL2["Other session plugin"] -->|session.send| PL
+</pre>
+  </div>
+  <div class="scroll">
+  <table>
+    <tr><th>Party</th><th>Push</th><th>Native part</th><th>Safety sweep</th></tr>
+    <tr><td>Session plugin</td><td>Child <code>orch watch --to session:&lt;id&gt;</code> prints one line for each new envelope</td><td><code>$.process.spawn</code> for the session life; .NET <code>FileSystemWatcher</code></td><td>Query from the cursor each 60 s</td></tr>
+    <tr><td>Supervisor</td><td><code>FileSystemWatcher</code> on <code>events/</code> feeds the reactors</td><td>.NET</td><td>Query from the cursor each 60 s</td></tr>
+    <tr><td>Web UI</td><td>SSE from <code>GET /api/stream/live</code></td><td>Blazor circuit, SSE</td><td>None: the circuit reconnects</td></tr>
+    <tr><td>Session to session nudge</td><td><code>$.session.send({ to: { sessionId } })</code>; the receiver takes it in <code>session.receive</code></td><td>Yes: peer messages</td><td>The watchdog</td></tr>
+  </table>
+  </div>
+  <ol>
+    <li>A subscriber waits for a push. It does no work between pushes.</li>
+    <li>A file watcher can drop events when its buffer is full. So each subscriber also queries from its cursor each 60 s.</li>
+    <li>A peer nudge goes to <code>session.receive</code>. The plugin returns <code>consumed</code>, so the model does not see the ping. Then it reads the stream.</li>
+    <li>The heartbeat of the lease stays. Stream B owns it.</li>
+  </ol>
 </section>
 
 <section>
@@ -598,7 +627,8 @@ flowchart LR
     <tr><th>Part</th><th>Change</th><th>Files</th><th>Fixes</th></tr>
     <tr><td>Envelope</td><td>Add <code>thread</code>, <code>needs</code>; refs <code>reply</code>, <code>of</code>, <code>via</code></td><td><code>Event.cs</code>, <code>events.ts</code></td><td>G10, G17</td></tr>
     <tr><td>Post</td><td>Body first, envelope second. Validate the template. Set <code>needs</code></td><td><code>EventStream.cs</code> → <code>Stream.cs</code></td><td>G9</td></tr>
-    <tr><td>Subscribe</td><td><code>subscriptions/&lt;party&gt;/&lt;name&gt;.json</code> with filter and cursor. File watcher plus a poll</td><td><code>Stream.cs</code></td><td>G13</td></tr>
+    <tr><td>Subscribe</td><td><code>subscriptions/&lt;party&gt;/&lt;name&gt;.json</code> with filter and cursor. <code>FileSystemWatcher</code> plus a 60 s sweep</td><td><code>Stream.cs</code></td><td>G13</td></tr>
+    <tr><td>Watch</td><td><code>orch watch --to P</code>: one JSON line for each new envelope</td><td><code>EventCommands.cs</code></td><td>G13</td></tr>
     <tr><td>Read</td><td><code>Read(id, for)</code> renders for the receiver. One renderer</td><td><code>Stream.cs</code>, <code>Texts.cs</code></td><td>G1, G3</td></tr>
     <tr><td>Subject</td><td>One rule, in the contract tests of both bindings</td><td><code>Subjects</code>, <code>events.ts</code></td><td>G2</td></tr>
     <tr><td>TS binding</td><td><code>post</code>, <code>subscribe</code>, <code>query</code> in the plugin. Render through <code>orch read --for</code></td><td><code>plugin/hooks/stream.ts</code> (new)</td><td>G2</td></tr>
@@ -614,7 +644,7 @@ flowchart LR
   <div class="scroll">
   <table>
     <tr><th>Part</th><th>Change</th><th>Files</th><th>Fixes</th></tr>
-    <tr><td>Deliverer</td><td>Subscribe to <code>to</code> = self. Remove inbox drain and <code>deliverAnswers</code>. Post <code>ack</code></td><td><code>inbox.ts</code></td><td>G1, G12, G13</td></tr>
+    <tr><td>Deliverer</td><td><code>$.process.spawn</code> of <code>orch watch</code>. Remove the 3 s inbox drain and <code>deliverAnswers</code>. Post <code>ack</code></td><td><code>inbox.ts</code></td><td>G1, G12, G13</td></tr>
     <tr><td>Delivery block</td><td>Post a lifecycle event at the stop latch, not only <code>blocked.json</code></td><td><code>inbox.ts</code></td><td>G16</td></tr>
     <tr><td>Turn runner</td><td>Pending = envelopes to the session with no <code>ack</code>. <code>turn.start</code> keeps ids, not the prompt</td><td><code>FileStore.Pending</code>, <code>Supervisor.RunTurn</code></td><td>G11, G12</td></tr>
     <tr><td>Relays</td><td>Subscribe to child <code>decision</code> and <code>report</code>. Forward each envelope</td><td><code>Supervisor.cs</code></td><td>G9, G14</td></tr>
@@ -649,7 +679,8 @@ flowchart LR
   <div class="scroll">
   <table>
     <tr><th>Question</th><th>Recommendation</th></tr>
-    <tr><td>Notify: a file watcher, or a poll of the day folder each 1 to 3 s?</td><td>Both. The watcher wakes the subscriber; the poll catches a lost event. The cursor makes it safe</td></tr>
+    <tr><td>Sweep interval for lost watcher events: 60 s?</td><td>Yes, as a default in <code>policy.json</code></td></tr>
+    <tr><td>Peer nudge from the supervisor: it is not a Claude session. Use the file watcher only?</td><td>Yes. Only sessions send peer nudges</td></tr>
     <tr><td>The plugin renders through <code>orch read --for</code> (about 1 s for each message). Is the delay acceptable?</td><td>Yes. One renderer stays in C#</td></tr>
     <tr><td>A chat line with two or more open decisions: which decision gets it?</td><td>None. The model asks the user which question it answers</td></tr>
     <tr><td>Nudge a live app session whose process ended: a peer message, or <code>claude --resume</code>?</td><td>A peer message. It keeps one writer. Stream B owns the lease rule</td></tr>
