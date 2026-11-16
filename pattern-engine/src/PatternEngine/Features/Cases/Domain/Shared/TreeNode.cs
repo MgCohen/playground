@@ -107,5 +107,5 @@ public sealed record TreeNode
     }
 
     /// <summary>The same tree with patterns and variants only.</summary>
-    public TreeNode Shape() => new() { P = P, V = V, Parts = Parts?.Select(x => x.Shape()).ToList() ?? [] };
+    public TreeNode Shape() => new() { P = P, V = V, Parts = Parts?.Select(x => x.Shape()).ToList() };
 }

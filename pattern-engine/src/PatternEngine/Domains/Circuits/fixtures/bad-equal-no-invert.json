@@ -1,0 +1,3 @@
+{ "p": "equal", "v": "plain",
+  "parts": [ { "id": "x1", "p": "xor" }, { "id": "n1", "p": "not" } ],
+  "wires": [ ["a", "x1.a"], ["b", "x1.b"], ["x1.y", "n1.a"], ["x1.y", "y"] ] }

@@ -27,6 +27,7 @@ public static class Composition
         services.AddSingleton(_ => Settings.Load(Path.Combine(root.Dir, EngineRoot.SettingsFile)));
 
         services.AddSingleton<IDomainPack, ShapesPack>();
+        services.AddSingleton<IDomainPack, Domains.Circuits.CircuitsPack>();
 
         services.AddSingleton<ICaseSource, GeneratorSource>();
         services.AddSingleton<ICaseSource, HandSource>();

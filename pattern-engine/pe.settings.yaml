@@ -63,6 +63,7 @@ grader_trust:
 
 eval:
   case_sources: [generator, hand]
+  # Each pack sets object_template and group_template in its pack.settings.yaml.
   generator: { count: 15, seed: 7, max_children: 4, tuned_seed: 7 }
   sample_buckets: [ask, no-fit, near-miss, deep, group, object]
   concurrency: 4                  # runs at the same time

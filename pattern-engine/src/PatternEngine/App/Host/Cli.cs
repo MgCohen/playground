@@ -180,7 +180,7 @@ public sealed class Cli(IServiceProvider services)
             a.Int("concurrency") ?? eval.Int("concurrency"),
             a.List("ablate"),
             a.Value("label"),
-            new GeneratorSettings(a.Int("count") ?? g.Int("count"), a.Int("seed") ?? g.Int("seed"), a.Int("max-children") ?? g.Int("max_children"), g.Int("tuned_seed")));
+            GeneratorSettings.From(g, a.Int("count"), a.Int("seed"), a.Int("max-children")));
     }
 
     private sealed class Args

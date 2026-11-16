@@ -17,6 +17,7 @@ public sealed class ShapesParityTests
 {
     private static readonly PatternCatalog Catalog = PatternCatalog.Load(Repo.Parity("shapes", "patterns"));
     private static readonly ShapesPack Pack = new();
+    private static readonly RequestTemplates Templates = new("Draw {text}.", "Draw {group} with, from left to right: {list}.");
 
     [Test]
     public void Validator_gives_the_same_errors_and_warnings()
@@ -50,7 +51,7 @@ public sealed class ShapesParityTests
     [TestCase(60, 42, 6, "cases-seed42.json")]
     public void Generator_gives_the_same_cases_for_the_same_seed(int count, int seed, int maxChildren, string golden)
     {
-        var cases = GeneratorSource.Generate(Catalog, new GeneratorSettings(count, seed, maxChildren, 7));
+        var cases = GeneratorSource.Generate(Catalog, new GeneratorSettings(count, seed, maxChildren, 7, Templates));
         var want = Repo.Json(Repo.Parity(golden))!.AsArray();
         Assert.That(cases, Has.Count.EqualTo(want.Count));
         for (var i = 0; i < want.Count; i++)
@@ -115,10 +116,10 @@ public sealed class ShapesParityTests
 
     private static IReadOnlyList<Case> AllCases()
     {
-        var hand = new HandSource().Load(new CaseContext(Repo.Parity("shapes"), Catalog, new GeneratorSettings(0, 7, 4, 7)));
+        var hand = new HandSource().Load(new CaseContext(Repo.Parity("shapes"), Catalog, new GeneratorSettings(0, 7, 4, 7, Templates)));
         var seen = new HashSet<string>();
-        return GeneratorSource.Generate(Catalog, new GeneratorSettings(15, 7, 4, 7)).Concat(hand)
-            .Concat(GeneratorSource.Generate(Catalog, new GeneratorSettings(60, 42, 6, 7))).Concat(hand)
+        return GeneratorSource.Generate(Catalog, new GeneratorSettings(15, 7, 4, 7, Templates)).Concat(hand)
+            .Concat(GeneratorSource.Generate(Catalog, new GeneratorSettings(60, 42, 6, 7, Templates))).Concat(hand)
             .Where(c => seen.Add(c.Id)).ToList();
     }
 }

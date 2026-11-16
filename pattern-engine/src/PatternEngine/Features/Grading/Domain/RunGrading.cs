@@ -62,7 +62,8 @@ public static class RunGrading
             verdicts[g.Name] = new GraderOutcome(v.Ok, v.Skipped, v.Failures);
         }
 
-        var consistent = trace?.Tree is not null && built is not null && TreeNode.Diff(built.Shape(), trace.Tree.Shape()).Count == 0;
+        // The trace is the expected side: a level that the engine did not decide (an inner circuit of one compose call) is not compared.
+        var consistent = trace?.Tree is not null && built is not null && TreeNode.Diff(trace.Tree.Shape(), built.Shape()).Count == 0;
         return new GradeReport(verdicts, verdicts.Values.All(v => v.Ok), consistent);
     }
 }

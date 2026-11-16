@@ -1,0 +1,22 @@
+# Near-miss: the words point to one block; the rule or the ports give the correct one.
+- id: hand-near-001
+  tags: [near-miss-easy]
+  request: Build a circuit that adds three input bits.
+  expect: { outcome: match, tree: { p: full_adder } }
+- id: hand-rule-001
+  tags: [near-miss]
+  request: Build a half adder that also takes a carry in.
+  expect: { outcome: match, tree: { p: full_adder } }
+- id: hand-near-002
+  tags: [near-miss-easy]
+  request: Build a circuit whose output is 1 when its two input bits are the same.
+  expect: { outcome: match, tree: { p: equal } }
+- id: hand-near-003
+  tags: [near-miss-easy]
+  request: Build a circuit that passes input a or input b to its output, as a select bit says.
+  expect: { outcome: match, tree: { p: mux2 } }
+# No-fit: no block does this.
+- id: hand-nofit-001
+  tags: [no-fit]
+  request: Build a circuit whose output is 1 when at least two of its three inputs are 1.
+  expect: { outcome: no-fit, nearest: [full_adder, mux2, half_adder, equal] }

@@ -53,6 +53,24 @@ public static class OutputGrading
             failed["built"] = built.Failures[0];
         }
 
+        var input = new GradeInput
+        {
+            Case = new Case { Id = "trust", Source = "trust", Tags = [], Request = string.Empty, Expect = expect },
+            Catalog = catalog,
+            Pack = pack,
+            OutputText = text,
+            Parsed = parsed,
+            Built = parsed.Roots.Count > 0 ? StructureGrader.Built(parsed.Roots[0], catalog, pack.Adapter) : null,
+        };
+        foreach (var grader in pack.Graders)
+        {
+            var v = grader.Grade(input);
+            if (!v.Ok)
+            {
+                failed[grader.Name] = v.Failures[0];
+            }
+        }
+
         return failed;
     }
 }
@@ -86,6 +104,22 @@ public sealed class FixtureCheck : ITrustCheck
             {
                 var b = BuiltGrader.Check(StructureGrader.Built(parsed.Roots[0], context.Catalog, context.Pack.Adapter), new Expect { Outcome = Outcomes.Match, Tree = tree });
                 lines.Add(new TrustLine(b.Ok, $"{name}: built tree matches{(b.Ok ? string.Empty : " — " + b.Failures[0])}"));
+            }
+
+            // A fixture can also state the verdict of a grader of the pack, for example behavior.
+            foreach (var grader in context.Pack.Graders.Where(g => e.ContainsKey(g.Name)))
+            {
+                var expect = new Expect { Outcome = Outcomes.Match, Tree = TreeNode.From(e.Raw("tree")), Spec = e.Get("spec") };
+                var input = new GradeInput
+                {
+                    Case = new Case { Id = name, Source = "fixture", Tags = [], Request = string.Empty, Expect = expect },
+                    Catalog = context.Catalog,
+                    Pack = context.Pack,
+                    Parsed = parsed,
+                };
+                var v = grader.Grade(input);
+                var want = e.Get(grader.Name) == "true";
+                lines.Add(new TrustLine(v.Ok == want, $"{name}: {grader.Name} {Lower(v.Ok)} (want {Lower(want)}){(v.Ok ? string.Empty : " — " + v.Failures[0])}"));
             }
         }
 

@@ -1,0 +1,5 @@
+# Settings of the shapes pack. They override pe.settings.yaml for this pack only.
+eval:
+  generator:
+    object_template: "Draw {text}."
+    group_template: "Draw {group} with, from left to right: {list}."

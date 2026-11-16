@@ -4,7 +4,15 @@ using PatternEngine.Plugins.Yaml;
 
 namespace PatternEngine.Features.Cases.Domain;
 
-public sealed record GeneratorSettings(int Count, int Seed, int MaxChildren, int TunedSeed);
+/// <summary>The request text of a generated case. {text} is the phrase of an object; {group} and {list} are the phrase of a group and its children.</summary>
+public sealed record RequestTemplates(string Object, string Group);
+
+public sealed record GeneratorSettings(int Count, int Seed, int MaxChildren, int TunedSeed, RequestTemplates Templates)
+{
+    public static GeneratorSettings From(PatternEngine.Plugins.Settings.Settings generator, int? count = null, int? seed = null, int? maxChildren = null) => new(
+        count ?? generator.Int("count"), seed ?? generator.Int("seed"), maxChildren ?? generator.Int("max_children"), generator.Int("tuned_seed"),
+        new RequestTemplates(generator.Text("object_template"), generator.Text("group_template")));
+}
 
 public sealed record CaseContext(string PackDir, PatternCatalog Catalog, GeneratorSettings Generator);
 
@@ -66,7 +74,7 @@ public sealed class GeneratorSource : ICaseSource
             {
                 var p = objects[rand.Index(objects.Count)];
                 var o = Instance(p, rand);
-                request = $"Draw {o.Text}.";
+                request = settings.Templates.Object.Replace("{text}", o.Text, StringComparison.Ordinal);
                 tree = o.Tree;
                 tags = ["generated", "object"];
             }
@@ -77,7 +85,7 @@ public sealed class GeneratorSource : ICaseSource
                 var childTypes = g.PartsFor(gv.Id).Select(pt => catalog.Get(pt.Ref)).Where(p => p is { Kind: PatternKind.Object, Status: not PatternStatus.Proposed }).Select(p => p!).ToList();
                 var n = 2 + rand.Index(settings.MaxChildren - 1);
                 var kids = Enumerable.Range(0, n).Select(_ => Instance(childTypes[rand.Index(childTypes.Count)], rand)).ToList();
-                request = $"Draw {g.Phrase} with, from left to right: {JoinList(kids.Select(k => k.Text).ToList())}.";
+                request = settings.Templates.Group.Replace("{group}", g.Phrase, StringComparison.Ordinal).Replace("{list}", JoinList(kids.Select(k => k.Text).ToList()), StringComparison.Ordinal);
                 tree = new TreeNode { P = g.Id, V = gv.Id, Parts = kids.Select(k => k.Tree).ToList() };
                 tags = ["generated", "group", n >= 4 ? "deep" : "medium"];
             }

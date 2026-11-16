@@ -21,13 +21,12 @@ public sealed class RunTrustHandler(PackRegistry packs, IEnumerable<ITrustCheck>
     {
         var pack = packs.Load(command.Domain);
         var s = pack.Settings.Section("grader_trust");
-        var tuned = pack.Settings.Section("eval", "generator").Int("tuned_seed");
         var hand = sources.First(x => x.Name == "hand");
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var cases = new List<Case>();
         foreach (var set in Node.List(s.Raw("case_sets")).Select(Node.Map))
         {
-            var g = new GeneratorSettings(int.Parse(set.Get("count")!), int.Parse(set.Get("seed")!), int.Parse(set.Get("max_children")!), tuned);
+            var g = GeneratorSettings.From(pack.Settings.Section("eval", "generator"), int.Parse(set.Get("count")!), int.Parse(set.Get("seed")!), int.Parse(set.Get("max_children")!));
             cases.AddRange(GeneratorSource.Generate(pack.Catalog, g).Concat(hand.Load(new CaseContext(pack.Dir, pack.Catalog, g))).Where(c => seen.Add(c.Id)));
         }
 
