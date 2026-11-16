@@ -47,7 +47,7 @@ Each decision has one row in [`decisions.md`](decisions.md): 52 rows. The rows b
 | Item | Why | Next step for the user |
 |---|---|---|
 | Cloudflare Tunnel and Access (M4) | They need a Cloudflare account and a domain | Give the account, or use `ORCH_BIND=0.0.0.0` with `ORCH_TOKEN` on the home network |
-| M5 on the real vsa-template repository | `plan.md` says the user picks the stream, and a merge into that repository needs approval | Pick the stream. Issue #140 has a candidate in PR #3 of the copy |
+| M5 on the real vsa-template repository | The user decided: not now. First define a stream and its workflow | Discuss the stream definition (`plan.md`, open questions) |
 | Mod side of the M1 event fixes in `mod/orch` | Auto mode could not evaluate edits to the live mod file | None: `plugin/` has the fixes and the settings load it |
 | `orch open` live run | It opens the desktop app while the user is away | Run `orch open <id>` once |
 
