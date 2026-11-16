@@ -1,4 +1,4 @@
-import { HOME, MAX_WAIT_SECONDS, S, log, now, readJson, writeJson, type Decision } from './state.ts'
+import { HOME, MAX_WAIT_SECONDS, S, log, names, now, readJson, writeJson, type Decision } from './state.ts'
 import { emit } from './events.ts'
 import { answerText, markDelivered, waitForFile } from './inbox.ts'
 
@@ -6,6 +6,8 @@ export const ASK_TOOL = 'mcp__orch__ask_user'
 export const REPORT_TOOL = 'mcp__orch__report'
 export const UPDATE_TOOL = 'mcp__orch__update'
 export const SPAWN_TOOL = 'mcp__orch__spawn_child'
+export const ANSWER_TOOL = 'mcp__orch__answer'
+export const QUESTIONS_TOOL = 'mcp__orch__questions'
 
 async function templateSchema($: any, kind: string): Promise<any> {
   const schema = await readJson($, `${HOME}/templates/${kind}/schema.json`)
@@ -41,6 +43,23 @@ export async function registerTools($: any): Promise<void> {
     name: 'update',
     description: 'Show your progress (the update template). Nobody must act on it: the UI shows it in the session tree.',
     inputSchema: await templateSchema($, 'update'),
+    isDeferred: false,
+  })
+  await $.tool.register({
+    name: 'answer',
+    description:
+      'Answer an open question of a child for the user (a decision that arrived as "Question from child"). Use only the words of the user, never your own choice. The child gets the answer as a new message.',
+    inputSchema: {
+      type: 'object',
+      properties: { decision: { type: 'string', description: 'The decision id of the question.' }, text: { type: 'string', description: 'The answer of the user, in the words of the user.' } },
+      required: ['decision', 'text'],
+    },
+    isDeferred: false,
+  })
+  await $.tool.register({
+    name: 'questions',
+    description: 'List all open questions in the orchestrator queue: decision id, risk, default, session and question. Use it when the user asks which questions are open.',
+    inputSchema: { type: 'object', properties: {} },
     isDeferred: false,
   })
   const brief = await templateSchema($, 'brief')
@@ -97,6 +116,50 @@ export async function spawnChild($: any, e: any): Promise<any> {
   return { result: `Started child "${e.title}" (${child}). It reports back as a new message that starts with "Report from child". If you have nothing else to do now, end your turn.` }
 }
 
+async function orch($: any, argv: string[]): Promise<{ ok: boolean; text: string }> {
+  const run = await $.process.run(['orch', ...argv], { timeoutMs: 60000 })
+  const text = String(run.exitCode === 0 ? run.stdout ?? '' : run.stderr || run.stdout || '').trim()
+  return { ok: run.exitCode === 0, text }
+}
+
+export async function answerChild($: any, e: any): Promise<any> {
+  if (!S.dir) return { deny: 'orch: this session is not enabled' }
+  const run = await orch($, ['answer', String(e.decision), String(e.text)])
+  await log($, `answer ${e.decision}: ${run.text.slice(0, 200)}`)
+  return { result: run.ok ? `${run.text} The child gets the answer as a new message.` : `orch: the answer was not recorded: ${run.text.slice(0, 400)}` }
+}
+
+export async function listQuestions($: any): Promise<any> {
+  if (!S.dir) return { deny: 'orch: this session is not enabled' }
+  const run = await orch($, ['decisions'])
+  return { result: run.ok ? run.text : `orch: the list failed: ${run.text.slice(0, 400)}` }
+}
+
+function promptText(message: any): string {
+  const content = message?.content
+  if (typeof content === 'string') return content
+  if (!Array.isArray(content)) return ''
+  return content.filter((part: any) => part?.type === 'text').map((part: any) => String(part.text ?? '')).join('\n').trim()
+}
+
+export async function answerFromChat($: any, e: any): Promise<void> {
+  if (!S.dir || e.origin?.kind !== 'composer') return
+  const text = promptText(e.message)
+  if (text === '') return
+  const open: { id: string; asked: string }[] = []
+  for (const name of await names($, `${S.dir}/decisions`)) {
+    const id = name.replace(/\.json$/, '')
+    if ((await $.fs.exists(`${S.dir}/answers/${id}.json`)) || (await $.fs.exists(`${S.dir}/delivered/${id}.json`))) continue
+    const decision: Decision | undefined = await readJson($, `${S.dir}/decisions/${name}`)
+    if (decision) open.push({ id, asked: String(decision.asked ?? '') })
+  }
+  if (open.length === 0) return
+  const latest = open.sort((a, b) => a.asked.localeCompare(b.asked)).pop()!
+  await markDelivered($, latest.id, 'chat')
+  const run = await orch($, ['answer', latest.id, text])
+  await log($, `decision ${latest.id} answered in the chat: ${run.text.slice(0, 200)}`)
+}
+
 export async function askUser($: any, e: any): Promise<any> {
   if (!S.dir) return { deny: 'orch: this session is not enabled' }
   const wait = Math.max(0, Math.min(MAX_WAIT_SECONDS, Number(e.waitSeconds ?? 0)))
@@ -118,7 +181,7 @@ export async function askUser($: any, e: any): Promise<any> {
   const fields = { question: e.question, context: e.context, snippet: e.snippet, options: e.options, recommendation: e.recommendation, risk: decision.risk, defaultOption: e.defaultOption, mode: decision.mode }
   await emit($, 'decision', `session:${S.id}`, 'user', fields, { decision: decision.id })
   await writeJson($, `${S.dir}/decisions/${decision.id}.json`, decision)
-  const later = `Decision ${decision.id} stays in the user queue. End your turn now. The answer arrives as a new message that starts with "Answer to decision ${decision.id}".`
+  const later = `Decision ${decision.id} is in the user queue. If you have a parent session, it sees the question too. Write the question in your reply text in full, so that the user can read it here. The user can answer in this chat or in the parent session. End your turn now. An answer in this chat is your answer. An answer from elsewhere arrives as a new message that starts with "Answer to decision ${decision.id}".`
   if (wait === 0) {
     await log($, `ask_user ${decision.id} pending`)
     return { result: `PENDING: ${later}` }

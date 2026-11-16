@@ -23,6 +23,11 @@ public sealed class Texts(TemplateSet templates)
     public string ChildReport(string title, string id, string state, string summary, string? details) =>
         Notice("child-report", ("title", title), ("child", id), ("state", state), ("summary", summary), ("details", details));
 
+    public string ChildQuestion(string title, string id, Decision decision, string defaultText) =>
+        Notice("child-question", ("title", title), ("child", id), ("decision", decision.Id), ("question", decision.Question ?? "(no question text)"),
+            ("context", decision.Context), ("options", decision.Options is { Length: > 0 } options ? string.Join("; ", options) : null),
+            ("recommendation", decision.Recommendation), ("risk", decision.Risk), ("defaultText", defaultText));
+
     public string Blocked(int count, string error) => Notice("blocked", ("count", (double)count), ("error", error));
 
     public string Notice(string kind, params (string Key, object? Value)[] fields)

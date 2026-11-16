@@ -516,6 +516,30 @@ Findings:
 - An app session can be the root of a run only if the user types `/orch-enable` in it.
 - Fixed the same day: `/orch-enable [title]` writes `meta.json` (title, cwd, `started: true`), the reply has no double prefix, and the hooks of a live session stop and release the lease when `orch archive` removes `enabled`. Not tested live yet.
 
+## Sum test, run 1 (2026-11-16)
+
+A root ("Sum test: root", `de4325e9`) got N = 4 from the user in the app and started 4 children with `spawn_child`. The supervisor started all sessions and imported each one into the app after its first turn. The policy level `test` (90 s) was added for this run.
+
+| Child | Mode | Value | How the value came |
+|---|---|---|---|
+| 1 | auto | 47 | Random, no user action |
+| 2 | ask | 7 | The user typed 7 in the child chat |
+| 3 | chat | 13 | The user typed 8, 5 and "done" in the child chat |
+| 4 | approve | 16 | Both steps took the default "yes" after 90 s |
+
+The root summed 83 and reported done. Each child report reached the root inbox while the root was live in the app.
+
+Findings:
+
+| # | Finding | State |
+|---|---|---|
+| F1 | `ask_user` writes the question to the store only. In the app the user saw no question, and the child said "answer elsewhere" | Fixed: the tool tells the child to write the question in its reply text |
+| F2 | An answer in the child chat did not close the decision in the store. `orch tree` showed "1 open" after the run | Fixed: a `composer` prompt in a session with an open decision answers the latest open decision with `orch answer` |
+| F3 | The root did not see the questions of its children | Fixed: the supervisor sends each open question of a child to the parent inbox once (notice `child-question`, event `question.forward`). The root writes it in its reply. The new tools `mcp__orch__answer` and `mcp__orch__questions` let the root answer and list questions |
+| F4 | An imported session has no Remote Control. The app setting "Connect new sessions to Remote Control" applies only to sessions that the user starts in the app | Open. `claude --desktop --resume <id> --remote-control` does not import: the process exits and the app gets no record. Only the app tool `set_remote_control` works, from an app session |
+| F5 | Child 4 sent an extra "Step 1 is done" report before its final report | Open: the brief or the `orch-report` skill must say that a step is an update, not a report |
+| F6 | The brief and the skill texts make the start of each transcript long in the app | Open: put the steps in a skill and keep the brief short |
+
 ## Test sessions in the app sidebar
 
 None of these is archived. Archive them only when the user says so.

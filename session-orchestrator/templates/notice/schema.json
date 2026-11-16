@@ -5,7 +5,7 @@
   "type": "object",
   "required": ["kind"],
   "properties": {
-    "kind": { "enum": ["default-stacked-pr", "default-commit", "default-none", "docs", "review-approve", "review-change", "review-refuse", "child-report", "blocked"] },
+    "kind": { "enum": ["default-stacked-pr", "default-commit", "default-none", "docs", "review-approve", "review-change", "review-refuse", "child-report", "child-question", "blocked"] },
     "decision": { "type": "string" },
     "question": { "type": "string" },
     "reason": { "type": "string" },
@@ -19,6 +19,11 @@
     "state": { "type": "string" },
     "summary": { "type": "string" },
     "details": { "type": "string" },
+    "context": { "type": "string" },
+    "options": { "type": "string" },
+    "recommendation": { "type": "string" },
+    "risk": { "type": "string" },
+    "defaultText": { "type": "string" },
     "count": { "type": "number" },
     "error": { "type": "string" }
   },

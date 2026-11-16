@@ -38,6 +38,7 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
             {
                 ReleaseStaleLease(id, now);
                 ForwardReport(id);
+                ForwardQuestions(id);
                 ApplyPolicy(id, now);
             }
             foreach (var id in sessions)
@@ -79,6 +80,25 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         store.WriteJson(id, new Forwarded(report.At), StoreFiles.Forwarded);
         store.Events.Append(EventKinds.ReportForward, Parties.Session(id), Parties.Session(parent), Data.Of(("state", report.State), ("summary", report.Summary)), Data.Of(("child", id), ("report", report.Event)), parent);
         store.Log($"{id} report {report.State} forwarded to {parent}");
+    }
+
+    void ForwardQuestions(string id)
+    {
+        var meta = store.Meta(id);
+        if (meta.Parent is not { } parent) return;
+        foreach (var decision in store.OpenDecisions(id))
+        {
+            var marker = store.PathOf(id, StoreFiles.QuestionsForwarded, StoreFiles.Json(decision.Id));
+            if (File.Exists(marker)) continue;
+            var level = options.Policy.LevelOf(decision.Risk);
+            var defaultText = decision.DefaultOption is not { } option ? "There is no default: the child waits for an answer."
+                : level.TimeoutSeconds is { } seconds ? $"If nobody answers in {seconds:0} s, the policy answers \"{option}\"."
+                : $"The default is \"{option}\", but this level never applies it.";
+            store.Send(parent, store.Texts.ChildQuestion(meta.Title ?? id, id, decision, defaultText), Parties.Session(id));
+            Files.WriteJson(marker, new Forwarded(Times.Format(Now)));
+            store.Events.Append(EventKinds.QuestionForward, Parties.Session(id), Parties.Session(parent), Data.Of(("decision", decision.Id), ("question", decision.Question)), Data.Of(("child", id), ("decision", decision.Id)), parent);
+            store.Log($"{id} question {decision.Id} forwarded to {parent}");
+        }
     }
 
     void ApplyPolicy(string id, DateTimeOffset now)

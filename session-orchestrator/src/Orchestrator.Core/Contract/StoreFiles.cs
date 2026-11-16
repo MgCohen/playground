@@ -20,6 +20,7 @@ public static class StoreFiles
     public const string DocsChecks = "docs-checks";
     public const string Reviews = "reviews";
     public const string Forwarded = "forwarded.json";
+    public const string QuestionsForwarded = "forwarded-questions";
     public const string Policy = "policy.json";
     public const string Ledger = "ledger.jsonl";
     public const string SupervisorLog = "supervisor/log.txt";
