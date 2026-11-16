@@ -19,6 +19,7 @@ public static class EventKinds
     public const string SessionEnd = "session.end";
     public const string SessionStop = "session.stop";
     public const string SessionArchive = "session.archive";
+    public const string SessionImport = "session.import";
 
     public const string TurnStart = "turn.start";
     public const string TurnEnd = "turn.end";

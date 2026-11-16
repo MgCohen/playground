@@ -44,14 +44,16 @@ public sealed class Rig : IDisposable
         [new Level("low", "small", 60, true), new Level("medium", "design", 600, false), new Level("high", "hard to undo", null, false)],
         ["AGENTS.md"], OnDefault.StackedPr);
 
-    public Rig(bool ok = true, DocsResult? docs = null)
+    public List<string> Imports { get; } = [];
+
+    public Rig(bool ok = true, DocsResult? docs = null, bool import = false)
     {
         Folder = Directory.CreateTempSubdirectory("orch-").FullName;
         Clock = new ManualClock(DateTimeOffset.UtcNow);
         Store = new FileStore(Folder, Clock);
         Runner = new FakeRunner(ok);
         Docs = new FakeDocs(docs ?? new DocsResult(false));
-        Supervisor = new Supervisor.Supervisor(Store, Runner, Docs, new SupervisorOptions(2, 2, 2, TestPolicy));
+        Supervisor = new Supervisor.Supervisor(Store, Runner, Docs, new SupervisorOptions(2, 2, 2, TestPolicy) { Import = import ? id => { Imports.Add(id); Store.SaveMeta(Store.Meta(id) with { Imported = true }); } : null });
     }
 
     public string Folder { get; }

@@ -16,6 +16,7 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
     readonly ConcurrentDictionary<string, CancellationTokenSource> stops = new();
     readonly ConcurrentDictionary<string, Task> checks = new();
     readonly ConcurrentDictionary<string, Failure> failures = new();
+    readonly ConcurrentDictionary<string, DateTimeOffset> imports = new();
     readonly Lifecycle lifecycle = new(store);
     readonly Recovery recovery = new(store);
 
@@ -129,6 +130,7 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
     bool CanRun(string id, DateTimeOffset now)
     {
         if (running.ContainsKey(id) || store.IsLive(id, now)) return false;
+        if (imports.TryGetValue(id, out var imported) && now - imported < options.ImportWait) return false;
         if (!failures.TryGetValue(id, out var failure) || failure.Count < options.MaxFailures) return true;
         if (failure.Until is not { } until || now < until) return false;
         store.Send(id, store.Texts.Blocked(failure.Count, failure.Error ?? "unknown"), Parties.Supervisor);
@@ -156,7 +158,7 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
             return;
         }
         var meta = store.Meta(id);
-        var request = new TurnRequest(id, cwd, pending.Text, meta.CreatedBy is not null && meta.Started != true) { Agent = meta.Agent };
+        var request = new TurnRequest(id, cwd, pending.Text, meta.CreatedBy is not null && meta.Started != true) { Agent = meta.Agent, Title = meta.Title };
         var stop = new CancellationTokenSource();
         stops[id] = stop;
         Track(running, id, () => RunTurn(request, pending, stop.Token));
@@ -213,11 +215,27 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
                 Data.Of(("turnStart", start.Id), ("output", output is { } o && string.CompareOrdinal(o.Event, start.Id) > 0 ? o.Event : null)), id);
             store.Log($"{id} turn done {result.Seconds}s: {Cut(result.Text ?? "", 200)}");
             EndMarker(id, start);
+            ImportOnce(id);
             return;
         }
         if (request.IsNew) store.SaveMeta(store.Meta(id) with { Started = false });
         Fail(request, result.Error ?? "unknown", start.Id);
         EndMarker(id, start);
+    }
+
+    void ImportOnce(string id)
+    {
+        if (options.Import is not { } import || store.Meta(id).Imported == true) return;
+        try
+        {
+            import(id);
+            imports[id] = Now;
+            store.Log($"{id} imported into the desktop app");
+        }
+        catch (Exception e) when (e is ShellException or IOException or InvalidOperationException)
+        {
+            store.Log($"{id} import failed: {e.Message}");
+        }
     }
 
     void EndMarker(string id, Event start) =>

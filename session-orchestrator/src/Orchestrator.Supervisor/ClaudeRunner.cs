@@ -77,6 +77,7 @@ public sealed class ClaudeRunner(string storeRoot, string? pluginDir = null) : I
         var watch = Stopwatch.StartNew();
         var session = request.IsNew ? "--session-id" : "--resume";
         List<string> arguments = [.. SettingArguments(pluginDir), session, request.Id];
+        if (request.IsNew && request.Title is { Length: > 0 } title) arguments.AddRange(["-n", title]);
         if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", agent.Contains(':') ? agent : $"{PluginNamespace}:{agent}"]);
         var call = new ClaudeCall(request.Cwd, request.Prompt, arguments,
             new Dictionary<string, string> { ["ORCH_HOLDER"] = Holders.Supervisor, ["ORCH_STORE"] = storeRoot.Replace('\\', '/') });
