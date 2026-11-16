@@ -1,0 +1,14 @@
+# The verdict that each grader must give for each fixture.
+- file: good-house.svg
+  structure: true
+  rules: true
+  tree: { p: house, v: plain, params: { door_fill: red } }
+- { file: bad-house-floating-door.svg, structure: false, rules: true }
+- { file: bad-house-no-roof.svg, structure: false, rules: true }
+- { file: bad-lint-path.svg, structure: true, rules: false }
+- { file: bad-lint-viewbox.svg, structure: true, rules: false }
+- file: good-street.svg
+  structure: true
+  rules: true
+  tree: { p: street, v: row, parts: [ { p: house, v: plain }, { p: tower, v: plain, params: { door_fill: blue } }, { p: tree, v: plain } ] }
+- { file: bad-street-overlap.svg, structure: false, rules: true }

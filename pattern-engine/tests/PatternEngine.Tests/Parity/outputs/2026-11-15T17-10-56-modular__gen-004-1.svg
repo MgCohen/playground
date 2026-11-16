@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <g data-p="street" data-v="row">
+    <g data-p="ground"><rect x="0" y="260" width="400" height="40" fill="green"/></g>
+    <g data-p="tree" data-v="plain">
+      <g data-p="trunk"><rect x="32" y="200" width="16" height="60" fill="brown"/></g>
+      <g data-p="crown"><circle cx="40" cy="180" r="28" fill="green"/></g>
+    </g>
+    <g data-p="shed" data-v="plain">
+      <g data-p="body"><rect x="80" y="195" width="90" height="65" fill="yellow"/></g>
+      <g data-p="roof"><polygon points="75,195 175,195 125,155" fill="red"/></g>
+      <g data-p="door"><rect x="105" y="210" width="40" height="50" fill="blue"/></g>
+    </g>
+    <g data-p="house" data-v="plain">
+      <g data-p="body"><rect x="190" y="180" width="100" height="80" fill="orange"/></g>
+      <g data-p="roof"><polygon points="185,180 295,180 240,135" fill="red"/></g>
+      <g data-p="door"><rect x="222" y="210" width="36" height="50" fill="brown"/></g>
+    </g>
+    <g data-p="tower" data-v="plain">
+      <g data-p="body"><rect x="315" y="150" width="50" height="110" fill="gray"/></g>
+      <g data-p="roof"><polygon points="310,150 370,150 340,110" fill="brown"/></g>
+      <g data-p="door"><rect x="328" y="215" width="24" height="45" fill="green"/></g>
+    </g>
+  </g>
+</svg>

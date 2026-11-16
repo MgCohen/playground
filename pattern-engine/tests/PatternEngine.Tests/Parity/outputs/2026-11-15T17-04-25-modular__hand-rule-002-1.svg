@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <g data-p="shed" data-v="plain">
+    <g data-p="body">
+      <rect x="100" y="150" width="200" height="120" fill="gray"/>
+    </g>
+    <g data-p="roof">
+      <polygon points="90,150 310,150 200,90" fill="red"/>
+    </g>
+    <g data-p="door">
+      <rect x="155" y="180" width="90" height="90" fill="brown"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PatternEngine/PatternEngine.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PatternEngine.Tests/PatternEngine.Tests.csproj" />
+  </Folder>
+</Solution>

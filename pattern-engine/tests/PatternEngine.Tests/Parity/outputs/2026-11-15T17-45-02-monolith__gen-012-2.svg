@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <g data-p="street" data-v="row">
+    <g data-p="ground"><rect x="0" y="240" width="400" height="60" fill="gray"/></g>
+    <g data-p="house" data-v="plain">
+      <g data-p="body"><rect x="40" y="170" width="100" height="70" fill="white"/></g>
+      <g data-p="roof"><polygon points="30,170 150,170 90,125" fill="red"/></g>
+      <g data-p="door"><rect x="80" y="205" width="20" height="35" fill="yellow"/></g>
+    </g>
+    <g data-p="house" data-v="plain">
+      <g data-p="body"><rect x="220" y="170" width="100" height="70" fill="white"/></g>
+      <g data-p="roof"><polygon points="210,170 330,170 270,125" fill="red"/></g>
+      <g data-p="door"><rect x="260" y="205" width="20" height="35" fill="green"/></g>
+    </g>
+  </g>
+</svg>

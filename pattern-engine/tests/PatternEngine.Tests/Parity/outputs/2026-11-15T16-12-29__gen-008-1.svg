@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <g data-p="street" data-v="row">
+    <g data-p="ground"><rect x="0" y="250" width="400" height="50" fill="green"/></g>
+    <g data-p="tower" data-v="plain">
+      <g data-p="body"><rect x="80" y="130" width="60" height="120" fill="gray"/></g>
+      <g data-p="roof"><polygon points="70,130 150,130 110,90" fill="red"/></g>
+      <g data-p="door"><rect x="100" y="220" width="20" height="30" fill="brown"/></g>
+      <g data-p="window"><rect x="100" y="150" width="20" height="20" fill="yellow"/></g>
+      <g data-p="window"><rect x="100" y="185" width="20" height="20" fill="yellow"/></g>
+    </g>
+    <g data-p="tower" data-v="plain">
+      <g data-p="body"><rect x="240" y="130" width="60" height="120" fill="gray"/></g>
+      <g data-p="roof"><polygon points="230,130 310,130 270,90" fill="red"/></g>
+      <g data-p="door"><rect x="260" y="220" width="20" height="30" fill="brown"/></g>
+      <g data-p="window"><rect x="260" y="150" width="20" height="20" fill="yellow"/></g>
+      <g data-p="window"><rect x="260" y="185" width="20" height="20" fill="yellow"/></g>
+    </g>
+  </g>
+</svg>

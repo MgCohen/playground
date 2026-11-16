@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "properties": {
+    "action": { "type": "string", "enum": ["decide", "question"] },
+    "status": { "type": "string", "enum": ["solved", "partial", "none"] },
+    "pattern": { "type": "string" },
+    "variant": { "type": "string" },
+    "params": { "type": "object", "additionalProperties": { "type": "string" } },
+    "children": { "type": "array", "items": { "type": "string" } },
+    "open": { "type": "array", "items": { "type": "string" } },
+    "nearest": { "type": "string" },
+    "new_id": { "type": "string" },
+    "deltas": { "type": "array", "items": { "type": "string" } },
+    "question": {
+      "type": "object",
+      "properties": {
+        "about": { "type": "string", "enum": ["pattern choice", "requirement", "input", "domain"] },
+        "key": { "type": "string" },
+        "text": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["about", "text"]
+    },
+    "reason": { "type": "string" }
+  },
+  "required": ["action", "reason"]
+}

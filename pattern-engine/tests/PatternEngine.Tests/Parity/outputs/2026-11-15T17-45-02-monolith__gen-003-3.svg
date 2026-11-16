@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+<g data-p="street" data-v="row">
+<g data-p="ground"><rect x="0" y="250" width="400" height="50" fill="green"/></g>
+<g data-p="tower" data-v="plain">
+<g data-p="body"><rect x="20" y="160" width="40" height="90" fill="gray"/></g>
+<g data-p="roof"><polygon points="15,160 65,160 40,125" fill="brown"/></g>
+<g data-p="door"><rect x="33" y="225" width="14" height="25" fill="red"/></g>
+<g data-p="window"><rect x="33" y="175" width="14" height="14" fill="white"/></g>
+</g>
+<g data-p="house" data-v="plain">
+<g data-p="body"><rect x="100" y="190" width="80" height="60" fill="orange"/></g>
+<g data-p="roof"><polygon points="95,190 185,190 140,150" fill="brown"/></g>
+<g data-p="door"><rect x="130" y="220" width="20" height="30" fill="yellow"/></g>
+<g data-p="window"><rect x="108" y="203" width="14" height="14" fill="white"/></g>
+</g>
+<g data-p="house" data-v="chimney">
+<g data-p="body"><rect x="230" y="190" width="80" height="60" fill="orange"/></g>
+<g data-p="roof"><polygon points="225,190 315,190 270,150" fill="brown"/></g>
+<g data-p="door"><rect x="260" y="220" width="20" height="30" fill="brown"/></g>
+<g data-p="window"><rect x="288" y="203" width="14" height="14" fill="white"/></g>
+<g data-p="chimney"><rect x="285" y="155" width="12" height="25" fill="gray"/></g>
+</g>
+</g>
+</svg>

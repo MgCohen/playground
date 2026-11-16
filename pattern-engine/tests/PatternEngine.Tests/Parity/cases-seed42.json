@@ -1,0 +1,2206 @@
+[
+  {
+    "id": "gen-s42-001",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; a tree; a tree; a tower; a tree; and a house with a chimney.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-002",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed; a house with a yellow door; a tree; and a house with a chimney and a blue door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-003",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; and a house with a chimney and a green door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-004",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tower with a green door; a tree; and a house with a chimney and a red door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-005",
+    "source": "generator",
+    "request": "Draw a house with a yellow door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-006",
+    "source": "generator",
+    "request": "Draw a tower with a red door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-007",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed; and a tower with a blue door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-008",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed; a shed; a tower; and a tower.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-009",
+    "source": "generator",
+    "request": "Draw a shed with a red door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-010",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tower; a tower; and a shed.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-011",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tower; a tree; a shed; a tower with a green door; a tower with a red door; and a shed.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-012",
+    "source": "generator",
+    "request": "Draw a house with a chimney and a blue door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney",
+        "params": {
+          "door_fill": "blue"
+        }
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-013",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tower with a green door; a tree; and a house with a green door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-014",
+    "source": "generator",
+    "request": "Draw a tower with a green door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "green"
+        }
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-015",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a chimney; a shed with a green door; a shed with a yellow door; and a tower.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-016",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a chimney; and a shed.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-017",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; a tower; a tower; a tower with a red door; a house with a chimney; and a shed with a red door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-018",
+    "source": "generator",
+    "request": "Draw a house with a green door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "green"
+        }
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-019",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a chimney; a tower with a blue door; a tower; a tower; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-020",
+    "source": "generator",
+    "request": "Draw a house.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain"
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-021",
+    "source": "generator",
+    "request": "Draw a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tree",
+        "v": "plain"
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-022",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a green door; a house with a chimney; a tree; a tree; a tree; and a house with a green door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-023",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a yellow door; a tree; a shed with a yellow door; a shed; a shed with a green door; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-024",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed; a tree; a tower with a blue door; a tower; a tree; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-025",
+    "source": "generator",
+    "request": "Draw a tower.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-026",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed with a blue door; a shed with a green door; a tree; a house with a blue door; a shed; and a house with a blue door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-027",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed with a red door; a tower with a green door; a tower with a green door; a shed with a blue door; a house; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-028",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed with a yellow door; a tower; and a tower with a green door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-029",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house; a tree; a house with a chimney; a tree; and a shed with a blue door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-030",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed with a green door; a house with a chimney and a yellow door; and a house.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-031",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a chimney; a tower; a shed with a blue door; a house with a chimney and a blue door; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-032",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed; a house with a chimney; a tower with a green door; a house with a chimney and a red door; a tower; and a tower.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-033",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tower with a red door; a tree; a shed with a yellow door; and a house with a chimney and a green door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-034",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed; a shed; a house; a house; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-035",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house; a house with a blue door; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-036",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a chimney; a tower; a tower; a tree; and a tower.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-037",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed; a house with a chimney and a green door; a tree; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-038",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a chimney and a green door; and a house with a chimney.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-039",
+    "source": "generator",
+    "request": "Draw a shed with a green door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain",
+        "params": {
+          "door_fill": "green"
+        }
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-040",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; a tree; a tree; a tree; and a house with a chimney.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-041",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; a shed with a green door; and a shed with a yellow door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-042",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; and a shed.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-043",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tower; a tower with a red door; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-044",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; a tower with a green door; a tree; a house; a tower with a green door; and a tower with a red door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-045",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; a tower with a red door; and a house.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-046",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a chimney; a shed with a red door; a shed with a yellow door; and a house with a chimney.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-047",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; a shed with a yellow door; a tower; and a tower with a green door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-048",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; a tree; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-049",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a blue door; a shed with a yellow door; a tree; and a tower with a blue door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-050",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; and a house with a chimney and a blue door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-051",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a red door; a shed with a red door; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-052",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a chimney; a shed with a yellow door; a shed with a yellow door; a tree; a house with a chimney; and a shed.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-053",
+    "source": "generator",
+    "request": "Draw a tower with a yellow door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-054",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a house with a chimney and a blue door; a shed; and a house with a green door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "medium",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-055",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; a shed; a tower with a red door; a shed with a green door; and a tree.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-056",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; a tree; a tree; and a shed.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-057",
+    "source": "generator",
+    "request": "Draw a shed with a yellow door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "tags": [
+      "generated",
+      "object",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-058",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a shed with a blue door; a tower with a blue door; a shed; a tree; a tower with a red door; and a house with a chimney and a red door.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-059",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tree; a tower; a tower; a tree; and a tower.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  },
+  {
+    "id": "gen-s42-060",
+    "source": "generator",
+    "request": "Draw a street with, from left to right: a tower; a tower; a shed; and a shed.",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "tags": [
+      "generated",
+      "group",
+      "deep",
+      "heldout"
+    ]
+  }
+]

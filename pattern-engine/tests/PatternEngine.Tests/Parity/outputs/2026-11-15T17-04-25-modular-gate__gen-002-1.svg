@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <g data-p="street" data-v="row">
+    <g data-p="ground"><rect x="0" y="240" width="400" height="60" fill="gray"/></g>
+    <g data-p="house" data-v="chimney">
+      <g data-p="body"><rect x="30" y="160" width="110" height="80" fill="orange"/></g>
+      <g data-p="roof"><polygon points="25,160 145,160 85,110" fill="red"/></g>
+      <g data-p="door"><rect x="60" y="200" width="20" height="40" fill="brown"/></g>
+      <g data-p="chimney"><rect x="115" y="115" width="15" height="35" fill="gray"/></g>
+    </g>
+    <g data-p="tower" data-v="plain">
+      <g data-p="body"><rect x="175" y="100" width="60" height="140" fill="yellow"/></g>
+      <g data-p="roof"><polygon points="170,100 240,100 205,40" fill="blue"/></g>
+      <g data-p="door"><rect x="195" y="200" width="20" height="40" fill="brown"/></g>
+    </g>
+    <g data-p="tree" data-v="plain">
+      <g data-p="trunk"><rect x="295" y="190" width="10" height="50" fill="brown"/></g>
+      <g data-p="crown"><circle cx="300" cy="165" r="30" fill="green"/></g>
+    </g>
+  </g>
+</svg>

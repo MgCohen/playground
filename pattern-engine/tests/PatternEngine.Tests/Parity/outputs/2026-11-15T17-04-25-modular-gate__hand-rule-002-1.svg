@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <g data-p="shed" data-v="plain">
+    <g data-p="body"><rect x="120" y="160" width="160" height="100" fill="orange"/></g>
+    <g data-p="roof"><polygon points="110,160 200,90 290,160" fill="red"/></g>
+    <g data-p="door"><rect x="170" y="200" width="70" height="60" fill="brown"/></g>
+  </g>
+</svg>

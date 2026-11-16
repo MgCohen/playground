@@ -1,0 +1,5646 @@
+[
+  {
+    "file": "2026-11-15T16-11-12__gen-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-001-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tree",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-002-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tree",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-003-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tree",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-004-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-004-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-005-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-005-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-005-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-006-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-006-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-006-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-007-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-007-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-007-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-008-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-008-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-008-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-009-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-009-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-009-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-010-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-010-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-010-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-011-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-011-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-011-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-012-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-012-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-012-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-013-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-013-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-014-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-013-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-014-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-014-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-015-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "blue"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-015-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "blue"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__gen-015-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "blue"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__hand-near-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__hand-near-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__hand-near-001-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__hand-near-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__hand-near-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__hand-near-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__hand-near-002-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__hand-near-003-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-12-29__hand-near-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-22-11-no-dont-use__hand-near-001-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-22-11-no-dont-use__hand-near-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-22-11-no-dont-use__hand-near-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-22-11-no-dont-use__hand-near-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-22-11-no-dont-use__hand-near-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-22-11-no-dont-use__hand-near-002-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-22-11-no-dont-use__hand-near-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-22-11-no-dont-use__hand-near-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-22-11-no-dont-use__hand-near-003-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-32-11__hand-near-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T16-32-11__gen-006-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-01-57-modular__gen-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-modular-gate__gen-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-modular-gate__hand-rule-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-modular-gate__gen-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-modular-gate__gen-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-modular-gate__hand-near-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-modular-gate__hand-rule-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-modular__gen-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-modular__gen-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-modular__hand-near-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-modular__hand-rule-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-monolith__hand-rule-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-monolith__gen-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-monolith__gen-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-monolith__gen-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-monolith__hand-near-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-04-25-monolith__hand-rule-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-06-monolith-no-dont-use__hand-rule-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-06-monolith-no-dont-use__hand-rule-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {
+      "built": "shed: expected \"shed\", got \"house\""
+    }
+  },
+  {
+    "file": "2026-11-15T17-10-06-monolith-no-dont-use__hand-rule-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-06-monolith-no-dont-use__hand-rule-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {
+      "built": "tower: expected \"tower\", got \"house\""
+    }
+  },
+  {
+    "file": "2026-11-15T17-10-06-monolith-no-dont-use__hand-rule-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-06-monolith-no-dont-use__hand-rule-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {
+      "structure": "low-tower: unknown pattern \"low-tower\"",
+      "built": "house: expected \"house\", got \"low-tower\""
+    }
+  },
+  {
+    "file": "2026-11-15T17-10-06-monolith-no-dont-use__hand-rule-004-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-06-monolith-no-dont-use__hand-rule-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {
+      "structure": "lowtower: unknown pattern \"lowtower\"",
+      "built": "house: expected \"house\", got \"lowtower\""
+    }
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__hand-rule-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__hand-rule-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__gen-004-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__gen-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__gen-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__gen-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__hand-near-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__gen-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__gen-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__hand-near-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__hand-rule-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-10-56-modular__hand-rule-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-001-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-002-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-003-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-004-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-004-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-005-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-005-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-005-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-006-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-006-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-006-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-007-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-008-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-007-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-007-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-009-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-008-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-008-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-009-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-010-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-009-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-010-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-011-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-010-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-011-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-012-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-011-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-012-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-012-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-013-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-013-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-014-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-013-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-014-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-015-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-014-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-015-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__gen-015-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-near-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-near-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-near-001-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-near-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-near-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-near-002-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-near-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-near-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-near-003-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-001-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-002-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-003-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-004-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-modular__hand-rule-004-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-001-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-002-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-003-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-004-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-004-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-005-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-005-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-005-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-006-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-006-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-006-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-007-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-007-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-007-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-008-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-008-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-008-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-009-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-009-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-009-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-010-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-010-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-010-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-011-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-011-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-011-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-012-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-012-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-012-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-013-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-013-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-013-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-014-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-014-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-015-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-014-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-015-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-near-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__gen-015-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-near-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-near-001-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-near-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-near-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-near-002-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-near-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-near-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-near-003-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-001-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-002-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-003-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-004-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T17-45-02-monolith__hand-rule-004-3.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-52-23-solver__gen-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {
+      "structure": "output: no pattern found",
+      "built": "no top pattern"
+    }
+  },
+  {
+    "file": "2026-11-15T21-52-23-solver__hand-rule-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {
+      "structure": "output: no pattern found",
+      "built": "no top pattern"
+    }
+  },
+  {
+    "file": "2026-11-15T21-53-14-solver__hand-rule-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-53-14-solver__gen-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-53-14-solver__gen-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "house",
+            "v": "chimney"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-53-14-solver__gen-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-53-14-solver__hand-near-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-53-14-solver__hand-rule-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-rule-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-rule-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-005-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-005-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "plain",
+        "params": {
+          "door_fill": "yellow"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-near-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-near-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-rule-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-rule-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "plain",
+            "params": {
+              "door_fill": "yellow"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-006-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-006-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-004-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "house",
+            "v": "chimney",
+            "params": {
+              "door_fill": "red"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-near-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-near-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house",
+        "v": "chimney"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-rule-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-rule-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-008-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-008-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-007-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-007-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-009-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-009-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-near-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-near-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-rule-004-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__hand-rule-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-011-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-54-22-solver__gen-s42-011-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tower",
+            "v": "plain"
+          },
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "red"
+            }
+          },
+          {
+            "p": "shed",
+            "v": "plain"
+          }
+        ]
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T21-58-05-solver-no-dont-use__hand-rule-002-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {
+      "built": "shed: expected \"shed\", got \"house\""
+    }
+  },
+  {
+    "file": "2026-11-15T21-58-05-solver-no-dont-use__hand-rule-002-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "shed",
+        "v": "plain"
+      }
+    },
+    "failed": {
+      "built": "shed: expected \"shed\", got \"house\""
+    }
+  },
+  {
+    "file": "2026-11-15T21-58-05-solver-no-dont-use__hand-rule-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {
+      "built": "tower: expected \"tower\", got \"house\""
+    }
+  },
+  {
+    "file": "2026-11-15T21-58-05-solver-no-dont-use__hand-rule-001-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {
+      "built": "tower: expected \"tower\", got \"house\""
+    }
+  },
+  {
+    "file": "2026-11-15T21-58-05-solver-no-dont-use__hand-rule-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {
+      "built": "house: expected \"house\", got \"shed\""
+    }
+  },
+  {
+    "file": "2026-11-15T21-58-05-solver-no-dont-use__hand-rule-004-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {
+      "built": "house: expected \"house\", got \"shed\""
+    }
+  },
+  {
+    "file": "2026-11-15T21-58-05-solver-no-dont-use__hand-rule-003-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {
+      "built": "house: expected \"house\", got \"tower\""
+    }
+  },
+  {
+    "file": "2026-11-15T21-58-05-solver-no-dont-use__hand-rule-003-2.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "house"
+      }
+    },
+    "failed": {
+      "built": "house: expected \"house\", got \"tower\""
+    }
+  },
+  {
+    "file": "2026-11-15T23-13-23-solver__hand-rule-001-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "tower",
+        "v": "plain",
+        "params": {
+          "door_fill": "red"
+        }
+      }
+    },
+    "failed": {}
+  },
+  {
+    "file": "2026-11-15T23-13-23-solver__gen-004-1.svg",
+    "expect": {
+      "outcome": "match",
+      "tree": {
+        "p": "street",
+        "v": "row",
+        "parts": [
+          {
+            "p": "tree",
+            "v": "plain"
+          },
+          {
+            "p": "shed",
+            "v": "plain",
+            "params": {
+              "door_fill": "blue"
+            }
+          },
+          {
+            "p": "house",
+            "v": "plain"
+          },
+          {
+            "p": "tower",
+            "v": "plain",
+            "params": {
+              "door_fill": "green"
+            }
+          }
+        ]
+      }
+    },
+    "failed": {}
+  }
+]

@@ -1,0 +1,284 @@
+{
+  "nodes": [
+    {
+      "id": "body",
+      "kind": "leaf",
+      "level": 3,
+      "status": "stable"
+    },
+    {
+      "id": "chimney",
+      "kind": "leaf",
+      "level": 3,
+      "status": "stable"
+    },
+    {
+      "id": "crown",
+      "kind": "leaf",
+      "level": 3,
+      "status": "stable"
+    },
+    {
+      "id": "door",
+      "kind": "leaf",
+      "level": 3,
+      "status": "stable"
+    },
+    {
+      "id": "ground",
+      "kind": "leaf",
+      "level": 3,
+      "status": "stable"
+    },
+    {
+      "id": "house",
+      "kind": "object",
+      "level": 2,
+      "status": "stable"
+    },
+    {
+      "id": "roof",
+      "kind": "leaf",
+      "level": 3,
+      "status": "stable"
+    },
+    {
+      "id": "shed",
+      "kind": "object",
+      "level": 2,
+      "status": "stable"
+    },
+    {
+      "id": "street",
+      "kind": "group",
+      "level": 1,
+      "status": "stable"
+    },
+    {
+      "id": "tower",
+      "kind": "object",
+      "level": 2,
+      "status": "stable"
+    },
+    {
+      "id": "tree",
+      "kind": "object",
+      "level": 2,
+      "status": "stable"
+    },
+    {
+      "id": "trunk",
+      "kind": "leaf",
+      "level": 3,
+      "status": "stable"
+    },
+    {
+      "id": "window",
+      "kind": "leaf",
+      "level": 3,
+      "status": "stable"
+    }
+  ],
+  "edges": [
+    {
+      "from": "house",
+      "to": "body",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "house",
+      "to": "roof",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "house",
+      "to": "door",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "house",
+      "to": "window",
+      "type": "part",
+      "count": "0..4"
+    },
+    {
+      "from": "house",
+      "to": "chimney",
+      "type": "part",
+      "count": "1",
+      "only": "chimney"
+    },
+    {
+      "from": "house",
+      "to": "tower",
+      "type": "instead"
+    },
+    {
+      "from": "house",
+      "to": "shed",
+      "type": "instead"
+    },
+    {
+      "from": "house",
+      "to": "street",
+      "type": "related"
+    },
+    {
+      "from": "house",
+      "to": "tower",
+      "type": "related"
+    },
+    {
+      "from": "house",
+      "to": "shed",
+      "type": "related"
+    },
+    {
+      "from": "shed",
+      "to": "body",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "shed",
+      "to": "roof",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "shed",
+      "to": "door",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "shed",
+      "to": "house",
+      "type": "instead"
+    },
+    {
+      "from": "shed",
+      "to": "house",
+      "type": "related"
+    },
+    {
+      "from": "shed",
+      "to": "street",
+      "type": "related"
+    },
+    {
+      "from": "street",
+      "to": "ground",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "street",
+      "to": "house",
+      "type": "part",
+      "count": "0..n"
+    },
+    {
+      "from": "street",
+      "to": "tower",
+      "type": "part",
+      "count": "0..n"
+    },
+    {
+      "from": "street",
+      "to": "tree",
+      "type": "part",
+      "count": "0..n"
+    },
+    {
+      "from": "street",
+      "to": "shed",
+      "type": "part",
+      "count": "0..n"
+    },
+    {
+      "from": "street",
+      "to": "house",
+      "type": "instead"
+    },
+    {
+      "from": "street",
+      "to": "house",
+      "type": "related"
+    },
+    {
+      "from": "street",
+      "to": "tower",
+      "type": "related"
+    },
+    {
+      "from": "street",
+      "to": "tree",
+      "type": "related"
+    },
+    {
+      "from": "street",
+      "to": "shed",
+      "type": "related"
+    },
+    {
+      "from": "tower",
+      "to": "body",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "tower",
+      "to": "roof",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "tower",
+      "to": "door",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "tower",
+      "to": "window",
+      "type": "part",
+      "count": "0..6"
+    },
+    {
+      "from": "tower",
+      "to": "house",
+      "type": "instead"
+    },
+    {
+      "from": "tower",
+      "to": "street",
+      "type": "related"
+    },
+    {
+      "from": "tower",
+      "to": "house",
+      "type": "related"
+    },
+    {
+      "from": "tree",
+      "to": "trunk",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "tree",
+      "to": "crown",
+      "type": "part",
+      "count": "1"
+    },
+    {
+      "from": "tree",
+      "to": "street",
+      "type": "related"
+    }
+  ]
+}

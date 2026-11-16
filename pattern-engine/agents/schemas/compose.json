@@ -1,0 +1,7 @@
+{
+  "type": "object",
+  "properties": {
+    "fragment": { "type": "string", "description": "the output fragment of one pattern instance, in the format of the subject rules" }
+  },
+  "required": ["fragment"]
+}

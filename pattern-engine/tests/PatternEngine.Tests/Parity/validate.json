@@ -1,0 +1,7 @@
+{
+  "errors": [],
+  "warnings": [
+    "house and tower: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true.",
+    "house and shed: do_not_use_when rules point at each other. Make sure that the two conditions cannot both be true."
+  ]
+}

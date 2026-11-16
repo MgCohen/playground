@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["object", "group"] },
+    "phrase": { "type": "string", "description": "a short noun phrase, for example: a lighthouse" },
+    "use_when": { "type": "array", "items": { "type": "string" } },
+    "variants": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "when": { "type": "string" } }, "required": ["id", "when"] } },
+    "parts": { "type": "array", "items": { "type": "object", "properties": { "ref": { "type": "string" }, "count": { "type": "string" }, "only": { "type": "string" } }, "required": ["ref", "count"] } },
+    "related": { "type": "array", "items": { "type": "string" } },
+    "asserts": { "type": "array", "items": { "type": "string" } },
+    "intent": { "type": "string" },
+    "rules": { "type": "array", "items": { "type": "string" } },
+    "rationale": { "type": "string" }
+  },
+  "required": ["phrase", "use_when", "parts", "intent", "rules"]
+}

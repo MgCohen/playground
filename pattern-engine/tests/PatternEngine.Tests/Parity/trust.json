@@ -1,0 +1,78 @@
+{
+  "references": {
+    "n": 82,
+    "pass": 82
+  },
+  "operators": {
+    "remove-roof": {
+      "applied": 80,
+      "caught": 80,
+      "right": 80
+    },
+    "remove-ground": {
+      "applied": 60,
+      "caught": 60,
+      "right": 60
+    },
+    "remove-chimney": {
+      "applied": 30,
+      "caught": 30,
+      "right": 30
+    },
+    "door-up": {
+      "applied": 80,
+      "caught": 80,
+      "right": 80
+    },
+    "window-over-door": {
+      "applied": 72,
+      "caught": 72,
+      "right": 72
+    },
+    "swap-children": {
+      "applied": 51,
+      "caught": 51,
+      "right": 51
+    },
+    "change-param": {
+      "applied": 55,
+      "caught": 55,
+      "right": 55
+    },
+    "wrong-variant": {
+      "applied": 30,
+      "caught": 30,
+      "right": 30
+    },
+    "wrong-type": {
+      "applied": 51,
+      "caught": 51,
+      "right": 51
+    },
+    "overlap": {
+      "applied": 60,
+      "caught": 60,
+      "right": 60
+    },
+    "outside-canvas": {
+      "applied": 82,
+      "caught": 82,
+      "right": 82
+    },
+    "add-path": {
+      "applied": 82,
+      "caught": 82,
+      "right": 82
+    },
+    "no-fill": {
+      "applied": 80,
+      "caught": 80,
+      "right": 80
+    }
+  },
+  "total": {
+    "applied": 813,
+    "caught": 813,
+    "right": 813
+  }
+}
