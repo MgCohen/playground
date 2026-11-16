@@ -8,9 +8,12 @@ public static class PartyScript
 {
     public static readonly PartyPack Pack = PartyPack.Load(Repo.Path("src", "PatternEngine", "Domains", "Party"), Repo.Path("pe.settings.yaml"));
 
+    private static readonly Dictionary<string, Features.Compose.Domain.Shared.Rubric> ByAsk =
+        Pack.Cases.SelectMany(c => c.Quests).SelectMany(q => q.Rubrics).GroupBy(r => r.Ask).ToDictionary(g => g.Key, g => g.First());
+
     /// <summary>
-    /// A grader that answers each rubric with the oracle truth. It finds the quest by the longest context in the input,
-    /// and the heroes by the lines of the set.
+    /// A grader that answers each rubric with the oracle truth. It finds each rubric by its ask (the case files and the
+    /// decomposer use the same words), and the heroes by the lines of the set.
     /// </summary>
     public static object OracleGrader(AgentCall call)
     {
@@ -23,9 +26,22 @@ public static class PartyScript
             return new { verdicts = whole.Visible.Select(r => new { rubric = r.Id, verdict = Oracle.PoolTruth(r, parties), reason = "oracle" }).ToArray() };
         }
 
-        var quest = Pack.Cases.SelectMany(c => c.Quests).Where(q => call.Input.Contains(q.Context, StringComparison.Ordinal)).MaxBy(q => q.Context.Length)!;
         var party = Heroes(call.Input.Split("# Set")[1].Split("# Rubrics")[0]).Select(id => Pack.Heroes.Get(id)!).ToList();
-        return new { verdicts = quest.Visible.Select(r => new { rubric = r.Id, verdict = Oracle.Truth(r, party), reason = "oracle" }).ToArray() };
+        var rubrics = call.Input.Split("# Rubrics")[1].Split('\n').Where(l => l.StartsWith("- ", StringComparison.Ordinal))
+            .Select(l => l[(l.IndexOf(": ", StringComparison.Ordinal) + 2)..])
+            .Select(ask => ByAsk.TryGetValue(ask, out var r) ? r : FromAsk(ask));
+        return new { verdicts = rubrics.Select(r => new { rubric = r.Id, verdict = Oracle.Truth(r, party), reason = "oracle" }).ToArray() };
+    }
+
+    /// <summary>A rubric that no case file has, for example a decomposed stat amount. The ask has the words of Decomposer.Anchor.</summary>
+    private static Features.Compose.Domain.Shared.Rubric FromAsk(string ask)
+    {
+        var words = ask.TrimEnd('?').Split(' ');
+        var amount = () => int.Parse(words[^3], System.Globalization.CultureInfo.InvariantCulture);
+        var anchor = ask.StartsWith("Is the total cost", StringComparison.Ordinal) ? Decomposer.Anchor("x", "x", [], [], amount())
+            : ask.StartsWith("Is the total ", StringComparison.Ordinal) ? Decomposer.Anchor("x", "x", [], [(words[3], amount())], null)
+            : Decomposer.Anchor("x", "x", [words[^1]], [], null);
+        return anchor.Rubrics[0];
     }
 
     private static List<string> Heroes(string block) =>

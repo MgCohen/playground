@@ -22,7 +22,11 @@ party:
     prose: [tags, cost, stats]
   pass: { rubrics: [valid], rule: all }   # rule: all | percent, with pass_at
   grade: [smallest, best-cost, best-total, spec]
-  decomposer: { lore: on }      # rung 6
+  decomposer:                   # rung 6
+    spec: decompose             # decompose | given (control: the hidden anchor goes to the run)
+    lore: on                    # on | off: lore.md goes to the decomposer
+    retries: 1                  # more decomposer calls when code refuses the answer
+    ranges: { stat_min: [1, 60], max_cost: [0, 100] }
 
 eval:
   modes:

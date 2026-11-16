@@ -33,6 +33,7 @@ public sealed class Cli(IServiceProvider services)
         pe trials [domain]                        metrics of each trial pattern; notifications at the thresholds
         pe review <result.json> [...] [--title t]  build the review page: one card for each run
         pe compose eval [--rung r | --only a,b] [--strategy s] [--mode smoke|dev] [--k n] [--model m] [--label t] [--dry]
+                        [--spec decompose|given] [--lore on|off]   (prose cases)
                                                   run party cases with the compose loop; the oracle grades each run
         pe compose grader-check [--mode dev] [--model m]   grade the fixed pairs; compare each verdict with the oracle
         """;
@@ -219,7 +220,16 @@ public sealed class Cli(IServiceProvider services)
         var m = pack.Settings.Section("eval", "modes", mode);
         var rung = a.Value("rung");
         var cases = a.List("only").Count > 0 ? a.List("only") : pack.Cases.Where(c => rung is null || c.Rung == rung).Select(c => c.Id).ToList();
-        var options = new Domains.Party.PartyRunOptions(mode, a.Value("model") ?? m.Text("model"), a.Int("k") ?? m.Int("k"), cases, a.Value("strategy") ?? pack.Settings.Section("compose").Text("strategy"), a.Value("label"));
+        var decomposer = pack.Settings.Section("party", "decomposer");
+        var options = new Domains.Party.PartyRunOptions(
+            mode,
+            a.Value("model") ?? m.Text("model"),
+            a.Int("k") ?? m.Int("k"),
+            cases,
+            a.Value("strategy") ?? pack.Settings.Section("compose").Text("strategy"),
+            a.Value("label"),
+            a.Value("spec") ?? decomposer.Text("spec"),
+            (a.Value("lore") ?? decomposer.Text("lore")) is "on" or "true" or "True");
         if (a.Flag("dry"))
         {
             Console.WriteLine($"Mode {mode}: model {options.Model}, k={options.K}, strategy {options.Strategy}, cases {string.Join(", ", cases)}");

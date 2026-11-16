@@ -9,7 +9,8 @@ using PatternEngine.Plugins.Yaml;
 
 namespace PatternEngine.Domains.Party;
 
-public sealed record PartyRunOptions(string Mode, string Model, int K, IReadOnlyList<string> Cases, string Strategy, string? Label);
+/// <summary>The options of a run. Spec and Lore apply to prose cases only: Spec decompose or given, Lore on or off.</summary>
+public sealed record PartyRunOptions(string Mode, string Model, int K, IReadOnlyList<string> Cases, string Strategy, string? Label, string Spec = "decompose", bool Lore = true);
 
 public sealed record PartyCaseRun(
     [property: JsonPropertyName("case")] string Case,
@@ -18,7 +19,8 @@ public sealed record PartyCaseRun(
     [property: JsonPropertyName("verdicts")] IReadOnlyList<EvalVerdict> Verdicts,
     [property: JsonPropertyName("measures")] IReadOnlyDictionary<string, string> Measures,
     [property: JsonPropertyName("grader_accuracy")] string GraderAccuracy,
-    [property: JsonPropertyName("trace")] ComposeTrace Trace);
+    [property: JsonPropertyName("trace")] ComposeTrace Trace,
+    [property: JsonPropertyName("decomposition")] Decomposition? Decomposition = null);
 
 public sealed record GraderCheckLine(
     [property: JsonPropertyName("quest")] string Quest,
@@ -56,7 +58,8 @@ public sealed class PartyRunner(PartyPack pack, Func<IJudge> judge, RunLimits li
         var runId = RunId(options.Label);
         var settings = ComposeSettings.From(pack.Settings) with { Strategy = options.Strategy };
         var runs = new List<PartyCaseRun>();
-        log($"Run {runId} [{options.Mode}]: model {options.Model}, strategy {options.Strategy}, {options.Cases.Count} cases x k={options.K}");
+        var prose = options.Cases.Any(id => pack.Case(id).Rung == "prose") ? $", spec {options.Spec}{(options.Spec == "decompose" ? $", lore {(options.Lore ? "on" : "off")}" : string.Empty)}" : string.Empty;
+        log($"Run {runId} [{options.Mode}]: model {options.Model}, strategy {options.Strategy}{prose}, {options.Cases.Count} cases x k={options.K}");
         foreach (var id in options.Cases)
         {
             var c = pack.Case(id);
@@ -64,11 +67,28 @@ public sealed class PartyRunner(PartyPack pack, Func<IJudge> judge, RunLimits li
             {
                 var dir = Path.Combine(workRoot, runId, $"{id}-{trial}");
                 Directory.CreateDirectory(dir);
-                var task = new PartyTask(pack, c, PartyTask.FieldsOf(pack, c.Rung), options.Strategy);
                 var gateway = new AgentGateway(judge(), dir, limits);
-                var trace = await new ComposeLoop(task, settings, gateway).RunAsync(ct);
-                var result = eval.Grade(c, c.Quests.Select(q => trace.CommitOf(q.Id)).ToList());
-                var run = new PartyCaseRun(id, trial, result.Pass, result.Verdicts, result.Measures, GraderAccuracy(c, trace), trace);
+                Decomposition? decomposition = null;
+                IReadOnlyList<Features.Compose.Domain.Shared.Anchor>? specs = null;
+                if (c.Rung == "prose")
+                {
+                    if (options.Spec == "given")
+                    {
+                        specs = [Decomposer.Given(c)];
+                    }
+                    else
+                    {
+                        decomposition = await DecomposeAsync(gateway, c, options.Lore, ct);
+                        specs = decomposition.Anchor is { } a ? [a] : null;
+                    }
+                }
+
+                var task = new PartyTask(pack, c, PartyTask.FieldsOf(pack, c.Rung), options.Strategy, specs);
+                var trace = c.Rung == "prose" && specs is null
+                    ? new ComposeTrace(c.Id, options.Strategy, "stopped", "the decomposer gave no valid spec", c.Quests.Select(q => new SetCommit(q.Id, null, "no spec")).ToList(), [], 0, 0, gateway.Calls, gateway.Cost, gateway.ElapsedMs)
+                    : await new ComposeLoop(task, settings, gateway).RunAsync(ct);
+                var result = eval.Grade(c, c.Quests.Select(q => trace.CommitOf(q.Id)).ToList(), decomposition?.Anchor);
+                var run = new PartyCaseRun(id, trial, result.Pass, result.Verdicts, result.Measures, GraderAccuracy(task, trace), trace, decomposition);
                 runs.Add(run);
                 log(Line(run));
             }
@@ -76,6 +96,29 @@ public sealed class PartyRunner(PartyPack pack, Func<IJudge> judge, RunLimits li
 
         var report = Report(runs);
         return new PartyRunResult(runId, "compose", options.Mode, options.Model, options.Strategy, runs.Sum(r => r.Trace.Calls), runs.Sum(r => r.Trace.Cost), runs, [], report);
+    }
+
+    /// <summary>Calls the decomposer, checks the answer with code, and calls again with the errors (party.decomposer.retries).</summary>
+    public async Task<Decomposition> DecomposeAsync(AgentGateway gateway, PartyCase c, bool lore, CancellationToken ct)
+    {
+        var settings = pack.Settings.Section("party", "decomposer");
+        var ranges = DecomposeRanges.From(settings);
+        var retries = settings.Int("retries");
+        IReadOnlyList<string> errors = [];
+        AgentAnswer? answer = null;
+        for (var attempt = 1; attempt <= retries + 1; attempt++)
+        {
+            answer = await gateway.CallAsync(Decomposer.Agent, Decomposer.Input(pack, c.Text!, lore, errors), ct);
+            var (anchor, problems) = Decomposer.Build(pack, ranges, c.Id, c.Text!, answer);
+            if (anchor is not null)
+            {
+                return new Decomposition(anchor.Rubrics.Select(r => r.Ask).ToList(), [], answer.Text("note"), lore, attempt) { Anchor = anchor };
+            }
+
+            errors = problems;
+        }
+
+        return new Decomposition([], errors, answer?.Text("note"), lore, retries + 1);
     }
 
     /// <summary>Grades the fixed pairs of grader-check.yaml with the grader agent and compares each verdict with the oracle.</summary>
@@ -131,7 +174,7 @@ public sealed class PartyRunner(PartyPack pack, Func<IJudge> judge, RunLimits li
     }
 
     /// <summary>The grader verdicts of the run that agree with the oracle truth, for each graded party.</summary>
-    private string GraderAccuracy(PartyCase c, ComposeTrace trace)
+    private string GraderAccuracy(PartyTask task, ComposeTrace trace)
     {
         var right = 0;
         var total = 0;
@@ -139,7 +182,7 @@ public sealed class PartyRunner(PartyPack pack, Func<IJudge> judge, RunLimits li
         {
             if (g.Parts is { } parts)
             {
-                foreach (var (rubric, verdict) in c.Anchor.Visible.Zip(g.Verdicts))
+                foreach (var (rubric, verdict) in task.Whole!.Visible.Zip(g.Verdicts))
                 {
                     total++;
                     right += verdict.Ok == Oracle.PoolTruth(rubric, parts.Select(p => p.Set).ToList()) ? 1 : 0;
@@ -148,7 +191,7 @@ public sealed class PartyRunner(PartyPack pack, Func<IJudge> judge, RunLimits li
                 continue;
             }
 
-            var quest = c.Quests.First(q => q.Id == g.Spec);
+            var quest = task.Specs.First(q => q.Id == g.Spec);
             var heroes = g.Set.Select(pack.Heroes.Get).OfType<Hero>().ToList();
             foreach (var (rubric, verdict) in quest.Visible.Zip(g.Verdicts))
             {
@@ -165,7 +208,10 @@ public sealed class PartyRunner(PartyPack pack, Func<IJudge> judge, RunLimits li
         var commits = string.Join(" · ", r.Trace.Commits.Select(c => c.Set is null ? "none" : string.Join("+", c.Set)));
         var grades = string.Join(", ", r.Verdicts.Where(v => v.Rubric != "valid").Select(v => $"{v.Rubric} {(v.Ok ? "yes" : "no")}"));
         var measures = string.Join(", ", r.Measures.Select(m => $"{m.Key} {m.Value}"));
-        return $"  {r.Case}-{r.Trial}: {(r.Pass ? "PASS" : "FAIL")} {commits} | {grades} | {measures} | grader {r.GraderAccuracy} | {r.Trace.Turns.Count} turns, {r.Trace.Grades} grades, {r.Trace.Calls} calls, ${r.Trace.Cost:0.000}{(r.Trace.StopReason is null ? string.Empty : " | " + r.Trace.StopReason)}{(r.Pass ? string.Empty : " | " + r.Verdicts.First(v => v.Rubric == "valid").Reason)}";
+        var spec = r.Decomposition is null ? string.Empty
+            : r.Decomposition.Anchor is { } a ? $" [spec: {Decomposer.Describe(a)}]"
+            : $" [spec refused: {string.Join("; ", r.Decomposition.Errors)}]";
+        return $"  {r.Case}-{r.Trial}: {(r.Pass ? "PASS" : "FAIL")}{spec} {commits} | {grades} | {measures} | grader {r.GraderAccuracy} | {r.Trace.Turns.Count} turns, {r.Trace.Grades} grades, {r.Trace.Calls} calls, ${r.Trace.Cost:0.000}{(r.Trace.StopReason is null ? string.Empty : " | " + r.Trace.StopReason)}{(r.Pass ? string.Empty : " | " + r.Verdicts.First(v => v.Rubric == "valid").Reason)}";
     }
 
     private static string Report(IReadOnlyList<PartyCaseRun> runs)

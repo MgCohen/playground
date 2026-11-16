@@ -3,14 +3,17 @@ using PatternEngine.Features.Compose.Domain.Shared;
 
 namespace PatternEngine.Domains.Party;
 
-/// <summary>One party case as a compose task. A spec is a quest, an entry is a hero and a set is a party.</summary>
-public sealed class PartyTask(PartyPack pack, PartyCase c, IReadOnlyList<string> fields, string strategy) : IComposeTask
+/// <summary>
+/// One party case as a compose task. A spec is a quest, an entry is a hero and a set is a party.
+/// A prose case gets its specs from the decomposer, or the hidden anchor in the control mode.
+/// </summary>
+public sealed class PartyTask(PartyPack pack, PartyCase c, IReadOnlyList<string> fields, string strategy, IReadOnlyList<Anchor>? specs = null) : IComposeTask
 {
     public static readonly string[] Fields = ["tags", "cost", "stats"];
 
     public string Id => c.Id;
 
-    public IReadOnlyList<Anchor> Specs => c.Quests;
+    public IReadOnlyList<Anchor> Specs => specs ?? c.Quests;
 
     public string Catalog => string.Join('\n', pack.Heroes.Heroes.Select(Line));
 

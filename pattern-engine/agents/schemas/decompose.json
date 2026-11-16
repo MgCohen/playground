@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "stats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "stat": { "type": "string" },
+          "min": { "type": "integer" }
+        },
+        "required": ["stat", "min"]
+      }
+    },
+    "budget": { "type": ["integer", "null"] },
+    "note": { "type": "string" }
+  },
+  "required": ["tags", "stats", "budget", "note"]
+}
