@@ -8,14 +8,14 @@ public static class DecisionCommands
     {
         var any = false;
         var only = c.Args.Option("session") is { } prefix ? c.Messages.RequireSession(prefix) : null;
-        foreach (var session in c.Store.Sessions().Where(s => only is null || s == only))
-            foreach (var d in c.Store.OpenDecisions(session))
-            {
-                any = true;
-                var title = c.Store.Meta(session).Title ?? SessionCommands.Short(session);
-                c.Output.WriteLine($"{d.Id} [{d.Risk}{(d.DefaultOption is { } o ? $", default {o}" : "")}] {title}: {d.Question}");
-                if (d.Options is { Length: > 0 } options) c.Output.WriteLine($"  options: {string.Join(", ", options)}");
-            }
+        var enabled = c.Store.Sessions().ToHashSet();
+        foreach (var d in c.Store.OpenDecisions().Where(d => enabled.Contains(d.Session) && (only is null || d.Session == only)))
+        {
+            any = true;
+            var title = c.Store.Meta(d.Session).Title ?? SessionCommands.Short(d.Session);
+            c.Output.WriteLine($"{d.Id} [{d.Risk}{(d.DefaultOption is { } o ? $", default {o}" : "")}] {title}: {d.Question}");
+            if (d.Options is { Length: > 0 } options) c.Output.WriteLine($"  options: {string.Join(", ", options)}");
+        }
         if (!any) c.Output.WriteLine("No open decisions.");
         return 0;
     }

@@ -95,7 +95,10 @@ public static class Verdicts
     public static readonly string[] All = [Approve, Change, Refuse];
 }
 
-public sealed record Blocked(string? Reason, string Since);
+public sealed record Blocked(string? Reason, string Since)
+{
+    public string? Event { get; init; }
+}
 
 public sealed record Status(string State, string? TurnId, string At);
 

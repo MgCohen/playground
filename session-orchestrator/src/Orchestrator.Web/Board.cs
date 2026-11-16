@@ -26,9 +26,12 @@ public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
 
     public string Title(string session) => store.Meta(session).Title ?? session[..Math.Min(8, session.Length)];
 
-    public IReadOnlyList<OpenDecision> OpenDecisions() =>
-        store.Sessions().SelectMany(s => store.OpenDecisions(s).Select(d => new OpenDecision(s, Title(s), d)))
-            .OrderBy(d => d.Decision.Asked, StringComparer.Ordinal).ToList();
+    /// <summary>The named query <see cref="StreamQueries.OpenDecisions"/>, for the enabled sessions.</summary>
+    public IReadOnlyList<OpenDecision> OpenDecisions()
+    {
+        var enabled = store.Sessions().ToHashSet();
+        return store.OpenDecisions().Where(d => enabled.Contains(d.Session)).Select(d => new OpenDecision(d.Session, Title(d.Session), d)).ToList();
+    }
 
     /// <summary>The cards of the user inbox: a query of the stream.</summary>
     public IReadOnlyList<Card> Inbox() => inbox.Cards();
@@ -76,7 +79,8 @@ public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
         return new UpdateView(f.GetValueOrDefault("step") as string, f.GetValueOrDefault("progress") as double?, f.GetValueOrDefault("summary") as string ?? "", e.At);
     }
 
-    public IReadOnlyList<Event> Timeline(EventFilter filter) => store.Query(filter).Reverse().Take(TimelineLimit).ToList();
+    /// <summary>The named query <see cref="StreamQueries.Timeline"/>: the newest envelopes first.</summary>
+    public IReadOnlyList<Event> Timeline(StreamQuery filter) => store.Query(StreamQueries.Timeline(filter, TimelineLimit));
 
     public string? BodyText(Event e) => store.Events.Body(e) is { } body ? JsonSerializer.Serialize(body, new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) : null;
 

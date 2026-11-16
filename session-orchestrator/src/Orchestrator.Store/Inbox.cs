@@ -17,12 +17,8 @@ public sealed class Inbox(FileStore store)
 {
     readonly Messages messages = new(store);
 
-    public IReadOnlyList<Card> Cards()
-    {
-        var open = store.Events.All().Where(e => e.To == Parties.User && (e.Needs is not null || EventKinds.Questions.Contains(e.Kind)) && EventQuery.IsOpen(store, e)).ToList();
-        var newest = open.GroupBy(e => e.Thread ?? e.Id).Select(g => g.Last());
-        return newest.Select(ToCard).ToList();
-    }
+    /// <summary>The named query <see cref="StreamQueries.Inbox"/> as cards.</summary>
+    public IReadOnlyList<Card> Cards() => store.Query(StreamQueries.Inbox).Select(ToCard).ToList();
 
     Card ToCard(Event e)
     {

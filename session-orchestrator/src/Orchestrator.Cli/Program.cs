@@ -37,7 +37,7 @@ namespace Orchestrator.Cli
             Stream and tools (P: user, supervisor, session:<id> or the first characters of a session id)
               orch init
               orch post <kind> --to P [--from P] [--thread T] [--needs N] [--reply ID] [--via P] [--json FILE|-] [--<field> value]
-              orch events [--since 3h] [--kind a,b] [--session ID] [--from P] [--to P] [--thread T] [--needs] [--open] [--ledger] [--follow] [--json] [--body]
+              orch events [--view inbox|decisions|timeline|thread|ledger [ARG]] [--since 3h] [--until T] [--after ID] [--kind a,b] [--session ID] [--party P] [--from P] [--to P] [--thread T] [--needs [answer|review|ack]] [--open] [--ledger] [--forwards false] [--heads] [--newest] [--limit N] [--follow] [--json] [--body]
               orch read <id> [--for P] [--render NAME]
               orch watch --to P [--kind a,b] [--thread T] [--render NAME] [--once] [--timeout S] [--list]
               orch nudge <party> [id]

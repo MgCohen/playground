@@ -89,7 +89,7 @@ public sealed class FileStore
     public Decision? Decision(string id, string decision) => Decision(decision) is { } d && d.Session == id ? d : null;
 
     public IReadOnlyList<Decision> Decisions(string id) =>
-        Events.All().Where(e => EventKinds.Questions.Contains(e.Kind) && !e.IsForward && e.From == Parties.Session(id) && e.Thread is not null).Select(ToDecision).ToList();
+        Events.FromParty(Parties.Session(id)).Where(e => EventKinds.Questions.Contains(e.Kind) && !e.IsForward && e.Thread is not null).Select(ToDecision).ToList();
 
     public bool IsAnswered(string id, string decision) => Events.FirstAnswer(decision) is not null;
 
@@ -97,7 +97,10 @@ public sealed class FileStore
 
     public IReadOnlyList<Decision> OpenDecisions(string id) => Decisions(id).Where(d => !IsAnswered(id, d.Id)).ToList();
 
-    Decision ToDecision(Event e)
+    /// <summary>The open decisions and queries of all sessions, oldest first: the named query <see cref="StreamQueries.OpenDecisions"/>.</summary>
+    public IReadOnlyList<Decision> OpenDecisions() => this.Query(StreamQueries.OpenDecisions()).Where(e => e.Thread is not null).Select(ToDecision).ToList();
+
+    public Decision ToDecision(Event e)
     {
         var f = Events.Fields(e);
         return new Decision(e.Thread ?? e.Id, Parties.SessionId(e.From) ?? e.Session ?? "")
@@ -166,8 +169,7 @@ public sealed class FileStore
 
     // Reports and updates: the newest post of the session.
 
-    public Event? LastPost(string id, string kind) =>
-        Events.All().LastOrDefault(e => e.Kind == kind && !e.IsForward && e.From == Parties.Session(id));
+    public Event? LastPost(string id, string kind) => Events.LastFrom(Parties.Session(id), kind);
 
     public Report? Report(string id)
     {
@@ -230,9 +232,17 @@ public sealed class FileStore
 
     public Status? Status(string id) => Files.ReadJson<Status>(PathOf(id, StoreFiles.Status));
 
-    public Blocked? Blocked(string id) => Files.ReadJson<Blocked>(PathOf(id, StoreFiles.Blocked));
+    /// <summary>The newest <c>blocked</c> envelope about the session. Its reason is None when the session is not blocked.</summary>
+    public Blocked? Blocked(string id) =>
+        Events.OfKind(EventKinds.Blocked).LastOrDefault(e => e.Session == id) is { } e ? new Blocked(Events.Fields(e).GetValueOrDefault("reason") as string, e.At) { Event = e.Id } : null;
 
-    public void SaveBlocked(string id, string? reason) => Files.WriteJson(PathOf(id, StoreFiles.Blocked), new Blocked(reason, Now));
+    /// <summary>Posts a <c>blocked</c> envelope from the supervisor to the user when the reason changes.</summary>
+    public void SaveBlocked(string id, string? reason)
+    {
+        if (Blocked(id)?.Reason == reason) return;
+        Events.Append(EventKinds.Blocked, Parties.Supervisor, Parties.User,
+            new Dictionary<string, object?> { ["text"] = reason is null ? "delivery unblocked" : $"delivery blocked: {reason}", ["reason"] = reason }, session: id);
+    }
 
     public StackEntry? Stack(string id, string decision) => Files.ReadJson<StackEntry>(PathOf(id, StoreFiles.Stack, StoreFiles.Json(decision)));
 
@@ -241,7 +251,7 @@ public sealed class FileStore
 
     public void SaveStack(StackEntry entry) => Files.WriteJson(PathOf(entry.Session, StoreFiles.Stack, StoreFiles.Json(entry.Decision)), entry);
 
-    public IReadOnlyList<Event> Ledger() => Events.All().Where(EventQuery.IsLedger).ToList();
+    public IReadOnlyList<Event> Ledger() => this.Query(StreamQueries.Ledger);
 
     public T? ReadJson<T>(string id, params string[] parts) => Files.ReadJson<T>(PathOf(id, parts));
 

@@ -67,15 +67,12 @@ public static class EventCommands
     {
         var filter = Filter(c);
         var titles = new Dictionary<string, string>();
-        string? last = null;
-        foreach (var e in c.Store.Query(filter))
-        {
-            Print(c, e, titles);
-            last = e.Id;
-        }
+        var found = c.Store.Query(filter);
+        foreach (var e in found) Print(c, e, titles);
         if (!c.Args.Flag("follow")) return 0;
+        var last = found.Select(e => e.Id).Order(Core.Ordering.Names.Order).LastOrDefault();
         using var watcher = new StreamWatcher(c.Store.Root);
-        var next = filter with { Since = null, After = last ?? (c.Store.Clock.GetUtcNow() - TimeSpan.FromSeconds(2)).ToUnixTimeMilliseconds().ToString() };
+        var next = filter with { Since = null, Newest = false, Limit = null, ThreadHeads = false, After = last ?? (c.Store.Clock.GetUtcNow() - TimeSpan.FromSeconds(2)).ToUnixTimeMilliseconds().ToString() };
         var seen = new HashSet<string>();
         while (true)
         {
@@ -125,22 +122,9 @@ public static class EventCommands
         }
     }
 
-    public static EventFilter Filter(CommandContext c)
-    {
-        var a = c.Args;
-        return new EventFilter
-        {
-            Since = a.Option("since") is { } since ? Durations.Since(since, c.Store.Clock.GetUtcNow()) : null,
-            Kinds = a.List("kind")?.ToHashSet(),
-            Session = a.Option("session"),
-            From = a.Option("from"),
-            To = a.Option("to"),
-            Thread = a.Option("thread"),
-            Needs = a.Flag("needs"),
-            Open = a.Flag("open"),
-            Ledger = a.Flag("ledger"),
-        };
-    }
+    /// <summary>The typed query of the options: the keys of <see cref="StreamQueryText.Keys"/>, for example --view inbox or --needs review.</summary>
+    public static StreamQuery Filter(CommandContext c) =>
+        StreamQueryText.Parse(key => (c.Args.Options.ContainsKey(key), c.Args.Option(key)), c.Store.Clock.GetUtcNow(), c.Args.Positional.ElementAtOrDefault(1));
 
     /// <summary>An address: user, supervisor, docs, policy, session:&lt;id&gt;, or the first characters of a session id.</summary>
     public static string Party(CommandContext c, string text)
