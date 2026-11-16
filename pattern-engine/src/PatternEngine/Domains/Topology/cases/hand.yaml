@@ -1,8 +1,10 @@
+# The expected output is the typed data flow (io). A case without io uses the ports of the reference of its tree.
+# The tree is the expected solution: it gives a solution grade, never the pass.
 # Near-miss: the words point to one pattern; a rule or the job gives the correct one.
 - id: hand-rule-001
   tags: [near-miss]
   request: Design a query handler that also saves the changes that the user sends.
-  expect: { outcome: match, tree: { p: command_pipeline } }
+  expect: { outcome: match, io: { inputs: [Request], outputs: [Saved] }, tree: { p: cqrs_system, parts: [ { p: command_pipeline }, { p: store } ] } }
 - id: hand-near-001
   tags: [near-miss-easy]
   request: Design a part that sends an email each time an order is placed.
@@ -20,4 +22,4 @@
 - id: hand-partialfit-001
   tags: [partial-fit]
   request: Design a part that tries a failed payment again three times, with a delay between the tries.
-  expect: { outcome: match, tree: { p: solution, parts: [ { p: command_pipeline }, { p: "*" } ] }, remainder: [no-fit] }
+  expect: { outcome: match, io: { inputs: [Request], outputs: [Event] }, tree: { p: solution, parts: [ { p: command_pipeline }, { p: "*" } ] }, remainder: [no-fit] }

@@ -6,4 +6,4 @@
   tree: { p: observer }
 - { file: bad-pipeline-type.json, structure: false, rules: true, flow: false }
 # A new block: the structure fails (unknown pattern), but the flow of the block is right.
-- { file: retry-new-block.json, structure: false, rules: true, flow: true }
+- { file: retry-new-block.json, structure: false, rules: true, flow: true, io: { inputs: [Command], outputs: [Saved] } }

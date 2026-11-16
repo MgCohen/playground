@@ -12,10 +12,25 @@ public sealed record GraderOutcome(
     [property: JsonPropertyName("skipped")] bool Skipped,
     [property: JsonPropertyName("failures")] IReadOnlyList<string> Failures);
 
+/// <summary>
+/// The grades of one run. The output graders decide the pass: is the output correct. The solution graders grade the solution
+/// that made the output (which patterns, which tree); they never decide the pass, because many solutions give a correct output.
+/// </summary>
 public sealed record GradeReport(
     [property: JsonPropertyName("verdicts")] IReadOnlyDictionary<string, GraderOutcome> Verdicts,
     [property: JsonPropertyName("pass")] bool Pass,
-    [property: JsonPropertyName("consistent")] bool Consistent);
+    [property: JsonPropertyName("consistent")] bool Consistent)
+{
+    [JsonPropertyName("solution")]
+    public IReadOnlyDictionary<string, GraderOutcome> Solution { get; init; } = new Dictionary<string, GraderOutcome>();
+
+    /// <summary>The part of the solution graders that pass, from 0 to 1; null if no solution grader ran.</summary>
+    [JsonPropertyName("solution_score")]
+    public double? SolutionScore { get; init; }
+}
+
+/// <summary>The graders of one pack, from the settings: <c>grading.output</c> (the pass) and <c>grading.solution</c> (a grade).</summary>
+public sealed record GraderPlan(IReadOnlyList<IGrader> Output, IReadOnlyList<IGrader> Solution);
 
 /// <summary>All graders that a run can use: the core graders and the graders of the pack. The settings select the ones that run.</summary>
 public sealed class GraderSet(IEnumerable<IGrader> core)
@@ -34,12 +49,23 @@ public sealed class GraderSet(IEnumerable<IGrader> core)
         return names.Select(n => all[n]).ToList();
     }
 
+    public GraderPlan Plan(Plugins.Settings.Settings grading, IDomainPack pack) =>
+        new(Select(grading.List("output"), pack), Select(grading.List("solution"), pack));
+
     public static GraderSet Default { get; } = new([new SelectionGrader(), new BuiltGrader(), new StructureGrader(), new RulesGrader(), new ProposedGrader(), new QuestionsGrader()]);
 }
 
 /// <summary>Grades one run: it reads the output with the adapter, builds the input once, and runs each grader.</summary>
 public static class RunGrading
 {
+    public static GradeReport Grade(Case c, IDomainPack pack, PatternCatalog catalog, RunTrace? trace, string? outputText, GraderPlan plan)
+    {
+        var report = Grade(c, pack, catalog, trace, outputText, plan.Output);
+        var solution = Grade(c, pack, catalog, trace, outputText, plan.Solution).Verdicts;
+        var ran = solution.Values.Where(v => !v.Skipped).ToList();
+        return report with { Solution = solution, SolutionScore = ran.Count > 0 ? ran.Count(v => v.Ok) / (double)ran.Count : null };
+    }
+
     public static GradeReport Grade(Case c, IDomainPack pack, PatternCatalog catalog, RunTrace? trace, string? outputText, IReadOnlyList<IGrader> graders)
     {
         ParsedOutput? parsed = string.IsNullOrEmpty(outputText) ? null : pack.Adapter.Parse(outputText);

@@ -2,7 +2,8 @@
 # The behavior grader simulates the circuit and checks the full truth table. The built grader stays, but the
 # expected tree has no parts, so another correct inner circuit also passes.
 grading:
-  graders: [selection, built, structure, rules, behavior, proposed, questions]
+  output: [structure, rules, behavior, questions]   # the truth table is the expected output
+  solution: [selection, built, proposed]
 eval:
   generator:
     count: 4

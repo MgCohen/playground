@@ -35,17 +35,17 @@ public static class Solver
             queue = s.Nodes.Skip(before).Where(n => n.Status == NodeStatus.Open).ToList();
         }
 
-        var slot = s.Pack.Pack.Layout.Slots(null, 1)[0];
-        var top = await ComposeStep.RunAsync(s, root, slot, ct);
+        // The remainder of each partial fit: compose each item (the author agent fills a gap first), then join all into one solution.
+        // With a remainder, the layout gives one slot for each pattern of the solution.
+        var gaps = s.Nodes.Where(n => n.FromOpen && n.Status is NodeStatus.Solved or NodeStatus.PartialFit or NodeStatus.None).ToList();
+        var slots = gaps.Count > 0 ? s.Pack.Pack.Layout.Slots(Packs.Domain.Shared.Solution.Id, gaps.Count + 1) : s.Pack.Pack.Layout.Slots(null, 1);
+        var top = await ComposeStep.RunAsync(s, root, slots[0], ct);
         var failures = top.Failures.ToList();
         var fragment = top.Fragment;
         var ok = top.Ok;
-
-        // The remainder of each partial fit: compose each item (the author agent fills a gap first), then join all into one solution.
-        var gaps = s.Nodes.Where(n => n.FromOpen && n.Status is NodeStatus.Solved or NodeStatus.PartialFit or NodeStatus.None).ToList();
         if (gaps.Count > 0 && ok)
         {
-            var parts = await Task.WhenAll(gaps.Select(g => ComposeStep.RunAsync(s, g, slot, ct)));
+            var parts = await Task.WhenAll(gaps.Select((g, i) => ComposeStep.RunAsync(s, g, slots[i + 1], ct)));
             var nodes = new[] { root }.Concat(gaps).ToList();
             var fragments = new[] { top }.Concat(parts).ToList();
             var items = nodes.Select((n, i) => new Packs.Domain.Shared.SolutionItem($"s{i + 1}", n.Status == NodeStatus.None ? n.NewId! : n.Pattern!, fragments[i].Fragment)).ToList();

@@ -12,9 +12,6 @@ namespace PatternEngine.Features.Engine.Domain;
 /// </summary>
 public static class JoinStep
 {
-    /// <summary>An input of one item, and the outputs of other items with the same type.</summary>
-    public sealed record Choice(string Input, string Type, IReadOnlyList<string> Options);
-
     public sealed record Result(string? Output, JoinPlan? Plan, IReadOnlyList<string> Failures);
 
     public static async Task<Result> RunAsync(SolveContext s, IReadOnlyList<SolutionItem> items, CancellationToken ct)
@@ -40,7 +37,7 @@ public static class JoinStep
                 }
             }
 
-            plan = Finish(s.Catalog, items, wires, inputs, s.Pack.Pack.Layout);
+            plan = PortJoin.Finish(s.Catalog, items, wires, inputs, s.Pack.Pack.Layout);
         }
 
         foreach (var lone in items.Where(i => !plan.Wires.Any(w => w.From.StartsWith($"{i.Id}.", StringComparison.Ordinal) || w.To.StartsWith($"{i.Id}.", StringComparison.Ordinal))))
@@ -48,7 +45,7 @@ public static class JoinStep
             s.Note($"join: {lone.Id} ({lone.Pattern}) has no wire to another pattern of the solution");
         }
 
-        if (Loop(plan.Wires))
+        if (PortJoin.Loop(plan.Wires))
         {
             return new Result(null, plan, ["join: the wires between the patterns make a loop"]);
         }
@@ -59,75 +56,9 @@ public static class JoinStep
             : new Result(output, plan, []);
     }
 
-    /// <summary>
-    /// The code part of the join. For each input: one output of another item with the same type gives a wire; none gives an outer input;
-    /// more than one gives a choice. Each output that no wire uses is an outer output.
-    /// </summary>
-    public static (JoinPlan Plan, IReadOnlyList<Choice> Choices) Plan(PatternCatalog catalog, IReadOnlyList<SolutionItem> items, ILayout? layout = null)
-    {
-        var wires = new List<JoinWire>();
-        var inputs = new List<string>();
-        var choices = new List<Choice>();
-        foreach (var item in items)
-        {
-            foreach (var port in Ports(catalog, item, layout).Inputs)
-            {
-                var options = items.Where(o => o.Id != item.Id)
-                    .SelectMany(o => Ports(catalog, o, layout).Outputs.Where(x => x.Type == port.Type).Select(x => $"{o.Id}.{x.Name}")).ToList();
-                var input = $"{item.Id}.{port.Name}";
-                switch (options.Count)
-                {
-                    case 0:
-                        inputs.Add($"{item.Id}_{port.Name}");
-                        break;
-                    case 1:
-                        wires.Add(new JoinWire(options[0], input));
-                        break;
-                    default:
-                        choices.Add(new Choice(input, port.Type, options));
-                        break;
-                }
-            }
-        }
-
-        return (Finish(catalog, items, wires, inputs, layout), choices);
-    }
-
-    private static JoinPlan Finish(PatternCatalog catalog, IReadOnlyList<SolutionItem> items, List<JoinWire> wires, List<string> inputs, ILayout? layout)
-    {
-        var used = wires.Select(w => w.From).ToHashSet(StringComparer.Ordinal);
-        var outputs = items.SelectMany(i => Ports(catalog, i, layout).Outputs.Select(x => $"{i.Id}.{x.Name}"))
-            .Where(o => !used.Contains(o)).Select(o => o.Replace('.', '_')).ToList();
-        return new JoinPlan(wires, inputs, outputs);
-    }
-
-    /// <summary>The ports of an item: from the catalog, or from the pack when the pattern has no ports in the catalog.</summary>
-    private static (IReadOnlyList<Port> Inputs, IReadOnlyList<Port> Outputs) Ports(PatternCatalog catalog, SolutionItem item, ILayout? layout) =>
-        catalog.Get(item.Pattern) is { } p && p.Inputs.Count + p.Outputs.Count > 0 ? (p.Inputs, p.Outputs)
-        : layout?.Ports(item.Fragment, catalog) ?? ([], []);
-
-    private static bool Loop(IReadOnlyList<JoinWire> wires)
-    {
-        var edges = wires.Select(w => (From: w.From.Split('.')[0], To: w.To.Split('.')[0])).ToList();
-        var state = new Dictionary<string, int>(StringComparer.Ordinal);
-        bool Visit(string id)
-        {
-            switch (state.GetValueOrDefault(id))
-            {
-                case 1:
-                    return true;
-                case 2:
-                    return false;
-            }
-
-            state[id] = 1;
-            var loop = edges.Where(e => e.From == id).Any(e => Visit(e.To));
-            state[id] = 2;
-            return loop;
-        }
-
-        return edges.Select(e => e.From).Distinct().Any(Visit);
-    }
+    /// <summary>The code part of the join: see <see cref="PortJoin.Plan"/>.</summary>
+    public static (JoinPlan Plan, IReadOnlyList<PortJoin.Choice> Choices) Plan(PatternCatalog catalog, IReadOnlyList<SolutionItem> items, ILayout? layout = null) =>
+        PortJoin.Plan(catalog, items, layout);
 
     private static List<JoinWire> Chosen(JsonElement? field) =>
         field is { ValueKind: JsonValueKind.Array } arr
@@ -136,7 +67,7 @@ public static class JoinStep
                 .Select(w => new JoinWire(w.GetProperty("from").ToString(), w.GetProperty("to").ToString())).ToList()
             : [];
 
-    private static string Input(SolveContext s, IReadOnlyList<SolutionItem> items, IReadOnlyList<Choice> choices)
+    private static string Input(SolveContext s, IReadOnlyList<SolutionItem> items, IReadOnlyList<PortJoin.Choice> choices)
     {
         var sb = new StringBuilder();
         sb.Append($"Request: {s.Nodes[0].Text}\n\nPatterns of the solution:\n");

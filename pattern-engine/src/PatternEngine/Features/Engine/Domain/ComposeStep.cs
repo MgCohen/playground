@@ -24,7 +24,7 @@ public static class ComposeStep
         {
             var slots = layout.Slots(n.Pattern, partKids.Count);
             var done = await Task.WhenAll(partKids.Select((k, i) => RunAsync(s, k, slots[i], ct)));
-            return new Composed(layout.Assemble(n.Pattern, n.Variant, done.Select(d => d.Fragment).ToList()), done.All(d => d.Ok), done.SelectMany(d => d.Failures).ToList());
+            return new Composed(layout.Assemble(n.Pattern, n.Variant, done.Select(d => d.Fragment).ToList(), s.Catalog), done.All(d => d.Ok), done.SelectMany(d => d.Failures).ToList());
         }
 
         if (n.Status == NodeStatus.None)

@@ -37,6 +37,11 @@ public sealed record Expect
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Remainder { get; init; }
 
+    /// <summary>The expected output as typed data flow: the input types that the request gives and the output types that it needs.</summary>
+    [JsonPropertyName("io")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IoSpec? Io { get; init; }
+
     [JsonPropertyName("spec")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Spec { get; init; }
@@ -52,8 +57,33 @@ public sealed record Expect
             Nearest = nearest is null ? null : Node.Text(nearest) is { } one ? [one] : Node.Strings(nearest).ToList(),
             Asks = map.ContainsKey("asks") ? Node.Strings(map.Raw("asks")).ToList() : null,
             Spec = map.Get("spec"),
+            Io = IoSpec.From(map.Raw("io")),
             Remainder = map.ContainsKey("remainder") ? Node.Strings(map.Raw("remainder")).ToList() : null,
         };
+    }
+}
+
+/// <summary>
+/// The expected behavior of a case as typed data flow. A solution passes if it needs no other input types and each output type gets a value.
+/// Many solutions can give the same output.
+/// </summary>
+public sealed record IoSpec
+{
+    [JsonPropertyName("inputs")]
+    public required List<string> Inputs { get; init; }
+
+    [JsonPropertyName("outputs")]
+    public required List<string> Outputs { get; init; }
+
+    public static IoSpec? From(object? node)
+    {
+        if (node is null)
+        {
+            return null;
+        }
+
+        var map = Node.Map(node);
+        return new IoSpec { Inputs = Node.Strings(map.Raw("inputs")).ToList(), Outputs = Node.Strings(map.Raw("outputs")).ToList() };
     }
 }
 

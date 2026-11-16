@@ -1,7 +1,8 @@
 # Settings of the topology pack. They override pe.settings.yaml for this pack only.
 # The flow grader runs the data flow of the top block: each part must run, and each output must get a value.
 grading:
-  graders: [selection, built, structure, rules, flow, proposed, questions]
+  output: [structure, rules, flow, questions]   # the typed data flow (io) is the expected output
+  solution: [selection, built, proposed]
 eval:
   generator:
     count: 8

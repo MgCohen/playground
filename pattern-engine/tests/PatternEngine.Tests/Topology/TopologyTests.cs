@@ -102,12 +102,25 @@ public sealed class TopologyTests
 
         // The solution: the pipeline and the authored delay, joined Event to Event by code.
         var authored = run.Trace.Remainder[0].Pattern!;
-        var expect = new Expect { Outcome = Outcomes.Match, Tree = new TreeNode { P = Solution.Id, Parts = [new() { P = "command_pipeline" }, new() { P = authored }] }, Remainder = [Outcomes.NoFit] };
-        var grades = RunGrading.Grade(new Case { Id = "r", Source = "t", Tags = [], Request = "r", Expect = expect }, Pack, run.Catalog, run.Trace, File.ReadAllText(run.OutputFile), GraderSet.Default.Select(settings.Section("grading").List("graders"), Pack));
+        var expect = new Expect { Outcome = Outcomes.Match, Tree = new TreeNode { P = Solution.Id, Parts = [new() { P = "command_pipeline" }, new() { P = authored }] }, Remainder = [Outcomes.NoFit], Io = new IoSpec { Inputs = ["Request"], Outputs = ["Effect"] } };
+        var grades = RunGrading.Grade(new Case { Id = "r", Source = "t", Tags = [], Request = "r", Expect = expect }, Pack, run.Catalog, run.Trace, File.ReadAllText(run.OutputFile), GraderSet.Default.Plan(settings.Section("grading"), Pack));
         Assert.That(grades.Verdicts.Where(v => !v.Value.Ok).Select(v => $"{v.Key}: {v.Value.Failures[0]}"), Is.Empty);
         var top = (BlockNode)Pack.Adapter.Parse(File.ReadAllText(run.OutputFile)).Roots[0];
         Assert.That(top.Wires, Does.Contain(("s1.event", "s2.event")));
         Assert.That(SelectionGrader.Check(run.Trace, expect with { Remainder = [Outcomes.Match] }).Failures, Has.Some.Contains("expected remainder"));
+        Assert.That(grades.SolutionScore, Is.EqualTo(1));
+
+        // The output is the gate: a solution that gives no Saved output fails, whatever its tree.
+        var saved = RunGrading.Grade(new Case { Id = "r", Source = "t", Tags = [], Request = "r", Expect = expect with { Io = new IoSpec { Inputs = ["Request"], Outputs = ["Saved"] } } }, Pack, run.Catalog, run.Trace, File.ReadAllText(run.OutputFile), GraderSet.Default.Plan(settings.Section("grading"), Pack));
+        Assert.That(saved.Pass, Is.False);
+        Assert.That(saved.Verdicts["flow"].Failures, Has.Some.Contains("no Saved output"));
+    }
+
+    [Test]
+    public void A_solution_with_a_pattern_that_has_no_wire_fails_the_flow()
+    {
+        var top = (BlockNode)Pack.Adapter.Parse("""{ "p": "solution", "v": "plain", "inputs": ["s1_request", "s2_request"], "outputs": ["s1_view", "s2_view"], "parts": [ { "id": "s1", "p": "query_handler", "v": "plain" }, { "id": "s2", "p": "query_handler", "v": "plain" } ], "wires": [ ["s1_request", "s1.request"], ["s2_request", "s2.request"], ["s1.view", "s1_view"], ["s2.view", "s2_view"] ] }""").Roots[0];
+        Assert.That(FlowGrader.Islands(top), Has.Count.EqualTo(2));
     }
 
     private static string ProposedId(string input) =>
@@ -120,7 +133,7 @@ public sealed class TopologyTests
         var (plan, choices) = JoinStep.Plan(Catalog, [Item("s1", "command_pipeline"), Item("s2", "observer")]);
         Assert.That(plan.Wires, Is.EqualTo(new[] { new JoinWire("s1.event", "s2.event") }));
         Assert.That(plan.Inputs, Is.EqualTo(new[] { "s1_request" }));
-        Assert.That(plan.Outputs, Is.EqualTo(new[] { "s2_effect" }));
+        Assert.That(plan.Outputs, Is.EqualTo(new[] { "s1_event", "s2_effect" }));
         Assert.That(choices, Is.Empty);
 
         (_, choices) = JoinStep.Plan(Catalog, [Item("s1", "command_pipeline"), Item("s2", "command_pipeline"), Item("s3", "observer")]);
@@ -178,7 +191,7 @@ public sealed class TopologyTests
         var run = await EngineRun.RunAsync(pack, "Design a system where users place orders and get an email for each order.", dir, EngineSettings.From(settings), judge, new NoUser(), CancellationToken.None);
         var expect = new Expect { Outcome = Outcomes.Match, Tree = new TreeNode { P = "cqrs_system", Parts = [new() { P = "command_pipeline" }, new() { P = "observer" }] } };
         var c = new Case { Id = "s", Source = "t", Tags = [], Request = "r", Expect = expect };
-        var grades = RunGrading.Grade(c, Pack, run.Catalog, run.Trace, File.ReadAllText(run.OutputFile), GraderSet.Default.Select(settings.Section("grading").List("graders"), Pack));
+        var grades = RunGrading.Grade(c, Pack, run.Catalog, run.Trace, File.ReadAllText(run.OutputFile), GraderSet.Default.Plan(settings.Section("grading"), Pack));
         Assert.That(grades.Verdicts.Where(v => !v.Value.Ok).Select(v => $"{v.Key}: {v.Value.Failures[0]}"), Is.Empty);
         Assert.That(grades.Consistent, Is.True);
     }

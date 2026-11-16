@@ -49,7 +49,9 @@ engine:
 # The graders that decide pass or fail. A run passes when each grader that applies passes.
 # A pack can add its own graders (for example behavior) and list them in its pack.settings.yaml.
 grading:
-  graders: [selection, built, structure, rules, proposed, questions]
+  # output: these decide the pass (is the output correct). solution: these grade the solution (which patterns); never the pass.
+  output: [selection, built, structure, rules, proposed, questions]
+  solution: []
   information: [consistent]      # measured, but not a pass condition
 
 # Tests of the graders, with no model.

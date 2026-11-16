@@ -1,0 +1,138 @@
+{
+  "runId": "2026-11-16T12-32-53",
+  "domain": "circuits",
+  "engine": "csharp-hybrid",
+  "mode": "dev",
+  "label": null,
+  "model": "haiku",
+  "k": 1,
+  "ablate": [],
+  "graders": [
+    "structure",
+    "rules",
+    "behavior",
+    "questions"
+  ],
+  "solution_graders": [
+    "selection",
+    "built",
+    "proposed"
+  ],
+  "catalog": "b6c00f7ec3a0",
+  "cases": 1,
+  "runs": [
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Build a circuit with the inputs a, b and c, whose output y is 1 when at least two of the inputs are 1.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "full_adder",
+          "mux2",
+          "half_adder",
+          "equal"
+        ],
+        "spec": "majority"
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "majority3",
+          "v": "plain"
+        },
+        "nearest": "full_adder",
+        "deltas": [
+          "Inputs a, b, c with no carry-in input; a, b, c are the three bits.",
+          "Single output y (1 when at least two inputs are 1) instead of sum and cout.",
+          "No sum output and no child half_adder; the carry-out logic alone is the majority function."
+        ],
+        "proposed": "patterns/majority3.md",
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "6b789c4d7e69",
+          "patterns": {
+            "majority3": "560b45be6fca"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a circuit with the inputs a, b and c, whose output y is 1 when at least two of the inputs are 1.",
+            "status": "none",
+            "pattern": "majority3",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request asks for a three-input majority function, which is not an addition request, so no candidate's use_when matches; full_adder is the nearest because its carry-out equals the majority of its three inputs, but it also carries a sum output the request does not need."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true,
+        "solution": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "solution_score": 1
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 46556,
+        "Cost": 0.00300817,
+        "Calls": 3,
+        "Escalations": 0,
+        "Error": null
+      }
+    }
+  ]
+}

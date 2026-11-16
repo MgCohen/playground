@@ -68,7 +68,7 @@ public interface ILayout
 
     string SlotText(Slot slot);
 
-    string Assemble(string pattern, string? variant, IReadOnlyList<string> fragments);
+    string Assemble(string pattern, string? variant, IReadOnlyList<string> fragments, PatternCatalog catalog);
 
     string Wrap(string fragment);
 

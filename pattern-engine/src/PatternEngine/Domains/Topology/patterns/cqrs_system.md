@@ -5,7 +5,7 @@ level: 1
 status: stable
 phrase: a system
 use_when:
-  - The request needs two or more of these jobs - change data, read data, react to events.
+  - The request needs two or more of these jobs - change data, save data, read data, react to events.
 do_not_use_when:
   - when: The request needs only one of these jobs.
     use: command_pipeline
@@ -14,15 +14,16 @@ variants:
     when: Always.
 parts:
   - { ref: command_pipeline, count: "0..1" }
+  - { ref: store, count: "0..1" }
   - { ref: query_handler, count: "0..1" }
   - { ref: observer, count: "0..2" }
-related: [command_pipeline, query_handler, observer]
+related: [command_pipeline, store, query_handler, observer]
 ---
 ## Intent
-A system of parts that each do one job. The events of the command pipeline go to each observer.
+A system of parts that each do one job. Code joins the parts by their ports: the events of the command pipeline go to the store and to each observer.
 
 ## Rules
-- Do: wire the event output of the command pipeline to the event input of each observer.
+- Do: give each part one job.
 - Do: keep the read side apart from the write side.
 
 ## Rationale

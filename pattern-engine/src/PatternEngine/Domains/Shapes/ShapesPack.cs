@@ -40,7 +40,7 @@ public sealed class ShapesLayout : ILayout
 
     public IReadOnlyList<Slot> Slots(string? pattern, int children)
     {
-        if (pattern == "street")
+        if (pattern is "street" or Solution.Id)
         {
             var n = Math.Max(children, 1);
             var slot = (W - 10) / n;
@@ -53,9 +53,13 @@ public sealed class ShapesLayout : ILayout
     public string SlotText(Slot b) =>
         $"Draw inside x from {b["x"]} to {b["x"] + b["w"]}. The bottom of the object is on y = {b["base"]}. The top is not above y = {b["base"] - b["maxH"]}. You can use less width than the box.";
 
-    public string Assemble(string pattern, string? variant, IReadOnlyList<string> fragments) => pattern == "street"
+    public string Assemble(string pattern, string? variant, IReadOnlyList<string> fragments, PatternCatalog catalog) => pattern == "street"
         ? $"<g data-p=\"street\" data-v=\"{variant ?? "row"}\"><g data-p=\"ground\"><rect x=\"0\" y=\"{Ground}\" width=\"{W}\" height=\"{H - Ground}\" fill=\"green\"/></g>{string.Concat(fragments)}</g>"
         : throw new InvalidOperationException($"no assembly for {pattern}");
+
+    /// <summary>A solution in shapes: each pattern in its own slot, side by side. Shapes have no ports, so the plan has no wires.</summary>
+    public string? Join(IReadOnlyList<SolutionItem> items, JoinPlan plan) =>
+        items.Any(i => IsAssembled(i.Pattern)) ? null : $"<g data-p=\"{Solution.Id}\" data-v=\"plain\">{string.Concat(items.Select(i => i.Fragment))}</g>";
 
     public string Wrap(string fragment) => $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {W} {H}\">{fragment}</svg>";
 

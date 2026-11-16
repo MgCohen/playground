@@ -20,7 +20,7 @@ public sealed class RegradeHandler(PackRegistry packs, GraderSet graders) : IHan
         var result = JsonSerializer.Deserialize<EvalResult>(await File.ReadAllTextAsync(command.ResultFile, ct))!;
         var pack = packs.Load(result.Domain);
         var runs = Path.Combine(packs.Root.Path(pack.Settings.Section("paths").Text("runs")), result.RunId);
-        var gradersToRun = graders.Select(pack.Settings.Section("grading").List("graders"), pack.Pack);
+        var gradersToRun = graders.Plan(pack.Settings.Section("grading"), pack.Pack);
         int before = 0, now = 0;
         var changed = new List<string>();
         foreach (var r in result.Runs)
@@ -28,9 +28,15 @@ public sealed class RegradeHandler(PackRegistry packs, GraderSet graders) : IHan
             var dir = Path.Combine(runs, $"{r.Case}-{r.Run}");
             var output = Path.Combine(dir, pack.Pack.OutputFile);
             var catalog = pack.Catalog;
-            if (r.Trace?.Proposed is { } proposed && File.Exists(Path.Combine(dir, Path.GetFileName(proposed))))
+            // The patterns that the run authored: for the full request and for each remainder item.
+            foreach (var proposed in new[] { r.Trace?.Proposed }.Concat(r.Trace?.Remainder.Select(x => x.Proposed) ?? []).OfType<string>())
             {
-                catalog = catalog.With(Catalog.Domain.PatternParser.Parse(await File.ReadAllTextAsync(Path.Combine(dir, Path.GetFileName(proposed)), ct), Path.GetFileName(proposed)));
+                var file = Path.Combine(dir, "patterns", Path.GetFileName(proposed));
+                file = File.Exists(file) ? file : Path.Combine(dir, Path.GetFileName(proposed));
+                if (File.Exists(file))
+                {
+                    catalog = catalog.With(Catalog.Domain.PatternParser.Parse(await File.ReadAllTextAsync(file, ct), Path.GetFileName(proposed)));
+                }
             }
 
             var c = new Cases.Domain.Shared.Case { Id = r.Case, Source = "result", Tags = r.Tags, Request = r.Request, Expect = r.Expect, Hidden = r.Hidden };

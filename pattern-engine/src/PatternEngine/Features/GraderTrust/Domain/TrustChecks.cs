@@ -109,7 +109,7 @@ public sealed class FixtureCheck : ITrustCheck
             // A fixture can also state the verdict of a grader of the pack, for example behavior.
             foreach (var grader in context.Pack.Graders.Where(g => e.ContainsKey(g.Name)))
             {
-                var expect = new Expect { Outcome = Outcomes.Match, Tree = TreeNode.From(e.Raw("tree")), Spec = e.Get("spec") };
+                var expect = new Expect { Outcome = Outcomes.Match, Tree = TreeNode.From(e.Raw("tree")), Spec = e.Get("spec"), Io = IoSpec.From(e.Raw("io")) };
                 var input = new GradeInput
                 {
                     Case = new Case { Id = name, Source = "fixture", Tags = [], Request = string.Empty, Expect = expect },
