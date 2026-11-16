@@ -32,6 +32,11 @@ public sealed record Expect
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Asks { get; init; }
 
+    /// <summary>The expected outcome of each remainder item of a partial fit, in any order. For example [no-fit].</summary>
+    [JsonPropertyName("remainder")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? Remainder { get; init; }
+
     [JsonPropertyName("spec")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Spec { get; init; }
@@ -47,6 +52,7 @@ public sealed record Expect
             Nearest = nearest is null ? null : Node.Text(nearest) is { } one ? [one] : Node.Strings(nearest).ToList(),
             Asks = map.ContainsKey("asks") ? Node.Strings(map.Raw("asks")).ToList() : null,
             Spec = map.Get("spec"),
+            Remainder = map.ContainsKey("remainder") ? Node.Strings(map.Raw("remainder")).ToList() : null,
         };
     }
 }

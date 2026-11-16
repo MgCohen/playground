@@ -88,7 +88,7 @@ flowchart TD
 | D8 | Params are values that a request sets; `required: true` means the engine asks. Ports (`inputs`, `outputs`) are typed data flow | Two different ideas, so two fields. Q12 uses params; Q10 uses ports. |
 | D9 | A new `sign` pattern in `shapes`, with a required board color | The ask cases needed a pattern with a required input. |
 | D10 | The parity tests use a frozen copy of the spike data (`tests/.../Parity/shapes`) | The pack data can change (for example D9) and the parity still holds. |
-| D11 | `partial` makes child nodes for the open requirements; they are recorded, but code composes them only when the pack can combine them | Q3 says other patterns cover the rest. How to join them in one output is a pack question. |
+| D11 | A `partial_fit` makes remainder nodes; they are decided, authored when no pattern fits, and recorded, but not composed yet | Q3 (changed after review): a pattern is always complete; the fit is partial. How to join the outputs is an open question. |
 | D12 | The pattern hash leaves out the `status:` line | An approval must not restart the trial metrics; any other edit does (Q6). |
 | D13 | `pe remove` moves the file to `patterns/removed/` | The history stays, and the catalog does not load it. |
 | D14 | Trial metrics read all C# result files of the pack | Q14 keeps the result files in git, so the history is there. |
@@ -117,7 +117,8 @@ The second and third domains are the test of the core. Each change below is a pl
 - **The ask cases test what they must.** With questions and escalation turned off, the 4 ask cases fail 4/4; with them on, they pass 4/4.
 - **Escalation works on real requests.** "Draw a building" escalated and asked which building; "Write me a poem" escalated and asked about the domain.
 - **The author agent writes valid patterns.** The lighthouse of a real run passed the validator and went through propose, approve and remove.
-- **A no-fit inside a partial.** In topology, the decider covered "retry a payment" with the command pipeline and made "wait a delay" an open requirement. The escalation agent asked if the delay is in scope. The case expected a no-fit for the full request. See the open questions.
+- **A no-fit inside a partial fit (resolved by Q3).** In topology, the decider covered "retry a payment" with the command pipeline and made "wait a delay" an open requirement. The escalation agent asked if the delay is in scope. The case expected a no-fit for the full request. See the open questions.
+- **After the Q3 change.** In two Haiku runs of the delay case, no run asked about scope. One run chose the observer, with two authored remainder items. One run chose the command pipeline with no remainder. The engine works as designed; the case accepts only one split.
 - **An ambiguous near-miss case.** "A query handler that also saves the changes" went to the system pattern (two jobs). The case expects the command pipeline. The case or the system rule needs a decision; it was not tuned.
 - **Cost.** The code-led engine costs $0.002 to $0.004 for each run with Haiku, with 2 to 9 agent calls.
 

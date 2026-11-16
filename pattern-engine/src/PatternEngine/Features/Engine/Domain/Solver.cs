@@ -35,6 +35,12 @@ public static class Solver
             queue = s.Nodes.Skip(before).Where(n => n.Status == NodeStatus.Open).ToList();
         }
 
+        // A remainder that no pattern fits: the author agent fills the gap, so the full request stays a match.
+        foreach (var gap in s.Nodes.Where(n => n.FromOpen && n.Status == NodeStatus.None).ToList())
+        {
+            await AuthorStep.RunAsync(s, gap, ct);
+        }
+
         Composed top;
         var slot = s.Pack.Pack.Layout.Slots(null, 1)[0];
         top = await ComposeStep.RunAsync(s, root, slot, ct);
@@ -50,7 +56,7 @@ public static class Solver
             await EscalateStep.RunAsync(s, n, reason.Value, ct);
         }
 
-        if (n.Status is NodeStatus.Solved or NodeStatus.Partial)
+        if (n.Status is NodeStatus.Solved or NodeStatus.PartialFit)
         {
             await AskStep.RunAsync(s, n, ct);
         }
@@ -66,7 +72,7 @@ public static class TraceBuilder
         var asking = s.Nodes.Any(n => n.Status == NodeStatus.Asking);
         var outcome = asking ? Outcomes.Ask
             : root.Status == NodeStatus.None ? Outcomes.NoFit
-            : root.Status is NodeStatus.Solved or NodeStatus.Partial ? Outcomes.Match
+            : root.Status is NodeStatus.Solved or NodeStatus.PartialFit ? Outcomes.Match
             : Outcomes.Stopped;
         return new RunTrace
         {
@@ -77,6 +83,7 @@ public static class TraceBuilder
             Proposed = root.Status == NodeStatus.None ? $"patterns/{root.NewId}.md" : null,
             Questions = [.. s.Questions],
             OpenRequirements = s.Nodes.SelectMany(n => n.Open).ToList(),
+            Remainder = s.Nodes.Where(n => n.FromOpen).Select(Remainder).ToList(),
             Attempts = s.Attempts,
             StopReason = s.Agents.StopReason ?? (outcome == Outcomes.Stopped ? root.Reason : null),
             Hashes = new Hashes
@@ -88,6 +95,20 @@ public static class TraceBuilder
             Graph = s.Nodes.Select(n => n.ToState()).ToList(),
         };
     }
+
+    private static RemainderItem Remainder(WorkNode n) => new()
+    {
+        Text = n.Text,
+        Outcome = n.Status switch
+        {
+            NodeStatus.None => Outcomes.NoFit,
+            NodeStatus.Asking => Outcomes.Ask,
+            NodeStatus.Solved or NodeStatus.PartialFit => Outcomes.Match,
+            _ => Outcomes.Stopped,
+        },
+        Pattern = n.Status == NodeStatus.None ? n.NewId : n.Pattern,
+        Proposed = n.Status == NodeStatus.None ? $"patterns/{n.NewId}.md" : null,
+    };
 
     private static TreeNode Tree(SolveContext s, WorkNode n)
     {

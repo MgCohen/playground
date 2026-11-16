@@ -20,7 +20,7 @@ public sealed record Decision(
     string? Reason)
 {
     public const string Solved = "solved";
-    public const string Partial = "partial";
+    public const string PartialFit = "partial_fit";
     public const string None = "none";
     public const string Unclear = "unclear";
     public const string Outside = "outside";
@@ -64,7 +64,7 @@ public static partial class DecideStep
             return s.Settings.Triggers.NotAllowed ? EscalationReason.NotAllowed : null;
         }
 
-        var answer = await s.Agents.CallAsync("decider", $"Request: {n.Text}\n\nCandidates:\n{s.Candidates(n.Allowed)}", ct);
+        var answer = await s.Agents.CallAsync("decider", $"Request: {n.Text}\n{Remainder(s, n)}\nCandidates:\n{s.Candidates(n.Allowed)}", ct);
         if (!answer.Ok)
         {
             n.Status = NodeStatus.Unresolved;
@@ -72,7 +72,7 @@ public static partial class DecideStep
             return null;
         }
 
-        var d = Decision.From(answer);
+        var d = InScope(n, Decision.From(answer));
         n.Reason = d.Reason;
         switch (d.Status)
         {
@@ -123,7 +123,7 @@ public static partial class DecideStep
             return null;
         }
 
-        if (d.Status is not (Decision.Solved or Decision.Partial))
+        if (d.Status is not (Decision.Solved or Decision.PartialFit))
         {
             return $"unknown status \"{d.Status}\"";
         }
@@ -139,7 +139,7 @@ public static partial class DecideStep
             return limit;
         }
 
-        n.Status = d.Status == Decision.Partial && d.Open.Count > 0 ? NodeStatus.Partial : NodeStatus.Solved;
+        n.Status = d.Status == Decision.PartialFit && d.Open.Count > 0 ? NodeStatus.PartialFit : NodeStatus.Solved;
         n.Pattern = p.Id;
         var variants = p.VariantIds.ToList();
         n.Variant = variants.Contains(d.Variant ?? string.Empty) ? d.Variant : variants.FirstOrDefault();
@@ -163,7 +163,7 @@ public static partial class DecideStep
             }
         }
 
-        if (n.Status == NodeStatus.Partial)
+        if (n.Status == NodeStatus.PartialFit)
         {
             n.Open.Clear();
             n.Open.AddRange(d.Open);
@@ -199,7 +199,7 @@ public static partial class DecideStep
         var max = PartCount.Parse(spec.Count).Max;
         lock (parent)
         {
-            var taken = parent.Children.Select(i => s.Nodes[i]).Count(k => k != n && !k.FromOpen && k.Pattern == pattern && k.Status is NodeStatus.Solved or NodeStatus.Partial or NodeStatus.Asking);
+            var taken = parent.Children.Select(i => s.Nodes[i]).Count(k => k != n && !k.FromOpen && k.Pattern == pattern && k.Status is NodeStatus.Solved or NodeStatus.PartialFit or NodeStatus.Asking);
             if (taken >= max)
             {
                 return $"\"{parent.Pattern}\" allows at most {spec.Count} \"{pattern}\" parts, and {taken} are already decided";
@@ -210,6 +210,18 @@ public static partial class DecideStep
             return null;
         }
     }
+
+    /// <summary>The context line for a remainder node. A remainder comes from the request, so it is always in scope.</summary>
+    public static string Remainder(SolveContext s, WorkNode n) =>
+        n.FromOpen && n.Parent is { } p
+            ? $"\nThis is the remainder of a partial fit: the request \"{s.Nodes[p].Text}\" needs it, and the pattern \"{s.Nodes[p].Pattern}\" does not cover it. It is in scope. If no candidate fits, set status to none.\n"
+            : string.Empty;
+
+    /// <summary>A remainder is in scope: code reads "outside" as a no-fit, and the author agent fills the gap.</summary>
+    public static Decision InScope(WorkNode n, Decision d) =>
+        n.FromOpen && d.Status == Decision.Outside
+            ? d with { Status = Decision.None, Reason = $"remainder in scope, no pattern fits: {d.Reason}" }
+            : d;
 
     public static string CleanId(string? id)
     {

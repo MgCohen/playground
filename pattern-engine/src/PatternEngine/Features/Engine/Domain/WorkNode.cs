@@ -6,7 +6,7 @@ public static class NodeStatus
 {
     public const string Open = "open";
     public const string Solved = "solved";
-    public const string Partial = "partial";
+    public const string PartialFit = "partial_fit";
     public const string None = "none";
     public const string Asking = "asking";
     public const string Unresolved = "unresolved";
@@ -35,10 +35,10 @@ public sealed class WorkNode(int id, string text, IReadOnlyList<string> allowed,
 
     public List<int> Children { get; } = [];
 
-    /// <summary>Requirements that the pattern does not cover. Other patterns must cover them (a partial).</summary>
+    /// <summary>Requirements that the pattern does not cover. Other patterns must cover them: the remainder of a partial fit.</summary>
     public List<string> Open { get; } = [];
 
-    /// <summary>True for a node made from an open requirement of its parent, not from a part.</summary>
+    /// <summary>True for a remainder node: an open requirement of a partial fit of its parent, not a part. A remainder is always in scope.</summary>
     public bool FromOpen { get; set; }
 
     public string? Reason { get; set; }

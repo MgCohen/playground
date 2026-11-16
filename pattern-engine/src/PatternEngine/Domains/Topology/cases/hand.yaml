@@ -17,7 +17,7 @@
   request: Design a system where users place orders, read their order history, and get an email for each order.
   expect: { outcome: match, tree: { p: cqrs_system, parts: [ { p: command_pipeline }, { p: query_handler }, { p: observer } ] } }
 # No-fit: no pattern does this.
-- id: hand-nofit-001
-  tags: [no-fit]
+- id: hand-partialfit-001
+  tags: [partial-fit]
   request: Design a part that tries a failed payment again three times, with a delay between the tries.
-  expect: { outcome: no-fit, nearest: [command_pipeline, observer] }
+  expect: { outcome: match, tree: { p: command_pipeline }, remainder: [no-fit] }

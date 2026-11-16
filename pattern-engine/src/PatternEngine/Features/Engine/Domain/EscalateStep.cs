@@ -36,7 +36,7 @@ public static class EscalateStep
             return await QuestionAsync(s, n, answer, ct);
         }
 
-        var d = Decision.From(answer);
+        var d = DecideStep.InScope(n, Decision.From(answer));
         var problem = DecideStep.Apply(s, n, d);
         if (problem is null)
         {
@@ -84,7 +84,7 @@ public static class EscalateStep
         }
 
         Replace(s, n, again);
-        return n.Status is NodeStatus.Solved or NodeStatus.Partial or NodeStatus.None;
+        return n.Status is NodeStatus.Solved or NodeStatus.PartialFit or NodeStatus.None;
     }
 
     /// <summary>Moves the decision of the new node into the old node, so the parent keeps its child id.</summary>
@@ -127,6 +127,7 @@ public static class EscalateStep
             Reason: {Reason(reason)}. {n.Reason}
 
             Request part: {n.Text}
+            {DecideStep.Remainder(s, n)}
 
             Parent nodes:
             {(path.Length > 0 ? path.ToString() : "- none (this is the full request)\n")}
