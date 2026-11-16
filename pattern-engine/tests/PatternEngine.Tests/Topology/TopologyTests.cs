@@ -22,6 +22,17 @@ public sealed class TopologyTests
     private static readonly TopologyPack Pack = new();
 
     [Test]
+    public void A_retry_is_a_loop_with_a_merge()
+    {
+        // The handler takes the first command from the endpoint and the next tries from the retrier: a merge and a loop.
+        var retry = (BlockNode)Pack.Adapter.Parse("""{ "p": "retry_pipeline", "v": "plain", "inputs": ["request"], "outputs": ["event"], "parts": [ { "id": "in", "p": "endpoint" }, { "id": "run", "p": "handler" }, { "id": "again", "p": "retrier" } ], "wires": [ ["request", "in.request"], ["in.command", "run.command"], ["run.event", "again.event"], ["again.command", "run.command"], ["run.event", "event"] ] }""").Roots[0];
+        Assert.That(BlockAdapter.HasLoop(retry), Is.True);
+        Assert.That(BlockAdapter.Wiring(retry, Catalog, true, merge: true), Is.Empty);
+        Assert.That(FlowGrader.Flow(retry, Catalog), Is.Empty);
+        Assert.That(FlowGrader.Io(retry, Catalog, new IoSpec { Inputs = ["Request"], Outputs = ["Event"] }), Is.Empty);
+    }
+
+    [Test]
     public void The_catalog_has_no_errors()
     {
         Assert.That(CatalogRules.Validate(Catalog).Where(f => f.Severity == Severity.Error), Is.Empty);

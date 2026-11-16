@@ -13,25 +13,54 @@ public static class Simulator
             return Gate(n.Pattern, inputs);
         }
 
+        // A loop is allowed (a latch). Code runs the parts again and again until no value changes. An input of a loop that has
+        // no value yet starts at 0. A loop that never settles (it oscillates) is a failure.
         var values = new Dictionary<string, bool>(inputs, StringComparer.Ordinal);
         var parts = n.Parts.Where(p => p.Id is not null).ToList();
-        var done = new HashSet<string>(StringComparer.Ordinal);
-        for (var round = 0; round <= parts.Count; round++)
+        var limit = (parts.Count * 4) + 8;
+        for (var round = 0; ; round++)
         {
+            if (round > limit)
+            {
+                throw new InvalidOperationException($"{n.Pattern}: the loop does not settle");
+            }
+
             Propagate(n, values);
-            foreach (var part in parts.Where(p => !done.Contains(p.Id!)))
+            var changed = false;
+            foreach (var part in parts)
             {
                 var (pi, _) = BlockAdapter.Ports(part, catalog);
-                if (pi.All(x => values.ContainsKey($"{part.Id}.{x}")))
+                if (!pi.All(x => values.ContainsKey($"{part.Id}.{x}")))
                 {
-                    var outputs = Run(part, catalog, pi.ToDictionary(x => x, x => values[$"{part.Id}.{x}"], StringComparer.Ordinal));
-                    foreach (var (k, v) in outputs)
-                    {
-                        values[$"{part.Id}.{k}"] = v;
-                    }
-
-                    done.Add(part.Id!);
+                    continue;
                 }
+
+                foreach (var (k, v) in Run(part, catalog, pi.ToDictionary(x => x, x => values[$"{part.Id}.{x}"], StringComparer.Ordinal)))
+                {
+                    var key = $"{part.Id}.{k}";
+                    if (!values.TryGetValue(key, out var old) || old != v)
+                    {
+                        values[key] = v;
+                        changed = true;
+                    }
+                }
+            }
+
+            if (changed)
+            {
+                continue;
+            }
+
+            // No change: start each input that a loop still holds back at 0, or stop if every input has a value.
+            var waiting = parts.SelectMany(part => BlockAdapter.Ports(part, catalog).Inputs.Select(x => $"{part.Id}.{x}")).Where(x => !values.ContainsKey(x)).ToList();
+            if (waiting.Count == 0)
+            {
+                break;
+            }
+
+            foreach (var x in waiting)
+            {
+                values[x] = false;
             }
         }
 

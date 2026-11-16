@@ -9,6 +9,7 @@
   rules: true
   behavior: false
   tree: { p: equal }
-- { file: bad-half-adder-loop.json, structure: false, rules: true }
+# A loop is allowed: the structure passes, but the truth table is wrong.
+- { file: bad-half-adder-loop.json, structure: true, rules: true, behavior: false, spec: half_adder }
 # A new block that the catalog does not have: the structure fails (unknown pattern), but the behavior is right.
 - { file: majority-new-block.json, structure: false, rules: true, behavior: true, spec: majority }

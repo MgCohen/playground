@@ -108,6 +108,9 @@ flowchart TD
 | D28 | A topology case states `io` (input types and output types). If a case has no `io`, the flow grader uses the ports of the reference of its tree. A case with no behavior fails | No magic: each case has a clear expected output |
 | D29 | The behavior grader of circuits fails a case that names no truth table. The request names the ports of the truth table | Q17: a clear input and a clear output. A real run named the ports in a different way |
 | D30 | `PortJoin` holds the port rule in the pack contracts. The join step and the `cqrs_system` assembly both use it; D17 is replaced | Q19. One rule for each join |
+| D31 | The Blocks kit allows a loop. Topology also allows a merge: an input can take more than one wire. Circuits keeps one wire for each input | Q23. A retry needs a merge (the first try and the next tries). Two wires on one circuit input is a short circuit |
+| D32 | The circuits simulator runs a loop until no value changes; an input that a loop holds back starts at 0. A loop that does not settle fails | A latch is a loop that settles. An oscillator is not a valid circuit for a truth table |
+| D33 | A new topology component `retrier` (Event in, Command out): the back wire of a retry | Without it, the port types cannot show a retry |
 
 ## Core changes that the new domains needed
 
@@ -132,6 +135,7 @@ The second and third domains are the test of the core. Each change below is a pl
 - **An ambiguous near-miss case.** "A query handler that also saves the changes" went to the system pattern (two jobs). The case expects the command pipeline. The case or the system rule needs a decision; it was not tuned.
 - **The join in a real run.** "Place orders through a command pipeline; after each order event, wait ten minutes, then send a reminder" gave a solution of `cqrs_system` and an authored delayed observer. The first run showed a defect: an assembled system has no catalog ports, so it had no wire. Fixed with D23. The second run wired the order event to the delay. Cost $0.007 for each run.
 - **The output gate on real runs.** Topology dev (5 runs): 4 pass. The fail is correct: for "a query handler that also saves", the engine joined a query handler to a store, and a store needs an Event. Circuits dev (5 runs): 4 pass, then 5 after the majority case named its ports. Solution grades were 4/5 and 5/5.
+- **Loops on real runs.** Two runs of the delay case after D31: the loop rules worked, but the decider and the author made other mistakes (parts that the authored pattern does not list; a loop with no entry). Part of the decider discussion.
 - **Cost.** The code-led engine costs $0.002 to $0.004 for each run with Haiku, with 2 to 9 agent calls.
 
 ## Extension points

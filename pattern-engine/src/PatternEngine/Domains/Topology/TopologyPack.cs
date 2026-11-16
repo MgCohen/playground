@@ -22,7 +22,7 @@ public sealed class TopologyPack : IDomainPack
 
     public string OutputFile => "output.json";
 
-    public IOutputAdapter Adapter { get; } = new BlockAdapter("component", true);
+    public IOutputAdapter Adapter { get; } = new BlockAdapter("component", true, merge: true);
 
     public ILayout Layout { get; } = new TopologyLayout();
 
@@ -56,7 +56,7 @@ public sealed class FlowGrader : IGrader
             return Verdict.From(["no topology"]);
         }
 
-        var failures = new List<string>(BlockAdapter.Wiring(top, input.Catalog, true));
+        var failures = new List<string>(BlockAdapter.Wiring(top, input.Catalog, true, merge: true));
         if (failures.Count == 0)
         {
             failures.AddRange(Flow(top, input.Catalog));
@@ -162,7 +162,7 @@ public sealed class TopologyLayout : ILayout
 
     public (IReadOnlyList<Port> Inputs, IReadOnlyList<Port> Outputs)? Ports(string fragment, PatternCatalog catalog) => BlockJoin.Ports(Adapter, fragment, catalog);
 
-    private static readonly BlockAdapter Adapter = new("component", true);
+    private static readonly BlockAdapter Adapter = new("component", true, merge: true);
 
     /// <summary>
     /// Code assembles a system with the port rule of a join (<see cref="PortJoin"/>): each input takes the one output of another part

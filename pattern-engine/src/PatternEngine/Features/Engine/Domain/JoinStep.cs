@@ -45,11 +45,6 @@ public static class JoinStep
             s.Note($"join: {lone.Id} ({lone.Pattern}) has no wire to another pattern of the solution");
         }
 
-        if (PortJoin.Loop(plan.Wires))
-        {
-            return new Result(null, plan, ["join: the wires between the patterns make a loop"]);
-        }
-
         var output = s.Pack.Pack.Layout.Join(items, plan);
         return output is null
             ? new Result(null, plan, [$"join: the pack \"{s.Pack.Pack.Name}\" cannot join a solution yet"])
