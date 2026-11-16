@@ -1,0 +1,7 @@
+{
+  "kind": "review-change",
+  "decision": "toolu_01RAQ",
+  "question": "Which size do we use in size.txt?",
+  "text": "Use SMALL.",
+  "branch": "orch/decision-toolu_01RAQ"
+}

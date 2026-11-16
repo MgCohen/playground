@@ -20,6 +20,13 @@ public static partial class Subjects
     public const int MaxLength = 80;
     static readonly string[] Fields = ["question", "summary", "title", "text"];
 
+    public static string Of(string kind, IReadOnlyDictionary<string, object?> data)
+    {
+        if (kind == EventKinds.Answer && data.TryGetValue("text", out var answer)) return Clean(answer?.ToString() ?? "");
+        if (kind == EventKinds.Review && data.TryGetValue("verdict", out var verdict)) return Clean($"{verdict}{(data.TryGetValue("text", out var said) && said is string { Length: > 0 } s ? $": {s}" : "")}");
+        return Of(data);
+    }
+
     public static string Of(IReadOnlyDictionary<string, object?> data)
     {
         foreach (var field in Fields)

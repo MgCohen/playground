@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "notice",
+  "description": "A text of the supervisor to a session. Each kind has its own file in render/.",
+  "type": "object",
+  "required": ["kind"],
+  "properties": {
+    "kind": { "enum": ["default-stacked-pr", "default-commit", "default-none", "docs", "review-approve", "review-change", "review-refuse", "child-report", "blocked"] },
+    "decision": { "type": "string" },
+    "question": { "type": "string" },
+    "reason": { "type": "string" },
+    "source": { "type": "string" },
+    "branch": { "type": "string" },
+    "base": { "type": "string" },
+    "nextBranch": { "type": "string" },
+    "text": { "type": "string" },
+    "title": { "type": "string" },
+    "child": { "type": "string" },
+    "state": { "type": "string" },
+    "summary": { "type": "string" },
+    "details": { "type": "string" },
+    "count": { "type": "number" },
+    "error": { "type": "string" }
+  },
+  "additionalProperties": false
+}

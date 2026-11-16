@@ -18,11 +18,11 @@ public sealed class PolicyTests
         var answer = t.Store.Answer(id, "d1")!;
         Assert.That(answer.Value, Is.EqualTo("B"));
         Assert.That(answer.By, Is.EqualTo("policy"));
-        Assert.That(answer.Note, Does.Contain("orch/decision-d1"));
+        Assert.That(answer.Note, Does.Contain("orch decision start d1"));
         Assert.That(t.Turns[^1].Prompt, Does.StartWith("Answer to decision d1 (Q d1): B\n\nThis is a default decision"));
-        var ledger = t.Store.LedgerLines();
-        Assert.That(ledger[0].GetProperty("by").GetString(), Is.EqualTo("policy"));
-        Assert.That(ledger[0].GetProperty("answer").GetString(), Is.EqualTo("B"));
+        var ledger = t.Store.Ledger();
+        Assert.That(ledger[0].From, Is.EqualTo("policy"));
+        Assert.That(ledger[0].Subject, Is.EqualTo("B"));
     }
 
     [Test]

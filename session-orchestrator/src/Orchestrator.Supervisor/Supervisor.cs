@@ -58,9 +58,9 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         var meta = store.Meta(id);
         if (meta.Parent is not { } parent || store.Report(id) is not { } report || report.State == ReportStates.Working) return;
         if (store.ReadJson<Forwarded>(id, StoreFiles.Forwarded)?.At == report.At) return;
-        store.Send(parent, Texts.ChildReport(meta.Title ?? id, id, report.State, report.Summary, report.Details));
+        store.Send(parent, store.Texts.ChildReport(meta.Title ?? id, id, report.State, report.Summary, report.Details), Parties.Session(id));
         store.WriteJson(id, new Forwarded(report.At), StoreFiles.Forwarded);
-        store.Events.Append("report.forward", Parties.Session(id), Parties.Session(parent), Data.Of(("state", report.State), ("summary", report.Summary)), Data.Of(("child", id)), parent);
+        store.Events.Append(EventKinds.ReportForward, Parties.Session(id), Parties.Session(parent), Data.Of(("state", report.State), ("summary", report.Summary)), Data.Of(("child", id), ("report", report.Event)), parent);
         store.Log($"{id} report {report.State} forwarded to {parent}");
     }
 
@@ -72,9 +72,8 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
             if (level.CheckDocs) StartDocsCheck(id, decision);
             if (!DefaultRule.IsDue(decision, level, now) || store.IsAnswered(id, decision.Id)) continue;
             var reason = DefaultRule.Reason(level);
-            store.Events.Append("answer", Parties.Policy, Parties.Session(id), Data.Of(("text", decision.DefaultOption), ("reason", reason)), Data.Of(("decision", decision.Id)), id);
-            store.SaveAnswer(id, decision.Id, new Answer { Value = decision.DefaultOption, By = Parties.Policy, Note = Texts.DefaultNote(options.Policy, decision.Id, reason) });
-            store.Ledger(Data.Of(("session", id), ("decision", decision.Id), ("question", decision.Question), ("answer", decision.DefaultOption), ("by", Parties.Policy), ("reason", reason)));
+            store.Events.Append(EventKinds.Answer, Parties.Policy, Parties.Session(id), Data.Of(("decision", decision.Id), ("text", decision.DefaultOption), ("question", decision.Question), ("reason", reason)), Data.Of(("decision", decision.Id)), id);
+            store.SaveAnswer(id, decision.Id, new Answer { Value = decision.DefaultOption, By = Parties.Policy, Reason = reason, Note = store.Texts.DefaultNote(options.Policy, decision.Id, reason) });
             store.Log($"{id} decision {decision.Id} default {decision.DefaultOption} ({reason})");
         }
     }
@@ -104,20 +103,12 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         }
         Files.WriteJson(path, new DocsCheck(result.Answered, result.Answer, result.Source, Times.Format(Now)) { Error = error });
         if (!result.Answered || result.Answer is not { } answer || store.IsAnswered(id, decision.Id)) return;
-        store.Events.Append("answer", Parties.Docs, Parties.Session(id), Data.Of(("text", answer), ("source", result.Source)), Data.Of(("decision", decision.Id)), id);
-        store.SaveAnswer(id, decision.Id, new Answer { Value = answer, By = Parties.Docs, Source = result.Source, Note = Texts.DocsNote(result.Source) });
-        store.Ledger(Data.Of(("session", id), ("decision", decision.Id), ("question", decision.Question), ("answer", answer), ("by", Parties.Docs), ("source", result.Source)));
+        store.Events.Append(EventKinds.Answer, Parties.Docs, Parties.Session(id), Data.Of(("decision", decision.Id), ("text", answer), ("question", decision.Question), ("source", result.Source)), Data.Of(("decision", decision.Id)), id);
+        store.SaveAnswer(id, decision.Id, new Answer { Value = answer, By = Parties.Docs, Source = result.Source, Reason = $"answered by {result.Source}", Note = store.Texts.DocsNote(result.Source) });
         store.Log($"{id} decision {decision.Id} answered from the docs: {answer} ({result.Source})");
     }
 
-    public string Review(string id, string decision, string verdict, string text)
-    {
-        var question = store.Decision(id, decision)?.Question ?? "question";
-        store.Events.Append("review", Parties.User, Parties.Session(id), Data.Of(("verdict", verdict), ("text", text)), Data.Of(("decision", decision)), id);
-        store.SaveReview(id, decision, verdict, text);
-        store.Ledger(Data.Of(("session", id), ("decision", decision), ("review", verdict), ("text", text)));
-        return store.Send(id, Texts.ReviewText(decision, question, verdict, text));
-    }
+    public string Review(string id, string decision, string verdict, string text) => new Messages(store).Review(id, decision, verdict, text);
 
     bool CanRun(string id, DateTimeOffset now) =>
         !running.ContainsKey(id) && failures.GetValueOrDefault(id) < options.MaxFailures && !store.IsLive(id, now);
@@ -152,7 +143,9 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         var id = request.Id;
         store.Log($"{id} turn start new={request.IsNew} inbox={string.Join(',', pending.Inbox)} answers={string.Join(',', pending.Answers)}");
         if (request.IsNew) store.SaveMeta(store.Meta(id) with { Started = true });
-        store.Events.Append("turn.start", Parties.Supervisor, Parties.Session(id), Data.Of(("isNew", request.IsNew), ("prompt", request.Prompt)), Data.Of(("inbox", pending.Inbox), ("answers", pending.Answers)), id);
+        var from = string.Join(',', pending.Senders.DefaultIfEmpty(Parties.Supervisor));
+        var start = store.Events.Append(EventKinds.TurnStart, Parties.Supervisor, Parties.Session(id), Data.Of(("isNew", request.IsNew), ("senders", pending.Senders), ("prompt", request.Prompt)), Data.Of(("inbox", pending.Inbox), ("answers", pending.Answers)), id);
+        store.WriteJson(id, new TurnMarker(start.Id, from, start.At), StoreFiles.Turn);
         TurnResult result;
         try
         {
@@ -166,14 +159,16 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         {
             store.MarkSent(id, pending);
             failures.TryRemove(id, out _);
-            store.Events.Append("turn.end", Parties.Session(id), Parties.Supervisor, Data.Of(("ok", true), ("seconds", result.Seconds), ("text", result.Text ?? "")), null, id);
+            var output = store.ReadJson<LastOutput>(id, StoreFiles.LastOutput);
+            store.Events.Append(EventKinds.TurnEnd, Parties.Session(id), Parties.Supervisor, Data.Of(("ok", true), ("seconds", result.Seconds), ("text", result.Text ?? "")),
+                Data.Of(("turnStart", start.Id), ("output", output is { } o && string.CompareOrdinal(o.Event, start.Id) > 0 ? o.Event : null)), id);
             store.Log($"{id} turn done {result.Seconds}s: {Cut(result.Text ?? "", 200)}");
             return;
         }
         if (request.IsNew) store.SaveMeta(store.Meta(id) with { Started = false });
         var count = failures.AddOrUpdate(id, 1, (_, n) => n + 1);
         store.SaveBlocked(id, $"supervisor turn failed {count} times: {result.Error}");
-        store.Events.Append("turn.fail", Parties.Session(id), Parties.Supervisor, Data.Of(("count", count), ("error", result.Error)), null, id);
+        store.Events.Append(EventKinds.TurnFail, Parties.Session(id), Parties.Supervisor, Data.Of(("count", count), ("error", result.Error)), Data.Of(("turnStart", start.Id)), id);
         store.Log($"{id} turn failed ({count}): {result.Error}");
     }
 

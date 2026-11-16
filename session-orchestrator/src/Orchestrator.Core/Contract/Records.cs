@@ -19,6 +19,9 @@ public sealed record Meta(string Id)
     public string? CreatedBy { get; init; }
     public string? CreatedAt { get; init; }
     public bool? Started { get; init; }
+    public bool? Worktree { get; init; }
+    public string? Agent { get; init; }
+    public List<string>? Skills { get; init; }
 }
 
 public sealed record Decision(string Id, string Session)
@@ -49,6 +52,7 @@ public sealed record Answer
     public string? By { get; init; }
     public string? Source { get; init; }
     public string? Note { get; init; }
+    public string? Reason { get; init; }
 
     public string Body => Value ?? Text ?? (Answers is { } a ? a.GetRawText() : "");
 }
@@ -56,6 +60,7 @@ public sealed record Answer
 public sealed record Report(string State, string Summary, string At)
 {
     public string? Details { get; init; }
+    public string? Event { get; init; }
 }
 
 public static class ReportStates
@@ -90,5 +95,12 @@ public sealed record DocsCheck(bool Answered, string? Answer, string? Source, st
 
 public sealed record Pending(string Text, IReadOnlyList<string> Inbox, IReadOnlyList<string> Answers)
 {
+    public IReadOnlyList<string> Senders { get; init; } = [];
     public bool IsEmpty => Text.Length == 0;
 }
+
+public sealed record InboxMessage(string Text, string? From);
+
+public sealed record TurnMarker(string Event, string From, string At);
+
+public sealed record LastOutput(string Event, string At);

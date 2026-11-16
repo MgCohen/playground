@@ -1,32 +1,39 @@
 using System.Text.Json;
 using Orchestrator.Core.Contract;
+using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
 using Orchestrator.Core.Ordering;
 using Orchestrator.Core.Policy;
+using Orchestrator.Core.Stack;
+using Orchestrator.Core.Templates;
 
 namespace Orchestrator.Store;
 
 public sealed class FileStore
 {
-    public FileStore(string root, TimeProvider? clock = null)
+    public FileStore(string root, TimeProvider? clock = null, TemplateSet? templates = null)
     {
         Root = Path.GetFullPath(root);
         Clock = clock ?? TimeProvider.System;
         Events = new EventStream(Root, Clock);
+        Texts = new Texts(templates ?? new TemplateSet(Home.Templates()));
     }
 
     public string Root { get; }
     public TimeProvider Clock { get; }
     public EventStream Events { get; }
+    public Texts Texts { get; }
+    public TemplateSet Templates => Texts.Templates;
 
-    string Now => Times.Format(Clock.GetUtcNow());
+    public string Now => Times.Format(Clock.GetUtcNow());
 
     public string Dir(string id) => Path.Combine(Root, StoreFiles.Sessions, id);
 
     public string PathOf(string id, params string[] parts) => Path.Combine([Dir(id), .. parts]);
 
-    public IReadOnlyList<string> Sessions() =>
-        Files.Names(Path.Combine(Root, StoreFiles.Sessions)).Where(id => File.Exists(PathOf(id, StoreFiles.Enabled))).ToList();
+    public IReadOnlyList<string> AllSessions() => Files.Names(Path.Combine(Root, StoreFiles.Sessions));
+
+    public IReadOnlyList<string> Sessions() => AllSessions().Where(id => File.Exists(PathOf(id, StoreFiles.Enabled))).ToList();
 
     public Meta Meta(string id) => Files.ReadJson<Meta>(PathOf(id, StoreFiles.Meta)) ?? new Meta(id);
 
@@ -53,15 +60,15 @@ public sealed class FileStore
     {
         var id = meta.Id.Length > 0 ? meta.Id : Guid.NewGuid().ToString();
         SaveMeta(meta with { Id = id, CreatedAt = Now });
-        Files.Write(PathOf(id, StoreFiles.Inbox, "1.txt"), brief);
+        Files.WriteJson(PathOf(id, StoreFiles.Inbox, "1.json"), new InboxMessage(brief, meta.Parent is { } parent ? Parties.Session(parent) : Parties.User));
         Files.Write(PathOf(id, StoreFiles.Enabled), "");
         return id;
     }
 
-    public string Send(string id, string text)
+    public string Send(string id, string text, string from = Parties.User)
     {
-        var name = Names.NewInboxName(Clock.GetUtcNow());
-        Files.Write(PathOf(id, StoreFiles.Inbox, name), text);
+        var name = Path.ChangeExtension(Names.NewInboxName(Clock.GetUtcNow()), ".json");
+        Files.WriteJson(PathOf(id, StoreFiles.Inbox, name), new InboxMessage(text, from));
         return name;
     }
 
@@ -70,17 +77,6 @@ public sealed class FileStore
     public Answer? Answer(string id, string decision) => Files.ReadJson<Answer>(PathOf(id, StoreFiles.Answers, StoreFiles.Json(decision)));
 
     public void SaveAnswer(string id, string decision, Answer answer) => Files.WriteJson(PathOf(id, StoreFiles.Answers, StoreFiles.Json(decision)), answer);
-
-    public void Ledger(IReadOnlyDictionary<string, object?> entry)
-    {
-        var line = new Dictionary<string, object?> { ["at"] = Now };
-        foreach (var (key, value) in entry) line[key] = value;
-        Files.Append(Path.Combine(Root, StoreFiles.Ledger), JsonSerializer.Serialize(line, new JsonSerializerOptions(StoreJson.Options) { WriteIndented = false }));
-    }
-
-    public IReadOnlyList<JsonElement> LedgerLines() =>
-        (Files.ReadText(Path.Combine(Root, StoreFiles.Ledger)) ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(line => JsonSerializer.Deserialize<JsonElement>(line)).ToList();
 
     public Decision? Decision(string id, string decision) => Files.ReadJson<Decision>(PathOf(id, StoreFiles.Decisions, StoreFiles.Json(decision)));
 
@@ -91,8 +87,23 @@ public sealed class FileStore
 
     public bool IsDelivered(string id, string decision) => File.Exists(PathOf(id, StoreFiles.Delivered, StoreFiles.Json(decision)));
 
-    public IReadOnlyList<Decision> OpenDecisions(string id) =>
-        Decisions(id).Where(d => !IsDelivered(id, d.Id) && !IsAnswered(id, d.Id)).ToList();
+    public bool IsOpen(string id, string decision) => !IsDelivered(id, decision) && !IsAnswered(id, decision);
+
+    public IReadOnlyList<Decision> OpenDecisions(string id) => Decisions(id).Where(d => IsOpen(id, d.Id)).ToList();
+
+    public string? SessionOf(string decision)
+    {
+        var file = StoreFiles.Json(decision);
+        return AllSessions().FirstOrDefault(id => File.Exists(PathOf(id, StoreFiles.Decisions, file)) || File.Exists(PathOf(id, StoreFiles.Stack, file)));
+    }
+
+    public string? ResolveSession(string prefix)
+    {
+        var all = AllSessions();
+        if (all.Contains(prefix)) return prefix;
+        var matches = all.Where(id => id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList();
+        return matches.Count == 1 ? matches[0] : null;
+    }
 
     public Report? Report(string id) => Files.ReadJson<Report>(PathOf(id, StoreFiles.Report));
 
@@ -107,26 +118,38 @@ public sealed class FileStore
     public void SaveReview(string id, string decision, string verdict, string text) =>
         Files.WriteJson(PathOf(id, StoreFiles.Reviews, StoreFiles.Json(decision)), new Review(verdict, text, Now));
 
+    public StackEntry? Stack(string id, string decision) => Files.ReadJson<StackEntry>(PathOf(id, StoreFiles.Stack, StoreFiles.Json(decision)));
+
+    public IReadOnlyList<StackEntry> Stacks(string id) =>
+        Files.Names(PathOf(id, StoreFiles.Stack)).Select(name => Files.ReadJson<StackEntry>(PathOf(id, StoreFiles.Stack, name))).OfType<StackEntry>().ToList();
+
+    public void SaveStack(StackEntry entry) => Files.WriteJson(PathOf(entry.Session, StoreFiles.Stack, StoreFiles.Json(entry.Decision)), entry);
+
+    public IReadOnlyList<Event> Ledger() => Events.All().Where(EventQuery.IsLedger).ToList();
+
     public Pending Pending(string id)
     {
         var cursor = (Files.ReadText(PathOf(id, StoreFiles.Cursor)) ?? "").Trim();
         var inbox = Files.Names(PathOf(id, StoreFiles.Inbox)).Where(name => cursor.Length == 0 || Names.Order.Compare(name, cursor) > 0).ToList();
-        var texts = inbox.Select(name => InboxText(id, name)).ToList();
+        var messages = inbox.Select(name => ReadInbox(id, name)).ToList();
+        var texts = messages.Select(m => m.Text).ToList();
+        var senders = messages.Select(m => m.From ?? Parties.User).ToList();
         var answers = new List<string>();
         foreach (var d in Decisions(id))
         {
             if (d.Mode != DecisionModes.Pending || IsDelivered(id, d.Id)) continue;
             if (Answer(id, d.Id) is not { } answer) continue;
             answers.Add(d.Id);
+            senders.Add(answer.By ?? Parties.User);
             texts.Add(Texts.AnswerTurn(d.Id, d.Question, answer.Body, answer.Note));
         }
-        return new Pending(string.Join("\n\n---\n\n", texts), inbox, answers);
+        return new Pending(string.Join("\n\n---\n\n", texts), inbox, answers) { Senders = senders.Distinct().ToList() };
     }
 
-    string InboxText(string id, string name)
+    InboxMessage ReadInbox(string id, string name)
     {
         var raw = Files.ReadText(PathOf(id, StoreFiles.Inbox, name)) ?? "";
-        return name.EndsWith(".json") ? StoreJson.Read<Answer>(raw)?.Body ?? "" : raw;
+        return name.EndsWith(".json") ? StoreJson.Read<InboxMessage>(raw) ?? new InboxMessage("", null) : new InboxMessage(raw, null);
     }
 
     public void MarkSent(string id, Pending pending)
