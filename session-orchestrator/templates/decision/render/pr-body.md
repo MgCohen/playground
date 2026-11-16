@@ -1,8 +1,8 @@
-[orch] This PR holds one default decision. Approve, change or refuse it alone.
+[orch] This PR holds one decision of the orchestrator ({{origin}}). Approve, change or refuse it alone.
 
 Question: {{question}}
 
-Default answer: {{answer}} ({{reason}})
+Answer: {{answer}} ({{reason}})
 
 Decision: `{{decision}}`, version {{version}}
 

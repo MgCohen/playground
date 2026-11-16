@@ -11,11 +11,11 @@ namespace Orchestrator.Store;
 
 public sealed class FileStore
 {
-    public FileStore(string root, TimeProvider? clock = null, TemplateSet? templates = null)
+    public FileStore(string root, TimeProvider? clock = null, TemplateSet? templates = null, string writer = Parties.Supervisor)
     {
         Root = Path.GetFullPath(root);
         Clock = clock ?? TimeProvider.System;
-        Events = new EventStream(Root, Clock);
+        Events = new EventStream(Root, Clock, writer);
         Texts = new Texts(templates ?? new TemplateSet(Home.Templates()));
     }
 

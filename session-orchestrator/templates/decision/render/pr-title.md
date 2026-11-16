@@ -1,1 +1,1 @@
-[orch] {{answer}}: {{question}} (default decision)
+[orch] {{answer}}: {{question}} ({{origin}})
