@@ -19,7 +19,10 @@
         </p>
     }
     <label class="answer-label" for="review-@Item.Decision.Id">Direction for change or refuse</label>
-    <textarea id="review-@Item.Decision.Id" class="answer" rows="2" placeholder="Optional for approve" @bind="text" @bind:event="oninput"></textarea>
+    <div class="speech-field">
+        <textarea id="review-@Item.Decision.Id" class="answer" rows="2" placeholder="Optional for approve" @bind="text" @bind:event="oninput"></textarea>
+        <Mic For="@($"review-{Item.Decision.Id}")" />
+    </div>
     <div class="actions three">
         <button type="button" class="approve" @onclick='() => Submit("approve")'>Approve</button>
         <button type="button" class="secondary" disabled="@string.IsNullOrWhiteSpace(text)" @onclick='() => Submit("change")'>Change</button>

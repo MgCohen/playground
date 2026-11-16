@@ -14,6 +14,12 @@ public sealed record NewSession(string? Title, string? Cwd, string? Brief, strin
     public string? Agent { get; init; }
     public bool? Worktree { get; init; }
     public bool? AllowDefaults { get; init; }
+
+    public BriefFields ToBrief() => new()
+    {
+        Title = Title, Goal = Goal ?? Brief, Scope = Scope, DoneWhen = DoneWhen, Skills = Skills,
+        Agent = Agent, Cwd = Cwd, Worktree = Worktree, Parent = Parent, AllowDefaults = AllowDefaults,
+    };
 }
 
 public sealed record SendText(string? Text);
@@ -44,15 +50,9 @@ public static class OrchestratorApi
 
         api.MapGet("/decisions", (FileStore store) => store.Sessions().SelectMany(store.OpenDecisions));
 
-        api.MapPost("/sessions", (NewSession input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
+        api.MapPost("/sessions", (NewSession input, Board board) => Guard(() =>
         {
-            var brief = new BriefFields
-            {
-                Title = input.Title, Goal = input.Goal ?? input.Brief, Scope = input.Scope, DoneWhen = input.DoneWhen, Skills = input.Skills,
-                Agent = input.Agent, Cwd = input.Cwd, Worktree = input.Worktree, Parent = input.Parent, AllowDefaults = input.AllowDefaults,
-            };
-            var id = new Messages(store).NewSession(brief, Parties.Supervisor);
-            s.Tick();
+            var id = board.NewSession(input);
             return Results.Created($"/api/sessions/{id}", new { id });
         }));
 

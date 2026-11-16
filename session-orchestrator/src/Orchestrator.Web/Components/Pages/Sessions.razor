@@ -9,9 +9,10 @@
     {
         <p class="toast" role="status">@Message</p>
     }
+    <NewSessionForm Parents="parents" OnStart="Start" Open="tree.Count == 0" />
     @if (tree.Count == 0)
     {
-        <p class="empty">No sessions in this store. Start one with <code>orch new</code>.</p>
+        <p class="empty">No sessions in this store. Start one with the form above or with <code>orch new</code>.</p>
     }
     <ul class="tree">
         @foreach (var node in tree)
@@ -24,11 +25,22 @@
 @code {
     IReadOnlyList<SessionNode> tree = [];
     int count;
+    IReadOnlyList<ParentOption> parents = [];
 
     protected override void Load()
     {
         tree = Board.Tree();
         count = Count(tree);
+        parents = Flatten(tree).Where(n => n.Control != ControlStates.Archived).Select(n => new ParentOption(n.Meta.Id, Name(n), n.Meta.Cwd)).ToList();
+    }
+
+    static IEnumerable<SessionNode> Flatten(IEnumerable<SessionNode> nodes) => nodes.SelectMany(n => Flatten(n.Children).Prepend(n));
+
+    bool Start(NewSession input)
+    {
+        var started = Act(() => Board.NewSession(input), $"Started {input.Title}.");
+        StateHasChanged();
+        return started;
     }
 
     static int Count(IReadOnlyList<SessionNode> nodes) => nodes.Sum(n => 1 + Count(n.Children));

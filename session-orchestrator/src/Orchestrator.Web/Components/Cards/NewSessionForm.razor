@@ -1,0 +1,85 @@
+<details class="card new-session" open="@Open">
+    <summary><span class="name">New session</span></summary>
+    <form class="brief-form" @onsubmit="Start" @onsubmit:preventDefault>
+        <label class="answer-label" for="new-title">Title</label>
+        <input id="new-title" name="title" class="answer" required @bind="title" @bind:event="oninput" placeholder="A short title that names all of the scope" />
+
+        <label class="answer-label" for="new-goal">Goal</label>
+        <div class="speech-field">
+            <textarea id="new-goal" name="goal" class="answer" rows="3" required @bind="goal" @bind:event="oninput" placeholder="What the session must make, and why. Steps go here too."></textarea>
+            <Mic For="new-goal" />
+        </div>
+
+        <label class="answer-label" for="new-scope">Scope</label>
+        <div class="speech-field">
+            <textarea id="new-scope" name="scope" class="answer" rows="2" @bind="scope" @bind:event="oninput" placeholder="What is in scope and what is not"></textarea>
+            <Mic For="new-scope" />
+        </div>
+
+        <label class="answer-label" for="new-done-when">Done when</label>
+        <div class="speech-field">
+            <textarea id="new-done-when" name="doneWhen" class="answer" rows="2" @bind="doneWhen" @bind:event="oninput" placeholder="The check that shows that the work is done"></textarea>
+            <Mic For="new-done-when" />
+        </div>
+
+        <label class="answer-label" for="new-parent">Parent</label>
+        <select id="new-parent" name="parent" class="answer" @bind="parent">
+            <option value="">No parent (a root session)</option>
+            @foreach (var p in Parents)
+            {
+                <option value="@p.Id">@p.Name</option>
+            }
+        </select>
+
+        <label class="answer-label" for="new-cwd">Working folder</label>
+        <input id="new-cwd" name="cwd" class="answer" @bind="cwd" @bind:event="oninput" placeholder="@CwdHint" />
+
+        <label class="answer-label" for="new-agent">Agent</label>
+        <input id="new-agent" name="agent" class="answer" @bind="agent" @bind:event="oninput" placeholder="For example worker" />
+
+        <label class="answer-label" for="new-skills">Skills</label>
+        <input id="new-skills" name="skills" class="answer" @bind="skills" @bind:event="oninput" placeholder="Plugin skills to load first, with commas between them" />
+
+        <label class="check"><input id="new-worktree" name="worktree" type="checkbox" @bind="worktree" /> Make a git worktree for this session</label>
+
+        <div class="actions">
+            <button type="submit" class="primary" disabled="@(!CanStart)">Start session</button>
+        </div>
+    </form>
+</details>
+
+@code {
+    [Parameter] public IReadOnlyList<ParentOption> Parents { get; set; } = [];
+    [Parameter] public Func<NewSession, bool> OnStart { get; set; } = _ => false;
+    [Parameter] public bool Open { get; set; }
+
+    string title = "", goal = "", scope = "", doneWhen = "", parent = "", cwd = "", agent = "", skills = "";
+    bool worktree;
+
+    ParentOption? Parent => Parents.FirstOrDefault(p => p.Id == parent);
+
+    string Cwd => Text(cwd) ?? Parent?.Cwd ?? "";
+
+    string CwdHint => Parent?.Cwd is { } folder ? $"Default: {folder}" : "Absolute path of the folder";
+
+    bool CanStart => Text(title) is not null && Text(goal) is not null && Cwd.Length > 0;
+
+    public NewSession Input() => new(Text(title), Cwd, null, Text(parent))
+    {
+        Goal = Text(goal),
+        Scope = Text(scope),
+        DoneWhen = Text(doneWhen),
+        Agent = Text(agent),
+        Skills = skills.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is { Length: > 0 } list ? [.. list] : null,
+        Worktree = worktree ? true : null,
+    };
+
+    void Start()
+    {
+        if (!CanStart || !OnStart(Input())) return;
+        title = goal = scope = doneWhen = parent = cwd = agent = skills = "";
+        worktree = false;
+    }
+
+    static string? Text(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+}

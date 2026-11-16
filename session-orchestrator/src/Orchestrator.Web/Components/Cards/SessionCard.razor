@@ -31,7 +31,10 @@
             }
         </dl>
         <label class="answer-label" for="send-@N.Meta.Id">Message to this session</label>
-        <textarea id="send-@N.Meta.Id" class="answer" rows="2" @bind="text" @bind:event="oninput"></textarea>
+        <div class="speech-field">
+            <textarea id="send-@N.Meta.Id" class="answer" rows="2" @bind="text" @bind:event="oninput"></textarea>
+            <Mic For="@($"send-{N.Meta.Id}")" />
+        </div>
         <div class="actions">
             <button type="button" class="primary" disabled="@string.IsNullOrWhiteSpace(text)" @onclick="Send">Send</button>
             @if (N.Control == ControlStates.Active)

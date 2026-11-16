@@ -46,6 +46,18 @@ public sealed class WebTests
     }
 
     [Test]
+    public async Task The_sessions_page_has_the_new_session_form_and_the_speech_script()
+    {
+        var (factory, _) = Start();
+        using var __ = factory;
+        var page = await factory.CreateClient().GetStringAsync("/sessions");
+        Assert.That(page, Does.Contain("id=\"new-title\""));
+        Assert.That(page, Does.Contain("data-speech-for=\"new-goal\""));
+        Assert.That(page, Does.Match("speech(\\.[a-z0-9]+)?\\.js"));
+        Assert.That(page, Does.Not.Contain("allowDefaults").IgnoreCase);
+    }
+
+    [Test]
     public async Task With_a_token_each_request_needs_the_token()
     {
         var (factory, _) = Start("secret-1");
