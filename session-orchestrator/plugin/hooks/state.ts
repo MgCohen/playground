@@ -20,7 +20,7 @@ export type Decision = {
   asked: string
 }
 
-export const S: { id?: string; dir?: string; store?: string; cwd?: string; holder: string; cursor: string; busy: boolean; idle: boolean; dropped: string } = {
+export const S: { id?: string; dir?: string; store?: string; cwd?: string; holder: string; cursor: string; busy: boolean; idle: boolean; dropped: string; timers?: boolean } = {
   dropped: '',
   holder: 'live',
   cursor: '',

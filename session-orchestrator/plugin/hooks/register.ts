@@ -38,8 +38,22 @@ async function activate($: any, dir: string, reason: unknown): Promise<void> {
   await writeLease($, S.holder, reason)
   await log($, `activate plugin holder=${S.holder} cursor=${S.cursor} ${JSON.stringify(reason)}`)
   await registerTools($)
+  if (S.timers) return
+  S.timers = true
   $.clock.every(TICK_MS, () => beat($))
   $.clock.every(TICK_MS, () => tick($))
+}
+
+async function writeMeta($: any, dir: string, title: string): Promise<void> {
+  const path = `${dir}/meta.json`
+  const old = await readJson($, path)
+  if (old && title === '') return
+  const cwd = await $.session.cwd()
+  const name = String(cwd).split(/[\\/]/).filter(Boolean).pop() ?? 'chat'
+  await writeJson($, path, {
+    ...(old ?? { id: await $.session.id(), cwd, createdBy: 'orch-enable', createdAt: await now($), started: true }),
+    title: title !== '' ? title : old?.title ?? `App chat in ${name}`,
+  })
 }
 
 export const register: Register = on => {
@@ -47,16 +61,18 @@ export const register: Register = on => {
     const result = await next(e)
     const dir = await sessionDir($)
     if (await $.fs.exists(`${dir}/enabled`)) await activate($, dir, { event: 'session.start', start: e })
-    await $.command.register({ name: 'orch-enable', description: 'Put this session under the orchestrator: inbox, mirror, lease and the orch tools.' })
+    await $.command.register({ name: 'orch-enable', description: 'Put this session under the orchestrator: inbox, mirror, lease and the orch tools. Optional: a title, for example /orch-enable Foobar root.' })
     return result
   })
 
-  on('command.run', { command: 'orch-enable' }, async $ => {
+  on('command.run', { command: 'orch-enable' }, async ($, e: any) => {
     const dir = await sessionDir($)
-    if (S.dir === dir) return { text: `orch: this session is already enabled (${dir}).` }
+    const title = String(e.args ?? '').trim()
+    await writeMeta($, dir, title)
+    if (S.dir === dir) return { text: `This session is already enabled (${dir}).${title !== '' ? ` New title: ${title}.` : ''}` }
     await $.fs.write(`${dir}/enabled`, '')
     await activate($, dir, { event: 'orch-enable' })
-    return { text: `orch: enabled. Store folder: ${dir}` }
+    return { text: `Enabled. Store folder: ${dir}` }
   })
 
   on('turn.start', async ($, e, next) => {

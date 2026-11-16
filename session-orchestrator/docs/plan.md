@@ -456,6 +456,7 @@ Findings:
 - `/orch-enable` writes no `meta.json`. The session has no title (the queue shows its id) and no `cwd`. If its lease becomes `none`, the supervisor fails its turns with "no cwd".
 - The reply of `/orch-enable` starts with `orch:` two times.
 - An app session can be the root of a run only if the user types `/orch-enable` in it.
+- Fixed the same day: `/orch-enable [title]` writes `meta.json` (title, cwd, `started: true`), the reply has no double prefix, and the hooks of a live session stop and release the lease when `orch archive` removes `enabled`. Not tested live yet.
 
 ## Test sessions in the app sidebar
 

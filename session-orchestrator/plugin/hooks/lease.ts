@@ -7,6 +7,12 @@ export async function writeLease($: any, holder: string, reason: unknown): Promi
 
 export async function beat($: any): Promise<void> {
   if (!S.dir) return
+  if (!(await $.fs.exists(`${S.dir}/enabled`))) {
+    await writeLease($, 'none', { event: 'archived' })
+    await log($, 'the enabled file is gone: lease released, plugin inactive')
+    S.dir = undefined
+    return
+  }
   await $.fs.write(`${S.dir}/heartbeat.txt`, await now($))
   const lease = await readJson($, `${S.dir}/lease.json`)
   if (lease?.holder === S.holder) return
