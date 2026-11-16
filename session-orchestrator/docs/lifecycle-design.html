@@ -121,14 +121,14 @@ dl.facts dd { margin: 0; min-width: 0; max-width: 70ch; }
 <header>
   <div class="eyebrow">session-orchestrator · B1 design</div>
   <h1>Session Lifecycle</h1>
-  <p class="summary">Each session has one lifecycle state. The supervisor calculates it at each tick (3 s) with a small state machine: one rule for each state, in a fixed order. It writes an event when the state changes. Each state has one detector, one action and the messages that the change needs. Stream A designs the message formats.</p>
+  <p class="summary">Each session has one lifecycle state. The supervisor calculates it at each tick (3 s) with a state machine: from the current state, only guarded transitions lead out. A transition that needs agent work is requested first, and it commits only when the expected signals arrive. Stream A designs the message formats.</p>
 </header>
 
 <nav role="tablist" aria-label="Sections">
   <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
   <button role="tab" data-tab="states" aria-selected="false">States</button>
   <button role="tab" data-tab="transitions" aria-selected="false">Transitions</button>
-  <button role="tab" data-tab="messages" aria-selected="false">Messages</button>
+  <button role="tab" data-tab="topology" aria-selected="false">Topology</button>
   <button role="tab" data-tab="open" aria-selected="false">Open items</button>
   <button role="tab" data-tab="b2" aria-selected="false">B2 changes</button>
 </nav>
@@ -192,47 +192,63 @@ stateDiagram-v2
   </section>
 
   <section>
-    <h2>State machine: rules, order, fallback</h2>
-    <p class="summary">Each state is one rule: a name and a check that says yes or no for a snapshot of the store. The supervisor runs the rules in a fixed order, and the first yes wins. If no rule says yes, an agent infers the state.</p>
-    <pre class="stack"><span class="c">// Orchestrator.Core/Lifecycle: no IO, one unit test for each rule</span>
-<span class="k">record</span> StateRule(LifecycleState State, Func&lt;Snapshot, bool&gt; Matches);
-<span class="k">record</span> Snapshot(Control Control, bool Enabled, Meta Meta, Lease Lease, TimeSpan HeartbeatAge,
-    TurnMarker? Turn, Status? Status, Report? Report, Failures Failures, Pending Pending, DateTimeOffset Now);
-<span class="k">record</span> StateResult(LifecycleState State, string Rule, bool Inferred);</pre>
+    <h2>State machine: guarded transitions</h2>
+    <p class="summary">The supervisor keeps the current state in <code>state.json</code>. At each tick it checks only the transitions that leave the current state. Each transition has a guard (a yes-or-no check on a snapshot of the store), a priority and a kind.</p>
+    <pre class="stack"><span class="c">// Orchestrator.Core/Lifecycle: no IO, unit tests for each guard</span>
+<span class="k">enum</span> Kind { Immediate, Requested }
+<span class="k">record</span> Transition(State From, State To, Func&lt;Snapshot, bool&gt; Guard, int Priority, Kind Kind);
+<span class="k">record</span> Request(State To, string Transition, DateTimeOffset Since, DateTimeOffset Deadline, string[] WaitsFor);
+<span class="k">record</span> StateFile(State State, string Since, Request? Requested, bool Inferred);  <span class="c">// state.json, supervisor only</span></pre>
     <div class="box">
 <pre class="mermaid">
 flowchart LR
-  A[Snapshot of the store] --> B[Rules in order]
-  B -->|first yes| C[State]
-  B -->|no yes| D[unknown]
-  D --> E[Agent infers the state]
-  E --> F[State, inferred]
-  F --> G[Notice to the parent]
+  A[Snapshot] --> B[Guards of the current state]
+  B -->|no yes| C[Stay]
+  B -->|one yes| D{Kind}
+  B -->|two or more| E[Priority, or conflict]
+  D -->|immediate| F[Change the state]
+  D -->|requested| G[Start the actions, wait]
+  G -->|signals arrive| F
+  G -->|deadline| H[Escalate, stay]
 </pre>
     </div>
-    <p>More than one rule can say yes at the same time. The order decides: a stop is stronger than a fault, and a fault is stronger than a turn.
+  </section>
+
+  <section>
+    <h2>Two valid transitions at the same time</h2>
+    <p class="summary">The machine never takes "the first valid one" by chance. Each overlap has a rule, and a test finds an overlap that has no rule.</p>
     <div class="scroll">
     <table>
-      <thead><tr><th>Order</th><th>State</th><th>Match</th></tr></thead>
+      <thead><tr><th>Case</th><th>Rule</th></tr></thead>
       <tbody>
-        <tr><td>1</td><td><span class="st end">archived</span></td><td><code>control.json</code> archived, or no <code>enabled</code> file</td></tr>
-        <tr><td>2</td><td><span class="st end">stopped</span></td><td><code>control.json</code> stopped</td></tr>
-        <tr><td>3</td><td><span class="st fault">stale</span></td><td>Lease <code>live</code> and heartbeat older than 15 s</td></tr>
-        <tr><td>4</td><td><span class="st fault">not responding</span></td><td>One of the four faults (States tab)</td></tr>
-        <tr><td>5</td><td><span class="st">start</span></td><td>No good first turn yet</td></tr>
-        <tr><td>6</td><td><span class="st">running</span></td><td>Supervisor turn, or <code>status.json</code> running</td></tr>
-        <tr><td>7</td><td><span class="st">done</span></td><td>Last report <code>done</code>, no input after it</td></tr>
-        <tr><td>8</td><td><span class="st fault">forgotten</span></td><td>Idle 15 min, no final report, no wait</td></tr>
-        <tr><td>9</td><td><span class="st">idle</span></td><td>Started, enabled, no turn, no input waits</td></tr>
+        <tr><td>A global and a local transition</td><td>The global one wins, in the order below</td></tr>
+        <tr><td>Two local transitions, different priority</td><td>The lower priority number wins</td></tr>
+        <tr><td>Two local transitions, same priority</td><td>Conflict: stay, event, fallback agent</td></tr>
+        <tr><td>One transition more than 3 times in 1 h</td><td>Loop: <span class="st fault">not responding</span>, notice to the parent</td></tr>
       </tbody>
     </table>
     </div>
-    <h3>Fallback</h3>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Order</th><th>Global transition</th><th>Guard</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>any → <span class="st end">archived</span></td><td>Archive requested, or no <code>enabled</code> file</td></tr>
+        <tr><td>2</td><td>any → <span class="st end">stopped</span></td><td><code>control.json</code> stopped</td></tr>
+        <tr><td>3</td><td>any → <span class="st fault">stale</span></td><td>Lease <code>live</code>, heartbeat older than 15 s</td></tr>
+        <tr><td>4</td><td>any → <span class="st fault">not responding</span></td><td>One of the four faults (States tab)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>A unit test runs each pair of guards that leave one state on a set of sample snapshots. If two guards say yes with the same priority, the test fails. So the build finds a conflict, and the runtime rule is the last safety.</p>
+  </section>
+
+  <section>
+    <h2>Fallback</h2>
     <ul>
-      <li>The fallback runs only when no rule says yes. The state is <code>unknown</code> until the agent answers.</li>
-      <li>The agent reads the snapshot and gives one of the nine states and a reason. The supervisor records it with <code>inferred: true</code>.</li>
+      <li>The fallback runs when <code>state.json</code> is missing or not valid, or on a conflict. The state is <code>unknown</code> until the agent answers.</li>
+      <li>The agent <code>orch:state-checker</code> reads the snapshot and gives one of the nine states and a reason. The supervisor records it with <code>inferred: true</code>.</li>
       <li>An inferred state only names the state and tells the parent. It starts no action: no resume, no lease change, no archive. Reason: a guess must not move the lease or delete a worktree.</li>
-      <li>Each fallback is a finding in <code>docs/plan.md</code>. If one case comes again, add a rule for it.</li>
+      <li>Each fallback is a finding in <code>docs/plan.md</code>. If one case comes again, add a guard or a priority for it.</li>
     </ul>
     <p>An idle session can wait for something. The state stays <span class="st">idle</span>, and a wait reason shows why: an open decision, an open child, or a <code>blocked</code> report.</p>
   </section>
@@ -321,15 +337,15 @@ flowchart LR
     <h2>Main path</h2>
     <div class="scroll">
     <table>
-      <thead><tr><th>From → to</th><th>Trigger</th><th>Detector</th><th>Message</th></tr></thead>
+      <thead><tr><th>From → to</th><th>Trigger</th><th>Detector</th><th>Message</th><th>Kind</th></tr></thead>
       <tbody>
-        <tr><td>none → start</td><td><code>spawn_child</code>, <code>orch new</code>, API</td><td><code>orch</code></td><td>Event <code>brief</code></td></tr>
-        <tr><td>start → running</td><td>First turn starts</td><td>Supervisor</td><td>Event <code>turn.start</code></td></tr>
-        <tr><td>running → idle</td><td>Turn ends</td><td>Supervisor, plugin</td><td>Event <code>turn.end</code></td></tr>
-        <tr><td>idle → running</td><td>Inbox file or answer</td><td>Supervisor, plugin</td><td>Event <code>session.input</code></td></tr>
-        <tr><td>running → done</td><td>Report <code>done</code>, turn ends</td><td>Supervisor</td><td>Notice <code>child-report</code> to the parent</td></tr>
-        <tr><td>done → running</td><td>Review or message</td><td>Supervisor, plugin</td><td>Event <code>session.input</code></td></tr>
-        <tr><td>done → archived</td><td><code>orch archive</code></td><td><code>orch</code></td><td>Event <code>session.archive</code></td></tr>
+        <tr><td>none → start</td><td><code>spawn_child</code>, <code>orch new</code>, API</td><td><code>orch</code></td><td>Event <code>brief</code></td><td>immediate</td></tr>
+        <tr><td>start → running</td><td>First turn starts</td><td>Supervisor</td><td>Event <code>turn.start</code></td><td>immediate</td></tr>
+        <tr><td>running → idle</td><td>Turn ends</td><td>Supervisor, plugin</td><td>Event <code>turn.end</code></td><td>immediate</td></tr>
+        <tr><td>idle → running</td><td>Inbox file or answer</td><td>Supervisor, plugin</td><td>Event <code>session.input</code></td><td>immediate</td></tr>
+        <tr><td>running → done</td><td>Report <code>done</code>, turn ends</td><td>Supervisor</td><td>Notice <code>child-report</code> to the parent</td><td>immediate</td></tr>
+        <tr><td>done → running</td><td>Review or message</td><td>Supervisor, plugin</td><td>Event <code>session.input</code></td><td>immediate</td></tr>
+        <tr><td>done → archived</td><td><code>orch archive</code>, or the <code>autoArchive</code> flag</td><td><code>orch</code></td><td>Event <code>session.archive</code></td><td>requested</td></tr>
       </tbody>
     </table>
     </div>
@@ -338,50 +354,156 @@ flowchart LR
     <h2>Faults and control</h2>
     <div class="scroll">
     <table>
-      <thead><tr><th>From → to</th><th>Trigger</th><th>Detector</th><th>Message</th></tr></thead>
+      <thead><tr><th>From → to</th><th>Trigger</th><th>Detector</th><th>Message</th><th>Kind</th></tr></thead>
       <tbody>
-        <tr><td>idle → forgotten</td><td>15 min, no final report</td><td>Supervisor</td><td>Nudge to the session</td></tr>
-        <tr><td>forgotten → running</td><td>Nudge starts a turn</td><td>Supervisor</td><td>Event <code>turn.start</code></td></tr>
-        <tr><td>running, idle → stale</td><td>Heartbeat older than 15 s</td><td>Supervisor</td><td>Event <code>session.state</code></td></tr>
-        <tr><td>stale → idle</td><td>Process gone</td><td>Supervisor</td><td>Event <code>lease.release</code></td></tr>
-        <tr><td>stale → not responding</td><td>Process alive, no beat for 2 min</td><td>Supervisor</td><td>Notice to the parent</td></tr>
-        <tr><td>any → not responding</td><td>Failed turns, Stop latch, input not taken</td><td>Supervisor</td><td>Notice to the parent</td></tr>
-        <tr><td>not responding → running</td><td>Retry works, or the user types</td><td>Supervisor</td><td>Notice to the parent</td></tr>
-        <tr><td>any → stopped</td><td><code>orch stop</code>, API, UI</td><td><code>orch</code></td><td>Event <code>session.stop</code>, notice to the parent</td></tr>
-        <tr><td>stopped → idle</td><td><code>orch resume</code></td><td><code>orch</code></td><td>Event <code>session.start</code></td></tr>
-        <tr><td>any → archived</td><td><code>orch archive</code>, or the app sidebar</td><td><code>orch</code>, supervisor</td><td>Event <code>session.archive</code>, notice to the parent</td></tr>
+        <tr><td>idle → forgotten</td><td>15 min, no final report</td><td>Supervisor</td><td>Nudge to the session</td><td>immediate</td></tr>
+        <tr><td>forgotten → running</td><td>Nudge starts a turn</td><td>Supervisor</td><td>Event <code>turn.start</code></td><td>immediate</td></tr>
+        <tr><td>running, idle → stale</td><td>Heartbeat older than 15 s</td><td>Supervisor</td><td>Event <code>session.state</code></td><td>immediate</td></tr>
+        <tr><td>stale → idle</td><td>Process gone</td><td>Supervisor</td><td>Event <code>lease.release</code></td><td>immediate</td></tr>
+        <tr><td>stale → not responding</td><td>Process alive, no beat for 2 min</td><td>Supervisor</td><td>Notice to the parent</td><td>immediate</td></tr>
+        <tr><td>any → not responding</td><td>Failed turns, Stop latch, input not taken</td><td>Supervisor</td><td>Notice to the parent</td><td>immediate</td></tr>
+        <tr><td>not responding → running</td><td>Retry works, or the user types</td><td>Supervisor</td><td>Notice to the parent</td><td>immediate</td></tr>
+        <tr><td>any → stopped</td><td><code>orch stop</code>, API, UI</td><td><code>orch</code></td><td>Event <code>session.stop</code>, notice to the parent</td><td>requested</td></tr>
+        <tr><td>stopped → idle</td><td><code>orch resume</code></td><td><code>orch</code></td><td>Event <code>session.start</code></td><td>immediate</td></tr>
+        <tr><td>any → archived</td><td><code>orch archive</code>, or the app sidebar</td><td><code>orch</code>, supervisor</td><td>Event <code>session.archive</code>, notice to the parent</td><td>requested</td></tr>
       </tbody>
     </table>
     </div>
-    <p>These two tables are the allowed transitions. The state machine checks each change against them. If a change is not in the tables, the supervisor accepts the new state and writes an event that names the transition, so a test or a person can examine it.</p>
-    <p>Each change also writes one <code>session.state</code> event with the old state, the new state and the signal. The UI and the timeline read it.</p>
+    <p>The column "Kind" shows how a transition commits. <code>immediate</code>: the state changes when the guard says yes. <code>requested</code>: see the next section. A change that is not in these tables never happens: the guards of the current state are the only way out of it.</p>
+    <p>Each change writes one <code>session.state</code> event with the old state, the new state and the guard. The UI and the timeline read it.</p>
   </section>
-</div>
 
-<!-- MESSAGES -->
-<div class="panel off" id="messages" role="tabpanel">
+  <section>
+    <h2>Requested transitions</h2>
+    <p class="summary">A transition that needs actions, and above all agent actions, does not change the state at once. The machine records the request, starts the actions, and changes the state only when the expected signals arrive.</p>
+    <div class="box">
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  state "done (requested: archived)" as req
+  done --> req: request
+  req --> archived: all signals arrive
+  req --> done: deadline, escalate
+  req --> running: new input cancels
+</pre>
+    </div>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Transition</th><th>Actions</th><th>Commit when</th><th>Deadline</th></tr></thead>
+      <tbody>
+        <tr><td>any → stopped</td><td>Cancel the turn, kill descendants (code)</td><td>No turn, no recorded process alive</td><td>30 s, then not responding</td></tr>
+        <tr><td>any → archived</td><td>Remote Control off, <code>archive-self</code> (agent), store side (code)</td><td>App <code>isArchived</code>, <code>enabled</code> gone</td><td>120 s: parent path; 10 min: user</td></tr>
+        <tr><td>done → archived (auto)</td><td>As above, started by the flag</td><td>As above</td><td>As above</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <ul>
+      <li>While a request waits, the state stays. <code>state.json</code> shows <code>requested</code>, and the UI can show "archiving".</li>
+      <li>A request that reaches its deadline changes nothing. The state stays, and the escalation of the Topology tab starts.</li>
+      <li>A new input cancels a requested archive of a done session. A stop never cancels: it is stronger.</li>
+      <li>A session that is not in the app skips the app step. Then the store side commits the archive.</li>
+    </ul>
+    <p>Auto-archive is off by default. The flag <code>autoArchive</code> in <code>policy.json</code> turns it on: <code>{ "enabled": false, "afterMinutes": 60 }</code>. It requests the archive of a done session with no open PR, no open decision and no input for that time.</p>
+  </section>
+
   <section>
     <h2>Messages that the state changes need</h2>
-    <p class="summary">This tab gives the name of each message only. Stream A owns the formats (report, update, notice, events).</p>
+    <p class="summary">Names only. Stream A owns the formats (report, update, notice, events). A root session has no parent: for a root, each notice to the parent goes to the user queue.</p>
     <div class="scroll">
     <table>
       <thead><tr><th>Message</th><th>Kind</th><th>From → to</th><th>Sent on</th><th>Exists</th></tr></thead>
       <tbody>
-        <tr><td><code>session.state</code></td><td>Event</td><td>Supervisor → stream</td><td>Each state change</td><td>No</td></tr>
+        <tr><td><code>session.state</code></td><td>Event</td><td>Supervisor → stream</td><td>Each state change and request</td><td>No</td></tr>
+        <tr><td><code>state.conflict</code></td><td>Event</td><td>Supervisor → stream</td><td>Two guards, same priority</td><td>No</td></tr>
         <tr><td><code>child-report</code></td><td>Notice</td><td>Supervisor → parent</td><td>Enter done, or a blocked report</td><td>Yes</td></tr>
         <tr><td>Child not responding</td><td>Notice</td><td>Supervisor → parent</td><td>Enter and leave not responding</td><td>No</td></tr>
         <tr><td>Child forgotten</td><td>Notice</td><td>Supervisor → parent</td><td>Still forgotten after the nudge</td><td>No</td></tr>
         <tr><td>Report missing (nudge)</td><td>Notice</td><td>Supervisor → session</td><td>Enter forgotten</td><td>No</td></tr>
         <tr><td>Child stopped</td><td>Notice</td><td>Supervisor → parent</td><td>Enter and leave stopped</td><td>No</td></tr>
-        <tr><td>Child archived</td><td>Notice</td><td>Supervisor → parent</td><td>Archive by the user or the app</td><td>No</td></tr>
+        <tr><td>Child archived</td><td>Notice</td><td>Supervisor → parent</td><td>Archive committed</td><td>No</td></tr>
         <tr><td>Archive reminder</td><td>Notice</td><td>Supervisor → parent</td><td>Done for 1 h, not archived</td><td>No</td></tr>
         <tr><td>Remote Control self</td><td>Notice</td><td>Supervisor → session</td><td>After the import, no <code>background</code></td><td>No</td></tr>
-        <tr><td><code>archive-self</code></td><td>Notice</td><td><code>orch</code> → session</td><td>Archive of a live app session</td><td>Yes</td></tr>
+        <tr><td><code>archive-self</code></td><td>Notice</td><td>Supervisor → session</td><td>Requested archive, live app session</td><td>Yes</td></tr>
         <tr><td><code>blocked</code></td><td>Notice</td><td>Supervisor → session</td><td>Retry after the backoff</td><td>Yes</td></tr>
       </tbody>
     </table>
     </div>
-    <p>A root session has no parent. For a root, each notice to the parent goes to the user queue.</p>
+  </section>
+</div>
+
+<!-- TOPOLOGY -->
+<div class="panel off" id="topology" role="tabpanel">
+  <section>
+    <h2>Code checks, agents act</h2>
+    <p class="summary">Only code runs the state machine. Agents write the signals that the guards read, and they do the tasks that a state change gives them. The fallback checker is the only agent inside the check.</p>
+    <pre class="stack"><span class="c">TickService (every 3 s; an API POST also calls Tick)</span>                <span class="k">CODE</span>
+└─ Supervisor.Tick()                                                <span class="k">CODE</span>
+   └─ for each session:
+      ├─ Snapshot.Read(store)           files only                  <span class="k">CODE</span>
+      ├─ StateMachine.Step(state, snapshot)                         <span class="k">CODE</span>
+      │   ├─ guards of the current state → change, request or stay
+      │   ├─ open request → signals arrived? commit : deadline?
+      │   └─ conflict or no state.json → FallbackCheck (async)
+      │        └─ claude -p --agent orch:state-checker              <span class="k">AGENT</span> (read-only)
+      ├─ write state.json, event session.state                      <span class="k">CODE</span>
+      └─ actions of the change or the request:                      <span class="k">CODE</span>
+         ├─ release a lease, back off, kill a stopped turn
+         ├─ write a notice to an inbox  → plugin or claude -p        → <span class="k">AGENT</span>
+         └─ start a turn: claude -p --resume                         → <span class="k">AGENT</span></pre>
+    <p>The loop: clock → supervisor → notice file → plugin (live) or <code>claude -p</code> → agent → tool call or <code>orch</code> → store file → next tick. No agent calls the state machine.</p>
+  </section>
+
+  <section>
+    <h2>Parts</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Part</th><th>Kind</th><th>Triggered by</th><th>Writes or does</th></tr></thead>
+      <tbody>
+        <tr><td>Supervisor tick, state machine</td><td>Code (C#)</td><td>Clock, API</td><td><code>state.json</code>, events, notices, turns</td></tr>
+        <tr><td>Plugin hooks in each session</td><td>Code (TS)</td><td>Engine events, 3 s timer</td><td>Heartbeat, status, lease, inbox delivery</td></tr>
+        <tr><td>Worker or orchestrator session</td><td>Agent</td><td>Inbox turn, answer, user message</td><td><code>report</code>, <code>ask_user</code>, <code>update</code>, commits</td></tr>
+        <tr><td>Parent session</td><td>Agent</td><td>Child notice in its inbox</td><td><code>orch archive</code>, <code>orch stop</code>, answers</td></tr>
+        <tr><td>Fallback checker</td><td>Agent (read-only)</td><td>Supervisor, conflict or no state</td><td>One inferred state and a reason</td></tr>
+        <tr><td><code>orch</code> commands</td><td>Code (C#)</td><td>User, agents</td><td>Requests in <code>control.json</code>, meta, inbox</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Agent tasks and their checks</h2>
+    <p class="summary">Each agent task has an owner, a trigger, a signal that the machine looks for, and an escalation. So the machine sees when an agent does not do its task.</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Task</th><th>Agent</th><th>Trigger</th><th>Expected signal</th><th>No signal in time</th></tr></thead>
+      <tbody>
+        <tr><td>Do the brief</td><td>Session</td><td>First turn</td><td>Report <code>done</code> or <code>blocked</code></td><td>forgotten: nudge</td></tr>
+        <tr><td>Turn on own Remote Control</td><td>Session</td><td>Notice after import</td><td>Plugin records <code>remoteControl: true</code></td><td>Parent calls it with child appId</td></tr>
+        <tr><td>Report after a nudge</td><td>Session</td><td>Nudge notice</td><td>A report within 15 min</td><td>Notice to the parent</td></tr>
+        <tr><td>Decide on a fault</td><td>Parent</td><td>Child not responding notice</td><td>Stop, resume or new input</td><td>User queue</td></tr>
+        <tr><td>Review a done child</td><td>Parent</td><td><code>child-report</code></td><td>Archive request or new input in 1 h</td><td>Reminder; auto-archive if the flag is on</td></tr>
+        <tr><td>Archive itself in the app</td><td>Child</td><td><code>archive-self</code></td><td>App <code>isArchived</code> in 120 s</td><td>Parent path, then the user</td></tr>
+        <tr><td>Infer an unknown state</td><td>State checker</td><td>Conflict or no state file</td><td>A state-check file</td><td>Stay unknown, user queue</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Where the definitions are</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Definition</th><th>Place</th></tr></thead>
+      <tbody>
+        <tr><td>States, transitions, guards, priorities</td><td><code>Core/Lifecycle/</code> (C#, unit tests)</td></tr>
+        <tr><td>Current state and open request</td><td><code>store/sessions/&lt;id&gt;/state.json</code></td></tr>
+        <tr><td>Timers and the <code>autoArchive</code> flag</td><td><code>store/policy.json</code></td></tr>
+        <tr><td>Notice texts</td><td><code>templates/notice/</code> (stream A)</td></tr>
+        <tr><td>Agent behavior on a notice</td><td><code>plugin/agents/*.md</code>, <code>orch-*</code> skills</td></tr>
+        <tr><td>Fallback agent prompt</td><td><code>plugin/agents/state-checker.md</code> (new)</td></tr>
+      </tbody>
+    </table>
+    </div>
   </section>
 </div>
 
@@ -480,9 +602,10 @@ flowchart TD
     <table>
       <thead><tr><th>Part</th><th>Change</th><th>File</th></tr></thead>
       <tbody>
-        <tr><td>State machine</td><td>Rule records, the order, the transitions table</td><td><code>Core/Lifecycle/</code> (new folder)</td></tr>
-        <tr><td>Fallback</td><td><code>unknown</code>, agent infers, record <code>inferred</code></td><td><code>Supervisor.cs</code>, a read-only agent</td></tr>
-        <tr><td>State event</td><td>Calculate at each tick, event on change</td><td><code>Supervisor/Supervisor.cs</code></td></tr>
+        <tr><td>State machine</td><td>Transitions, guards, priorities, kinds; guard overlap test</td><td><code>Core/Lifecycle/</code> (new folder)</td></tr>
+        <tr><td>State file</td><td><code>state.json</code>, <code>session.state</code> event on change</td><td><code>Supervisor.cs</code>, <code>docs/store.md</code></td></tr>
+        <tr><td>Requested transitions</td><td>Request, actions, commit signals, deadline, escalation</td><td><code>Supervisor.cs</code>, <code>Store/Lifecycle.cs</code></td></tr>
+        <tr><td>Fallback</td><td><code>unknown</code>, <code>state-checker</code> agent, record <code>inferred</code></td><td><code>Supervisor.cs</code>, <code>plugin/agents/state-checker.md</code></td></tr>
         <tr><td>Lease process</td><td>Write process id and start time</td><td><code>plugin/hooks/lease.ts</code>, <code>docs/store.md</code></td></tr>
         <tr><td>Stale check</td><td>Release only when the process is gone</td><td><code>Supervisor.cs</code> <code>ReleaseStaleLease</code></td></tr>
         <tr><td>Stop in the plugin</td><td>No inbox delivery while stopped</td><td><code>plugin/hooks/inbox.ts</code></td></tr>
@@ -491,7 +614,7 @@ flowchart TD
         <tr><td>F5</td><td>Forward at turn end, refuse early <code>done</code></td><td><code>Supervisor.cs</code>, <code>plugin/hooks/tools.ts</code>, skill</td></tr>
         <tr><td>F8</td><td>Parent archive path, sidebar archive watch</td><td><code>Store/Lifecycle.cs</code></td></tr>
         <tr><td>F4</td><td><code>background</code> in the brief, <code>remoteControl</code> in meta, self notice after import</td><td><code>Records.cs</code>, <code>Supervisor.cs</code>, <code>templates/brief</code></td></tr>
-        <tr><td>Timers</td><td>Three lifecycle timers in the policy</td><td><code>config/policy.*.json</code>, <code>Policy.cs</code></td></tr>
+        <tr><td>Policy</td><td>Three lifecycle timers, the <code>autoArchive</code> flag</td><td><code>config/policy.*.json</code>, <code>Policy.cs</code></td></tr>
         <tr><td>API</td><td><code>state</code> and wait reason in <code>GET /api/sessions</code></td><td><code>Api/OrchestratorApi.cs</code></td></tr>
         <tr><td>Live test</td><td>Stale, forgotten, stop and archive in one run</td><td><code>tests/Orchestrator.E2E</code></td></tr>
       </tbody>
@@ -503,7 +626,7 @@ flowchart TD
     <ul>
       <li>No message formats in B1 or B2. Reason: stream A owns them.</li>
       <li>No UI change. Reason: the UI reads the API field in a later step.</li>
-      <li>No automatic archive. Reason: the parent or the user decides, and open PRs need a person.</li>
+      <li>No automatic archive by default. Reason: the parent or the user decides, and open PRs need a person. The <code>autoArchive</code> flag turns it on.</li>
     </ul>
   </section>
 </div>
@@ -511,7 +634,7 @@ flowchart TD
 
 <script>
 (function () {
-  var names = ["overview", "states", "transitions", "messages", "open", "b2"];
+  var names = ["overview", "states", "transitions", "topology", "open", "b2"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "overview";
     names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
