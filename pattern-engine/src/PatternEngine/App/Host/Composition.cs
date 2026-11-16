@@ -28,6 +28,7 @@ public static class Composition
 
         services.AddSingleton<IDomainPack, ShapesPack>();
         services.AddSingleton<IDomainPack, Domains.Circuits.CircuitsPack>();
+        services.AddSingleton<IDomainPack, Domains.Topology.TopologyPack>();
 
         services.AddSingleton<ICaseSource, GeneratorSource>();
         services.AddSingleton<ICaseSource, HandSource>();

@@ -1,3 +1,4 @@
+using PatternEngine.Domains.Blocks;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -18,7 +19,7 @@ public sealed class CircuitsPack : IDomainPack
 
     public string OutputFile => "output.json";
 
-    public IOutputAdapter Adapter { get; } = new CircuitsAdapter();
+    public IOutputAdapter Adapter { get; } = new BlockAdapter("gate", false);
 
     public ILayout Layout { get; } = new CircuitsLayout();
 
@@ -47,7 +48,7 @@ public sealed class BehaviorGrader : IGrader
             return Verdict.Skip;
         }
 
-        if (input.Parsed?.Roots.FirstOrDefault() is not CircuitNode top)
+        if (input.Parsed?.Roots.FirstOrDefault() is not BlockNode top)
         {
             return Verdict.From(["no circuit"]);
         }

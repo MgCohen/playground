@@ -1,0 +1,367 @@
+{
+  "runId": "2026-11-16T05-21-43",
+  "domain": "topology",
+  "engine": "csharp-hybrid",
+  "mode": "dev",
+  "label": "system-recheck",
+  "model": "haiku",
+  "k": 2,
+  "ablate": [],
+  "graders": [
+    "selection",
+    "built",
+    "structure",
+    "rules",
+    "flow",
+    "proposed",
+    "questions"
+  ],
+  "catalog": "f6fc3237a768",
+  "cases": 1,
+  "runs": [
+    {
+      "case": "hand-system-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "group"
+      ],
+      "request": "Design a system where users place orders, read their order history, and get an email for each order.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "parts": [
+            {
+              "p": "command_pipeline"
+            },
+            {
+              "p": "query_handler"
+            },
+            {
+              "p": "observer"
+            }
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "command_pipeline",
+              "v": "plain"
+            },
+            {
+              "p": "query_handler",
+              "v": "plain"
+            },
+            {
+              "p": "observer",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 3,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "cqrs_system": "56c39c70804e",
+            "command_pipeline": "8019f2632f29",
+            "query_handler": "aa16916c94a5",
+            "observer": "0bd02ed5500e"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a system where users place orders, read their order history, and get an email for each order.",
+            "status": "solved",
+            "pattern": "cqrs_system",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2,
+              3
+            ],
+            "open": [],
+            "reason": "The request needs three jobs (change data by placing orders, read data as order history, and react to each order event by sending an email), so the group pattern cqrs_system fits, and no input validation is requested so the plain variant applies."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "command_pipeline: users place orders",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "Placing an order changes data in steps when a user sends the request, and the request names no input check, so the plain variant applies; the query_handler exclusion does not apply because the request saves data."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "query_handler: users read their order history",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request only reads order history and returns it to users, which matches query_handler's use_when; command_pipeline is excluded because nothing is changed or saved, and observer does not apply since no parts react to an event."
+          },
+          {
+            "id": 3,
+            "parent": 0,
+            "depth": 1,
+            "text": "observer: get an email for each order",
+            "status": "solved",
+            "pattern": "observer",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request is a separate reaction to each order event, such as sending an email, which matches the observer's use_when, and no exclusion applies."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 21912,
+        "Cost": 0.00308654,
+        "Calls": 7,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-system-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "group"
+      ],
+      "request": "Design a system where users place orders, read their order history, and get an email for each order.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "parts": [
+            {
+              "p": "command_pipeline"
+            },
+            {
+              "p": "query_handler"
+            },
+            {
+              "p": "observer"
+            }
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "command_pipeline",
+              "v": "plain"
+            },
+            {
+              "p": "query_handler",
+              "v": "plain"
+            },
+            {
+              "p": "observer",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 3,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "cqrs_system": "56c39c70804e",
+            "command_pipeline": "8019f2632f29",
+            "query_handler": "aa16916c94a5",
+            "observer": "0bd02ed5500e"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a system where users place orders, read their order history, and get an email for each order.",
+            "status": "solved",
+            "pattern": "cqrs_system",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2,
+              3
+            ],
+            "open": [],
+            "reason": "The request needs three jobs (placing orders changes data, reading order history reads data, and emailing for each order reacts to events), which matches the group pattern for two or more jobs, and no exclusion applies."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "command_pipeline: users place orders",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "Placing an order changes data in steps when a user sends a request, which matches command_pipeline; the request names no input check, so the plain variant applies, and the other candidates (query_handler reads only, observer reacts to events) do not fit."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "query_handler: users read their order history",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request only reads order history and returns it as a view, which matches query_handler's use_when, and it changes no data, so command_pipeline's exclusion does not apply."
+          },
+          {
+            "id": 3,
+            "parent": 0,
+            "depth": 1,
+            "text": "observer: get an email for each order",
+            "status": "solved",
+            "pattern": "observer",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request names the observer pattern and asks for an email to be produced for each order, which is a separate part reacting to an order event; \"get\" could also suggest a read, but the explicit observer label and the per-order email action fit observer better, and no do_not_use_when rule excludes it."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 22829,
+        "Cost": 0.0033172400000000004,
+        "Calls": 7,
+        "Escalations": 0,
+        "Error": null
+      }
+    }
+  ]
+}

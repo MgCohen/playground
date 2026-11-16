@@ -84,7 +84,22 @@ public sealed class GeneratorSource : ICaseSource
                 var gv = g.Variants[0];
                 var childTypes = g.PartsFor(gv.Id).Select(pt => catalog.Get(pt.Ref)).Where(p => p is { Kind: PatternKind.Object, Status: not PatternStatus.Proposed }).Select(p => p!).ToList();
                 var n = 2 + rand.Index(settings.MaxChildren - 1);
-                var kids = Enumerable.Range(0, n).Select(_ => Instance(childTypes[rand.Index(childTypes.Count)], rand)).ToList();
+                var max = g.PartsFor(gv.Id).ToDictionary(pt => pt.Ref, pt => PartCount.Parse(pt.Count).Max, StringComparer.Ordinal);
+                var used = new Dictionary<string, int>(StringComparer.Ordinal);
+                var kids = new List<(TreeNode Tree, string Text)>();
+                for (var i = 0; i < n; i++)
+                {
+                    // A child type that reached its maximum count is not chosen again, so the expected tree is valid.
+                    var open = childTypes.Where(p => used.GetValueOrDefault(p.Id) < max[p.Id]).ToList();
+                    if (open.Count == 0)
+                    {
+                        break;
+                    }
+
+                    var type = open[rand.Index(open.Count)];
+                    used[type.Id] = used.GetValueOrDefault(type.Id) + 1;
+                    kids.Add(Instance(type, rand));
+                }
                 request = settings.Templates.Group.Replace("{group}", g.Phrase, StringComparison.Ordinal).Replace("{list}", JoinList(kids.Select(k => k.Text).ToList()), StringComparison.Ordinal);
                 tree = new TreeNode { P = g.Id, V = gv.Id, Parts = kids.Select(k => k.Tree).ToList() };
                 tags = ["generated", "group", n >= 4 ? "deep" : "medium"];

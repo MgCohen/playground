@@ -134,6 +134,11 @@ public static partial class DecideStep
             return $"pattern \"{d.Pattern}\" is not allowed here";
         }
 
+        if (OverCount(s, n, p.Id) is { } limit)
+        {
+            return limit;
+        }
+
         n.Status = d.Status == Decision.Partial && d.Open.Count > 0 ? NodeStatus.Partial : NodeStatus.Solved;
         n.Pattern = p.Id;
         var variants = p.VariantIds.ToList();
@@ -171,6 +176,39 @@ public static partial class DecideStep
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The part count of the parent pattern: a child decision that makes more parts of one pattern than the parent allows is not allowed.
+    /// The check and the claim are one step, so two children decided at the same time cannot both take the last place.
+    /// </summary>
+    private static string? OverCount(SolveContext s, WorkNode n, string pattern)
+    {
+        if (n.FromOpen || n.Parent is not { } parentId)
+        {
+            return null;
+        }
+
+        var parent = s.Nodes[parentId];
+        var spec = s.Catalog.Get(parent.Pattern ?? string.Empty)?.PartsFor(parent.Variant).FirstOrDefault(pt => pt.Ref == pattern);
+        if (spec is null)
+        {
+            return null;
+        }
+
+        var max = PartCount.Parse(spec.Count).Max;
+        lock (parent)
+        {
+            var taken = parent.Children.Select(i => s.Nodes[i]).Count(k => k != n && !k.FromOpen && k.Pattern == pattern && k.Status is NodeStatus.Solved or NodeStatus.Partial or NodeStatus.Asking);
+            if (taken >= max)
+            {
+                return $"\"{parent.Pattern}\" allows at most {spec.Count} \"{pattern}\" parts, and {taken} are already decided";
+            }
+
+            n.Pattern = pattern;
+            n.Status = NodeStatus.Solved;
+            return null;
+        }
     }
 
     public static string CleanId(string? id)

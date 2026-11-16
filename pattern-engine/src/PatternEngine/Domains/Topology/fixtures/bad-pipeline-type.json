@@ -1,0 +1,3 @@
+{ "p": "command_pipeline", "v": "plain",
+  "parts": [ { "id": "in", "p": "endpoint" }, { "id": "run", "p": "handler" }, { "id": "save", "p": "event_store" } ],
+  "wires": [ ["request", "in.request"], ["in.command", "run.command"], ["run.event", "save.event"], ["in.command", "event"] ] }

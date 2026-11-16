@@ -1,3 +1,4 @@
+using PatternEngine.Domains.Blocks;
 using PatternEngine.Domains.Circuits;
 using PatternEngine.Features.Cases.Domain.Shared;
 using PatternEngine.Features.Catalog.Domain;
@@ -32,14 +33,14 @@ public sealed class CircuitsTests
     public void Each_reference_circuit_has_the_right_truth_table(string id)
     {
         var parsed = Pack.Adapter.Parse(new CircuitsReference().Render(new TreeNode { P = id }, Catalog)!);
-        Assert.That(BehaviorSpec.All[id].Check((CircuitNode)parsed.Roots[0], Catalog), Is.Empty);
+        Assert.That(BehaviorSpec.All[id].Check((BlockNode)parsed.Roots[0], Catalog), Is.Empty);
     }
 
     [Test]
     public void The_simulator_runs_nested_blocks()
     {
         var parsed = Pack.Adapter.Parse(new CircuitsReference().Render(new TreeNode { P = "full_adder" }, Catalog)!);
-        var outputs = Simulator.Run((CircuitNode)parsed.Roots[0], Catalog, new Dictionary<string, bool> { ["a"] = true, ["b"] = true, ["cin"] = true });
+        var outputs = Simulator.Run((BlockNode)parsed.Roots[0], Catalog, new Dictionary<string, bool> { ["a"] = true, ["b"] = true, ["cin"] = true });
         Assert.That(outputs["sum"], Is.True);
         Assert.That(outputs["cout"], Is.True);
     }

@@ -1,3 +1,4 @@
+using PatternEngine.Domains.Blocks;
 using PatternEngine.Features.Catalog.Domain.Shared;
 
 namespace PatternEngine.Domains.Circuits;
@@ -5,7 +6,7 @@ namespace PatternEngine.Domains.Circuits;
 /// <summary>Runs a circuit on input bits. A block is evaluated from its wires; a gate computes its output.</summary>
 public static class Simulator
 {
-    public static IReadOnlyDictionary<string, bool> Run(CircuitNode n, PatternCatalog catalog, IReadOnlyDictionary<string, bool> inputs)
+    public static IReadOnlyDictionary<string, bool> Run(BlockNode n, PatternCatalog catalog, IReadOnlyDictionary<string, bool> inputs)
     {
         if (n.Children.Count == 0 && n.Wires.Count == 0)
         {
@@ -20,7 +21,7 @@ public static class Simulator
             Propagate(n, values);
             foreach (var part in parts.Where(p => !done.Contains(p.Id!)))
             {
-                var (pi, _) = CircuitsAdapter.Ports(part, catalog);
+                var (pi, _) = BlockAdapter.Ports(part, catalog);
                 if (pi.All(x => values.ContainsKey($"{part.Id}.{x}")))
                 {
                     var outputs = Run(part, catalog, pi.ToDictionary(x => x, x => values[$"{part.Id}.{x}"], StringComparer.Ordinal));
@@ -35,7 +36,7 @@ public static class Simulator
         }
 
         Propagate(n, values);
-        var (_, outs) = CircuitsAdapter.Ports(n, catalog);
+        var (_, outs) = BlockAdapter.Ports(n, catalog);
         var missing = outs.Where(o => !values.ContainsKey(o)).ToList();
         if (missing.Count > 0)
         {
@@ -45,37 +46,7 @@ public static class Simulator
         return outs.ToDictionary(o => o, o => values[o], StringComparer.Ordinal);
     }
 
-    public static bool HasLoop(CircuitNode n)
-    {
-        var edges = n.Wires.Where(w => w.From.Contains('.') && w.To.Contains('.'))
-            .Select(w => (From: w.From.Split('.')[0], To: w.To.Split('.')[0])).ToList();
-        var state = new Dictionary<string, int>(StringComparer.Ordinal);
-        bool Visit(string id)
-        {
-            if (state.GetValueOrDefault(id) == 1)
-            {
-                return true;
-            }
-
-            if (state.GetValueOrDefault(id) == 2)
-            {
-                return false;
-            }
-
-            state[id] = 1;
-            if (edges.Where(e => e.From == id).Any(e => Visit(e.To)))
-            {
-                return true;
-            }
-
-            state[id] = 2;
-            return false;
-        }
-
-        return n.Parts.Where(p => p.Id is not null).Any(p => Visit(p.Id!));
-    }
-
-    private static void Propagate(CircuitNode n, Dictionary<string, bool> values)
+    private static void Propagate(BlockNode n, Dictionary<string, bool> values)
     {
         foreach (var (from, to) in n.Wires)
         {
@@ -119,9 +90,9 @@ public sealed record BehaviorSpec(string Id, IReadOnlyList<string> Inputs, IRead
     }.ToDictionary(s => s.Id, StringComparer.Ordinal);
 
     /// <summary>The failures of a circuit against this behavior, for each row of the truth table.</summary>
-    public IReadOnlyList<string> Check(CircuitNode top, PatternCatalog catalog)
+    public IReadOnlyList<string> Check(BlockNode top, PatternCatalog catalog)
     {
-        var (inputs, outputs) = CircuitsAdapter.Ports(top, catalog);
+        var (inputs, outputs) = BlockAdapter.Ports(top, catalog);
         var missing = Inputs.Except(inputs).Concat(Outputs.Except(outputs)).ToList();
         if (missing.Count > 0)
         {

@@ -3,10 +3,10 @@ using System.Text.Json.Nodes;
 using PatternEngine.Features.Catalog.Domain.Shared;
 using PatternEngine.Features.Packs.Domain.Shared;
 
-namespace PatternEngine.Domains.Circuits;
+namespace PatternEngine.Domains.Blocks;
 
-/// <summary>One block or gate of a circuit. Ports come from the pattern, or from the block itself for a new pattern.</summary>
-public sealed class CircuitNode(string pattern, string? variant, string? id) : OutputNode(pattern, variant)
+/// <summary>One block or leaf. Ports come from the pattern, or from the block itself for a new pattern.</summary>
+public sealed class BlockNode(string pattern, string? variant, string? id) : OutputNode(pattern, variant)
 {
     public string? Id { get; } = id;
 
@@ -16,11 +16,14 @@ public sealed class CircuitNode(string pattern, string? variant, string? id) : O
 
     public List<string> DeclaredOutputs { get; } = [];
 
-    public IEnumerable<CircuitNode> Parts => Children.OfType<CircuitNode>();
+    public IEnumerable<BlockNode> Parts => Children.OfType<BlockNode>();
 }
 
-/// <summary>Reads circuits written as JSON blocks. Code checks the wiring, so an agent cannot leave a port open or make a loop.</summary>
-public sealed class CircuitsAdapter : IOutputAdapter
+/// <summary>
+/// Reads JSON blocks: a pattern instance with parts and wires between typed ports. Code checks the wiring, so an agent cannot leave
+/// a port open, drive a port two times or make a loop. With typed set, each wire must join two ports of the same type.
+/// </summary>
+public sealed class BlockAdapter(string primitive, bool typed) : IOutputAdapter
 {
     public ParsedOutput Parse(string text)
     {
@@ -44,7 +47,7 @@ public sealed class CircuitsAdapter : IOutputAdapter
     public IReadOnlyList<string> Lint(ParsedOutput parsed)
     {
         var failures = new List<string>();
-        void Walk(CircuitNode n, string where)
+        void Walk(BlockNode n, string where)
         {
             var here = where.Length > 0 ? $"{where} > {n.Id ?? n.Pattern}" : n.Pattern;
             foreach (var dup in n.Parts.GroupBy(p => p.Id).Where(g => g.Key is null || g.Count() > 1))
@@ -58,7 +61,7 @@ public sealed class CircuitsAdapter : IOutputAdapter
             }
         }
 
-        foreach (var r in parsed.Roots.OfType<CircuitNode>())
+        foreach (var r in parsed.Roots.OfType<BlockNode>())
         {
             Walk(r, string.Empty);
         }
@@ -68,16 +71,16 @@ public sealed class CircuitsAdapter : IOutputAdapter
 
     public IReadOnlyList<string> CheckLeaf(OutputNode node, Pattern leaf)
     {
-        var n = (CircuitNode)node;
+        var n = (BlockNode)node;
         var messages = new List<string>();
-        if (leaf.Primitive != "gate")
+        if (leaf.Primitive != primitive)
         {
-            messages.Add($"a leaf of this domain is a gate, got \"{leaf.Primitive}\"");
+            messages.Add($"a leaf of this domain is a {primitive}, got \"{leaf.Primitive}\"");
         }
 
         if (n.Wires.Count > 0 || n.Children.Count > 0)
         {
-            messages.Add("a gate has no parts and no wires");
+            messages.Add($"a {primitive} has no parts and no wires");
         }
 
         return messages;
@@ -86,13 +89,82 @@ public sealed class CircuitsAdapter : IOutputAdapter
     /// <summary>The wiring check of one block, then the asserts of the pattern (none in this pack yet).</summary>
     public IReadOnlyList<AssertResult> Assert(OutputNode node, Pattern pattern, PatternCatalog catalog)
     {
-        var problems = Wiring((CircuitNode)node, catalog);
+        var problems = Wiring((BlockNode)node, catalog, typed);
         return [new AssertResult("wiring", problems.Count == 0, string.Join("; ", problems.Take(3)))];
     }
 
     public string? ReadParam(OutputNode node, ParamDef param) => null;
 
-    public static (IReadOnlyList<string> Inputs, IReadOnlyList<string> Outputs) Ports(CircuitNode n, PatternCatalog catalog)
+    /// <summary>The type of each port that a wire can name in a block: its own ports and the ports of its parts. Unknown ports have no type.</summary>
+    public static Dictionary<string, string> PortTypes(BlockNode n, PatternCatalog catalog)
+    {
+        var types = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (catalog.Get(n.Pattern) is { } own)
+        {
+            foreach (var port in own.Inputs.Concat(own.Outputs))
+            {
+                types[port.Name] = port.Type;
+            }
+        }
+
+        foreach (var part in n.Parts.Where(p => p.Id is not null))
+        {
+            if (catalog.Get(part.Pattern) is { } p)
+            {
+                foreach (var port in p.Inputs.Concat(p.Outputs))
+                {
+                    types[$"{part.Id}.{port.Name}"] = port.Type;
+                }
+            }
+        }
+
+        return types;
+    }
+
+    public static IEnumerable<string> TypeErrors(BlockNode n, PatternCatalog catalog)
+    {
+        var types = PortTypes(n, catalog);
+        foreach (var (from, to) in n.Wires)
+        {
+            if (types.TryGetValue(from, out var a) && types.TryGetValue(to, out var b) && a != b)
+            {
+                yield return $"wire {from} -> {to} joins a {a} to a {b}";
+            }
+        }
+    }
+
+    /// <summary>True if the wires between the parts of a block make a loop.</summary>
+    public static bool HasLoop(BlockNode n)
+    {
+        var edges = n.Wires.Where(w => w.From.Contains('.') && w.To.Contains('.'))
+            .Select(w => (From: w.From.Split('.')[0], To: w.To.Split('.')[0])).ToList();
+        var state = new Dictionary<string, int>(StringComparer.Ordinal);
+        bool Visit(string id)
+        {
+            if (state.GetValueOrDefault(id) == 1)
+            {
+                return true;
+            }
+
+            if (state.GetValueOrDefault(id) == 2)
+            {
+                return false;
+            }
+
+            state[id] = 1;
+            if (edges.Where(e => e.From == id).Any(e => Visit(e.To)))
+            {
+                return true;
+            }
+
+            state[id] = 2;
+            return false;
+        }
+
+        return n.Parts.Where(p => p.Id is not null).Any(p => Visit(p.Id!));
+    }
+
+    public static (IReadOnlyList<string> Inputs, IReadOnlyList<string> Outputs) Ports(BlockNode n, PatternCatalog catalog)
     {
         var p = catalog.Get(n.Pattern);
         var inputs = p is { Inputs.Count: > 0 } ? p.Inputs.Select(x => x.Name).ToList() : n.DeclaredInputs;
@@ -100,7 +172,7 @@ public sealed class CircuitsAdapter : IOutputAdapter
         return (inputs, outputs);
     }
 
-    public static IReadOnlyList<string> Wiring(CircuitNode n, PatternCatalog catalog)
+    public static IReadOnlyList<string> Wiring(BlockNode n, PatternCatalog catalog, bool typed = false)
     {
         var problems = new List<string>();
         var (inputs, outputs) = Ports(n, catalog);
@@ -146,7 +218,12 @@ public sealed class CircuitsAdapter : IOutputAdapter
             }
         }
 
-        if (problems.Count == 0 && Simulator.HasLoop(n))
+        if (typed)
+        {
+            problems.AddRange(TypeErrors(n, catalog));
+        }
+
+        if (problems.Count == 0 && HasLoop(n))
         {
             problems.Add("the wires make a loop");
         }
@@ -154,7 +231,7 @@ public sealed class CircuitsAdapter : IOutputAdapter
         return problems;
     }
 
-    private static CircuitNode Read(JsonObject o, List<string> errors)
+    private static BlockNode Read(JsonObject o, List<string> errors)
     {
         var p = o["p"]?.GetValue<string>() ?? string.Empty;
         if (p.Length == 0)
@@ -162,7 +239,7 @@ public sealed class CircuitsAdapter : IOutputAdapter
             errors.Add("a block has no \"p\"");
         }
 
-        var node = new CircuitNode(p, o["v"]?.GetValue<string>(), o["id"]?.GetValue<string>());
+        var node = new BlockNode(p, o["v"]?.GetValue<string>(), o["id"]?.GetValue<string>());
         node.DeclaredInputs.AddRange(Names(o["inputs"]));
         node.DeclaredOutputs.AddRange(Names(o["outputs"]));
         foreach (var part in (o["parts"] as JsonArray ?? []).OfType<JsonObject>())
