@@ -430,6 +430,7 @@ Rules of the vsa-template work that the M5 stream must obey:
 | Delete the old folder `Projects/claude-orchestrator`? It also holds a stray `session-orchestrator/` subfolder with copied type files | Yes, after the next app restart, when the user says so |
 | Which vsa-template stream runs first in M5? | Ask the user at the M5 start. Use the stable roadmap of vsa-template |
 | Does a Cloudflare account with a domain exist for the tunnel? | The user decided: Cloudflare, as the last step. Until then, local tests on this PC only |
+| Which skills and agents does each kind of session get? The supervisor sessions may need other skills than the chat sessions | Discuss with the user. Today all sessions load all of `plugin/` (user review, 2026-11-16) |
 
 ### Known gaps
 
