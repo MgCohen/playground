@@ -1,23 +1,28 @@
 # Pattern engine: instructions for agents
 
-Read `README.md` first. It has the layout, the commands, the adapter contract and the settings.
+Read `README.md` first, then `docs/design/`.
+
+## Layout
+
+| Path | Content |
+|---|---|
+| `src/`, `tests/`, `PatternEngine.slnx` | The C# engine (in progress). See `docs/design/architecture.md` |
+| `docs/design/` | Features, architecture, plan, decisions |
+| `docs/pages/`, `docs/research/` | Explainer page sources and research |
+| `spike/` | The Node spike. Parity reference for `shapes`. See `spike/README.md` |
 
 ## Rules
 
 - Keep all files of this project in this folder.
-- Put values in `eval.config.yaml`, not in code: run modes, targets, grader-test settings.
-- The core (`core/`) must not know a domain. Put subject logic in `domains/<name>/`.
-- Two harnesses: `harnesses/modular/` (an agent session) and `harnesses/solver/` (code-led). The monolith harness is removed; old results still name it.
-- Do not edit the agent files of a harness to make one case pass. Fix the pattern, the case or the graders.
+- Follow the layout of the VSA framework (`Features/<Feature>/Slices/<Slice>/`, `<Name>Command`, `<Name>Result`, `<Name>Handler`), but do not reference VSA.Sdk or VSA packages.
+- Put values in the settings file, not in code: modes, targets, limits, triggers.
+- The core must not know a domain. Put subject code and data in `src/PatternEngine/Domains/<Name>/`.
+- An agent call uses an agent file with `tools: StructuredOutput` and `output_schema`. Do not use `--bare`.
+- Do not edit an agent file to make one case pass. Fix the pattern, the case or the graders.
+- Do not change `spike/` except to keep it working as the reference.
 
 ## Before you report a change
 
-1. Run `node core/graph/build.mjs shapes`. Fix each error.
-2. Run `node core/eval/self-test.mjs shapes`. All grader checks must pass.
-3. If a pattern or an assert changed, run `node core/eval/regrade.mjs results/<run>.json` on the last full run.
-4. Test with `--mode smoke` or `--mode dev`. Run `--mode full` only when the user asks for a validation.
-
-## Docs
-
-- `docs/pages/`: the sources of the explainer pages (design, spike).
-- `docs/research/`: the research reports and notes behind the design.
+1. Run `dotnet test`. All tests must pass.
+2. If a phase has a parity test against the spike, run it.
+3. Test agents with small runs (`--mode smoke` or `--mode dev`). Run `--mode full` only when the user asks for a validation.

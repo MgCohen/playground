@@ -14,5 +14,5 @@ A repository for small tools, spikes and experiments. Each project is one folder
 
 | Folder | Content |
 |---|---|
-| `pattern-engine/` | A generic engine for patterns, composition and evaluation. First domain: `shapes` |
+| `pattern-engine/` | A generic engine for patterns, composition and evaluation. C# engine in progress; Node spike in `spike/` |
 | `session-orchestrator/` | A local supervisor for many Claude Code sessions: one writer for each session, free-text decisions, stacked default PRs |

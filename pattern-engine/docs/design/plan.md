@@ -2,41 +2,47 @@
 
 [← Design index](README.md)
 
-The plan has two stages. Stage 1 closes the open design points in the Node spike, because there they are cheap to try. Stage 2 ports the proven design to C#, with parity tests against the spike. Each phase ends with tests that must pass.
+The engine is built in C# from now on. It uses the layout of the VSA framework without VSA.Sdk (see [architecture.md](architecture.md)). The Node spike in `spike/` stays as the parity reference for `shapes`. Each phase ends with tests that must pass.
 
 ```mermaid
 flowchart LR
-    A1[A1 Ask cases] --> A2[A2 Escalation]
-    A2 --> A3[A3 Second domain]
-    A3 --> D{Design fixed}
-    D --> B1[B1 Contracts + catalog]
-    B1 --> B2[B2 Pack + grader trust]
-    B2 --> B3[B3 Engine]
-    B3 --> B4[B4 Runner + report]
-    B4 --> B5[B5 Review]
+    P0[P0 Skeleton] --> P1[P1 Catalog]
+    P1 --> P2[P2 Shapes + grader trust]
+    P2 --> P3[P3 Engine core]
+    P3 --> P4[P4 Eval + report]
+    P4 --> P5[P5 Questions]
+    P5 --> D{Design step: map of code and agents}
+    D --> P6[P6 Escalation + author]
+    P6 --> P7[P7 Circuits]
+    P7 --> P8[P8 Trial metrics]
+    P8 --> P9[P9 Review]
+    P9 --> P10[P10 Software topology]
 ```
 
-## Stage 1: Node spike
+## Phases
 
 | Phase | Work | Exit tests |
 |---|---|---|
-| A1 Ask cases | Outcome `ask` in cases, trace and graders; 3 hand cases: unclear, outside the domain, two equal patterns | Grader self-test covers `ask`; the solver fails the 3 cases (baseline) |
-| A2 Escalation | Triggers as settings; an escalation agent file with tools; the engine flow in [architecture.md](architecture.md) | Smoke run: the 3 ask cases pass; normal cases keep their score and cost |
-| A3 Second domain | A pack for logic or topology problems: patterns, adapter, reference, mutations, layout, review | Self-test passes; a dev run works; a list of each core change that the pack needed |
+| P0 Skeleton | Solution, app project, test project (NUnit), `Result` and `Error`, settings file, `IJudge` with `ScriptedJudge` | `pe --help` runs; one test passes |
+| P1 Catalog | Pattern records with typed `inputs` and `outputs`; loader, validator, index; catalog and pattern hashes | A unit test for each validator rule; the same index as the spike for `shapes` |
+| P2 Shapes + grader trust | `shapes` adapter, reference, operators; the five graders; regrade | References and mutations give the same counts as the spike; regrade of stored outputs gives the same verdicts |
+| P3 Engine core | Work queue, node states, `partial` with open requirements, compose and check loop, limits for each node and each run, stop reasons, trace; `CliJudge` (no `--bare`) | Scripted judge: loop, recursion, retries, limits and trace with no model; one smoke run with the CLI judge |
+| P4 Eval + report | Case generator, hand cases, runner (modes, sandbox, concurrency), report, targets | The same case list as the spike for the same seed; a dev run meets the targets |
+| P5 Questions | Typed pattern inputs make questions; cases with hidden facts; simulated user; question graders | Scripted tests for needed, extra and used answers; a smoke run on 3 ask cases |
+| Design step | With the owner: the map of code and agents, who starts whom | The owner approves the map |
+| P6 Escalation + author | Escalation agent with triggers as settings; author agent with the authoring guide; novelty check | Smoke run: unclear cases resolve or ask; no-fit cases get a valid proposed pattern; normal cases keep their score and cost |
+| P7 Circuits | Pack for logic circuits: blocks with typed ports, simulator, truth-table grader, mutations | Self-test passes; a dev run works; a list of each core change that the pack needed |
+| P8 Trial metrics | Metrics for each `trial` pattern from all results; notification at the thresholds; `pe promote` | Scripted results reach each threshold and give the notification |
+| P9 Review | Review page from result files, with notes | Browser check at phone and desktop width, light and dark |
+| P10 Software topology | Pack of design patterns with typed input and output; data-flow simulation | Self-test passes; a dev run works |
 
-Each run in stage 1 is small: about 5 cases, k=1 or 2, Haiku.
+Each eval run in a phase is small: about 5 cases, k=1 or 2, Haiku.
 
-## Stage 2: C# core
+## Points to test during the work
 
-One .NET solution. The Node spike stays as the reference until each phase has parity.
-
-| Phase | Work | Exit tests |
-|---|---|---|
-| B1 Contracts + catalog | Records for pattern, case, trace, run result; loader, validator, index | A unit test for each validator rule; same index as Node for `shapes` |
-| B2 Pack + grader trust | `shapes` adapter, reference, operators; graders; regrade | References and mutations: same counts as Node; regrade of stored outputs gives the same verdicts |
-| B3 Engine | Work queue, node states, escalation; `IJudge` with a scripted judge and a CLI judge that reads agent files | Scripted judge: loop, recursion, retries and trace with no model; smoke run with the CLI judge |
-| B4 Runner + report | Modes, sandbox, concurrency, targets, case generator | Same case list as Node for the same seed; dev run meets targets |
-| B5 Review | Page builder from result files | Browser check at phone and desktop width |
+- **CLI judge:** do not use `--bare`. It ignores the subscription login. If `-p` makes bare mode the default, turn it off.
+- **Persistent CLI process:** test if a `stream-json` process keeps `--agent` and `--json-schema` for each message. Use it only if the context does not carry over between agent calls.
+- **Parity of the case generator:** the same seed must give the same cases, so port the random number generator of the spike exactly.
 
 ## Test types
 

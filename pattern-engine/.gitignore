@@ -1,4 +1,7 @@
-node_modules/
-results/runs/
-results/review/
-domains/*/build/
+spike/node_modules/
+spike/results/runs/
+spike/results/review/
+spike/domains/*/build/
+bin/
+obj/
+TestResults/

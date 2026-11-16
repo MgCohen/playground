@@ -1,6 +1,6 @@
 # Pattern engine: design
 
-The pattern engine turns a request into an output with a catalog of patterns, and measures how well it does that. It has 11 features. The spikes show that each feature works on the `shapes` domain, and they found blind spots in 6 of them. The target design is a code-led engine with an agent on call for exceptions, a C# core, and a second domain to prove that the core is generic.
+The pattern engine turns a request into an output with a catalog of patterns, and measures how well it does that. It has 11 features. The spikes show that each feature works on the `shapes` domain, and they found blind spots in 6 of them. The target design is a modular hybrid engine in C#: code owns the loop, and agent calls make the judgments. Two more domains (logic circuits, then software topology) prove that the core is generic.
 
 ## The features and their state
 
@@ -43,6 +43,6 @@ flowchart LR
 | [features.md](features.md) | Each feature: purpose, state, tests, findings, pending tests |
 | [architecture.md](architecture.md) | The target components, flows and contracts |
 | [plan.md](plan.md) | The code plan in phases, each with its exit tests |
-| [open-questions.md](open-questions.md) | The open questions and the non-goals |
+| [open-questions.md](open-questions.md) | The decisions, the open questions and the non-goals |
 
 The explainer pages are in [../pages/](../pages/). The research is in [../research/](../research/).
