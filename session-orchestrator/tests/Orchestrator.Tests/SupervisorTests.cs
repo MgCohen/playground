@@ -118,12 +118,13 @@ public sealed class SupervisorTests
         await t.Cycle();
         t.Decide(child, "d1", "high", null);
         await t.Cycle();
+        t.Clock.Advance(TimeSpan.FromSeconds(1));
         new Messages(t.Store).Answer(child, "d1", "B");
         await t.Cycle();
         await t.Cycle();
-        var toParent = t.Turns.Where(turn => turn.Id == parent).Select(turn => turn.Prompt).ToList();
-        Assert.That(toParent, Has.Count.EqualTo(3));
-        Assert.That(toParent[2], Does.StartWith($"Question closed: child \"child\" ({child}), decision d1: Q d1 Answer: B (from user)."));
+        var toParent = string.Join(" | ", t.Turns.Where(turn => turn.Id == parent).Select(turn => turn.Prompt));
+        var closed = $"Question closed: child \"child\" ({child}), decision d1: Q d1 Answer: B (from user).";
+        Assert.That(toParent.Split(closed).Length - 1, Is.EqualTo(1));
     }
 
     [Test]

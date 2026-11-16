@@ -8,6 +8,9 @@ public static class AppRecords
 
     public static bool Exists(string appId) => Find(appId) is not null;
 
+    public static bool IsArchived(string appId) =>
+        Find(appId) is { } path && System.Text.RegularExpressions.Regex.IsMatch(File.ReadAllText(path), "\"isArchived\"\\s*:\\s*true");
+
     public static string? Find(string appId)
     {
         if (Root is not { } root || !Directory.Exists(root)) return null;

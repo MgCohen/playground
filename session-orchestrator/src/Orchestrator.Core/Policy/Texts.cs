@@ -34,6 +34,8 @@ public sealed class Texts(TemplateSet templates)
     public string QuestionClosed(string title, string id, Decision decision, string answer, string by) =>
         Notice("question-closed", ("title", title), ("child", id), ("decision", decision.Id), ("question", decision.Question ?? "(no question text)"), ("text", answer), ("by", by));
 
+    public string ArchiveSelf() => Notice("archive-self");
+
     public string Blocked(int count, string error) => Notice("blocked", ("count", (double)count), ("error", error));
 
     public string Notice(string kind, params (string Key, object? Value)[] fields)

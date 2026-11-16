@@ -161,6 +161,25 @@ public sealed class Lifecycle(FileStore store)
         return true;
     }
 
+    public IReadOnlyList<string> ArchiveInApp(IReadOnlyList<string> ids, TimeSpan wait, TimeSpan? poll = null)
+    {
+        var asked = new List<(string Id, string AppId)>();
+        foreach (var id in ids)
+        {
+            if (store.Meta(id).AppId is not { } appId || !store.IsLive(id, store.Clock.GetUtcNow()) || AppRecords.IsArchived(appId)) continue;
+            store.Send(id, store.Texts.ArchiveSelf(), Parties.Supervisor);
+            asked.Add((id, appId));
+        }
+        var end = DateTime.UtcNow + wait;
+        while (asked.Any(a => !AppRecords.IsArchived(a.AppId)) && DateTime.UtcNow < end) Thread.Sleep(poll ?? TimeSpan.FromSeconds(1));
+        return [.. asked.Select(a => AppRecords.IsArchived(a.AppId)
+            ? $"The app archived {a.Id[..Math.Min(8, a.Id.Length)]} (the session archived itself)."
+            : $"The app still shows {a.Id[..Math.Min(8, a.Id.Length)]}: it did not archive itself in {wait.TotalSeconds:0} s. Archive it from the sidebar.")];
+    }
+
+    public IReadOnlyList<string> TreeOf(string id) =>
+        [.. store.AllSessions().Where(s => store.Meta(s).Parent == id && Control(s).State != ControlStates.Archived).SelectMany(TreeOf), id];
+
     public IReadOnlyList<string> ArchiveTree(string id, string by, bool force)
     {
         var lines = new List<string>();
