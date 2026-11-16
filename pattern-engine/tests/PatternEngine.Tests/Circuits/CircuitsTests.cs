@@ -21,6 +21,24 @@ public sealed class CircuitsTests
     private static readonly CircuitsPack Pack = new();
 
     [Test]
+    public void A_latch_is_a_loop_that_settles()
+    {
+        // An SR latch: q = not(r or qn), qn = not(s or q).
+        var latch = (BlockNode)Pack.Adapter.Parse("""{ "p": "latch", "v": "plain", "inputs": ["s", "r"], "outputs": ["q"], "parts": [ { "id": "o1", "p": "or" }, { "id": "n1", "p": "not" }, { "id": "o2", "p": "or" }, { "id": "n2", "p": "not" } ], "wires": [ ["r", "o1.a"], ["n2.y", "o1.b"], ["o1.y", "n1.a"], ["s", "o2.a"], ["n1.y", "o2.b"], ["o2.y", "n2.a"], ["n1.y", "q"] ] }""").Roots[0];
+        Assert.That(BlockAdapter.Wiring(latch, Catalog), Is.Empty);
+        Assert.That(BlockAdapter.HasLoop(latch), Is.True);
+        Assert.That(Simulator.Run(latch, Catalog, new Dictionary<string, bool> { ["s"] = true, ["r"] = false })["q"], Is.True);
+        Assert.That(Simulator.Run(latch, Catalog, new Dictionary<string, bool> { ["s"] = false, ["r"] = true })["q"], Is.False);
+    }
+
+    [Test]
+    public void A_loop_that_never_settles_fails()
+    {
+        var ring = (BlockNode)Pack.Adapter.Parse("""{ "p": "ring", "v": "plain", "inputs": [], "outputs": ["y"], "parts": [ { "id": "n1", "p": "not" } ], "wires": [ ["n1.y", "n1.a"], ["n1.y", "y"] ] }""").Roots[0];
+        Assert.That(() => Simulator.Run(ring, Catalog, new Dictionary<string, bool>()), Throws.InvalidOperationException.With.Message.Contains("does not settle"));
+    }
+
+    [Test]
     public void The_catalog_has_no_errors()
     {
         Assert.That(CatalogRules.Validate(Catalog).Where(f => f.Severity == Severity.Error), Is.Empty);

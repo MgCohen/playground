@@ -178,7 +178,7 @@ public static class CircuitsMutations
             gate["p"] = "nand";
             return true;
         })),
-        new MutationOperator("loop", ["structure"], "Wire the output of a gate back into its own input", i => Edit(i.Output, root =>
+        new MutationOperator("loop", ["behavior"], "Wire the output of a gate back into its own input: a loop is allowed, but the truth table is wrong", i => Edit(i.Output, root =>
         {
             var wires = root["wires"] as JsonArray;
             var target = wires?.OfType<JsonArray>().FirstOrDefault(w => w[0]!.ToString().Contains('.') && w[1]!.ToString().Contains('.'));

@@ -21,9 +21,9 @@ public sealed class BlockNode(string pattern, string? variant, string? id) : Out
 
 /// <summary>
 /// Reads JSON blocks: a pattern instance with parts and wires between typed ports. Code checks the wiring, so an agent cannot leave
-/// a port open, drive a port two times or make a loop. With typed set, each wire must join two ports of the same type.
+/// a port open or drive a port two times (with merge set, an input can take more than one wire). A loop is allowed. With typed set, each wire must join two ports of the same type.
 /// </summary>
-public sealed class BlockAdapter(string primitive, bool typed) : IOutputAdapter
+public sealed class BlockAdapter(string primitive, bool typed, bool merge = false) : IOutputAdapter
 {
     public ParsedOutput Parse(string text)
     {
@@ -89,7 +89,7 @@ public sealed class BlockAdapter(string primitive, bool typed) : IOutputAdapter
     /// <summary>The wiring check of one block, then the asserts of the pattern (none in this pack yet).</summary>
     public IReadOnlyList<AssertResult> Assert(OutputNode node, Pattern pattern, PatternCatalog catalog)
     {
-        var problems = Wiring((BlockNode)node, catalog, typed);
+        var problems = Wiring((BlockNode)node, catalog, typed, merge);
         return [new AssertResult("wiring", problems.Count == 0, string.Join("; ", problems.Take(3)))];
     }
 
@@ -133,7 +133,7 @@ public sealed class BlockAdapter(string primitive, bool typed) : IOutputAdapter
         }
     }
 
-    /// <summary>True if the wires between the parts of a block make a loop.</summary>
+    /// <summary>True if the wires between the parts of a block make a loop. A loop is allowed; this is information only.</summary>
     public static bool HasLoop(BlockNode n)
     {
         var edges = n.Wires.Where(w => w.From.Contains('.') && w.To.Contains('.'))
@@ -191,7 +191,7 @@ public sealed class BlockAdapter(string primitive, bool typed) : IOutputAdapter
         return (inputs, outputs);
     }
 
-    public static IReadOnlyList<string> Wiring(BlockNode n, PatternCatalog catalog, bool typed = false)
+    public static IReadOnlyList<string> Wiring(BlockNode n, PatternCatalog catalog, bool typed = false, bool merge = false)
     {
         var problems = new List<string>();
         var (inputs, outputs) = Ports(n, catalog);
@@ -231,7 +231,7 @@ public sealed class BlockAdapter(string primitive, bool typed) : IOutputAdapter
         foreach (var sink in sinks)
         {
             var count = driven.GetValueOrDefault(sink);
-            if (count != 1)
+            if (count == 0 || (count > 1 && !(merge && !outputs.Contains(sink))))
             {
                 problems.Add(count == 0 ? $"\"{sink}\" is not driven" : $"\"{sink}\" has {count} drivers");
             }
@@ -240,11 +240,6 @@ public sealed class BlockAdapter(string primitive, bool typed) : IOutputAdapter
         if (typed)
         {
             problems.AddRange(TypeErrors(n, catalog));
-        }
-
-        if (problems.Count == 0 && HasLoop(n))
-        {
-            problems.Add("the wires make a loop");
         }
 
         return problems;

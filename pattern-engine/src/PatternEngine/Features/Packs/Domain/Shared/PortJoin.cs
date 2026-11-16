@@ -57,27 +57,4 @@ public static class PortJoin
         catalog.Get(item.Pattern) is { } p && p.Inputs.Count + p.Outputs.Count > 0 ? (p.Inputs, p.Outputs)
         : layout?.Ports(item.Fragment, catalog) ?? ([], []);
 
-    public static bool Loop(IReadOnlyList<JoinWire> wires)
-    {
-        var edges = wires.Select(w => (From: w.From.Split('.')[0], To: w.To.Split('.')[0])).ToList();
-        var state = new Dictionary<string, int>(StringComparer.Ordinal);
-        bool Visit(string id)
-        {
-            switch (state.GetValueOrDefault(id))
-            {
-                case 1:
-                    return true;
-                case 2:
-                    return false;
-            }
-
-            state[id] = 1;
-            var loop = edges.Where(e => e.From == id).Any(e => Visit(e.To));
-            state[id] = 2;
-            return loop;
-        }
-
-        return edges.Select(e => e.From).Distinct().Any(Visit);
-    }
-
 }

@@ -9,5 +9,5 @@ A solution uses more than one pattern. Code joins their ports by type. For some 
 
 1. For each input, choose one output from its options. Use the request: the data that the request sends to that step.
 2. Put each choice in `wires` as `{ "from": "<output>", "to": "<input>" }`. Use the names exactly as given.
-3. Do not make a loop: a pattern must not get its input from a pattern that gets its input from it.
+3. A loop is allowed, for example a retry that sends a failed result back to an earlier pattern.
 4. Put one sentence in `reason`.

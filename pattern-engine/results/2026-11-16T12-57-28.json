@@ -1,0 +1,370 @@
+{
+  "runId": "2026-11-16T12-57-28",
+  "domain": "topology",
+  "engine": "csharp-hybrid",
+  "mode": "dev",
+  "label": null,
+  "model": "haiku",
+  "k": 2,
+  "ablate": [],
+  "graders": [
+    "structure",
+    "rules",
+    "flow",
+    "questions"
+  ],
+  "solution_graders": [
+    "selection",
+    "built",
+    "proposed"
+  ],
+  "catalog": "a307e7d3ddf7",
+  "cases": 1,
+  "runs": [
+    {
+      "case": "hand-partialfit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "partial-fit"
+      ],
+      "request": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "solution",
+          "parts": [
+            {
+              "p": "command_pipeline"
+            },
+            {
+              "p": "*"
+            }
+          ]
+        },
+        "remainder": [
+          "no-fit"
+        ],
+        "io": {
+          "inputs": [
+            "Request"
+          ],
+          "outputs": [
+            "Event"
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "payment-retry",
+          "v": "plain"
+        },
+        "nearest": "observer",
+        "deltas": [
+          "Re-attempts the failed payment up to three times in total, not once like observer",
+          "Keeps an attempt counter and stops after the third try",
+          "Waits a set delay between tries",
+          "Outputs the effect of the final attempt; the retrier leaf's Command output must be converted to an Effect"
+        ],
+        "proposed": "patterns/payment-retry.md",
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 6,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "94b3f6a637da",
+          "patterns": {
+            "payment-retry": "c44f62a3f59c"
+          }
+        },
+        "notes": [
+          "node 0: escalation (the compose check failed after all retries): compose failed: payment-retry: assert \"wiring\" failed (\"effect\" is not driven)"
+        ],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+            "status": "none",
+            "pattern": "payment-retry",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "escalation: No allowed pattern retries a payment with a counter and delay; the only fitting proposed pattern, payment-retry, is not allowed and its effect output cannot be driven because its retrier leaf outputs a Command, not an Effect."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "structure": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "payment-retry: part \"handler\" is not allowed here",
+              "payment-retry: part \"subscriber\" is not allowed here"
+            ]
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "the solution needs a Event input (\"event\"); the request gives Request",
+              "the solution gives no Event output"
+            ]
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": false,
+        "consistent": true,
+        "solution": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "expected outcome \"match\", got \"no-fit\"",
+              "solution: expected \"solution\", got \"payment-retry\"",
+              "expected remainder [no-fit], got []"
+            ]
+          },
+          "built": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "solution: expected \"solution\", got \"payment-retry\""
+            ]
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          }
+        },
+        "solution_score": 0
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 186605,
+        "Cost": 0.01132478,
+        "Calls": 9,
+        "Escalations": 1,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-partialfit-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "partial-fit"
+      ],
+      "request": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "solution",
+          "parts": [
+            {
+              "p": "command_pipeline"
+            },
+            {
+              "p": "*"
+            }
+          ]
+        },
+        "remainder": [
+          "no-fit"
+        ],
+        "io": {
+          "inputs": [
+            "Request"
+          ],
+          "outputs": [
+            "Event"
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "solution",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "observer",
+              "v": "plain"
+            },
+            {
+              "p": "payment-retry",
+              "v": "plain"
+            },
+            {
+              "p": "retry-delay",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [
+          "Retry the failed payment up to three times",
+          "Wait a delay between each retry attempt"
+        ],
+        "remainder": [
+          {
+            "text": "Retry the failed payment up to three times",
+            "outcome": "no-fit",
+            "pattern": "payment-retry",
+            "proposed": "patterns/payment-retry.md",
+            "joined": true
+          },
+          {
+            "text": "Wait a delay between each retry attempt",
+            "outcome": "no-fit",
+            "pattern": "retry-delay",
+            "proposed": "patterns/retry-delay.md",
+            "joined": true
+          }
+        ],
+        "attempts": 4,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "efaaac547d64",
+          "patterns": {
+            "observer": "0bd02ed5500e",
+            "payment-retry": "685ee91d7d04",
+            "retry-delay": "66e36e1853fe"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+            "status": "partial_fit",
+            "pattern": "observer",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2
+            ],
+            "open": [
+              "Retry the failed payment up to three times",
+              "Wait a delay between each retry attempt"
+            ],
+            "reason": "The part reacts to a failed-payment event on its own, which matches observer; the request's own requirements to retry the payment up to three times and to wait between tries are not covered by that pattern."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "Retry the failed payment up to three times",
+            "status": "none",
+            "pattern": "payment-retry",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "No candidate covers retrying a failed payment up to three times with a delay; observer is the closest because it reacts to an event on its own, but it lacks the retry count and the delay between attempts."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "Wait a delay between each retry attempt",
+            "status": "none",
+            "pattern": "retry-delay",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "None of the candidates covers waiting between retry attempts; command_pipeline is the closest because it runs steps in order, but it has no notion of a timed delay between repeated tries, and observer only reacts to events."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "solution: the part \"s1\" never runs",
+              "solution: the part \"s2\" never runs",
+              "solution: the part \"s3\" never runs",
+              "solution: the output \"s1_effect\" gets no value",
+              "solution: the output \"s2_effect\" gets no value",
+              "solution: the output \"s3_event\" gets no value"
+            ]
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": false,
+        "consistent": true,
+        "solution": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "solution: expected 2 parts [command_pipeline, *], got 3 [observer, payment-retry, retry-delay]",
+              "expected remainder [no-fit], got [no-fit, no-fit]"
+            ]
+          },
+          "built": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "solution: expected 2 parts [command_pipeline, *], got 3 [observer, payment-retry, retry-delay]"
+            ]
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          }
+        },
+        "solution_score": 0
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 115043,
+        "Cost": 0.00973208,
+        "Calls": 9,
+        "Escalations": 0,
+        "Error": null
+      }
+    }
+  ]
+}
