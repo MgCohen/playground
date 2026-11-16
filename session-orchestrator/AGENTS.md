@@ -17,7 +17,13 @@ Read these files before you change this project:
 - Never use click questions. The user answers in free text or by voice.
 - Test a live change in the scratchpad with its own `ORCH_STORE` and `ORCH_PORT`. Never use `store/` for tests.
 
+## Stack
+
+C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the UI, NUnit for the tests. Do not add TypeScript or JavaScript, with two exceptions: the plugin hooks (the Claude Code engine runs only TypeScript) and small JavaScript parts of the Blazor UI. The code in `supervisor/` is the TypeScript version from the spikes. Milestone M0 ports it to C#.
+
 ## Commands
+
+Commands of the TypeScript supervisor of today (until M0 ends):
 
 `npm test` and `npm start` fail on this computer: the cmd shell that npm opens cannot find `node`. Run node directly.
 

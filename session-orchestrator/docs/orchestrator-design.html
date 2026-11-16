@@ -141,8 +141,8 @@ flowchart LR
       <tr><td>Supervisor</td><td><code>supervisor/</code></td><td>Scheduler, SDK turns, policy, HTTP API</td><td><span class="pill ok">built</span></td></tr>
       <tr><td>Store</td><td><code>store/</code></td><td>One folder for each session, the event stream</td><td><span class="pill ok">built</span></td></tr>
       <tr><td>Policy</td><td><code>store/policy.json</code></td><td>Risk levels, timeouts, docs check</td><td><span class="pill ok">built</span></td></tr>
-      <tr><td>Phone UI</td><td><code>ui/</code></td><td>Session tree, decision cards, reviews</td><td><span class="pill todo">P4</span></td></tr>
-      <tr><td>Tunnel</td><td>None yet</td><td>Phone access to the local API</td><td><span class="pill todo">P4</span></td></tr>
+      <tr><td>Phone UI</td><td><code>Orchestrator.Web</code></td><td>Blazor: tree, decision cards, timeline</td><td><span class="pill todo">M4</span></td></tr>
+      <tr><td>Tunnel</td><td>None yet</td><td>Phone access to the local API</td><td><span class="pill todo">M4</span></td></tr>
     </table></div>
   </section>
 
@@ -382,13 +382,13 @@ flowchart LR
     <div class="vtitle">Each message is a filled template: one schema, one text, one card</div>
     <div class="scroll"><pre class="mermaid">
 flowchart LR
-  S[Sender: session, user, supervisor] -->|fields| V[core: validate]
+  S[Sender: session, user, supervisor] -->|fields| V[Orchestrator.Core: validate]
   V -->|ok| F[Store file, JSON]
   F --> R[render.md: text for a session]
-  F --> C[UI card for the user]
+  F --> C[Blazor card for the user]
   V -->|error| E[Sender fixes the fields]
     </pre></div>
-    <p>A sender never writes free text into the store. It fills the fields of a template. <code>core</code> validates the fields against the schema of the template, and refuses a message with a missing field. Then each reader shows the same data in its own way: a session gets text from <code>render.md</code>, and the phone UI draws the card of that template.</p>
+    <p>A sender never writes free text into the store. It fills the fields of a template. <code>Orchestrator.Core</code> validates the fields against the schema of the template, and refuses a message with a missing field. Then each reader shows the same data in its own way: a session gets text from <code>render.md</code>, and the Blazor UI draws the card of that template.</p>
   </div>
 
   <section>
@@ -521,12 +521,12 @@ flowchart LR
     <h2>Files of one template</h2>
     <div class="scroll"><table>
       <tr><th>File</th><th>Content</th><th>Reader</th></tr>
-      <tr><td><code>schema.json</code></td><td>Fields, types, required fields</td><td><code>core</code>, tools, CLI</td></tr>
+      <tr><td><code>schema.json</code></td><td>Fields, types, required fields</td><td><code>Orchestrator.Core</code>, plugin tools, CLI</td></tr>
       <tr><td><code>render.md</code></td><td>Text with <code>{{field}}</code> places</td><td>Sessions</td></tr>
-      <tr><td><code>card.js</code></td><td>The card of this template</td><td>Phone UI</td></tr>
+      <tr><td><code>&lt;Kind&gt;Card.razor</code></td><td>The Blazor card of this template, in <code>Orchestrator.Web</code></td><td>Phone UI</td></tr>
       <tr><td><code>example.json</code></td><td>One valid message</td><td>Tests, docs</td></tr>
     </table></div>
-    <p>To add a template, add its folder in <code>templates/</code> with these four files, and add one row to the table above. A test examines each <code>example.json</code> against its <code>schema.json</code>, so a template cannot drift from its example.</p>
+    <p>To add a template, add its folder in <code>templates/</code> with <code>schema.json</code>, <code>render.md</code> and <code>example.json</code>, add its Blazor card in <code>Orchestrator.Web</code>, and add one row to the table of templates. A test examines each <code>example.json</code> against its <code>schema.json</code>, so a template cannot drift from its example.</p>
   </section>
 
   <section>
@@ -584,7 +584,7 @@ flowchart LR
     <ul>
       <li>Write each event as one new file: <code>store/events/&lt;day&gt;/&lt;id&gt;.json</code>. Two writers never write one file, so no line gets lost.</li>
       <li>Never change or delete an event. A correction is a new event with a <code>refs</code> link.</li>
-      <li><code>core</code> writes the event first, then the state file of the session. The state files are for fast reads; the stream is the record.</li>
+      <li><code>Orchestrator.Store</code> writes the event first, then the state file of the session. The state files are for fast reads; the stream is the record.</li>
       <li>The ledger of today is a query: the events with <code>by</code> = <code>docs</code> or <code>policy</code>, and the <code>review</code> events.</li>
       <li>From M6, the supervisor can build the state files again from the stream after a crash.</li>
     </ul>
@@ -608,7 +608,7 @@ orch events --session eae5b144 --follow      # one session, live</pre>
       <tr><td><code>supervisor/src/sdk.ts</code>, <code>policy.ts</code>, <code>main.ts</code></td><td>127</td><td>SDK runner, policy texts, start</td></tr>
       <tr><td><code>supervisor/test/supervisor.test.ts</code></td><td>263</td><td>16 unit tests</td></tr>
     </table></div>
-    <p>Four problems: the mod and the supervisor each have their own copy of the store rules. The texts to the sessions are in the code. There is no command-line tool. There are no agent, skill or template files, so each brief repeats the instructions.</p>
+    <p>The code today is TypeScript on Node, from the spikes. The target is C# on .NET 10: the supervisor, the store, the CLI and the Blazor UI. Only the plugin hooks stay in TypeScript, because the Claude Code engine runs them. Four problems of the code today: the mod and the supervisor each have their own copy of the store rules. The texts to the sessions are in the code. There is no command-line tool. There are no agent, skill or template files, so each brief repeats the instructions.</p>
   </section>
 
   <section>
@@ -626,23 +626,25 @@ orch events --session eae5b144 --follow      # one session, live</pre>
   </section>
 
   <div class="card">
-    <div class="vtitle">Each package uses only the packages below it</div>
+    <div class="vtitle">Each project uses only the projects below it; the plugin meets C# only through files and orch</div>
     <div class="scroll"><pre class="mermaid">
 flowchart TD
-  UI[ui] -->|HTTP| SV[supervisor]
-  CLI[cli] --> ST[store]
+  WEB[Orchestrator.Web: API, Blazor] --> SV[Orchestrator.Supervisor]
+  CLI[Orchestrator.Cli: orch] --> ST[Orchestrator.Store]
   SV --> ST
-  ST --> CO[core]
-  PL[plugin hooks] --> CO
+  ST --> CO[Orchestrator.Core]
+  CO -->|reads| TP[templates: schema.json]
+  SV -->|runs| CL[claude -p]
+  PL[plugin hooks, TypeScript] -->|files| STF[(store/)]
+  PL -->|tool schemas| TP
   SK[plugin skills] -->|run| CLI
-  CO -->|reads| TP[templates]
     </pre></div>
-    <p>The plugin cannot use Node file IO: it writes through <code>$.fs</code>. So it uses <code>core</code> only, with its own small IO part. A spike must show that a plugin hook can import a relative <code>.ts</code> file.</p>
+    <p>The plugin is the only TypeScript part. It keeps only what needs the engine API: submit a turn, the heartbeat, the lease, the mirror and the tools. The input schema of each tool is the <code>schema.json</code> of its template, so TypeScript and C# use one schema. For other rules, the plugin calls <code>orch</code>. The supervisor runs session turns with <code>claude -p</code>, because the Agent SDK has no C# version.</p>
   </div>
 
   <section>
     <h2>The orch command</h2>
-    <p>Each read and write of the store goes through one tool, so nobody writes store files by hand. Each command that sends a message takes the fields of a template, and <code>core</code> validates them.</p>
+    <p>Each read and write of the store goes through one tool, so nobody writes store files by hand. It is a .NET tool. Each command that sends a message takes the fields of a template, and <code>Orchestrator.Core</code> validates them.</p>
     <div class="scroll"><table>
       <tr><th>Command</th><th>User</th><th>Does</th></tr>
       <tr><td><code>orch new</code>, <code>orch send</code></td><td>User, scripts</td><td>Start a session from a brief, add an inbox message</td></tr>
@@ -662,20 +664,20 @@ flowchart TD
     <h2>Tests</h2>
     <div class="scroll"><table>
       <tr><th>Level</th><th>Folder</th><th>Checks</th></tr>
-      <tr><td>Unit</td><td><code>tests/unit</code></td><td>core, store, supervisor, cli with a fake runner</td></tr>
-      <tr><td>Template</td><td><code>tests/templates</code></td><td>Each example against its schema and its render</td></tr>
-      <tr><td>Contract</td><td><code>tests/contract</code></td><td>Plugin and supervisor read the same files</td></tr>
+      <tr><td>Unit</td><td><code>tests/Orchestrator.Tests</code></td><td>Core, Store, Supervisor, Cli with a fake runner</td></tr>
+      <tr><td>Template</td><td><code>tests/Orchestrator.Tests</code></td><td>Each example against its schema and its render</td></tr>
+      <tr><td>Contract</td><td><code>tests/Orchestrator.Tests</code></td><td>Files that the plugin writes, read by C#</td></tr>
       <tr><td>End to end</td><td><code>tests/e2e</code></td><td>The live test recipe as one script</td></tr>
     </table></div>
-    <p>Today, only the unit tests are automatic (<code>node --test test/</code> in <code>supervisor/</code>, 16 tests). The live test recipe in <code>docs/know-how.md</code> is manual. The end-to-end script makes it one command.</p>
+    <p>Today, only the unit tests are automatic (<code>node --test test/</code> in <code>supervisor/</code>, 16 tests). The live test recipe in <code>docs/know-how.md</code> is manual. The end-to-end script makes it one command. The C# tests use NUnit, as in vsa-template: <code>dotnet test --solution Orchestrator.slnx</code>.</p>
   </section>
 
   <div class="card">
     <div class="vtitle">Seven milestones to the stable version 1.0</div>
     <div class="scroll"><pre class="mermaid">
 flowchart LR
-  D[P0-P3 done] --> M0[M0 Structure]
-  M0 --> M1[M1 CLI]
+  D[P0-P3 done] --> M0[M0 Port to .NET]
+  M0 --> M1[M1 Messages and CLI]
   M1 --> M2[M2 Plugin]
   M2 --> M3[M3 Lifecycle]
   M3 --> M4[M4 Phone UI]
@@ -689,11 +691,11 @@ flowchart LR
     <div class="scroll"><table>
       <tr><th>Id</th><th>Work</th><th>Done when</th><th>State</th></tr>
       <tr><td>P0-P3</td><td>Spikes, mod, supervisor, policy, PR stack</td><td>Live tests pass</td><td><span class="pill ok">done</span></td></tr>
-      <tr><td>M0</td><td>Packages, core, templates, plugin split</td><td>Same 16 tests pass, no behavior change</td><td><span class="pill todo">next</span></td></tr>
-      <tr><td>M1</td><td>orch command, stack commands, decision versions</td><td>The PR stack test runs on orch commands</td><td><span class="pill todo">todo</span></td></tr>
-      <tr><td>M2</td><td>Agents, skills, commands in the plugin</td><td>Briefs refer to skills, not long texts</td><td><span class="pill todo">todo</span></td></tr>
+      <tr><td>M0</td><td>C# solution: Core, Store, Supervisor, Web API, claude -p runner</td><td>16 tests pass in NUnit, PR stack test passes</td><td><span class="pill todo">next</span></td></tr>
+      <tr><td>M1</td><td>Templates, event stream, orch command, stack commands, decision versions</td><td>The PR stack test runs on orch commands</td><td><span class="pill todo">todo</span></td></tr>
+      <tr><td>M2</td><td>Thin plugin: tool schemas from templates, skills, agents</td><td>Briefs refer to skills, not long texts</td><td><span class="pill todo">todo</span></td></tr>
       <tr><td>M3</td><td>Stop, archive, worktrees, restart, app import</td><td>Two code sessions run in one repository</td><td><span class="pill todo">todo</span></td></tr>
-      <tr><td>M4</td><td>Phone UI from the template cards, tunnel</td><td>You answer and review from the phone</td><td><span class="pill todo">todo</span></td></tr>
+      <tr><td>M4</td><td>Blazor UI: tree, cards, timeline; tunnel</td><td>You answer and review from the phone</td><td><span class="pill todo">todo</span></td></tr>
       <tr><td>M5</td><td>One vsa-template stream under the orchestrator</td><td>Start to merge with no lost decision</td><td><span class="pill todo">todo</span></td></tr>
       <tr><td>M6</td><td>End-to-end script, crash recovery, store version</td><td>A supervisor restart loses nothing</td><td><span class="pill todo">todo</span></td></tr>
     </table></div>
@@ -709,7 +711,7 @@ flowchart LR
       <tr><td>No stop or archive API</td><td>Manual clean-up</td><td><span class="pill warn">M3</span></td></tr>
       <tr><td>No worktree for each session</td><td>Parallel code sessions collide</td><td><span class="pill warn">M3</span></td></tr>
       <tr><td>No restart after 3 failures</td><td>Session stays blocked</td><td><span class="pill warn">M3</span></td></tr>
-      <tr><td>SDK sessions not in sidebar</td><td>Open with the app import</td><td><span class="pill warn">M3</span></td></tr>
+      <tr><td>Supervisor sessions not in sidebar</td><td>Open with the app import</td><td><span class="pill warn">M3</span></td></tr>
       <tr><td><code>/orch-enable</code> not tested</td><td>Unknown in the app</td><td><span class="pill warn">M2</span></td></tr>
     </table></div>
   </section>
@@ -717,10 +719,10 @@ flowchart LR
   <section>
     <h2>Open questions</h2>
     <ul>
-      <li>Language of the orch command: Node, the same as the supervisor? Recommendation: yes, Node 26 with no build step.</li>
-      <li>Package layout: npm workspaces in one <code>package.json</code>? Recommendation: yes.</li>
-      <li>Schema format: JSON Schema with a small validator in <code>core</code>, or plain TypeScript checks? Recommendation: JSON Schema, because the UI and the tools can read the same file.</li>
-      <li>Plugin imports: can a hook import a relative <code>.ts</code> file? Recommendation: a small spike at the M0 start. If not, keep one file and generate it.</li>
+      <li>Blazor mode: Blazor Server in the same process as the API, or WebAssembly? Recommendation: Blazor Server (interactive server), because the supervisor state is in that process.</li>
+      <li>Use the VSA framework for the orchestrator? Recommendation: not now. Keep plain .NET until 1.0, and decide after the VSA 0.1.0 release.</li>
+      <li>Session turns: does <code>claude -p</code> with <code>--session-id</code> and <code>--resume</code> keep the lease and the one-branch rule of the SDK runner? Recommendation: a small spike at the M0 start (spike S1 showed that the plugin loads in <code>claude -p</code>).</li>
+      <li>Plugin imports: can a hook import a relative <code>.ts</code> file? Recommendation: a small spike at the M2 start. If not, keep one file.</li>
       <li>Plugin skills and agents: does <code>CLAUDE_CODE_PLUGIN_DIRS</code> give them to the session? Recommendation: a small spike at the M2 start.</li>
       <li>Tunnel: which tool, and which sign-in? Recommendation: Cloudflare Tunnel with Cloudflare Access.</li>
       <li>Worktrees: does the supervisor make them? Recommendation: yes, and it records the folder in <code>meta.json</code>.</li>
@@ -755,71 +757,64 @@ flowchart LR
 })();
 (function () {
   var T = [
-    ["package.json", "M0", "npm workspaces of all packages", "One root package.json lists packages/* as workspaces. One npm install gets the dependencies of all packages. The npm scripts fail on this computer, so each script also has a direct node command in AGENTS.md."],
+    ["Orchestrator.slnx", "M0", "The .NET solution", "Lists each project in src/ and tests/. Build with dotnet build Orchestrator.slnx."],
+    ["global.json", "M0", ".NET SDK version and test runner", ".NET 10. NUnit on Microsoft.Testing.Platform, as in vsa-template."],
+    ["Directory.Build.props", "M0", "Shared build settings", "Target framework, nullable, warnings as errors, the common usings."],
+    ["Directory.Packages.props", "M0", "Package versions in one place", "Central package management: JsonSchema.Net, System.CommandLine, NUnit and the others."],
     ["README.md", "today", "What the project is, how to start it", "The summary, the folder table, the start command and the link to the design page."],
     ["AGENTS.md", "today", "Rules for each agent that works here", "Files to read first, the rules of the project, the commands, how to work with the user, and how the plugin loads. CLAUDE.md contains only @AGENTS.md."],
-    ["packages", "M0", "The code, one package for each job", "Each package has src/ and its own package.json. A package uses only the packages below it in the package graph."],
-    ["packages/core", "M0", "The store contract, with no file IO", "The single copy of the rules that the plugin and the supervisor share. No Node API, so the plugin can use it too."],
-    ["packages/core/src/contract.ts", "M0", "File names and folder layout of a session", "The names of each store file (lease.json, inbox/, decisions/, answers/ and the others) and the types of their content. store.md documents the same contract."],
-    ["packages/core/src/order.ts", "M0", "Inbox names and their order", "Makes a new inbox name that sorts after all earlier names, and sorts names in numeric order. Today the mod and the supervisor each have a copy."],
-    ["packages/core/src/lease.ts", "M0", "The lease rules", "isLive: a live lease counts while its heartbeat or the lease is less than 15 s old. Who may write which turn."],
-    ["packages/core/src/policy.ts", "M0", "Policy levels and the default rule", "Loads and validates a policy, finds the level of a decision (an unknown level is the strictest), and decides when a default applies."],
-    ["packages/core/src/events.ts", "M0", "The event envelope and kinds", "The fields of each event (id, at, session, kind, by, data, refs) and the list of kinds: the seven templates and the system events."],
-    ["packages/core/src/templates.ts", "M0", "Validate and render a template", "Reads schema.json and render.md of a template, validates the fields of a message, and makes the text for a session."],
-    ["packages/store", "M0", "File IO of the contract for Node", "Atomic write (temporary file, then rename), read, list, the event stream. The supervisor and the CLI use it."],
-    ["packages/store/src/fs-store.ts", "M0", "Read and write store files", "The Store class of today without the rules, which move to core."],
-    ["packages/store/src/events.ts", "M0", "Append and query events", "Writes each event as one file in store/events/<day>/, and reads them back by time, session and kind. ledger.jsonl of today becomes a query of this stream."],
-    ["packages/supervisor", "today", "The scheduler process", "Today it is supervisor/ at the root. M0 moves it here and splits it into one file for each job."],
-    ["packages/supervisor/src/tick.ts", "M0", "One pass over all sessions", "Releases stale leases, forwards child reports, applies the policy and starts turns, up to maxRuns at one time."],
-    ["packages/supervisor/src/policy-runner.ts", "M0", "Docs answers and default answers", "Runs the docs check for each level with checkDocs, and writes a default answer after the timeout of its level."],
-    ["packages/supervisor/src/runner-sdk.ts", "today", "Agent SDK turns", "Starts or resumes a session with the Agent SDK and the local login. Sets ORCH_HOLDER and ORCH_STORE."],
-    ["packages/supervisor/src/http.ts", "today", "HTTP API and the UI files", "The API of store.md. From M4 it also serves packages/ui."],
-    ["packages/supervisor/src/main.ts", "today", "Start of the process", "Reads ORCH_STORE and ORCH_PORT, loads the policy, starts the tick timer and the HTTP server."],
-    ["packages/cli", "M1", "The orch command", "One command for each operation. The user, the test scripts and the sessions use the same commands, so nobody writes store files by hand."],
-    ["packages/cli/src/main.ts", "M1", "Argument parse and help", "Finds the command and its options, and prints the help of each command."],
-    ["packages/cli/src/commands", "M1", "One file for each command", "new, send, tree, status, decisions, answer, review, events, decision, stack, stop, archive, open, template, doctor."],
-    ["packages/cli/src/git.ts", "M1", "Git and gh steps of a stack", "Makes decision branches, opens draft PRs with the PR template, rebases the branches above a change, and closes the PRs above a refuse."],
-    ["packages/ui", "M4", "The phone page", "Plain HTML and JS with no build step. The supervisor serves it. Reached through the tunnel."],
-    ["packages/ui/index.html", "M4", "Session tree and decision queue", "Three views: the tree of sessions with their last update, the queue of open decisions and default reviews, and the timeline of all events with filters."],
-    ["packages/ui/app.js", "M4", "Reads the API, draws the cards", "Gets the sessions and the decisions, and draws each message with the card.js of its template."],
-    ["plugin", "today", "The plugin that each session loads", "Today it is mod/orch. M0 moves it here. CLAUDE_CODE_PLUGIN_DIRS in the user settings points to this folder."],
+    ["src", "M0", "The C# code, one project for each job", "A project uses only the projects below it in the project graph."],
+    ["src/Orchestrator.Core", "M0", "The store contract, with no file IO", "Records, rules and texts that each other project shares. No file system, no process, no HTTP, so the unit tests are fast."],
+    ["src/Orchestrator.Core/Contract", "M0", "Store files and their records", "The names of each store file (lease.json, inbox/, decisions/, answers/ and the others) and one record for the content of each. store.md documents the same contract."],
+    ["src/Orchestrator.Core/Ordering", "M0", "Inbox and event names and their order", "Makes a new name that sorts after all earlier names, and sorts names in numeric order."],
+    ["src/Orchestrator.Core/Leases", "M0", "The lease rules", "IsLive: a live lease counts while its heartbeat or the lease is less than 15 s old. Who may write which turn."],
+    ["src/Orchestrator.Core/Policy", "M0", "Policy levels and the default rule", "Loads and validates a policy, finds the level of a decision (an unknown level is the strictest), and decides when a default applies."],
+    ["src/Orchestrator.Core/Templates", "M1", "Validate and render a template", "Validates the fields of a message against schema.json (JsonSchema.Net) and makes the text for a session from render.md."],
+    ["src/Orchestrator.Core/Events", "M1", "The event envelope and kinds", "The Event record (Id, At, Session, Kind, By, Data, Refs) and the list of kinds: the seven templates and the system events."],
+    ["src/Orchestrator.Store", "M0", "File IO of the contract", "Atomic write (temporary file, then rename), read, list. The supervisor and the CLI use it."],
+    ["src/Orchestrator.Store/FileStore.cs", "M0", "Read and write session files", "The Store class of the TypeScript supervisor of today, without the rules, which go to Core."],
+    ["src/Orchestrator.Store/EventStream.cs", "M1", "Append and query events", "Writes each event as one file in store/events/<day>/, and reads them back by time, session and kind. ledger.jsonl of today becomes a query of this stream."],
+    ["src/Orchestrator.Supervisor", "M0", "The scheduler, as a library", "The tick and its parts. The Web host runs it as a hosted service."],
+    ["src/Orchestrator.Supervisor/Tick.cs", "M0", "One pass over all sessions", "Releases stale leases, forwards child reports, applies the policy and starts turns, up to MaxRuns at one time."],
+    ["src/Orchestrator.Supervisor/PolicyRunner.cs", "M0", "Docs answers and default answers", "Runs the docs check for each level with checkDocs, and writes a default answer after the timeout of its level."],
+    ["src/Orchestrator.Supervisor/ClaudeRunner.cs", "M0", "Session turns through the claude CLI", "Runs claude -p with --session-id (new session) or --resume (next turn) and --output-format stream-json. Sets ORCH_HOLDER and ORCH_STORE. The Agent SDK has no C# version, so the CLI replaces it."],
+    ["src/Orchestrator.Web", "M0", "The one process: API, supervisor, UI", "ASP.NET Core. Hosts the supervisor, serves the HTTP API of store.md, and from M4 the Blazor UI. Start: dotnet run --project src/Orchestrator.Web."],
+    ["src/Orchestrator.Web/Api", "M0", "HTTP endpoints", "Sessions, send, decisions, answers, reviews, events. Each endpoint takes the fields of a template."],
+    ["src/Orchestrator.Web/Components", "M4", "Blazor pages", "Three views: the session tree with the last update of each session, the queue of open decisions and default reviews, and the timeline of all events with filters."],
+    ["src/Orchestrator.Web/Components/Cards", "M4", "One Blazor card for each template", "DecisionCard.razor, ReportCard.razor, UpdateCard.razor and the others. A card shows the data of one event of its template."],
+    ["src/Orchestrator.Cli", "M1", "The orch command", "A .NET tool (dotnet tool). One command for each operation. The user, the test scripts and the sessions use the same commands, so nobody writes store files by hand."],
+    ["src/Orchestrator.Cli/Commands", "M1", "One class for each command", "new, send, tree, status, decisions, answer, review, events, decision, stack, stop, archive, open, template, doctor."],
+    ["src/Orchestrator.Cli/Git", "M1", "Git and gh steps of a stack", "Makes decision branches, opens draft PRs from the PR template, rebases the branches above a change, and closes the PRs above a refuse."],
+    ["plugin", "today", "The Claude Code plugin that each session loads", "Today it is mod/orch. M2 moves it here. CLAUDE_CODE_PLUGIN_DIRS in the user settings points to this folder. The only TypeScript in the project: the engine runs plugin hooks in TypeScript."],
     ["plugin/.claude-plugin/plugin.json", "today", "Plugin name and version", "The manifest of the plugin."],
-    ["plugin/hooks", "today", "The hooks module", "hooks.json names register.ts. M0 splits the 382 lines of today into one file for each part."],
+    ["plugin/hooks", "today", "A thin hooks module", "Only the parts that need the engine API: submit a turn, heartbeat, lease, mirror, the tools. Each rule that does not need the engine moves to C#, and the hook calls orch for it."],
     ["plugin/hooks/register.ts", "today", "Activation and timers", "Activates the session if it has the enabled file, starts the heartbeat timer and the inbox timer, registers the tools."],
-    ["plugin/hooks/inbox.ts", "M0", "Submit inbox turns", "Sends each new inbox message as a turn when the session is idle. Handles the Stop latch and blocked.json."],
-    ["plugin/hooks/lease.ts", "M0", "Lease and heartbeat", "Writes the heartbeat every 3 s, writes the lease, takes back a released lease."],
-    ["plugin/hooks/mirror.ts", "M0", "Copy transcript rows", "Writes the prompt, response and tool-result rows to mirror/."],
-    ["plugin/hooks/io.ts", "M0", "Store IO through $.fs", "The plugin version of packages/store: the same contract from core, with $.fs in place of Node."],
-    ["plugin/hooks/tools", "M0", "One file for each session tool", "ask-user.ts (decision template), report.ts (report template), update.ts (update template), spawn-child.ts (brief template). Each tool takes the fields of its template."],
-    ["plugin/hooks/questions.ts", "today", "Refuse click questions", "Hides AskUserQuestion and refuses it, as the fallback of the deny rule in the user settings."],
+    ["plugin/hooks/inbox.ts", "M2", "Submit inbox turns", "Sends each new inbox message as a turn when the session is idle. Handles the Stop latch and blocked.json."],
+    ["plugin/hooks/lease.ts", "M2", "Lease and heartbeat", "Writes the heartbeat every 3 s with $.fs, writes the lease, takes back a released lease. No process call: the heartbeat must be cheap."],
+    ["plugin/hooks/tools.ts", "M2", "Session tools from the templates", "ask_user, report, update and spawn_child. The input schema of each tool is the schema.json of its template, so the plugin and C# use one schema."],
     ["plugin/skills", "M2", "How-to files that sessions load when needed", "Each skill is a folder with SKILL.md. A brief names the skills to load, so the brief stays short."],
     ["plugin/skills/orch-ask/SKILL.md", "M2", "How to ask the user", "How to fill the decision template, how to pick a risk level from the policy definitions, when to ask and when to decide."],
     ["plugin/skills/orch-report/SKILL.md", "M2", "How to report and update", "When to send a report and when an update, and how to fill each template."],
     ["plugin/skills/orch-stack/SKILL.md", "M2", "Default and review steps", "The orch decision and orch stack commands for a default answer and for each verdict."],
     ["plugin/skills/orch-brief/SKILL.md", "M2", "How to start a child", "How to fill the brief template: one decision group, a title that names all of the scope, the done check, the archive rule."],
-    ["plugin/agents", "M2", "Subagent and session roles", "Markdown files with a role, its tools and its rules. The brief template names one."],
-    ["plugin/agents/orchestrator.md", "M2", "Root session role", "Splits the work, starts children with briefs, checks them, and reports to the user."],
-    ["plugin/agents/worker.md", "M2", "Child session role", "Does one task in its scope, asks with the decision template, ends with a report."],
-    ["plugin/agents/docs-checker.md", "M2", "Read-only docs answer", "Reads the docs paths of the policy and answers a decision only if the docs answer it, with the source. The supervisor runs it."],
+    ["plugin/agents", "M2", "Session and subagent roles", "orchestrator.md (root: split the work, start children), worker.md (child: one task, then a report), docs-checker.md (read-only docs answer for a decision)."],
     ["plugin/commands/orch-enable.md", "M2", "Put a session under the orchestrator", "The slash command that writes the enabled file for the current session."],
-    ["templates", "M0", "One folder for each message kind", "decision, answer, review, report, update, brief, notice. Each folder has schema.json, render.md, card.js and example.json. See the Messages tab."],
-    ["templates/decision", "M0", "Session asks the user", "Fields: question, context, snippet, options, recommendation, risk, defaultOption."],
-    ["templates/answer", "M0", "Answer to a decision", "Fields: decision, text, by, source, note."],
-    ["templates/review", "M0", "Verdict on a default", "Fields: decision, verdict, text."],
-    ["templates/report", "M0", "Work done or blocked", "Fields: state, summary, done, next, blockers, links."],
-    ["templates/update", "M0", "Progress, no action needed", "Fields: step, progress, summary."],
-    ["templates/brief", "M0", "Start of a session", "Fields: title, goal, scope, doneWhen, skills, agent, cwd, worktree."],
-    ["templates/notice", "M0", "Supervisor text to a session", "One render.md for each kind: default, review, child-report, blocked. These are the texts that are in the code today."],
-    ["store/events", "M0", "The event stream", "One JSON file for each event, in one folder for each day. Append only: nobody changes or deletes an event. The UI, the CLI and the sessions read it with a query."],
+    ["templates", "M1", "One folder for each message kind", "decision, answer, review, report, update, brief, notice. Each folder has schema.json, render.md and example.json. Its Blazor card is in Orchestrator.Web. See the Messages tab."],
+    ["templates/decision", "M1", "Session asks the user", "Fields: question, context, snippet, options, recommendation, risk, defaultOption."],
+    ["templates/answer", "M1", "Answer to a decision", "Fields: decision, text, by, source, note."],
+    ["templates/review", "M1", "Verdict on a default", "Fields: decision, verdict, text."],
+    ["templates/report", "M1", "Work done or blocked", "Fields: state, summary, done, next, blockers, links."],
+    ["templates/update", "M1", "Progress, no action needed", "Fields: step, progress, summary."],
+    ["templates/brief", "M1", "Start of a session", "Fields: title, goal, scope, doneWhen, skills, agent, cwd, worktree."],
+    ["templates/notice", "M1", "Supervisor text to a session", "One render.md for each kind: default, review, child-report, blocked. These are the texts that are in the code today."],
     ["config", "today", "Policies", "policy.default.json (low 30 min, medium 4 h, high never) and policy.test.json (short timeouts for live tests)."],
-    ["tests", "M0", "All tests in one place", "Today the tests are in supervisor/test. M0 moves them."],
-    ["tests/unit", "M0", "Unit tests with a fake runner", "core, store, supervisor and cli. The 16 tests of today are the start."],
-    ["tests/templates", "M0", "Template tests", "Each example.json against its schema.json, and each render.md with its example."],
-    ["tests/contract", "M1", "Plugin and supervisor agree", "Writes store files with one side and reads them with the other side."],
+    ["tests", "M0", "All tests", "NUnit, as in vsa-template. Run with dotnet test --solution Orchestrator.slnx."],
+    ["tests/Orchestrator.Tests", "M0", "Unit, template and contract tests", "Unit: Core, Store, Supervisor with a fake runner (the 16 tests of today, ported). Templates: each example.json against its schema.json. Contract: files that the plugin writes, read by C#."],
     ["tests/e2e", "M6", "The live test as one script", "The recipe of know-how.md: a test repository, a test supervisor, scripted answers and reviews, checks of the event stream and the PRs."],
     ["docs", "today", "Plan, contract, know-how, design page", "plan.md (goal, phases, results, next steps), store.md (contract and API), know-how.md (limits and recipes), orchestrator-design.html (this page)."],
-    ["spikes", "today", "Spike scripts and test briefs", "Frozen. The briefs p3 and p4 of the live tests stay here until tests/e2e replaces them."],
-    ["store", "today", "Runtime data", "One folder for each session (the current state), events/ (the stream of all that happened) and policy.json. Git ignores it. Tests use their own store in the scratchpad."]
+    ["spikes", "today", "Spike scripts and test briefs", "Frozen, in TypeScript and JavaScript. The TypeScript supervisor of P2 and P3 moves here after the port. The briefs p3 and p4 stay until tests/e2e replaces them."],
+    ["store", "today", "Runtime data", "One folder for each session (the current state), events/ (the stream of all that happened) and policy.json. Git ignores it. Tests use their own store in the scratchpad."],
+    ["store/events", "M1", "The event stream", "One JSON file for each event, in one folder for each day. Append only: nobody changes or deletes an event. The UI, the CLI and the sessions read it with a query."]
   ];
   var box = document.getElementById("ftree");
   if (!box) return;

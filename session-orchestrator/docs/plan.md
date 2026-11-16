@@ -41,30 +41,30 @@ session-orchestrator/
 └─ store/          runtime files, ignored by git: sessions/<id>/..., ledger.jsonl, policy.json
 ```
 
-The target folders (milestone M0). The design page, tab Code, gives the reasons and the package graph:
+The stack is C# on .NET 10 and the `claude` CLI. The user uses C# for all projects. The UI is Blazor. Only the plugin hooks stay in TypeScript, because the Claude Code engine runs them, and the Blazor UI can have a little JavaScript. The supervisor runs session turns with `claude -p` (`--session-id` for a new session, `--resume` for the next turn, `--output-format stream-json`), because the Agent SDK has no C# version.
+
+The target folders. The design page, tab Build, gives the full tree with the detail of each line, and the project graph:
 
 ```
 session-orchestrator/
-├─ packages/
-│  ├─ core/        store contract: types, file names, order, texts. No file IO
-│  ├─ store/       file IO of the contract (atomic write, read, list)
-│  ├─ supervisor/  tick, lease, policy, SDK runner, HTTP API
-│  ├─ cli/         the orch command for the user, scripts and sessions
-│  └─ ui/          phone web page, served by the supervisor
-├─ plugin/         the Claude Code plugin that each session loads
-│  ├─ hooks/       register.ts + inbox, lease, mirror, tools (one file each)
-│  ├─ skills/      orch-ask, orch-report, orch-stack, orch-brief
-│  ├─ agents/      orchestrator, worker, docs-checker
-│  └─ commands/    orch-enable
-├─ templates/      one folder for each message kind: schema.json, render.md, card.js, example.json
-├─ config/         policy.default.json, policy.test.json
-├─ tests/          unit, contract, e2e
+├─ Orchestrator.slnx, global.json, Directory.Build.props, Directory.Packages.props
+├─ src/
+│  ├─ Orchestrator.Core/        contract records, order, lease, policy, templates, events. No IO
+│  ├─ Orchestrator.Store/       file IO: atomic write, read, event stream
+│  ├─ Orchestrator.Supervisor/  tick, policy runner, claude -p runner
+│  ├─ Orchestrator.Web/         one process: hosts the supervisor, HTTP API, Blazor UI and cards
+│  └─ Orchestrator.Cli/         the orch .NET tool
+├─ plugin/                      the Claude Code plugin (thin TypeScript hooks, skills, agents, commands)
+├─ templates/                   one folder for each message kind: schema.json, render.md, example.json
+├─ config/                      policy.default.json, policy.test.json
+├─ tests/Orchestrator.Tests/    NUnit: unit, template, contract
+├─ tests/e2e/                   the live test as one script
 ├─ docs/
-├─ spikes/         frozen
-└─ store/          runtime, ignored by git
+├─ spikes/                      frozen TypeScript and JavaScript, plus the TypeScript supervisor after the port
+└─ store/                       runtime, ignored by git
 ```
 
-Each message is a filled template. A sender gives the fields, `core` validates them against `schema.json`, a session gets the text of `render.md`, and the phone UI draws `card.js`. The design page, tab Templates, gives the fields of each template.
+Each message is a filled template. A sender gives the fields, `Orchestrator.Core` validates them against `schema.json`, a session gets the text of `render.md`, and the Blazor UI draws the card of the template. The input schema of each plugin tool is the same `schema.json`. The design page, tab Messages, gives the fields of each template.
 
 | Template | From → to | Sent with |
 |---|---|---|
@@ -76,9 +76,9 @@ Each message is a filled template. A sender gives the fields, `core` validates t
 | `brief` | User, parent → new session | `spawn_child`, `orch new`: title, goal, scope, doneWhen, skills, agent, cwd, worktree |
 | `notice` | Supervisor → session | default, review, child-report, blocked |
 
-Each template message, and each change of state, is also an event in one append-only stream, `store/events/<day>/<id>.json`. A reader picks what it needs with a query: the UI queue takes `decision` events, the timeline takes all events of the last hours, and the ledger of today becomes the query `by = docs or policy, or kind = review`. The event envelope: `id`, `at`, `session`, `kind`, `by`, `data` (the template fields), `refs`. Rules: one new file for each event, so two writers never write one file; never change or delete an event; `core` writes the event first, then the state file. The design page, tab Messages, gives the event kinds and the queries.
+Each template message, and each change of state, is also an event in one append-only stream, `store/events/<day>/<id>.json`. A reader picks what it needs with a query: the UI queue takes `decision` events, the timeline takes all events of the last hours, and the ledger of today becomes the query `by = docs or policy, or kind = review`. The event envelope: `id`, `at`, `session`, `kind`, `by`, `data` (the template fields), `refs`. Rules: one new file for each event, so two writers never write one file; never change or delete an event; `Orchestrator.Store` writes the event first, then the state file. The design page, tab Messages, gives the event kinds and the queries.
 
-The `orch` command (M1) does each read and write of the store, for the user, the scripts and the sessions: `new`, `send`, `tree`, `status`, `decisions`, `answer`, `review`, `events`, `decision start`, `decision pr`, `stack rebase`, `stack close`, `stop`, `archive`, `open`, `template`, `doctor`. The stack commands replace the 5 steps of the default note.
+The `orch` command (M1), a .NET tool, does each read and write of the store, for the user, the scripts and the sessions: `new`, `send`, `tree`, `status`, `decisions`, `answer`, `review`, `events`, `decision start`, `decision pr`, `stack rebase`, `stack close`, `stop`, `archive`, `open`, `template`, `doctor`. The stack commands replace the 5 steps of the default note.
 
 ## Phases
 
@@ -93,11 +93,11 @@ After P3, the work continues in milestones to the stable version 1.0:
 
 | Milestone | Work | Done when |
 |---|---|---|
-| M0 | Packages, `core`, templates, event stream, plugin split | The same 16 tests pass, with no behavior change |
-| M1 | `orch` command, stack commands, decision versions, new PR bodies, `[orch]` tag | The PR stack test runs on `orch` commands |
-| M2 | Agents, skills and commands in the plugin | Briefs refer to skills, not long texts |
+| M0 | Port to .NET: Core, Store, Supervisor, Web API, `claude -p` runner | The 16 tests pass in NUnit, and the PR stack live test passes |
+| M1 | Templates, event stream, `orch` command, stack commands, decision versions, new PR bodies, `[orch]` tag | The PR stack test runs on `orch` commands |
+| M2 | Thin plugin: tool schemas from the templates, skills, agents, commands | Briefs refer to skills, not long texts |
 | M3 | Stop, archive, worktrees, restart after failures, app import | Two code sessions run in one repository |
-| M4 | Phone UI, tunnel, sign-in | You answer and review from the phone |
+| M4 | Blazor UI (tree, cards, timeline), tunnel, sign-in | You answer and review from the phone |
 | M5 | One vsa-template stream under the orchestrator | Start to merge with no lost decision |
 | M6 | End-to-end script, crash recovery, store version | A supervisor restart loses nothing |
 
@@ -277,9 +277,10 @@ Rules of the vsa-template work that the M5 stream must obey:
 
 | Question | Recommendation |
 |---|---|
-| Language of the `orch` command | Node 26, the same as the supervisor, no build step |
-| Package layout | npm workspaces in one `package.json` |
-| Can a plugin hook import a relative `.ts` file? | Spike at the M0 start. If not, keep one file and generate it |
+| Blazor mode | Blazor Server (interactive server), in the same process as the supervisor |
+| Use the VSA framework for the orchestrator? | Not now. Plain .NET until 1.0; decide after the VSA 0.1.0 release |
+| Does `claude -p` with `--session-id` and `--resume` keep the lease and the one-branch rule? | Spike at the M0 start |
+| Can a plugin hook import a relative `.ts` file? | Spike at the M2 start. If not, keep one file |
 | Does `CLAUDE_CODE_PLUGIN_DIRS` give the plugin skills and agents to a session? | Spike at the M2 start |
 | Worktrees: does the supervisor make them, or each brief? | The supervisor makes them and records the folder in `meta.json` |
 | Tunnel: which tool and which sign-in? | Cloudflare Tunnel with Cloudflare Access |
