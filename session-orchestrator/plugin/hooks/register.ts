@@ -36,6 +36,9 @@ async function activate($: any, dir: string, reason: unknown): Promise<void> {
   S.idle = status?.state !== 'running'
   await $.fs.write(`${dir}/heartbeat.txt`, await now($))
   await writeLease($, S.holder, reason)
+  const host = await $.env.get('CLAUDE_CODE_HOST_SESSION_ID')
+  const meta = await readJson($, `${dir}/meta.json`)
+  if (host && meta && meta.appId !== host) await writeJson($, `${dir}/meta.json`, { ...meta, appId: host })
   await log($, `activate plugin holder=${S.holder} cursor=${S.cursor} ${JSON.stringify(reason)}`)
   await registerTools($)
   if (S.timers) return

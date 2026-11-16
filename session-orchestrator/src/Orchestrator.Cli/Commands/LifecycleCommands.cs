@@ -24,7 +24,9 @@ public static class LifecycleCommands
     public static int Archive(CommandContext c)
     {
         var id = c.Session(1);
-        foreach (var line in new Lifecycle(c.Store).Archive(id, Parties.User, c.Args.Flag("force"))) c.Output.WriteLine(line);
+        var lifecycle = new Lifecycle(c.Store);
+        var lines = c.Args.Flag("tree") ? lifecycle.ArchiveTree(id, Parties.User, c.Args.Flag("force")) : lifecycle.Archive(id, Parties.User, c.Args.Flag("force"));
+        foreach (var line in lines) c.Output.WriteLine(line);
         return 0;
     }
 
@@ -38,10 +40,11 @@ public static class LifecycleCommands
             return 0;
         }
         var lease = c.Store.Lease(id);
-        if (lease.Holder == Core.Contract.Holders.Supervisor || c.Store.Status(id)?.State == "running")
+        if (lease.Holder == Core.Contract.Holders.Supervisor || c.Store.Status(id)?.State == "running" || c.Store.ReadJson<Core.Contract.TurnMarker>(id, Core.Contract.StoreFiles.Turn) is { Ended: null })
             throw new UsageException($"session {SessionCommands.Short(id)} has a running turn. Wait until it is idle, or run orch stop first, so that only one process writes it.");
-        new Lifecycle(c.Store).Import(id);
-        c.Output.WriteLine($"Opened {SessionCommands.Short(id)} in the desktop app. The app starts its process, and the plugin takes the lease live.");
+        if (!new Lifecycle(c.Store).Import(id))
+            throw new UsageException($"the desktop app did not confirm the import of {SessionCommands.Short(id)} in 30 s. Try again when the session is idle.");
+        c.Output.WriteLine($"Opened {SessionCommands.Short(id)} in the desktop app as local_{id}. The app starts its process, and the plugin takes the lease live.");
         return 0;
     }
 }

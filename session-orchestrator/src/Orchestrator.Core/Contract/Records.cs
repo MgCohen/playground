@@ -26,6 +26,7 @@ public sealed record Meta(string Id)
     public string? Branch { get; init; }
     public bool? AllowDefaults { get; init; }
     public bool? Imported { get; init; }
+    public string? AppId { get; init; }
 }
 
 public sealed record Decision(string Id, string Session)
