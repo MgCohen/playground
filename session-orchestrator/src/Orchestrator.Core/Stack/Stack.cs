@@ -24,14 +24,16 @@ public sealed record StackEntry(string Decision, string Session)
 {
     public List<StackVersion> Versions { get; init; } = [];
 
+    [System.Text.Json.Serialization.JsonIgnore]
     public StackVersion? Newest => Versions.Count > 0 ? Versions[^1] : null;
 
+    [System.Text.Json.Serialization.JsonIgnore]
     public StackVersion? Current => Versions.LastOrDefault(v => v.State != VersionStates.Planned);
 
     public StackVersion? Previous(StackVersion version) => Versions.LastOrDefault(v => v.Version < version.Version);
 
     public StackEntry With(StackVersion version) =>
-        this with { Versions = [.. Versions.Where(v => v.Version != version.Version), version] };
+        this with { Versions = [.. Versions.Where(v => v.Version != version.Version).Append(version).OrderBy(v => v.Version)] };
 }
 
 public static partial class StackNames

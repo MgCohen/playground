@@ -54,6 +54,7 @@ public sealed record Answer
     public string? Note { get; init; }
     public string? Reason { get; init; }
 
+    [System.Text.Json.Serialization.JsonIgnore]
     public string Body => Value ?? Text ?? (Answers is { } a ? a.GetRawText() : "");
 }
 
@@ -96,6 +97,7 @@ public sealed record DocsCheck(bool Answered, string? Answer, string? Source, st
 public sealed record Pending(string Text, IReadOnlyList<string> Inbox, IReadOnlyList<string> Answers)
 {
     public IReadOnlyList<string> Senders { get; init; } = [];
+    [System.Text.Json.Serialization.JsonIgnore]
     public bool IsEmpty => Text.Length == 0;
 }
 

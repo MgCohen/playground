@@ -38,9 +38,9 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 1. Make a git repository in the scratchpad. Put an `AGENTS.md` with one rule in it, for the docs check.
 2. If the test needs PRs, make a private GitHub repository with `gh repo create --private --source . --push`. Before you delete it, copy the PR bodies and comments into `plan.md`: GitHub holds the only copy. The user allows you to create and delete test repositories without a question. The user also allows a public test repository if a private one is blocked.
 3. Copy `config/policy.test.json` into a new store folder as `policy.json` (medium: 30 s).
-4. Build once (`dotnet build src/Orchestrator.Web`), then start the supervisor in the background: `ORCH_STORE=<store> ORCH_PORT=7779 dotnet src/Orchestrator.Web/bin/Debug/net10.0/Orchestrator.Web.dll`. The built DLL starts faster than `dotnet run` and does not lock the sources.
+4. Publish a copy (`dotnet publish src/Orchestrator.Web -o <scratchpad>/sup`), then start it in the background: `ORCH_STORE=<store> ORCH_PORT=7779 dotnet <scratchpad>/sup/Orchestrator.Web.dll`. A supervisor that runs from `bin/` locks the DLLs, and the next build fails. The copy finds the repository through the path that the build embeds.
 5. Copy `spikes/p3/root.json` (one repository) or `spikes/p4/root.json` (PR stack) to the scratchpad, change its `cwd`, then send it: `curl -X POST -H 'content-type: application/json' --data @root.json http://127.0.0.1:7779/api/sessions`.
-6. Play the user with `POST /api/decisions/<session>/<id>` (answer) and `.../review` (`approve`, `change`, `refuse`).
+6. Play the user with `orch answer <decision> <text>` and `orch review <decision> approve|change|refuse <text>`, with `ORCH_STORE` set to the test store.
 7. Watch `answers/`, `report.json` and `blocked.json` of the session. A POST starts a tick at once, so two close reviews run as two turns.
 8. Examine the ledger, the git graph and the PRs. Stop the supervisor.
 
@@ -65,3 +65,10 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - Give the prompt on standard input. A long brief as an argument breaks on the Windows command line.
 - At the end of a `claude -p` process, `session.end` fires, so the mod sets the lease to `none`.
 - The process inherits `ORCH_HOLDER` and `ORCH_STORE` from the runner, so the mod writes to the test store.
+
+## The orch tool
+
+- Install or update it after a change of `src/Orchestrator.Cli`: `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` (`install` the first time).
+- The build embeds the repository path, so `orch` finds `templates/` and `config/` from any folder. `ORCH_HOME` overrides it.
+- `orch` uses `ORCH_STORE`. A supervisor turn sets it, so a session that runs `orch` writes to the store of its supervisor.
+- `orch doctor` checks the home, the store, the policy, the templates, `claude`, `gh`, the plugin path and the supervisor.

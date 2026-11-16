@@ -289,6 +289,26 @@ Findings:
 - The session saw a conflict between the direction of the user and `AGENTS.md` again, followed the user, and wrote it in the PR body.
 - `session.output` still has empty rows and `session.input` has the origin `unclassified`. M1 fixes them in the mod.
 
+## M1 result (2026-11-16)
+
+| Part | Result | Evidence |
+|---|---|---|
+| Templates | ✅ Seven kinds in `templates/`. Each example matches its schema, and each render fills its places | `TemplateTests` |
+| Session texts | ✅ The defaults, reviews, docs notes and child reports come from `templates/notice/render/` | `PolicyTests` |
+| `orch` command | ✅ `new`, `send`, `tree`, `status`, `decisions`, `answer`, `review`, `events`, `decision start/pr/ready`, `stack rebase/close`, `template`, `doctor` | `CliTests` with a local git repository |
+| PR stack test on `orch` | ✅ The session used `orch decision start` and `orch decision pr` for each default, `orch decision ready` for approve, `orch stack rebase` for change and `orch stack close` for refuse. The user part used `orch review` | Test repository `MgCohen/orch-m1-stack-test` (deleted), session `a1b09966`, 89 events |
+| Decision versions | ✅ The refuse planned `-v2` of the refused decision and of the decision above it. A review after it named the `-v2` branch and wrote `reviews/<id>-v2.json` | Rebuilt PRs #4 and #5 |
+| PR texts | ✅ Each title starts with `[orch]` and names its origin: "default decision" or "direction of the user". The body of a rebuilt PR has the new answer, its version and "It replaces PR #2" | PRs #1 to #5 |
+| Event fixes, supervisor side | ✅ Each inbox file names its sender. `turn.json` gives the senders of a turn. `report.forward` links `refs.report`, `turn.end` links `refs.output` | `Supervisor.cs` |
+| Event fixes, mod side | ❌ Blocked: auto mode could not evaluate edits to `mod/orch/hooks/register.ts`. The fixes go into the plugin of M2 | `decisions.md` |
+| Unit tests | ✅ 41 tests | `dotnet test --solution Orchestrator.slnx` |
+
+Findings:
+
+- A supervisor that runs from `src/Orchestrator.Web/bin/` locks its DLLs, so a build fails while it runs. Run live tests from a published copy in the scratchpad.
+- The session followed each `orch` instruction with no extra text in the brief. The brief of the test was the same as in P3.
+- The title of a rebuilt PR cuts a long direction of the user at 60 characters.
+
 ## Next steps
 
 Status: the user reviewed the design page and accepted it. The user then asked for the folder structure, the code topology and a roadmap to a stable version. They are on the page (tabs Code and Roadmap) and in this file. The next work is M0, after the user accepts the roadmap. The notes arrive in the chat, or as comments on the page: read them with the `ArtifactComments` tool on the page URL. After a design change, edit `docs/orchestrator-design.html` and publish it with the `Artifact` tool and `url` set to the page URL.
@@ -339,11 +359,12 @@ Rules of the vsa-template work that the M5 stream must obey:
 
 ### Known gaps
 
-- PR comments show the user (`MgCohen`) as author. Start each orchestrator text with `[orch]`.
+- PR comments show the user (`MgCohen`) as author. Each orchestrator PR title, body and comment starts with `[orch]`, so a reader can tell them apart.
 - Supervisor sessions are not in the app sidebar. Open them with the app import (`docs/know-how.md`).
 - The supervisor does not restart a session after `maxFailures` (3) until the supervisor restarts.
 - `/orch-enable` is not tested in the app.
 - The supervisor has no API to stop or archive a session, but the goal needs both.
+- The mod does not write the event fixes of M1 (see `decisions.md`).
 
 ## Test sessions in the app sidebar
 

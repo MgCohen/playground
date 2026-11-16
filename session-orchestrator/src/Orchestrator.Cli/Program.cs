@@ -2,6 +2,7 @@ using Orchestrator.Cli;
 using Orchestrator.Cli.Git;
 using Orchestrator.Store;
 
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 return Cli.Run(args, Console.Out, Console.Error, Environment.CurrentDirectory);
 
 namespace Orchestrator.Cli
