@@ -17,6 +17,10 @@ namespace Orchestrator.Cli
               orch send <session> <text>
               orch tree
               orch status <session>
+              orch stop <session> [--reason R]
+              orch resume <session>
+              orch archive <session> [--force]
+              orch open <session> [--dry-run]
             Decisions
               orch decisions
               orch answer <decision> <text>
@@ -51,6 +55,10 @@ namespace Orchestrator.Cli
                     "send" => SessionCommands.Send(command),
                     "tree" => SessionCommands.Tree(command),
                     "status" => SessionCommands.Status(command),
+                    "stop" => LifecycleCommands.Stop(command),
+                    "resume" => LifecycleCommands.Resume(command),
+                    "archive" => LifecycleCommands.Archive(command),
+                    "open" => LifecycleCommands.Open(command),
                     "decisions" => DecisionCommands.List(command),
                     "answer" => DecisionCommands.Answer(command),
                     "review" => DecisionCommands.Review(command),

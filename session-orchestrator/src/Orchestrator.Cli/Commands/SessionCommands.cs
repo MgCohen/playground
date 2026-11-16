@@ -61,6 +61,7 @@ public static class SessionCommands
         c.Output.WriteLine(Line(store, meta, now));
         c.Output.WriteLine($"  id: {id}");
         c.Output.WriteLine($"  cwd: {store.Cwd(id)}");
+        if (meta.Branch is { } branch) c.Output.WriteLine($"  worktree: {meta.Cwd} on {branch} (repository {meta.Repo})");
         if (meta.Parent is { } parent) c.Output.WriteLine($"  parent: {parent}");
         var lease = store.Lease(id);
         c.Output.WriteLine($"  lease: {lease.Holder} since {lease.Since}{(store.IsLive(id, now) ? " (live)" : "")}");
@@ -83,6 +84,7 @@ public static class SessionCommands
         if (report is not null) flags.Add($"report {report}");
         if (open > 0) flags.Add($"{open} open");
         if (store.Blocked(id)?.Reason is not null) flags.Add("blocked");
+        if (new Lifecycle(store).Control(id).State is var control && control != Core.Contract.ControlStates.Active) flags.Add(control);
         return $"{Short(id)} {meta.Title ?? "(no title)"} [{string.Join(", ", flags)}]";
     }
 

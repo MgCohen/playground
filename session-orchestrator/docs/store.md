@@ -20,7 +20,7 @@ The plugin `plugin/` and the supervisor share one folder for each session: `stor
 | `report.json`, `reports/<ms>.json` | Plugin | The fields of the report template (`state`, `summary`, `done`, `next`, `blockers`, `links`, `details`), plus `at` and `event` (the id of its `report` event), from the `report` tool |
 | `update.json` | Plugin | The fields of the update template (`step`, `progress`, `summary`), plus `at` and `event`, from the `update` tool |
 | `log-<holder>.txt` | Plugin | Log lines of one holder (`live` or `supervisor`), cut to the last 100 000 characters |
-| `meta.json` | Supervisor, `spawn_child`, `orch new` | `{ id, parent, title, cwd, createdBy, createdAt, started, worktree, agent, skills }`. A session with `createdBy` and no `started` gets a new `claude -p` session with this id |
+| `meta.json` | Supervisor, `spawn_child`, `orch new` | `{ id, parent, title, cwd, createdBy, createdAt, started, worktree, agent, skills, repo, branch }`. With `worktree: true`, the first turn makes a git worktree: `cwd` becomes the worktree folder, `repo` the repository and `branch` its branch. A session with `createdBy` and no `started` gets a new `claude -p` session with this id |
 | `blocked.json` | Plugin, supervisor | `{ reason, since }`. `reason` is `null` when the session is not blocked |
 | `docs-checks/<id>.json` | Supervisor | `{ answered, answer, source, at }`: the result of the docs check of one decision |
 | `reviews/<id>.json` | Supervisor | `{ verdict: approve \| change \| refuse, text, at }` |
@@ -28,6 +28,7 @@ The plugin `plugin/` and the supervisor share one folder for each session: `stor
 | `turn.json` | Supervisor | `{ event, from, at }`: the `turn.start` event of the current supervisor turn and its senders. The plugin uses it as the sender of `session.input` |
 | `last-output.json` | Plugin | `{ event, at }`: the last `session.output` event. `turn.end` links it in `refs.output` |
 | `stack/<decision>.json` | `orch decision`, `orch stack` | The versions of one decision on the stack (below) |
+| `control.json` | `orch stop`, `orch resume`, `orch archive`, the API | `{ state: active | stopped | archived, at, by, reason }`. The supervisor runs no turn of a stopped or archived session, and ends its running turn |
 
 ## Decision
 
@@ -105,6 +106,9 @@ A version id is the decision id for version 1 and `<decision>-v<n>` after it. A 
 | `POST /api/decisions/<session>/<id>/review` | `{ verdict: approve \| change \| refuse, text }` | `{ inbox }`. The review instruction goes to the session |
 | `GET /api/events` | Query: `since` (`3h` or an ISO time), `kind` (comma list), `session`, `from`, `open`, `ledger` | The matching events in order |
 | `GET /api/ledger` | | The ledger events |
+| `POST /api/sessions/<id>/stop` | | `{ stopped }`. Writes `control.json` with `stopped` |
+| `POST /api/sessions/<id>/resume` | | `{ resumed }` |
+| `POST /api/sessions/<id>/archive?force=true` | | `{ archived, lines }`. Refused (400) with open decisions or open PRs, unless `force` |
 
 ## Questions to the user
 
