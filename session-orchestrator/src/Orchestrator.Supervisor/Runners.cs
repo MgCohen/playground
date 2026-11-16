@@ -27,6 +27,8 @@ public sealed record SupervisorOptions(int MaxRuns, int MaxFailures, int MaxChec
     public TimeSpan RetryAfter { get; init; } = TimeSpan.FromMinutes(5);
     public Action<string>? Import { get; init; }
     public TimeSpan ImportWait { get; init; } = TimeSpan.FromSeconds(30);
+    public TimeSpan FirstReminder { get; init; } = TimeSpan.FromMinutes(10);
+    public TimeSpan NextReminder { get; init; } = TimeSpan.FromHours(1);
 }
 
 static class Data

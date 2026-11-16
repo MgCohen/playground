@@ -110,6 +110,62 @@ public sealed class SupervisorTests
     }
 
     [Test]
+    public async Task A_closed_question_sends_one_close_notice_to_the_parent()
+    {
+        using var t = new Rig();
+        var parent = t.Create("p", "parent");
+        var child = t.Create("c", "child", parent, "spawn_child");
+        await t.Cycle();
+        t.Decide(child, "d1", "high", null);
+        await t.Cycle();
+        new Messages(t.Store).Answer(child, "d1", "B");
+        await t.Cycle();
+        await t.Cycle();
+        var toParent = t.Turns.Where(turn => turn.Id == parent).Select(turn => turn.Prompt).ToList();
+        Assert.That(toParent, Has.Count.EqualTo(3));
+        Assert.That(toParent[2], Does.StartWith($"Question closed: child \"child\" ({child}), decision d1: Q d1 Answer: B (from user)."));
+    }
+
+    [Test]
+    public async Task An_open_question_with_no_default_gets_reminders_at_the_set_times()
+    {
+        using var t = new Rig();
+        var parent = t.Create("p", "parent");
+        var child = t.Create("c", "child", parent, "spawn_child");
+        await t.Cycle();
+        t.Decide(child, "d1", "high", null);
+        await t.Cycle();
+        t.Clock.Advance(TimeSpan.FromMinutes(9));
+        await t.Cycle();
+        t.Clock.Advance(TimeSpan.FromMinutes(2));
+        await t.Cycle();
+        t.Clock.Advance(TimeSpan.FromMinutes(30));
+        await t.Cycle();
+        t.Clock.Advance(TimeSpan.FromMinutes(31));
+        await t.Cycle();
+        var reminders = t.Turns.Where(turn => turn.Id == parent && turn.Prompt.StartsWith("Reminder:")).Select(turn => turn.Prompt).ToList();
+        Assert.That(reminders, Has.Count.EqualTo(2));
+        Assert.That(reminders[0], Does.Contain("for 11 min"));
+        Assert.That(reminders[1], Does.Contain("for 1.2 h"));
+    }
+
+    [Test]
+    public async Task A_question_that_the_policy_answers_later_gets_no_reminder()
+    {
+        using var t = new Rig();
+        var parent = t.Create("p", "parent");
+        var child = t.Create("c", "child", parent, "spawn_child");
+        await t.Cycle();
+        t.Decide(child, "d1", "medium", "A");
+        await t.Cycle();
+        t.Clock.Advance(TimeSpan.FromMinutes(9.5));
+        await t.Cycle();
+        t.Clock.Advance(TimeSpan.FromMinutes(1));
+        await t.Cycle();
+        Assert.That(t.Turns.Any(turn => turn.Prompt.StartsWith("Reminder:")), Is.False);
+    }
+
+    [Test]
     public async Task A_question_of_a_root_session_is_not_forwarded()
     {
         using var t = new Rig();

@@ -28,6 +28,12 @@ public sealed class Texts(TemplateSet templates)
             ("context", decision.Context), ("options", decision.Options is { Length: > 0 } options ? string.Join("; ", options) : null),
             ("recommendation", decision.Recommendation), ("risk", decision.Risk), ("defaultText", defaultText));
 
+    public string QuestionReminder(string title, string id, Decision decision, string waited) =>
+        Notice("question-reminder", ("title", title), ("child", id), ("decision", decision.Id), ("question", decision.Question ?? "(no question text)"), ("waited", waited));
+
+    public string QuestionClosed(string title, string id, Decision decision, string answer, string by) =>
+        Notice("question-closed", ("title", title), ("child", id), ("decision", decision.Id), ("question", decision.Question ?? "(no question text)"), ("text", answer), ("by", by));
+
     public string Blocked(int count, string error) => Notice("blocked", ("count", (double)count), ("error", error));
 
     public string Notice(string kind, params (string Key, object? Value)[] fields)

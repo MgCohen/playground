@@ -13,6 +13,8 @@ public static class EventKinds
 
     public const string ReportForward = "report.forward";
     public const string QuestionForward = "question.forward";
+    public const string QuestionRemind = "question.remind";
+    public const string QuestionClose = "question.close";
     public const string SessionInput = "session.input";
     public const string SessionOutput = "session.output";
     public const string SessionTool = "session.tool";
