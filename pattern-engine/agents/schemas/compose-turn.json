@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "properties": {
+    "action": { "type": "string", "enum": ["grade", "commit"] },
+    "grade": {
+      "type": "array",
+      "description": "grade only: the sets to grade, each with its spec",
+      "items": {
+        "type": "object",
+        "properties": {
+          "spec": { "type": "string" },
+          "set": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["spec", "set"]
+      }
+    },
+    "commit": {
+      "type": "array",
+      "description": "commit only: one item for each spec; set null means none",
+      "items": {
+        "type": "object",
+        "properties": {
+          "spec": { "type": "string" },
+          "set": { "type": ["array", "null"], "items": { "type": "string" } },
+          "reason": { "type": "string" }
+        },
+        "required": ["spec", "set", "reason"]
+      }
+    },
+    "note": { "type": "string" }
+  },
+  "required": ["action", "note"]
+}

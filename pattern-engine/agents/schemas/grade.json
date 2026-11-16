@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "verdicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rubric": { "type": "string" },
+          "verdict": { "type": "boolean" },
+          "reason": { "type": "string" }
+        },
+        "required": ["rubric", "verdict", "reason"]
+      }
+    }
+  },
+  "required": ["verdicts"]
+}
