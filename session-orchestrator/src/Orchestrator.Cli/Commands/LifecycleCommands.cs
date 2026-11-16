@@ -31,7 +31,7 @@ public static class LifecycleCommands
     public static int Open(CommandContext c)
     {
         var id = c.Session(1);
-        var command = Lifecycle.OpenCommand(id);
+        var command = Lifecycle.OpenCommand(id, c.Store.Cwd(id));
         if (c.Args.Flag("dry-run"))
         {
             c.Output.WriteLine(string.Join(' ', command));
@@ -40,8 +40,8 @@ public static class LifecycleCommands
         var lease = c.Store.Lease(id);
         if (lease.Holder == Core.Contract.Holders.Supervisor || c.Store.Status(id)?.State == "running")
             throw new UsageException($"session {SessionCommands.Short(id)} has a running turn. Wait until it is idle, or run orch stop first, so that only one process writes it.");
-        new Shell(c.Cwd).Must(command[0], [.. command.Skip(1)]);
-        c.Output.WriteLine($"Opened {SessionCommands.Short(id)} in the desktop app. Send it one message in the app to start its process; the plugin then takes the lease.");
+        new Lifecycle(c.Store).Import(id);
+        c.Output.WriteLine($"Opened {SessionCommands.Short(id)} in the desktop app. The app starts its process, and the plugin takes the lease live.");
         return 0;
     }
 }

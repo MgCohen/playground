@@ -27,7 +27,8 @@ public static class Claude
         foreach (var argument in new[] { "-p", "--output-format", "stream-json", "--verbose" }.Concat(call.Arguments)) info.ArgumentList.Add(argument);
         foreach (var (key, value) in call.Environment) info.Environment[key] = value;
         using var process = Process.Start(info) ?? throw new InvalidOperationException($"cannot start {Executable}");
-        using var kill = cancel.Register(() => { try { process.Kill(entireProcessTree: true); } catch (InvalidOperationException) { } });
+        using var tree = new ProcessTree(process, ProcessTree.DefaultInterval);
+        using var kill = cancel.Register(tree.KillAll);
         await process.StandardInput.WriteAsync(call.Prompt);
         process.StandardInput.Close();
         var errors = process.StandardError.ReadToEndAsync(CancellationToken.None);
@@ -77,6 +78,7 @@ public sealed class ClaudeRunner(string storeRoot, string? pluginDir = null) : I
         var watch = Stopwatch.StartNew();
         var session = request.IsNew ? "--session-id" : "--resume";
         List<string> arguments = [.. SettingArguments(pluginDir), session, request.Id];
+        if (request.IsNew && request.Title is { Length: > 0 } title) arguments.AddRange(["-n", title]);
         if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", agent.Contains(':') ? agent : $"{PluginNamespace}:{agent}"]);
         var call = new ClaudeCall(request.Cwd, request.Prompt, arguments,
             new Dictionary<string, string> { ["ORCH_HOLDER"] = Holders.Supervisor, ["ORCH_STORE"] = storeRoot.Replace('\\', '/') });
