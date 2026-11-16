@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <g data-p="street" data-v="row">
+    <g data-p="ground">
+      <rect x="0" y="260" width="400" height="40" fill="gray"/>
+    </g>
+    <g data-p="house" data-v="chimney">
+      <g data-p="body">
+        <rect x="10" y="180" width="100" height="80" fill="yellow"/>
+      </g>
+      <g data-p="roof">
+        <polygon points="5,180 115,180 60,130" fill="red"/>
+      </g>
+      <g data-p="door">
+        <rect x="20" y="220" width="20" height="40" fill="brown"/>
+      </g>
+      <g data-p="window">
+        <rect x="60" y="195" width="18" height="18" fill="blue"/>
+      </g>
+      <g data-p="window">
+        <rect x="85" y="195" width="18" height="18" fill="blue"/>
+      </g>
+      <g data-p="chimney">
+        <rect x="68" y="120" width="12" height="30" fill="gray"/>
+      </g>
+    </g>
+    <g data-p="tower" data-v="plain">
+      <g data-p="body">
+        <rect x="150" y="130" width="50" height="130" fill="orange"/>
+      </g>
+      <g data-p="roof">
+        <polygon points="145,130 205,130 175,80" fill="black"/>
+      </g>
+      <g data-p="door">
+        <rect x="167" y="230" width="16" height="30" fill="brown"/>
+      </g>
+      <g data-p="window">
+        <rect x="169" y="150" width="12" height="12" fill="yellow"/>
+      </g>
+      <g data-p="window">
+        <rect x="169" y="185" width="12" height="12" fill="yellow"/>
+      </g>
+    </g>
+    <g data-p="tree" data-v="plain">
+      <g data-p="trunk">
+        <rect x="280" y="210" width="12" height="50" fill="brown"/>
+      </g>
+      <g data-p="crown">
+        <circle cx="286" cy="185" r="30" fill="green"/>
+      </g>
+    </g>
+  </g>
+</svg>

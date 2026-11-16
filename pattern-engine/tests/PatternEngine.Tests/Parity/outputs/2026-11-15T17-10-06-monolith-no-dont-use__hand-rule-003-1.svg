@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <g data-p="lowtower" data-v="plain">
+    <g data-p="body"><rect x="40" y="160" width="320" height="110" fill="yellow"/></g>
+    <g data-p="roof"><polygon points="40,160 360,160 200,128" fill="red"/></g>
+    <g data-p="door"><rect x="180" y="210" width="40" height="60" fill="brown"/></g>
+    <g data-p="window"><rect x="90" y="178" width="36" height="30" fill="blue"/></g>
+    <g data-p="window"><rect x="134" y="178" width="36" height="30" fill="blue"/></g>
+    <g data-p="window"><rect x="230" y="178" width="36" height="30" fill="blue"/></g>
+    <g data-p="window"><rect x="274" y="178" width="36" height="30" fill="blue"/></g>
+  </g>
+</svg>

@@ -1,0 +1,943 @@
+{
+  "runId": "2026-11-16T05-08-10",
+  "domain": "circuits",
+  "engine": "csharp-hybrid",
+  "mode": "dev",
+  "label": "circuits-first",
+  "model": "haiku",
+  "k": 1,
+  "ablate": [],
+  "graders": [
+    "selection",
+    "built",
+    "structure",
+    "rules",
+    "behavior",
+    "proposed",
+    "questions"
+  ],
+  "catalog": "24bbc488ad96",
+  "cases": 9,
+  "runs": [
+    {
+      "case": "gen-001",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Build a one-bit equality checker.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "equal",
+          "v": "plain"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "equal",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "24bbc488ad96",
+          "patterns": {
+            "equal": "3eeb6c7e720b"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a one-bit equality checker.",
+            "status": "solved",
+            "pattern": "equal",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request checks whether two bits are the same, which matches the \"equal\" pattern's use_when, has no exclusion that applies, and needs no child patterns or params."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 12597,
+        "Cost": 0.00108332,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "gen-002",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Build a half adder.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "half_adder",
+          "v": "plain"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "half_adder",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "24bbc488ad96",
+          "patterns": {
+            "half_adder": "92c1e5721485"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a half adder.",
+            "status": "solved",
+            "pattern": "half_adder",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request asks for a half adder, which adds two bits with no carry in, so half_adder matches; full_adder is excluded by its do_not_use_when rule because there is no carry in and only two bits."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 13295,
+        "Cost": 0.0011598200000000002,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "gen-003",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Build a full adder.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "full_adder",
+          "v": "plain"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "full_adder",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "24bbc488ad96",
+          "patterns": {
+            "full_adder": "2ba4adf929bf"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a full adder.",
+            "status": "solved",
+            "pattern": "full_adder",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request asks for a full adder, which adds two bits and a carry in (a, b, cin) and produces sum and cout; the full_adder pattern covers this directly, and the half_adder exclusion does not apply because a carry in is involved."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": false
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 20601,
+        "Cost": 0.00213802,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "gen-004",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Build a two-input multiplexer.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "mux2",
+          "v": "plain"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "mux2",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "24bbc488ad96",
+          "patterns": {
+            "mux2": "c07e5413690f"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a two-input multiplexer.",
+            "status": "solved",
+            "pattern": "mux2",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "A two-input multiplexer selects one of two bits with a select bit, which is exactly mux2's use_when, and mux2 has no do_not_use_when exclusions that apply."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 14455,
+        "Cost": 0.00132752,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-near-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Build a circuit that adds three input bits.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "full_adder"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "full_adder",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "24bbc488ad96",
+          "patterns": {
+            "full_adder": "2ba4adf929bf"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a circuit that adds three input bits.",
+            "status": "solved",
+            "pattern": "full_adder",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request adds three bits, which full_adder's use_when covers (a, b, and a carry-in), and no do_not_use_when condition applies; half_adder only fits two bits with no carry in."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": false
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 16835,
+        "Cost": 0.0018281200000000001,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-near-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Build a circuit whose output is 1 when its two input bits are the same.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "equal"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "equal",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "24bbc488ad96",
+          "patterns": {
+            "equal": "3eeb6c7e720b"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a circuit whose output is 1 when its two input bits are the same.",
+            "status": "solved",
+            "pattern": "equal",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request asks for a circuit that outputs 1 when two bits are the same, which is the equality check; the \"equal\" pattern's use_when matches, no do_not_use_when applies, and the plain variant covers it with inputs a and b and output y."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 12439,
+        "Cost": 0.00116672,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-near-003",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Build a circuit that passes input a or input b to its output, as a select bit says.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "mux2"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "mux2",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "24bbc488ad96",
+          "patterns": {
+            "mux2": "c07e5413690f"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a circuit that passes input a or input b to its output, as a select bit says.",
+            "status": "solved",
+            "pattern": "mux2",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request passes one of two input bits to the output based on a select bit, which is exactly what mux2 does; no do_not_use_when condition applies and the other candidates (adders, equal) do not select."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 12449,
+        "Cost": 0.00125822,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Build a circuit whose output is 1 when at least two of its three inputs are 1.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "full_adder",
+          "mux2",
+          "half_adder",
+          "equal"
+        ]
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "majority3",
+          "v": "plain"
+        },
+        "nearest": "full_adder",
+        "deltas": [
+          "Keep the three 1-bit inputs a, b, cin.",
+          "Drop the sum output; the only output is a single bit that is 1 when at least two inputs are 1.",
+          "The output equals the carry-out of a full adder, so the new pattern is a majority-of-three gate rather than an adder."
+        ],
+        "proposed": "patterns/majority3.md",
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "38a8d11c6fa6",
+          "patterns": {
+            "majority3": "9791e5e74826"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a circuit whose output is 1 when at least two of its three inputs are 1.",
+            "status": "none",
+            "pattern": "majority3",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request asks for a majority-of-three bit function, which none of the candidates' use_when covers: full_adder is about adding, and half_adder, equal and mux2 do not fit, although full_adder's carry-out is exactly this function, so it is the nearest pattern."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 30704,
+        "Cost": 0.00324218,
+        "Calls": 3,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Build a half adder that also takes a carry in.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "full_adder"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "full_adder",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "24bbc488ad96",
+          "patterns": {
+            "full_adder": "2ba4adf929bf"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a half adder that also takes a carry in.",
+            "status": "solved",
+            "pattern": "full_adder",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request adds two bits plus a carry in, which matches full_adder's use_when; half_adder is excluded because its do_not_use_when applies when a carry in is also added. The request names a half adder only as the base to extend, not as a required sub-part, so no child is listed."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": false
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 18536,
+        "Cost": 0.0021070200000000002,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+{ "p": "mux2", "v": "plain",
+  "parts": [ { "id": "inv", "p": "not" }, { "id": "low", "p": "and" }, { "id": "high", "p": "and" }, { "id": "join", "p": "or" } ],
+  "wires": [ ["sel", "inv.a"], ["inv.y", "low.a"], ["a", "low.b"], ["sel", "high.a"], ["b", "high.b"], ["high.y", "join.a"], ["low.y", "join.b"], ["join.y", "y"] ] }

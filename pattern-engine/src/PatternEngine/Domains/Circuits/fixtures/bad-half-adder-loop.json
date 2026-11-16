@@ -1,0 +1,3 @@
+{ "p": "half_adder", "v": "plain",
+  "parts": [ { "id": "x1", "p": "xor" }, { "id": "a1", "p": "and" } ],
+  "wires": [ ["a", "x1.a"], ["a1.y", "x1.b"], ["x1.y", "a1.a"], ["b", "a1.b"], ["x1.y", "sum"], ["a1.y", "carry"] ] }

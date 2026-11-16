@@ -5,3 +5,7 @@ spike/domains/*/build/
 bin/
 obj/
 TestResults/
+results/runs/
+results/solve/
+src/PatternEngine/Domains/*/build/
+results/review/

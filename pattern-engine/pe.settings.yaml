@@ -1,0 +1,91 @@
+# Pattern engine settings. Change the values here, not in code.
+# A pack can override any key in src/PatternEngine/Domains/<Pack>/pack.settings.yaml.
+
+paths:
+  domains: src/PatternEngine/Domains     # one folder for each pack
+  agents: agents                         # the engine agent files; a pack can replace one in <pack>/agents
+  results: results                       # result files (in git)
+  runs: results/runs                     # run outputs (not in git)
+  review: results/review                 # review pages (not in git)
+  review_template: src/PatternEngine/Features/Review/template.html
+  sandboxes: ""                          # empty = the system temp folder
+
+default_domain: shapes
+
+# The model boundary. kind: cli (claude -p with the subscription login) or scripted (tests only).
+judge:
+  kind: cli
+  cli:
+    executable: claude
+    model: ""            # empty = the model of the agent file; a run mode can set one
+    retries: 1           # one more call when a call gives no structured answer
+    timeout_seconds: 120
+
+engine:
+  allow_no_fit: true
+  concurrency: 4         # agent calls at the same time inside one run
+  limits:
+    node:
+      max_depth: 4
+      compose_retries: 3
+      escalations: 1
+    run:
+      agent_calls: 80
+      cost_usd: 1.0
+      seconds: 900
+  # Escalation triggers (phase P6). Each one can be turned off.
+  triggers:
+    unclear: true
+    near_tie: false
+    near_tie_margin: 0.15
+    not_allowed: true
+    retries_used_up: true
+    out_of_domain: true
+  # Questions to the user (phase P5).
+  questions:
+    ask_missing_required: true   # a required param that the request does not give
+    max_rounds: 3
+
+# The graders that decide pass or fail. A run passes when each grader that applies passes.
+# A pack can add its own graders (for example behavior) and list them in its pack.settings.yaml.
+grading:
+  graders: [selection, built, structure, rules, proposed, questions]
+  information: [consistent]      # measured, but not a pass condition
+
+# Tests of the graders, with no model.
+grader_trust:
+  checks: [fixtures, references, mutations]
+  reference_pass_rate: 1.0
+  mutation_catch_rate: 1.0
+  right_reason_rate: 1.0
+  mutations: all                 # or a list of operator ids
+  case_sets:
+    - { count: 15, seed: 7, max_children: 4 }    # the tuned set
+    - { count: 60, seed: 42, max_children: 6 }   # the held-out set
+
+eval:
+  case_sources: [generator, hand]
+  # Each pack sets object_template and group_template in its pack.settings.yaml.
+  generator: { count: 15, seed: 7, max_children: 4, tuned_seed: 7 }
+  sample_buckets: [ask, no-fit, near-miss, deep, group, object]
+  concurrency: 4                  # runs at the same time
+  modes:
+    smoke: { sample: 3, k: 1, model: haiku }
+    dev:   { sample: 5, k: 1, model: haiku }
+    full:  { sample: 0, k: 3, model: sonnet }    # sample 0 = all cases
+  # A number is a minimum rate (0..1). { max: x } is a maximum rate. null = no targets.
+  targets:
+    smoke: null
+    default:
+      pass@1: 0.85
+      pass^k: 0.70
+      near-miss: 0.80
+      no-fit: 0.80
+      agent-errors: { max: 0.05 }
+
+# Promotion of trial patterns (phase P8).
+promotion:
+  min_runs: 10
+  good_pass_rate: 0.9
+  bad_pass_rate: 0.6
+  notifications: results/notifications.md

@@ -1,0 +1,1808 @@
+{
+  "runId": "2026-11-16T05-19-11",
+  "domain": "topology",
+  "engine": "csharp-hybrid",
+  "mode": "dev",
+  "label": "topology-first",
+  "model": "haiku",
+  "k": 1,
+  "ablate": [],
+  "graders": [
+    "selection",
+    "built",
+    "structure",
+    "rules",
+    "flow",
+    "proposed",
+    "questions"
+  ],
+  "catalog": "f6fc3237a768",
+  "cases": 13,
+  "runs": [
+    {
+      "case": "gen-001",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Design a command pipeline that validates its input.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "command_pipeline",
+          "v": "validated"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "command_pipeline",
+          "v": "validated"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "command_pipeline": "8019f2632f29"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a command pipeline that validates its input.",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "validated",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request asks for a single job that changes data in steps, and it explicitly asks for the input to be validated first, which matches command_pipeline's validated variant; cqrs_system is excluded because only one job is needed."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 14155,
+        "Cost": 0.00134372,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "gen-002",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "medium"
+      ],
+      "request": "Design a system with: a query handler; and an observer.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "query_handler",
+              "v": "plain"
+            },
+            {
+              "p": "observer",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "query_handler",
+              "v": "plain"
+            },
+            {
+              "p": "observer",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 2,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "cqrs_system": "56c39c70804e",
+            "query_handler": "aa16916c94a5",
+            "observer": "0bd02ed5500e"
+          }
+        },
+        "notes": [
+          "node 2: escalation (the decider could not choose (unclear)): unclear: The request is only the word \"observer\" and does not say that other parts react to an event, so the use_when match is not established and I cannot choose a pattern without guessing."
+        ],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a system with: a query handler; and an observer.",
+            "status": "solved",
+            "pattern": "cqrs_system",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2
+            ],
+            "open": [],
+            "reason": "The request needs two jobs (reading data via a query handler and reacting to events via an observer), which matches cqrs_system's use_when, and no do_not_use_when applies because more than one job is required."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "query handler",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request names a query handler, which matches query_handler's use_when (reads data and returns a view); the request does not say it changes or saves data, so its exclusion does not apply, and the plain variant is the only one."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "observer",
+            "status": "solved",
+            "pattern": "observer",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "escalation: The parent request explicitly asks for \"an observer\", which names the allowed pattern observer directly, so the match is established and only the plain variant applies."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 29411,
+        "Cost": 0.00380535,
+        "Calls": 6,
+        "Escalations": 1,
+        "Error": null
+      }
+    },
+    {
+      "case": "gen-003",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "medium"
+      ],
+      "request": "Design a system with: a command pipeline that validates its input; and a query handler.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "command_pipeline",
+              "v": "validated"
+            },
+            {
+              "p": "query_handler",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "command_pipeline",
+              "v": "validated"
+            },
+            {
+              "p": "query_handler",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 2,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "cqrs_system": "56c39c70804e",
+            "command_pipeline": "8019f2632f29",
+            "query_handler": "aa16916c94a5"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a system with: a command pipeline that validates its input; and a query handler.",
+            "status": "solved",
+            "pattern": "cqrs_system",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2
+            ],
+            "open": [],
+            "reason": "The request needs two jobs, changing data (the command pipeline) and reading data (the query handler), so the group fits; the validation request selects the validated variant of the pipeline child, and no other requirement is left uncovered."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "a command pipeline that validates its input",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "validated",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request changes data through steps and explicitly asks to validate the input first, which matches command_pipeline's validated variant; the request does not only read data, so query_handler is excluded, and observer does not fit because no parts react to an event."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "a query handler",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request names a query handler, which reads data and returns a view and does not change data; command_pipeline's exclusion rule sends read-only requests to query_handler, and observer reacts to events, so query_handler (plain, which always applies) is the fit."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 20548,
+        "Cost": 0.00308869,
+        "Calls": 5,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "gen-004",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Design a query handler.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "query_handler",
+          "v": "plain"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "query_handler",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "query_handler": "aa16916c94a5"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a query handler.",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request asks for a query handler, which matches the query_handler use_when (reads data and returns a view) and does not involve changing or saving data, so the plain variant applies with no params or child patterns."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 12772,
+        "Cost": 0.0011866200000000002,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "gen-005",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Design a command pipeline.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "command_pipeline",
+          "v": "plain"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "command_pipeline",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "command_pipeline": "8019f2632f29"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a command pipeline.",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request asks for one job, a command pipeline that changes data in steps; cqrs_system is excluded because the request needs only one job, and the request names no input check, reads, or event reactions, so the plain variant of command_pipeline applies."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 12319,
+        "Cost": 0.0013255200000000002,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "gen-006",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "medium"
+      ],
+      "request": "Design a system with: an observer; and a query handler.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "observer",
+              "v": "plain"
+            },
+            {
+              "p": "query_handler",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "observer",
+              "v": "plain"
+            },
+            {
+              "p": "query_handler",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 2,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "cqrs_system": "56c39c70804e",
+            "observer": "0bd02ed5500e",
+            "query_handler": "aa16916c94a5"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a system with: an observer; and a query handler.",
+            "status": "solved",
+            "pattern": "cqrs_system",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2
+            ],
+            "open": [],
+            "reason": "The request asks for two jobs (reacting to events via an observer and reading data via a query handler), which matches the group's two-or-more condition, and the group's child patterns cover both named parts; no command pipeline is requested, so it is not listed as a child."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "observer",
+            "status": "solved",
+            "pattern": "observer",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request names the observer pattern directly, and no do_not_use_when condition applies, so the plain variant (which always matches) is chosen; the request gives no further details, but none are needed to select the pattern."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "query handler",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request names a query handler, which matches the query_handler use_when (reads data and returns a view), and nothing in the request says it changes or saves data, so the do_not_use_when check does not apply."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 24947,
+        "Cost": 0.00255204,
+        "Calls": 5,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "gen-007",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "medium"
+      ],
+      "request": "Design a system with: an observer; a command pipeline; and a query handler.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "observer",
+              "v": "plain"
+            },
+            {
+              "p": "command_pipeline",
+              "v": "plain"
+            },
+            {
+              "p": "query_handler",
+              "v": "plain"
+            }
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "observer",
+              "v": "plain"
+            },
+            {
+              "p": "command_pipeline",
+              "v": "plain"
+            },
+            {
+              "p": "query_handler",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 3,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "cqrs_system": "56c39c70804e",
+            "observer": "0bd02ed5500e",
+            "command_pipeline": "8019f2632f29",
+            "query_handler": "aa16916c94a5"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a system with: an observer; a command pipeline; and a query handler.",
+            "status": "solved",
+            "pattern": "cqrs_system",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2,
+              3
+            ],
+            "open": [],
+            "reason": "The request asks for three jobs (an observer that reacts to events, a command pipeline that changes data, and a query handler that reads data), which matches the group pattern that needs two or more of these jobs, and none of the exclusion conditions apply."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "an observer",
+            "status": "solved",
+            "pattern": "observer",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request names an observer directly, and the observer pattern is the only candidate about other parts reacting to an event on their own; it has no exclusion rule that applies, so the plain variant is used with no params or children."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "a command pipeline",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request names a command pipeline, which matches command_pipeline directly; no read-only exclusion or input validation is named, so the plain variant applies, and query_handler and observer do not fit."
+          },
+          {
+            "id": 3,
+            "parent": 0,
+            "depth": 1,
+            "text": "a query handler",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request asks for a query handler, which reads data and returns a view, and it names no change or save, so query_handler applies and its only variant, plain, is chosen."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 25015,
+        "Cost": 0.00409752,
+        "Calls": 7,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "gen-008",
+      "run": 1,
+      "tags": [
+        "generated",
+        "group",
+        "medium"
+      ],
+      "request": "Design a system with: a query handler; and a command pipeline that validates its input.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "query_handler",
+              "v": "plain"
+            },
+            {
+              "p": "command_pipeline",
+              "v": "validated"
+            }
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "query_handler",
+              "v": "plain"
+            },
+            {
+              "p": "command_pipeline",
+              "v": "validated"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 2,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "cqrs_system": "56c39c70804e",
+            "query_handler": "aa16916c94a5",
+            "command_pipeline": "8019f2632f29"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a system with: a query handler; and a command pipeline that validates its input.",
+            "status": "solved",
+            "pattern": "cqrs_system",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2
+            ],
+            "open": [],
+            "reason": "The request needs two jobs, reading data through a query handler and changing data through a command pipeline, which is the group cqrs_system; the command pipeline's input check is covered by its validated variant, and the observer is not named."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "a query handler",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request is for a query handler, which reads data and returns a view, and it names no change or save of data, so query_handler applies in its plain variant."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "a command pipeline that validates its input",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "validated",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request is a multi-step flow that changes data (a command) and explicitly asks to validate the input first, which matches the command_pipeline pattern's validated variant; no do_not_use_when condition applies and the other candidates do not fit."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 20955,
+        "Cost": 0.0023691000000000003,
+        "Calls": 5,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-near-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Design a part that sends an email each time an order is placed.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "observer"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "observer",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "observer": "0bd02ed5500e"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a part that sends an email each time an order is placed.",
+            "status": "solved",
+            "pattern": "observer",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request is a part that reacts to an order-placed event by sending an email, which matches the observer use_when example of sending an email; no exclusion applies and no other requirement is named."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 17468,
+        "Cost": 0.00124642,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-near-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Design a pipeline that shows a customer the list of their orders.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "query_handler"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "query_handler",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "query_handler": "aa16916c94a5"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a pipeline that shows a customer the list of their orders.",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request only reads a customer's orders and returns them as a list view, with no change or save of data, so query_handler is the only fitting pattern and the plain variant applies."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 16785,
+        "Cost": 0.00120822,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "command_pipeline",
+          "observer"
+        ]
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "ask",
+        "tree": {
+          "p": "command_pipeline",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          {
+            "node": 2,
+            "about": "domain",
+            "key": "Wait a delay between the retry attempts",
+            "text": "Is the retry delay within this design's scope, or should it be left out and only the retry steps kept?",
+            "options": [
+              "command_pipeline",
+              "out of scope"
+            ],
+            "answer": null
+          }
+        ],
+        "open_requirements": [
+          "Retry the failed payment up to three times",
+          "Wait a delay between the retry attempts"
+        ],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "command_pipeline": "8019f2632f29"
+          }
+        },
+        "notes": [
+          "node 2: escalation (the request may be outside the domain): outside the domain: The request asks for a delay between retry attempts, which is retry or resilience timing and not about structuring the change, read, or event jobs that these patterns cover, so no candidate fits."
+        ],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+            "status": "partial",
+            "pattern": "command_pipeline",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2
+            ],
+            "open": [
+              "Retry the failed payment up to three times",
+              "Wait a delay between the retry attempts"
+            ],
+            "reason": "Retrying a payment changes data in steps, which matches command_pipeline, but the pattern does not cover the retry count or the delay between attempts, so those are listed as open requirements."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "Retry the failed payment up to three times",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "Retrying a failed payment changes data (charging the payment) in steps, which matches command_pipeline; it is a single change job, so cqrs_system does not apply, and no input validation is named, so the plain variant is used."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "Wait a delay between the retry attempts",
+            "status": "asking",
+            "pattern": null,
+            "variant": null,
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "asked: Is the retry delay within this design's scope, or should it be left out and only the retry steps kept?"
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "expected outcome \"no-fit\", got \"ask\"",
+              "expected nearest command_pipeline or observer, got \"-\"",
+              "no deltas listed"
+            ]
+          },
+          "built": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "no proposed pattern file"
+            ]
+          },
+          "questions": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "extra question about \"Wait a delay between the retry attempts\" (domain): Is the retry delay within this design's scope, or should it be left out and only the retry steps kept?"
+            ]
+          }
+        },
+        "pass": false,
+        "consistent": true
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 33248,
+        "Cost": 0.00434758,
+        "Calls": 5,
+        "Escalations": 1,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Design a query handler that also saves the changes that the user sends.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "command_pipeline"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "query_handler",
+              "v": "plain"
+            },
+            {
+              "p": "command_pipeline",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 2,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "cqrs_system": "56c39c70804e",
+            "query_handler": "aa16916c94a5",
+            "command_pipeline": "8019f2632f29"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a query handler that also saves the changes that the user sends.",
+            "status": "solved",
+            "pattern": "cqrs_system",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2
+            ],
+            "open": [],
+            "reason": "The request needs both reading data (query handler) and changing/saving data (command pipeline), so it needs two or more jobs and the query_handler exclusion routes the save part to command_pipeline; cqrs_system groups these and is the more specific fit."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "a query handler",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request is for a query handler, which reads data and returns a view, and it does not say the request changes or saves data, so command_pipeline's exclusion does not apply."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "saves the changes that the user sends",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request saves data changes sent by a user, which is a state-changing request handled in steps, so command_pipeline applies; no input check is named, so the plain variant is used, and query_handler and observer do not match."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "command_pipeline: expected \"command_pipeline\", got \"cqrs_system\""
+            ]
+          },
+          "built": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "command_pipeline: expected \"command_pipeline\", got \"cqrs_system\""
+            ]
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": false,
+        "consistent": true
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 24866,
+        "Cost": 0.0028347,
+        "Calls": 5,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-system-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "group"
+      ],
+      "request": "Design a system where users place orders, read their order history, and get an email for each order.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "parts": [
+            {
+              "p": "command_pipeline"
+            },
+            {
+              "p": "query_handler"
+            },
+            {
+              "p": "observer"
+            }
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "command_pipeline",
+              "v": "plain"
+            },
+            {
+              "p": "query_handler",
+              "v": "plain"
+            },
+            {
+              "p": "query_handler",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "attempts": 3,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "cqrs_system": "56c39c70804e",
+            "command_pipeline": "8019f2632f29",
+            "query_handler": "aa16916c94a5"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a system where users place orders, read their order history, and get an email for each order.",
+            "status": "solved",
+            "pattern": "cqrs_system",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2,
+              3
+            ],
+            "open": [],
+            "reason": "The request needs three jobs (change data by placing orders, read data via order history, and react to each order with an email), so the group pattern cqrs_system applies, and none of its do_not_use_when conditions match."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "command_pipeline: users place orders",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "Placing an order changes data in steps when a user sends a request, and the request names no input check, so the plain variant of command_pipeline applies; query_handler is excluded because the request writes data."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "query_handler: users read their order history",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request only reads order history and returns a view, which matches query_handler's use_when, and it names no write or save step, so the command_pipeline exclusion does not apply."
+          },
+          {
+            "id": 3,
+            "parent": 0,
+            "depth": 1,
+            "text": "observer: get an email for each order",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request asks to get (read) an email for each order and return that as a result, which matches the read-only query_handler; it changes no data, and the observer pattern does not fit because no event or reaction is mentioned."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "cqrs_system[2] > observer: expected \"observer\", got \"query_handler\""
+            ]
+          },
+          "built": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "cqrs_system[2] > observer: expected \"observer\", got \"query_handler\""
+            ]
+          },
+          "structure": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "cqrs_system: part \"query_handler\": count 2, allowed 0..1"
+            ]
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": false,
+        "consistent": true
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 23245,
+        "Cost": 0.0042298100000000005,
+        "Calls": 7,
+        "Escalations": 0,
+        "Error": null
+      }
+    }
+  ]
+}

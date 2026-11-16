@@ -1,0 +1,5 @@
+{ "p": "majority", "v": "plain",
+  "inputs": ["a", "b", "c"], "outputs": ["y"],
+  "parts": [ { "id": "ab", "p": "and" }, { "id": "bc", "p": "and" }, { "id": "ac", "p": "and" }, { "id": "o1", "p": "or" }, { "id": "o2", "p": "or" } ],
+  "wires": [ ["a", "ab.a"], ["b", "ab.b"], ["b", "bc.a"], ["c", "bc.b"], ["a", "ac.a"], ["c", "ac.b"],
+             ["ab.y", "o1.a"], ["bc.y", "o1.b"], ["o1.y", "o2.a"], ["ac.y", "o2.b"], ["o2.y", "y"] ] }

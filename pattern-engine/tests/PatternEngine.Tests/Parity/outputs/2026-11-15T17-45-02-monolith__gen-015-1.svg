@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+<g data-p="tower" data-v="plain">
+<g data-p="body"><rect x="170" y="90" width="60" height="180" fill="gray"/></g>
+<g data-p="roof"><polygon points="160,90 240,90 200,40" fill="red"/></g>
+<g data-p="door"><rect x="190" y="240" width="20" height="30" fill="brown"/></g>
+<g data-p="window"><rect x="190" y="110" width="20" height="20" fill="yellow"/></g>
+<g data-p="window"><rect x="190" y="160" width="20" height="20" fill="yellow"/></g>
+</g>
+</svg>

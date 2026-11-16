@@ -1,0 +1,23 @@
+# Near-miss: the words point to one pattern; a rule or the job gives the correct one.
+- id: hand-rule-001
+  tags: [near-miss]
+  request: Design a query handler that also saves the changes that the user sends.
+  expect: { outcome: match, tree: { p: command_pipeline } }
+- id: hand-near-001
+  tags: [near-miss-easy]
+  request: Design a part that sends an email each time an order is placed.
+  expect: { outcome: match, tree: { p: observer } }
+- id: hand-near-002
+  tags: [near-miss]
+  request: Design a pipeline that shows a customer the list of their orders.
+  expect: { outcome: match, tree: { p: query_handler } }
+# A system: two or more jobs.
+- id: hand-system-001
+  tags: [group]
+  request: Design a system where users place orders, read their order history, and get an email for each order.
+  expect: { outcome: match, tree: { p: cqrs_system, parts: [ { p: command_pipeline }, { p: query_handler }, { p: observer } ] } }
+# No-fit: no pattern does this.
+- id: hand-nofit-001
+  tags: [no-fit]
+  request: Design a part that tries a failed payment again three times, with a delay between the tries.
+  expect: { outcome: no-fit, nearest: [command_pipeline, observer] }

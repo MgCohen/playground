@@ -1,0 +1,14 @@
+# Settings of the topology pack. They override pe.settings.yaml for this pack only.
+# The flow grader runs the data flow of the top block: each part must run, and each output must get a value.
+grading:
+  graders: [selection, built, structure, rules, flow, proposed, questions]
+eval:
+  generator:
+    count: 8
+    max_children: 3
+    object_template: "Design {text}."
+    group_template: "Design {group} with: {list}."
+  sample_buckets: [no-fit, near-miss, group, object]
+grader_trust:
+  case_sets:
+    - { count: 8, seed: 7, max_children: 3 }

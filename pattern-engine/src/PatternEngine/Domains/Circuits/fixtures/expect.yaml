@@ -1,0 +1,14 @@
+# The verdict that each grader must give for each fixture.
+- file: good-mux-alt.json
+  structure: true
+  rules: true
+  behavior: true
+  tree: { p: mux2, v: plain }
+- file: bad-equal-no-invert.json
+  structure: true
+  rules: true
+  behavior: false
+  tree: { p: equal }
+- { file: bad-half-adder-loop.json, structure: false, rules: true }
+# A new block that the catalog does not have: the structure fails (unknown pattern), but the behavior is right.
+- { file: majority-new-block.json, structure: false, rules: true, behavior: true, spec: majority }

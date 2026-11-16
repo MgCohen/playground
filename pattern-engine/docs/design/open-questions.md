@@ -31,11 +31,15 @@
 
 | Area | Question |
 |---|---|
-| Engine | The map of code and agents: which element is code, which is an agent, who starts whom (design step with the owner, before A2) |
+| Engine | The map of code and agents: a proposal is in [build-log.md](build-log.md). Review it and change the balance if needed |
 | Roles | Which roles are agents and which are people: reviewer, author, approver, grader |
 | Review | How notes become asserts and operators |
 | Code | How a domain pack fits the VSA layout: a feature module, a plugin module, or a separate assembly that the app loads |
-| Code | Does a persistent `stream-json` CLI process keep `--agent` and `--json-schema` for each message? Test it in B3 |
+| Code | Does a persistent `stream-json` CLI process keep `--agent` and `--json-schema` for each message? Not tested yet: one process for each call works and keeps the context clean |
+| Cases | A no-fit inside a partial: if one open requirement has no pattern, is the expected outcome a no-fit for the full request, or a partial with a proposed pattern for that requirement? |
+| Cases | The topology case "a query handler that also saves the changes" goes to the system pattern. Change the case, or add a rule to the system pattern? |
+| Engine | A partial with open requirements: how does a pack join the outputs of the other patterns into one output? Today the open requirements are decided and recorded, but not composed |
+| Engine | An escalation during compose can change the pattern of a node. Child nodes that the new pattern needs are not decided |
 
 ## Non-goals
 

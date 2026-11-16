@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "status": { "type": "string", "enum": ["solved", "partial", "none", "unclear", "outside"] },
+    "pattern": { "type": "string", "description": "one id from the candidates" },
+    "variant": { "type": "string" },
+    "params": { "type": "object", "additionalProperties": { "type": "string" } },
+    "children": { "type": "array", "items": { "type": "string" } },
+    "open": { "type": "array", "items": { "type": "string" }, "description": "requirements that the pattern does not cover (partial only)" },
+    "nearest": { "type": "string" },
+    "new_id": { "type": "string" },
+    "deltas": { "type": "array", "items": { "type": "string" } },
+    "margin": { "type": "number", "description": "0..1: how much better the chosen candidate fits than the next one" },
+    "reason": { "type": "string" }
+  },
+  "required": ["status", "pattern", "reason"]
+}

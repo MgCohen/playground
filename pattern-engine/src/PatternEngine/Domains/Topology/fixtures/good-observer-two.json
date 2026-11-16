@@ -1,0 +1,3 @@
+{ "p": "observer", "v": "plain",
+  "parts": [ { "id": "mail", "p": "subscriber" }, { "id": "report", "p": "subscriber" } ],
+  "wires": [ ["event", "mail.event"], ["event", "report.event"], ["mail.effect", "effect"] ] }

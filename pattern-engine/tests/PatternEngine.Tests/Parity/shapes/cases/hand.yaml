@@ -1,0 +1,42 @@
+# Hand cases: the situations that the generator does not make.
+- id: hand-near-001
+  tags: [near-miss-easy]
+  request: Draw a tall, narrow building with a pointed roof and a door.
+  expect: { outcome: match, tree: { p: tower, v: plain } }
+- id: hand-near-002
+  tags: [near-miss-easy]
+  request: Draw a small cottage with a chimney.
+  expect: { outcome: match, tree: { p: house, v: chimney } }
+- id: hand-near-003
+  tags: [near-miss-easy]
+  request: Draw a skinny building, three times as tall as it is wide, with two windows.
+  expect: { outcome: match, tree: { p: tower, v: plain } }
+- id: hand-nofit-001
+  tags: [no-fit]
+  request: Draw a lighthouse.
+  expect: { outcome: no-fit, nearest: tower }
+- id: hand-nofit-002
+  tags: [no-fit]
+  request: Draw a windmill.
+  expect: { outcome: no-fit, nearest: tower }
+- id: hand-nofit-003
+  tags: [no-fit]
+  request: Draw a camping tent.
+  expect: { outcome: no-fit, nearest: [house, tower, shed] }
+# Near-miss: the words point to one pattern; only a do_not_use_when rule gives the correct one.
+- id: hand-rule-001
+  tags: [near-miss]
+  request: Draw a narrow house, four floors tall, with a red door.
+  expect: { outcome: match, tree: { p: tower, v: plain, params: { door_fill: red } } }
+- id: hand-rule-002
+  tags: [near-miss]
+  request: Draw a little house where we keep our bikes.
+  expect: { outcome: match, tree: { p: shed, v: plain } }
+- id: hand-rule-003
+  tags: [near-miss]
+  request: Draw a tower that is low and wide, where a family lives.
+  expect: { outcome: match, tree: { p: house } }
+- id: hand-rule-004
+  tags: [near-miss]
+  request: Draw a garage that a family has made into their home.
+  expect: { outcome: match, tree: { p: house } }
