@@ -14,16 +14,20 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 | `session.end` | Fires when the app archives a session or an idle app process ends (after about 3 h 45 min in S11) |
 | Two writers | Two processes that write one session split the transcript. Two processes that write one log file lose lines |
 
-## Mod rules
+## Plugin rules
 
 - Write each helper as a top-level `function` that takes `$`. The validator refuses arrow-function helpers.
 - Read an environment variable with `$.env.get('LITERAL')`, with a literal name.
 - Give each promise a `.catch` handler.
 - `tool.describe` can change the description of a tool and move it behind ToolSearch (`isDeferred`).
-- `tsc` gives TS2589 on `on('tool.call', { tool: 'mcp__...' })`. This is a limit of the type checker. The mod loads correctly.
-- The engine writes `mod/orch/.claude-plugin/types/` when it loads the mod. Git ignores that folder. `tsconfig.json` needs it, so `tsc` works only after one load.
-- Check the mod with `claude plugin validate mod/orch`.
-- Type-check the mod: `npx -y --package=typescript@5.6.3 -- tsc -p .` in `mod/orch`. Exit 2 with only TS2589 is a pass.
+- A hook module can import a relative `.ts` file (`./state.ts`). The modules of one plugin share their module state.
+- Plugin skills and agents reach each session through `CLAUDE_CODE_PLUGIN_DIRS` and through `--plugin-dir`. Their names start with `orch:` (`orch:orch-ask`, `orch:worker`).
+- `claude -p --agent orch:worker` starts a session with a plugin agent.
+- `$.process.run(argv, { cwd, env, stdin, timeoutMs })` runs a program with no shell. The child gets the environment of the session, so `orch` gets `ORCH_STORE`.
+- Auto mode refuses `--permission-mode bypassPermissions` in tests. Use the user settings, or `--permission-mode auto`.
+- `tsc` gives TS2589 on `on('tool.call', { tool: 'mcp__...' })`. This is a limit of the type checker. The plugin loads correctly.
+- The engine writes `plugin/.claude-plugin/types/` when it loads the plugin. Git ignores that folder. `tsconfig.json` needs it, so `tsc` works only after one load.
+- Check the plugin with `claude plugin validate plugin`.
 
 ## Node and the SDK (spikes only)
 
@@ -54,7 +58,8 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 
 | File | State |
 |---|---|
-| `~/.claude/settings.json` | Mod env lines, `defaultMode: auto`, `deny: ["AskUserQuestion"]` |
+| `~/.claude/settings.json` | Plugin env lines (`plugin/`), `defaultMode: auto`, `deny: ["AskUserQuestion"]` |
+| `settings.json.bak-m2-plugin` | Before M2: the env line pointed to `mod/orch` |
 | `settings.json.bak-askuser` | Before the deny rule (mod path of `claude-orchestrator`) |
 | `settings.json.bak-bypass` | Older state, with no mod lines and no `defaultMode` |
 
