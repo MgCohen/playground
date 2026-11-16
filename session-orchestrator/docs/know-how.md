@@ -58,7 +58,7 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 
 | File | State |
 |---|---|
-| `~/.claude/settings.json` | Plugin env lines (`plugin/`), `defaultMode: auto`, `deny: ["AskUserQuestion"]` |
+| `~/.claude/settings.json` | Plugin env lines (`plugin/`), `defaultMode: auto`, `deny: ["AskUserQuestion"]`, `allow` for `mcp__ccd_session_mgmt__set_remote_control` and `mcp__ccd_session_mgmt__archive_session` (added 2026-11-16 to stop the app approval prompts; not tested yet) |
 | `settings.json.bak-m2-plugin` | Before M2: the env line pointed to `mod/orch` |
 | `settings.json.bak-askuser` | Before the deny rule (mod path of `claude-orchestrator`) |
 | `settings.json.bak-bypass` | Older state, with no mod lines and no `defaultMode` |
