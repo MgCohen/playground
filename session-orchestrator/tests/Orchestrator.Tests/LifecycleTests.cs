@@ -88,6 +88,37 @@ public sealed class LifecycleTests
     }
 
     [Test]
+    public void Archive_keeps_the_repository_folder_when_the_cwd_is_the_repository_root()
+    {
+        using var t = new Rig();
+        var repo = Directory.CreateTempSubdirectory("orch-root-").FullName;
+        var shell = new Shell(repo);
+        shell.MustGit("init", "--quiet", "-b", "main");
+        File.WriteAllText(Path.Combine(repo, "keep.txt"), "keep");
+        shell.MustGit("add", "keep.txt");
+        shell.MustGit("-c", "user.email=t@t", "-c", "user.name=t", "commit", "--quiet", "-m", "init");
+        var id = t.Store.Create(new Meta("") { Cwd = repo.Replace('\\', '/'), Repo = repo, Branch = "main", CreatedBy = "user" }, "a");
+        var lines = new Lifecycle(t.Store).Archive(id, Parties.User, false);
+        Assert.That(lines[^1], Does.Contain("is the repository root"));
+        Assert.That(File.Exists(Path.Combine(repo, "keep.txt")), Is.True);
+        Assert.That(Directory.Exists(Path.Combine(repo, ".git")), Is.True);
+    }
+
+    [Test]
+    public void Archive_keeps_a_plain_folder_with_no_git_file()
+    {
+        using var t = new Rig();
+        var repo = Directory.CreateTempSubdirectory("orch-repo-").FullName;
+        new Shell(repo).MustGit("init", "--quiet", "-b", "main");
+        var plain = Directory.CreateTempSubdirectory("orch-plain-").FullName;
+        File.WriteAllText(Path.Combine(plain, "keep.txt"), "keep");
+        var id = t.Store.Create(new Meta("") { Cwd = plain, Repo = repo, Branch = "main", CreatedBy = "user" }, "a");
+        var lines = new Lifecycle(t.Store).Archive(id, Parties.User, false);
+        Assert.That(lines[^1], Does.Contain("has no .git file"));
+        Assert.That(File.Exists(Path.Combine(plain, "keep.txt")), Is.True);
+    }
+
+    [Test]
     public void The_open_command_starts_the_desktop_app_with_the_session()
     {
         var command = Lifecycle.OpenCommand("abc");

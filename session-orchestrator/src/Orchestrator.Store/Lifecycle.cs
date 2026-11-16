@@ -53,18 +53,22 @@ public sealed class Lifecycle(FileStore store)
     {
         var shell = new Shell(repo);
         if (!Directory.Exists(worktree)) return $"The worktree {worktree} does not exist.";
+        if (SamePath(worktree, repo)) return $"The folder {worktree} is the repository root, not a worktree, so it stays.";
+        if (!File.Exists(Path.Combine(worktree, ".git"))) return $"The folder {worktree} has no .git file, so it is not a linked worktree and it stays.";
         if (new Shell(worktree).Git("status", "--porcelain") is { Ok: true } status && status.Text.Length > 0)
             return $"The worktree {worktree} has changes that are not committed, so it stays.";
         var error = "";
+        var removeRan = false;
         foreach (var delay in RemoveDelays.Prepend(TimeSpan.Zero))
         {
             Thread.Sleep(delay);
             if (File.Exists(Path.Combine(worktree, ".git")))
             {
                 var remove = shell.Git("worktree", "remove", worktree);
+                removeRan = true;
                 if (!remove.Ok) error = remove.Error.Trim();
             }
-            if (Directory.Exists(worktree) && !File.Exists(Path.Combine(worktree, ".git")))
+            if (removeRan && Directory.Exists(worktree) && !File.Exists(Path.Combine(worktree, ".git")))
             {
                 try
                 {
@@ -83,6 +87,10 @@ public sealed class Lifecycle(FileStore store)
         }
         return $"The worktree {worktree} stays: {error}";
     }
+
+    static bool SamePath(string a, string b) =>
+        string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(a)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(b)),
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 
     public static IReadOnlyList<TimeSpan> RemoveDelays { get; set; } =
         [TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(4)];
