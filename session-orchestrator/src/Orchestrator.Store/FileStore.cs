@@ -2,28 +2,42 @@ using System.Text.Json;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
-using Orchestrator.Core.Ordering;
 using Orchestrator.Core.Policy;
 using Orchestrator.Core.Stack;
 using Orchestrator.Core.Templates;
 
 namespace Orchestrator.Store;
 
+/// <summary>
+/// The store: the stream (<see cref="Events"/>) and the lifecycle files of each session. Decisions, answers,
+/// reviews, reports and the pending deliveries are queries of the stream.
+/// </summary>
 public sealed class FileStore
 {
+    Policy? policy;
+
     public FileStore(string root, TimeProvider? clock = null, TemplateSet? templates = null, string writer = Parties.Supervisor)
     {
         Root = Path.GetFullPath(root);
         Clock = clock ?? TimeProvider.System;
-        Events = new EventStream(Root, Clock, writer);
         Texts = new Texts(templates ?? new TemplateSet(Home.Templates()));
+        Events = new EventStream(Root, Clock, writer, Texts.Templates);
+        Renderer = new Renderer(this);
     }
 
     public string Root { get; }
     public TimeProvider Clock { get; }
     public EventStream Events { get; }
     public Texts Texts { get; }
+    public Renderer Renderer { get; }
     public TemplateSet Templates => Texts.Templates;
+
+    /// <summary>The policy in use: store/policy.json, or the one the supervisor sets.</summary>
+    public Policy Policy
+    {
+        get => policy ??= Home.LoadPolicy(Root);
+        set => policy = value;
+    }
 
     public string Now => Times.Format(Clock.GetUtcNow());
 
@@ -56,45 +70,78 @@ public sealed class FileStore
             : null;
     }
 
-    public string Create(Meta meta, string brief)
+    /// <summary>Writes meta.json and the enabled file of a new session. The first message is a post to the session.</summary>
+    public string Create(Meta meta)
     {
         var id = meta.Id.Length > 0 ? meta.Id : Guid.NewGuid().ToString();
         SaveMeta(meta with { Id = id, CreatedAt = Now });
-        Files.WriteJson(PathOf(id, StoreFiles.Inbox, "1.json"), new InboxMessage(brief, meta.Parent is { } parent ? Parties.Session(parent) : Parties.User));
         Files.Write(PathOf(id, StoreFiles.Enabled), "");
         return id;
     }
 
-    public string Send(string id, string text, string from = Parties.User)
-    {
-        var name = Path.ChangeExtension(Names.NewInboxName(Clock.GetUtcNow()), ".json");
-        Files.WriteJson(PathOf(id, StoreFiles.Inbox, name), new InboxMessage(text, from));
-        return name;
-    }
+    // Decisions and queries: envelopes of kind decision or query from a session. The thread is the decision id.
 
-    public bool IsAnswered(string id, string decision) => File.Exists(PathOf(id, StoreFiles.Answers, StoreFiles.Json(decision)));
+    public Event? DecisionEvent(string thread) =>
+        Events.Thread(thread).FirstOrDefault(e => EventKinds.Questions.Contains(e.Kind) && !e.IsForward);
 
-    public Answer? Answer(string id, string decision) => Files.ReadJson<Answer>(PathOf(id, StoreFiles.Answers, StoreFiles.Json(decision)));
+    public Decision? Decision(string thread) => DecisionEvent(thread) is { } e ? ToDecision(e) : null;
 
-    public void SaveAnswer(string id, string decision, Answer answer) => Files.WriteJson(PathOf(id, StoreFiles.Answers, StoreFiles.Json(decision)), answer);
-
-    public Decision? Decision(string id, string decision) => Files.ReadJson<Decision>(PathOf(id, StoreFiles.Decisions, StoreFiles.Json(decision)));
-
-    public void SaveDecision(Decision decision) => Files.WriteJson(PathOf(decision.Session, StoreFiles.Decisions, StoreFiles.Json(decision.Id)), decision);
+    public Decision? Decision(string id, string decision) => Decision(decision) is { } d && d.Session == id ? d : null;
 
     public IReadOnlyList<Decision> Decisions(string id) =>
-        Files.Names(PathOf(id, StoreFiles.Decisions)).Select(name => Files.ReadJson<Decision>(PathOf(id, StoreFiles.Decisions, name))).OfType<Decision>().ToList();
+        Events.All().Where(e => EventKinds.Questions.Contains(e.Kind) && !e.IsForward && e.From == Parties.Session(id) && e.Thread is not null).Select(ToDecision).ToList();
 
-    public bool IsDelivered(string id, string decision) => File.Exists(PathOf(id, StoreFiles.Delivered, StoreFiles.Json(decision)));
+    public bool IsAnswered(string id, string decision) => Events.FirstAnswer(decision) is not null;
 
-    public bool IsOpen(string id, string decision) => !IsDelivered(id, decision) && !IsAnswered(id, decision);
+    public bool IsOpen(string id, string decision) => !IsAnswered(id, decision);
 
-    public IReadOnlyList<Decision> OpenDecisions(string id) => Decisions(id).Where(d => IsOpen(id, d.Id)).ToList();
+    public IReadOnlyList<Decision> OpenDecisions(string id) => Decisions(id).Where(d => !IsAnswered(id, d.Id)).ToList();
+
+    Decision ToDecision(Event e)
+    {
+        var f = Events.Fields(e);
+        return new Decision(e.Thread ?? e.Id, Parties.SessionId(e.From) ?? e.Session ?? "")
+        {
+            Kind = e.Kind == EventKinds.Query ? "query" : "ask_user",
+            Question = f.GetValueOrDefault("question") as string,
+            Context = f.GetValueOrDefault("context") as string,
+            Snippet = f.GetValueOrDefault("snippet") as string,
+            Recommendation = f.GetValueOrDefault("recommendation") as string,
+            Options = f.GetValueOrDefault("options") is List<object?> list ? list.Select(o => o?.ToString() ?? "").ToArray() : null,
+            Risk = f.GetValueOrDefault("risk") as string ?? (e.Kind == EventKinds.Query ? "high" : "medium"),
+            DefaultOption = f.GetValueOrDefault("defaultOption") as string,
+            Mode = f.GetValueOrDefault("waitSeconds") is double wait && wait > 0 ? DecisionModes.Wait : DecisionModes.Pending,
+            WaitSeconds = f.GetValueOrDefault("waitSeconds") as double? ?? 0,
+            Asked = e.At,
+            Event = e.Id,
+        };
+    }
+
+    public Answer? Answer(string id, string decision) => Events.FirstAnswer(decision) is { } e ? ToAnswer(e) : null;
+
+    Answer ToAnswer(Event e)
+    {
+        var f = Events.Fields(e);
+        var by = f.GetValueOrDefault("by") as string ?? e.From;
+        var decision = f.GetValueOrDefault("decision") as string ?? e.Thread ?? "";
+        return new Answer
+        {
+            Value = f.GetValueOrDefault("text") as string,
+            By = by,
+            Source = f.GetValueOrDefault("source") as string,
+            Reason = f.GetValueOrDefault("reason") as string,
+            Note = Texts.AnswerNote(by, f.GetValueOrDefault("onDefault") as string, decision, f.GetValueOrDefault("reason") as string, f.GetValueOrDefault("source") as string),
+            Via = e.Via,
+            Event = e.Id,
+            At = e.At,
+        };
+    }
 
     public string? SessionOf(string decision)
     {
+        if (DecisionEvent(decision) is { } e) return Parties.SessionId(e.From) ?? e.Session;
         var file = StoreFiles.Json(decision);
-        return AllSessions().FirstOrDefault(id => File.Exists(PathOf(id, StoreFiles.Decisions, file)) || File.Exists(PathOf(id, StoreFiles.Stack, file)));
+        return AllSessions().FirstOrDefault(id => File.Exists(PathOf(id, StoreFiles.Stack, file)));
     }
 
     public string? ResolveSession(string prefix)
@@ -105,18 +152,84 @@ public sealed class FileStore
         return matches.Count == 1 ? matches[0] : null;
     }
 
-    public Report? Report(string id) => Files.ReadJson<Report>(PathOf(id, StoreFiles.Report));
+    // Reviews: the newest review in the thread of the decision, for one version id.
+
+    public Review? Review(string id, string versionId)
+    {
+        var decision = StackNames.DecisionOf(versionId);
+        var e = Events.Thread(decision).LastOrDefault(r => r.Kind == EventKinds.Review && !r.IsForward
+            && (Events.Fields(r).GetValueOrDefault("version") as string ?? decision) == versionId);
+        if (e is null) return null;
+        var f = Events.Fields(e);
+        return new Review(f.GetValueOrDefault("verdict") as string ?? "", f.GetValueOrDefault("text") as string ?? "", e.At) { Event = e.Id };
+    }
+
+    // Reports and updates: the newest post of the session.
+
+    public Event? LastPost(string id, string kind) =>
+        Events.All().LastOrDefault(e => e.Kind == kind && !e.IsForward && e.From == Parties.Session(id));
+
+    public Report? Report(string id)
+    {
+        if (LastPost(id, EventKinds.Report) is not { } e) return null;
+        var f = Events.Fields(e);
+        return new Report(f.GetValueOrDefault("state") as string ?? "", f.GetValueOrDefault("summary") as string ?? "", e.At)
+        {
+            Details = f.GetValueOrDefault("details") as string,
+            Done = Strings(f.GetValueOrDefault("done")),
+            Next = Strings(f.GetValueOrDefault("next")),
+            Blockers = Strings(f.GetValueOrDefault("blockers")),
+            Links = Strings(f.GetValueOrDefault("links")),
+            Event = e.Id,
+        };
+    }
+
+    static IReadOnlyList<string>? Strings(object? value) => value is List<object?> list ? list.Select(o => o?.ToString() ?? "").ToList() : null;
+
+    // Delivery: the envelopes to a session that have no ack.
+
+    public StreamSubscription Deliveries(string id)
+    {
+        var to = Parties.Session(id);
+        return Events.Subscribe(to, "deliver", e => e.To == to && IsDeliverable(e), "to = self, message kinds, no ack");
+    }
+
+    public static bool IsDeliverable(Event e) =>
+        EventKinds.Deliverable.Contains(e.Kind) && (e.Kind != EventKinds.Report || e.Needs is not null || e.IsForward);
+
+    /// <summary>The envelopes to the session with no ack, in order. Moves the shared cursor over the acknowledged ones.</summary>
+    public IReadOnlyList<Event> Undelivered(string id)
+    {
+        var subscription = Deliveries(id);
+        var acked = new List<string>();
+        var open = new List<Event>();
+        foreach (var e in subscription.Next())
+        {
+            if (Events.IsAcked(e.Id)) acked.Add(e.Id);
+            else open.Add(e);
+        }
+        subscription.Done(acked);
+        return open;
+    }
+
+    public Pending Pending(string id)
+    {
+        var open = Undelivered(id);
+        return new Pending(Renderer.Join(open), open.Select(e => e.Id).ToList()) { Senders = open.Select(e => e.From).Distinct().ToList() };
+    }
+
+    /// <summary>Posts an ack for each envelope: the receiver got it.</summary>
+    public void MarkSent(string id, IEnumerable<string> envelopes, string by)
+    {
+        foreach (var envelope in envelopes)
+            if (Events.Find(envelope) is { } e && !Events.IsAcked(e.Id)) Events.Ack(e, Parties.Session(id), by);
+    }
 
     public Status? Status(string id) => Files.ReadJson<Status>(PathOf(id, StoreFiles.Status));
 
     public Blocked? Blocked(string id) => Files.ReadJson<Blocked>(PathOf(id, StoreFiles.Blocked));
 
     public void SaveBlocked(string id, string? reason) => Files.WriteJson(PathOf(id, StoreFiles.Blocked), new Blocked(reason, Now));
-
-    public Review? Review(string id, string decision) => Files.ReadJson<Review>(PathOf(id, StoreFiles.Reviews, StoreFiles.Json(decision)));
-
-    public void SaveReview(string id, string decision, string verdict, string text) =>
-        Files.WriteJson(PathOf(id, StoreFiles.Reviews, StoreFiles.Json(decision)), new Review(verdict, text, Now));
 
     public StackEntry? Stack(string id, string decision) => Files.ReadJson<StackEntry>(PathOf(id, StoreFiles.Stack, StoreFiles.Json(decision)));
 
@@ -126,38 +239,6 @@ public sealed class FileStore
     public void SaveStack(StackEntry entry) => Files.WriteJson(PathOf(entry.Session, StoreFiles.Stack, StoreFiles.Json(entry.Decision)), entry);
 
     public IReadOnlyList<Event> Ledger() => Events.All().Where(EventQuery.IsLedger).ToList();
-
-    public Pending Pending(string id)
-    {
-        var cursor = (Files.ReadText(PathOf(id, StoreFiles.Cursor)) ?? "").Trim();
-        var inbox = Files.Names(PathOf(id, StoreFiles.Inbox)).Where(name => cursor.Length == 0 || Names.Order.Compare(name, cursor) > 0).ToList();
-        var messages = inbox.Select(name => ReadInbox(id, name)).ToList();
-        var texts = messages.Select(m => m.Text).ToList();
-        var senders = messages.Select(m => m.From ?? Parties.User).ToList();
-        var answers = new List<string>();
-        foreach (var d in Decisions(id))
-        {
-            if (d.Mode != DecisionModes.Pending || IsDelivered(id, d.Id)) continue;
-            if (Answer(id, d.Id) is not { } answer) continue;
-            answers.Add(d.Id);
-            senders.Add(answer.By ?? Parties.User);
-            texts.Add(Texts.AnswerTurn(d.Id, d.Question, answer.Body, answer.Note));
-        }
-        return new Pending(string.Join("\n\n---\n\n", texts), inbox, answers) { Senders = senders.Distinct().ToList() };
-    }
-
-    InboxMessage ReadInbox(string id, string name)
-    {
-        var raw = Files.ReadText(PathOf(id, StoreFiles.Inbox, name)) ?? "";
-        return name.EndsWith(".json") ? StoreJson.Read<InboxMessage>(raw) ?? new InboxMessage("", null) : new InboxMessage(raw, null);
-    }
-
-    public void MarkSent(string id, Pending pending)
-    {
-        var cursor = (Files.ReadText(PathOf(id, StoreFiles.Cursor)) ?? "").Trim();
-        if (pending.Inbox.Count > 0 && (cursor.Length == 0 || Names.Order.Compare(pending.Inbox[^1], cursor) > 0)) Files.Write(PathOf(id, StoreFiles.Cursor), pending.Inbox[^1]);
-        foreach (var decision in pending.Answers) Files.WriteJson(PathOf(id, StoreFiles.Delivered, StoreFiles.Json(decision)), new Delivered(Holders.Supervisor, Now));
-    }
 
     public T? ReadJson<T>(string id, params string[] parts) => Files.ReadJson<T>(PathOf(id, parts));
 

@@ -47,7 +47,7 @@ new Messages(store).Answer(id, first.Id, "GREEN");
 Console.WriteLine("answered GREEN while the supervisor was down");
 supervisor = Start();
 
-await WaitFor("the turn with the answer", TimeSpan.FromMinutes(2), () => store.Events.All().LastOrDefault(e => e.Kind == EventKinds.TurnStart && e.Session == id && Refs(e, "answers").Contains(first.Id)));
+await WaitFor("the turn with the answer", TimeSpan.FromMinutes(2), () => store.Events.All().LastOrDefault(e => e.Kind == EventKinds.TurnStart && e.Session == id && Refs(e, "envelopes").Contains(store.Events.FirstAnswer(first.Id)?.Id ?? "")));
 await Task.Delay(TimeSpan.FromSeconds(4));
 Stop(supervisor, "crash in the middle of a turn");
 await Task.Delay(TimeSpan.FromSeconds(10));
@@ -61,7 +61,7 @@ var events = store.Events.All().Where(e => e.Session == id).ToList();
 var decisions = store.Decisions(id);
 Check("two decisions", decisions.Count == 2, string.Join(", ", decisions.Select(d => $"{d.Risk} {d.Question}")));
 Check("each decision has an answer", decisions.All(d => store.IsAnswered(id, d.Id)), "");
-Check("each decision was delivered", decisions.All(d => store.IsDelivered(id, d.Id)), "");
+Check("each answer has an ack", decisions.All(d => store.Events.FirstAnswer(d.Id) is { } a && store.Events.IsAcked(a.Id)), "");
 var deliveries = events.Count(e => e.Kind == EventKinds.SessionInput && e.Subject.StartsWith($"Answer to decision {first.Id}"));
 Check("the answer GREEN reached the session once", deliveries == 1, $"{deliveries} deliveries");
 Check("the default of the medium decision applied", decisions.Any(d => store.Answer(id, d.Id)?.By == Parties.Policy), "");

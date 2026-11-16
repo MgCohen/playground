@@ -1,23 +1,40 @@
 using System.Text.Json;
 using Json.Schema;
+using Orchestrator.Core.Contract;
 
 namespace Orchestrator.Core.Templates;
 
 public static class Kinds
 {
+    public const string Brief = "brief";
+    public const string Message = "message";
     public const string Decision = "decision";
+    public const string Query = "query";
+    public const string Plan = "plan";
     public const string Answer = "answer";
     public const string Review = "review";
     public const string Report = "report";
     public const string Update = "update";
-    public const string Brief = "brief";
     public const string Notice = "notice";
-    public static readonly string[] All = [Decision, Answer, Review, Report, Update, Brief, Notice];
+    public const string Ack = "ack";
+    public static readonly string[] All = [Brief, Message, Decision, Query, Plan, Answer, Review, Report, Update, Notice, Ack];
 }
 
-public sealed record Template(string Kind, string Folder, JsonSchema Schema, string SchemaText)
+/// <summary>The meta.json of a type: its purpose, who may send it to whom, and the types of its replies.</summary>
+public sealed record TemplateMeta(string Type, int Version, string Purpose, IReadOnlyList<string> From, IReadOnlyList<string> To, string? Needs, IReadOnlyList<string> Replies)
+{
+    public JsonElement? Card { get; init; }
+
+    public bool AllowsFrom(string partyClass) => From.Contains("*") || From.Contains(partyClass);
+
+    public bool AllowsTo(string partyClass) => To.Contains("*") || To.Contains(partyClass);
+}
+
+public sealed record Template(string Kind, string Folder, JsonSchema Schema, string SchemaText, TemplateMeta? Meta)
 {
     public string RenderPath(string? name = null) => name is null ? Path.Combine(Folder, "render.md") : Path.Combine(Folder, "render", $"{name}.md");
+
+    public bool HasRender(string? name = null) => File.Exists(RenderPath(name));
 
     public IReadOnlyList<string> RenderNames() =>
         Directory.Exists(Path.Combine(Folder, "render"))
@@ -41,13 +58,17 @@ public sealed class TemplateSet
         templates = Kinds.All.Where(kind => File.Exists(Path.Combine(root, kind, "schema.json"))).ToDictionary(kind => kind, kind =>
         {
             var text = File.ReadAllText(Path.Combine(root, kind, "schema.json"));
-            return new Template(kind, Path.Combine(root, kind), JsonSchema.FromText(text), text);
+            var metaPath = Path.Combine(root, kind, "meta.json");
+            var meta = File.Exists(metaPath) ? StoreJson.Read<TemplateMeta>(File.ReadAllText(metaPath)) : null;
+            return new Template(kind, Path.Combine(root, kind), JsonSchema.FromText(text), text, meta);
         });
     }
 
     public string Root { get; }
 
     public IEnumerable<Template> All => templates.Values;
+
+    public bool Has(string kind) => templates.ContainsKey(kind);
 
     public Template this[string kind] => templates.TryGetValue(kind, out var t) ? t : throw new KeyNotFoundException($"no template {kind} in {Root}");
 
@@ -62,7 +83,7 @@ public sealed class TemplateSet
     }
 
     public Validation Validate(string kind, IReadOnlyDictionary<string, object?> fields) =>
-        Validate(kind, JsonSerializer.SerializeToElement(fields.Where(f => f.Value is not null).ToDictionary(f => f.Key, f => f.Value)));
+        Validate(kind, JsonSerializer.SerializeToElement(fields.Where(f => f.Value is not null).ToDictionary(f => f.Key, f => f.Value), StoreJson.Options));
 
     public string Render(string kind, IReadOnlyDictionary<string, object?> data, string? name = null)
     {

@@ -20,5 +20,6 @@
     }
   ],
   "docs": ["AGENTS.md", "CLAUDE.md", "README.md", "docs/"],
-  "onDefault": "stacked-pr"
+  "onDefault": "stacked-pr",
+  "delivery": { "nudgeSeconds": 15, "peerSeconds": 60, "sweepSeconds": 60 }
 }

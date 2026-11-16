@@ -15,7 +15,7 @@ namespace Orchestrator.Cli
             Sessions
               orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--agent A] [--worktree] [--allow-defaults] [--parent ID]
               orch enable [--title T] [--parent ID] [--id ID]
-              orch send <session> <text>
+              orch send <session> <text> [--from P]
               orch tree
               orch status <session>
               orch stop <session> [--reason R]
@@ -23,8 +23,10 @@ namespace Orchestrator.Cli
               orch archive <session> [--force] [--tree] [--store-only] [--wait <seconds>]
               orch open <session> [--dry-run]
             Decisions
-              orch decisions
-              orch answer <decision> <text>
+              orch decisions [--session ID]
+              orch answer <decision> <text> [--via P]
+              orch chat-answer <session> <text>
+              orch inbox [accept|refuse <id> [text]]
               orch review <decision> approve|change|refuse [text]
               orch decision start <decision>
               orch decision pr <decision>
@@ -32,8 +34,13 @@ namespace Orchestrator.Cli
               orch stack rebase <decision>
               orch stack close <decision> [--text T]
               orch merge <pr>|<branch> [--base B]
-            Stream and tools
-              orch events [--since 3h] [--kind a,b] [--session ID] [--from P] [--open] [--ledger] [--follow] [--json] [--body]
+            Stream and tools (P: user, supervisor, session:<id> or the first characters of a session id)
+              orch init
+              orch post <kind> --to P [--from P] [--thread T] [--needs N] [--reply ID] [--via P] [--json FILE|-] [--<field> value]
+              orch events [--since 3h] [--kind a,b] [--session ID] [--from P] [--to P] [--thread T] [--needs] [--open] [--ledger] [--follow] [--json] [--body]
+              orch read <id> [--for P] [--render NAME]
+              orch watch --to P [--kind a,b] [--thread T] [--render NAME] [--once] [--timeout S] [--list]
+              orch nudge <party> [id]
               orch template [<kind>] [--check FILE] [--render FILE] [--name N]
               orch doctor
             A <session> can be the first characters of its id.
@@ -64,6 +71,13 @@ namespace Orchestrator.Cli
                     "open" => LifecycleCommands.Open(command),
                     "decisions" => DecisionCommands.List(command),
                     "answer" => DecisionCommands.Answer(command),
+                    "chat-answer" => DecisionCommands.ChatAnswer(command),
+                    "inbox" => DecisionCommands.Inbox(command),
+                    "init" => EventCommands.Init(command),
+                    "post" => EventCommands.Post(command),
+                    "read" => EventCommands.Read(command),
+                    "watch" => EventCommands.Watch(command),
+                    "nudge" => EventCommands.Nudge(command),
                     "review" => DecisionCommands.Review(command),
                     "decision" => DecisionCommands.Decision(command),
                     "stack" => DecisionCommands.Stack(command),

@@ -1,19 +1,9 @@
-import { S, newId, now, readJson, writeJson } from './state.ts'
+// The trace of the session (session.input, session.output, session.tool), posted to the stream.
+import { S, now, readJson, writeJson } from './state.ts'
+import { post } from './stream.ts'
 
 export async function emit($: any, kind: string, from: string, to: string, data: Record<string, unknown>, refs: Record<string, unknown> = {}): Promise<string> {
-  if (!S.store) return ''
-  const ms = await $.clock.now()
-  const at = new Date(ms).toISOString()
-  const id = `${ms}-${newId().slice(0, 8)}-${S.holder}`
-  const body = `bodies/${at.slice(0, 10)}/${id}.json`
-  await writeJson($, `${S.store}/${body}`, data)
-  await writeJson($, `${S.store}/events/${at.slice(0, 10)}/${id}.json`, { id, at, session: S.id, kind, from, to, subject: subject(data), body, refs })
-  return id
-}
-
-export function subject(data: Record<string, unknown>): string {
-  const text = String(data.question ?? data.summary ?? data.title ?? data.text ?? '')
-  return text.replace(/\s+/g, ' ').trim().slice(0, 80)
+  return post($, kind, from, to, data, { refs })
 }
 
 export function blocksOf(message: any): any[] {
@@ -38,7 +28,10 @@ export function rowText(message: any): string {
 }
 
 export async function inputSender($: any, origin: string): Promise<{ from: string; turnStart?: string }> {
-  if (S.holder !== 'supervisor' || !S.dir) return { from: origin }
+  if (S.holder !== 'supervisor' || !S.dir) {
+    if (origin === 'plugin' && S.inputFrom !== '') return { from: S.inputFrom }
+    return { from: origin === 'composer' ? 'user' : origin }
+  }
   const turn = await readJson($, `${S.dir}/turn.json`)
   return typeof turn?.from === 'string' ? { from: turn.from, turnStart: turn.event } : { from: 'supervisor' }
 }

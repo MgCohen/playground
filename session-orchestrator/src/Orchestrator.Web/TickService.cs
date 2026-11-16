@@ -2,14 +2,17 @@ using Orchestrator.Store;
 
 namespace Orchestrator.Web;
 
-public sealed class TickService(Supervisor.Supervisor supervisor, FileStore store) : BackgroundService
+/// <summary>
+/// Runs the supervisor tick at each push of the stream, and at least each <see cref="Interval"/> for the time rules:
+/// the default timeouts, the reminders, the watchdog and the stale lease.
+/// </summary>
+public sealed class TickService(Supervisor.Supervisor supervisor, FileStore store, StreamHub hub) : BackgroundService
 {
-    public static readonly TimeSpan Interval = TimeSpan.FromSeconds(3);
+    public static readonly TimeSpan Interval = TimeSpan.FromSeconds(5);
 
     protected override async Task ExecuteAsync(CancellationToken stop)
     {
-        using var timer = new PeriodicTimer(Interval);
-        do
+        while (!stop.IsCancellationRequested)
         {
             try
             {
@@ -19,7 +22,7 @@ public sealed class TickService(Supervisor.Supervisor supervisor, FileStore stor
             {
                 store.Log($"tick failed: {e.Message}");
             }
+            await hub.Wait(Interval, stop);
         }
-        while (await timer.WaitForNextTickAsync(stop));
     }
 }

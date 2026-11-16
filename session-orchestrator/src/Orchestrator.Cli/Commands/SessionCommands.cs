@@ -44,8 +44,9 @@ public static class SessionCommands
         var session = c.Session(1);
         var text = c.Args.Rest(2);
         if (text.Length == 0) throw new UsageException("missing <text>");
-        var (inbox, _) = c.Messages.Send(session, text);
-        c.Output.WriteLine($"Sent to {Short(session)} as inbox/{inbox}.");
+        var from = c.Args.Option("from") is { } f ? EventCommands.Party(c, f) : EventCommands.DefaultSender(c);
+        var e = c.Messages.Send(session, text, from);
+        c.Output.WriteLine($"Sent to {Short(session)} as {e.Id}.");
         return 0;
     }
 

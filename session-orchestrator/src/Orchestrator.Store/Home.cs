@@ -37,6 +37,8 @@ public static class Home
         {
             if (found.Version > StoreVersion.Current)
                 throw new InvalidDataException($"store {storeRoot} has version {found.Version}, newer than this supervisor ({StoreVersion.Current}). Update the orchestrator.");
+            if (found.Version < StoreVersion.Current)
+                throw new InvalidDataException($"store {storeRoot} has version {found.Version}, older than this supervisor ({StoreVersion.Current}). There is no migration: move the old store to another folder and start with a new store.");
             return found;
         }
         var version = new StoreVersion(StoreVersion.Current, Core.Leases.Times.Format(now));

@@ -21,6 +21,7 @@ public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
     public const int TimelineLimit = 300;
 
     readonly Messages messages = new(store);
+    readonly Inbox inbox = new(store);
     readonly Lifecycle lifecycle = new(store);
 
     public string Title(string session) => store.Meta(session).Title ?? session[..Math.Min(8, session.Length)];
@@ -29,19 +30,21 @@ public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
         store.Sessions().SelectMany(s => store.OpenDecisions(s).Select(d => new OpenDecision(s, Title(s), d)))
             .OrderBy(d => d.Decision.Asked, StringComparer.Ordinal).ToList();
 
+    /// <summary>The cards of the user inbox: a query of the stream.</summary>
+    public IReadOnlyList<Card> Inbox() => inbox.Cards();
+
+    /// <summary>The inbox cards of the answers by the docs or the policy, which need a review.</summary>
     public IReadOnlyList<DefaultToReview> DefaultsToReview()
     {
         var list = new List<DefaultToReview>();
-        foreach (var session in store.AllSessions())
-            foreach (var decision in store.Decisions(session))
-            {
-                if (store.Answer(session, decision.Id) is not { By: Parties.Policy or Parties.Docs } answer) continue;
-                var version = store.Stack(session, decision.Id)?.Current;
-                var versionId = StackNames.VersionId(decision.Id, version?.Version ?? 1);
-                if (store.Review(session, versionId) is not null) continue;
-                if (version is { State: VersionStates.Closed }) continue;
-                list.Add(new DefaultToReview(session, Title(session), decision, answer, version));
-            }
+        foreach (var card in inbox.Cards().Where(c => c.Kind == EventKinds.Answer && c.Needs == Needs.Review))
+        {
+            var thread = card.Envelope.Thread ?? "";
+            if (store.Decision(thread) is not { } decision || store.Answer(decision.Session, thread) is not { } answer) continue;
+            var version = store.Stack(decision.Session, decision.Id)?.Current;
+            if (version is { State: VersionStates.Closed }) continue;
+            list.Add(new DefaultToReview(decision.Session, Title(decision.Session), decision, answer, version));
+        }
         return list.OrderBy(d => d.Decision.Asked, StringComparer.Ordinal).ToList();
     }
 
@@ -59,11 +62,18 @@ public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
             store.Status(meta.Id)?.State ?? "new",
             lifecycle.Control(meta.Id).State,
             store.Report(meta.Id),
-            store.ReadJson<UpdateView>(meta.Id, StoreFiles.Update),
+            Update(meta.Id),
             store.Blocked(meta.Id)?.Reason,
             store.OpenDecisions(meta.Id).Count,
             metas.Where(m => m.Parent == meta.Id).OrderBy(m => m.CreatedAt, StringComparer.Ordinal).Select(Node).ToList());
         return metas.Where(m => m.Parent is null || !known.Contains(m.Parent)).OrderByDescending(m => m.CreatedAt, StringComparer.Ordinal).Select(Node).ToList();
+    }
+
+    UpdateView? Update(string id)
+    {
+        if (store.LastPost(id, EventKinds.Update) is not { } e) return null;
+        var f = store.Events.Fields(e);
+        return new UpdateView(f.GetValueOrDefault("step") as string, f.GetValueOrDefault("progress") as double?, f.GetValueOrDefault("summary") as string ?? "", e.At);
     }
 
     public IReadOnlyList<Event> Timeline(EventFilter filter) => store.Query(filter).Reverse().Take(TimelineLimit).ToList();

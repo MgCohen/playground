@@ -1,0 +1,35 @@
+{
+  "type": "answer",
+  "version": 1,
+  "purpose": "You reply to a decision or a query.",
+  "from": [
+    "user",
+    "docs",
+    "policy"
+  ],
+  "to": [
+    "session",
+    "user"
+  ],
+  "needs": "review",
+  "replies": [
+    "review"
+  ],
+  "card": {
+    "title": "question",
+    "quick": [
+      "text",
+      "by",
+      "reason",
+      "source"
+    ],
+    "accept": {
+      "post": "review",
+      "verdict": "approve"
+    },
+    "refuse": {
+      "post": "review",
+      "verdict": "refuse"
+    }
+  }
+}

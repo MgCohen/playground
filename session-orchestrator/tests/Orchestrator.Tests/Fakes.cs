@@ -64,8 +64,8 @@ public sealed class Rig : IDisposable
     public Supervisor.Supervisor Supervisor { get; }
     public List<TurnRequest> Turns => Runner.Turns;
 
-    public string Create(string brief, string? title = null, string? parent = null, string createdBy = "supervisor") =>
-        Store.Create(new Meta("") { Title = title, Cwd = "C:/x", Parent = parent, CreatedBy = createdBy }, brief);
+    public string Create(string text, string? title = null, string? parent = null, string createdBy = "supervisor") =>
+        Store.Create(new Meta("") { Title = title, Cwd = "C:/x", Parent = parent, CreatedBy = createdBy }, text);
 
     public async Task Cycle()
     {

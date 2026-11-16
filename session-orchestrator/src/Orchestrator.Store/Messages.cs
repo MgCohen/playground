@@ -23,6 +23,15 @@ public sealed record BriefFields
     public bool? AllowDefaults { get; init; }
 }
 
+/// <summary>An answer of the docs check or the policy: why it applies, and where it comes from.</summary>
+public sealed record AnswerSource(string By)
+{
+    public string? Reason { get; init; }
+    public string? Source { get; init; }
+    public string? OnDefault { get; init; }
+}
+
+/// <summary>The posts of the user and of the reactors, one method for each message type.</summary>
 public sealed class Messages(FileStore store)
 {
     public string NewSession(BriefFields brief, string createdBy, string from = Parties.User)
@@ -32,36 +41,68 @@ public sealed class Messages(FileStore store)
         Check(Kinds.Brief, fields);
         if (string.IsNullOrEmpty(brief.Cwd)) throw new MessageException("brief: cwd is necessary");
         var id = Guid.NewGuid().ToString();
-        var text = store.Templates.Render(Kinds.Brief, fields);
-        store.Events.Append(EventKinds.Brief, from, Parties.Session(id), new Dictionary<string, object?>(fields) { ["text"] = text }, brief.Parent is { } p ? Fields(("parent", p)) : null, id);
-        store.Create(new Meta(id) { Title = brief.Title, Cwd = brief.Cwd, Parent = brief.Parent, CreatedBy = createdBy, Worktree = brief.Worktree, Agent = brief.Agent, Skills = brief.Skills?.ToList(), AllowDefaults = brief.AllowDefaults }, text);
+        store.Create(new Meta(id) { Title = brief.Title, Cwd = brief.Cwd, Parent = brief.Parent, CreatedBy = createdBy, Worktree = brief.Worktree, Agent = brief.Agent, Skills = brief.Skills?.ToList(), AllowDefaults = brief.AllowDefaults });
+        store.Events.Post(new PostInput(EventKinds.Brief, from, Parties.Session(id), Clean(fields)) { Session = id, Refs = brief.Parent is { } p ? Fields(("parent", p)) : null });
         return id;
     }
 
-    public (string Inbox, string Event) Send(string session, string text, string from = Parties.User)
+    /// <summary>Free text to a session. The sender is the user, a session or the supervisor.</summary>
+    public Event Send(string session, string text, string from = Parties.User, string? via = null)
     {
-        var e = store.Events.Append(EventKinds.Message, from, Parties.Session(session), Fields(("text", text)), null, session);
-        return (store.Send(session, text, from), e.Id);
+        if (text.Trim().Length == 0) throw new MessageException("message: the text is empty");
+        return store.Events.Post(new PostInput(EventKinds.Message, from, Parties.Session(session), Fields(("text", text))) { Session = session, Refs = via is null ? null : Fields((RefKeys.Via, via)) });
     }
 
-    public void Answer(string session, string decision, string text, string by = Parties.User)
+    /// <summary>
+    /// The answer to a decision or a query goes to the session. An answer of the docs or the policy goes to the user too,
+    /// as a forward that needs a review.
+    /// </summary>
+    public Event Answer(string session, string decision, string text, string by = Parties.User, string? via = null, AnswerSource? source = null)
     {
-        Check(Kinds.Answer, Fields(("decision", decision), ("text", text), ("by", by)));
-        if (store.Answer(session, decision) is { } old)
-            throw new MessageException($"decision {decision} already has an answer from {old.By ?? "someone"}: {old.Value ?? old.Text}. The session has this answer. Nothing changed.");
-        var question = store.Decision(session, decision)?.Question;
-        store.Events.Append(EventKinds.Answer, by, Parties.Session(session), Fields(("decision", decision), ("text", text), ("question", question)), Fields(("decision", decision)), session);
-        store.SaveAnswer(session, decision, new Answer { Value = text, By = by });
+        var asked = store.DecisionEvent(decision) ?? throw new MessageException($"no session has decision {decision}");
+        var body = Fields(("decision", decision), ("text", text), ("by", by), ("question", store.Events.Fields(asked).GetValueOrDefault("question") as string),
+            ("reason", source?.Reason), ("source", source?.Source), ("onDefault", source?.OnDefault));
+        Check(Kinds.Answer, body);
+        var refs = Fields((RefKeys.Reply, asked.Id), (RefKeys.Via, via));
+        var answer = store.Events.Post(new PostInput(EventKinds.Answer, by, Parties.Session(session), Clean(body)) { Session = session, Thread = decision, Refs = refs });
+        if (by is Parties.Docs or Parties.Policy) store.Events.Forward(answer, Parties.User, Needs.Review);
+        return answer;
     }
 
-    public string Review(string session, string decision, string verdict, string text)
+    /// <summary>The verdict of the user on a default decision or a plan. It closes the card of the default answer or the plan.</summary>
+    public Event Review(string session, string decision, string verdict, string text)
     {
         Check(Kinds.Review, Fields(("decision", decision), ("verdict", verdict), ("text", text)));
-        var question = store.Decision(session, decision)?.Question ?? "question";
-        var (target, versionId) = Target(session, decision);
-        store.Events.Append(EventKinds.Review, Parties.User, Parties.Session(session), Fields(("decision", decision), ("verdict", verdict), ("text", text), ("version", versionId)), Fields(("decision", decision), ("version", versionId)), session);
-        store.SaveReview(session, versionId, verdict, text);
-        return store.Send(session, store.Texts.ReviewText(decision, question, verdict, text, target), Parties.Supervisor);
+        var thread = store.Events.Thread(decision);
+        var plan = thread.FirstOrDefault(e => e.Kind == EventKinds.Plan && !e.IsForward);
+        Dictionary<string, object?> body;
+        string? reply;
+        if (plan is not null)
+        {
+            body = Fields(("decision", decision), ("verdict", verdict), ("text", text), ("question", store.Events.Fields(plan).GetValueOrDefault("title") as string), ("target", "plan"));
+            reply = plan.Id;
+        }
+        else
+        {
+            var question = store.Decision(decision)?.Question ?? "question";
+            var (target, versionId) = Target(session, decision);
+            body = Fields(("decision", decision), ("verdict", verdict), ("text", text), ("question", question), ("version", versionId),
+                ("branch", target.Branch), ("base", target.Base), ("nextBranch", target.NextBranch));
+            reply = thread.LastOrDefault(e => e.Kind == EventKinds.Answer && e.To == Parties.User && e.Needs == Needs.Review)?.Id;
+        }
+        return store.Events.Post(new PostInput(EventKinds.Review, Parties.User, Parties.Session(session), Clean(body))
+        {
+            Session = session,
+            Thread = decision,
+            Refs = reply is null ? null : Fields((RefKeys.Reply, reply)),
+        });
+    }
+
+    /// <summary>The user read a card that needs an ack, for example a done report.</summary>
+    public Event Ack(string envelope)
+    {
+        var e = store.Events.Find(envelope) ?? throw new MessageException($"no envelope {envelope}");
+        return store.Events.Ack(e, Parties.User, Parties.User, "read");
     }
 
     public (ReviewTarget Target, string VersionId) Target(string session, string decision)
@@ -86,6 +127,8 @@ public sealed class Messages(FileStore store)
         var check = store.Templates.Validate(kind, fields);
         if (!check.IsValid) throw new MessageException($"{kind}: {check.Message}");
     }
+
+    static Dictionary<string, object?> Clean(Dictionary<string, object?> fields) => fields.Where(f => f.Value is not null).ToDictionary(f => f.Key, f => f.Value);
 
     public static Dictionary<string, object?> Fields(params (string Key, object? Value)[] pairs) => pairs.ToDictionary(p => p.Key, p => p.Value);
 

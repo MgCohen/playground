@@ -1,0 +1,27 @@
+{
+  "type": "query",
+  "version": 1,
+  "purpose": "You need facts from the user, with no choice and no default.",
+  "from": [
+    "session"
+  ],
+  "to": [
+    "user",
+    "session"
+  ],
+  "needs": "answer",
+  "replies": [
+    "answer"
+  ],
+  "card": {
+    "title": "question",
+    "quick": [
+      "context"
+    ],
+    "accept": null,
+    "refuse": {
+      "post": "answer",
+      "needsText": true
+    }
+  }
+}

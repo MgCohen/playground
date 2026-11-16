@@ -1,9 +1,31 @@
 import type { Register } from 'claude-code'
-import { ROW_CHARS, S, TICK_MS, log, now, readJson, readText, sessionDir, storeRoot, writeJson } from './state.ts'
+import { ROW_CHARS, S, TICK_MS, homeRoot, log, now, readJson, sessionDir, storeRoot, writeJson } from './state.ts'
 import { emitRow } from './events.ts'
 import { beat, releaseLease, writeLease } from './lease.ts'
-import { tick } from './inbox.ts'
-import { ANSWER_TOOL, ASK_TOOL, QUESTIONS_TOOL, REPORT_TOOL, SPAWN_TOOL, UPDATE_TOOL, answerChild, answerFromChat, askUser, listQuestions, registerTools, report, spawnChild, update } from './tools.ts'
+import { deliver, tick, watchLoop } from './deliver.ts'
+import { NUDGE } from './stream.ts'
+import {
+  ANSWER_TOOL,
+  ASK_TOOL,
+  PLAN_TOOL,
+  QUERY_TOOL,
+  QUESTIONS_TOOL,
+  REPORT_TOOL,
+  SEND_TOOL,
+  SPAWN_TOOL,
+  UPDATE_TOOL,
+  answerChild,
+  answerFromChat,
+  askUser,
+  listQuestions,
+  plan,
+  query,
+  registerTools,
+  report,
+  send,
+  spawnChild,
+  update,
+} from './tools.ts'
 
 const MIRROR_DOORS = ['prompt', 'response', 'tool-result']
 const ASK_IN_TEXT =
@@ -28,10 +50,11 @@ async function mirror($: any, e: any): Promise<void> {
 async function activate($: any, dir: string, reason: unknown): Promise<void> {
   S.id = await $.session.id()
   S.dir = dir
+  S.home = await homeRoot($)
   S.store = await storeRoot($)
   S.cwd = await $.session.cwd()
   S.holder = (await $.env.get('ORCH_HOLDER')) ?? 'live'
-  S.cursor = ((await readText($, `${dir}/cursor.txt`)) ?? '').trim()
+  S.wanted = true
   const status = await readJson($, `${dir}/status.json`)
   S.idle = status?.state !== 'running'
   await $.fs.write(`${dir}/heartbeat.txt`, await now($))
@@ -39,8 +62,9 @@ async function activate($: any, dir: string, reason: unknown): Promise<void> {
   const host = await $.env.get('CLAUDE_CODE_HOST_SESSION_ID')
   const meta = await readJson($, `${dir}/meta.json`)
   if (host && meta && meta.appId !== host) await writeJson($, `${dir}/meta.json`, { ...meta, appId: host })
-  await log($, `activate plugin holder=${S.holder} cursor=${S.cursor} ${JSON.stringify(reason)}`)
+  await log($, `activate plugin holder=${S.holder} ${JSON.stringify(reason)}`)
   await registerTools($)
+  if (S.holder === 'live') watchLoop($).catch((error: unknown) => log($, `watch failed: ${String(error)}`))
   if (S.timers) return
   S.timers = true
   $.clock.every(TICK_MS, () => beat($))
@@ -69,7 +93,7 @@ export const register: Register = on => {
     const result = await next(e)
     const dir = await sessionDir($)
     if (await $.fs.exists(`${dir}/enabled`)) await activate($, dir, { event: 'session.start', start: e })
-    await $.command.register({ name: 'orch-enable', description: 'Put this session under the orchestrator: inbox, mirror, lease and the orch tools. Optional: a title, for example /orch-enable Foobar root.' })
+    await $.command.register({ name: 'orch-enable', description: 'Put this session under the orchestrator: stream delivery, mirror, lease and the orch tools. Optional: a title, for example /orch-enable Foobar root.' })
     return result
   })
 
@@ -98,6 +122,7 @@ export const register: Register = on => {
     if (S.dir && turn.agentId === undefined) {
       S.idle = true
       await writeStatus($, 'idle', turn.turnId)
+      deliver($).catch((error: unknown) => log($, `deliver failed: ${String(error)}`))
     }
     return result
   })
@@ -105,8 +130,19 @@ export const register: Register = on => {
   on('session.append', async ($, e, next) => {
     if (!S.dir && e.agentId === undefined && e.door === 'tool-result') await activateIfEnabled($, 'orch enable')
     if (S.dir && e.agentId === undefined && MIRROR_DOORS.includes(e.door)) await mirror($, e)
-    if (S.dir && e.agentId === undefined && e.door === 'prompt') await answerFromChat($, e).catch(error => log($, `chat answer failed: ${String(error)}`))
+    if (S.dir && e.agentId === undefined && e.door === 'prompt') answerFromChat($, e).catch((error: unknown) => log($, `chat answer failed: ${String(error)}`))
     return next(e)
+  })
+
+  // A peer nudge carries no content: take it, so the model does not see it, and look at the stream.
+  on('session.receive', async ($, e: any, next) => {
+    if (typeof e.text !== 'string' || !e.text.startsWith(NUDGE)) return next(e)
+    if (S.dir) {
+      S.wanted = true
+      if (!S.watching) watchLoop($).catch((error: unknown) => log($, `watch failed: ${String(error)}`))
+      deliver($).catch((error: unknown) => log($, `deliver failed: ${String(error)}`))
+    }
+    return { consumed: 'orch nudge: the plugin looks at the stream' }
   })
 
   on('session.end', async ($, e, next) => {
@@ -121,6 +157,12 @@ export const register: Register = on => {
   on('tool.call', { tool: SPAWN_TOOL }, async ($, e: any) => spawnChild($, e)).catch((_$: any, _e: any) => ({ result: 'orch: spawn_child failed. Do the work yourself or report blocked.' }))
 
   on('tool.call', { tool: ANSWER_TOOL }, async ($, e: any) => answerChild($, e)).catch((_$: any, _e: any) => ({ result: 'orch: answer failed. Tell the user to answer with orch answer.' }))
+
+  on('tool.call', { tool: SEND_TOOL }, async ($, e: any) => send($, e)).catch((_$: any, _e: any) => ({ result: 'orch: send failed. Tell the user.' }))
+
+  on('tool.call', { tool: QUERY_TOOL }, async ($, e: any) => query($, e)).catch((_$: any, _e: any) => ({ result: 'orch: query failed. Ask the question in your reply text and end your turn.' }))
+
+  on('tool.call', { tool: PLAN_TOOL }, async ($, e: any) => plan($, e)).catch((_$: any, _e: any) => ({ result: 'orch: plan failed. Show the plan in your reply text and end your turn.' }))
 
   on('tool.call', { tool: QUESTIONS_TOOL }, async ($, _e: any) => listQuestions($)).catch((_$: any, _e: any) => ({ result: 'orch: the list failed. Run orch decisions.' }))
 

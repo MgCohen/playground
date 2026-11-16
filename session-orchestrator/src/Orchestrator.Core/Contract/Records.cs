@@ -43,6 +43,7 @@ public sealed record Decision(string Id, string Session)
     public string Mode { get; init; } = DecisionModes.Pending;
     public double WaitSeconds { get; init; }
     public string Asked { get; init; } = "";
+    public string? Event { get; init; }
 }
 
 public static class DecisionModes
@@ -51,24 +52,26 @@ public static class DecisionModes
     public const string Pending = "pending";
 }
 
+/// <summary>An answer, read from its envelope. <see cref="Note"/> is the rendered note of a policy or docs answer.</summary>
 public sealed record Answer
 {
-    public string? Text { get; init; }
-    [System.Text.Json.Serialization.JsonPropertyName("answer")]
     public string? Value { get; init; }
-    public JsonElement? Answers { get; init; }
     public string? By { get; init; }
     public string? Source { get; init; }
     public string? Note { get; init; }
     public string? Reason { get; init; }
-
-    [System.Text.Json.Serialization.JsonIgnore]
-    public string Body => Value ?? Text ?? (Answers is { } a ? a.GetRawText() : "");
+    public string? Via { get; init; }
+    public string? Event { get; init; }
+    public string? At { get; init; }
 }
 
 public sealed record Report(string State, string Summary, string At)
 {
     public string? Details { get; init; }
+    public IReadOnlyList<string>? Done { get; init; }
+    public IReadOnlyList<string>? Next { get; init; }
+    public IReadOnlyList<string>? Blockers { get; init; }
+    public IReadOnlyList<string>? Links { get; init; }
     public string? Event { get; init; }
 }
 
@@ -79,7 +82,10 @@ public static class ReportStates
     public const string Done = "done";
 }
 
-public sealed record Review(string Verdict, string Text, string At);
+public sealed record Review(string Verdict, string Text, string At)
+{
+    public string? Event { get; init; }
+}
 
 public static class Verdicts
 {
@@ -89,18 +95,7 @@ public static class Verdicts
     public static readonly string[] All = [Approve, Change, Refuse];
 }
 
-public sealed record Delivered(string By, string At);
-
 public sealed record Blocked(string? Reason, string Since);
-
-public sealed record Forwarded(string At);
-
-public sealed record QuestionRelay(string At)
-{
-    public int Reminders { get; init; }
-    public string? RemindedAt { get; init; }
-    public string? ClosedAt { get; init; }
-}
 
 public sealed record Status(string State, string? TurnId, string At);
 
@@ -109,14 +104,13 @@ public sealed record DocsCheck(bool Answered, string? Answer, string? Source, st
     public string? Error { get; init; }
 }
 
-public sealed record Pending(string Text, IReadOnlyList<string> Inbox, IReadOnlyList<string> Answers)
+/// <summary>The envelopes to a session that wait for a delivery, and their renders joined into one turn.</summary>
+public sealed record Pending(string Text, IReadOnlyList<string> Envelopes)
 {
     public IReadOnlyList<string> Senders { get; init; } = [];
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsEmpty => Text.Length == 0;
 }
-
-public sealed record InboxMessage(string Text, string? From);
 
 public sealed record TurnMarker(string Event, string From, string At)
 {
@@ -125,7 +119,7 @@ public sealed record TurnMarker(string Event, string From, string At)
 
 public sealed record StoreVersion(int Version, string At)
 {
-    public const int Current = 1;
+    public const int Current = 2;
 }
 
 public sealed record LastOutput(string Event, string At);
@@ -135,6 +129,11 @@ public static class ControlStates
     public const string Active = "active";
     public const string Stopped = "stopped";
     public const string Archived = "archived";
+}
+
+public sealed record Subscription(string Party, string Name, string? Cursor, string At)
+{
+    public string? Filter { get; init; }
 }
 
 public sealed record Control(string State, string At, string By)

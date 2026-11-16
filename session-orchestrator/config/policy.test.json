@@ -22,5 +22,6 @@
   "docs": [
     "AGENTS.md"
   ],
-  "onDefault": "stacked-pr"
+  "onDefault": "stacked-pr",
+  "delivery": { "nudgeSeconds": 15, "peerSeconds": 60, "sweepSeconds": 60 }
 }

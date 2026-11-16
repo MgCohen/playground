@@ -1,15 +1,50 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "answer",
-  "description": "The answer to one decision, from the user, the docs or the policy.",
+  "description": "The answer to one decision or query, from the user, the docs or the policy.",
   "type": "object",
-  "required": ["decision", "text", "by"],
+  "required": [
+    "decision",
+    "text",
+    "by"
+  ],
   "properties": {
-    "decision": { "type": "string", "minLength": 1 },
-    "text": { "type": "string", "description": "The answer in free text." },
-    "by": { "enum": ["user", "docs", "policy"] },
-    "source": { "type": "string", "description": "For a docs answer: the file and the section." },
-    "note": { "type": "string", "description": "Instructions that go with the answer, for example the default steps." }
+    "decision": {
+      "type": "string",
+      "description": "The id of the decision or query: the thread of the answer.",
+      "minLength": 1
+    },
+    "text": {
+      "type": "string",
+      "description": "The answer in free text."
+    },
+    "by": {
+      "enum": [
+        "user",
+        "docs",
+        "policy"
+      ]
+    },
+    "question": {
+      "type": "string",
+      "description": "The question of the decision, for the render."
+    },
+    "source": {
+      "type": "string",
+      "description": "For a docs answer: the file and the section."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Why a default or a docs answer applies."
+    },
+    "onDefault": {
+      "enum": [
+        "stacked-pr",
+        "commit",
+        "none"
+      ],
+      "description": "For a policy answer: what the session must do with the default."
+    }
   },
   "additionalProperties": false
 }

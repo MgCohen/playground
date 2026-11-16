@@ -16,6 +16,7 @@ var import = Environment.GetEnvironmentVariable("ORCH_IMPORT") is { Length: > 0 
 builder.Services.AddSingleton(services => new SupervisorOptions(4, 3, 2, Home.LoadPolicy(root)) { Import = import ? id => new Lifecycle(services.GetRequiredService<FileStore>()).Import(id) : null });
 builder.Services.AddSingleton<Supervisor>();
 builder.Services.AddSingleton<Board>();
+builder.Services.AddSingleton<StreamHub>();
 builder.Services.AddSingleton(services => new SignIn(services.GetRequiredService<IConfiguration>()["ORCH_TOKEN"]));
 builder.Services.AddHostedService<TickService>();
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();

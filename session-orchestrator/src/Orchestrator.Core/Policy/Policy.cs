@@ -11,8 +11,19 @@ public static class OnDefault
     public const string None = "none";
 }
 
+/// <summary>
+/// The wait times of the delivery ladder: after <see cref="NudgeSeconds"/> with no ack the watchdog nudges the receiver,
+/// after <see cref="PeerSeconds"/> more it posts delivery.blocked. Each subscriber sweeps the stream after <see cref="SweepSeconds"/> with no push.
+/// </summary>
+public sealed record Delivery(double NudgeSeconds = 15, double PeerSeconds = 60, double SweepSeconds = 60)
+{
+    public static readonly Delivery Default = new();
+}
+
 public sealed record Policy(IReadOnlyList<Level> Levels, IReadOnlyList<string> Docs, string OnDefault)
 {
+    public Delivery Delivery { get; init; } = Delivery.Default;
+
     public Level LevelOf(string? name) => Levels.FirstOrDefault(level => level.Name == name) ?? Levels[^1];
 
     public static Policy Parse(string text, string source)
@@ -24,8 +35,8 @@ public sealed record Policy(IReadOnlyList<Level> Levels, IReadOnlyList<string> D
             if (string.IsNullOrEmpty(level.Name)) throw new InvalidDataException($"policy {source}: a level has no name");
             if (level.TimeoutSeconds is < 0) throw new InvalidDataException($"policy {source}: level {level.Name} has a bad timeoutSeconds");
         }
-        return new Policy(levels, raw.Docs ?? [], raw.OnDefault ?? Core.Policy.OnDefault.StackedPr);
+        return new Policy(levels, raw.Docs ?? [], raw.OnDefault ?? Core.Policy.OnDefault.StackedPr) { Delivery = raw.Delivery ?? Delivery.Default };
     }
 
-    sealed record RawPolicy(List<Level>? Levels, List<string>? Docs, string? OnDefault);
+    sealed record RawPolicy(List<Level>? Levels, List<string>? Docs, string? OnDefault, Delivery? Delivery);
 }

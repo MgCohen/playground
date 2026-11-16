@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "query",
+  "description": "A session needs facts from the user. There is no choice and no default.",
+  "type": "object",
+  "required": [
+    "question"
+  ],
+  "properties": {
+    "question": {
+      "type": "string",
+      "description": "One question, one sentence.",
+      "minLength": 1
+    },
+    "context": {
+      "type": "string",
+      "description": "Why you need the facts, and what you do with them."
+    }
+  },
+  "additionalProperties": false
+}
