@@ -3,6 +3,7 @@ namespace Orchestrator.Supervisor;
 public sealed record TurnRequest(string Id, string Cwd, string Prompt, bool IsNew)
 {
     public string? Agent { get; init; }
+    public string? Title { get; init; }
 }
 
 public sealed record TurnResult(bool Ok, string? Text, string? Error, double Seconds);
@@ -24,6 +25,8 @@ public interface IDocsChecker
 public sealed record SupervisorOptions(int MaxRuns, int MaxFailures, int MaxChecks, Core.Policy.Policy Policy)
 {
     public TimeSpan RetryAfter { get; init; } = TimeSpan.FromMinutes(5);
+    public Action<string>? Import { get; init; }
+    public TimeSpan ImportWait { get; init; } = TimeSpan.FromSeconds(30);
 }
 
 static class Data

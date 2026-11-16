@@ -86,6 +86,18 @@ public sealed class Lifecycle(FileStore store)
         return updated;
     }
 
-    public static IReadOnlyList<string> OpenCommand(string id) =>
-        ["powershell", "-NoProfile", "-Command", $"Start-Process -FilePath 'claude.exe' -ArgumentList '--desktop','--resume','{id}'"];
+    public static IReadOnlyList<string> OpenCommand(string id, string? cwd = null)
+    {
+        var folder = cwd is { Length: > 0 } ? $" -WorkingDirectory '{cwd.Replace('/', '\\')}'" : "";
+        return ["powershell", "-NoProfile", "-Command", $"Start-Process -FilePath 'claude.exe' -ArgumentList '--desktop','--resume','{id}'{folder} -WindowStyle Hidden"];
+    }
+
+    public void Import(string id)
+    {
+        var meta = store.Meta(id);
+        var command = OpenCommand(id, store.Cwd(id));
+        new Shell(store.Cwd(id) ?? Environment.CurrentDirectory).Must(command[0], [.. command.Skip(1)]);
+        store.SaveMeta(store.Meta(id) with { Imported = true });
+        store.Events.Append(EventKinds.SessionImport, Parties.Supervisor, Parties.Session(id), Messages.Fields(("text", $"{meta.Title ?? id} imported into the desktop app")), null, id);
+    }
 }
