@@ -13,6 +13,7 @@ public sealed record NewSession(string? Title, string? Cwd, string? Brief, strin
     public List<string>? Skills { get; init; }
     public string? Agent { get; init; }
     public bool? Worktree { get; init; }
+    public bool? AllowDefaults { get; init; }
 }
 
 public sealed record SendText(string? Text);
@@ -48,7 +49,7 @@ public static class OrchestratorApi
             var brief = new BriefFields
             {
                 Title = input.Title, Goal = input.Goal ?? input.Brief, Scope = input.Scope, DoneWhen = input.DoneWhen, Skills = input.Skills,
-                Agent = input.Agent, Cwd = input.Cwd, Worktree = input.Worktree, Parent = input.Parent,
+                Agent = input.Agent, Cwd = input.Cwd, Worktree = input.Worktree, Parent = input.Parent, AllowDefaults = input.AllowDefaults,
             };
             var id = new Messages(store).NewSession(brief, Parties.Supervisor);
             s.Tick();

@@ -30,6 +30,7 @@ namespace Orchestrator.Cli
               orch decision ready <decision>
               orch stack rebase <decision>
               orch stack close <decision> [--text T]
+              orch merge <pr>|<branch> [--base B]
             Stream and tools
               orch events [--since 3h] [--kind a,b] [--session ID] [--from P] [--open] [--ledger] [--follow] [--json] [--body]
               orch template [<kind>] [--check FILE] [--render FILE] [--name N]
@@ -64,6 +65,7 @@ namespace Orchestrator.Cli
                     "review" => DecisionCommands.Review(command),
                     "decision" => DecisionCommands.Decision(command),
                     "stack" => DecisionCommands.Stack(command),
+                    "merge" => DecisionCommands.Merge(command),
                     "events" => EventCommands.Events(command),
                     "template" => ToolCommands.Template(command),
                     "doctor" => ToolCommands.Doctor(command),

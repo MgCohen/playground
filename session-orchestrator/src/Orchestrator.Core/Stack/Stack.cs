@@ -9,6 +9,7 @@ public static class VersionStates
     public const string Open = "open";
     public const string Ready = "ready";
     public const string Closed = "closed";
+    public const string Merged = "merged";
 }
 
 public sealed record StackVersion(int Version, string Branch, string Base)

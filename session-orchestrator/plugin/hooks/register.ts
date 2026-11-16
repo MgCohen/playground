@@ -8,6 +8,9 @@ import { ASK_TOOL, REPORT_TOOL, SPAWN_TOOL, UPDATE_TOOL, askUser, registerTools,
 const MIRROR_DOORS = ['prompt', 'response', 'tool-result']
 const ASK_IN_TEXT =
   'The user does not use this tool, because it allows only a click on fixed options. Write each question in your reply text: the question, the context, the options and your recommendation. Then end your turn. The user answers in free text.'
+const MERGE_IN_ORCH =
+  'In this session, do not merge with gh pr merge. Run orch merge <pr>. It refuses the merge while the PR carries a default decision that the user did not approve.'
+const GH_PR_MERGE = /\bgh\s+pr\s+merge\b/
 const ASK_IN_ORCH =
   'The user does not use this tool, because it allows only a click on fixed options. In this session, call mcp__orch__ask_user one time for each question. The user answers in free text.'
 
@@ -91,6 +94,9 @@ export const register: Register = on => {
   on('tool.call', { tool: SPAWN_TOOL }, async ($, e: any) => spawnChild($, e)).catch((_$: any, _e: any) => ({ result: 'orch: spawn_child failed. Do the work yourself or report blocked.' }))
 
   on('tool.call', { tool: ASK_TOOL }, async ($, e: any) => askUser($, e)).catch((_$: any, _e: any) => ({ result: 'orch: ask_user failed. Ask the question in your reply text and end your turn.' }))
+
+  for (const shell of ['Bash', 'PowerShell'])
+    on('tool.call', { tool: shell }, async ($: any, e: any, next: any) => (S.dir && GH_PR_MERGE.test(String(e.command ?? '')) ? { deny: MERGE_IN_ORCH } : next(e)))
 
   on('tool.describe', { tool: 'AskUserQuestion' }, async () => ({ description: `Do not use this tool. ${ASK_IN_TEXT}`, isDeferred: true }))
 

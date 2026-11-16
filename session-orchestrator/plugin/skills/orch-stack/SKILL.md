@@ -20,7 +20,7 @@ A default decision lives on its own branch, `orch/decision-<id>`, on top of the 
 
 | Verdict | Steps |
 |---|---|
-| approve | `orch decision ready <id>`. Do not merge unless the user asks |
+| approve | `orch decision ready <id>`. Do not merge unless the user asks. To merge, use `orch merge <pr>`, never `gh pr merge` |
 | change | Check out the branch of the decision, make the change and commit it. Then `orch stack rebase <id>` |
 | refuse | `orch stack close <id>`, then `orch decision start <id>` for the refused decision and for each closed decision above it, from the lowest to the highest. Do the work again in the direction of the user, reuse old commits with `git cherry-pick` where they fit, and run `orch decision pr <id>` for each |
 

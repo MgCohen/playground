@@ -24,6 +24,7 @@ public sealed record Meta(string Id)
     public List<string>? Skills { get; init; }
     public string? Repo { get; init; }
     public string? Branch { get; init; }
+    public bool? AllowDefaults { get; init; }
 }
 
 public sealed record Decision(string Id, string Session)

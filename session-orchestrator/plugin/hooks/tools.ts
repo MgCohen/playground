@@ -45,6 +45,7 @@ export async function registerTools($: any): Promise<void> {
   })
   const brief = await templateSchema($, 'brief')
   delete brief.properties.parent
+  delete brief.properties.allowDefaults
   await $.tool.register({
     name: 'spawn_child',
     description:

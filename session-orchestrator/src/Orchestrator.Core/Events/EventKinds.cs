@@ -34,4 +34,6 @@ public static class EventKinds
     public const string PrOpen = "pr.open";
     public const string PrReady = "pr.ready";
     public const string PrClose = "pr.close";
+    public const string PrMerge = "pr.merge";
+    public const string MergeBlock = "merge.block";
 }

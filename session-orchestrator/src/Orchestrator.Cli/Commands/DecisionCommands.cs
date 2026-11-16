@@ -65,4 +65,10 @@ public static class DecisionCommands
         }
         return 0;
     }
+
+    public static int Merge(CommandContext c)
+    {
+        var guard = new Git.MergeGuard(c.Store, new Store.Shell(c.Cwd), c.Output);
+        return guard.Merge(guard.Resolve(c.Args.Required(1, "pr or branch"), c.Args.Option("base")));
+    }
 }
