@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
 <style>
-/* Layout: one reading column, a sticky section bar, each section starts with its visual. Same tokens as the design page. */
+/* Layout: one reading column, a sticky tab bar, one topic for each tab, the visual first. Same tokens as the design page. */
 :root {
   --bg: #f6f7f8;
   --panel: #ffffff;
@@ -29,30 +29,37 @@
   --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f; color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { scroll-padding-top: 64px; }
 body {
   background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 28px 64px;
 }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
-.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
 header { display: flex; flex-direction: column; gap: 8px; }
 .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
 h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
 h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
 h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
-p { margin: 0; max-width: 70ch; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
 .summary { color: var(--muted); max-width: 70ch; }
 nav {
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
   padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap;
 }
-nav a { font: 500 14px var(--font-body); color: var(--muted); text-decoration: none; border-radius: 6px; padding: 6px 10px; }
-nav a:hover { color: var(--fg); background: var(--code-bg); }
-nav a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav button {
+  font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 24px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
 section { display: flex; flex-direction: column; gap: 12px; }
-section + section { border-top: 1px solid var(--line); padding-top: 28px; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
 .box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
 pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
 .scroll { overflow-x: auto; min-width: 0; }
@@ -61,12 +68,12 @@ th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom
 th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
 code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
 td code { white-space: nowrap; }
-pre.stack {
+pre.stack, pre.cmd {
   margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; background: var(--code-bg);
-  border-radius: 8px; padding: 14px; overflow-x: auto; color: var(--fg);
+  border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg); white-space: pre;
 }
-pre.stack .c { color: var(--muted); }
-pre.stack .k { color: var(--accent); }
+pre .c { color: var(--muted); }
+pre .k { color: var(--accent); }
 .tree { font-family: var(--font-mono); font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
 .tree details { margin-left: 16px; }
 .tree > details { margin-left: 0; }
@@ -84,33 +91,226 @@ pre.stack .k { color: var(--accent); }
 .tag { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
 .tag.code { color: var(--accent); border-color: var(--accent); }
 .tag.prompt { color: var(--warn); border-color: var(--warn); }
-@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+details.example { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+details.example > summary {
+  cursor: pointer; padding: 12px 14px; font-family: var(--font-display); font-weight: 500; font-size: 17px;
+  display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+}
+details.example > summary .d { font-family: var(--font-body); font-size: 14px; font-weight: 400; color: var(--muted); }
+details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+.step > * { min-width: 0; }
+.num {
+  font-family: var(--font-mono); font-size: 12px; width: 24px; height: 24px; border-radius: 50%;
+  border: 1px solid var(--accent); color: var(--accent); display: grid; place-items: center; margin-top: 1px;
+}
+.step .what { display: flex; flex-direction: column; gap: 6px; }
+.where { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
 </style>
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">session-orchestrator · main at 795cb42</div>
+  <div class="eyebrow">session-orchestrator · main</div>
   <h1>Orchestrator Internals</h1>
-  <p class="summary">How the orchestrator works today: the processes, the folders, the files that connect them, the call stack of one tick, and the sequence of events for the three main flows.</p>
+  <p class="summary">How to use the orchestrator, and how it works today. Each tab has one topic. Start with the tutorial.</p>
 </header>
 
-<nav aria-label="Sections">
-  <a href="#topology">Topology</a>
-  <a href="#entry">Entry points</a>
-  <a href="#folders">Folders</a>
-  <a href="#store">Store files</a>
-  <a href="#tick">Call stack</a>
-  <a href="#seq-new">New session</a>
-  <a href="#seq-decision">Decision</a>
-  <a href="#seq-report">Report and merge</a>
-  <a href="#lease">Lease</a>
-  <a href="#events">Event stream</a>
-  <a href="#workflow">Where the workflow is</a>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" data-tab="tutorial" aria-selected="true">Tutorial</button>
+  <button role="tab" data-tab="topology" aria-selected="false">Topology</button>
+  <button role="tab" data-tab="folders" aria-selected="false">Folders</button>
+  <button role="tab" data-tab="store" aria-selected="false">Store files</button>
+  <button role="tab" data-tab="calls" aria-selected="false">Call stack</button>
+  <button role="tab" data-tab="sequences" aria-selected="false">Sequences</button>
+  <button role="tab" data-tab="runtime" aria-selected="false">Lease and events</button>
+  <button role="tab" data-tab="workflow" aria-selected="false">Workflow</button>
 </nav>
 
-<section id="topology">
-  <h2>Topology</h2>
-  <div class="box">
+<!-- TUTORIAL -->
+<div class="panel" id="tutorial" role="tabpanel">
+  <section>
+    <h2>Tutorial: three scripts in a project "foobar"</h2>
+    <p class="summary">Three worked examples with the same small job: make <code>hello.ps1</code>, <code>add.ps1</code> and <code>today.ps1</code>. Each example uses a different way in. The commands are PowerShell.</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Example</th><th>Way in</th><th>Sessions</th><th>You learn</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Terminal (<code>orch</code>) and the web UI</td><td>1 worker</td><td>Start, watch, answer a question, send more work, archive</td></tr>
+        <tr><td>2</td><td>Terminal (<code>orch</code>)</td><td>1 root and 3 workers</td><td>Split work, worktrees, child reports, review, merge</td></tr>
+        <tr><td>3</td><td>A chat in the Claude Code app</td><td>Any</td><td>Let a chat session drive <code>orch</code> for you, open a supervisor session in the app</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Before each example</h2>
+    <div class="step"><div class="num">A</div><div class="what">
+      <div class="where">Terminal 1</div>
+      <p>Make the project folder and its git repository.</p>
+<pre class="cmd">mkdir $HOME\Documents\Projects\foobar; cd $HOME\Documents\Projects\foobar
+git init -b main
+"# foobar`n`nRules: one script for each job. Each script has a comment line at the top." | Set-Content AGENTS.md
+git add .; git commit -m "Start foobar"</pre>
+    </div></div>
+    <div class="step"><div class="num">B</div><div class="what">
+      <div class="where">Terminal 2, keep it open</div>
+      <p>Start the supervisor. It runs the tick loop, the API and the UI on port 7777.</p>
+<pre class="cmd">cd $HOME\Documents\Projects\playground\session-orchestrator
+dotnet run --project src/Orchestrator.Web</pre>
+    </div></div>
+    <div class="step"><div class="num">C</div><div class="what">
+      <div class="where">Terminal 1</div>
+      <p>Check the setup. Each line must say <code>ok</code>.</p>
+<pre class="cmd">orch doctor</pre>
+      <p>Open <code>http://127.0.0.1:7777/</code> in a browser. Keep it next to the terminal.</p>
+    </div></div>
+  </section>
+
+  <details class="example" open>
+    <summary>Example 1 <span class="d">One worker, from the terminal and the UI</span></summary>
+    <div class="body">
+      <div class="step"><div class="num">1</div><div class="what">
+        <div class="where">Terminal 1</div>
+        <p>Start a worker session. The brief tells it the job, and it also tells it to ask you one question.</p>
+<pre class="cmd">orch new --title "foobar scripts" --agent worker `
+  --skills orch-ask,orch-report,orch-stack `
+  --goal "Make three PowerShell scripts: hello.ps1 prints a greeting, add.ps1 adds two numbers, today.ps1 prints the date. Before you write add.ps1, ask the user if it takes the numbers as arguments or from a prompt (risk medium, default: arguments). Commit each script." `
+  --done-when "The three scripts are committed and each one runs."</pre>
+        <p>The command prints the session id, for example <code>3f2a9c1e-…</code>. It only writes files. In the next 3 s, the supervisor starts the first turn.</p>
+      </div></div>
+      <div class="step"><div class="num">2</div><div class="what">
+        <div class="where">Terminal 1 or the UI, tab Sessions</div>
+        <p>Watch the work. A short id prefix is enough.</p>
+<pre class="cmd">orch tree                          <span class="c"># all sessions and their state</span>
+orch status 3f2a                   <span class="c"># one session: turn, report, decisions, stack</span>
+orch events --session 3f2a --follow   <span class="c"># each event as it comes</span></pre>
+      </div></div>
+      <div class="step"><div class="num">3</div><div class="what">
+        <div class="where">The UI, tab Queue, or Terminal 1</div>
+        <p>The worker asks its question, then ends its turn. The question shows in the Queue. Answer it there in free text, or in the terminal.</p>
+<pre class="cmd">orch decisions
+<span class="c">toolu_01Ab… [medium, default arguments] foobar scripts: Does add.ps1 take the numbers as arguments or from a prompt?</span>
+orch answer toolu_01Ab "Arguments. Show a usage line if there are not two numbers."</pre>
+        <p>The next tick starts a turn with your answer. If you do not answer, the policy applies the default after 4 h (level medium). The worker then puts that work on its own branch <code>orch/decision-toolu_01Ab</code>, and the Queue asks you to review it.</p>
+      </div></div>
+      <div class="step"><div class="num">4</div><div class="what">
+        <div class="where">Terminal 1</div>
+        <p>When the worker reports done, check the result in the repository.</p>
+<pre class="cmd">orch status 3f2a
+git log --oneline
+.\add.ps1 2 3</pre>
+      </div></div>
+      <div class="step"><div class="num">5</div><div class="what">
+        <div class="where">Terminal 1, or the send box of the session card</div>
+        <p>Give the same session more work. It keeps its context.</p>
+<pre class="cmd">orch send 3f2a "Add a README.md that lists the three scripts with one example each."</pre>
+      </div></div>
+      <div class="step"><div class="num">6</div><div class="what">
+        <div class="where">Terminal 1, or the Archive button</div>
+        <p>When the work is done, archive the session. The supervisor never runs it again.</p>
+<pre class="cmd">orch archive 3f2a</pre>
+        <p>Use <code>orch stop 3f2a</code> to pause a session, and <code>orch resume 3f2a</code> to continue it.</p>
+      </div></div>
+    </div>
+  </details>
+
+  <details class="example">
+    <summary>Example 2 <span class="d">A root session that splits the work into three workers</span></summary>
+    <div class="body">
+      <div class="step"><div class="num">1</div><div class="what">
+        <div class="where">Terminal 1</div>
+        <p>Start a root session with the agent <code>orchestrator</code>. The brief gives the split, the merge permission and the merge command. The steps come from this brief and from the agent prompt, not from code.</p>
+<pre class="cmd">orch new --title "foobar root" --agent orchestrator `
+  --skills orch-brief,orch-ask,orch-report `
+  --goal "Make three PowerShell scripts in this repository: hello.ps1, add.ps1 and today.ps1. Start one worker child for each script, each with worktree true. Each child commits on its own branch and reports done with the branch name. Review each branch. If the review passes, merge it with: orch merge BRANCH --base main. Then report done." `
+  --done-when "main has the three scripts and each one runs."</pre>
+      </div></div>
+      <div class="step"><div class="num">2</div><div class="what">
+        <div class="where">Terminal 1 or the UI, tab Sessions</div>
+        <p>The root calls <code>spawn_child</code> three times, then ends its turn. Each child gets its own worktree folder next to the repository.</p>
+<pre class="cmd">orch tree
+<span class="c">1f00aa11 foobar root [supervisor, idle]
+  1a2b3c4d hello.ps1 [supervisor, running]
+  5e6f7a8b add.ps1 [supervisor, running, 1 open]
+  9c0d1e2f today.ps1 [supervisor, running]</span></pre>
+        <p>The three workers run at the same time. The supervisor runs up to 4 turns at one time. Each worktree is a folder next to the repository, for example <code>..\foobar.wt\orch-1a2b3c4d</code> on branch <code>orch/session-1a2b3c4d</code>.</p>
+      </div></div>
+      <div class="step"><div class="num">3</div><div class="what">
+        <div class="where">Nothing to do</div>
+        <p>Each child reports done. The supervisor sends each report to the root as a message that starts with "Report from child". Each report starts a root turn. The root reads the diff and runs the script, then runs <code>orch merge</code>.</p>
+      </div></div>
+      <div class="step"><div class="num">4</div><div class="what">
+        <div class="where">The UI, tab Queue</div>
+        <p>If a child asked a question that got a default, <code>orch merge</code> refuses its branch. The root reports the branch as ready and waits. You review the default in the Queue: Approve, Change or Refuse. After Approve, tell the root to merge again.</p>
+<pre class="cmd">orch review toolu_01Cd approve
+orch send 1f00 "The default is approved. Merge the branch of add.ps1."</pre>
+      </div></div>
+      <div class="step"><div class="num">5</div><div class="what">
+        <div class="where">Terminal 1</div>
+        <p>Check <code>main</code>, then archive the children and the root.</p>
+<pre class="cmd">git log --oneline --graph
+orch archive 1a2b; orch archive 5e6f; orch archive 9c0d; orch archive 1f00</pre>
+      </div></div>
+    </div>
+  </details>
+
+  <details class="example">
+    <summary>Example 3 <span class="d">From a chat in the Claude Code app</span></summary>
+    <div class="body">
+      <p>A normal chat session in the app can run <code>orch</code> for you. The chat is the remote control, and the supervisor does the work.</p>
+      <div class="step"><div class="num">1</div><div class="what">
+        <div class="where">A chat in the app</div>
+        <p>Ask in your own words. The chat runs <code>orch new</code> with a brief, as in example 1 or 2.</p>
+<pre class="cmd"><span class="c">You:</span> Start a worker on foobar that makes the three scripts. Tell me when it asks something.</pre>
+      </div></div>
+      <div class="step"><div class="num">2</div><div class="what">
+        <div class="where">The same chat</div>
+        <p>Ask for the state at any time. The chat runs <code>orch status</code> and <code>orch decisions</code>, and shows each question in the full format. You answer in the chat, and the chat runs <code>orch answer</code>.</p>
+<pre class="cmd"><span class="c">You:</span> Status?
+<span class="c">You:</span> For add.ps1, use arguments.</pre>
+        <p class="note">The chat does not get a signal when a worker asks. Ask it, or tell it to watch the session in the background.</p>
+      </div></div>
+      <div class="step"><div class="num">3</div><div class="what">
+        <div class="where">Terminal or chat</div>
+        <p>Read a supervisor session in the app sidebar. <code>orch open</code> imports the session into the app.</p>
+<pre class="cmd">orch open 3f2a</pre>
+        <p class="note">If you type in that session, its hooks take the lease <code>live</code>, and your messages go in directly. The supervisor does not start turns for it until 15 s after you close it.</p>
+      </div></div>
+      <div class="step"><div class="num">4</div><div class="what">
+        <div class="where">Any app chat, not tested yet</div>
+        <p>Put your own chat under the orchestrator. Type <code>/orch-enable</code>. The chat gets the <code>mcp__orch__*</code> tools, and inbox messages arrive when it is idle.</p>
+      </div></div>
+    </div>
+  </details>
+
+  <section>
+    <h2>Cheat sheet</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>To do this</th><th>Terminal</th><th>Web UI</th></tr></thead>
+      <tbody>
+        <tr><td>Start a session</td><td><code>orch new --title --goal [--agent] [--skills] [--worktree]</code></td><td>Not in the UI. API: <code>POST /api/sessions</code></td></tr>
+        <tr><td>See all sessions</td><td><code>orch tree</code></td><td>Sessions</td></tr>
+        <tr><td>See one session</td><td><code>orch status &lt;id&gt;</code></td><td>Sessions, the card</td></tr>
+        <tr><td>Answer a question</td><td><code>orch decisions</code>, <code>orch answer &lt;d&gt; &lt;text&gt;</code></td><td>Queue</td></tr>
+        <tr><td>Review a default</td><td><code>orch review &lt;d&gt; approve|change|refuse [text]</code></td><td>Queue, the default card</td></tr>
+        <tr><td>Send more work</td><td><code>orch send &lt;id&gt; &lt;text&gt;</code></td><td>Sessions, the send box</td></tr>
+        <tr><td>Pause, continue, end</td><td><code>orch stop</code>, <code>orch resume</code>, <code>orch archive</code></td><td>Sessions, the buttons</td></tr>
+        <tr><td>See what happened</td><td><code>orch events [--session] [--follow]</code></td><td>Timeline</td></tr>
+        <tr><td>Merge with the default check</td><td><code>orch merge &lt;pr&gt;</code> or <code>&lt;branch&gt; --base main</code></td><td>Not in the UI</td></tr>
+        <tr><td>Read a session in the app</td><td><code>orch open &lt;id&gt;</code></td><td>Not in the UI</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+</div>
+
+<!-- TOPOLOGY -->
+<div class="panel off" id="topology" role="tabpanel">
+  <section>
+    <h2>Topology</h2>
+    <div class="box">
 <pre class="mermaid">
 flowchart LR
   user([You])
@@ -150,33 +350,35 @@ flowchart LR
   cp -- Bash: orch, git, gh --> cli
   cli -- git, gh --> gh
 </pre>
-  </div>
-  <p>All state is in files in <code>store/</code>. No process calls another process through a network API. Each process reads the files, makes its decision and writes new files. The only process starts are these:</p>
-  <ul>
-    <li>The supervisor starts one <code>claude -p</code> process for each turn, and one for each docs check.</li>
-    <li>An agent in a turn runs <code>orch</code>, <code>git</code> and <code>gh</code> through its Bash tool.</li>
-    <li>The hook of <code>spawn_child</code> runs <code>orch new</code>.</li>
-  </ul>
-  <p>The UI, the API and the supervisor are in one process. They share one <code>FileStore</code> object, but they also talk only through the files.</p>
-</section>
-
-<section id="entry">
-  <h2>Entry points and projects</h2>
-  <div class="scroll">
-  <table>
-    <thead><tr><th>Process</th><th>Entry point</th><th>Who starts it</th><th>How long it lives</th></tr></thead>
-    <tbody>
-      <tr><td>Supervisor host</td><td><code>src/Orchestrator.Web/Program.cs</code></td><td>You: <code>dotnet run --project src/Orchestrator.Web</code></td><td>Until you stop it</td></tr>
-      <tr><td>One turn</td><td><code>ClaudeRunner.Run</code> → <code>Claude.Run</code></td><td><code>Supervisor.RunTurn</code></td><td>One turn, then it exits</td></tr>
-      <tr><td>Plugin hooks</td><td><code>plugin/hooks/register.ts</code>, function <code>register</code></td><td>The Claude Code engine, in each session (from <code>~/.claude/settings.json</code>)</td><td>The session. Active only if <code>sessions/&lt;id&gt;/enabled</code> exists</td></tr>
-      <tr><td><code>orch</code></td><td><code>src/Orchestrator.Cli/Program.cs</code></td><td>You, an agent (Bash), or the <code>spawn_child</code> hook</td><td>One command</td></tr>
-      <tr><td>Docs check</td><td><code>ClaudeDocsChecker.Check</code></td><td><code>Supervisor.StartDocsCheck</code></td><td>One check</td></tr>
-      <tr><td>End-to-end test</td><td><code>tests/Orchestrator.E2E/Program.cs</code></td><td>You</td><td>Minutes</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <div class="grid2">
-    <div class="box">
+    </div>
+    <p>All state is in files in <code>store/</code>. No process calls another process through a network API. Each process reads the files, makes its decision and writes new files. Only these process starts occur:</p>
+    <ul>
+      <li>The supervisor starts one <code>claude -p</code> process for each turn, and one for each docs check.</li>
+      <li>An agent in a turn runs <code>orch</code>, <code>git</code> and <code>gh</code> through its Bash tool.</li>
+      <li>The hook of <code>spawn_child</code> runs <code>orch new</code>.</li>
+    </ul>
+    <p>The UI, the API and the supervisor are in one process. They share one <code>FileStore</code> object, but they also talk only through the files.</p>
+  </section>
+  <section>
+    <h2>Entry points</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Process</th><th>Entry point</th><th>Who starts it</th><th>How long it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Supervisor host</td><td><code>src/Orchestrator.Web/Program.cs</code></td><td>You: <code>dotnet run --project src/Orchestrator.Web</code></td><td>Until you stop it</td></tr>
+        <tr><td>One turn</td><td><code>ClaudeRunner.Run</code> → <code>Claude.Run</code></td><td><code>Supervisor.RunTurn</code></td><td>One turn, then it exits</td></tr>
+        <tr><td>Plugin hooks</td><td><code>plugin/hooks/register.ts</code>, function <code>register</code></td><td>The Claude Code engine, in each session (from <code>~/.claude/settings.json</code>)</td><td>The session. Active only if <code>sessions/&lt;id&gt;/enabled</code> exists</td></tr>
+        <tr><td><code>orch</code></td><td><code>src/Orchestrator.Cli/Program.cs</code></td><td>You, an agent (Bash), or the <code>spawn_child</code> hook</td><td>One command</td></tr>
+        <tr><td>Docs check</td><td><code>ClaudeDocsChecker.Check</code></td><td><code>Supervisor.StartDocsCheck</code></td><td>One check</td></tr>
+        <tr><td>End-to-end test</td><td><code>tests/Orchestrator.E2E/Program.cs</code></td><td>You</td><td>Minutes</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+  <section>
+    <h2>Project references</h2>
+    <div class="grid2">
+      <div class="box">
 <pre class="mermaid">
 flowchart BT
   core["Orchestrator.Core<br/>records, rules, templates<br/>no file access"]
@@ -189,125 +391,132 @@ flowchart BT
   web --> sv
   cl --> st
 </pre>
+      </div>
+      <div class="box" style="display:flex;flex-direction:column;gap:10px">
+        <p>An arrow points to the project that a project uses. <code>Core</code> has no file access, so its rules are easy to test. <code>Store</code> is the only project that knows the folder layout.</p>
+        <p><code>Cli</code> does not use <code>Supervisor</code>. A command only writes files, and the next tick acts on them.</p>
+        <p>The plugin is TypeScript and has no project reference. It uses the same folder layout, which <code>docs/store.md</code> defines.</p>
+      </div>
     </div>
-    <div class="box">
-      <h3>Project references</h3>
-      <p>An arrow points to the project that a project uses. <code>Core</code> has no file access, so its rules are easy to test. <code>Store</code> is the only project that knows the folder layout. <code>Cli</code> does not use <code>Supervisor</code>: a command only writes files, and the next tick acts on them.</p>
-      <p>The plugin is TypeScript and has no project reference. It knows the same folder layout, which <code>docs/store.md</code> defines.</p>
+  </section>
+</div>
+
+<!-- FOLDERS -->
+<div class="panel off" id="folders" role="tabpanel">
+  <section>
+    <h2>Folders and files</h2>
+    <p class="summary">Click a line to open it.</p>
+    <div class="tree">
+      <details open><summary><span class="n">session-orchestrator/</span><span class="d">the project</span></summary>
+        <details><summary><span class="n">Orchestrator.slnx, global.json, Directory.*.props</span><span class="d">solution, SDK, shared build and package versions</span></summary>
+          <div class="more"><code>Directory.Build.props</code> sets net10.0, warnings as errors and the <code>OrchHome</code> path, so a built <code>orch</code> finds the project folder.</div></details>
+        <details><summary><span class="n">config/</span><span class="d">policy.default.json, policy.test.json</span></summary>
+          <div class="more">The risk levels: low 1800 s, medium 14400 s, high never. The first start copies the default to <code>store/policy.json</code>. The test policy has 120 s timeouts.</div></details>
+        <details open><summary><span class="n">src/Orchestrator.Core/</span><span class="d">pure rules and types</span></summary>
+          <details class="leaf"><summary><span class="n">Contract/Records.cs</span><span class="d">Meta, Lease, Decision, Answer, Report, Pending, TurnMarker, Control</span></summary><div class="more">The shapes of the store files, as C# records.</div></details>
+          <details class="leaf"><summary><span class="n">Contract/StoreFiles.cs, StoreJson.cs</span><span class="d">file names, JSON options</span></summary><div class="more">Each name in the store folder is a constant here.</div></details>
+          <details class="leaf"><summary><span class="n">Events/Event.cs, EventKinds.cs</span><span class="d">the event record and all kinds</span></summary><div class="more">Kinds such as <code>turn.start</code>, <code>decision</code>, <code>pr.merge</code>.</div></details>
+          <details class="leaf"><summary><span class="n">Leases/LeaseRules.cs</span><span class="d">holders, the 15 s live window, time format</span></summary><div class="more">Decides if a <code>live</code> lease is still live.</div></details>
+          <details class="leaf"><summary><span class="n">Ordering/Names.cs</span><span class="d">inbox file names that sort in time order</span></summary><div class="more">The cursor compares names with this order.</div></details>
+          <details class="leaf"><summary><span class="n">Policy/Policy.cs, DefaultRule.cs, Texts.cs</span><span class="d">risk levels, when a default is due, notice texts</span></summary><div class="more"><code>Texts</code> renders the notice templates: child report, default, review, blocked.</div></details>
+          <details class="leaf"><summary><span class="n">Stack/Stack.cs</span><span class="d">decision versions and branch names</span></summary><div class="more">States planned, started, open, ready, closed, merged. Names <code>orch/decision-&lt;id&gt;</code> and <code>-v2</code>.</div></details>
+          <details class="leaf"><summary><span class="n">Templates/Render.cs, TemplateSet.cs</span><span class="d">load, check and render the 7 templates</span></summary><div class="more">JSON Schema check with JsonSchema.Net. Render syntax <code>{{field}}</code> and <code>{{#field}}…{{/field}}</code>.</div></details>
+        </details>
+        <details open><summary><span class="n">src/Orchestrator.Store/</span><span class="d">all file access</span></summary>
+          <details class="leaf"><summary><span class="n">FileStore.cs</span><span class="d">read and write each session file</span></summary><div class="more"><code>Create</code>, <code>Send</code>, <code>Pending</code>, <code>MarkSent</code>, <code>OpenDecisions</code>, <code>Stacks</code>, leases, reports.</div></details>
+          <details class="leaf"><summary><span class="n">EventStream.cs, EventQuery.cs</span><span class="d">append and query the event stream</span></summary><div class="more"><code>Append</code> writes the event and its body. <code>All</code>, <code>Since</code>, <code>Find</code>. The ledger is a query.</div></details>
+          <details class="leaf"><summary><span class="n">Messages.cs</span><span class="d">new session, send, answer, review</span></summary><div class="more">Checks each message against its template, writes it and appends its event. The CLI and the API both use it.</div></details>
+          <details class="leaf"><summary><span class="n">Lifecycle.cs</span><span class="d">stop, resume, archive, worktree</span></summary><div class="more">Writes <code>control.json</code>. Makes <code>&lt;repo&gt;.wt/orch-&lt;id8&gt;</code> on <code>orch/session-&lt;id8&gt;</code>.</div></details>
+          <details class="leaf"><summary><span class="n">Home.cs, Files.cs, Shell.cs, Durations.cs</span><span class="d">paths, atomic file writes, process runs</span></summary><div class="more"><code>Home</code> finds the project and the store (<code>ORCH_HOME</code>, <code>ORCH_STORE</code>) and checks the store version.</div></details>
+        </details>
+        <details open><summary><span class="n">src/Orchestrator.Supervisor/</span><span class="d">the tick and the turns</span></summary>
+          <details class="leaf"><summary><span class="n">Supervisor.cs</span><span class="d">Tick, policy, turns, failures</span></summary><div class="more">The main loop. See the Call stack tab.</div></details>
+          <details class="leaf"><summary><span class="n">ClaudeRunner.cs</span><span class="d">starts claude -p, reads stream-json</span></summary><div class="more">Prompt on standard input. Environment <code>ORCH_HOLDER=supervisor</code> and <code>ORCH_STORE</code>.</div></details>
+          <details class="leaf"><summary><span class="n">Recovery.cs</span><span class="d">finds and closes a turn that a crash cut</span></summary><div class="more">Reads <code>turn.json</code> with no <code>ended</code>, and looks for the <code>session.input</code> event of that turn.</div></details>
+          <details class="leaf"><summary><span class="n">Runners.cs</span><span class="d">TurnRequest, TurnResult, SupervisorOptions</span></summary><div class="more">Interfaces, so tests use a fake runner.</div></details>
+        </details>
+        <details><summary><span class="n">src/Orchestrator.Web/</span><span class="d">host, API, UI</span></summary>
+          <details class="leaf"><summary><span class="n">Program.cs</span><span class="d">builds the host, port 7777, sign-in</span></summary><div class="more"><code>ORCH_PORT</code>, <code>ORCH_BIND</code>, <code>ORCH_TOKEN</code>, <code>ORCH_PLUGIN_DIR</code>.</div></details>
+          <details class="leaf"><summary><span class="n">TickService.cs</span><span class="d">calls Supervisor.Tick every 3 s</span></summary><div class="more">A hosted background service.</div></details>
+          <details class="leaf"><summary><span class="n">Api/OrchestratorApi.cs</span><span class="d">the HTTP API</span></summary><div class="more">Sessions, send, stop, resume, archive, events, ledger, answer, review.</div></details>
+          <details class="leaf"><summary><span class="n">Board.cs, SignIn.cs</span><span class="d">view data for the pages, token check</span></summary><div class="more"><code>Board</code> reads the store for the cards.</div></details>
+          <details class="leaf"><summary><span class="n">Components/</span><span class="d">pages Queue, Sessions, Timeline, and the cards</span></summary><div class="more"><code>LiveView</code> reloads each page every 2 s. One card for each template kind.</div></details>
+        </details>
+        <details><summary><span class="n">src/Orchestrator.Cli/</span><span class="d">the orch command</span></summary>
+          <details class="leaf"><summary><span class="n">Program.cs, Args.cs</span><span class="d">command switch and arguments</span></summary><div class="more">Each command goes to one static method in <code>Commands/</code>.</div></details>
+          <details class="leaf"><summary><span class="n">Commands/*.cs</span><span class="d">Session, Decision, Lifecycle, Event, Tool</span></summary><div class="more"><code>new</code>, <code>send</code>, <code>answer</code>, <code>review</code>, <code>stop</code>, <code>events</code>, <code>doctor</code> and the others.</div></details>
+          <details class="leaf"><summary><span class="n">Git/StackOps.cs, Git/MergeGuard.cs</span><span class="d">decision branches and PRs, the merge check</span></summary><div class="more">The only code that runs <code>git</code> and <code>gh</code> for the stack.</div></details>
+          <details class="leaf"><summary><span class="n">Install.cs</span><span class="d">the stale-install check of orch doctor</span></summary><div class="more">Compares the build commit with newer source commits.</div></details>
+        </details>
+        <details><summary><span class="n">plugin/</span><span class="d">loaded into each Claude Code session</span></summary>
+          <details class="leaf"><summary><span class="n">hooks/register.ts</span><span class="d">the hook entry point</span></summary><div class="more"><code>session.start</code> activates if <code>enabled</code> exists. Mirror rows, status, lease release, tool calls, the AskUserQuestion and gh pr merge blocks.</div></details>
+          <details class="leaf"><summary><span class="n">hooks/tools.ts</span><span class="d">the mcp__orch__ tools</span></summary><div class="more"><code>ask_user</code>, <code>report</code>, <code>update</code>, <code>spawn_child</code>. Each schema comes from a template.</div></details>
+          <details class="leaf"><summary><span class="n">hooks/inbox.ts</span><span class="d">delivery in a live session</span></summary><div class="more">Each tick, if the session is idle and holds <code>live</code>, it submits new inbox files and answers.</div></details>
+          <details class="leaf"><summary><span class="n">hooks/lease.ts, events.ts, state.ts</span><span class="d">lease and heartbeat, event writes, shared state</span></summary><div class="more"><code>emit</code> writes an event in the same format as <code>EventStream.Append</code>.</div></details>
+          <details class="leaf"><summary><span class="n">agents/</span><span class="d">worker, orchestrator, docs-checker</span></summary><div class="more">The role prompts. <code>--agent orch:worker</code> loads one.</div></details>
+          <details class="leaf"><summary><span class="n">skills/</span><span class="d">orch-ask, orch-brief, orch-report, orch-stack</span></summary><div class="more">How to ask, how to write a brief, how to report, the git steps of a default and a review.</div></details>
+        </details>
+        <details><summary><span class="n">templates/</span><span class="d">decision, answer, review, report, update, brief, notice</span></summary>
+          <div class="more">Each kind has <code>schema.json</code>, <code>render.md</code> and <code>example.json</code>. <code>decision/render/</code> has the PR texts. <code>notice/render/</code> has the 9 notices that the supervisor sends.</div></details>
+        <details><summary><span class="n">tests/</span><span class="d">72 NUnit tests, the end-to-end script</span></summary>
+          <div class="more">The unit tests use a fake runner and temporary git repositories. The end-to-end script runs real <code>claude</code> sessions and kills the supervisor two times.</div></details>
+        <details><summary><span class="n">docs/</span><span class="d">plan, store contract, know-how, decisions, design page, this page</span></summary>
+          <div class="more"><code>store.md</code> is the contract between the plugin and the supervisor.</div></details>
+        <details><summary><span class="n">spikes/, mod/orch/</span><span class="d">frozen TypeScript spike, the old mod (delete after the app restart)</span></summary>
+          <div class="more">Not in the run path.</div></details>
+        <details><summary><span class="n">store/</span><span class="d">the live data, not in git</span></summary>
+          <div class="more">See the Store files tab.</div></details>
+      </details>
     </div>
-  </div>
-</section>
+  </section>
+</div>
 
-<section id="folders">
-  <h2>Folders and files</h2>
-  <p class="summary">Click a line to open it.</p>
-  <div class="tree">
-    <details open><summary><span class="n">session-orchestrator/</span><span class="d">the project</span></summary>
-      <details><summary><span class="n">Orchestrator.slnx, global.json, Directory.*.props</span><span class="d">solution, SDK, shared build and package versions</span></summary>
-        <div class="more"><code>Directory.Build.props</code> sets net10.0, warnings as errors and the <code>OrchHome</code> path, so a built <code>orch</code> finds the project folder.</div></details>
-      <details><summary><span class="n">config/</span><span class="d">policy.default.json, policy.test.json</span></summary>
-        <div class="more">The risk levels: low 1800 s, medium 14400 s, high never. The first start copies the default to <code>store/policy.json</code>. The test policy has 120 s timeouts.</div></details>
-      <details open><summary><span class="n">src/Orchestrator.Core/</span><span class="d">pure rules and types</span></summary>
-        <details class="leaf"><summary><span class="n">Contract/Records.cs</span><span class="d">Meta, Lease, Decision, Answer, Report, Pending, TurnMarker, Control…</span></summary><div class="more">The shapes of the store files, as C# records.</div></details>
-        <details class="leaf"><summary><span class="n">Contract/StoreFiles.cs, StoreJson.cs</span><span class="d">file names, JSON options</span></summary><div class="more">Each name in the store folder is a constant here.</div></details>
-        <details class="leaf"><summary><span class="n">Events/Event.cs, EventKinds.cs</span><span class="d">the event record and all kinds</span></summary><div class="more">Kinds such as <code>turn.start</code>, <code>decision</code>, <code>pr.merge</code>.</div></details>
-        <details class="leaf"><summary><span class="n">Leases/LeaseRules.cs</span><span class="d">holders, the 15 s live window, time format</span></summary><div class="more">Decides if a <code>live</code> lease is still live.</div></details>
-        <details class="leaf"><summary><span class="n">Ordering/Names.cs</span><span class="d">inbox file names that sort in time order</span></summary><div class="more">The cursor compares names with this order.</div></details>
-        <details class="leaf"><summary><span class="n">Policy/Policy.cs, DefaultRule.cs, Texts.cs</span><span class="d">risk levels, when a default is due, notice texts</span></summary><div class="more"><code>Texts</code> renders the notice templates: child report, default, review, blocked.</div></details>
-        <details class="leaf"><summary><span class="n">Stack/Stack.cs</span><span class="d">decision versions and branch names</span></summary><div class="more">States planned, started, open, ready, closed, merged. Names <code>orch/decision-&lt;id&gt;</code> and <code>-v2</code>.</div></details>
-        <details class="leaf"><summary><span class="n">Templates/Render.cs, TemplateSet.cs</span><span class="d">load, check and render the 7 templates</span></summary><div class="more">JSON Schema check with JsonSchema.Net. Render syntax <code>{{field}}</code> and <code>{{#field}}…{{/field}}</code>.</div></details>
+<!-- STORE -->
+<div class="panel off" id="store" role="tabpanel">
+  <section>
+    <h2>Store files: who writes, who reads</h2>
+    <div class="tree">
+      <details open><summary><span class="n">store/</span><span class="d"><code>ORCH_STORE</code>, default <code>session-orchestrator/store</code></span></summary>
+        <details class="leaf"><summary><span class="n">version.json, policy.json</span><span class="d">store version 1, the active policy</span></summary><div class="more">A newer store version stops the supervisor at start.</div></details>
+        <details class="leaf"><summary><span class="n">events/&lt;day&gt;/&lt;id&gt;.json</span><span class="d">one file for each event</span></summary><div class="more">Small header: id, at, session, kind, from, to, subject, body path, refs.</div></details>
+        <details class="leaf"><summary><span class="n">bodies/&lt;day&gt;/&lt;id&gt;.json</span><span class="d">the full data of each event</span></summary><div class="more">The header points to it.</div></details>
+        <details class="leaf"><summary><span class="n">supervisor/log.txt</span><span class="d">the text log of the supervisor</span></summary><div class="more">One line for each action.</div></details>
+        <details class="leaf"><summary><span class="n">sessions/&lt;id&gt;/</span><span class="d">one folder for each session</span></summary><div class="more">The table below lists each file.</div></details>
       </details>
-      <details open><summary><span class="n">src/Orchestrator.Store/</span><span class="d">all file access</span></summary>
-        <details class="leaf"><summary><span class="n">FileStore.cs</span><span class="d">read and write each session file</span></summary><div class="more"><code>Create</code>, <code>Send</code>, <code>Pending</code>, <code>MarkSent</code>, <code>OpenDecisions</code>, <code>Stacks</code>, leases, reports.</div></details>
-        <details class="leaf"><summary><span class="n">EventStream.cs, EventQuery.cs</span><span class="d">append and query the event stream</span></summary><div class="more"><code>Append</code> writes the event and its body. <code>All</code>, <code>Since</code>, <code>Find</code>. The ledger is a query.</div></details>
-        <details class="leaf"><summary><span class="n">Messages.cs</span><span class="d">new session, send, answer, review</span></summary><div class="more">Checks each message against its template, writes it and appends its event. The CLI and the API both use it.</div></details>
-        <details class="leaf"><summary><span class="n">Lifecycle.cs</span><span class="d">stop, resume, archive, worktree</span></summary><div class="more">Writes <code>control.json</code>. Makes <code>&lt;repo&gt;.wt/orch-&lt;id8&gt;</code> on <code>orch/session-&lt;id8&gt;</code>.</div></details>
-        <details class="leaf"><summary><span class="n">Home.cs, Files.cs, Shell.cs, Durations.cs</span><span class="d">paths, atomic file writes, process runs</span></summary><div class="more"><code>Home</code> finds the project and the store (<code>ORCH_HOME</code>, <code>ORCH_STORE</code>) and checks the store version.</div></details>
-      </details>
-      <details open><summary><span class="n">src/Orchestrator.Supervisor/</span><span class="d">the tick and the turns</span></summary>
-        <details class="leaf"><summary><span class="n">Supervisor.cs</span><span class="d">Tick, policy, turns, failures</span></summary><div class="more">The main loop. See the call stack section.</div></details>
-        <details class="leaf"><summary><span class="n">ClaudeRunner.cs</span><span class="d">starts claude -p, reads stream-json</span></summary><div class="more">Prompt on standard input. Environment <code>ORCH_HOLDER=supervisor</code> and <code>ORCH_STORE</code>.</div></details>
-        <details class="leaf"><summary><span class="n">Recovery.cs</span><span class="d">finds and closes a turn that a crash cut</span></summary><div class="more">Reads <code>turn.json</code> with no <code>ended</code>, and looks for the <code>session.input</code> event of that turn.</div></details>
-        <details class="leaf"><summary><span class="n">Runners.cs</span><span class="d">TurnRequest, TurnResult, SupervisorOptions</span></summary><div class="more">Interfaces, so tests use a fake runner.</div></details>
-      </details>
-      <details><summary><span class="n">src/Orchestrator.Web/</span><span class="d">host, API, UI</span></summary>
-        <details class="leaf"><summary><span class="n">Program.cs</span><span class="d">builds the host, port 7777, sign-in</span></summary><div class="more"><code>ORCH_PORT</code>, <code>ORCH_BIND</code>, <code>ORCH_TOKEN</code>, <code>ORCH_PLUGIN_DIR</code>.</div></details>
-        <details class="leaf"><summary><span class="n">TickService.cs</span><span class="d">calls Supervisor.Tick every 3 s</span></summary><div class="more">A hosted background service.</div></details>
-        <details class="leaf"><summary><span class="n">Api/OrchestratorApi.cs</span><span class="d">the HTTP API</span></summary><div class="more">Sessions, send, stop, resume, archive, events, ledger, answer, review.</div></details>
-        <details class="leaf"><summary><span class="n">Board.cs, SignIn.cs</span><span class="d">view data for the pages, token check</span></summary><div class="more"><code>Board</code> reads the store for the cards.</div></details>
-        <details class="leaf"><summary><span class="n">Components/</span><span class="d">pages Queue, Sessions, Timeline, and the cards</span></summary><div class="more"><code>LiveView</code> reloads each page every 2 s. One card for each template kind.</div></details>
-      </details>
-      <details><summary><span class="n">src/Orchestrator.Cli/</span><span class="d">the orch command</span></summary>
-        <details class="leaf"><summary><span class="n">Program.cs, Args.cs</span><span class="d">command switch and arguments</span></summary><div class="more">Each command goes to one static method in <code>Commands/</code>.</div></details>
-        <details class="leaf"><summary><span class="n">Commands/*.cs</span><span class="d">Session, Decision, Lifecycle, Event, Tool</span></summary><div class="more"><code>new</code>, <code>send</code>, <code>answer</code>, <code>review</code>, <code>stop</code>, <code>events</code>, <code>doctor</code>…</div></details>
-        <details class="leaf"><summary><span class="n">Git/StackOps.cs, Git/MergeGuard.cs</span><span class="d">decision branches and PRs, the merge check</span></summary><div class="more">The only code that runs <code>git</code> and <code>gh</code> for the stack.</div></details>
-        <details class="leaf"><summary><span class="n">Install.cs</span><span class="d">the stale-install check of orch doctor</span></summary><div class="more">Compares the build commit with newer source commits.</div></details>
-      </details>
-      <details><summary><span class="n">plugin/</span><span class="d">loaded into each Claude Code session</span></summary>
-        <details class="leaf"><summary><span class="n">hooks/register.ts</span><span class="d">the hook entry point</span></summary><div class="more"><code>session.start</code> activates if <code>enabled</code> exists. Mirror rows, status, lease release, tool calls, the AskUserQuestion and gh pr merge blocks.</div></details>
-        <details class="leaf"><summary><span class="n">hooks/tools.ts</span><span class="d">the mcp__orch__ tools</span></summary><div class="more"><code>ask_user</code>, <code>report</code>, <code>update</code>, <code>spawn_child</code>. Each schema comes from a template.</div></details>
-        <details class="leaf"><summary><span class="n">hooks/inbox.ts</span><span class="d">delivery in a live session</span></summary><div class="more">Every tick, if the session is idle and holds <code>live</code>, it submits new inbox files and answers.</div></details>
-        <details class="leaf"><summary><span class="n">hooks/lease.ts, events.ts, state.ts</span><span class="d">lease and heartbeat, event writes, shared state</span></summary><div class="more"><code>emit</code> writes an event in the same format as <code>EventStream.Append</code>.</div></details>
-        <details class="leaf"><summary><span class="n">agents/</span><span class="d">worker, orchestrator, docs-checker</span></summary><div class="more">The role prompts. <code>--agent orch:worker</code> loads one.</div></details>
-        <details class="leaf"><summary><span class="n">skills/</span><span class="d">orch-ask, orch-brief, orch-report, orch-stack</span></summary><div class="more">How to ask, how to write a brief, how to report, the git steps of a default and a review.</div></details>
-      </details>
-      <details><summary><span class="n">templates/</span><span class="d">decision, answer, review, report, update, brief, notice</span></summary>
-        <div class="more">Each kind has <code>schema.json</code>, <code>render.md</code> and <code>example.json</code>. <code>decision/render/</code> has the PR texts. <code>notice/render/</code> has the 9 notices that the supervisor sends.</div></details>
-      <details><summary><span class="n">tests/</span><span class="d">72 NUnit tests, the end-to-end script</span></summary>
-        <div class="more">The unit tests use a fake runner and temporary git repositories. The end-to-end script runs real <code>claude</code> sessions and kills the supervisor two times.</div></details>
-      <details><summary><span class="n">docs/</span><span class="d">plan, store contract, know-how, decisions, design page, this page</span></summary>
-        <div class="more"><code>store.md</code> is the contract between the plugin and the supervisor.</div></details>
-      <details><summary><span class="n">spikes/, mod/orch/</span><span class="d">frozen TypeScript spike, the old mod (delete after the app restart)</span></summary>
-        <div class="more">Not in the run path.</div></details>
-      <details><summary><span class="n">store/</span><span class="d">the live data, not in git</span></summary>
-        <div class="more">See the next section.</div></details>
-    </details>
-  </div>
-</section>
+    </div>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>File in sessions/&lt;id&gt;/</th><th>Writer</th><th>Reader</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>meta.json</code></td><td><code>orch new</code>, API</td><td>Supervisor, hooks</td><td>Title, cwd, parent, agent, skills, worktree, <code>started</code>, <code>allowDefaults</code></td></tr>
+        <tr><td><code>enabled</code></td><td><code>orch new</code>, <code>/orch-enable</code></td><td>Supervisor, hooks</td><td>The session is under the orchestrator</td></tr>
+        <tr><td><code>inbox/*.json</code></td><td>CLI, API, supervisor (notices)</td><td>Supervisor, live hooks</td><td>Messages to the session. <code>1.json</code> is the brief</td></tr>
+        <tr><td><code>cursor.txt</code></td><td>Supervisor, live hooks</td><td>Supervisor, live hooks</td><td>The last inbox file that the session got. It only moves forward</td></tr>
+        <tr><td><code>decisions/&lt;d&gt;.json</code></td><td>Hook <code>ask_user</code></td><td>Supervisor, UI</td><td>A question for you</td></tr>
+        <tr><td><code>answers/&lt;d&gt;.json</code></td><td>You (UI, CLI), policy, docs check</td><td>Supervisor, hooks</td><td>The answer, with <code>by</code>: user, policy or docs</td></tr>
+        <tr><td><code>delivered/&lt;d&gt;.json</code></td><td>Supervisor, hooks</td><td>Supervisor, hooks</td><td>The session got this answer</td></tr>
+        <tr><td><code>reviews/&lt;version&gt;.json</code></td><td>You (UI, CLI)</td><td><code>orch merge</code>, <code>StackOps</code></td><td>approve, change or refuse for one decision version</td></tr>
+        <tr><td><code>stack/&lt;d&gt;.json</code></td><td><code>orch decision</code>, <code>orch stack</code>, <code>orch merge</code></td><td>Same, UI</td><td>Branch, base, PR and state of each version</td></tr>
+        <tr><td><code>report.json</code>, <code>reports/</code></td><td>Hook <code>report</code></td><td>Supervisor, UI</td><td>The last report and all reports</td></tr>
+        <tr><td><code>forwarded.json</code></td><td>Supervisor</td><td>Supervisor</td><td>The last report that went to the parent</td></tr>
+        <tr><td><code>lease.json</code>, <code>heartbeat.txt</code></td><td>Hooks, supervisor</td><td>Supervisor, hooks</td><td>Who may write prompts: <code>live</code>, <code>supervisor</code> or <code>none</code></td></tr>
+        <tr><td><code>status.json</code></td><td>Hooks</td><td>UI</td><td>running or idle</td></tr>
+        <tr><td><code>turn.json</code></td><td>Supervisor</td><td>Recovery</td><td>The current turn. No <code>ended</code> means a crash cut it</td></tr>
+        <tr><td><code>control.json</code></td><td><code>orch stop</code>, <code>resume</code>, <code>archive</code>, API</td><td>Supervisor</td><td>active, stopped or archived</td></tr>
+        <tr><td><code>blocked.json</code></td><td>Supervisor, hooks</td><td>UI</td><td>Why turns fail, and when the next try is</td></tr>
+        <tr><td><code>docs-checks/&lt;d&gt;.json</code></td><td>Supervisor</td><td>Supervisor</td><td>The result of one docs check</td></tr>
+        <tr><td><code>mirror/</code>, <code>last-output.json</code></td><td>Hooks</td><td>UI, supervisor</td><td>A copy of each prompt, reply and tool result</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+</div>
 
-<section id="store">
-  <h2>Store files: who writes, who reads</h2>
-  <div class="tree">
-    <details open><summary><span class="n">store/</span><span class="d"><code>ORCH_STORE</code>, default <code>session-orchestrator/store</code></span></summary>
-      <details class="leaf"><summary><span class="n">version.json, policy.json</span><span class="d">store version 1, the active policy</span></summary><div class="more">A newer store version stops the supervisor at start.</div></details>
-      <details class="leaf"><summary><span class="n">events/&lt;day&gt;/&lt;id&gt;.json</span><span class="d">one file for each event</span></summary><div class="more">Small header: id, at, session, kind, from, to, subject, body path, refs.</div></details>
-      <details class="leaf"><summary><span class="n">bodies/&lt;day&gt;/&lt;id&gt;.json</span><span class="d">the full data of each event</span></summary><div class="more">The header points to it.</div></details>
-      <details class="leaf"><summary><span class="n">supervisor/log.txt</span><span class="d">the text log of the supervisor</span></summary><div class="more">One line for each action.</div></details>
-      <details open><summary><span class="n">sessions/&lt;id&gt;/</span><span class="d">one folder for each session</span></summary>
-        <div class="more">The table below lists each file.</div>
-      </details>
-    </details>
-  </div>
-  <div class="scroll">
-  <table>
-    <thead><tr><th>File in sessions/&lt;id&gt;/</th><th>Writer</th><th>Reader</th><th>Meaning</th></tr></thead>
-    <tbody>
-      <tr><td><code>meta.json</code></td><td><code>orch new</code>, API</td><td>Supervisor, hooks</td><td>Title, cwd, parent, agent, skills, worktree, <code>started</code>, <code>allowDefaults</code></td></tr>
-      <tr><td><code>enabled</code></td><td><code>orch new</code>, <code>/orch-enable</code></td><td>Supervisor, hooks</td><td>The session is under the orchestrator</td></tr>
-      <tr><td><code>inbox/*.json</code></td><td>CLI, API, supervisor (notices)</td><td>Supervisor, live hooks</td><td>Messages to the session. <code>1.json</code> is the brief</td></tr>
-      <tr><td><code>cursor.txt</code></td><td>Supervisor, live hooks</td><td>Supervisor, live hooks</td><td>The last inbox file that the session got. It only moves forward</td></tr>
-      <tr><td><code>decisions/&lt;d&gt;.json</code></td><td>Hook <code>ask_user</code></td><td>Supervisor, UI</td><td>A question for you</td></tr>
-      <tr><td><code>answers/&lt;d&gt;.json</code></td><td>You (UI, CLI), policy, docs check</td><td>Supervisor, hooks</td><td>The answer, with <code>by</code>: user, policy or docs</td></tr>
-      <tr><td><code>delivered/&lt;d&gt;.json</code></td><td>Supervisor, hooks</td><td>Supervisor, hooks</td><td>The session got this answer</td></tr>
-      <tr><td><code>reviews/&lt;version&gt;.json</code></td><td>You (UI, CLI)</td><td><code>orch merge</code>, <code>StackOps</code></td><td>approve, change or refuse for one decision version</td></tr>
-      <tr><td><code>stack/&lt;d&gt;.json</code></td><td><code>orch decision</code>, <code>orch stack</code>, <code>orch merge</code></td><td>Same, UI</td><td>Branch, base, PR and state of each version</td></tr>
-      <tr><td><code>report.json</code>, <code>reports/</code></td><td>Hook <code>report</code></td><td>Supervisor, UI</td><td>The last report and all reports</td></tr>
-      <tr><td><code>forwarded.json</code></td><td>Supervisor</td><td>Supervisor</td><td>The last report that went to the parent</td></tr>
-      <tr><td><code>lease.json</code>, <code>heartbeat.txt</code></td><td>Hooks, supervisor</td><td>Supervisor, hooks</td><td>Who may write prompts: <code>live</code>, <code>supervisor</code> or <code>none</code></td></tr>
-      <tr><td><code>status.json</code></td><td>Hooks</td><td>UI</td><td>running or idle</td></tr>
-      <tr><td><code>turn.json</code></td><td>Supervisor</td><td>Recovery</td><td>The current turn. No <code>ended</code> means a crash cut it</td></tr>
-      <tr><td><code>control.json</code></td><td><code>orch stop</code>, <code>resume</code>, <code>archive</code>, API</td><td>Supervisor</td><td>active, stopped or archived</td></tr>
-      <tr><td><code>blocked.json</code></td><td>Supervisor, hooks</td><td>UI</td><td>Why turns fail, and when the next try is</td></tr>
-      <tr><td><code>docs-checks/&lt;d&gt;.json</code></td><td>Supervisor</td><td>Supervisor</td><td>The result of one docs check</td></tr>
-      <tr><td><code>mirror/</code>, <code>last-output.json</code></td><td>Hooks</td><td>UI, supervisor</td><td>A copy of each prompt, reply and tool result</td></tr>
-    </tbody>
-  </table>
-  </div>
-</section>
-
-<section id="tick">
-  <h2>Call stack of one tick</h2>
-  <p class="summary">The supervisor does all its work in this loop. Nothing else starts a turn.</p>
+<!-- CALLS -->
+<div class="panel off" id="calls" role="tabpanel">
+  <section>
+    <h2>Call stack of one tick</h2>
+    <p class="summary">The supervisor does all its work in this loop. Nothing else starts a turn.</p>
 <pre class="stack"><span class="k">TickService.ExecuteAsync</span>                     <span class="c">every 3 s</span>
 └─ <span class="k">Supervisor.Tick</span>                          <span class="c">one lock, one pass</span>
    ├─ StopRunningTurns                       <span class="c">control.json stopped → cancel → kill the claude process tree</span>
@@ -333,7 +542,10 @@ flowchart BT
             ├─ ok   → MarkSent (cursor, delivered/) + event turn.end
             ├─ fail → Fail (count, cooldown 5 min doubling) + event turn.fail
             └─ EndMarker                      <span class="c">turn.json gets ended</span></pre>
-  <div class="grid2">
+  </section>
+  <section>
+    <h2>Call stacks of a command and a tool</h2>
+    <div class="grid2">
 <pre class="stack"><span class="k">orch new</span> --title T --goal G --cwd C
 └─ SessionCommands.New
    └─ Messages.NewSession
@@ -353,12 +565,32 @@ flowchart BT
          <span class="c">the agent ends its turn</span>
          waitSeconds &gt; 0 → waits for
          answers/&lt;id&gt;.json, then "ANSWER"</pre>
-  </div>
-</section>
+<pre class="stack"><span class="k">orch merge</span> 12
+└─ DecisionCommands.Merge
+   └─ MergeGuard.Resolve       <span class="c">gh pr view → head, base</span>
+   └─ MergeGuard.Merge
+      ├─ git fetch origin
+      ├─ Carried               <span class="c">each decision tip in head, not in base</span>
+      ├─ blockers → event merge.block, exit 1
+      └─ gh pr merge --merge
+         + stack versions merged + event pr.merge</pre>
+<pre class="stack"><span class="k">mcp__orch__spawn_child</span> (in a root turn)
+└─ tools.spawnChild
+   └─ $.process.run("orch new ... --parent ROOT")
+      <span class="c">as orch new, with createdBy spawn_child</span>
+<span class="k">mcp__orch__report</span>
+└─ tools.report
+   ├─ emit(report)
+   └─ reports/&lt;ms&gt;.json + report.json</pre>
+    </div>
+  </section>
+</div>
 
-<section id="seq-new">
-  <h2>Sequence: a new session and its first turn</h2>
-  <div class="box">
+<!-- SEQUENCES -->
+<div class="panel off" id="sequences" role="tabpanel">
+  <section>
+    <h2>A new session and its first turn</h2>
+    <div class="box">
 <pre class="mermaid">
 sequenceDiagram
   autonumber
@@ -380,13 +612,12 @@ sequenceDiagram
   CP-->>Sup: stream-json result, exit
   Sup->>Store: cursor.txt = 1.json, event turn.end, turn.json ended
 </pre>
-  </div>
-  <p>Each later message follows steps 3 to 11. <code>orch send</code> writes one more inbox file, and the next tick starts a turn with <code>--resume</code>.</p>
-</section>
-
-<section id="seq-decision">
-  <h2>Sequence: a decision, answered or defaulted</h2>
-  <div class="box">
+    </div>
+    <p>Each later message follows steps 3 to 11. <code>orch send</code> writes one more inbox file, and the next tick starts a turn with <code>--resume</code>.</p>
+  </section>
+  <section>
+    <h2>A decision, answered or defaulted</h2>
+    <div class="box">
 <pre class="mermaid">
 sequenceDiagram
   autonumber
@@ -414,13 +645,12 @@ sequenceDiagram
     Note over W,Store: stack/d.json, branch orch/decision-d, draft PR
   end
 </pre>
-  </div>
-  <p>A default stays open for your review. <code>orch review d approve|change|refuse</code> writes <code>reviews/d.json</code> and an inbox notice. The next turn does the git steps of the verdict.</p>
-</section>
-
-<section id="seq-report">
-  <h2>Sequence: a child report, review and merge</h2>
-  <div class="box">
+    </div>
+    <p>A default stays open for your review. <code>orch review d approve|change|refuse</code> writes <code>reviews/d.json</code> and an inbox notice. The next turn does the git steps of the verdict.</p>
+  </section>
+  <section>
+    <h2>A child report, review and merge</h2>
+    <div class="box">
 <pre class="mermaid">
 sequenceDiagram
   autonumber
@@ -444,60 +674,86 @@ sequenceDiagram
     R->>Store: stack versions merged, event pr.merge, orch archive child
   end
 </pre>
-  </div>
-</section>
-
-<section id="lease">
-  <h2>Lease: a live session or the supervisor</h2>
-  <div class="scroll">
-  <table>
-    <thead><tr><th>Lease holder</th><th>Set by</th><th>Who delivers the inbox</th><th>How</th></tr></thead>
-    <tbody>
-      <tr><td><code>live</code></td><td>Hooks in a desktop app session</td><td>The hooks, in <code>inbox.ts tick</code></td><td>When the session is idle: <code>$.prompt.submit</code>, then the cursor moves</td></tr>
-      <tr><td><code>supervisor</code></td><td>Hooks in a <code>claude -p</code> turn (<code>ORCH_HOLDER</code>)</td><td>The supervisor</td><td>One <code>claude -p</code> turn with all pending text</td></tr>
-      <tr><td><code>none</code></td><td>Session end, or the supervisor after 15 s with no heartbeat</td><td>The supervisor</td><td>Same as above. A live session takes the lease back at its next beat</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <p>Only one writer sends prompts to a session at a time. The supervisor skips a session while its <code>live</code> lease is fresh.</p>
-</section>
-
-<section id="events">
-  <h2>Event stream</h2>
-  <div class="scroll">
-  <table>
-    <thead><tr><th>Group</th><th>Kinds</th><th>Writer</th></tr></thead>
-    <tbody>
-      <tr><td>Messages</td><td><code>brief</code>, <code>message</code>, <code>decision</code>, <code>answer</code>, <code>review</code>, <code>report</code>, <code>update</code>, <code>notice</code>, <code>report.forward</code></td><td>Messages.cs, hooks, supervisor</td></tr>
-      <tr><td>Turns</td><td><code>turn.start</code>, <code>turn.end</code>, <code>turn.fail</code></td><td>Supervisor</td></tr>
-      <tr><td>Session rows</td><td><code>session.input</code>, <code>session.output</code>, <code>session.tool</code></td><td>Hooks (mirror)</td></tr>
-      <tr><td>Lifecycle</td><td><code>session.start</code>, <code>session.stop</code>, <code>session.archive</code>, <code>blocked</code>, <code>unblocked</code></td><td>Lifecycle.cs, supervisor</td></tr>
-      <tr><td>Git</td><td><code>branch.create</code>, <code>branch.rebase</code>, <code>pr.open</code>, <code>pr.ready</code>, <code>pr.close</code>, <code>pr.merge</code>, <code>merge.block</code></td><td>StackOps.cs, MergeGuard.cs</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <p>The stream is a record. The supervisor does not act on events. It acts on the session files. The Timeline page and <code>orch events</code> read the stream. Refs link the events, for example <code>turnStart</code> on each <code>session.input</code>, and recovery uses this link.</p>
-</section>
-
-<section id="workflow">
-  <h2>Where the workflow is defined today</h2>
-  <div class="scroll">
-  <table>
-    <thead><tr><th>Step</th><th>Where</th><th>Kind</th></tr></thead>
-    <tbody>
-      <tr><td>A turn starts when a message waits</td><td><code>Supervisor.StartTurn</code></td><td><span class="tag code">code</span></td></tr>
-      <tr><td>A default answer after the timeout of the risk level</td><td><code>ApplyPolicy</code>, <code>policy.json</code></td><td><span class="tag code">code</span></td></tr>
-      <tr><td>A child report goes to the parent</td><td><code>ForwardReport</code></td><td><span class="tag code">code</span></td></tr>
-      <tr><td>Stop, archive, cooldown after failures</td><td><code>Lifecycle</code>, <code>Supervisor.Fail</code></td><td><span class="tag code">code</span></td></tr>
-      <tr><td>A merge with an unapproved default is refused</td><td><code>MergeGuard</code>, hook on <code>gh pr merge</code></td><td><span class="tag code">code</span></td></tr>
-      <tr><td>Split the goal into children</td><td><code>plugin/agents/orchestrator.md</code></td><td><span class="tag prompt">prompt</span></td></tr>
-      <tr><td>Review a PR, run tests, merge, archive</td><td><code>plugin/agents/orchestrator.md</code></td><td><span class="tag prompt">prompt</span></td></tr>
-      <tr><td>Ask, then end the turn</td><td><code>orch-ask</code>, <code>worker.md</code></td><td><span class="tag prompt">prompt</span></td></tr>
-      <tr><td>A default gets its own branch and PR</td><td><code>orch-stack</code>, notice <code>default-stacked-pr</code></td><td><span class="tag prompt">prompt</span> with <span class="tag code">code</span> commands</td></tr>
-      <tr><td>Report done or blocked</td><td><code>orch-report</code></td><td><span class="tag prompt">prompt</span></td></tr>
-    </tbody>
-  </table>
-  </div>
-  <p class="note">The code moves messages, answers, reports and limits. The prompts decide the steps of the work: when to split it, when to review it and when to merge it. No file defines a stream as a sequence of steps. This is the gap for the stream definition talk.</p>
-</section>
+    </div>
+  </section>
 </div>
+
+<!-- RUNTIME -->
+<div class="panel off" id="runtime" role="tabpanel">
+  <section>
+    <h2>Lease: a live session or the supervisor</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Lease holder</th><th>Set by</th><th>Who delivers the inbox</th><th>How</th></tr></thead>
+      <tbody>
+        <tr><td><code>live</code></td><td>Hooks in a desktop app session</td><td>The hooks, in <code>inbox.ts tick</code></td><td>When the session is idle: <code>$.prompt.submit</code>, then the cursor moves</td></tr>
+        <tr><td><code>supervisor</code></td><td>Hooks in a <code>claude -p</code> turn (<code>ORCH_HOLDER</code>)</td><td>The supervisor</td><td>One <code>claude -p</code> turn with all pending text</td></tr>
+        <tr><td><code>none</code></td><td>Session end, or the supervisor after 15 s with no heartbeat</td><td>The supervisor</td><td>Same as above. A live session takes the lease back at its next beat</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>Only one writer sends prompts to a session at a time. The supervisor skips a session while its <code>live</code> lease is fresh.</p>
+  </section>
+  <section>
+    <h2>Event stream</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Group</th><th>Kinds</th><th>Writer</th></tr></thead>
+      <tbody>
+        <tr><td>Messages</td><td><code>brief</code>, <code>message</code>, <code>decision</code>, <code>answer</code>, <code>review</code>, <code>report</code>, <code>update</code>, <code>notice</code>, <code>report.forward</code></td><td>Messages.cs, hooks, supervisor</td></tr>
+        <tr><td>Turns</td><td><code>turn.start</code>, <code>turn.end</code>, <code>turn.fail</code></td><td>Supervisor</td></tr>
+        <tr><td>Session rows</td><td><code>session.input</code>, <code>session.output</code>, <code>session.tool</code></td><td>Hooks (mirror)</td></tr>
+        <tr><td>Lifecycle</td><td><code>session.start</code>, <code>session.stop</code>, <code>session.archive</code>, <code>blocked</code>, <code>unblocked</code></td><td>Lifecycle.cs, supervisor</td></tr>
+        <tr><td>Git</td><td><code>branch.create</code>, <code>branch.rebase</code>, <code>pr.open</code>, <code>pr.ready</code>, <code>pr.close</code>, <code>pr.merge</code>, <code>merge.block</code></td><td>StackOps.cs, MergeGuard.cs</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>The stream is a record. The supervisor does not act on events. It acts on the session files. The Timeline page and <code>orch events</code> read the stream. Refs link the events, for example <code>turnStart</code> on each <code>session.input</code>, and recovery uses this link.</p>
+  </section>
+</div>
+
+<!-- WORKFLOW -->
+<div class="panel off" id="workflow" role="tabpanel">
+  <section>
+    <h2>Where the workflow is defined today</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Step</th><th>Where</th><th>Kind</th></tr></thead>
+      <tbody>
+        <tr><td>A turn starts when a message waits</td><td><code>Supervisor.StartTurn</code></td><td><span class="tag code">code</span></td></tr>
+        <tr><td>A default answer after the timeout of the risk level</td><td><code>ApplyPolicy</code>, <code>policy.json</code></td><td><span class="tag code">code</span></td></tr>
+        <tr><td>A child report goes to the parent</td><td><code>ForwardReport</code></td><td><span class="tag code">code</span></td></tr>
+        <tr><td>Stop, archive, cooldown after failures</td><td><code>Lifecycle</code>, <code>Supervisor.Fail</code></td><td><span class="tag code">code</span></td></tr>
+        <tr><td>A merge with an unapproved default is refused</td><td><code>MergeGuard</code>, hook on <code>gh pr merge</code></td><td><span class="tag code">code</span></td></tr>
+        <tr><td>Split the goal into children</td><td><code>plugin/agents/orchestrator.md</code>, the brief</td><td><span class="tag prompt">prompt</span></td></tr>
+        <tr><td>Review a PR, run tests, merge, archive</td><td><code>plugin/agents/orchestrator.md</code>, the brief</td><td><span class="tag prompt">prompt</span></td></tr>
+        <tr><td>Ask, then end the turn</td><td><code>orch-ask</code>, <code>worker.md</code></td><td><span class="tag prompt">prompt</span></td></tr>
+        <tr><td>A default gets its own branch and PR</td><td><code>orch-stack</code>, notice <code>default-stacked-pr</code></td><td><span class="tag prompt">prompt</span> with <span class="tag code">code</span> commands</td></tr>
+        <tr><td>Report done or blocked</td><td><code>orch-report</code></td><td><span class="tag prompt">prompt</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note">The code moves messages, answers, reports and limits. The prompts and the brief decide the steps of the work: when to split it, when to review it and when to merge it. In example 2 of the tutorial, the brief itself gives the merge command. No file defines a stream as a sequence of steps. This is the gap for the stream definition talk.</p>
+  </section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["tutorial", "topology", "folders", "store", "calls", "sequences", "runtime", "workflow"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "tutorial";
+    names.forEach(function (n) {
+      document.getElementById(n).classList.toggle("off", n !== name);
+    });
+    document.querySelectorAll("nav button").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
+    });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>
