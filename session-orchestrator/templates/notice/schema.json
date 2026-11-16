@@ -1,33 +1,47 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "notice",
-  "description": "A text of the supervisor to a session. Each kind has its own file in render/.",
+  "description": "A fixed fact of the supervisor to a session. Each kind has its own file in render/.",
   "type": "object",
-  "required": ["kind"],
+  "required": [
+    "kind"
+  ],
   "properties": {
-    "kind": { "enum": ["default-stacked-pr", "default-commit", "default-none", "docs", "review-approve", "review-change", "review-refuse", "child-report", "child-question", "question-reminder", "question-closed", "archive-self", "blocked"] },
-    "decision": { "type": "string" },
-    "question": { "type": "string" },
-    "reason": { "type": "string" },
-    "source": { "type": "string" },
-    "branch": { "type": "string" },
-    "base": { "type": "string" },
-    "nextBranch": { "type": "string" },
-    "text": { "type": "string" },
-    "title": { "type": "string" },
-    "child": { "type": "string" },
-    "state": { "type": "string" },
-    "summary": { "type": "string" },
-    "details": { "type": "string" },
-    "context": { "type": "string" },
-    "options": { "type": "string" },
-    "recommendation": { "type": "string" },
-    "risk": { "type": "string" },
-    "defaultText": { "type": "string" },
-    "by": { "type": "string" },
-    "waited": { "type": "string" },
-    "count": { "type": "number" },
-    "error": { "type": "string" }
+    "kind": {
+      "enum": [
+        "question-reminder",
+        "question-closed",
+        "archive-self",
+        "restart"
+      ]
+    },
+    "decision": {
+      "type": "string"
+    },
+    "question": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "child": {
+      "type": "string"
+    },
+    "by": {
+      "type": "string"
+    },
+    "waited": {
+      "type": "string"
+    },
+    "count": {
+      "type": "number"
+    },
+    "error": {
+      "type": "string"
+    }
   },
   "additionalProperties": false
 }

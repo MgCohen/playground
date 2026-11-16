@@ -8,7 +8,7 @@
         }
     </header>
     <h3>@Item.Decision.Question</h3>
-    <p class="applied"><span class="label">Applied</span> @Item.Answer.Body <span class="reason">(@(Item.Answer.Reason ?? Item.Answer.Source ?? Item.Answer.By))</span></p>
+    <p class="applied"><span class="label">Applied</span> @Item.Answer.Value <span class="reason">(@(Item.Answer.Reason ?? Item.Answer.Source ?? Item.Answer.By))</span></p>
     @if (Item.Version is { } version)
     {
         <p class="branch"><code>@version.Branch</code> on <code>@version.Base</code>

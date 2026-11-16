@@ -41,7 +41,7 @@ public sealed class LifecycleTests
         await t.Cycle();
         Assert.That(t.Turns, Has.Count.EqualTo(3));
         Assert.That(t.Turns[^1].Prompt, Does.Contain("The supervisor starts this session again after 2 failed turns"));
-        Assert.That(t.Store.Events.All().Any(e => e.Kind == EventKinds.Unblocked), Is.True);
+        Assert.That(t.Store.Events.All().Any(e => e.Kind == EventKinds.Notice && t.Store.Events.Fields(e)["kind"] as string == "restart"), Is.True);
     }
 
     [Test]

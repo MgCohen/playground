@@ -13,10 +13,10 @@
             var fields = Fields();
             switch (Event.Kind)
             {
-                case EventKinds.Decision: <DecisionFields Fields="fields" /> break;
+                case EventKinds.Decision or EventKinds.Query: <DecisionFields Fields="fields" /> break;
                 case EventKinds.Answer: <AnswerFields Fields="fields" /> break;
                 case EventKinds.Review: <ReviewFields Fields="fields" /> break;
-                case EventKinds.Report or EventKinds.ReportForward: <ReportFields Fields="fields" /> break;
+                case EventKinds.Report: <ReportFields Fields="fields" /> break;
                 case EventKinds.Update: <UpdateFields Fields="fields" /> break;
                 case EventKinds.Brief: <BriefFields Fields="fields" /> break;
                 default: <pre class="body">@Board.BodyText(Event)</pre> break;

@@ -23,6 +23,15 @@ public sealed record NewSession(string? Title, string? Cwd, string? Brief, strin
 }
 
 public sealed record SendText(string? Text);
+public sealed record PostBody(string? Kind, string? From, string? To, System.Text.Json.JsonElement? Body)
+{
+    public string? Thread { get; init; }
+    public string? Needs { get; init; }
+    public string? Reply { get; init; }
+    public string? Via { get; init; }
+}
+public sealed record NudgeBody(string? To, string? Id);
+public sealed record CardText(string? Text);
 public sealed record AnswerText(string? Answer);
 public sealed record ReviewInput(string? Verdict, string? Text);
 
@@ -58,9 +67,9 @@ public static class OrchestratorApi
 
         api.MapPost("/sessions/{id}/send", (string id, SendText input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
         {
-            var (inbox, e) = new Messages(store).Send(id, input.Text ?? "");
+            var e = new Messages(store).Send(id, input.Text ?? "");
             s.Tick();
-            return Results.Accepted(value: new { inbox, @event = e });
+            return Results.Accepted(value: new { @event = e.Id });
         }));
 
         api.MapPost("/sessions/{id}/stop", (string id, Supervisor.Supervisor s, FileStore store) => Guard(() =>
@@ -84,22 +93,85 @@ public static class OrchestratorApi
             return Results.Accepted(value: new { archived = id, lines });
         }));
 
-        api.MapGet("/events",(FileStore store, string? since, string? kind, string? session, string? from, bool? open, bool? ledger) => Guard(() =>
+        api.MapGet("/events", (FileStore store, string? since, string? after, string? kind, string? session, string? from, string? to, string? thread, bool? needs, bool? open, bool? ledger) => Guard(() =>
             Results.Ok(store.Query(new EventFilter
             {
                 Since = since is null ? null : Durations.Since(since, store.Clock.GetUtcNow()),
-                Kinds = kind?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(),
-                Session = session, From = from, Open = open ?? false, Ledger = ledger ?? false,
+                After = after,
+                Kinds = Kinds(kind),
+                Session = session, From = from, To = to, Thread = thread, Needs = needs ?? false, Open = open ?? false, Ledger = ledger ?? false,
             }).ToList())));
+
+        api.MapGet("/events/{id}", (string id, string? @for, string? render, FileStore store) =>
+            store.Events.Find(id) is { } e
+                ? Results.Ok(new { envelope = e, body = store.Events.Body(e), text = @for is null && render is null ? null : store.Renderer.Text(e, render) })
+                : Results.NotFound(new { error = $"no envelope {id}" }));
+
+        api.MapPost("/stream", (PostBody input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
+        {
+            if (input.Kind is null || input.To is null) return Results.BadRequest(new { error = "kind and to are necessary" });
+            var body = input.Body is { } b ? Core.Templates.Render.Fields(b) : [];
+            var refs = new Dictionary<string, object?> { [RefKeys.Reply] = input.Reply, [RefKeys.Via] = input.Via };
+            var e = store.Events.Post(new PostInput(input.Kind, input.From ?? Parties.User, input.To, body)
+            {
+                Session = Parties.SessionId(input.To) ?? Parties.SessionId(input.From ?? ""),
+                Thread = input.Thread, Needs = input.Needs, Refs = refs,
+            });
+            s.Tick();
+            return Results.Created($"/api/events/{e.Id}", e);
+        }));
+
+        api.MapGet("/stream/live", async (HttpContext http, FileStore store, StreamHub hub, string? after, string? to, string? kind, CancellationToken cancel) =>
+        {
+            http.Response.Headers.ContentType = "text/event-stream";
+            http.Response.Headers.CacheControl = "no-cache";
+            var cursor = after ?? (store.Clock.GetUtcNow() - TimeSpan.FromSeconds(2)).ToUnixTimeMilliseconds().ToString();
+            var filter = new EventFilter { To = to, Kinds = Kinds(kind) };
+            var seen = new HashSet<string>();
+            while (!cancel.IsCancellationRequested)
+            {
+                foreach (var e in store.Query(filter with { After = cursor }))
+                {
+                    if (!seen.Add(e.Id)) continue;
+                    await http.Response.WriteAsync($"id: {e.Id}\nevent: {e.Kind}\ndata: {System.Text.Json.JsonSerializer.Serialize(e, StoreJson.Line)}\n\n", cancel);
+                }
+                await http.Response.Body.FlushAsync(cancel);
+                await hub.Wait(TimeSpan.FromSeconds(15), cancel);
+                if (!cancel.IsCancellationRequested) await http.Response.WriteAsync(": sweep\n\n", cancel);
+            }
+        });
+
+        api.MapPost("/nudge", (NudgeBody input, FileStore store) => Guard(() =>
+        {
+            if (input.To is null) return Results.BadRequest(new { error = "to is necessary" });
+            store.Events.Nudge(input.To, input.Id);
+            return Results.Accepted(value: new { nudged = input.To });
+        }));
+
+        api.MapGet("/inbox", (FileStore store) => new Inbox(store).Cards().Select(c => new { id = c.Envelope.Id, c.Kind, c.Needs, c.Session, c.Title, envelope = c.Envelope, fields = c.Fields }));
+
+        api.MapPost("/inbox/{id}/accept", (string id, CardText? input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
+        {
+            var e = new Inbox(store).Accept(id, input?.Text);
+            s.Tick();
+            return Results.Accepted(value: e);
+        }));
+
+        api.MapPost("/inbox/{id}/refuse", (string id, CardText? input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
+        {
+            var e = new Inbox(store).Refuse(id, input?.Text ?? "");
+            s.Tick();
+            return Results.Accepted(value: e);
+        }));
 
         api.MapGet("/ledger", (FileStore store) => store.Ledger());
 
         api.MapPost("/decisions/{session}/{decision}/review", (string session, string decision, ReviewInput input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
         {
             if (!Verdict.IsValid(input.Verdict)) return Results.BadRequest(new { error = "verdict is approve, change or refuse" });
-            var name = new Messages(store).Review(session, decision, input.Verdict!, input.Text ?? "");
+            var review = new Messages(store).Review(session, decision, input.Verdict!, input.Text ?? "");
             s.Tick();
-            return Results.Accepted(value: new { inbox = name });
+            return Results.Accepted(value: new { @event = review.Id });
         }));
 
         api.MapPost("/decisions/{session}/{decision}", (string session, string decision, AnswerText input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
@@ -109,6 +181,8 @@ public static class OrchestratorApi
             return Results.Accepted(value: new { answered = decision });
         }));
     }
+
+    static HashSet<string>? Kinds(string? kind) => kind?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
 
     static IResult Guard(Func<IResult> work)
     {

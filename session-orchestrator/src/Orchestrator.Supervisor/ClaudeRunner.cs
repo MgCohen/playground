@@ -81,7 +81,7 @@ public sealed class ClaudeRunner(string storeRoot, string? pluginDir = null) : I
         if (request.IsNew && request.Title is { Length: > 0 } title) arguments.AddRange(["-n", title]);
         if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", agent.Contains(':') ? agent : $"{PluginNamespace}:{agent}"]);
         var call = new ClaudeCall(request.Cwd, request.Prompt, arguments,
-            new Dictionary<string, string> { ["ORCH_HOLDER"] = Holders.Supervisor, ["ORCH_STORE"] = storeRoot.Replace('\\', '/') });
+            new Dictionary<string, string> { ["ORCH_HOLDER"] = Holders.Supervisor, ["ORCH_STORE"] = storeRoot.Replace('\\', '/'), ["ORCH_HOME"] = Store.Home.Root().Replace('\\', '/') });
         var output = await Claude.Run(call, null, cancel);
         return new TurnResult(output.Ok, output.Result, output.Error, Math.Round(watch.Elapsed.TotalSeconds));
     }

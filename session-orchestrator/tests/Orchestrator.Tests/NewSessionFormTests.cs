@@ -18,6 +18,7 @@ public sealed class NewSessionFormTests
     {
         var context = new BunitContext();
         context.Services.AddSingleton(new Board(rig.Store, rig.Supervisor));
+        context.Services.AddSingleton(new StreamHub(rig.Store));
         return context;
     }
 

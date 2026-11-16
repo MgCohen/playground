@@ -18,13 +18,13 @@ public sealed class SupervisorTests
     }
 
     [Test]
-    public async Task The_next_turn_is_a_resume_with_all_inbox_files_in_order()
+    public async Task The_next_turn_is_a_resume_with_all_messages_in_order()
     {
         using var t = new Rig();
         var id = t.Create("one", "root");
         await t.Cycle();
-        Files.Write(t.Store.PathOf(id, StoreFiles.Inbox, "10.txt"), "three");
-        Files.Write(t.Store.PathOf(id, StoreFiles.Inbox, "2.txt"), "two");
+        t.Store.Send(id, "two");
+        t.Store.Send(id, "three");
         await t.Cycle();
         Assert.That(t.Turns[1].IsNew, Is.False);
         Assert.That(t.Turns[1].Prompt, Is.EqualTo("two\n\n---\n\nthree"));
@@ -63,7 +63,7 @@ public sealed class SupervisorTests
     }
 
     [Test]
-    public async Task An_answer_to_a_pending_decision_is_sent_once_and_marked_delivered()
+    public async Task An_answer_is_sent_once_and_gets_an_ack()
     {
         using var t = new Rig();
         var id = await t.Started();
@@ -78,13 +78,13 @@ public sealed class SupervisorTests
     }
 
     [Test]
-    public async Task A_done_report_of_a_child_goes_to_the_parent_inbox_once()
+    public async Task A_done_report_of_a_child_goes_to_the_parent_once()
     {
         using var t = new Rig();
         var parent = t.Create("p", "parent");
         var child = t.Create("c", "child", parent, "spawn_child");
         await t.Cycle();
-        t.Store.WriteJson(child, new Report(ReportStates.Done, "All good.", "t1"), StoreFiles.Report);
+        t.Store.SaveReport(child, ReportStates.Done, "All good.");
         await t.Cycle();
         await t.Cycle();
         var toParent = t.Turns.Where(turn => turn.Id == parent).Select(turn => turn.Prompt);
@@ -92,7 +92,7 @@ public sealed class SupervisorTests
     }
 
     [Test]
-    public async Task An_open_question_of_a_child_goes_to_the_parent_inbox_once()
+    public async Task An_open_question_of_a_child_goes_to_the_parent_once()
     {
         using var t = new Rig();
         var parent = t.Create("p", "parent");
@@ -178,7 +178,7 @@ public sealed class SupervisorTests
     }
 
     [Test]
-    public async Task A_failed_turn_keeps_the_inbox_and_stops_after_the_failure_limit()
+    public async Task A_failed_turn_keeps_its_messages_and_stops_after_the_failure_limit()
     {
         using var t = new Rig(ok: false);
         var id = t.Create("hello");

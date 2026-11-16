@@ -7,18 +7,43 @@ using Orchestrator.Store;
 
 namespace Orchestrator.Supervisor;
 
-public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker docs, SupervisorOptions options)
+/// <summary>
+/// The reactors of the supervisor on the stream: the relays, the question follow, the docs check, the default,
+/// the watchdog and the turn runner. A push of the stream or the timer of the time rules starts a <see cref="Tick"/>.
+/// </summary>
+public sealed class Supervisor
 {
     sealed record Failure(int Count, int Rounds, DateTimeOffset? Until, string? Error);
 
+    public const string RelaySubscription = "relay";
+
+    readonly FileStore store;
+    readonly ITurnRunner runner;
+    readonly IDocsChecker docs;
+    readonly SupervisorOptions options;
     readonly Lock gate = new();
     readonly ConcurrentDictionary<string, Task> running = new();
     readonly ConcurrentDictionary<string, CancellationTokenSource> stops = new();
     readonly ConcurrentDictionary<string, Task> checks = new();
     readonly ConcurrentDictionary<string, Failure> failures = new();
     readonly ConcurrentDictionary<string, DateTimeOffset> imports = new();
-    readonly Lifecycle lifecycle = new(store);
-    readonly Recovery recovery = new(store);
+    readonly ConcurrentDictionary<string, DateTimeOffset> nudged = new();
+    readonly Lifecycle lifecycle;
+    readonly Recovery recovery;
+    readonly Messages messages;
+
+    public Supervisor(FileStore store, ITurnRunner runner, IDocsChecker docs, SupervisorOptions options)
+    {
+        this.store = store;
+        this.runner = runner;
+        this.docs = docs;
+        this.options = options;
+        store.Policy = options.Policy;
+        store.Events.Open();
+        lifecycle = new Lifecycle(store);
+        recovery = new Recovery(store);
+        messages = new Messages(store);
+    }
 
     public FileStore Store => store;
     public SupervisorOptions Options => options;
@@ -33,18 +58,18 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         {
             var now = Now;
             StopRunningTurns();
+            Relay();
             var sessions = store.Sessions().Where(id => !lifecycle.IsStopped(id)).ToList();
             foreach (var id in sessions)
             {
                 ReleaseStaleLease(id, now);
-                ForwardReport(id);
-                ForwardQuestions(id);
                 ApplyPolicy(id, now);
             }
+            FollowQuestions(now);
             foreach (var id in sessions)
             {
-                if (running.Count >= options.MaxRuns) return;
-                StartTurn(id, now);
+                Watchdog(id, now);
+                if (running.Count < options.MaxRuns) StartTurn(id, now);
             }
         }
     }
@@ -71,74 +96,76 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         store.Log($"{id} lease released: stale heartbeat");
     }
 
-    void ForwardReport(string id)
-    {
-        var meta = store.Meta(id);
-        if (meta.Parent is not { } parent || store.Report(id) is not { } report || report.State == ReportStates.Working) return;
-        if (store.ReadJson<Forwarded>(id, StoreFiles.Forwarded)?.At == report.At) return;
-        store.Send(parent, store.Texts.ChildReport(meta.Title ?? id, id, report.State, report.Summary, report.Details), Parties.Session(id));
-        store.WriteJson(id, new Forwarded(report.At), StoreFiles.Forwarded);
-        store.Events.Append(EventKinds.ReportForward, Parties.Session(id), Parties.Session(parent), Data.Of(("state", report.State), ("summary", report.Summary)), Data.Of(("child", id), ("report", report.Event)), parent);
-        store.Log($"{id} report {report.State} forwarded to {parent}");
-    }
+    // Question relay and report relay: each question, plan and done or blocked report of a child goes to its parent.
 
-    void ForwardQuestions(string id)
+    static bool IsRelayed(Event e) =>
+        !e.IsForward && Parties.SessionId(e.From) is not null
+        && (e.Kind is EventKinds.Decision or EventKinds.Query or EventKinds.Plan || e.Kind == EventKinds.Report && e.Needs is not null);
+
+    void Relay()
     {
-        var meta = store.Meta(id);
-        if (meta.Parent is not { } parent) return;
-        var title = meta.Title ?? id;
-        var folder = store.PathOf(id, StoreFiles.QuestionsForwarded);
-        if (Directory.Exists(folder))
-            foreach (var path in Directory.EnumerateFiles(folder, "*.json"))
-                FollowQuestion(id, parent, title, path);
-        foreach (var decision in store.OpenDecisions(id))
+        var subscription = store.Events.Subscribe(Parties.Supervisor, RelaySubscription, IsRelayed, "decision, query, plan, report done or blocked from a child");
+        foreach (var e in subscription.Next())
         {
-            var marker = store.PathOf(id, StoreFiles.QuestionsForwarded, StoreFiles.Json(decision.Id));
-            if (File.Exists(marker)) continue;
-            var level = options.Policy.LevelOf(decision.Risk);
-            var defaultText = decision.DefaultOption is not { } option ? "There is no default: the child waits for an answer."
-                : level.TimeoutSeconds is { } seconds ? $"If nobody answers in {seconds:0} s, the policy answers \"{option}\"."
-                : $"The default is \"{option}\", but this level never applies it.";
-            store.Send(parent, store.Texts.ChildQuestion(meta.Title ?? id, id, decision, defaultText), Parties.Session(id));
-            Files.WriteJson(marker, new QuestionRelay(Times.Format(Now)));
-            store.Events.Append(EventKinds.QuestionForward, Parties.Session(id), Parties.Session(parent), Data.Of(("decision", decision.Id), ("question", decision.Question)), Data.Of(("child", id), ("decision", decision.Id)), parent);
-            store.Log($"{id} question {decision.Id} forwarded to {parent}");
+            var child = Parties.SessionId(e.From)!;
+            if (store.Meta(child).Parent is { } parent)
+            {
+                var to = Parties.Session(parent);
+                if (!store.Events.ForwardsOf(e.Id).Any(f => f.To == to))
+                {
+                    store.Events.Forward(e, to);
+                    store.Log($"{child} {e.Kind} {e.Thread ?? e.Id} forwarded to {parent}");
+                }
+            }
+            subscription.Done(e.Id);
         }
     }
 
-    void FollowQuestion(string id, string parent, string title, string path)
+    // Question follow: a closed notice when the question of a child closes, and reminders while it waits with no default.
+
+    void FollowQuestions(DateTimeOffset now)
     {
-        var relay = Files.ReadJson<QuestionRelay>(path);
-        var decisionId = Path.GetFileNameWithoutExtension(path);
-        if (relay is null || relay.ClosedAt is not null || store.Decision(id, decisionId) is not { } decision) return;
-        if (store.Answer(id, decisionId) is { } answer)
+        foreach (var forward in store.Events.All().Where(e => e.IsForward && EventKinds.Questions.Contains(e.Kind) && e.Thread is not null && Parties.SessionId(e.To) is not null))
         {
-            store.Send(parent, store.Texts.QuestionClosed(title, id, decision, answer.Value ?? answer.Text ?? "(no text)", answer.By ?? "unknown"), Parties.Session(id));
-            Files.WriteJson(path, relay with { ClosedAt = Times.Format(Now) });
-            store.Events.Append(EventKinds.QuestionClose, Parties.Session(id), Parties.Session(parent), Data.Of(("decision", decisionId), ("by", answer.By)), Data.Of(("child", id), ("decision", decisionId)), parent);
-            return;
+            var thread = forward.Thread!;
+            var notices = store.Events.Thread(thread).Where(n => n.Kind == EventKinds.Notice && n.To == forward.To).Select(n => (Event: n, Kind: store.Events.Fields(n).GetValueOrDefault("kind") as string)).ToList();
+            if (notices.Any(n => n.Kind == "question-closed")) continue;
+            var child = Parties.SessionId(forward.From) ?? "";
+            var title = store.Meta(child).Title ?? child;
+            if (store.Decision(thread) is not { } decision) continue;
+            if (store.Answer(child, thread) is { } answer)
+            {
+                Notify(forward.To, thread, store.Texts.Notice("question-closed", ("title", title), ("child", child), ("decision", thread),
+                    ("question", decision.Question ?? "(no question text)"), ("text", answer.Value ?? "(no text)"), ("by", answer.By ?? "unknown")));
+                continue;
+            }
+            if (decision.DefaultOption is not null && options.Policy.LevelOf(decision.Risk).TimeoutSeconds is not null) continue;
+            var reminders = notices.Where(n => n.Kind == "question-reminder").Select(n => n.Event).ToList();
+            var since = Times.Parse(reminders.LastOrDefault()?.At ?? forward.At) ?? now;
+            var wait = reminders.Count == 0 ? options.FirstReminder : options.NextReminder;
+            if (now - since < wait) continue;
+            var waited = now - (Times.Parse(forward.At) ?? now);
+            var text = waited.TotalHours >= 1 ? $"{waited.TotalHours:0.#} h" : $"{waited.TotalMinutes:0} min";
+            Notify(forward.To, thread, store.Texts.Notice("question-reminder", ("title", title), ("child", child), ("decision", thread),
+                ("question", decision.Question ?? "(no question text)"), ("waited", text)));
         }
-        if (!store.IsOpen(id, decisionId) || decision.DefaultOption is not null && options.Policy.LevelOf(decision.Risk).TimeoutSeconds is not null) return;
-        var since = Times.Parse(relay.RemindedAt ?? relay.At) ?? Now;
-        var wait = relay.Reminders == 0 ? options.FirstReminder : options.NextReminder;
-        if (Now - since < wait) return;
-        var waited = Now - (Times.Parse(relay.At) ?? Now);
-        var text = waited.TotalHours >= 1 ? $"{waited.TotalHours:0.#} h" : $"{waited.TotalMinutes:0} min";
-        store.Send(parent, store.Texts.QuestionReminder(title, id, decision, text), Parties.Session(id));
-        Files.WriteJson(path, relay with { Reminders = relay.Reminders + 1, RemindedAt = Times.Format(Now) });
-        store.Events.Append(EventKinds.QuestionRemind, Parties.Session(id), Parties.Session(parent), Data.Of(("decision", decisionId), ("waited", text)), Data.Of(("child", id), ("decision", decisionId)), parent);
     }
+
+    Event Notify(string to, string? thread, Dictionary<string, object?> fields) =>
+        store.Events.Post(new PostInput(EventKinds.Notice, Parties.Supervisor, to, fields) { Session = Parties.SessionId(to), Thread = thread });
+
+    // Docs check and default: the docs or the policy answer an open decision.
 
     void ApplyPolicy(string id, DateTimeOffset now)
     {
         foreach (var decision in store.OpenDecisions(id))
         {
+            if (decision.Kind != "ask_user") continue;
             var level = options.Policy.LevelOf(decision.Risk);
             if (level.CheckDocs) StartDocsCheck(id, decision);
             if (!DefaultRule.IsDue(decision, level, now) || store.IsAnswered(id, decision.Id)) continue;
             var reason = DefaultRule.Reason(level);
-            store.Events.Append(EventKinds.Answer, Parties.Policy, Parties.Session(id), Data.Of(("decision", decision.Id), ("text", decision.DefaultOption), ("question", decision.Question), ("reason", reason)), Data.Of(("decision", decision.Id)), id);
-            store.SaveAnswer(id, decision.Id, new Answer { Value = decision.DefaultOption, By = Parties.Policy, Reason = reason, Note = store.Texts.DefaultNote(options.Policy, decision.Id, reason) });
+            messages.Answer(id, decision.Id, decision.DefaultOption!, Parties.Policy, source: new AnswerSource(Parties.Policy) { Reason = reason, OnDefault = options.Policy.OnDefault });
             store.Log($"{id} decision {decision.Id} default {decision.DefaultOption} ({reason})");
         }
     }
@@ -167,13 +194,61 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
             error = e.Message;
         }
         Files.WriteJson(path, new DocsCheck(result.Answered, result.Answer, result.Source, Times.Format(Now)) { Error = error });
-        if (!result.Answered || result.Answer is not { } answer || store.IsAnswered(id, decision.Id)) return;
-        store.Events.Append(EventKinds.Answer, Parties.Docs, Parties.Session(id), Data.Of(("decision", decision.Id), ("text", answer), ("question", decision.Question), ("source", result.Source)), Data.Of(("decision", decision.Id)), id);
-        store.SaveAnswer(id, decision.Id, new Answer { Value = answer, By = Parties.Docs, Source = result.Source, Reason = $"answered by {result.Source}", Note = store.Texts.DocsNote(result.Source) });
+        if (!result.Answered || result.Answer is not { } answer) return;
+        lock (gate)
+        {
+            if (store.IsAnswered(id, decision.Id)) return;
+            messages.Answer(id, decision.Id, answer, Parties.Docs, source: new AnswerSource(Parties.Docs) { Source = result.Source, Reason = $"answered by {result.Source}" });
+        }
         store.Log($"{id} decision {decision.Id} answered from the docs: {answer} ({result.Source})");
     }
 
-    public string Review(string id, string decision, string verdict, string text) => new Messages(store).Review(id, decision, verdict, text);
+    public Event Review(string id, string decision, string verdict, string text) => messages.Review(id, decision, verdict, text);
+
+    // Watchdog: an envelope to a session with no ack in time gets a nudge, then a delivery.blocked post.
+
+    void Watchdog(string id, DateTimeOffset now)
+    {
+        var open = store.Undelivered(id);
+        if (open.Count == 0) return;
+        var delivery = options.Policy.Delivery;
+        var live = store.IsLive(id, now);
+        var status = store.Status(id);
+        var blocked = store.Events.All().Where(b => b.Kind == EventKinds.DeliveryBlocked).Select(b => b.Ref("envelope")).OfType<string>().ToHashSet();
+        foreach (var e in open)
+        {
+            if (blocked.Contains(e.Id)) continue;
+            if (!live)
+            {
+                if (failures.TryGetValue(id, out var failure) && failure.Count >= options.MaxFailures)
+                    PostBlocked(id, e, $"the supervisor turn failed {failure.Count} times: {failure.Error}");
+                continue;
+            }
+            if (status?.State == "running") continue;
+            var start = Times.Parse(e.At) ?? now;
+            if (Times.Parse(status?.At) is { } idle && idle > start) start = idle;
+            var waited = now - start;
+            if (waited >= TimeSpan.FromSeconds(delivery.NudgeSeconds + delivery.PeerSeconds))
+                PostBlocked(id, e, $"no ack in {waited.TotalSeconds:0} s from the live session, after a nudge");
+            else if (waited >= TimeSpan.FromSeconds(delivery.NudgeSeconds) && nudged.TryAdd(e.Id, now))
+            {
+                store.Events.Nudge(Parties.Session(id), e.Id);
+                store.Log($"{id} nudge: {e.Kind} {e.Id} has no ack after {waited.TotalSeconds:0} s");
+            }
+        }
+    }
+
+    void PostBlocked(string id, Event e, string reason)
+    {
+        var body = Data.Of(("text", $"{e.Kind} to {store.Meta(id).Title ?? id} is not delivered: {reason}"), ("session", id), ("envelope", e.Id), ("reason", reason));
+        var refs = Data.Of(("envelope", e.Id));
+        store.Events.Post(new PostInput(EventKinds.DeliveryBlocked, Parties.Supervisor, Parties.User, body) { Session = id, Thread = e.Thread, Needs = Needs.Ack, Refs = refs });
+        if (e.From != Parties.User && e.From != Parties.Session(id))
+            store.Events.Post(new PostInput(EventKinds.DeliveryBlocked, Parties.Supervisor, e.From, body) { Session = id, Thread = e.Thread, Refs = refs });
+        store.Log($"{id} delivery blocked: {e.Kind} {e.Id}: {reason}");
+    }
+
+    // Turn runner: a session that is not live gets its envelopes with no ack as one claude -p turn.
 
     bool CanRun(string id, DateTimeOffset now)
     {
@@ -181,8 +256,7 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         if (imports.TryGetValue(id, out var imported) && now - imported < options.ImportWait) return false;
         if (!failures.TryGetValue(id, out var failure) || failure.Count < options.MaxFailures) return true;
         if (failure.Until is not { } until || now < until) return false;
-        store.Send(id, store.Texts.Blocked(failure.Count, failure.Error ?? "unknown"), Parties.Supervisor);
-        store.Events.Append(EventKinds.Unblocked, Parties.Supervisor, Parties.Session(id), Data.Of(("text", $"restart after {failure.Count} failed turns"), ("count", failure.Count), ("error", failure.Error)), null, id);
+        Notify(Parties.Session(id), null, store.Texts.Notice("restart", ("count", (double)failure.Count), ("error", failure.Error ?? "unknown")));
         store.Log($"{id} restart after {failure.Count} failed turns");
         failures[id] = failure with { Count = 0, Until = null };
         return true;
@@ -233,10 +307,11 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
             Fail(request, $"worktree: {e.Message}", null);
             return;
         }
-        store.Log($"{id} turn start new={request.IsNew} cwd={request.Cwd} inbox={string.Join(',', pending.Inbox)} answers={string.Join(',', pending.Answers)}");
+        store.Log($"{id} turn start new={request.IsNew} cwd={request.Cwd} envelopes={string.Join(',', pending.Envelopes)}");
         if (request.IsNew) store.SaveMeta(store.Meta(id) with { Started = true });
         var from = string.Join(',', pending.Senders.DefaultIfEmpty(Parties.Supervisor));
-        var start = store.Events.Append(EventKinds.TurnStart, Parties.Supervisor, Parties.Session(id), Data.Of(("isNew", request.IsNew), ("senders", pending.Senders), ("prompt", request.Prompt)), Data.Of(("inbox", pending.Inbox), ("answers", pending.Answers)), id);
+        var start = store.Events.Append(EventKinds.TurnStart, Parties.Supervisor, Parties.Session(id), Data.Of(("isNew", request.IsNew), ("senders", pending.Senders), ("count", (double)pending.Envelopes.Count)),
+            Data.Of(("envelopes", pending.Envelopes)), id);
         store.WriteJson(id, new TurnMarker(start.Id, from, start.At), StoreFiles.Turn);
         TurnResult result;
         try
@@ -250,13 +325,13 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         if (stop.IsCancellationRequested)
         {
             store.Events.Append(EventKinds.TurnFail, Parties.Session(id), Parties.Supervisor, Data.Of(("text", "stopped"), ("error", "stopped")), Data.Of(("turnStart", start.Id)), id);
-            store.Log($"{id} turn stopped after {result.Seconds}s; the inbox stays for a later turn");
+            store.Log($"{id} turn stopped after {result.Seconds}s; its envelopes have no ack and go in a later turn");
             EndMarker(id, start);
             return;
         }
         if (result.Ok)
         {
-            store.MarkSent(id, pending);
+            lock (gate) store.MarkSent(id, pending.Envelopes, Holders.Supervisor);
             if (failures.TryRemove(id, out _)) store.SaveBlocked(id, null);
             var output = store.ReadJson<LastOutput>(id, StoreFiles.LastOutput);
             store.Events.Append(EventKinds.TurnEnd, Parties.Session(id), Parties.Supervisor, Data.Of(("ok", true), ("seconds", result.Seconds), ("text", result.Text ?? "")),

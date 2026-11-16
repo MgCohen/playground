@@ -1,31 +1,35 @@
-export const HOME = 'C:/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator'
-export const DEFAULT_STORE = `${HOME}/store`
+export const DEFAULT_HOME = 'C:/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator'
 export const TICK_MS = 3000
 export const MAX_WAIT_SECONDS = 580
 export const ROW_CHARS = 4000
 
-export type Decision = {
-  id: string
-  session: string
-  kind: 'ask_user'
-  question?: string
-  context?: string
-  snippet?: string
-  options?: string[]
-  recommendation?: string
-  risk: string
-  defaultOption?: string
-  mode: 'wait' | 'pending'
-  waitSeconds: number
-  asked: string
-}
-
-export const S: { id?: string; dir?: string; store?: string; cwd?: string; holder: string; cursor: string; busy: boolean; idle: boolean; dropped: string; timers?: boolean } = {
+export const S: {
+  id?: string
+  dir?: string
+  store?: string
+  home: string
+  cwd?: string
+  holder: string
+  busy: boolean
+  idle: boolean
+  dropped: string
+  timers?: boolean
+  watching: boolean
+  wanted: boolean
+  handled: Set<string>
+  inputFrom: string
+  lastMs: number
+} = {
   dropped: '',
   holder: 'live',
-  cursor: '',
+  home: DEFAULT_HOME,
   busy: false,
   idle: true,
+  watching: false,
+  wanted: false,
+  handled: new Set<string>(),
+  inputFrom: '',
+  lastMs: 0,
 }
 
 export async function now($: any): Promise<string> {
@@ -58,16 +62,6 @@ export async function log($: any, line: string): Promise<void> {
   await $.fs.write(path, `${kept}${await now($)} ${line}\n`)
 }
 
-export function byName(a: string, b: string): number {
-  return a.localeCompare(b, 'en', { numeric: true })
-}
-
-export async function names($: any, folder: string): Promise<string[]> {
-  if (!(await $.fs.exists(folder))) return []
-  const entries = await $.fs.list(folder)
-  return entries.map((x: any) => String(x.name)).filter((name: string) => !name.endsWith('.tmp')).sort(byName)
-}
-
 export function newId(): string {
   const hex = Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16))
   hex[12] = '4'
@@ -77,9 +71,19 @@ export function newId(): string {
 }
 
 export async function storeRoot($: any): Promise<string> {
-  return (await $.env.get('ORCH_STORE')) ?? DEFAULT_STORE
+  return (await $.env.get('ORCH_STORE')) ?? `${S.home}/store`
+}
+
+export async function homeRoot($: any): Promise<string> {
+  return (await $.env.get('ORCH_HOME')) ?? DEFAULT_HOME
 }
 
 export async function sessionDir($: any): Promise<string> {
   return `${await storeRoot($)}/sessions/${await $.session.id()}`
+}
+
+export async function orch($: any, argv: string[], timeoutMs = 60000): Promise<{ ok: boolean; text: string; code: number }> {
+  const run = await $.process.run(['orch', ...argv], { timeoutMs })
+  const text = String(run.exitCode === 0 ? run.stdout ?? '' : run.stderr || run.stdout || '').trim()
+  return { ok: run.exitCode === 0, text, code: run.exitCode }
 }

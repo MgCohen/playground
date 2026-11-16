@@ -152,7 +152,7 @@ public sealed class StackOps(FileStore store, Shell shell, TextWriter output)
         var answer = store.Answer(session, decision);
         var previous = entry.Previous(current);
         var refused = previous is not null ? store.Review(session, StackNames.VersionId(decision, previous.Version)) is { Verdict: Verdicts.Refuse } r ? r : null : null;
-        var text = refused?.Text ?? answer?.Body ?? "";
+        var text = refused?.Text ?? answer?.Value ?? "";
         var reason = refused is not null ? $"the user refused version {previous!.Version} and gave this direction" : answer?.Reason ?? $"answer by {answer?.By ?? "the user"}";
         var origin = refused is not null ? "direction of the user" : answer?.By == Parties.Policy ? "default decision" : $"answer by {answer?.By ?? "the user"}";
         var basePr = current.BaseDecision is { } bd ? store.Stack(session, bd)?.Versions.LastOrDefault(v => v.Branch == current.Base)?.Pr : null;

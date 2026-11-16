@@ -589,3 +589,74 @@ The session "Orchestrator watch" (`dc99fc00`) gets the framework problems of the
 | # | Problem | Analysis | State |
 |---|---|---|---|
 | W1 | `orch enable` in the old build session (`dc99fc00`) wrote `enabled`, but the plugin did not activate: no lease, no heartbeat | The session started before the current plugin hooks. Hot reload did not run `activateIfEnabled` in it. With lease `none`, a message in its inbox would make the supervisor run `claude -p --resume` on a live app session: two writers | Mitigated: `orch stop dc99fc00`, so the supervisor never runs it. A watcher reads its inbox |
+
+## A2 result: communication code (2026-11-17)
+
+The code follows the communication design, version 6 (`docs/communication-design.html`, tab "Changes A2"). All communication goes through the Stream API. `docs/store.md` has the new contract (store version 2).
+
+| Part | Result |
+|---|---|
+| Stream API | `EventStream` (C#) and `plugin/hooks/stream.ts`: post, forward, ack, subscribe, query, read, nudge |
+| Push | `StreamWatcher` (file watcher on `events/` and `nudges/`) with a 60 s sweep. The plugin runs a child `orch watch`; the supervisor and the UI use `StreamHub` |
+| Ack and watchdog | Each delivery gets an ack. A live idle session with no ack gets a nudge after 15 s, then `delivery.blocked` after 60 s more |
+| Types | New types `message`, `query`, `plan`, `ack`; `meta.json` in each type folder; new tools `send`, `query`, `plan`; skill `orch:orch-messages` |
+| Removed | `inbox/`, `answers/`, `delivered/`, `reviews/`, `decisions/`, `report.json`, `reports/`, `update.json`, `cursor.txt`, `forwarded*`, the relay kinds and `unblocked` |
+| Unit tests | 129 pass (`dotnet test --solution Orchestrator.slnx`) |
+
+### Live sum test (scratchpad store, port 7791)
+
+A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked the user; the test sent "my answer is: 9" to the root, and the root called `mcp__orch__answer` (`refs.via` = the root). Child 3 got the default 8 after 30 s. The root reported the total 44. Then `POST /api/inbox/<id>/accept` approved the default (a review to child 3) and acknowledged the root report.
+
+| Check | Result |
+|---|---|
+| Each envelope to a session got an ack | ✅ 16 deliveries, 0 with no ack, no double ack |
+| Question relay and closed notices | ✅ two forwards, two `question-closed` notices |
+| Answer through the root | ✅ answer from `user` with `via: session:<root>` |
+| Default for review in the inbox | ✅ card `answer [review]`, accept posted `review approve`, the child ran `orch decision ready` |
+| Root report card | ✅ card `report [ack]`; the child reports closed when the root got their forwards |
+| SSE | ✅ `GET /api/stream/live` sent the review envelope |
+
+### Decisions on the open questions of the page
+
+| Question | Decision |
+|---|---|
+| Sweep interval | 60 s, `delivery.sweepSeconds` in `policy.json` |
+| Peer nudge from the supervisor | None. The supervisor nudges with the file `nudges/<party>`. A session sends a peer nudge after `send` to its parent |
+| Render through `orch read --for` | One renderer in C#. `orch watch` puts the text in each line, so the plugin needs no extra call for the text |
+| Chat line with two open decisions | No answer. `orch chat-answer` answers only when exactly one decision is open |
+| Nudge of an app session whose process ended | Not built here: stream B owns the lease. The watchdog posts `delivery.blocked` |
+| Wait times | 15 s and 60 s, `delivery` in `policy.json` |
+| Old stores | No migration. The supervisor refuses a version 1 store |
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| A2-1 | `:` is not allowed in a Windows file name, so `subscriptions/session:<id>/` is `subscriptions/session-<id>/` | Decided, in `docs/store.md` |
+| A2-2 | The envelope files had the computed fields `of`, `reply`, `via` and `isForward` | Fixed: `JsonIgnore`, and a test of the envelope fields |
+| A2-3 | Envelopes of two writers in one millisecond can sort in any order | The ids of one writer always grow; a subscription keeps the done ids of the last 30 s |
+| A2-4 | A child report goes to the user and is forwarded to the parent. The design did not say when its user card closes | It closes when the forward to the parent has an ack. A root report waits for the ack of the user |
+| A2-5 | The live path (plugin deliverer with `orch watch`, stop latch, peer nudge) was not tested live: the test used supervisor turns only | Open: test it in an app session (A3 or A4) |
+| A2-6 | `session.input` of a turn with several senders shows them joined by a comma | Open, cosmetic |
+
+### Review of PR #11 (root, 2026-11-17)
+
+| # | Item | Result |
+|---|---|---|
+| R1 | The delivery cursor passed an open envelope when a later envelope got an ack (for example in `ask_user` wait mode) | Fixed: the cursor moves only over acked envelopes before the first open one. Test `The_cursor_does_not_pass_an_open_envelope_when_a_later_one_has_an_ack` |
+| R2 | "First answer wins" worked only in one process | Fixed: exclusive create of `claims/answer/<thread>` before the post. Tests with a claim of another process and with two stores in parallel |
+| R3 | The TS post check accepted an unknown kind | Fixed: the plugin refuses an unknown kind and a message kind with no `meta.json`. The plugin posts no answer and no review, so the reply-type and first-answer checks stay in C#. Contract test through node |
+| R4 | The watchdog ladder has no step 2 (peer message) | Known gap. The supervisor is not a Claude session, so it cannot send a peer message (decision on the design page: only sessions send peer nudges). The watchdog nudges with the file, then posts `delivery.blocked` after `peerSeconds`. A peer nudge from a live session that wakes an ended app process needs the lease rules of stream B |
+| R5 | A late writer can lose an envelope: the id time is taken before two writes | The grace window is now 120 s, with a test for an envelope 60 s late. Limit: an envelope that appears more than 120 s after its id time can be missed. Recorded in `docs/store.md` |
+| R6 | `docs/store.md` and the computed envelope fields | `docs/store.md` lists only the file fields, and says that the computed helpers are not in the file. A test checks the fields of an envelope file |
+| R7 | Only `orch init` and the supervisor checked the store version | Fixed: each `orch` command except `doctor` and `template` checks it; the plugin stays inactive with a version that is not 2. Tests for the CLI and for the plugin constant |
+
+Low items (recorded, accepted):
+
+| Item | State |
+|---|---|
+| Redelivery after a crash of the hook between submit and ack (`deliver.ts`) | Accepted: delivery is at least once |
+| Lost updates of `deliver.json` with no lock (two writers of the cursor) | Accepted: the ack is the truth, so a lost update only moves the cursor back and costs one more scan |
+| The watchdog copied the full stream for each open envelope | Fixed: one set of blocked envelopes for each run |
+
+Unit tests: 136 pass.

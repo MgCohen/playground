@@ -21,7 +21,7 @@ public sealed class Lifecycle(FileStore store)
 
     public void Resume(string id, string by)
     {
-        store.Events.Append(EventKinds.SessionStart, by, Parties.Session(id), Messages.Fields(("text", "resumed")), null, id);
+        store.Events.Append(EventKinds.SessionResume, by, Parties.Session(id), Messages.Fields(("text", "resumed")), null, id);
         store.WriteJson(id, new Control(ControlStates.Active, store.Now, by), StoreFiles.Control);
     }
 
@@ -167,7 +167,7 @@ public sealed class Lifecycle(FileStore store)
         foreach (var id in ids)
         {
             if (store.Meta(id).AppId is not { } appId || !store.IsLive(id, store.Clock.GetUtcNow()) || AppRecords.IsArchived(appId)) continue;
-            store.Send(id, store.Texts.ArchiveSelf(), Parties.Supervisor);
+            store.Events.Post(new PostInput(EventKinds.Notice, Parties.Supervisor, Parties.Session(id), store.Texts.Notice("archive-self")) { Session = id });
             asked.Add((id, appId));
         }
         var end = DateTime.UtcNow + wait;
