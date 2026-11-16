@@ -1,0 +1,24 @@
+# Settings of the party domain. They override pe.settings.yaml.
+
+compose:
+  strategy: greedy              # greedy | compare | in-order | pool
+  limits:
+    turns: 8
+    grades_per_turn: 8
+    grades: 40
+    party_size: 6
+  cache: true                   # same quest + same party = no new grader call
+
+party:
+  tags: [healer, tank, fighter, scout, tracker, lockpick, mage, lore]
+  stats: [strength, intelligence, agility, knowledge]
+  stat_range: [1, 10]
+  fields: [tags]                # tags | cost | stats: what the agents see
+  pass: { rubrics: [valid], rule: all }   # rule: all | percent, with pass_at
+  grade: [smallest, best-cost, best-total, spec]
+  decomposer: { lore: on }      # rung 6
+
+eval:
+  modes:
+    smoke: { sample: 3, k: 1, model: haiku }
+    dev:   { sample: 5, k: 1, model: haiku }
