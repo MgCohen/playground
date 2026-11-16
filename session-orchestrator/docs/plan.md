@@ -477,6 +477,25 @@ Rules of the vsa-template work that the M5 stream must obey:
 - PR comments show the user (`MgCohen`) as author. Each orchestrator PR title, body and comment starts with `[orch]`, so a reader can tell them apart.
 - Supervisor sessions are not in the app sidebar. Open them with the app import (`docs/know-how.md`).
 
+## Session management requirements (user, 2026-11-16)
+
+| # | Requirement | Weight |
+|---|---|---|
+| R1 | The orchestrator session starts sessions when it needs them, with the settings and the context they need | Must |
+| R2 | The sessions use the orchestrator tools | Must |
+| R3 | The orchestrator session controls, adds and archives them | Must |
+| R4 | They show in the desktop app, so the user can read their data and talk to them directly | Must |
+| R5 | They show as attached child sessions in the app | Strong wish |
+| R6 | One writer at a time (the lease). This is a limitation that we found, not a rule of the user. A shared session would be better. Review it later | Limitation |
+
+The custom UI is out of scope for now. The two ways in are: the orchestrator session, or the user in the Claude Code app.
+
+Findings of the probe tree:
+
+- An app session starts an attached session only in a turn that a message of the user started. In a turn that an event or another session started, the app refuses the start. The session can propose a card, and the click of the user starts it.
+- `orch enable` from the brief of a `start_session` session works: the tools, the inbox and the `live` lease come in the same turn, with no typed command.
+- The store id (`CLAUDE_CODE_SESSION_ID`) of an app session is not its app id (`CLAUDE_CODE_HOST_SESSION_ID`). The store must record the app id.
+
 ## App session probes (2026-11-16)
 
 Two app sessions, started from an app session with `start_session`, tested the plugin in the desktop app.
