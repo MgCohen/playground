@@ -32,7 +32,7 @@ The details of each result are in `plan.md` (sections "M0 result" to "M6 result"
 
 ## Decisions
 
-Each decision has one row in [`decisions.md`](decisions.md): 55 rows. The rows below change something outside the code, or need a review first.
+Each decision has one row in [`decisions.md`](decisions.md): 52 rows. The rows below change something outside the code, or need a review first.
 
 | Decision | Undo |
 |---|---|
