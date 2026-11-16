@@ -36,7 +36,7 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 ## Live test recipe
 
 1. Make a git repository in the scratchpad. Put an `AGENTS.md` with one rule in it, for the docs check.
-2. If the test needs PRs, make a private GitHub repository with `gh repo create --private --source . --push`. Before you delete it, copy the PR bodies and comments into `plan.md`: GitHub holds the only copy. The user also allows a public test repository if a private one is blocked.
+2. If the test needs PRs, make a private GitHub repository with `gh repo create --private --source . --push`. Before you delete it, copy the PR bodies and comments into `plan.md`: GitHub holds the only copy. The user allows you to create and delete test repositories without a question. The user also allows a public test repository if a private one is blocked.
 3. Copy `config/policy.test.json` into a new store folder as `policy.json` (medium: 30 s).
 4. Start the supervisor in the background: `ORCH_STORE=<store> ORCH_PORT=7779 node src/main.ts` in `supervisor/`.
 5. Copy `spikes/p3/root.json` (one repository) or `spikes/p4/root.json` (PR stack) to the scratchpad, change its `cwd`, then send it: `curl -X POST -H 'content-type: application/json' --data @root.json http://127.0.0.1:7779/api/sessions`.

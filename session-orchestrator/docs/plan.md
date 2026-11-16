@@ -198,7 +198,7 @@ PR format that the session used (the GitHub test repository is deleted):
 
 ## Next steps
 
-Status: the user reviews the design page. Wait for those notes before P4 starts.
+Status: the user reviews the design page. Wait for those notes before P4 starts. The notes arrive in the chat, or as comments on the page: read them with the `ArtifactComments` tool on the page URL. After a design change, edit `docs/orchestrator-design.html` and publish it with the `Artifact` tool and `url` set to the page URL.
 
 ### P4 scope (agreed)
 
@@ -214,8 +214,8 @@ Run one vsa-template stream under the orchestrator from start to merge. The supe
 
 - A status check every 5 minutes. Examine each session yourself, because messages can get lost.
 - If a question has no answer after 2 checks, decide it with the recommendation, and report it later.
-- Archive a child session when it is done and nobody needs it. Keep it while its PR is open. Put this rule in each child brief.
-- Archive only the sessions that the user names, and never a session that waits for the user.
+- Archive a child session that you started when it is done and nobody needs it. Keep it while its PR is open. Put this rule in each child brief.
+- Never archive a session that you did not start (examine its `startedBy`), unless the user names it. Never archive a session that waits for the user.
 - One decision group for each session. The title names all of its scope.
 - If an archive is refused, turn off Remote Control, then rename the session with `[archive/done]`.
 - Detach exploration sessions, and relay their results only when the user asks.
@@ -239,6 +239,8 @@ Rules of the vsa-template work that the P5 stream must obey:
 | Sign-in for the API (it listens on 127.0.0.1 with no auth) | Cloudflare Access in front of the tunnel, plus a token header |
 | Swipe meaning on a decision card | Right: accept the default. Left: open the free-text answer |
 | Voice input: browser speech or phone dictation? | Phone dictation in the text field: no extra code |
+| Which vsa-template stream runs first in P5? | Ask the user at the P5 start. Use the stable roadmap of vsa-template |
+| Does a Cloudflare account with a domain exist for the tunnel? | Ask the user at the P4 start. A Cloudflare connector exists in the sessions |
 
 ### Known gaps
 
