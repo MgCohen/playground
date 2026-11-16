@@ -581,3 +581,11 @@ None of these is archived. Archive them only when the user says so.
 | Test P2: child B hand-off | `48d13d06` | Split transcript (lease race) |
 
 The store folders of the P2 sessions (`b5f12905`, `249fb7b0`, `48d13d06`) are in `store/old-spikes/`, so the supervisor does not watch them. The build session of this project is `15fac584` (a vsa-template worktree).
+
+## Watch notes (root "Orchestrator: root", `ab9acae5`, started 2026-11-16)
+
+The session "Orchestrator watch" (`dc99fc00`) gets the framework problems of the root through its inbox. It records each one here and changes no code until the user decides.
+
+| # | Problem | Analysis | State |
+|---|---|---|---|
+| W1 | `orch enable` in the old build session (`dc99fc00`) wrote `enabled`, but the plugin did not activate: no lease, no heartbeat | The session started before the current plugin hooks. Hot reload did not run `activateIfEnabled` in it. With lease `none`, a message in its inbox would make the supervisor run `claude -p --resume` on a live app session: two writers | Mitigated: `orch stop dc99fc00`, so the supervisor never runs it. A watcher reads its inbox |
