@@ -2,6 +2,8 @@
 
 [← Design index](README.md)
 
+**State:** all phases P0 to P10 are built. The results of each phase are in [build-log.md](build-log.md).
+
 The engine is built in C# from now on. It uses the layout of the VSA framework without VSA.Sdk (see [architecture.md](architecture.md)). The Node spike in `spike/` stays as the parity reference for `shapes`. Each phase ends with tests that must pass.
 
 ```mermaid

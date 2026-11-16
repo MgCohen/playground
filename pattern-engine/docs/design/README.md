@@ -44,5 +44,6 @@ flowchart LR
 | [architecture.md](architecture.md) | The target components, flows and contracts |
 | [plan.md](plan.md) | The code plan in phases, each with its exit tests |
 | [open-questions.md](open-questions.md) | The decisions, the open questions and the non-goals |
+| [build-log.md](build-log.md) | The C# build: results of each phase, the map of code and agents, build decisions, findings, extension points |
 
 The explainer pages are in [../pages/](../pages/). The research is in [../research/](../research/).
