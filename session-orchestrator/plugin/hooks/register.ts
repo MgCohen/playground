@@ -3,7 +3,7 @@ import { ROW_CHARS, S, TICK_MS, log, now, readJson, readText, sessionDir, storeR
 import { emitRow } from './events.ts'
 import { beat, releaseLease, writeLease } from './lease.ts'
 import { tick } from './inbox.ts'
-import { ASK_TOOL, REPORT_TOOL, SPAWN_TOOL, UPDATE_TOOL, askUser, registerTools, report, spawnChild, update } from './tools.ts'
+import { ANSWER_TOOL, ASK_TOOL, QUESTIONS_TOOL, REPORT_TOOL, SPAWN_TOOL, UPDATE_TOOL, answerChild, answerFromChat, askUser, listQuestions, registerTools, report, spawnChild, update } from './tools.ts'
 
 const MIRROR_DOORS = ['prompt', 'response', 'tool-result']
 const ASK_IN_TEXT =
@@ -105,6 +105,7 @@ export const register: Register = on => {
   on('session.append', async ($, e, next) => {
     if (!S.dir && e.agentId === undefined && e.door === 'tool-result') await activateIfEnabled($, 'orch enable')
     if (S.dir && e.agentId === undefined && MIRROR_DOORS.includes(e.door)) await mirror($, e)
+    if (S.dir && e.agentId === undefined && e.door === 'prompt') await answerFromChat($, e).catch(error => log($, `chat answer failed: ${String(error)}`))
     return next(e)
   })
 
@@ -118,6 +119,10 @@ export const register: Register = on => {
   on('tool.call', { tool: UPDATE_TOOL }, async ($, e: any) => update($, e)).catch((_$: any, _e: any) => ({ result: 'orch: the update was not recorded. Continue your work.' }))
 
   on('tool.call', { tool: SPAWN_TOOL }, async ($, e: any) => spawnChild($, e)).catch((_$: any, _e: any) => ({ result: 'orch: spawn_child failed. Do the work yourself or report blocked.' }))
+
+  on('tool.call', { tool: ANSWER_TOOL }, async ($, e: any) => answerChild($, e)).catch((_$: any, _e: any) => ({ result: 'orch: answer failed. Tell the user to answer with orch answer.' }))
+
+  on('tool.call', { tool: QUESTIONS_TOOL }, async ($, _e: any) => listQuestions($)).catch((_$: any, _e: any) => ({ result: 'orch: the list failed. Run orch decisions.' }))
 
   on('tool.call', { tool: ASK_TOOL }, async ($, e: any) => askUser($, e)).catch((_$: any, _e: any) => ({ result: 'orch: ask_user failed. Ask the question in your reply text and end your turn.' }))
 

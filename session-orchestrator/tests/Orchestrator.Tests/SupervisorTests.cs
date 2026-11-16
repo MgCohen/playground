@@ -92,6 +92,35 @@ public sealed class SupervisorTests
     }
 
     [Test]
+    public async Task An_open_question_of_a_child_goes_to_the_parent_inbox_once()
+    {
+        using var t = new Rig();
+        var parent = t.Create("p", "parent");
+        var child = t.Create("c", "child", parent, "spawn_child");
+        await t.Cycle();
+        t.Decide(child, "d1", "low", "A");
+        await t.Cycle();
+        await t.Cycle();
+        var toParent = t.Turns.Where(turn => turn.Id == parent).Select(turn => turn.Prompt).ToList();
+        Assert.That(toParent, Has.Count.EqualTo(2));
+        Assert.That(toParent[1], Does.StartWith($"Question from child \"child\" ({child}), decision d1: Q d1"));
+        Assert.That(toParent[1], Does.Contain("Options: A; B"));
+        Assert.That(toParent[1], Does.Contain("If nobody answers in 60 s, the policy answers \"A\"."));
+        Assert.That(toParent[1], Does.Contain("mcp__orch__answer"));
+    }
+
+    [Test]
+    public async Task A_question_of_a_root_session_is_not_forwarded()
+    {
+        using var t = new Rig();
+        var root = t.Create("r", "root");
+        await t.Cycle();
+        t.Decide(root, "d1", "high", null);
+        await t.Cycle();
+        Assert.That(t.Turns.Count(turn => turn.Id == root), Is.EqualTo(1));
+    }
+
+    [Test]
     public async Task A_failed_turn_keeps_the_inbox_and_stops_after_the_failure_limit()
     {
         using var t = new Rig(ok: false);
