@@ -80,7 +80,7 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 
 ## Session lifecycle
 
-- `orch stop <id>` ends a running turn: the supervisor cancels it and kills the `claude` process tree. A grandchild of a tool can outlive it and keep files locked until it ends.
+- `orch stop <id>` ends a running turn: the supervisor cancels it and kills each descendant that it recorded while the turn ran, also an orphan. `orch archive` tries the worktree removal again for about 7.5 s if a process holds the folder.
 - `orch archive <id>` removes the `enabled` file. The supervisor never runs the session again. The branch of its worktree stays.
 - A worktree folder is `<repo>.wt/orch-<id8>`, next to the repository, on branch `orch/session-<id8>`.
 - `orch open <id>` opens a session in the desktop app. Then send it one message in the app, so that its process starts and the plugin takes the lease.
