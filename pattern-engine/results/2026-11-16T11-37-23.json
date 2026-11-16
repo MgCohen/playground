@@ -1,0 +1,259 @@
+{
+  "runId": "2026-11-16T11-37-23",
+  "domain": "topology",
+  "engine": "csharp-hybrid",
+  "mode": "dev",
+  "label": null,
+  "model": "haiku",
+  "k": 2,
+  "ablate": [],
+  "graders": [
+    "selection",
+    "built",
+    "structure",
+    "rules",
+    "flow",
+    "proposed",
+    "questions"
+  ],
+  "catalog": "f6fc3237a768",
+  "cases": 1,
+  "runs": [
+    {
+      "case": "hand-partialfit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "partial-fit"
+      ],
+      "request": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "solution",
+          "parts": [
+            {
+              "p": "command_pipeline"
+            },
+            {
+              "p": "*"
+            }
+          ]
+        },
+        "remainder": [
+          "no-fit"
+        ]
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "observer",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "observer": "0bd02ed5500e"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+            "status": "solved",
+            "pattern": "observer",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request is a single job: a part that reacts to a failed-payment event by retrying the payment, which matches observer's \"other parts react to an event, each on its own\" and produces an effect. The cqrs_system group is excluded because only one job is needed, and command_pipeline and query_handler fit less well since the trigger is an event rather than a user request, and the retry does not read or return a view."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "solution: expected \"solution\", got \"observer\"",
+              "expected remainder [no-fit], got []"
+            ]
+          },
+          "built": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "solution: expected \"solution\", got \"observer\""
+            ]
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": false,
+        "consistent": true
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 14134,
+        "Cost": 0.00096977,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-partialfit-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "partial-fit"
+      ],
+      "request": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "solution",
+          "parts": [
+            {
+              "p": "command_pipeline"
+            },
+            {
+              "p": "*"
+            }
+          ]
+        },
+        "remainder": [
+          "no-fit"
+        ]
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "observer",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "observer": "0bd02ed5500e"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+            "status": "solved",
+            "pattern": "observer",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The part reacts to a failed-payment event on its own and produces an effect (the retry attempts with delay), which matches the observer use_when; command_pipeline is the runner-up because retries change data, but it is triggered by a system event rather than a request in steps, and the retry count and delay are details of the object itself."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "solution: expected \"solution\", got \"observer\"",
+              "expected remainder [no-fit], got []"
+            ]
+          },
+          "built": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "solution: expected \"solution\", got \"observer\""
+            ]
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": false,
+        "consistent": true
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 14691,
+        "Cost": 0.00110787,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    }
+  ]
+}

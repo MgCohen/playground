@@ -76,6 +76,7 @@ flowchart TD
 ```
 
 - **`partial_fit`:** a pattern is always complete, but it can cover only a part of the request. The decider names the remainder in `open`. Each remainder item goes back into the queue for the top-level patterns. A remainder is always in scope: code reads `outside` as a no-fit, and pattern-author fills the gap. The trace records each remainder item in `remainder`, and a case can expect them with `remainder: [no-fit]`.
+- **Solution:** after the compose step, code composes each remainder item and joins all patterns into one `solution` block (the join step). Code makes each wire whose type allows only one choice; the `joiner` agent call chooses the others, and code checks them. The trace tree then has a `solution` root.
 - **Needs input:** a pattern declares its inputs. If the request does not give a required input, the engine asks. It does not guess.
 - **`none`:** the author agent writes a proposed pattern with the authoring guide. Code validates it and runs the novelty check. The pattern makes the output of this run and goes into the promotion flow.
 - **Limits:** each node has limits on depth, retries and escalations. Each run has limits on agent calls, cost and time. A stop writes a stop reason in the trace.

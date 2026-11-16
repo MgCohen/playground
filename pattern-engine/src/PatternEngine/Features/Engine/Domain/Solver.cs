@@ -35,17 +35,41 @@ public static class Solver
             queue = s.Nodes.Skip(before).Where(n => n.Status == NodeStatus.Open).ToList();
         }
 
-        // A remainder that no pattern fits: the author agent fills the gap, so the full request stays a match.
-        foreach (var gap in s.Nodes.Where(n => n.FromOpen && n.Status == NodeStatus.None).ToList())
+        var slot = s.Pack.Pack.Layout.Slots(null, 1)[0];
+        var top = await ComposeStep.RunAsync(s, root, slot, ct);
+        var failures = top.Failures.ToList();
+        var fragment = top.Fragment;
+        var ok = top.Ok;
+
+        // The remainder of each partial fit: compose each item (the author agent fills a gap first), then join all into one solution.
+        var gaps = s.Nodes.Where(n => n.FromOpen && n.Status is NodeStatus.Solved or NodeStatus.PartialFit or NodeStatus.None).ToList();
+        if (gaps.Count > 0 && ok)
         {
-            await AuthorStep.RunAsync(s, gap, ct);
+            var parts = await Task.WhenAll(gaps.Select(g => ComposeStep.RunAsync(s, g, slot, ct)));
+            var nodes = new[] { root }.Concat(gaps).ToList();
+            var fragments = new[] { top }.Concat(parts).ToList();
+            var items = nodes.Select((n, i) => new Packs.Domain.Shared.SolutionItem($"s{i + 1}", n.Status == NodeStatus.None ? n.NewId! : n.Pattern!, fragments[i].Fragment)).ToList();
+            failures.AddRange(parts.SelectMany(p => p.Failures));
+            if (parts.All(p => p.Ok))
+            {
+                var joined = await JoinStep.RunAsync(s, items, ct);
+                failures.AddRange(joined.Failures);
+                if (joined.Output is not null)
+                {
+                    fragment = joined.Output;
+                    s.Solution.AddRange(nodes);
+                }
+                else
+                {
+                    s.Note(joined.Failures.FirstOrDefault() ?? "join: no output");
+                }
+            }
+
+            ok = failures.Count == 0;
         }
 
-        Composed top;
-        var slot = s.Pack.Pack.Layout.Slots(null, 1)[0];
-        top = await ComposeStep.RunAsync(s, root, slot, ct);
-        var output = top.Fragment.Length > 0 ? s.Pack.Pack.Layout.Wrap(top.Fragment) : string.Empty;
-        return new SolveOutcome(output, TraceBuilder.Build(s, root), top.Ok, top.Failures);
+        var output = fragment.Length > 0 ? s.Pack.Pack.Layout.Wrap(fragment) : string.Empty;
+        return new SolveOutcome(output, TraceBuilder.Build(s, root), ok, failures);
     }
 
     private static async Task DecideNodeAsync(SolveContext s, WorkNode n, CancellationToken ct)
@@ -77,13 +101,15 @@ public static class TraceBuilder
         return new RunTrace
         {
             Outcome = outcome,
-            Tree = root.Status is NodeStatus.Unresolved or NodeStatus.Open ? null : Tree(s, root),
+            Tree = root.Status is NodeStatus.Unresolved or NodeStatus.Open ? null
+                : s.Solution.Count > 0 ? new TreeNode { P = Packs.Domain.Shared.Solution.Id, V = "plain", Parts = s.Solution.Select(n => Tree(s, n)).ToList() }
+                : Tree(s, root),
             Nearest = root.Nearest,
             Deltas = [.. root.Deltas],
             Proposed = root.Status == NodeStatus.None ? $"patterns/{root.NewId}.md" : null,
             Questions = [.. s.Questions],
             OpenRequirements = s.Nodes.SelectMany(n => n.Open).ToList(),
-            Remainder = s.Nodes.Where(n => n.FromOpen).Select(Remainder).ToList(),
+            Remainder = s.Nodes.Where(n => n.FromOpen).Select(n => Remainder(s, n)).ToList(),
             Attempts = s.Attempts,
             StopReason = s.Agents.StopReason ?? (outcome == Outcomes.Stopped ? root.Reason : null),
             Hashes = new Hashes
@@ -96,7 +122,7 @@ public static class TraceBuilder
         };
     }
 
-    private static RemainderItem Remainder(WorkNode n) => new()
+    private static RemainderItem Remainder(SolveContext s, WorkNode n) => new()
     {
         Text = n.Text,
         Outcome = n.Status switch
@@ -108,6 +134,7 @@ public static class TraceBuilder
         },
         Pattern = n.Status == NodeStatus.None ? n.NewId : n.Pattern,
         Proposed = n.Status == NodeStatus.None ? $"patterns/{n.NewId}.md" : null,
+        Joined = s.Solution.Contains(n),
     };
 
     private static TreeNode Tree(SolveContext s, WorkNode n)

@@ -38,7 +38,10 @@
 | Code | Does a persistent `stream-json` CLI process keep `--agent` and `--json-schema` for each message? Not tested yet: one process for each call works and keeps the context clean |
 | Cases | The topology case "a query handler that also saves the changes" goes to the system pattern. Owner view: both, a command pipeline whose entry point also needs a save part. This is a partial fit (Q3). To discuss: where the save part connects, and if a pattern can name a slot for it |
 | Cases | A partial-fit request has more than one correct split. "Retry a payment with a delay" gave an observer with two authored items, and a command pipeline with no remainder. How does a case accept each correct split? |
-| Engine | A partial fit: how does a pack join the outputs of the remainder into one output? Proposal: code joins by the ports, an output to an input of the same type. Today the remainder is decided, authored and recorded, but not composed |
+| Engine | The `cqrs_system` assembly still wires the pipeline events to each observer by name (D17). Replace it with the port rule of the join step? |
+| Engine | `shapes` cannot join a solution yet: its patterns have no ports. Proposal: each remainder item gets its own slot in the scene |
+| Grading | The flow grader does not find a pattern of a solution that has no wire to the others. Today the join step writes a note. Make it a failure? |
+| Engine | A retry sends data back to an earlier step, so its data flow has a loop. The block rules forbid loops. How does a pattern show a retry? |
 | Engine | An escalation during compose can change the pattern of a node. Child nodes that the new pattern needs are not decided |
 
 ## Non-goals

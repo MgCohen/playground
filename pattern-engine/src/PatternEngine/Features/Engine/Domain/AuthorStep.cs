@@ -37,6 +37,7 @@ public static class AuthorStep
             var candidate = Render(answer, n.NewId!, nearest);
             var pattern = PatternParser.Parse(candidate, $"{n.NewId}.md");
             problems = CatalogRules.Validate(s.Catalog.With(pattern)).Where(f => f.Severity == Severity.Error && f.Where.StartsWith(n.NewId!, StringComparison.Ordinal)).Select(f => f.Message).ToList();
+            problems.AddRange(PortProblems(s.Catalog, pattern));
             if (problems.Count == 0)
             {
                 text = candidate;
@@ -60,6 +61,27 @@ public static class AuthorStep
         }
 
         n.Variant = written.Variants.FirstOrDefault()?.Id ?? "plain";
+    }
+
+    /// <summary>
+    /// If the catalog has typed ports, a proposed pattern must have ports too, and each type must be a type of the catalog.
+    /// Without ports, code cannot join the pattern into a solution.
+    /// </summary>
+    public static IReadOnlyList<string> PortProblems(PatternCatalog catalog, Pattern proposed)
+    {
+        var types = catalog.All.Where(p => p.Id != proposed.Id).SelectMany(p => p.Inputs.Concat(p.Outputs)).Select(x => x.Type).ToHashSet(StringComparer.Ordinal);
+        if (types.Count == 0)
+        {
+            return [];
+        }
+
+        var ports = proposed.Inputs.Concat(proposed.Outputs).ToList();
+        if (ports.Count == 0)
+        {
+            return [$"the patterns of this domain have typed ports; add inputs and outputs with the types {string.Join(", ", types.Order(StringComparer.Ordinal))}"];
+        }
+
+        return ports.Where(x => !types.Contains(x.Type)).Select(x => $"port \"{x.Name}\": the type \"{x.Type}\" is not a type of the catalog ({string.Join(", ", types.Order(StringComparer.Ordinal))})").ToList();
     }
 
     /// <summary>The id of an existing pattern with the same part set and variant ids, or null if the proposed pattern is new.</summary>
@@ -154,6 +176,19 @@ public static class AuthorStep
         {
             var only = Get(p, "only");
             sb.Append($"  - {{ ref: {Get(p, "ref")}, count: \"{Get(p, "count") ?? "1"}\"{(string.IsNullOrEmpty(only) ? string.Empty : $", only: {only}")} }}\n");
+        }
+
+        foreach (var side in new[] { "inputs", "outputs" })
+        {
+            var ports = Objects(a, side).Where(x => Get(x, "name") is not null && Get(x, "type") is not null).ToList();
+            if (ports.Count > 0)
+            {
+                sb.Append($"{side}:\n");
+                foreach (var x in ports)
+                {
+                    sb.Append($"  - {{ name: {Get(x, "name")}, type: {Get(x, "type")} }}\n");
+                }
+            }
         }
 
         var related = a.Texts("related").Append(nearest.Id).Distinct();

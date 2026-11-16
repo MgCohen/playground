@@ -83,6 +83,10 @@ public sealed record RemainderItem
 
     [JsonPropertyName("proposed")]
     public string? Proposed { get; init; }
+
+    /// <summary>True if the item is in the solution output, joined by its ports.</summary>
+    [JsonPropertyName("joined")]
+    public bool Joined { get; init; }
 }
 
 public sealed record Hashes

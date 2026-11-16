@@ -130,6 +130,17 @@ public sealed class StructureGrader : IGrader
         void Walk(OutputNode node, string where)
         {
             var here = where.Length > 0 ? $"{where} > {node.Pattern}" : node.Pattern;
+            if (where.Length == 0 && node.Pattern == Solution.Id)
+            {
+                // A solution is not a pattern: each of its parts is a complete pattern. The pack graders check the wires.
+                foreach (var c in node.Children)
+                {
+                    Walk(c, here);
+                }
+
+                return;
+            }
+
             var def = catalog.Get(node.Pattern);
             if (def is null)
             {

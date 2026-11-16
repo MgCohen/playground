@@ -98,6 +98,11 @@ flowchart TD
 | D18 | Behavior graders are pack graders: `behavior` (circuits, truth table) and `flow` (topology, data flow) | Q10: rules that code can run come first. |
 | D19 | The escalation agent has the tools Read, Grep and Glob, and runs in the sandbox | It can read the catalog files; it cannot change files. |
 | D20 | `results/solve/` and `results/runs/` stay out of git | Q14: only the result files are in git. |
+| D21 | The output of a request is a solution. If it uses more than one pattern, code puts them in one `solution` block; else the output is the one pattern | The owner expects a solution to the problem, with one or more patterns in a combination. Each pattern stays complete (Q3). |
+| D22 | The join step makes the wires from the port types in the catalog: one output of the same type gives a wire; none gives an outer port; more than one goes to the `joiner` agent call, and code checks each choice | Code decides what the types decide. A judgment only where the types allow more than one answer. |
+| D23 | `ILayout.Join` and `ILayout.Ports` are optional. The Blocks kit implements them for topology and circuits. A pattern with no catalog ports, for example an assembled `cqrs_system`, gets its ports from the wires of its fragment | One contract for each pack. A pack that cannot join yet records the remainder as not joined. |
+| D24 | pattern-author writes typed ports if the catalog has them. Code refuses a proposed pattern with no ports or with a type that the catalog does not have | Without ports, code cannot join the pattern. |
+| D25 | An expected tree can use `p: "*"` for a pattern that the run authors | A case cannot know the id of an authored pattern. |
 
 ## Core changes that the new domains needed
 
@@ -120,6 +125,7 @@ The second and third domains are the test of the core. Each change below is a pl
 - **A no-fit inside a partial fit (resolved by Q3).** In topology, the decider covered "retry a payment" with the command pipeline and made "wait a delay" an open requirement. The escalation agent asked if the delay is in scope. The case expected a no-fit for the full request. See the open questions.
 - **After the Q3 change.** In two Haiku runs of the delay case, no run asked about scope. One run chose the observer, with two authored remainder items. One run chose the command pipeline with no remainder. The engine works as designed; the case accepts only one split.
 - **An ambiguous near-miss case.** "A query handler that also saves the changes" went to the system pattern (two jobs). The case expects the command pipeline. The case or the system rule needs a decision; it was not tuned.
+- **The join in a real run.** "Place orders through a command pipeline; after each order event, wait ten minutes, then send a reminder" gave a solution of `cqrs_system` and an authored delayed observer. The first run showed a defect: an assembled system has no catalog ports, so it had no wire. Fixed with D23. The second run wired the order event to the delay. Cost $0.007 for each run.
 - **Cost.** The code-led engine costs $0.002 to $0.004 for each run with Haiku, with 2 to 9 agent calls.
 
 ## Extension points
@@ -135,4 +141,5 @@ The second and third domains are the test of the core. Each change below is a pl
 | A judge | A class that implements `IJudge` and a factory | Replace `IJudgeFactory` | `judge.kind` |
 | A judgment | An agent file with `tools: StructuredOutput` and `output_schema` | — | Put it in `agents/` or `<pack>/agents/` |
 | A mutation operator | Add a `MutationOperator` to the pack list | — | `grader_trust.mutations` |
+| A join of a solution for a pack | `ILayout.Join` (and `ILayout.Ports` if a pattern has no catalog ports) | — | — |
 | A validator rule | A class that implements `ICatalogRule` | Add it to `CatalogRules.All` | — |

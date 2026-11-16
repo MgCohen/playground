@@ -73,6 +73,12 @@ public interface ILayout
     string Wrap(string fragment);
 
     IReadOnlyList<string> CheckSlot(OutputNode? root, Slot slot);
+
+    /// <summary>Joins the items of a solution into one output with the wires of the plan. Null means that this pack cannot join yet.</summary>
+    string? Join(IReadOnlyList<SolutionItem> items, JoinPlan plan) => null;
+
+    /// <summary>The typed ports of a fragment whose pattern has no ports in the catalog, for example a block that code assembles. Null if not known.</summary>
+    (IReadOnlyList<Port> Inputs, IReadOnlyList<Port> Outputs)? Ports(string fragment, PatternCatalog catalog) => null;
 }
 
 /// <summary>HTML for the review card.</summary>

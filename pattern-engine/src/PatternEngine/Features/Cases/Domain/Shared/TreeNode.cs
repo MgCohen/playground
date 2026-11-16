@@ -59,12 +59,20 @@ public sealed record TreeNode
     }
 
     /// <summary>The differences between an expected tree and an actual tree. Empty means a match.</summary>
+    /// <summary>An expected pattern id that matches any pattern, for a pattern that the run authors (its id is not known before).</summary>
+    public const string Any = "*";
+
     public static IReadOnlyList<string> Diff(TreeNode expected, TreeNode? actual, string at = "")
     {
         var here = at.Length > 0 ? $"{at} > {expected.P}" : expected.P;
         if (actual is null)
         {
             return [$"{here}: missing"];
+        }
+
+        if (expected.P == Any)
+        {
+            return [];
         }
 
         if (expected.P != actual.P)
