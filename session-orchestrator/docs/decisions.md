@@ -11,3 +11,5 @@ The build session made these decisions while the user was away. The user reviews
 | 2026-11-16 | How do the tests control time? | A `TimeProvider` (`ManualClock` in the tests) | Standard .NET type, no extra package |
 | 2026-11-16 | Event first or state file first? | The event first, then the state file | `plan.md`, stream rules |
 | 2026-11-16 | Thread safety of the tick | One lock around the tick. A finished turn leaves the running list under the same lock | The timer and the HTTP calls both start a tick |
+| 2026-11-16 | Where does the TypeScript supervisor go after the port? | `spikes/supervisor-ts/`, frozen. Its 16 tests still pass there | The design page, Build tab: "moves here after the port" |
+| 2026-11-16 | Which GitHub repository for the PR stack test? | A private test repository for each run, deleted after the run | `know-how.md`, live test recipe |
