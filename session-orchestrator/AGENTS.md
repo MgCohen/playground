@@ -37,6 +37,8 @@ cd supervisor && node src/main.ts
 - If you need a permission for project work, you have it. Ask first only for an action outside the project that you cannot undo, or one that the user did not ask for.
 - In spike and test work, do not wait for the user. Run the test, then report the result.
 - The user reviews defaults later. Prefer a reversible default and a record over a stop.
+- Use a template for each input and output (decision, answer, review, report, update, brief, notice). Templates make the messages the same each time and make the UI easy to build. See `templates/` and the Templates tab of the design page.
+- Show a folder layout as a foldable tree: one line for each folder or file, a short description, and a detail that opens under the line.
 
 ## Load the mod
 
