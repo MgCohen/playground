@@ -165,7 +165,7 @@ sequenceDiagram
     <li>Each communication is one post: one body file in the store and one envelope in the stream.</li>
     <li>Each party is always subscribed to the envelopes with <code>to</code> = its address. Other filters are optional.</li>
     <li>A receiver decides what to do. It reads the body only when it needs the content.</li>
-    <li>A nudge carries no content. It only makes the receiver look at the stream sooner.</li>
+    <li>A nudge carries no content. It makes the receiver look at the stream. Each delivery gets an ack (pong), or the watchdog raises an alarm.</li>
   </ol>
 </section>
 </div>
@@ -189,21 +189,56 @@ sequenceDiagram
 </section>
 
 <section>
-  <h2>Nudge: a direct ping, not a message</h2>
-  <div class="scroll">
-  <table>
-    <tr><th>Receiver state</th><th>The nudge does</th><th>Transport</th></tr>
-    <tr><td>Subscriber process runs</td><td>Wakes it before the next poll</td><td><code>nudges/&lt;party&gt;</code> touch, file watcher; SSE for the UI</td></tr>
-    <tr><td>Session live in the app, process ended</td><td>Starts the app process again</td><td>Peer message <code>look at the stream</code></td></tr>
-    <tr><td>Session not live</td><td>Starts a supervisor turn now</td><td>Supervisor tick</td></tr>
-  </table>
+  <h2>Nudge and pong: each delivery gets an answer or an alarm</h2>
+  <div class="box">
+<pre class="mermaid">
+sequenceDiagram
+  participant A as Sender
+  participant S as Stream
+  participant R as Receiver
+  participant W as Watchdog
+  A->>S: post envelope, to R
+  A--)R: nudge (envelope id)
+  R->>S: query, read
+  R->>S: post ack (pong)
+  Note over W: No ack in time?
+  W--)R: nudge on the next channel
+  W->>S: post delivery.blocked, to sender and user
+</pre>
   </div>
   <ol>
-    <li>A nudge never carries content. The receiver queries from its cursor and reads what it needs.</li>
-    <li>A nudge is best effort. It can be lost or arrive two times. The poll still delivers each envelope.</li>
-    <li>A post does not need a nudge. A sender nudges only when the receiver must act soon.</li>
-    <li>The stream records no nudge. The receiver records what it does as usual.</li>
+    <li>The content goes only through the stream. A nudge is a ping: "look at the stream". It carries at most an envelope id.</li>
+    <li>Each delivered envelope gets a pong: an <code>ack</code> with <code>refs.of</code>. The ack goes to the stream, so the record and the pong are one post.</li>
+    <li>The watchdog (supervisor) queries for envelopes with no ack. It does not need a record of the nudge.</li>
+    <li>If there is no ack in time, the watchdog nudges again on the next channel of the ladder below.</li>
+    <li>After the last channel, the watchdog posts <code>delivery.blocked</code> to the sender and to the user. The user inbox shows it as a card.</li>
   </ol>
+  <div class="scroll">
+  <table>
+    <tr><th>Step</th><th>Receiver state</th><th>Channel</th><th>Native</th><th>Wait for ack</th></tr>
+    <tr><td>1</td><td>Process runs</td><td>Plugin timer or file watcher, then <code>$.prompt.submit</code></td><td>Submit: yes. Timer: plugin API</td><td>15 s</td></tr>
+    <tr><td>2</td><td>App session, process ended</td><td>App peer message "look at the stream"</td><td>Yes: app <code>send_message</code></td><td>60 s</td></tr>
+    <tr><td>3</td><td>Not live</td><td>Supervisor turn, <code>claude -p --resume</code></td><td>Yes: CLI</td><td>Turn time</td></tr>
+    <tr><td>4</td><td>No ack after step 3</td><td><code>delivery.blocked</code> card to the user</td><td>Built</td><td>None</td></tr>
+  </table>
+  </div>
+  <p>The wait times are examples. A2 puts them in <code>policy.json</code>. The lease (stream B) decides the first step for a session.</p>
+</section>
+
+<section>
+  <h2>How a session gets a message today</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Path</th><th>Wake-up</th><th>Native part</th><th>Built part</th></tr>
+    <tr><td>Session live in the app</td><td>Plugin timer reads <code>inbox/</code> each 3 s</td><td><code>$.prompt.submit</code> starts the turn</td><td>The poll, <code>cursor.txt</code></td></tr>
+    <tr><td>Session not live</td><td>Supervisor tick reads <code>inbox/</code></td><td><code>claude -p --resume</code></td><td>The tick, <code>turn.json</code></td></tr>
+    <tr><td>App process ended</td><td>None today. The inbox waits</td><td>Peer message can wake it (tested in S11 and the archive probes)</td><td>Not built</td></tr>
+    <tr><td>Phone</td><td>Remote Control shows each turn</td><td>Yes</td><td>None</td></tr>
+    <tr><td>Web UI</td><td>Blazor reloads each 2 s</td><td>Blazor circuit</td><td>The reload</td></tr>
+    <tr><td>Stop latch</td><td>Submit refused until the user types</td><td>Engine rule</td><td><code>blocked.json</code>, retry each 3 s</td></tr>
+  </table>
+  </div>
+  <p>Today nothing pushes a notification. Each receiver polls a folder, and a delivery that fails stays silent. The target keeps the native wake-ups and adds only the ack, the watchdog and the ladder.</p>
 </section>
 
 <section>
@@ -330,6 +365,7 @@ sequenceDiagram
     <tr><td>Default</td><td><code>policy</code></td><td>Open <code>decision</code>, timeout of its level</td><td>Applies the default option</td><td><code>answer</code> from policy</td></tr>
     <tr><td>User inbox</td><td>Web UI, <code>orch inbox</code></td><td><code>to</code> = user, <code>needs</code> set, no reply</td><td>Shows a card</td><td><code>answer</code>, <code>review</code>, <code>ack</code></td></tr>
     <tr><td>Session tree</td><td>Web UI</td><td><code>update</code>, <code>report</code>, lifecycle</td><td>Shows the newest state</td><td>None</td></tr>
+    <tr><td>Watchdog</td><td>Supervisor</td><td>Envelopes to a session with no <code>ack</code> in time</td><td>Nudges on the next channel</td><td><code>delivery.blocked</code></td></tr>
     <tr><td>Timeline</td><td>Web UI, <code>orch events</code></td><td>All, by time</td><td>Shows the envelopes</td><td>None</td></tr>
   </table>
   </div>
@@ -567,7 +603,8 @@ flowchart LR
     <tr><td>Subject</td><td>One rule, in the contract tests of both bindings</td><td><code>Subjects</code>, <code>events.ts</code></td><td>G2</td></tr>
     <tr><td>TS binding</td><td><code>post</code>, <code>subscribe</code>, <code>query</code> in the plugin. Render through <code>orch read --for</code></td><td><code>plugin/hooks/stream.ts</code> (new)</td><td>G2</td></tr>
     <tr><td>Kinds</td><td>Add <code>ack</code>. Retire the relay kinds and <code>unblocked</code></td><td><code>EventKinds.cs</code></td><td>G7</td></tr>
-    <tr><td>Nudge</td><td><code>Nudge(to)</code>, <code>orch nudge</code>, <code>POST /api/nudge</code>. Plugin and supervisor react to it</td><td><code>Stream.cs</code>, <code>inbox.ts</code>, <code>Supervisor.cs</code></td><td>None: lower delay</td></tr>
+    <tr><td>Nudge</td><td><code>Nudge(to)</code>, <code>orch nudge</code>, <code>POST /api/nudge</code>. Plugin and supervisor react to it</td><td><code>Stream.cs</code>, <code>inbox.ts</code>, <code>Supervisor.cs</code></td><td>G16</td></tr>
+    <tr><td>Watchdog</td><td>Query envelopes with no ack, nudge on the ladder, post <code>delivery.blocked</code></td><td><code>Supervisor.cs</code>, <code>policy.json</code></td><td>G13, G16</td></tr>
   </table>
   </div>
 </section>
@@ -616,6 +653,7 @@ flowchart LR
     <tr><td>The plugin renders through <code>orch read --for</code> (about 1 s for each message). Is the delay acceptable?</td><td>Yes. One renderer stays in C#</td></tr>
     <tr><td>A chat line with two or more open decisions: which decision gets it?</td><td>None. The model asks the user which question it answers</td></tr>
     <tr><td>Nudge a live app session whose process ended: a peer message, or <code>claude --resume</code>?</td><td>A peer message. It keeps one writer. Stream B owns the lease rule</td></tr>
+    <tr><td>Wait times of the ladder: 15 s, 60 s, then the turn?</td><td>Yes, as defaults in <code>policy.json</code></td></tr>
     <tr><td>Keep old stores readable after the change?</td><td>No migration. Archive the old store and start a new one</td></tr>
   </table>
   </div>
