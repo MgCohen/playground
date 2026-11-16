@@ -1,0 +1,13 @@
+{
+  "id": "1794798387389-befb56be-supervisor",
+  "at": "2026-11-16T03:06:27.389Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "kind": "session.output",
+  "from": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "to": "supervisor",
+  "refs": {
+    "row": "d3960359-80d7-411d-aaeb-73c5fae40496"
+  },
+  "subject": "The child wrote GREEN into color.txt. The child says the user chose GREEN as a f",
+  "body": "bodies/2026-11-16/1794798387389-befb56be-supervisor.json"
+}

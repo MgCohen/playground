@@ -1,0 +1,13 @@
+{
+  "id": "1794798263300-faeb6880-supervisor",
+  "at": "2026-11-16T03:04:23.300Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "kind": "session.output",
+  "from": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "to": "supervisor",
+  "refs": {
+    "row": "a8d009f2-4568-46be-b8f3-3840c199c77e"
+  },
+  "subject": "[tool mcp__orch__spawn_child]",
+  "body": "bodies/2026-11-16/1794798263300-faeb6880-supervisor.json"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "1794798321307-31a90e8a-supervisor",
+  "at": "2026-11-16T03:05:21.307Z",
+  "session": "c01a56af-89e2-41db-918e-13690d701992",
+  "kind": "session.output",
+  "from": "session:c01a56af-89e2-41db-918e-13690d701992",
+  "to": "supervisor",
+  "refs": {
+    "row": "7dbfe9fb-48c0-461d-99bf-d3d8d9b76033"
+  },
+  "subject": "[tool mcp__orch__report]",
+  "body": "bodies/2026-11-16/1794798321307-31a90e8a-supervisor.json"
+}

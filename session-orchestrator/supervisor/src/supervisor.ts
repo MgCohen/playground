@@ -136,12 +136,12 @@ export class Supervisor {
   async run(id: string, request: TurnRequest, pending: Pending): Promise<void> {
     this.store.log(`${id} turn start new=${request.isNew} inbox=${pending.inbox.join(',')} answers=${pending.answers.join(',')}`)
     if (request.isNew) this.store.saveMeta({ ...this.store.meta(id), started: true })
-    this.store.event('turn.start', 'supervisor', `session:${id}`, { isNew: request.isNew, prompt: request.prompt.slice(0, 2000) }, { inbox: pending.inbox, answers: pending.answers }, id)
+    this.store.event('turn.start', 'supervisor', `session:${id}`, { isNew: request.isNew, prompt: request.prompt }, { inbox: pending.inbox, answers: pending.answers }, id)
     const result = await this.runTurn(request).catch(error => ({ ok: false, error: String(error), seconds: 0 }))
     if (result.ok) {
       this.store.markSent(id, pending)
       this.failures.delete(id)
-      this.store.event('turn.end', `session:${id}`, 'supervisor', { ok: true, seconds: result.seconds, text: String(result.text ?? '').slice(0, 2000) }, {}, id)
+      this.store.event('turn.end', `session:${id}`, 'supervisor', { ok: true, seconds: result.seconds, text: String(result.text ?? '') }, {}, id)
       this.store.log(`${id} turn done ${result.seconds}s: ${String(result.text ?? '').slice(0, 200)}`)
       return
     }

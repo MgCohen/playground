@@ -1,0 +1,13 @@
+{
+  "id": "1794798322067-208e6eac-supervisor",
+  "at": "2026-11-16T03:05:22.067Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "kind": "report.forward",
+  "from": "session:c01a56af-89e2-41db-918e-13690d701992",
+  "to": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "refs": {
+    "child": "c01a56af-89e2-41db-918e-13690d701992"
+  },
+  "subject": "I wrote GREEN into color.txt, because the user chose GREEN in place of RED or BL",
+  "body": "bodies/2026-11-16/1794798322067-208e6eac-supervisor.json"
+}

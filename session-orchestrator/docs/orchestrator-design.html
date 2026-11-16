@@ -438,83 +438,19 @@ flowchart LR
           <tr><th>Field</th><th>Content</th><th>Need</th></tr>
           <tr><td><code>decision</code></td><td>The decision id</td><td>Yes</td></tr>
           <tr><td><code>text</code></td><td>The answer in free text</td><td>Yes</td></tr>
-          <tr><td><code>by</code></td><td><code>user</code>, <code>docs</code> or <code>policy</code></td><td>Yes</td></tr>
-          <tr><td><code>source</code></td><td>The docs file and section</td><td>If by docs</td></tr>
-          <tr><td><code>note</code></td><td>A notice for the session, for example the stack steps</td><td>No</td></tr>
-        </table></div>
-      </div>
-    </details>
-
-    <details>
-      <summary><code>review</code> · verdict, text</summary>
-      <div>
-        <div class="scroll"><table>
-          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
-          <tr><td><code>decision</code></td><td>The decision id and its version</td><td>Yes</td></tr>
-          <tr><td><code>verdict</code></td><td><code>approve</code>, <code>change</code> or <code>refuse</code></td><td>Yes</td></tr>
-          <tr><td><code>text</code></td><td>The change or the new direction</td><td>If change or refuse</td></tr>
-        </table></div>
-      </div>
-    </details>
-
-    <details>
-      <summary><code>report</code> · state, summary, done, next, blockers, links</summary>
-      <div>
-        <div class="scroll"><table>
-          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
-          <tr><td><code>state</code></td><td><code>done</code> or <code>blocked</code></td><td>Yes</td></tr>
-          <tr><td><code>summary</code></td><td>The result in two sentences</td><td>Yes</td></tr>
-          <tr><td><code>done</code></td><td>List of finished items</td><td>Yes</td></tr>
-          <tr><td><code>next</code></td><td>List of steps that are left</td><td>No</td></tr>
-          <tr><td><code>blockers</code></td><td>What stops the work, and who can fix it</td><td>If blocked</td></tr>
-          <tr><td><code>links</code></td><td>Branches, PRs, commits, pages</td><td>No</td></tr>
-        </table></div>
-        <pre class="code">{ "state": "done",
-  "summary": "Three files written on three stacked branches.",
-  "done": ["shape.txt SQUARE", "size.txt LARGE", "color.txt BLUE"],
-  "links": [{ "kind": "pr", "url": "https://github.com/…/pull/1" }] }</pre>
-      </div>
-    </details>
-
-    <details>
-      <summary><code>update</code> · step, progress, summary</summary>
-      <div>
-        <div class="scroll"><table>
-          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
-          <tr><td><code>step</code></td><td>The name of the current step</td><td>Yes</td></tr>
-          <tr><td><code>progress</code></td><td>Done and total, for example 2 of 5</td><td>No</td></tr>
-          <tr><td><code>summary</code></td><td>One sentence</td><td>Yes</td></tr>
-        </table></div>
-      </div>
-    </details>
-
-    <details>
-      <summary><code>brief</code> · title, goal, scope, done when, skills</summary>
-      <div>
-        <div class="scroll"><table>
-          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
-          <tr><td><code>title</code></td><td>Names all of the scope</td><td>Yes</td></tr>
-          <tr><td><code>goal</code></td><td>What the session must make</td><td>Yes</td></tr>
-          <tr><td><code>scope</code></td><td>Files and folders it may change</td><td>Yes</td></tr>
-          <tr><td><code>doneWhen</code></td><td>The check that ends the work</td><td>Yes</td></tr>
-          <tr><td><code>skills</code>, <code>agent</code></td><td>Skills to load, agent definition</td><td>No</td></tr>
-          <tr><td><code>cwd</code>, <code>worktree</code></td><td>Folder, and whether it needs a worktree</td><td>Yes</td></tr>
-        </table></div>
-      </div>
-    </details>
-
-    <details>
-      <summary><code>notice</code> · kind, decision, steps</summary>
-      <div>
-        <p>The supervisor sends a notice in four cases: a default answer with its stack steps, a review instruction, a child report to the parent, and a block message. Each case is one <code>render.md</code> file, so the text is not in the code.</p>
-        <div class="scroll"><table>
-          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
-          <tr><td><code>kind</code></td><td><code>default</code>, <code>review</code>, <code>child-report</code>, <code>blocked</code></td><td>Yes</td></tr>
-          <tr><td><code>decision</code>, <code>child</code></td><td>The id that the notice is about</td><td>If it applies</td></tr>
-          <tr><td><code>steps</code></td><td>The <code>orch</code> commands to run</td><td>No</td></tr>
-        </table></div>
-      </div>
-    </details>
+          <tr><td><code>from</code>, <code>to</code></td><td><code>user</code>, <code>supervisor</code>, <code>docs</code>, <code>policy</code>, or <code>session:&lt;full id&gt;</code></td></tr>
+      <tr><td><code>subject</code></td><td>One line, 80 characters maximum: the question, the summary or the first words</td></tr>
+      <tr><td><code>body</code></td><td>The path of the body file, relative to the store. The body file has the full fields of the template</td></tr>
+      <tr><td><code>refs</code></td><td>Related ids: decision, parent, child, inbox file, PR</td></tr>
+    </table></div>
+    <pre class="code">{ "id": "1794798322067-208e6eac-supervisor", "at": "2026-11-16T03:05:22Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25", "kind": "report.forward",
+  "from": "session:c01a56af-89e2-41db-918e-13690d701992",
+  "to": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "subject": "I wrote GREEN into color.txt, because the user chose GREEN in place of RED or BL",
+  "body": "bodies/2026-11-16/1794798322067-208e6eac-supervisor.json",
+  "refs": { "child": "c01a56af-89e2-41db-918e-13690d701992" } }</pre>
+    <p>An event file is small. A reader reads the body file only when it needs the full text.</p>
   </section>
 
   <section>
@@ -770,7 +706,7 @@ flowchart LR
     ["src/Orchestrator.Core/Leases", "M0", "The lease rules", "IsLive: a live lease counts while its heartbeat or the lease is less than 15 s old. Who may write which turn."],
     ["src/Orchestrator.Core/Policy", "M0", "Policy levels and the default rule", "Loads and validates a policy, finds the level of a decision (an unknown level is the strictest), and decides when a default applies."],
     ["src/Orchestrator.Core/Templates", "M1", "Validate and render a template", "Validates the fields of a message against schema.json (JsonSchema.Net) and makes the text for a session from render.md."],
-    ["src/Orchestrator.Core/Events", "M1", "The event envelope and kinds", "The Event record (Id, At, Session, Kind, By, Data, Refs) and the list of kinds: the seven templates and the system events."],
+    ["src/Orchestrator.Core/Events", "M1", "The event envelope and kinds", "The Event record (Id, At, Session, Kind, From, To, Subject, Body, Refs) and the list of kinds: the seven templates and the system events."],
     ["src/Orchestrator.Store", "M0", "File IO of the contract", "Atomic write (temporary file, then rename), read, list. The supervisor and the CLI use it."],
     ["src/Orchestrator.Store/FileStore.cs", "M0", "Read and write session files", "The Store class of the TypeScript supervisor of today, without the rules, which go to Core."],
     ["src/Orchestrator.Store/EventStream.cs", "M1", "Append and query events", "Writes each event as one file in store/events/<day>/, and reads them back by time, session and kind. ledger.jsonl of today becomes a query of this stream."],

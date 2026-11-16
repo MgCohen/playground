@@ -1,0 +1,13 @@
+{
+  "id": "1794798272740-204e276b-supervisor",
+  "at": "2026-11-16T03:04:32.740Z",
+  "session": "c01a56af-89e2-41db-918e-13690d701992",
+  "kind": "session.input",
+  "from": "unclassified",
+  "to": "session:c01a56af-89e2-41db-918e-13690d701992",
+  "refs": {
+    "row": "a151ea5d-78e0-43be-aa54-e65e6f10e7db"
+  },
+  "subject": "Call mcp__orch__ask_user with question Which color goes in color.txt?, options R",
+  "body": "bodies/2026-11-16/1794798272740-204e276b-supervisor.json"
+}

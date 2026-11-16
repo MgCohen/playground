@@ -1,0 +1,9 @@
+{
+  "question": "Which color goes in color.txt?",
+  "options": [
+    "RED",
+    "BLUE"
+  ],
+  "risk": "high",
+  "mode": "pending"
+}

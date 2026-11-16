@@ -1,0 +1,11 @@
+{
+  "id": "1794798353828-3a598503-supervisor",
+  "at": "2026-11-16T03:05:53.828Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "kind": "report",
+  "from": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "to": "user",
+  "refs": {},
+  "subject": "The child wrote GREEN into color.txt, and I wrote GREEN into summary.txt.",
+  "body": "bodies/2026-11-16/1794798353828-3a598503-supervisor.json"
+}

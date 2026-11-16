@@ -1,0 +1,4 @@
+{
+  "isNew": true,
+  "prompt": "Call mcp__orch__ask_user with question Which color goes in color.txt?, options RED and BLUE, risk high, waitSeconds 0, then end your turn. When the answer arrives, write the color into color.txt, then call mcp__orch__report with state done and a one-sentence summary that names the color."
+}

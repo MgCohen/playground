@@ -1,0 +1,13 @@
+{
+  "id": "1794798265295-2c3e805f-supervisor",
+  "at": "2026-11-16T03:04:25.295Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "kind": "session.output",
+  "from": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "to": "supervisor",
+  "refs": {
+    "row": "c71cc53f-2843-4400-a172-d2a183d08856"
+  },
+  "subject": "I started the \"Color child\" session. Now I wait for its report.",
+  "body": "bodies/2026-11-16/1794798265295-2c3e805f-supervisor.json"
+}

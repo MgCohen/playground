@@ -1,0 +1,13 @@
+{
+  "id": "1794798256385-0926e65c-supervisor",
+  "at": "2026-11-16T03:04:16.385Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "kind": "session.input",
+  "from": "unclassified",
+  "to": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "refs": {
+    "row": "1b4e0212-87dc-43c8-bf8d-798e2f63d4ac"
+  },
+  "subject": "You are the root session of an orchestrator test. Work in your folder. Step 1: c",
+  "body": "bodies/2026-11-16/1794798256385-0926e65c-supervisor.json"
+}

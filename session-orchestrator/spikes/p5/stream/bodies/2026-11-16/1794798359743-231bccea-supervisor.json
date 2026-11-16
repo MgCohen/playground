@@ -1,0 +1,5 @@
+{
+  "ok": true,
+  "seconds": 38,
+  "text": "I wrote GREEN into summary.txt and reported done to the orchestrator. GREEN was not one of the two options, but you typed it as a free-text answer, and color.txt also contains GREEN."
+}

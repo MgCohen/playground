@@ -1,0 +1,13 @@
+{
+  "id": "1794798279745-8bc916f4-supervisor",
+  "at": "2026-11-16T03:04:39.745Z",
+  "session": "c01a56af-89e2-41db-918e-13690d701992",
+  "kind": "session.output",
+  "from": "session:c01a56af-89e2-41db-918e-13690d701992",
+  "to": "supervisor",
+  "refs": {
+    "row": "21b92976-ea83-46ac-b1ee-2acf7d618a83"
+  },
+  "subject": "[tool mcp__orch__ask_user]",
+  "body": "bodies/2026-11-16/1794798279745-8bc916f4-supervisor.json"
+}

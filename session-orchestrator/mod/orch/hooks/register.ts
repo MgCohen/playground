@@ -70,18 +70,24 @@ async function emit($: any, kind: string, from: string, to: string, data: Record
   const ms = await $.clock.now()
   const at = new Date(ms).toISOString()
   const id = `${ms}-${newId().slice(0, 8)}-${S.holder}`
-  await writeJson($, `${S.store}/events/${at.slice(0, 10)}/${id}.json`, { id, at, session: S.id, kind, from, to, data, refs })
+  const body = `bodies/${at.slice(0, 10)}/${id}.json`
+  await writeJson($, `${S.store}/${body}`, data)
+  await writeJson($, `${S.store}/events/${at.slice(0, 10)}/${id}.json`, { id, at, session: S.id, kind, from, to, subject: subject(data), body, refs })
+}
+
+function subject(data: Record<string, unknown>): string {
+  const text = String(data.question ?? data.summary ?? data.title ?? data.text ?? '')
+  return text.replace(/\s+/g, ' ').trim().slice(0, 80)
 }
 
 function rowText(message: any): string {
   const content = message?.content ?? message?.message?.content
   if (typeof content === 'string') return content
-  if (!Array.isArray(content)) return JSON.stringify(message).slice(0, 2000)
+  if (!Array.isArray(content)) return JSON.stringify(message)
   return content
     .map((block: any) => (block.type === 'text' ? block.text : block.type === 'tool_use' ? `[tool ${block.name}]` : block.type === 'tool_result' ? '[tool result]' : ''))
     .filter((text: string) => text !== '')
     .join(' ')
-    .slice(0, 2000)
 }
 
 function byName(a: string, b: string): number {
@@ -375,7 +381,7 @@ export const register: Register = on => {
     await writeJson($, `${dir}/meta.json`, meta)
     await $.fs.write(`${dir}/inbox/1.txt`, String(e.brief))
     await $.fs.write(`${dir}/enabled`, '')
-    await emit($, 'brief', `session:${S.id}`, `session:${child}`, { title: e.title, cwd: meta.cwd, text: String(e.brief).slice(0, 2000) }, { child })
+    await emit($, 'brief', `session:${S.id}`, `session:${child}`, { title: e.title, cwd: meta.cwd, text: String(e.brief) }, { child })
     await log($, `spawn_child ${child} ${e.title}`)
     return { result: `Started child "${e.title}" (${child}). It reports back as a new message that starts with "Report from child". If you have nothing else to do now, end your turn.` }
   }).catch((_$: any, _e: any) => ({ result: 'orch: spawn_child failed. Do the work yourself or report blocked.' }))

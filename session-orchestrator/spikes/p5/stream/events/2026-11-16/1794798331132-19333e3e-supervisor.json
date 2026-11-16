@@ -1,0 +1,13 @@
+{
+  "id": "1794798331132-19333e3e-supervisor",
+  "at": "2026-11-16T03:05:31.132Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "kind": "session.input",
+  "from": "unclassified",
+  "to": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "refs": {
+    "row": "d68fc67c-82fd-41a4-8265-dc993270836c"
+  },
+  "subject": "Report from child \"Color child\" (c01a56af-89e2-41db-918e-13690d701992): done. I ",
+  "body": "bodies/2026-11-16/1794798331132-19333e3e-supervisor.json"
+}

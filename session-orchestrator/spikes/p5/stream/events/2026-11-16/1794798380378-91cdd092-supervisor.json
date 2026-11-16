@@ -1,0 +1,13 @@
+{
+  "id": "1794798380378-91cdd092-supervisor",
+  "at": "2026-11-16T03:06:20.378Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "kind": "session.input",
+  "from": "unclassified",
+  "to": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "refs": {
+    "row": "034880ca-8e60-4478-9578-ec9018861892"
+  },
+  "subject": "Which color did the child pick, and who chose it?",
+  "body": "bodies/2026-11-16/1794798380378-91cdd092-supervisor.json"
+}

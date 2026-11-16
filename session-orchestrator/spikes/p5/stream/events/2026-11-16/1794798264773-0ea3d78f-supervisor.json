@@ -1,0 +1,16 @@
+{
+  "id": "1794798264773-0ea3d78f-supervisor",
+  "at": "2026-11-16T03:04:24.773Z",
+  "session": "c01a56af-89e2-41db-918e-13690d701992",
+  "kind": "turn.start",
+  "from": "supervisor",
+  "to": "session:c01a56af-89e2-41db-918e-13690d701992",
+  "refs": {
+    "inbox": [
+      "1.txt"
+    ],
+    "answers": []
+  },
+  "subject": "",
+  "body": "bodies/2026-11-16/1794798264773-0ea3d78f-supervisor.json"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "1794798359743-231bccea-supervisor",
+  "at": "2026-11-16T03:05:59.743Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "kind": "turn.end",
+  "from": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "to": "supervisor",
+  "refs": {},
+  "subject": "I wrote GREEN into summary.txt and reported done to the orchestrator. GREEN was ",
+  "body": "bodies/2026-11-16/1794798359743-231bccea-supervisor.json"
+}

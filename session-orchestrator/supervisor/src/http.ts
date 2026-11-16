@@ -41,7 +41,7 @@ export function startHttp(supervisor: Supervisor, port: number): Server {
         const input = await body(request)
         if (!input.brief || !input.cwd) return reply(400, { error: 'brief and cwd are necessary' })
         const id = store.create({ title: input.title, cwd: input.cwd, parent: input.parent, createdBy: 'supervisor' }, input.brief)
-        store.event('brief', 'user', `session:${id}`, { title: input.title, cwd: input.cwd, text: String(input.brief).slice(0, 2000) }, {}, id)
+        store.event('brief', 'user', `session:${id}`, { title: input.title, cwd: input.cwd, text: String(input.brief) }, {}, id)
         supervisor.tick()
         return reply(201, { id })
       }

@@ -26,6 +26,11 @@ export function byName(a: string, b: string): number {
   return a.localeCompare(b, 'en', { numeric: true })
 }
 
+export function subject(data: Record<string, unknown>): string {
+  const text = String(data.question ?? data.summary ?? data.title ?? data.text ?? '')
+  return text.replace(/\s+/g, ' ').trim().slice(0, 80)
+}
+
 export class Store {
   readonly root: string
   constructor(root: string) {
@@ -178,7 +183,10 @@ export class Store {
     const at = new Date()
     const id = `${at.getTime()}-${randomUUID().slice(0, 8)}-supervisor`
     const day = at.toISOString().slice(0, 10)
-    this.write(join(this.root, 'events', day, `${id}.json`), JSON.stringify({ id, at: at.toISOString(), session, kind, from, to, data, refs }, null, 2))
+    const body = `bodies/${day}/${id}.json`
+    this.write(join(this.root, body), JSON.stringify(data, null, 2))
+    const event = { id, at: at.toISOString(), session, kind, from, to, subject: subject(data), body, refs }
+    this.write(join(this.root, 'events', day, `${id}.json`), JSON.stringify(event, null, 2))
   }
 
   events(): any[] {

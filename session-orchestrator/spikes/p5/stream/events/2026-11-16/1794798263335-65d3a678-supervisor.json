@@ -1,0 +1,13 @@
+{
+  "id": "1794798263335-65d3a678-supervisor",
+  "at": "2026-11-16T03:04:23.335Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "kind": "brief",
+  "from": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "to": "session:c01a56af-89e2-41db-918e-13690d701992",
+  "refs": {
+    "child": "c01a56af-89e2-41db-918e-13690d701992"
+  },
+  "subject": "Color child",
+  "body": "bodies/2026-11-16/1794798263335-65d3a678-supervisor.json"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "1794798267720-576ac214-supervisor",
+  "at": "2026-11-16T03:04:27.720Z",
+  "session": "7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "kind": "turn.end",
+  "from": "session:7b7b5dd4-6240-4065-962a-b0eef32e7a25",
+  "to": "supervisor",
+  "refs": {},
+  "subject": "I started the \"Color child\" session. Now I wait for its report.",
+  "body": "bodies/2026-11-16/1794798267720-576ac214-supervisor.json"
+}
