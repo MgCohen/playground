@@ -39,3 +39,12 @@ The build session made these decisions while the user was away. The user reviews
 | 2026-11-16 | Restart after `maxFailures` | A cooldown of 5 min that doubles each round, then the `blocked` notice and a new turn | A session must not stay blocked until a supervisor restart, and a broken session must not retry fast |
 | 2026-11-16 | Kill the grandchildren of a stopped turn with a Windows job object? | No. A test showed that the grandchild leaves the job | The host job probably allows silent breakaway. The limit is in `plan.md` |
 | 2026-11-16 | `orch open` in the live test | Tested with `--dry-run` only | A real run opens the desktop app of the user while the user is away |
+| 2026-11-16 | Blazor mode | Blazor Server (interactive server) in the supervisor process | The open question of `plan.md` recommended it. The UI reads the store and the supervisor state directly |
+| 2026-11-16 | How does the UI stay current? | Each view reloads its data every 2 s on the server and sends the change over the Blazor circuit | No extra push code. The store has files, not change events |
+| 2026-11-16 | Names of the template cards | `DecisionCard` and `DefaultCard` in the queue. `<Kind>Fields` cards (for example `ReportFields`) in the timeline | The queue cards take input; the timeline cards only show the fields of one event |
+| 2026-11-16 | Swipe on a decision card | Right accepts the default, left focuses the free-text field. 25 lines of JavaScript in `wwwroot/swipe.js` | The open question of `plan.md`. The stack allows small JavaScript parts in the UI |
+| 2026-11-16 | Voice input | Phone dictation in the text field. No extra code | The open question of `plan.md` |
+| 2026-11-16 | **Blocked**: Cloudflare Tunnel and Cloudflare Access | Not made | They need a Cloudflare account and a domain of the user |
+| 2026-11-16 | Sign-in without the tunnel | `ORCH_TOKEN`: open the page once with `?token=<token>` (a cookie for 30 days), or send the header `X-Orch-Token`. With no `ORCH_TOKEN`, the UI is open on 127.0.0.1 | The open question of `plan.md` asked for a token header with Cloudflare Access. The token works alone on a private network too |
+| 2026-11-16 | Address for a phone on the local network | `ORCH_BIND` (default `127.0.0.1`). `ORCH_BIND=0.0.0.0` with `ORCH_TOKEN` serves the phone on the same Wi-Fi | A step before the tunnel, with no account |
+| 2026-11-16 | The phone test | The browser pane of the desktop app at 375 × 812, not a real phone | A real phone needs the tunnel or a network address, and the user is away |
