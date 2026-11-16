@@ -14,6 +14,7 @@ namespace Orchestrator.Cli
 
             Sessions
               orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--agent A] [--worktree] [--allow-defaults] [--parent ID]
+              orch enable [--title T] [--parent ID] [--id ID]
               orch send <session> <text>
               orch tree
               orch status <session>
@@ -53,6 +54,7 @@ namespace Orchestrator.Cli
                 return args.Positional[0] switch
                 {
                     "new" => SessionCommands.New(command),
+                    "enable" => SessionCommands.Enable(command),
                     "send" => SessionCommands.Send(command),
                     "tree" => SessionCommands.Tree(command),
                     "status" => SessionCommands.Status(command),

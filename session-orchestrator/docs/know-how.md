@@ -84,6 +84,7 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - `orch archive <id>` removes the `enabled` file. The supervisor never runs the session again. The branch of its worktree stays.
 - A worktree folder is `<repo>.wt/orch-<id8>`, next to the repository, on branch `orch/session-<id8>`.
 - `orch open <id>` imports a session into the desktop app (`claude --desktop --resume` with the session folder as working folder). The app starts its process at once, and the plugin takes the lease `live`. The supervisor imports each session by itself after its first good turn, when it uses the default store (`ORCH_IMPORT=1` or `0` overrides). The first turn of a new session gets `-n <title>`, so the sidebar shows the title.
+- `orch enable [--title T] [--parent ID]` puts the session that runs it under the orchestrator. It reads `CLAUDE_CODE_SESSION_ID`, writes `meta.json` (title, parent, cwd, `started`, `imported`) and `enabled`, and prints the id. The hook activates after the next tool result, in the same turn. Use it in the brief of an app session that `start_session` started: the app links the session to its parent in the sidebar, and `--parent` links it in the store.
 
 ## The UI
 

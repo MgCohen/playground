@@ -44,6 +44,11 @@ async function activate($: any, dir: string, reason: unknown): Promise<void> {
   $.clock.every(TICK_MS, () => tick($))
 }
 
+async function activateIfEnabled($: any, event: string): Promise<void> {
+  const dir = await sessionDir($)
+  if (await $.fs.exists(`${dir}/enabled`)) await activate($, dir, { event })
+}
+
 async function writeMeta($: any, dir: string, title: string): Promise<void> {
   const path = `${dir}/meta.json`
   const old = await readJson($, path)
@@ -76,6 +81,7 @@ export const register: Register = on => {
   })
 
   on('turn.start', async ($, e, next) => {
+    if (!S.dir && e.agentId === undefined) await activateIfEnabled($, 'turn.start')
     if (S.dir && e.agentId === undefined) {
       S.idle = false
       await writeStatus($, 'running', e.turnId)
@@ -94,6 +100,7 @@ export const register: Register = on => {
   })
 
   on('session.append', async ($, e, next) => {
+    if (!S.dir && e.agentId === undefined && e.door === 'tool-result') await activateIfEnabled($, 'orch enable')
     if (S.dir && e.agentId === undefined && MIRROR_DOORS.includes(e.door)) await mirror($, e)
     return next(e)
   })
