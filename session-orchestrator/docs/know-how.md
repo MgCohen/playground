@@ -77,3 +77,10 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - The build embeds the repository path, so `orch` finds `templates/` and `config/` from any folder. `ORCH_HOME` overrides it.
 - `orch` uses `ORCH_STORE`. A supervisor turn sets it, so a session that runs `orch` writes to the store of its supervisor.
 - `orch doctor` checks the home, the store, the policy, the templates, `claude`, `gh`, the plugin path and the supervisor.
+
+## Session lifecycle
+
+- `orch stop <id>` ends a running turn: the supervisor cancels it and kills the `claude` process tree. A grandchild of a tool can outlive it and keep files locked until it ends.
+- `orch archive <id>` removes the `enabled` file. The supervisor never runs the session again. The branch of its worktree stays.
+- A worktree folder is `<repo>.wt/orch-<id8>`, next to the repository, on branch `orch/session-<id8>`.
+- `orch open <id>` opens a session in the desktop app. Then send it one message in the app, so that its process starts and the plugin takes the lease.

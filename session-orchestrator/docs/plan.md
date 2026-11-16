@@ -327,6 +327,23 @@ Findings:
 - A session loads the skills of its brief with the `Skill` tool before its first step. The events show each load as a `session.tool` event.
 - The test supervisor ran the plugin with `--plugin-dir` and `--permission-mode auto`, so the settings stayed unchanged until the end of the test.
 
+## M3 result (2026-11-16)
+
+| Part | Result | Evidence |
+|---|---|---|
+| Two code sessions in one repository | ✅ "Calc: subtract" and "Calc: multiply" changed `calc.py` at the same time, each in its own worktree and branch. `main` stayed clean | Test repository `m3repo`, sessions `5317be82` and `5e999bf0` |
+| Worktrees | ✅ The first turn of a brief with `worktree: true` makes `<repo>.wt/orch-<id8>` on `orch/session-<id8>` | `branch.create` events |
+| Stop | ✅ `orch stop` ended a running turn after 67 s. The `claude` process ended, the inbox stayed, and no new turn started | Session `f79426d3` |
+| Archive | ✅ `orch archive` removed the clean worktrees and kept the branches. It refuses open decisions and open PRs without `--force` | `LifecycleTests` |
+| Restart after failures | ✅ After `maxFailures`, the session waits 5 min (then 10, 20...), gets the `blocked` notice and runs again | `LifecycleTests` |
+| App import | ✅ `orch open` runs `claude.exe --desktop --resume <id>` with `Start-Process`, and refuses a session with a running turn. Not run live: it opens the app of the user | `orch open --dry-run` |
+| Unit tests | ✅ 51 tests | `dotnet test --solution Orchestrator.slnx` |
+
+Findings:
+
+- A stop ends the `claude` process tree, but a grandchild of the session's Bash tool can live on: the `powershell Start-Sleep` of the test ran to its end. That process kept the worktree folder locked, so `orch archive` removed the worktree from git but not the folder. A Windows job object did not help: the grandchild left the job, probably because the host job allows silent breakaway. Archive a stopped session after its tools end.
+- `git worktree add` works from a session folder of any depth: the supervisor finds the repository with `git rev-parse --show-toplevel`.
+
 ## Next steps
 
 Status: the user reviewed the design page and accepted it. The user then asked for the folder structure, the code topology and a roadmap to a stable version. They are on the page (tabs Code and Roadmap) and in this file. The next work is M0, after the user accepts the roadmap. The notes arrive in the chat, or as comments on the page: read them with the `ArtifactComments` tool on the page URL. After a design change, edit `docs/orchestrator-design.html` and publish it with the `Artifact` tool and `url` set to the page URL.
@@ -359,7 +376,6 @@ Rules of the vsa-template work that the M5 stream must obey:
 | Question | Recommendation |
 |---|---|
 | Use the VSA framework for the orchestrator? | Not now. Plain .NET until 1.0; decide after the VSA 0.1.0 release |
-| Worktrees: does the supervisor make them, or each brief? | The supervisor makes them and records the folder in `meta.json` |
 | Tunnel: which tool and which sign-in? | Cloudflare Tunnel with Cloudflare Access |
 | Store: files, or SQLite? | Files until M5 shows a real problem |
 | `medium` has `checkDocs: true`. The user named the docs answer only for `low` | Keep it, and ask the user at the M4 start |
@@ -374,9 +390,7 @@ Rules of the vsa-template work that the M5 stream must obey:
 
 - PR comments show the user (`MgCohen`) as author. Each orchestrator PR title, body and comment starts with `[orch]`, so a reader can tell them apart.
 - Supervisor sessions are not in the app sidebar. Open them with the app import (`docs/know-how.md`).
-- The supervisor does not restart a session after `maxFailures` (3) until the supervisor restarts.
 - `/orch-enable` is not tested in the app.
-- The supervisor has no API to stop or archive a session, but the goal needs both.
 
 ## Test sessions in the app sidebar
 
