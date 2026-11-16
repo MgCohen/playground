@@ -73,6 +73,9 @@ public sealed record EvalResult
     [JsonPropertyName("graders")]
     public required List<string> Graders { get; init; }
 
+    [JsonPropertyName("solution_graders")]
+    public List<string> SolutionGraders { get; init; } = [];
+
     [JsonPropertyName("catalog")]
     public required string Catalog { get; init; }
 
@@ -109,7 +112,7 @@ public sealed class EvalRunner(PackRegistry packs, GraderSet graders, IReadOnlyL
     {
         var pack = packs.Load(domain);
         var cases = Cases(pack, options);
-        var gradersToRun = graders.Select(pack.Settings.Section("grading").List("graders"), pack.Pack);
+        var gradersToRun = graders.Plan(pack.Settings.Section("grading"), pack.Pack);
         var ablations = Ablations.Named(options.Ablate);
         var runId = DateTime.UtcNow.ToString("yyyy-MM-ddTHH-mm-ss", System.Globalization.CultureInfo.InvariantCulture) + (options.Ablate.Count > 0 ? "-" + string.Join("+", options.Ablate) : string.Empty);
         var paths = pack.Settings.Section("paths");
@@ -166,7 +169,8 @@ public sealed class EvalRunner(PackRegistry packs, GraderSet graders, IReadOnlyL
             Model = options.Model,
             K = options.K,
             Ablate = [.. options.Ablate],
-            Graders = gradersToRun.Select(g => g.Name).ToList(),
+            Graders = gradersToRun.Output.Select(g => g.Name).ToList(),
+            SolutionGraders = gradersToRun.Solution.Select(g => g.Name).ToList(),
             Catalog = pack.Catalog.Hash,
             Cases = cases.Count,
             Runs = records.OrderBy(r => r.Case, StringComparer.Ordinal).ThenBy(r => r.Run).ToList(),

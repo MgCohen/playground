@@ -7,7 +7,7 @@ namespace PatternEngine.Domains.Blocks;
 /// <summary>Builds a solution block: each item is a part with its item id, and the wires of the plan join their ports.</summary>
 public static class BlockJoin
 {
-    public static string? Build(IReadOnlyList<SolutionItem> items, JoinPlan plan)
+    public static string? Build(IReadOnlyList<SolutionItem> items, JoinPlan plan, string pattern = Solution.Id, string? variant = null)
     {
         var parts = new JsonArray();
         foreach (var item in items)
@@ -39,8 +39,8 @@ public static class BlockJoin
 
         return new JsonObject
         {
-            ["p"] = Solution.Id,
-            ["v"] = "plain",
+            ["p"] = pattern,
+            ["v"] = variant ?? "plain",
             ["inputs"] = new JsonArray(plan.Inputs.Select(x => (JsonNode)x).ToArray()),
             ["outputs"] = new JsonArray(plan.Outputs.Select(x => (JsonNode)x).ToArray()),
             ["parts"] = parts,
@@ -56,13 +56,7 @@ public static class BlockJoin
             return null;
         }
 
-        var types = BlockAdapter.PortTypes(n, catalog);
-        string? Type(string port) => types.GetValueOrDefault(port);
-        var inputs = n.DeclaredInputs.Select(x => (x, n.Wires.Where(w => w.From == x).Select(w => Type(w.To)).FirstOrDefault(t => t is not null)))
-            .Where(p => p.Item2 is not null).Select(p => new Port(p.x, p.Item2!)).ToList();
-        var outputs = n.DeclaredOutputs.Select(x => (x, n.Wires.Where(w => w.To == x).Select(w => Type(w.From)).FirstOrDefault(t => t is not null)))
-            .Where(p => p.Item2 is not null).Select(p => new Port(p.x, p.Item2!)).ToList();
-        return (inputs, outputs);
+        return BlockAdapter.TypedPorts(n, catalog);
     }
 
     /// <summary>s1_request → s1.request: the outer port name back to the item port.</summary>

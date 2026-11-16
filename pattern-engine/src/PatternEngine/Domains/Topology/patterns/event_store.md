@@ -7,7 +7,7 @@ primitive: component
 inputs:
   - { name: event, type: Event }
 outputs:
-  - { name: event, type: Event }
+  - { name: saved, type: Saved }
 ---
 ## Intent
-Saves an event and passes it on.
+Saves an event.

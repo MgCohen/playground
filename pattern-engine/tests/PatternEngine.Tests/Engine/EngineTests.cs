@@ -123,6 +123,19 @@ public sealed class EngineTests
         Assert.That(grades.Consistent, Is.True);
     }
 
+    [Test]
+    public async Task A_shapes_solution_puts_each_pattern_in_its_own_slot()
+    {
+        var judge = ShapesScript.Judge(call => call.Agent == "decider" && ShapesScript.Request(call.Input).StartsWith("Draw a house", StringComparison.Ordinal)
+            ? new { status = "partial_fit", pattern = "house", variant = "plain", open = new[] { "a tree next to it" }, reason = "the house does not cover the tree" }
+            : null);
+        var run = await ShapesScript.RunAsync("Draw a house with a tree next to it.", judge);
+        Assert.That(run.Trace.Outcome, Is.EqualTo(Outcomes.Match));
+        Assert.That(run.Trace.Remainder.Single().Joined, Is.True);
+        var grades = Grade(run, new Expect { Outcome = Outcomes.Match, Tree = new TreeNode { P = "solution", Parts = [new() { P = "house" }, new() { P = "tree" }] } });
+        Assert.That(grades.Verdicts.Where(v => !v.Value.Ok).Select(v => $"{v.Key}: {v.Value.Failures[0]}"), Is.Empty);
+    }
+
     internal static GradeReport Grade(EngineRunResult run, Expect expect, Dictionary<string, string>? hidden = null)
     {
         var c = new Case { Id = "t", Source = "test", Tags = [], Request = "r", Expect = expect, Hidden = hidden };

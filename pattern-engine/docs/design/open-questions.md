@@ -26,22 +26,26 @@
 | Q14 | Results | Results in git | Keep the current setup: result files in git, run outputs outside git |
 | Q15 | Code | CLI or API | The Claude CLI with the subscription login, behind `IJudge`. Do not use `--bare`: it ignores the subscription login |
 | Q16 | Code | When to port | Now. The new work is built directly in C# with the VSA framework. The Node spike is the parity reference for `shapes` |
+| Q17 | Graders | What decides the pass? | The output, not the solution. A case states a clear input and a clear expected output: a truth table (circuits) or typed data flow `io` (topology). Each solution that gives that output passes. Solution graders (the tree, the patterns) give a grade, never the pass. Later the engine can use the grade to look for a better solution |
+| Q18 | Catalog | Does a command pipeline save? | No. A command pipeline takes a command in, runs it, and gives an event out. Saving is a second pattern: `store` |
+| Q19 | Engine | How does a group pattern join its parts? | With the same port rule as a solution (`cqrs_system` too). An output is also an output of the whole, so an event can go to a part inside and to a pattern outside |
+| Q20 | Graders | A pattern of a solution with no wire to the others | A failure of the flow grader |
+| Q21 | Pack | A solution in `shapes` | Each pattern of the solution gets its own slot, side by side |
+| Q22 | Roles | Which roles are agents and which are people | Later. It stays a setting |
 
 ## Open questions
 
 | Area | Question |
 |---|---|
 | Engine | The map of code and agents: a proposal is in [build-log.md](build-log.md). Review it and change the balance if needed |
-| Roles | Which roles are agents and which are people: reviewer, author, approver, grader |
 | Review | How notes become asserts and operators |
 | Code | How a domain pack fits the VSA layout: a feature module, a plugin module, or a separate assembly that the app loads |
 | Code | Does a persistent `stream-json` CLI process keep `--agent` and `--json-schema` for each message? Not tested yet: one process for each call works and keeps the context clean |
 | Cases | The topology case "a query handler that also saves the changes" goes to the system pattern. Owner view: both, a command pipeline whose entry point also needs a save part. This is a partial fit (Q3). To discuss: where the save part connects, and if a pattern can name a slot for it |
-| Cases | A partial-fit request has more than one correct split. "Retry a payment with a delay" gave an observer with two authored items, and a command pipeline with no remainder. How does a case accept each correct split? |
-| Engine | The `cqrs_system` assembly still wires the pipeline events to each observer by name (D17). Replace it with the port rule of the join step? |
-| Engine | `shapes` cannot join a solution yet: its patterns have no ports. Proposal: each remainder item gets its own slot in the scene |
-| Grading | The flow grader does not find a pattern of a solution that has no wire to the others. Today the join step writes a note. Make it a failure? |
-| Engine | A retry sends data back to an earlier step, so its data flow has a loop. The block rules forbid loops. How does a pattern show a retry? |
+| Engine | Retries are loops (owner). The block rules forbid a loop in the data flow. How does a solution show a retry: a loop inside one pattern, or a loop in the wires between patterns? |
+| Engine | The decider does not see the ports of the candidates. In a real run, it put a store after a query handler; the output gate found it (a store needs an Event). Give the ports to the decider? |
+| Engine | A solution in `shapes` with a street in it is not joined yet: a street uses all of the scene |
+| Engine | Use the solution grade in the run: if the output is correct but the grade is low, look for another solution |
 | Engine | An escalation during compose can change the pattern of a node. Child nodes that the new pattern needs are not decided |
 
 ## Non-goals

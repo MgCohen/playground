@@ -68,7 +68,7 @@ public sealed class CircuitsTests
         EngineRun.Prepare(pack, dir);
         var run = await EngineRun.RunAsync(pack, "Build a circuit that adds three bits.", dir, EngineSettings.From(settings), judge, new NoUser(), CancellationToken.None);
         var c = new Case { Id = "c", Source = "t", Tags = [], Request = "r", Expect = new Expect { Outcome = Outcomes.Match, Tree = new TreeNode { P = "full_adder" } } };
-        var graders = GraderSet.Default.Select(settings.Section("grading").List("graders"), Pack);
+        var graders = GraderSet.Default.Plan(settings.Section("grading"), Pack);
         var grades = RunGrading.Grade(c, Pack, run.Catalog, run.Trace, File.ReadAllText(run.OutputFile), graders);
         Assert.That(grades.Verdicts.Keys, Does.Contain("behavior"));
         Assert.That(grades.Verdicts.Where(v => !v.Value.Ok).Select(v => $"{v.Key}: {v.Value.Failures[0]}"), Is.Empty);

@@ -1,0 +1,562 @@
+{
+  "runId": "2026-11-16T12-31-39",
+  "domain": "circuits",
+  "engine": "csharp-hybrid",
+  "mode": "dev",
+  "label": null,
+  "model": "haiku",
+  "k": 1,
+  "ablate": [],
+  "graders": [
+    "structure",
+    "rules",
+    "behavior",
+    "questions"
+  ],
+  "solution_graders": [
+    "selection",
+    "built",
+    "proposed"
+  ],
+  "catalog": "b6c00f7ec3a0",
+  "cases": 5,
+  "runs": [
+    {
+      "case": "gen-001",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Build a one-bit equality checker.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "equal",
+          "v": "plain"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "equal",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "b6c00f7ec3a0",
+          "patterns": {
+            "equal": "4f7a3d759d95"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a one-bit equality checker.",
+            "status": "solved",
+            "pattern": "equal",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request checks whether two bits are the same, which matches the equal pattern's use_when, and it has no exclusion rule that applies; the adder and mux candidates do not match."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true,
+        "solution": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          }
+        },
+        "solution_score": 1
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 31516,
+        "Cost": 0.00110617,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "gen-002",
+      "run": 1,
+      "tags": [
+        "generated",
+        "object"
+      ],
+      "request": "Build a half adder.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "half_adder",
+          "v": "plain"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "half_adder",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "b6c00f7ec3a0",
+          "patterns": {
+            "half_adder": "d15a5d97f7e6"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a half adder.",
+            "status": "solved",
+            "pattern": "half_adder",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request names a half adder, which adds two bits with no carry in, matching half_adder's use_when; full_adder's exclusion rule points to half_adder for a two-bit add with no carry in, and half_adder's own exclusions do not apply."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true,
+        "solution": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          }
+        },
+        "solution_score": 1
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 25933,
+        "Cost": 0.00117667,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-near-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss-easy"
+      ],
+      "request": "Build a circuit that adds three input bits.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "full_adder"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "full_adder",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "b6c00f7ec3a0",
+          "patterns": {
+            "full_adder": "0cc274e846ee"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a circuit that adds three input bits.",
+            "status": "solved",
+            "pattern": "full_adder",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request adds three bits, which full_adder's use_when covers, and the do_not_use_when exclusion (two bits with no carry in) does not apply; half_adder only handles two bits, so full_adder is the clear match."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true,
+        "solution": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          }
+        },
+        "solution_score": 1
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 35873,
+        "Cost": 0.0014856700000000001,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-nofit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "no-fit"
+      ],
+      "request": "Build a circuit whose output is 1 when at least two of its three inputs are 1.",
+      "expect": {
+        "outcome": "no-fit",
+        "nearest": [
+          "full_adder",
+          "mux2",
+          "half_adder",
+          "equal"
+        ],
+        "spec": "majority"
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "no-fit",
+        "tree": {
+          "p": "majority3",
+          "v": "plain"
+        },
+        "nearest": "full_adder",
+        "deltas": [
+          "Drop the sum output; the circuit has only one output bit.",
+          "Output y is 1 when at least two of the three inputs a, b, cin are 1 (the carry-out majority function).",
+          "Do not use half_adder as a child because the request does not add bits."
+        ],
+        "proposed": "patterns/majority3.md",
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "fe622d8188d4",
+          "patterns": {
+            "majority3": "ed07e04e97f0"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a circuit whose output is 1 when at least two of its three inputs are 1.",
+            "status": "none",
+            "pattern": "majority3",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request asks for a 2-of-3 majority output, not an addition, so no candidate's use_when matches; full_adder is nearest because it takes three bit inputs and its cout is the same majority function."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "the circuit has no port c"
+            ]
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": false,
+        "consistent": true,
+        "solution": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "solution_score": 1
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 49293,
+        "Cost": 0.0029463700000000002,
+        "Calls": 3,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Build a half adder that also takes a carry in.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "full_adder"
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "full_adder",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 2,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "b6c00f7ec3a0",
+          "patterns": {
+            "full_adder": "0cc274e846ee"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Build a half adder that also takes a carry in.",
+            "status": "solved",
+            "pattern": "full_adder",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request adds two bits plus a carry in, which matches full_adder's use_when; half_adder is excluded because the request includes a carry in, and full_adder's own exclusion (no carry in, two bits) does not apply."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "behavior": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true,
+        "solution": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          }
+        },
+        "solution_score": 1
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 50555,
+        "Cost": 0.00320314,
+        "Calls": 3,
+        "Escalations": 0,
+        "Error": null
+      }
+    }
+  ]
+}

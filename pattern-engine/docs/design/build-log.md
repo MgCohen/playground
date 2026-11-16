@@ -94,7 +94,7 @@ flowchart TD
 | D14 | Trial metrics read all C# result files of the pack | Q14 keeps the result files in git, so the history is there. |
 | D15 | The review page uses the template of the spike | It was already checked at both widths; the C# builder fills it. |
 | D16 | Circuits and topology share a `Domains/Blocks` kit: block model, wiring, types, loops | Both are blocks with ports and wires. The kit is domain code, not core code. |
-| D17 | Topology: code assembles a system and wires the events of the pipeline to each observer | A composition rule of the domain, not a judgment. |
+| D17 (replaced by D30) | Topology: code assembles a system and wires the events of the pipeline to each observer | A composition rule of the domain, not a judgment. |
 | D18 | Behavior graders are pack graders: `behavior` (circuits, truth table) and `flow` (topology, data flow) | Q10: rules that code can run come first. |
 | D19 | The escalation agent has the tools Read, Grep and Glob, and runs in the sandbox | It can read the catalog files; it cannot change files. |
 | D20 | `results/solve/` and `results/runs/` stay out of git | Q14: only the result files are in git. |
@@ -103,6 +103,11 @@ flowchart TD
 | D23 | `ILayout.Join` and `ILayout.Ports` are optional. The Blocks kit implements them for topology and circuits. A pattern with no catalog ports, for example an assembled `cqrs_system`, gets its ports from the wires of its fragment | One contract for each pack. A pack that cannot join yet records the remainder as not joined. |
 | D24 | pattern-author writes typed ports if the catalog has them. Code refuses a proposed pattern with no ports or with a type that the catalog does not have | Without ports, code cannot join the pattern. |
 | D25 | An expected tree can use `p: "*"` for a pattern that the run authors | A case cannot know the id of an authored pattern. |
+| D26 | Two grader lists in the settings: `grading.output` decides the pass; `grading.solution` gives `solution_score` in each result | Q17. A grader moves between the lists with no code change |
+| D27 | Circuits and topology: the output list has `structure`, `rules`, the behavior grader (`behavior` or `flow`) and `questions`; `selection`, `built` and `proposed` are solution graders. Shapes keeps all graders in the output list | Shapes has no behavior to simulate: the drawing is the output |
+| D28 | A topology case states `io` (input types and output types). If a case has no `io`, the flow grader uses the ports of the reference of its tree. A case with no behavior fails | No magic: each case has a clear expected output |
+| D29 | The behavior grader of circuits fails a case that names no truth table. The request names the ports of the truth table | Q17: a clear input and a clear output. A real run named the ports in a different way |
+| D30 | `PortJoin` holds the port rule in the pack contracts. The join step and the `cqrs_system` assembly both use it; D17 is replaced | Q19. One rule for each join |
 
 ## Core changes that the new domains needed
 
@@ -126,6 +131,7 @@ The second and third domains are the test of the core. Each change below is a pl
 - **After the Q3 change.** In two Haiku runs of the delay case, no run asked about scope. One run chose the observer, with two authored remainder items. One run chose the command pipeline with no remainder. The engine works as designed; the case accepts only one split.
 - **An ambiguous near-miss case.** "A query handler that also saves the changes" went to the system pattern (two jobs). The case expects the command pipeline. The case or the system rule needs a decision; it was not tuned.
 - **The join in a real run.** "Place orders through a command pipeline; after each order event, wait ten minutes, then send a reminder" gave a solution of `cqrs_system` and an authored delayed observer. The first run showed a defect: an assembled system has no catalog ports, so it had no wire. Fixed with D23. The second run wired the order event to the delay. Cost $0.007 for each run.
+- **The output gate on real runs.** Topology dev (5 runs): 4 pass. The fail is correct: for "a query handler that also saves", the engine joined a query handler to a store, and a store needs an Event. Circuits dev (5 runs): 4 pass, then 5 after the majority case named its ports. Solution grades were 4/5 and 5/5.
 - **Cost.** The code-led engine costs $0.002 to $0.004 for each run with Haiku, with 2 to 9 agent calls.
 
 ## Extension points

@@ -62,7 +62,53 @@ public sealed class FlowGrader : IGrader
             failures.AddRange(Flow(top, input.Catalog));
         }
 
+        failures.AddRange(Islands(top));
+        if (failures.Count == 0 && input.Case.Expect.Outcome != Outcomes.Ask)
+        {
+            var io = input.Case.Expect.Io ?? Derived(input);
+            failures.AddRange(io is null ? ["the case has no expected behavior: give io, or a tree that has a reference"] : Io(top, input.Catalog, io));
+        }
+
         return Verdict.From(failures);
+    }
+
+    /// <summary>
+    /// The expected output against the typed ports of the top block. The solution must not need an input type that the request does not give,
+    /// and it must give each expected output type. The flow check before makes sure that each output gets a value.
+    /// </summary>
+    public static IReadOnlyList<string> Io(BlockNode top, PatternCatalog catalog, IoSpec io)
+    {
+        var (inputs, outputs) = BlockAdapter.TypedPorts(top, catalog);
+        var failures = inputs.Where(p => !io.Inputs.Contains(p.Type)).Select(p => $"the solution needs a {p.Type} input (\"{p.Name}\"); the request gives {string.Join(", ", io.Inputs)}").ToList();
+        failures.AddRange(io.Outputs.Where(t => outputs.All(p => p.Type != t)).Select(t => $"the solution gives no {t} output"));
+        return failures;
+    }
+
+    /// <summary>A part of a solution with no wire to another part: it does not take part in the data flow of the solution.</summary>
+    public static IReadOnlyList<string> Islands(BlockNode top)
+    {
+        if (top.Pattern != Solution.Id)
+        {
+            return [];
+        }
+
+        static string Owner(string port) => port.Contains('.', StringComparison.Ordinal) ? port.Split('.')[0] : string.Empty;
+        var joined = top.Wires.Where(w => Owner(w.From).Length > 0 && Owner(w.To).Length > 0 && Owner(w.From) != Owner(w.To))
+            .SelectMany(w => new[] { Owner(w.From), Owner(w.To) }).ToHashSet(StringComparer.Ordinal);
+        return top.Parts.Count() < 2 ? [] : top.Parts.Where(p => p.Id is not null && !joined.Contains(p.Id)).Select(p => $"{Solution.Id}: the pattern \"{p.Id}\" ({p.Pattern}) has no wire to another pattern").ToList();
+    }
+
+    /// <summary>The expected output of a case with no io: the typed ports of the reference output of its expected tree.</summary>
+    private static IoSpec? Derived(GradeInput input)
+    {
+        if (input.Case.Expect.Tree is not { } tree || input.Pack.Reference?.Render(tree, input.Catalog) is not { } reference
+            || input.Pack.Adapter.Parse(reference).Roots.FirstOrDefault() is not BlockNode top)
+        {
+            return null;
+        }
+
+        var (inputs, outputs) = BlockAdapter.TypedPorts(top, input.Catalog);
+        return new IoSpec { Inputs = inputs.Select(p => p.Type).Distinct().ToList(), Outputs = outputs.Select(p => p.Type).Distinct().ToList() };
     }
 
     public static IReadOnlyList<string> Flow(BlockNode n, PatternCatalog catalog)
@@ -97,7 +143,7 @@ public sealed class FlowGrader : IGrader
     }
 }
 
-/// <summary>Code assembles a system from its parts: each open port of a part becomes a port of the system, and the events of the command pipeline go to each observer.</summary>
+/// <summary>The layout of topology: code assembles a system with the port rule of a join, and joins a solution in the same way.</summary>
 public sealed class TopologyLayout : ILayout
 {
     private static readonly Slot Empty = new(new Dictionary<string, double>());
@@ -118,46 +164,21 @@ public sealed class TopologyLayout : ILayout
 
     private static readonly BlockAdapter Adapter = new("component", true);
 
-    public string Assemble(string pattern, string? variant, IReadOnlyList<string> fragments)
+    /// <summary>
+    /// Code assembles a system with the port rule of a join (<see cref="PortJoin"/>): each input takes the one output of another part
+    /// with the same type. If more than one output fits, code takes the first part in order and writes no agent call: a group pattern
+    /// is assembled only by code.
+    /// </summary>
+    public string Assemble(string pattern, string? variant, IReadOnlyList<string> fragments, PatternCatalog catalog)
     {
-        var parts = new JsonArray();
-        var wires = new JsonArray();
-        var inputs = new JsonArray();
-        var outputs = new JsonArray();
-        var blocks = fragments.Select((f, i) => (Node: JsonNode.Parse(f) as JsonObject, Id: $"c{i + 1}")).Where(x => x.Node is not null).ToList();
-        var pipeline = blocks.FirstOrDefault(b => b.Node!["p"]?.ToString() == "command_pipeline");
-        foreach (var (node, id) in blocks)
+        var items = fragments.Select((f, i) => new SolutionItem($"c{i + 1}", (JsonNode.Parse(f) as JsonObject)?["p"]?.ToString() ?? string.Empty, f)).ToList();
+        var (plan, choices) = PortJoin.Plan(catalog, items, this);
+        if (choices.Count > 0)
         {
-            node!["id"] = id;
-            parts.Add(node);
-            var p = node["p"]?.ToString();
-            var (ins, outs) = p switch
-            {
-                "command_pipeline" => (["request"], ["event"]),
-                "query_handler" => (new[] { "request" }, new[] { "view" }),
-                "observer" => (["event"], ["effect"]),
-                _ => (Names(node["inputs"]), Names(node["outputs"])),
-            };
-            foreach (var x in ins)
-            {
-                if (p == "observer" && x == "event" && pipeline.Node is not null)
-                {
-                    wires.Add(new JsonArray($"{pipeline.Id}.event", $"{id}.event"));
-                    continue;
-                }
-
-                inputs.Add($"{id}_{x}");
-                wires.Add(new JsonArray($"{id}_{x}", $"{id}.{x}"));
-            }
-
-            foreach (var x in outs)
-            {
-                outputs.Add($"{id}_{x}");
-                wires.Add(new JsonArray($"{id}.{x}", $"{id}_{x}"));
-            }
+            plan = PortJoin.Finish(catalog, items, [.. plan.Wires, .. choices.Select(c => new JoinWire(c.Options[0], c.Input))], [.. plan.Inputs], this);
         }
 
-        return new JsonObject { ["p"] = pattern, ["v"] = variant ?? "plain", ["inputs"] = inputs, ["outputs"] = outputs, ["parts"] = parts, ["wires"] = wires }.ToJsonString();
+        return BlockJoin.Build(items, plan, pattern, variant) ?? string.Empty;
     }
 
     private static string[] Names(JsonNode? node) => (node as JsonArray ?? []).Select(x => x is JsonObject o ? o["name"]?.ToString() : x?.ToString()).OfType<string>().ToArray();
@@ -171,7 +192,7 @@ public sealed class TopologyReference : IReferenceRenderer
         if (tree.P == "cqrs_system")
         {
             var kids = (tree.Parts ?? []).Select(k => Block(k.P, k.V)?.ToJsonString()).OfType<string>().ToList();
-            return new TopologyLayout().Assemble("cqrs_system", tree.V, kids);
+            return new TopologyLayout().Assemble("cqrs_system", tree.V, kids, catalog);
         }
 
         return Block(tree.P, tree.V)?.ToJsonString();
@@ -191,11 +212,12 @@ public sealed class TopologyReference : IReferenceRenderer
         return p switch
         {
             "command_pipeline" when v == "validated" => Make("validated",
-                [Leaf("in", "endpoint"), Leaf("check", "validator"), Leaf("run", "handler"), Leaf("save", "event_store")],
-                ["request", "in.request"], ["in.command", "check.command"], ["check.command", "run.command"], ["run.event", "save.event"], ["save.event", "event"]),
+                [Leaf("in", "endpoint"), Leaf("check", "validator"), Leaf("run", "handler")],
+                ["request", "in.request"], ["in.command", "check.command"], ["check.command", "run.command"], ["run.event", "event"]),
             "command_pipeline" => Make("plain",
-                [Leaf("in", "endpoint"), Leaf("run", "handler"), Leaf("save", "event_store")],
-                ["request", "in.request"], ["in.command", "run.command"], ["run.event", "save.event"], ["save.event", "event"]),
+                [Leaf("in", "endpoint"), Leaf("run", "handler")],
+                ["request", "in.request"], ["in.command", "run.command"], ["run.event", "event"]),
+            "store" => Make("plain", [Leaf("save", "event_store")], ["event", "save.event"], ["save.saved", "saved"]),
             "query_handler" => Make("plain", [Leaf("in", "query_endpoint"), Leaf("read", "reader")], ["request", "in.request"], ["in.query", "read.query"], ["read.view", "view"]),
             "observer" => Make("plain", [Leaf("s1", "subscriber")], ["event", "s1.event"], ["s1.effect", "effect"]),
             _ => null,

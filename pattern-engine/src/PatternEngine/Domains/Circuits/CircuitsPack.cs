@@ -43,9 +43,14 @@ public sealed class BehaviorGrader : IGrader
     public Verdict Grade(GradeInput input)
     {
         var id = input.Case.Expect.Spec ?? (input.Case.Expect.Outcome == Outcomes.Match ? input.Case.Expect.Tree?.P : null);
-        if (id is null || !BehaviorSpec.All.TryGetValue(id, out var spec))
+        if (input.Case.Expect.Outcome == Outcomes.Ask)
         {
             return Verdict.Skip;
+        }
+
+        if (id is null || !BehaviorSpec.All.TryGetValue(id, out var spec))
+        {
+            return Verdict.From([$"the case has no expected behavior: give spec (one of {string.Join(", ", BehaviorSpec.All.Keys)})"]);
         }
 
         if (input.Parsed?.Roots.FirstOrDefault() is not BlockNode top)
@@ -69,7 +74,7 @@ public sealed class CircuitsLayout : ILayout
 
     public string SlotText(Slot slot) => "Give the full block as one JSON object, with its parts and wires.";
 
-    public string Assemble(string pattern, string? variant, IReadOnlyList<string> fragments) => throw new InvalidOperationException("circuits are not assembled by code");
+    public string Assemble(string pattern, string? variant, IReadOnlyList<string> fragments, PatternCatalog catalog) => throw new InvalidOperationException("circuits are not assembled by code");
 
     public string Wrap(string fragment) => fragment;
 

@@ -172,6 +172,25 @@ public sealed class BlockAdapter(string primitive, bool typed) : IOutputAdapter
         return (inputs, outputs);
     }
 
+    /// <summary>
+    /// The typed outer ports of a block: from the catalog, or, for a block with no catalog ports (a solution, an assembled system),
+    /// from its wires: an input has the type of the part port that it drives; an output has the type of its source.
+    /// </summary>
+    public static (IReadOnlyList<Port> Inputs, IReadOnlyList<Port> Outputs) TypedPorts(BlockNode n, PatternCatalog catalog)
+    {
+        if (catalog.Get(n.Pattern) is { } p && p.Inputs.Count + p.Outputs.Count > 0)
+        {
+            return (p.Inputs, p.Outputs);
+        }
+
+        var types = PortTypes(n, catalog);
+        var inputs = n.DeclaredInputs.Select(x => (Name: x, Type: n.Wires.Where(w => w.From == x).Select(w => types.GetValueOrDefault(w.To)).FirstOrDefault(t => t is not null)))
+            .Where(x => x.Type is not null).Select(x => new Port(x.Name, x.Type!)).ToList();
+        var outputs = n.DeclaredOutputs.Select(x => (Name: x, Type: n.Wires.Where(w => w.To == x).Select(w => types.GetValueOrDefault(w.From)).FirstOrDefault(t => t is not null)))
+            .Where(x => x.Type is not null).Select(x => new Port(x.Name, x.Type!)).ToList();
+        return (inputs, outputs);
+    }
+
     public static IReadOnlyList<string> Wiring(BlockNode n, PatternCatalog catalog, bool typed = false)
     {
         var problems = new List<string>();

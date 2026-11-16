@@ -21,8 +21,11 @@ public static class Metrics
     public static IReadOnlyList<Metric> Of(EvalResult result)
     {
         var runs = result.Runs;
-        bool Ok(RunRecord r, string grader) => r.Grades.Verdicts.TryGetValue(grader, out var v) && v.Ok;
-        bool Ran(RunRecord r, string grader) => r.Grades.Verdicts.TryGetValue(grader, out var v) && !v.Skipped;
+        // A grader is an output grader or a solution grader; a metric of one grader reads it from either list.
+        static Grading.Domain.GraderOutcome? Find(RunRecord r, string grader) =>
+            r.Grades.Verdicts.TryGetValue(grader, out var v) ? v : r.Grades.Solution.TryGetValue(grader, out var s) ? s : null;
+        bool Ok(RunRecord r, string grader) => Find(r, grader) is { Ok: true };
+        bool Ran(RunRecord r, string grader) => Find(r, grader) is { Skipped: false };
         Metric Grader(string id, string label, string grader)
         {
             var ran = runs.Where(r => Ran(r, grader)).ToList();
@@ -40,9 +43,10 @@ public static class Metrics
             Grader("built", "built tree matches", "built"),
             Grader("structure", "structure pass", "structure"),
             Grader("rules", "rules pass", "rules"),
-            .. runs.SelectMany(r => r.Grades.Verdicts.Keys).Distinct().Where(g => g is not ("selection" or "built" or "structure" or "rules" or "proposed" or "questions"))
+            .. runs.SelectMany(r => r.Grades.Verdicts.Keys.Concat(r.Grades.Solution.Keys)).Distinct().Where(g => g is not ("selection" or "built" or "structure" or "rules" or "proposed" or "questions"))
                 .Select(g => Grader(g, $"{g} pass", g)),
             new Metric("pass@1", "pass@1 (all checks)", runs.Count(r => r.Pass), runs.Count),
+            new Metric("solution", "solution grade: all solution graders pass (not a pass condition)", runs.Count(r => r.Grades.SolutionScore == 1), runs.Count(r => r.Grades.SolutionScore is not null)),
             new Metric("pass^k", $"pass^{result.K} (all runs of a case)", cases.Count(id => runs.Where(r => r.Case == id).All(r => r.Pass)), cases.Count),
             new Metric("near-miss", "near-miss accuracy", near.Count(r => Ok(r, "selection")), near.Count),
             new Metric("no-fit-precision", "no-fit precision", nofit.Count(r => r.Trace?.Outcome == Outcomes.NoFit), nofit.Count),

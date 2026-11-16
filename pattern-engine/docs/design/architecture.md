@@ -44,7 +44,7 @@ flowchart TB
 | Catalog | Load, check, index, hashes, lifecycle of patterns | Pack patterns |
 | Engine | Work queue, node states, compose and check loop, limits, escalation, questions | Catalog, pack hooks, agent files |
 | Trace | The graph state of one run, as `trace.json` | Engine |
-| Graders | The verdict of one run | Pack adapter and simulator |
+| Graders | Output graders give the pass of one run (is the output correct). Solution graders give a grade of the solution (which patterns) | Pack adapter and simulator |
 | Grader trust | References, mutations, fixtures, regrade | Pack hooks, graders |
 | Eval | Cases, simulated user, runner, report, targets | Engine, graders, settings |
 | Trial metrics | Metrics of each `trial` pattern, notifications at thresholds | Results, catalog hashes |
@@ -137,7 +137,7 @@ flowchart LR
 | Case | `request`, `hidden` facts, `expect` (tree or behavior, `asks`), tags |
 | Question | `about` (`requirement`, `pattern choice`, `input`, `domain`), `options`, answer |
 | Trace | `outcome`, `tree`, `open requirements`, `nearest`, `deltas`, `proposed`, `questions`, `attempts`, `stop reason`, `hashes`, `graph` |
-| Run result | One record for each run: case, trace, grader results, pass, agent stats, hashes |
+| Run result | One record for each run: case, trace, output grader results, pass, solution grader results, `solution_score`, agent stats, hashes |
 | Note | `target` (case, fixture, output), `author` (person or agent), text |
 
 ## Code layout (C#)

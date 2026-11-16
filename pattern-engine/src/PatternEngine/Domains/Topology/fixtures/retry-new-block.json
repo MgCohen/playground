@@ -1,4 +1,4 @@
 { "p": "retrier", "v": "plain",
-  "inputs": ["command"], "outputs": ["event"],
+  "inputs": ["command"], "outputs": ["saved"],
   "parts": [ { "id": "try1", "p": "handler" }, { "id": "store", "p": "event_store" } ],
-  "wires": [ ["command", "try1.command"], ["try1.event", "store.event"], ["store.event", "event"] ] }
+  "wires": [ ["command", "try1.command"], ["try1.event", "store.event"], ["store.saved", "saved"] ] }
