@@ -27,6 +27,18 @@ public static class SessionCommands
         return 0;
     }
 
+    public static int Enable(CommandContext c)
+    {
+        var id = c.Args.Option("id") ?? Environment.GetEnvironmentVariable("CLAUDE_CODE_SESSION_ID")
+            ?? throw new UsageException("no session id: run this inside a Claude Code session, or give --id");
+        var parent = c.Args.Option("parent") is { } p ? c.Messages.RequireSession(p) : null;
+        var meta = new Lifecycle(c.Store).Enable(id, Path.GetFullPath(c.Cwd).Replace('\\', '/'), c.Args.Option("title"), parent, "orch enable");
+        c.Output.WriteLine($"Enabled as {id} ({meta.Title}){(parent is not null ? $", child of {Short(parent)}" : "")}.");
+        c.Output.WriteLine("The plugin activates after this tool result: the mcp__orch__ tools, the inbox and the live lease.");
+        c.Output.WriteLine($"A child joins with: orch enable --parent {id} --title \"<title>\"");
+        return 0;
+    }
+
     public static int Send(CommandContext c)
     {
         var session = c.Session(1);

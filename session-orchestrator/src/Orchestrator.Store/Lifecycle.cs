@@ -128,6 +128,21 @@ public sealed class Lifecycle(FileStore store)
         return ["powershell", "-NoProfile", "-Command", $"Start-Process -FilePath 'claude.exe' -ArgumentList '--desktop','--resume','{id}'{folder} -WindowStyle Hidden"];
     }
 
+    public Meta Enable(string id, string cwd, string? title, string? parent, string by)
+    {
+        var old = File.Exists(store.PathOf(id, StoreFiles.Meta)) ? store.Meta(id) : null;
+        var meta = (old ?? new Meta(id) { Cwd = cwd, CreatedBy = by, CreatedAt = store.Now, Started = true }) with
+        {
+            Title = title ?? old?.Title ?? $"Chat in {Path.GetFileName(cwd.TrimEnd('/', '\\'))}",
+            Parent = parent ?? old?.Parent,
+            Imported = true,
+        };
+        store.SaveMeta(meta);
+        Files.Write(store.PathOf(id, StoreFiles.Enabled), "");
+        store.Events.Append(EventKinds.SessionStart, parent is null ? Parties.User : Parties.Session(parent), Parties.Session(id), Messages.Fields(("text", $"{meta.Title} enabled"), ("title", meta.Title)), parent is null ? null : Messages.Fields(("parent", parent)), id);
+        return meta;
+    }
+
     public void Import(string id)
     {
         var meta = store.Meta(id);
