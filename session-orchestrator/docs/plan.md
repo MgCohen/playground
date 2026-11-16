@@ -392,6 +392,28 @@ Findings:
 | Store version | ✅ `version.json`. A newer store stops the supervisor | `RecoveryTests` |
 | Unit tests | ✅ 62 tests | `dotnet test --solution Orchestrator.slnx` |
 
+## B1 result (2026-11-16): new session form and mic buttons
+
+The Sessions page has a form for a new session. Each free-text field of the cards has a mic button for dictation.
+
+| Part | Result | Evidence |
+|---|---|---|
+| Form fields | ✅ Each brief field except `allowDefaults` | `NewSessionFormTests` reads `templates/brief/schema.json` |
+| Form start | ✅ The form and `POST /api/sessions` use `Board.NewSession` | `NewSessionFormTests`: meta and `brief` event |
+| Parent | ✅ A select of the sessions. An empty folder takes the folder of the parent | `NewSessionFormTests` |
+| Refused start | ✅ The form keeps the text | `NewSessionFormTests` |
+| Mic buttons | ✅ One for each `textarea` of the cards and the form | `NewSessionFormTests`, `WebTests` |
+| No speech support | ✅ 0 of 3 mic buttons show | CDP check, Chrome without `webkitSpeechRecognition` |
+| Phone layout | ✅ 390 px wide, no horizontal scroll | `docs/screens/sessions-new-form-phone.png` |
+| All tests | ✅ 79 tests | `dotnet test --solution Orchestrator.slnx` |
+
+Findings:
+
+- A `Func` parameter does not render the parent component again. The Sessions page calls `StateHasChanged` after a start, or the toast does not show.
+- `dotnet run --project src/Orchestrator.Web` serves `app.<hash>.css` with 0 bytes, because `ContentRootPath` is the `bin` folder. For a screenshot, use a copy from `dotnet publish`.
+- Headless Chrome has a minimum window width of about 500 px, so `--window-size=390,…` cuts the page. Use the DevTools protocol: `Emulation.setDeviceMetricsOverride` with `width: 390` and `mobile: true`.
+- The tests use bUnit 2.15.2 to render the Blazor components without a browser.
+
 ## Next steps
 
 Status: the user reviewed the design page and accepted it. The user then asked for the folder structure, the code topology and a roadmap to a stable version. They are on the page (tabs Code and Roadmap) and in this file. The next work is M0, after the user accepts the roadmap. The notes arrive in the chat, or as comments on the page: read them with the `ArtifactComments` tool on the page URL. After a design change, edit `docs/orchestrator-design.html` and publish it with the `Artifact` tool and `url` set to the page URL.
