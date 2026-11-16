@@ -101,8 +101,8 @@ pre .k { color: var(--accent); }
   <button role="tab" data-tab="summary">Summary</button>
   <button role="tab" data-tab="primitives">Primitives</button>
   <button role="tab" data-tab="reactors">Reactors</button>
-  <button role="tab" data-tab="today">Today</button>
-  <button role="tab" data-tab="gaps">Gaps</button>
+  <button role="tab" data-tab="types">Types</button>
+  <button role="tab" data-tab="today">Today and gaps</button>
   <button role="tab" data-tab="changes">Changes A2</button>
 </nav>
 
@@ -344,25 +344,6 @@ flowchart LR
 </section>
 
 <section>
-  <h2>Message kinds</h2>
-  <div class="scroll">
-  <table>
-    <tr><th>Kind</th><th>From → to</th><th>Needs</th><th>Render for a session</th></tr>
-    <tr><td><code>brief</code></td><td>User, parent → new session</td><td>none</td><td><code>brief/render.md</code></td></tr>
-    <tr><td><code>message</code></td><td>User, session → session</td><td>none</td><td><code>message/render.md</code> (new)</td></tr>
-    <tr><td><code>decision</code></td><td>Session → user; forward to parent</td><td><code>answer</code></td><td><code>decision/render/parent.md</code></td></tr>
-    <tr><td><code>answer</code></td><td>User, docs, policy → session</td><td><code>review</code> (docs, policy)</td><td><code>answer/render.md</code> + note</td></tr>
-    <tr><td><code>review</code></td><td>User → session</td><td>none</td><td><code>review/render/&lt;verdict&gt;.md</code></td></tr>
-    <tr><td><code>report</code></td><td>Session → parent or user</td><td><code>ack</code> (done, blocked)</td><td><code>report/render/parent.md</code></td></tr>
-    <tr><td><code>update</code></td><td>Session → user</td><td>none</td><td>None</td></tr>
-    <tr><td><code>notice</code></td><td>Supervisor → session</td><td>none</td><td><code>notice/render/&lt;kind&gt;.md</code></td></tr>
-    <tr><td><code>ack</code></td><td>Receiver → stream</td><td>none</td><td>None</td></tr>
-  </table>
-  </div>
-  <p>Notice kinds: <code>question-reminder</code>, <code>question-closed</code>, <code>archive-self</code>, <code>restart</code>. The default and docs texts are answer notes.</p>
-</section>
-
-<section>
   <h2>Lifecycle messages: names only</h2>
   <div class="scroll">
   <table>
@@ -452,6 +433,108 @@ sequenceDiagram
   </table>
   </div>
   <p>Post refuses a second answer in one thread, and gives the first answer in the error text.</p>
+</section>
+</div>
+
+<!-- ============================== TYPES ============================== -->
+<div class="panel off" id="types" role="tabpanel">
+<section>
+  <h2>One type, one template, one tool</h2>
+  <div class="box">
+<pre class="mermaid">
+flowchart LR
+  I["Intent of the sender"] -->|picks| T["Tool or command<br/>one per type"]
+  T -->|fills| F["Template fields"]
+  F -->|post| V{"Schema valid?"}
+  V -->|no| E["Error to sender<br/>names the fields"]
+  V -->|yes| S[("Stream")]
+  S -->|meta.json| C["UI card of the type"]
+</pre>
+  </div>
+  <p>Each message has a type. Each type has one folder in <code>templates/</code>. The sender picks the type when it picks the tool. Post refuses a body that does not match the schema of its type.</p>
+</section>
+
+<section>
+  <h2>Message types</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Type</th><th>Use it when</th><th>Session tool</th><th>Needs</th><th>Reply type</th></tr>
+    <tr><td><code>brief</code></td><td>You start a session</td><td><code>spawn_child</code></td><td>none</td><td><code>report</code></td></tr>
+    <tr><td><code>decision</code></td><td>The user must choose, with options and a default</td><td><code>ask_user</code></td><td><code>answer</code></td><td><code>answer</code></td></tr>
+    <tr><td><code>query</code></td><td>You need facts from a party, no choice, no default</td><td><code>query</code> (new)</td><td><code>answer</code></td><td><code>answer</code></td></tr>
+    <tr><td><code>plan</code></td><td>You propose steps before you do them</td><td><code>plan</code> (new)</td><td><code>review</code></td><td><code>review</code></td></tr>
+    <tr><td><code>report</code></td><td>Your work is done, blocked, or ready for review</td><td><code>report</code></td><td><code>ack</code> (done, blocked)</td><td><code>ack</code>, <code>message</code></td></tr>
+    <tr><td><code>update</code></td><td>A step starts or ends</td><td><code>update</code></td><td>none</td><td>None</td></tr>
+    <tr><td><code>message</code></td><td>None of the other types fits</td><td><code>send</code> (new)</td><td>none</td><td><code>message</code></td></tr>
+    <tr><td><code>answer</code></td><td>You reply to a decision or a query</td><td><code>answer</code></td><td><code>review</code> (docs, policy)</td><td><code>review</code></td></tr>
+    <tr><td><code>review</code></td><td>You approve, change or refuse a plan or a default</td><td>UI, <code>orch review</code></td><td>none</td><td>None</td></tr>
+    <tr><td><code>notice</code></td><td>The supervisor tells a session a fixed fact</td><td>None: supervisor only</td><td>none</td><td>None</td></tr>
+    <tr><td><code>ack</code></td><td>You got an envelope, or you read a card</td><td>None: automatic</td><td>none</td><td>None</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Template folder</h2>
+<pre class="code">templates/&lt;type&gt;/
+  schema.json      <span class="c">// the fields; the tool input schema and the post check</span>
+  meta.json        <span class="c">// purpose, from, to, needs, reply types, card fields (new)</span>
+  render/&lt;for&gt;.md  <span class="c">// one text for each receiver: session.md, parent.md, pr-body.md</span>
+  example.json     <span class="c">// one valid body, used by the tests</span></pre>
+<pre class="code"><span class="c">// templates/decision/meta.json</span>
+{ "type": "decision", "version": 1,
+  "purpose": "The user must choose, with options and a default.",
+  "from": ["session"], "to": ["user"], "needs": "answer", "replies": ["answer"],
+  "card": { "title": "question", "quick": ["recommendation", "defaultOption", "risk"],
+            "accept": { "post": "answer", "text": "defaultOption" },
+            "refuse": { "post": "answer", "needsText": true } } }</pre>
+  <p>The UI draws each card from <code>meta.json</code>. A new type needs a new folder and a tool, but no new card code.</p>
+</section>
+
+<section>
+  <h2>How a sender picks the type</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Sender</th><th>How it picks</th></tr>
+    <tr><td>Session model</td><td>One tool for each type. The tool description is the <code>purpose</code> of <code>meta.json</code>. The skill <code>orch:orch-messages</code> has the table above</td></tr>
+    <tr><td>User in the UI</td><td>One form for each type, or a swipe on a card. A card posts only its reply types</td></tr>
+    <tr><td>User or script on the CLI</td><td><code>orch post &lt;type&gt; --field value</code>, or a command for each type (<code>orch answer</code>)</td></tr>
+    <tr><td>Supervisor and reactors</td><td>Fixed in code: each reactor posts its own types</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>How the system enforces the type</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Level</th><th>Check</th><th>Where</th><th>When</th></tr>
+    <tr><td>1</td><td>The tool input schema is the template schema</td><td>Claude Code engine, before the call</td><td>A2</td></tr>
+    <tr><td>2</td><td>Post refuses an unknown type or a body that fails the schema</td><td><code>Stream.Post</code>, both bindings</td><td>A2</td></tr>
+    <tr><td>3</td><td>Post refuses a <code>from</code>, <code>to</code> or reply type that <code>meta.json</code> does not allow</td><td><code>Stream.Post</code></td><td>A2</td></tr>
+    <tr><td>4</td><td>Free text of the model is a trace, not a message. It gets no card</td><td>Reactors and UI</td><td>A2</td></tr>
+    <tr><td>5</td><td>A turn that ends with a question or a report in free text, and no post, gets a notice: "use the tool"</td><td>Plugin <code>turn.complete</code> hook</td><td>Later</td></tr>
+  </table>
+  </div>
+  <p>An error of level 2 or 3 names the type and each wrong field, so the model can correct the call. Free text from the user to a session is a <code>message</code>: the UI and <code>orch send</code> post it with that type.</p>
+</section>
+
+<section>
+  <h2>Message renders</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Type</th><th>Render for a session</th><th>Prefix of the text</th></tr>
+    <tr><td><code>brief</code></td><td><code>brief/render/session.md</code></td><td><code># &lt;title&gt;</code></td></tr>
+    <tr><td><code>decision</code>, <code>query</code></td><td><code>render/parent.md</code></td><td><code>Question from child</code></td></tr>
+    <tr><td><code>plan</code></td><td><code>plan/render/parent.md</code></td><td><code>Plan from child</code></td></tr>
+    <tr><td><code>answer</code></td><td><code>answer/render/session.md</code> + note</td><td><code>Answer to decision</code></td></tr>
+    <tr><td><code>review</code></td><td><code>review/render/&lt;verdict&gt;.md</code></td><td><code>Review of decision</code></td></tr>
+    <tr><td><code>report</code></td><td><code>report/render/parent.md</code></td><td><code>Report from child</code></td></tr>
+    <tr><td><code>message</code></td><td><code>message/render/session.md</code></td><td><code>Message from &lt;sender&gt;:</code>; none from the user</td></tr>
+    <tr><td><code>notice</code></td><td><code>notice/render/&lt;kind&gt;.md</code></td><td>Fixed for each notice kind</td></tr>
+  </table>
+  </div>
+  <p>Notice kinds: <code>question-reminder</code>, <code>question-closed</code>, <code>archive-self</code>, <code>restart</code>. The default and docs texts are answer notes.</p>
 </section>
 </div>
 
@@ -551,10 +634,7 @@ flowchart LR
   </table>
   </div>
 </section>
-</div>
-
-<!-- ============================== GAPS ============================== -->
-<div class="panel off" id="gaps" role="tabpanel">
+<!-- ============================== GAPS (part of TODAY) ============================== -->
 <section>
   <p class="summary">18 gaps in four groups. Each gap has the file that shows it. The tab <a href="#changes">Changes A2</a> gives the fix for each gap.</p>
 </section>
@@ -664,7 +744,11 @@ flowchart LR
   <div class="scroll">
   <table>
     <tr><th>Part</th><th>Change</th><th>Files</th><th>Fixes</th></tr>
-    <tr><td>Message</td><td>New template <code>message</code>: <code>text</code></td><td><code>templates/message/</code></td><td>G4</td></tr>
+    <tr><td>New types</td><td><code>message</code>, <code>query</code>, <code>plan</code></td><td><code>templates/&lt;type&gt;/</code></td><td>G4</td></tr>
+    <tr><td>Type meta</td><td><code>meta.json</code> in each folder: purpose, from, to, needs, replies, card</td><td><code>templates/*/meta.json</code></td><td>G17</td></tr>
+    <tr><td>New tools</td><td><code>send</code>, <code>query</code>, <code>plan</code>. Descriptions from <code>meta.json</code></td><td><code>tools.ts</code></td><td>G4</td></tr>
+    <tr><td>Type check</td><td>Post refuses unknown types, bad bodies, wrong from, to or reply</td><td><code>Stream.cs</code>, <code>stream.ts</code></td><td>G6</td></tr>
+    <tr><td>Skill</td><td><code>orch:orch-messages</code>: the table "use it when"</td><td><code>plugin/skills/</code></td><td>None</td></tr>
     <tr><td>Receiver renders</td><td>Move <code>child-question</code>, <code>child-report</code>, <code>review-*</code></td><td><code>decision/render/</code>, <code>report/render/</code>, <code>review/render/</code></td><td>G3, G6</td></tr>
     <tr><td>Answer notes</td><td>Move <code>default-*</code> and <code>docs</code></td><td><code>answer/render/note-*.md</code></td><td>G6</td></tr>
     <tr><td>Notice</td><td>Four kinds. Rename <code>blocked</code> to <code>restart</code></td><td><code>notice/schema.json</code></td><td>G6</td></tr>
@@ -695,7 +779,7 @@ flowchart LR
 
 <script>
 (function () {
-  var names = ["summary", "primitives", "reactors", "today", "gaps", "changes"];
+  var names = ["summary", "primitives", "reactors", "types", "today", "changes"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "summary";
     names.forEach(function (n) {
