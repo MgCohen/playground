@@ -9,7 +9,7 @@ Design page: https://claude.ai/artifact/EggEYH4ivUuPGG9Pw4k1y1 (source `docs/orc
 | `src/Orchestrator.Core/` | Contract records, name order, lease rule, policy, events. No file IO |
 | `src/Orchestrator.Store/` | Atomic file IO, session files, the event stream |
 | `src/Orchestrator.Supervisor/` | The tick, the decision policy, the `claude -p` runner |
-| `src/Orchestrator.Web/` | One process: the supervisor and the HTTP API |
+| `src/Orchestrator.Web/` | One process: the supervisor, the HTTP API and the Blazor Server UI (queue, sessions, timeline) |
 | `src/Orchestrator.Cli/` | The `orch` command (a .NET tool): sessions, decisions, stack, events, templates, doctor |
 | `templates/` | One folder for each message kind: `schema.json`, `render.md`, `example.json` |
 | `tests/Orchestrator.Tests/` | NUnit tests with a fake runner and a temporary store |
@@ -26,10 +26,10 @@ Build and test:
 dotnet test --solution Orchestrator.slnx
 ```
 
-Start the supervisor (HTTP API on `http://127.0.0.1:7777`):
+Start the supervisor and the UI (`http://127.0.0.1:7777/`, API under `/api`):
 
 ```bash
 dotnet run --project src/Orchestrator.Web
 ```
 
-`ORCH_STORE` sets the store folder and `ORCH_PORT` sets the port.
+`ORCH_STORE` sets the store folder and `ORCH_PORT` the port. `ORCH_TOKEN` adds a token sign-in, and `ORCH_BIND=0.0.0.0` serves the UI to a phone on the same network (use it only with `ORCH_TOKEN`).

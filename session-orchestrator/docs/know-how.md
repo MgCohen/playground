@@ -84,3 +84,10 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - `orch archive <id>` removes the `enabled` file. The supervisor never runs the session again. The branch of its worktree stays.
 - A worktree folder is `<repo>.wt/orch-<id8>`, next to the repository, on branch `orch/session-<id8>`.
 - `orch open <id>` opens a session in the desktop app. Then send it one message in the app, so that its process starts and the plugin takes the lease.
+
+## The UI
+
+- The supervisor process serves the UI on `/`: Queue (the start page), Sessions and Timeline. The API stays under `/api`.
+- A published copy finds its `wwwroot/` through `ContentRootPath = AppContext.BaseDirectory`, so it runs from any folder.
+- Test the phone layout in the browser pane of the desktop app: `preview_start` with the URL, then `resize_window` with the preset `mobile`.
+- The browser pane resets the viewport size when the pane width changes. Set `mobile` again before each screenshot.

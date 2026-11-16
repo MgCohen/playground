@@ -344,6 +344,26 @@ Findings:
 - A stop ends the `claude` process tree, but a grandchild of the session's Bash tool can live on: the `powershell Start-Sleep` of the test ran to its end. That process kept the worktree folder locked, so `orch archive` removed the worktree from git but not the folder. A Windows job object did not help: the grandchild left the job, probably because the host job allows silent breakaway. Archive a stopped session after its tools end.
 - `git worktree add` works from a session folder of any depth: the supervisor finds the repository with `git rev-parse --show-toplevel`.
 
+## M4 result (2026-11-16)
+
+| Part | Result | Evidence |
+|---|---|---|
+| Queue view | ✅ Each open decision is a card: risk, session, question, context, recommendation, options as suggestions, a free-text field and "Accept default". Each default to review has approve, change and refuse | Phone test, `WebTests` |
+| Answer from the phone view | ✅ The free-text answer "GREEN, like the logo" (not an option) reached the session, which wrote GREEN | Session `47991b46` |
+| Review from the phone view | ✅ "Change: use SMALL" on a default reached the session, which changed the decision branch to SMALL | Session `29e75a65` |
+| Sessions view | ✅ The tree with state, lease, report, update, worktree, a message field, stop, resume and archive | Phone test |
+| Timeline view | ✅ The stream, newest first, with filters for time, kind group, session and tool calls. Each template event opens its fields | Phone test |
+| Sign-in | ✅ `ORCH_TOKEN`: a token in the link once (then a cookie), or the header `X-Orch-Token` for the API | `WebTests` |
+| Tunnel | ❌ Blocked: Cloudflare Tunnel and Access need an account of the user | `decisions.md` |
+| Unit tests | ✅ 56 tests | `dotnet test --solution Orchestrator.slnx` |
+
+The phone test used the browser pane of the desktop app at 375 × 812, not a real phone.
+
+Findings:
+
+- A view reloads every 2 s. An open `<details>` card stays open across a reload, because each card has a `@key`.
+- A review notice arrives at the session as `session.input` from `supervisor`, because the supervisor writes the review text. The `review` event before it names the user.
+
 ## Next steps
 
 Status: the user reviewed the design page and accepted it. The user then asked for the folder structure, the code topology and a roadmap to a stable version. They are on the page (tabs Code and Roadmap) and in this file. The next work is M0, after the user accepts the roadmap. The notes arrive in the chat, or as comments on the page: read them with the `ArtifactComments` tool on the page URL. After a design change, edit `docs/orchestrator-design.html` and publish it with the `Artifact` tool and `url` set to the page URL.
@@ -380,11 +400,8 @@ Rules of the vsa-template work that the M5 stream must obey:
 | Store: files, or SQLite? | Files until M5 shows a real problem |
 | `medium` has `checkDocs: true`. The user named the docs answer only for `low` | Keep it, and ask the user at the M4 start |
 | Delete the old folder `Projects/claude-orchestrator`? It also holds a stray `session-orchestrator/` subfolder with copied type files | Yes, after the next app restart, when the user says so |
-| Sign-in for the API (it listens on 127.0.0.1 with no auth) | Cloudflare Access in front of the tunnel, plus a token header |
-| Swipe meaning on a decision card | Right: accept the default. Left: open the free-text answer |
-| Voice input: browser speech or phone dictation? | Phone dictation in the text field: no extra code |
 | Which vsa-template stream runs first in M5? | Ask the user at the M5 start. Use the stable roadmap of vsa-template |
-| Does a Cloudflare account with a domain exist for the tunnel? | Ask the user at the M4 start. A Cloudflare connector exists in the sessions |
+| Does a Cloudflare account with a domain exist for the tunnel? | Ask the user. The tunnel is blocked until then. Today: `ORCH_BIND` with `ORCH_TOKEN` on the local network |
 
 ### Known gaps
 
