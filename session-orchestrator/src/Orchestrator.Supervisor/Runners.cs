@@ -1,6 +1,9 @@
 namespace Orchestrator.Supervisor;
 
-public sealed record TurnRequest(string Id, string Cwd, string Prompt, bool IsNew);
+public sealed record TurnRequest(string Id, string Cwd, string Prompt, bool IsNew)
+{
+    public string? Agent { get; init; }
+}
 
 public sealed record TurnResult(bool Ok, string? Text, string? Error, double Seconds);
 
