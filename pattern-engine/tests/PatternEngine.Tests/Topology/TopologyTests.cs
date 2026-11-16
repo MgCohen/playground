@@ -7,6 +7,7 @@ using PatternEngine.Features.Engine.Domain;
 using PatternEngine.Features.Engine.Domain.Shared;
 using PatternEngine.Features.Grading.Domain;
 using PatternEngine.Features.Packs.Domain;
+using PatternEngine.Features.Packs.Domain.Shared;
 using PatternEngine.Plugins.Agents;
 using PatternEngine.Plugins.Settings;
 using PatternEngine.Tests.Support;
@@ -77,11 +78,14 @@ public sealed class TopologyTests
                     kind = "object",
                     phrase = "a delay",
                     use_when = new[] { "The request waits a time before the next step." },
-                    parts = new[] { new { @ref = "handler", count = "1" } },
-                    intent = "Waits, then sends the command again.",
+                    parts = new[] { new { @ref = "subscriber", count = "1" } },
+                    inputs = new[] { new { name = "event", type = "Event" } },
+                    outputs = new[] { new { name = "effect", type = "Effect" } },
+                    intent = "Waits after a failed try.",
                     rules = new[] { "Do: wait before the next try." },
                 },
-                "composer" => new { fragment = TopologyReference.Block("command_pipeline", "plain")!.ToJsonString() },
+                "composer" when call.Input.Contains("Pattern: command_pipeline", StringComparison.Ordinal) => new { fragment = TopologyReference.Block("command_pipeline", "plain")!.ToJsonString() },
+                "composer" => new { fragment = """{ "p": "PROPOSED", "v": "plain", "parts": [ { "id": "s", "p": "subscriber" } ], "wires": [ ["event", "s.event"], ["s.effect", "effect"] ] }""".Replace("PROPOSED", ProposedId(call.Input), StringComparison.Ordinal) },
                 _ => null,
             };
         });
@@ -91,13 +95,65 @@ public sealed class TopologyTests
 
         Assert.That(run.Trace.Outcome, Is.EqualTo(Outcomes.Match));
         Assert.That(run.Trace.Remainder.Select(r => r.Outcome), Is.EqualTo(new[] { Outcomes.NoFit }));
-        Assert.That(run.Trace.Remainder[0].Proposed, Is.Not.Null);
+        Assert.That(run.Trace.Remainder[0].Joined, Is.True);
         Assert.That(File.Exists(Path.Combine(dir, run.Trace.Remainder[0].Proposed!)), Is.True);
-        Assert.That(judge.Calls.Any(c => c.Agent == "escalation"), Is.False);
+        Assert.That(judge.Calls.Any(c => c.Agent is "escalation" or "joiner"), Is.False);
         Assert.That(run.Trace.Questions, Is.Empty);
-        var expect = new Expect { Outcome = Outcomes.Match, Tree = new TreeNode { P = "command_pipeline" }, Remainder = [Outcomes.NoFit] };
-        Assert.That(SelectionGrader.Check(run.Trace, expect).Failures, Is.Empty);
+
+        // The solution: the pipeline and the authored delay, joined Event to Event by code.
+        var authored = run.Trace.Remainder[0].Pattern!;
+        var expect = new Expect { Outcome = Outcomes.Match, Tree = new TreeNode { P = Solution.Id, Parts = [new() { P = "command_pipeline" }, new() { P = authored }] }, Remainder = [Outcomes.NoFit] };
+        var grades = RunGrading.Grade(new Case { Id = "r", Source = "t", Tags = [], Request = "r", Expect = expect }, Pack, run.Catalog, run.Trace, File.ReadAllText(run.OutputFile), GraderSet.Default.Select(settings.Section("grading").List("graders"), Pack));
+        Assert.That(grades.Verdicts.Where(v => !v.Value.Ok).Select(v => $"{v.Key}: {v.Value.Failures[0]}"), Is.Empty);
+        var top = (BlockNode)Pack.Adapter.Parse(File.ReadAllText(run.OutputFile)).Roots[0];
+        Assert.That(top.Wires, Does.Contain(("s1.event", "s2.event")));
         Assert.That(SelectionGrader.Check(run.Trace, expect with { Remainder = [Outcomes.Match] }).Failures, Has.Some.Contains("expected remainder"));
+    }
+
+    private static string ProposedId(string input) =>
+        System.Text.RegularExpressions.Regex.Match(input, "new pattern \"([a-z0-9-]+)\"").Groups[1].Value;
+
+    [Test]
+    public void Code_joins_a_port_when_one_type_matches_and_asks_when_more_match()
+    {
+        SolutionItem Item(string id, string p) => new(id, p, "{}");
+        var (plan, choices) = JoinStep.Plan(Catalog, [Item("s1", "command_pipeline"), Item("s2", "observer")]);
+        Assert.That(plan.Wires, Is.EqualTo(new[] { new JoinWire("s1.event", "s2.event") }));
+        Assert.That(plan.Inputs, Is.EqualTo(new[] { "s1_request" }));
+        Assert.That(plan.Outputs, Is.EqualTo(new[] { "s2_effect" }));
+        Assert.That(choices, Is.Empty);
+
+        (_, choices) = JoinStep.Plan(Catalog, [Item("s1", "command_pipeline"), Item("s2", "command_pipeline"), Item("s3", "observer")]);
+        Assert.That(choices.Single().Options, Is.EqualTo(new[] { "s1.event", "s2.event" }));
+    }
+
+    [Test]
+    public void An_assembled_system_joins_by_the_ports_of_its_fragment()
+    {
+        var system = new TopologyReference().Render(new TreeNode { P = "cqrs_system", V = "plain", Parts = [new() { P = "command_pipeline", V = "plain" }, new() { P = "observer" }] }, Catalog)!;
+        var items = new[] { new SolutionItem("s1", "cqrs_system", system), new SolutionItem("s2", "observer", TopologyReference.Block("observer", "plain")!.ToJsonString()) };
+        var (plan, choices) = JoinStep.Plan(Catalog, items, Pack.Layout);
+        Assert.That(choices, Is.Empty);
+        Assert.That(plan.Wires, Does.Contain(new JoinWire("s1.c1_event", "s2.event")));
+        var top = (BlockNode)Pack.Adapter.Parse(Pack.Layout.Join(items, plan)!).Roots[0];
+        Assert.That(BlockAdapter.Wiring(top, Catalog, true), Is.Empty);
+        Assert.That(FlowGrader.Flow(top, Catalog), Is.Empty);
+    }
+
+    [Test]
+    public void A_joined_solution_passes_the_wiring_and_flow_checks()
+    {
+        var items = new[]
+        {
+            new SolutionItem("s1", "command_pipeline", TopologyReference.Block("command_pipeline", "plain")!.ToJsonString()),
+            new SolutionItem("s2", "observer", TopologyReference.Block("observer", "plain")!.ToJsonString()),
+        };
+        var (plan, _) = JoinStep.Plan(Catalog, items);
+        var parsed = Pack.Adapter.Parse(Pack.Layout.Join(items, plan)!);
+        Assert.That(StructureGrader.Check(parsed, Catalog, Pack.Adapter).Failures, Is.Empty);
+        var top = (BlockNode)parsed.Roots[0];
+        Assert.That(BlockAdapter.Wiring(top, Catalog, true), Is.Empty);
+        Assert.That(FlowGrader.Flow(top, Catalog), Is.Empty);
     }
 
     [Test]

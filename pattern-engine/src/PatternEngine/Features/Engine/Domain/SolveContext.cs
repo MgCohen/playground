@@ -33,6 +33,9 @@ public sealed class SolveContext(PackContext pack, EngineSettings settings, Agen
 
     public int Attempts { get; set; }
 
+    /// <summary>The nodes of a joined solution: the root first, then each remainder item. Empty when the output has one pattern.</summary>
+    public List<WorkNode> Solution { get; } = [];
+
     /// <summary>The ids of the composed patterns that a top node can use, lowest level first.</summary>
     public IReadOnlyList<string> TopIds =>
         Catalog.Active.Where(p => p.Kind != PatternKind.Leaf).OrderBy(p => p.Level).Select(p => p.Id).ToList();

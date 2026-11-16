@@ -20,4 +20,4 @@
 - id: hand-partialfit-001
   tags: [partial-fit]
   request: Design a part that tries a failed payment again three times, with a delay between the tries.
-  expect: { outcome: match, tree: { p: command_pipeline }, remainder: [no-fit] }
+  expect: { outcome: match, tree: { p: solution, parts: [ { p: command_pipeline }, { p: "*" } ] }, remainder: [no-fit] }

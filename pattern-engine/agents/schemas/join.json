@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "wires": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": { "from": { "type": "string" }, "to": { "type": "string" } },
+        "required": ["from", "to"]
+      }
+    },
+    "reason": { "type": "string" }
+  },
+  "required": ["wires", "reason"]
+}

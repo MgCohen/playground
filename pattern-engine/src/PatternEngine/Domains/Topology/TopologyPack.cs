@@ -112,6 +112,12 @@ public sealed class TopologyLayout : ILayout
 
     public IReadOnlyList<string> CheckSlot(OutputNode? root, Slot slot) => root is null ? ["the fragment has no block"] : [];
 
+    public string? Join(IReadOnlyList<SolutionItem> items, JoinPlan plan) => BlockJoin.Build(items, plan);
+
+    public (IReadOnlyList<Port> Inputs, IReadOnlyList<Port> Outputs)? Ports(string fragment, PatternCatalog catalog) => BlockJoin.Ports(Adapter, fragment, catalog);
+
+    private static readonly BlockAdapter Adapter = new("component", true);
+
     public string Assemble(string pattern, string? variant, IReadOnlyList<string> fragments)
     {
         var parts = new JsonArray();

@@ -73,6 +73,8 @@ public sealed class CircuitsLayout : ILayout
 
     public string Wrap(string fragment) => fragment;
 
+    public string? Join(IReadOnlyList<SolutionItem> items, JoinPlan plan) => BlockJoin.Build(items, plan);
+
     public IReadOnlyList<string> CheckSlot(OutputNode? root, Slot slot) => root is null ? ["the fragment has no block"] : [];
 }
 
