@@ -47,6 +47,8 @@ public sealed class Messages(FileStore store)
     public void Answer(string session, string decision, string text, string by = Parties.User)
     {
         Check(Kinds.Answer, Fields(("decision", decision), ("text", text), ("by", by)));
+        if (store.Answer(session, decision) is { } old)
+            throw new MessageException($"decision {decision} already has an answer from {old.By ?? "someone"}: {old.Value ?? old.Text}. The session has this answer. Nothing changed.");
         var question = store.Decision(session, decision)?.Question;
         store.Events.Append(EventKinds.Answer, by, Parties.Session(session), Fields(("decision", decision), ("text", text), ("question", question)), Fields(("decision", decision)), session);
         store.SaveAnswer(session, decision, new Answer { Value = text, By = by });
