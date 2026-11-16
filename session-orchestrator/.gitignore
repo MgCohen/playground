@@ -1,2 +1,6 @@
 store/
 node_modules/
+bin/
+obj/
+TestResults/
+*.nupkg

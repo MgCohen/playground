@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Orchestrator.Core/Orchestrator.Core.csproj" />
+  </ItemGroup>
+</Project>
