@@ -1,0 +1,597 @@
+<title>Orchestrator Messages</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one topic for each tab, the visual first. Same tokens as the design page. */
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --fg: #1b2126;
+  --muted: #5b6670;
+  --line: #d9dee3;
+  --accent: #0f6e78;
+  --accent-soft: #e2f1f2;
+  --warn: #9a6200;
+  --bad: #a3322b;
+  --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --bad: #ec7d74; --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --bad: #ec7d74; --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 72ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 72ch; }
+nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap;
+}
+nav button {
+  font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 24px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 940px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 12px; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td { font-variant-numeric: tabular-nums; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+td code { white-space: nowrap; }
+pre.code {
+  margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; background: var(--code-bg);
+  border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg); white-space: pre;
+}
+pre .c { color: var(--muted); }
+pre .k { color: var(--accent); }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 72ch; }
+.tag { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.ok { color: var(--accent); border-color: var(--accent); }
+.tag.no { color: var(--bad); border-color: var(--bad); }
+.tag.part { color: var(--warn); border-color: var(--warn); }
+.id { font-family: var(--font-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.stat b { font-family: var(--font-display); font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 13px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.grid2 > * { min-width: 0; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Session orchestrator · A1 communication design</div>
+  <h1>Orchestrator Messages</h1>
+  <p class="summary">Each message is one event of one kind, with one template, and goes through one entry point, <code>Messages.Post</code>. Delivery to a session uses one inbox format and one acknowledge record. The user inbox is a query of the event stream: open events that need the user, with no reply.</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" data-tab="summary">Summary</button>
+  <button role="tab" data-tab="today">Today</button>
+  <button role="tab" data-tab="gaps">Gaps</button>
+  <button role="tab" data-tab="target">Target</button>
+  <button role="tab" data-tab="delivery">Delivery</button>
+  <button role="tab" data-tab="changes">Changes A2</button>
+</nav>
+
+<!-- ============================== SUMMARY ============================== -->
+<div class="panel" id="summary" role="tabpanel">
+<section>
+  <div class="stats">
+    <div class="stat"><b>9</b><span>message kinds in the target</span></div>
+    <div class="stat"><b>4</b><span>notice kinds in the target (13 today)</span></div>
+    <div class="stat"><b>18</b><span>gaps in the code of today</span></div>
+    <div class="stat"><b>1</b><span>entry point, renderer and inbox format</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>All messages go through one entry point</h2>
+  <div class="box">
+<pre class="mermaid">
+flowchart LR
+  S["Senders<br/>tools, orch, UI, supervisor"] -->|calls| P["Messages.Post"]
+  P -->|appends| E[("Event stream")]
+  P -->|writes| ST["State files"]
+  P -->|queues| I["Session inbox"]
+  I -->|reads| D["Deliverer<br/>plugin or turn"]
+  D -->|submits| X["Session"]
+  D -->|appends| E
+  E -->|query| U["User inbox"]
+  U -->|swipe reply| P
+</pre>
+  </div>
+  <div class="scroll">
+  <table>
+    <tr><th>Step</th><th>Rule</th></tr>
+    <tr><td>Post</td><td>Validate the fields against <code>schema.json</code>. Set <code>needs</code> and <code>thread</code></td></tr>
+    <tr><td>Event</td><td>One message event first. The event id is the message id</td></tr>
+    <tr><td>State</td><td>State files are projections of events, written after the event</td></tr>
+    <tr><td>Queue</td><td>One inbox file for each session receiver: <code>inbox/&lt;event id&gt;.json</code></td></tr>
+    <tr><td>Deliver</td><td>The lease holder submits the text. One <code>message.delivered</code> event for each item</td></tr>
+    <tr><td>User inbox</td><td>Open events with <code>needs</code> and no reply. A swipe posts the reply</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Target message kinds</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Kind</th><th>From → to</th><th>Needs</th><th>Delivered to</th></tr>
+    <tr><td><code>brief</code></td><td>User, parent → new session</td><td>none</td><td>Session inbox</td></tr>
+    <tr><td><code>message</code></td><td>User, session → session</td><td>none</td><td>Session inbox</td></tr>
+    <tr><td><code>decision</code></td><td>Session → user</td><td><code>answer</code></td><td>User inbox, parent inbox</td></tr>
+    <tr><td><code>answer</code></td><td>User, docs, policy → session</td><td><code>review</code> (docs, policy)</td><td>Session inbox or tool result</td></tr>
+    <tr><td><code>review</code></td><td>User → session</td><td>none</td><td>Session inbox</td></tr>
+    <tr><td><code>report</code></td><td>Session → parent or user</td><td><code>ack</code> (done, blocked)</td><td>Parent inbox, or user inbox</td></tr>
+    <tr><td><code>update</code></td><td>Session → user</td><td>none</td><td>None: session tree only</td></tr>
+    <tr><td><code>notice</code></td><td>Supervisor → session</td><td>none</td><td>Session inbox</td></tr>
+    <tr><td><code>ack</code></td><td>User → sender of a card</td><td>none</td><td>None: closes the card</td></tr>
+  </table>
+  </div>
+  <p>The tab <a href="#target">Target</a> gives the envelope, the templates and the inbox read. The tab <a href="#delivery">Delivery</a> gives the delivery and acknowledge rules.</p>
+</section>
+</div>
+
+<!-- ============================== TODAY ============================== -->
+<div class="panel off" id="today" role="tabpanel">
+<section>
+  <h2>Three writers and two renderers send messages today</h2>
+  <div class="box">
+<pre class="mermaid">
+flowchart LR
+  T["Plugin tools<br/>tools.ts emit"] -->|events| E[("Event stream")]
+  T -->|files| F["decisions, report.json"]
+  M["Messages.cs<br/>orch, API, UI"] -->|events| E
+  M -->|files| A["answers, inbox"]
+  V["Supervisor tick<br/>Texts.Notice"] -->|inbox first| A
+  V -->|relay events| E
+  A -->|reads| PL["Plugin deliverer<br/>own answer text"]
+  A -->|reads| SU["Supervisor turn<br/>answer template"]
+</pre>
+  </div>
+</section>
+
+<section>
+  <h2>Plugin tools</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Tool</th><th>From → to</th><th>Transport</th><th>Template</th><th>Event</th></tr>
+    <tr><td><code>ask_user</code></td><td>Session → user, parent</td><td><code>decisions/&lt;id&gt;.json</code>, parent inbox</td><td>decision</td><td><code>decision</code>, <code>question.forward</code></td></tr>
+    <tr><td><code>report</code></td><td>Session → parent or user</td><td><code>report.json</code>, <code>reports/</code>, parent inbox</td><td>report</td><td><code>report</code>, <code>report.forward</code></td></tr>
+    <tr><td><code>update</code></td><td>Session → session tree</td><td><code>update.json</code></td><td>update</td><td><code>update</code>, <code>to</code> = parent</td></tr>
+    <tr><td><code>spawn_child</code></td><td>Parent → new child</td><td><code>orch new</code> → <code>inbox/1.json</code></td><td>brief</td><td><code>brief</code></td></tr>
+    <tr><td><code>answer</code></td><td>Root, for the user → child</td><td><code>orch answer</code> → <code>answers/</code></td><td>answer</td><td><code>answer</code>, from user</td></tr>
+    <tr><td><code>questions</code></td><td>Store → root</td><td><code>orch decisions</code>, read only</td><td>None</td><td>None</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Commands, API, UI and supervisor</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Sender</th><th>From → to</th><th>Transport</th><th>Template</th><th>Event</th></tr>
+    <tr><td><code>orch new</code>, <code>POST /api/sessions</code>, UI form</td><td>User → new session</td><td><code>inbox/1.json</code></td><td>brief</td><td><code>brief</code></td></tr>
+    <tr><td><code>orch send</code>, <code>POST …/send</code>, UI field</td><td>User, session → session</td><td><code>inbox/&lt;ms&gt;.json</code></td><td>None</td><td><code>message</code>, always from user</td></tr>
+    <tr><td><code>orch answer</code>, <code>POST /api/decisions</code>, UI card</td><td>User → session</td><td><code>answers/&lt;id&gt;.json</code></td><td>answer</td><td><code>answer</code></td></tr>
+    <tr><td><code>orch review</code>, <code>POST …/review</code>, UI card</td><td>User → session</td><td><code>reviews/</code>, inbox</td><td>review, notice <code>review-*</code></td><td><code>review</code></td></tr>
+    <tr><td>Supervisor policy</td><td>Policy → session</td><td><code>answers/</code> with note</td><td>answer, notice <code>default-*</code></td><td><code>answer</code></td></tr>
+    <tr><td>Supervisor docs check</td><td>Docs → session</td><td><code>answers/</code> with note</td><td>answer, notice <code>docs</code></td><td><code>answer</code></td></tr>
+    <tr><td>Chat composer (plugin)</td><td>User → own session</td><td><code>orch answer</code> on the newest open decision</td><td>answer</td><td><code>answer</code></td></tr>
+    <tr><td><code>orch enable</code>, <code>/orch-enable</code></td><td>User → session</td><td><code>meta.json</code>, <code>enabled</code></td><td>None</td><td><code>session.start</code></td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Notices</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Notice kind</th><th>From → to</th><th>Transport</th><th>Event</th></tr>
+    <tr><td><code>default-stacked-pr</code>, <code>default-commit</code>, <code>default-none</code></td><td>Policy → session</td><td>Note in the answer</td><td><code>answer</code></td></tr>
+    <tr><td><code>docs</code></td><td>Docs → session</td><td>Note in the answer</td><td><code>answer</code></td></tr>
+    <tr><td><code>review-approve</code>, <code>review-change</code>, <code>review-refuse</code></td><td>Supervisor, for the user → session</td><td>Inbox</td><td><code>review</code></td></tr>
+    <tr><td><code>child-report</code></td><td>Supervisor → parent</td><td>Inbox</td><td><code>report.forward</code></td></tr>
+    <tr><td><code>child-question</code></td><td>Supervisor → parent</td><td>Inbox</td><td><code>question.forward</code></td></tr>
+    <tr><td><code>question-reminder</code></td><td>Supervisor → parent</td><td>Inbox</td><td><code>question.remind</code></td></tr>
+    <tr><td><code>question-closed</code></td><td>Supervisor → parent</td><td>Inbox</td><td><code>question.close</code></td></tr>
+    <tr><td><code>archive-self</code></td><td><code>orch archive</code> → session</td><td>Inbox</td><td>None</td></tr>
+    <tr><td><code>blocked</code></td><td>Supervisor → session</td><td>Inbox</td><td><code>unblocked</code></td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Inbox files and acknowledge records</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Item</th><th>Writer</th><th>Format</th><th>Acknowledge</th></tr>
+    <tr><td><code>inbox/&lt;name&gt;.txt</code></td><td>UI (legacy)</td><td>Plain text, no sender</td><td><code>cursor.txt</code></td></tr>
+    <tr><td><code>inbox/&lt;name&gt;.json</code></td><td>Messages, supervisor</td><td><code>{ text, from }</code>, no event id</td><td><code>cursor.txt</code></td></tr>
+    <tr><td>Pending answer</td><td><code>answers/</code> + mode <code>pending</code></td><td>Text made at delivery, two code paths</td><td><code>delivered/&lt;decision&gt;.json</code></td></tr>
+    <tr><td>Tool result</td><td><code>ask_user</code> in mode <code>wait</code></td><td><code>ANSWER: &lt;text&gt;</code></td><td><code>delivered</code>, by <code>tool-result</code></td></tr>
+    <tr><td>Supervisor turn</td><td><code>claude -p</code></td><td>Items joined with <code>---</code></td><td><code>cursor.txt</code>, <code>delivered</code>, <code>turn.json</code></td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Event kinds</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Class</th><th>Emitted</th><th>Defined, never emitted</th></tr>
+    <tr><td>Message</td><td><code>brief</code> <code>message</code> <code>decision</code> <code>answer</code> <code>review</code> <code>report</code> <code>update</code></td><td><code>notice</code></td></tr>
+    <tr><td>Relay</td><td><code>report.forward</code> <code>question.forward</code> <code>question.remind</code> <code>question.close</code> <code>unblocked</code></td><td>None</td></tr>
+    <tr><td>Trace</td><td><code>session.input</code> <code>session.output</code> <code>session.tool</code> <code>turn.start</code> <code>turn.end</code> <code>turn.fail</code></td><td>None</td></tr>
+    <tr><td>Lifecycle</td><td><code>session.start</code> <code>session.stop</code> <code>session.archive</code> <code>session.import</code></td><td><code>session.end</code> <code>lease.take</code> <code>lease.release</code> <code>blocked</code></td></tr>
+    <tr><td>Git</td><td><code>branch.create</code> <code>branch.rebase</code> <code>pr.open</code> <code>pr.ready</code> <code>pr.close</code> <code>pr.merge</code> <code>merge.block</code></td><td>None</td></tr>
+  </table>
+  </div>
+</section>
+</div>
+
+<!-- ============================== GAPS ============================== -->
+<div class="panel off" id="gaps" role="tabpanel">
+<section>
+  <p class="summary">18 gaps in four groups. Each gap has the file that shows it. The tab <a href="#changes">Changes A2</a> gives the fix for each gap.</p>
+</section>
+
+<section>
+  <h2>Formats and templates</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>#</th><th>Gap</th><th>Evidence</th><th>Effect</th></tr>
+    <tr><td class="id">G1</td><td>Two renderers for the answer text</td><td><code>inbox.ts</code> deliverAnswers, <code>Texts.AnswerTurn</code></td><td>A live answer and a turn answer can differ</td></tr>
+    <tr><td class="id">G2</td><td>Two subject rules for one envelope</td><td><code>events.ts</code> subject, <code>Subjects.Of</code></td><td>Answer and review subjects differ by writer</td></tr>
+    <tr><td class="id">G3</td><td>Review has two texts for one message</td><td><code>review/render.md</code>, notice <code>review-*</code></td><td><code>review/render.md</code> never reaches a session</td></tr>
+    <tr><td class="id">G4</td><td>Free-text message has no template</td><td><code>Messages.Send</code></td><td>No schema, no card type, no sender line</td></tr>
+    <tr><td class="id">G5</td><td>Two inbox formats</td><td><code>.txt</code> and <code>.json</code> in <code>inbox/</code></td><td>A <code>.txt</code> item has no sender</td></tr>
+    <tr><td class="id">G6</td><td>Notices mix three roles</td><td><code>notice/schema.json</code>, 13 kinds</td><td>Answer notes, receiver renders and real notices share one enum</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Events</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>#</th><th>Gap</th><th>Evidence</th><th>Effect</th></tr>
+    <tr><td class="id">G7</td><td>Kind <code>notice</code> is never emitted</td><td><code>EventKinds.Notice</code></td><td>Each notice uses a relay kind, or none</td></tr>
+    <tr><td class="id">G8</td><td><code>archive-self</code> and review texts have no own event</td><td><code>Lifecycle.ArchiveInApp</code>, <code>Messages.Review</code></td><td>The stream does not show the inbox item</td></tr>
+    <tr><td class="id">G9</td><td>Supervisor writes the inbox before the event</td><td><code>Supervisor.ForwardReport</code>, <code>ForwardQuestions</code></td><td>Breaks the rule "event first"</td></tr>
+    <tr><td class="id">G10</td><td>Wrong or missing sender</td><td><code>orch send</code>, <code>mcp__orch__answer</code>, <code>update</code></td><td>Session text shows as user; root relay is not recorded</td></tr>
+    <tr><td class="id">G11</td><td><code>turn.start</code> holds the full prompt</td><td><code>Supervisor.RunTurn</code></td><td>Each message body is stored two times</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Delivery and acknowledge</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>#</th><th>Gap</th><th>Evidence</th><th>Effect</th></tr>
+    <tr><td class="id">G12</td><td>Two delivery paths: inbox and answers</td><td><code>Pending</code>, <code>deliverAnswers</code></td><td>Two orders, two acknowledge records</td></tr>
+    <tr><td class="id">G13</td><td>No acknowledge for each inbox item</td><td><code>cursor.txt</code></td><td>No link from an inbox file to its <code>session.input</code> in a live session</td></tr>
+    <tr><td class="id">G14</td><td>Only the last report is forwarded</td><td><code>ForwardReport</code> reads <code>report.json</code></td><td>Two reports in one tick: the first is lost</td></tr>
+    <tr><td class="id">G15</td><td>Chat text answers the newest open decision</td><td><code>answerFromChat</code></td><td>A chat line that is not an answer closes a decision</td></tr>
+    <tr><td class="id">G16</td><td>Delivery block has no event</td><td><code>blocked.json</code> from <code>submit</code></td><td>The stop latch shows only in a state file</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>User inbox</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>#</th><th>Gap</th><th>Evidence</th><th>Effect</th></tr>
+    <tr><td class="id">G17</td><td>Queue reads state files, not events</td><td><code>Board.OpenDecisions</code>, <code>DefaultsToReview</code></td><td>Each new card type needs new code</td></tr>
+    <tr><td class="id">G18</td><td>A root report has no card</td><td><code>Queue.razor</code></td><td>A root done or blocked report waits unseen</td></tr>
+  </table>
+  </div>
+</section>
+</div>
+
+<!-- ============================== TARGET ============================== -->
+<div class="panel off" id="target" role="tabpanel">
+<section>
+  <h2>The envelope gets two fields and three refs</h2>
+<pre class="code"><span class="c">// store/events/&lt;day&gt;/&lt;id&gt;.json — the id is also the message id</span>
+{
+  "id": "1763300000000-a1b2c3d4-cli", "at": "…", "session": "&lt;session id&gt;",
+  "kind": "decision", "from": "session:&lt;id&gt;", "to": "user",
+  "subject": "Which color do we use in color.txt?", "body": "bodies/&lt;day&gt;/&lt;id&gt;.json",
+  <span class="k">"thread"</span>: "toolu_01RAQ",          <span class="c">// decision id, report event id or brief event id</span>
+  <span class="k">"needs"</span>: "answer",                <span class="c">// answer | review | ack | null — the user must act</span>
+  "refs": { <span class="k">"reply"</span>: "&lt;event id&gt;", <span class="k">"via"</span>: "session:&lt;root&gt; | chat", <span class="k">"message"</span>: "&lt;event id&gt;" }
+}</pre>
+  <div class="scroll">
+  <table>
+    <tr><th>Field</th><th>Set by</th><th>Use</th></tr>
+    <tr><td><code>thread</code></td><td><code>Messages.Post</code></td><td>Groups a decision, its answer, review and notices</td></tr>
+    <tr><td><code>needs</code></td><td><code>Messages.Post</code>, from the kind table</td><td>Marks a card for the user inbox</td></tr>
+    <tr><td><code>refs.reply</code></td><td>Each reply</td><td>Closes the card that it answers</td></tr>
+    <tr><td><code>refs.via</code></td><td>A relay: root tool, chat composer</td><td>Records who typed the words of the user</td></tr>
+    <tr><td><code>refs.message</code></td><td>Delivery events</td><td>Links a delivery to its message</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Event classes</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Class</th><th>Kinds</th><th>Rule</th></tr>
+    <tr><td>Message</td><td><code>brief</code> <code>message</code> <code>decision</code> <code>answer</code> <code>review</code> <code>report</code> <code>update</code> <code>notice</code> <code>ack</code></td><td>One event for each message. Kind = template name</td></tr>
+    <tr><td>Delivery</td><td><code>message.queued</code> <code>message.delivered</code> <code>delivery.blocked</code> <code>delivery.resumed</code></td><td>Each has <code>refs.message</code>, or the session</td></tr>
+    <tr><td>Trace</td><td><code>session.input</code> <code>session.output</code> <code>session.tool</code> <code>turn.*</code></td><td>Written by the plugin and the runner. <code>session.input</code> gets <code>refs.message</code></td></tr>
+    <tr><td>Lifecycle</td><td>Names below. Stream B owns the states</td><td>Same envelope, <code>needs</code> = null</td></tr>
+    <tr><td>Git</td><td><code>branch.*</code> <code>pr.*</code> <code>merge.block</code></td><td>No change</td></tr>
+  </table>
+  </div>
+  <p>There are no relay kinds. A forward to the parent is a <code>message.queued</code> event. A reminder, a close and a restart are <code>notice</code> events.</p>
+</section>
+
+<section>
+  <h2>One template for each kind, one render for each receiver</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Kind</th><th>Session render</th><th>Parent render</th><th>Prefix of the text</th></tr>
+    <tr><td><code>brief</code></td><td><code>brief/render.md</code></td><td>None</td><td><code># &lt;title&gt;</code></td></tr>
+    <tr><td><code>message</code></td><td><code>message/render.md</code> (new)</td><td>None</td><td><code>Message from &lt;sender&gt;:</code>, no prefix from the user</td></tr>
+    <tr><td><code>decision</code></td><td>None</td><td><code>decision/render/parent.md</code></td><td><code>Question from child</code></td></tr>
+    <tr><td><code>answer</code></td><td><code>answer/render.md</code> + <code>render/note-*.md</code></td><td>None</td><td><code>Answer to decision</code></td></tr>
+    <tr><td><code>review</code></td><td><code>review/render/&lt;verdict&gt;.md</code></td><td>None</td><td><code>Review of decision</code></td></tr>
+    <tr><td><code>report</code></td><td>None</td><td><code>report/render/parent.md</code></td><td><code>Report from child</code></td></tr>
+    <tr><td><code>notice</code></td><td><code>notice/render/&lt;kind&gt;.md</code></td><td>Same</td><td>Fixed for each notice kind</td></tr>
+  </table>
+  </div>
+  <p>Only C# renders. The plugin gets the rendered text in the inbox file. The default and docs texts are answer notes. The review and child texts are renders of their own kind.</p>
+</section>
+
+<section>
+  <h2>Notice kinds: only supervisor texts</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Notice kind</th><th>To</th><th>Trigger</th><th>Source today</th></tr>
+    <tr><td><code>question-reminder</code></td><td>Parent</td><td>Open child question, no default will apply</td><td>Same name</td></tr>
+    <tr><td><code>question-closed</code></td><td>Parent</td><td>Child question gets an answer</td><td>Same name</td></tr>
+    <tr><td><code>archive-self</code></td><td>Session live in the app</td><td><code>orch archive</code></td><td>Same name</td></tr>
+    <tr><td><code>restart</code></td><td>Session</td><td>Run again after failed turns</td><td><code>blocked</code>, renamed: the word is also a report state</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>The user inbox reads one query</h2>
+<pre class="code"><span class="c">// GET /api/inbox — Board.Inbox(), orch inbox</span>
+open cards = events where <span class="k">needs</span> != null
+             and the user must act (to = user, or kind = answer by docs or policy)
+             and no event has <span class="k">refs.reply</span> = card id
+             and the card is the newest event of its <span class="k">thread</span> with needs</pre>
+  <div class="scroll">
+  <table>
+    <tr><th>Card</th><th>Needs</th><th>Quick view</th><th>Accept posts</th><th>Refuse posts</th></tr>
+    <tr><td><code>decision</code></td><td><code>answer</code></td><td>Question, recommendation, default, risk</td><td><code>answer</code> = default option. No default: text field</td><td>Text field, then <code>answer</code></td></tr>
+    <tr><td><code>answer</code> by docs or policy</td><td><code>review</code></td><td>Question, answer, by, reason, PR</td><td><code>review</code> approve</td><td><code>review</code> refuse, optional text</td></tr>
+    <tr><td><code>report</code> done or blocked</td><td><code>ack</code></td><td>Summary, done or blockers, links</td><td><code>ack</code></td><td>Text field, then <code>message</code> to the session</td></tr>
+  </table>
+  </div>
+  <p>The review verdict <code>change</code> always needs text, so it is not a swipe. Each reply has <code>refs.reply</code> = the card id. The card contract gives the data; the UI design is not on this page.</p>
+</section>
+
+<section>
+  <h2>Lifecycle messages: names only</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Name</th><th>Class</th><th>From → to</th><th>Inbox item</th></tr>
+    <tr><td><code>session.start</code></td><td>Lifecycle event</td><td>User, parent → session</td><td>No. The <code>brief</code> is the item</td></tr>
+    <tr><td><code>session.stop</code>, <code>session.resume</code></td><td>Lifecycle event</td><td>User, root → session</td><td>No</td></tr>
+    <tr><td><code>session.archive</code></td><td>Lifecycle event</td><td>User, root → session</td><td>No</td></tr>
+    <tr><td><code>archive-self</code></td><td>Notice</td><td>Supervisor → session</td><td>Yes</td></tr>
+    <tr><td><code>restart</code></td><td>Notice</td><td>Supervisor → session</td><td>Yes</td></tr>
+    <tr><td><code>session.import</code>, <code>session.end</code>, <code>lease.take</code>, <code>lease.release</code></td><td>Lifecycle event</td><td>Supervisor, plugin</td><td>No</td></tr>
+  </table>
+  </div>
+  <p class="note">Stream B owns the session states, the stale rules and the transitions. This design owns only the envelope and the notice texts of these names.</p>
+</section>
+</div>
+
+<!-- ============================== DELIVERY ============================== -->
+<div class="panel off" id="delivery" role="tabpanel">
+<section>
+  <h2>A child question, from ask to close</h2>
+  <div class="box">
+<pre class="mermaid">
+sequenceDiagram
+  participant C as Child
+  participant P as Messages.Post
+  participant R as Root
+  participant U as User inbox
+  C->>P: ask_user (decision)
+  P-->>U: decision, needs answer
+  P-->>R: queued, parent render
+  U->>P: swipe accept (answer, reply)
+  P-->>C: queued, answer render
+  C-->>P: message.delivered
+  P-->>R: notice question-closed
+</pre>
+  </div>
+</section>
+
+<section>
+  <h2>Inbox file</h2>
+<pre class="code"><span class="c">// sessions/&lt;id&gt;/inbox/&lt;event id&gt;.json — one file for each receiver of a message</span>
+{ "message": "&lt;event id&gt;", "kind": "answer", "from": "user", "thread": "toolu_01RAQ",
+  "text": "Answer to decision toolu_01RAQ (Which color …?): GREEN" }</pre>
+  <p>The name is the event id, so the names sort by time. The <code>text</code> is the render for this receiver, made at queue time.</p>
+</section>
+
+<section>
+  <h2>Delivery rules</h2>
+  <ol>
+    <li>Only the lease holder delivers. Holder <code>live</code>: the plugin. Any other holder: a supervisor turn.</li>
+    <li>Deliver in the order of the inbox names. Answers use the same inbox. There is no second path.</li>
+    <li>Skip an item that has a <code>delivered/&lt;message&gt;.json</code> record.</li>
+    <li>A supervisor turn joins the items with <code>---</code>. The plugin submits one item for each turn.</li>
+    <li>Delivery is at least once. After a crash, an item can arrive two times. The text holds the message id, so the model can see a repeat.</li>
+    <li>If a submit is refused (stop latch), write <code>delivery.blocked</code> one time. Try again each 3 s. Write <code>delivery.resumed</code> after the next good submit.</li>
+    <li>Write the message event first, then the state file, then the inbox file.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Acknowledge rules</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Acknowledge</th><th>Writer</th><th>Record</th><th>Event</th></tr>
+    <tr><td>Item queued</td><td><code>Messages.Post</code></td><td><code>inbox/&lt;event id&gt;.json</code></td><td><code>message.queued</code></td></tr>
+    <tr><td>Item delivered, live</td><td>Plugin</td><td><code>delivered/&lt;message&gt;.json</code>, by <code>live</code></td><td><code>message.delivered</code></td></tr>
+    <tr><td>Item delivered, turn</td><td>Supervisor, after a good turn</td><td><code>delivered/</code>, by <code>supervisor</code></td><td><code>message.delivered</code></td></tr>
+    <tr><td>Answer in a tool result</td><td>Plugin, <code>ask_user</code> wait mode</td><td><code>delivered/</code>, by <code>tool-result</code></td><td><code>message.delivered</code></td></tr>
+    <tr><td>Session got the text</td><td>Plugin</td><td>None</td><td><code>session.input</code> with <code>refs.message</code></td></tr>
+    <tr><td>User acted on a card</td><td><code>Messages.Post</code></td><td>The state file of the reply</td><td>The reply, with <code>refs.reply</code></td></tr>
+  </table>
+  </div>
+  <p>There is no <code>cursor.txt</code>. The <code>delivered/</code> folder is the only acknowledge record, keyed by the message id. The recovery reads <code>refs.inbox</code> of <code>turn.start</code> and writes the missing records.</p>
+</section>
+
+<section>
+  <h2>Answer channels for one decision</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Channel</th><th>From</th><th><code>refs.via</code></th><th>Rule</th></tr>
+    <tr><td>UI card, <code>orch answer</code>, API</td><td><code>user</code></td><td>None</td><td>First answer wins</td></tr>
+    <tr><td>Root tool <code>mcp__orch__answer</code></td><td><code>user</code></td><td><code>session:&lt;root&gt;</code></td><td>Words of the user only</td></tr>
+    <tr><td>Child chat composer</td><td><code>user</code></td><td><code>chat</code></td><td>Only with one open decision</td></tr>
+    <tr><td>Docs check, policy</td><td><code>docs</code>, <code>policy</code></td><td>None</td><td>Needs a review</td></tr>
+  </table>
+  </div>
+  <p>A second answer is refused with the first answer in the error text. The first answer closes the card in all channels.</p>
+</section>
+</div>
+
+<!-- ============================== CHANGES ============================== -->
+<div class="panel off" id="changes" role="tabpanel">
+<section>
+  <p class="summary">The code changes for A2, by part. Each row names the gaps that it fixes. Change <code>docs/store.md</code> in the same commit as each store file change.</p>
+</section>
+
+<section>
+  <h2>Core and store</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Part</th><th>Change</th><th>Files</th><th>Fixes</th></tr>
+    <tr><td>Envelope</td><td>Add <code>thread</code>, <code>needs</code>; refs <code>reply</code>, <code>via</code>, <code>message</code></td><td><code>Event.cs</code>, <code>events.ts</code></td><td>G10, G17</td></tr>
+    <tr><td>Kinds</td><td>Add <code>ack</code> and the four delivery kinds. Retire the five relay kinds</td><td><code>EventKinds.cs</code></td><td>G7, G16</td></tr>
+    <tr><td>Entry point</td><td><code>Messages.Post</code>: validate, event, state, queue. Other methods call it</td><td><code>Messages.cs</code></td><td>G9</td></tr>
+    <tr><td>Inbox</td><td><code>inbox/&lt;event id&gt;.json</code> with message, kind, thread, text. No <code>.txt</code></td><td><code>FileStore.Send</code>, <code>Create</code></td><td>G5, G13</td></tr>
+    <tr><td>Pending</td><td>Inbox minus <code>delivered/</code>. No answer path. No cursor</td><td><code>FileStore.Pending</code>, <code>MarkSent</code></td><td>G12, G13</td></tr>
+    <tr><td>Renders</td><td>One <code>Texts.Render(kind, receiver)</code></td><td><code>Texts.cs</code></td><td>G1, G3</td></tr>
+    <tr><td>Subject</td><td>One rule, in C#. The plugin calls <code>orch</code> for messages</td><td><code>Subjects</code></td><td>G2</td></tr>
+    <tr><td>Turn start</td><td>Keep only refs to the items, not the prompt</td><td><code>Supervisor.RunTurn</code></td><td>G11</td></tr>
+    <tr><td>Inbox query</td><td><code>EventQuery</code> filter <code>needs</code> + no reply</td><td><code>EventQuery.cs</code></td><td>G17</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Supervisor, plugin, CLI and web</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Part</th><th>Change</th><th>Files</th><th>Fixes</th></tr>
+    <tr><td>Forwards</td><td>Queue the <code>report</code> and <code>decision</code> events to the parent. Read reports from the stream</td><td><code>Supervisor.cs</code></td><td>G9, G14</td></tr>
+    <tr><td>Notices</td><td>Reminder, closed, restart, archive-self through <code>Post</code></td><td><code>Supervisor.cs</code>, <code>Lifecycle.cs</code></td><td>G7, G8</td></tr>
+    <tr><td>Plugin tools</td><td><code>ask_user</code>, <code>report</code>, <code>update</code> call <code>orch post</code>. <code>update</code> goes to user</td><td><code>tools.ts</code></td><td>G2, G10</td></tr>
+    <tr><td>Plugin deliverer</td><td>Read the inbox file text. Write <code>delivered/</code>. Remove <code>deliverAnswers</code></td><td><code>inbox.ts</code></td><td>G1, G12</td></tr>
+    <tr><td>Plugin input</td><td><code>session.input</code> gets <code>refs.message</code></td><td><code>events.ts</code></td><td>G13</td></tr>
+    <tr><td>Plugin block</td><td>Emit <code>delivery.blocked</code> and <code>delivery.resumed</code></td><td><code>inbox.ts</code></td><td>G16</td></tr>
+    <tr><td>Chat answer</td><td>Only with one open decision; <code>via</code> = chat</td><td><code>tools.ts</code></td><td>G15</td></tr>
+    <tr><td>Root answer</td><td><code>orch answer --via session:&lt;id&gt;</code></td><td><code>tools.ts</code>, <code>DecisionCommands.cs</code></td><td>G10</td></tr>
+    <tr><td>CLI</td><td><code>orch post</code>, <code>orch inbox</code>, <code>orch ack</code>. <code>orch send</code> sets the session sender</td><td><code>Program.cs</code>, commands</td><td>G10</td></tr>
+    <tr><td>Web</td><td><code>GET /api/inbox</code>, <code>POST /api/inbox/&lt;id&gt;/accept|refuse</code></td><td><code>OrchestratorApi.cs</code>, <code>Board.cs</code></td><td>G17, G18</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Templates and docs</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Part</th><th>Change</th><th>Files</th><th>Fixes</th></tr>
+    <tr><td>Message</td><td>New template <code>message</code>: <code>text</code></td><td><code>templates/message/</code></td><td>G4</td></tr>
+    <tr><td>Receiver renders</td><td>Move <code>child-question</code>, <code>child-report</code>, <code>review-*</code></td><td><code>decision/render/</code>, <code>report/render/</code>, <code>review/render/</code></td><td>G3, G6</td></tr>
+    <tr><td>Answer notes</td><td>Move <code>default-*</code> and <code>docs</code></td><td><code>answer/render/note-*.md</code></td><td>G6</td></tr>
+    <tr><td>Notice</td><td>Four kinds. Rename <code>blocked</code> to <code>restart</code></td><td><code>notice/schema.json</code></td><td>G6</td></tr>
+    <tr><td>Skills</td><td>The prefixes of the texts stay the same</td><td><code>plugin/skills/</code></td><td>None</td></tr>
+    <tr><td>Docs</td><td>Store contract, plan results, design page tab Messages</td><td><code>store.md</code>, <code>plan.md</code></td><td>None</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Open questions</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Question</th><th>Recommendation</th></tr>
+    <tr><td>The plugin sends messages through <code>orch post</code> (one process start, about 1 s). Is the delay acceptable?</td><td>Yes. One validator and one renderer. Trace events stay in TypeScript</td></tr>
+    <tr><td>A chat line with two or more open decisions: which decision gets it?</td><td>None. The model asks the user which question it answers</td></tr>
+    <tr><td>Keep old relay events readable after the change?</td><td>Yes. The timeline reads both until the stores of today are archived</td></tr>
+  </table>
+  </div>
+</section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["summary", "today", "gaps", "target", "delivery", "changes"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "summary";
+    names.forEach(function (n) {
+      document.getElementById(n).classList.toggle("off", n !== name);
+    });
+    document.querySelectorAll("nav button").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
+    });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>
