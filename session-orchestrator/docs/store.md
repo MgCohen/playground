@@ -20,7 +20,7 @@ The plugin `plugin/` and the supervisor share one folder for each session: `stor
 | `report.json`, `reports/<ms>.json` | Plugin | The fields of the report template (`state`, `summary`, `done`, `next`, `blockers`, `links`, `details`), plus `at` and `event` (the id of its `report` event), from the `report` tool |
 | `update.json` | Plugin | The fields of the update template (`step`, `progress`, `summary`), plus `at` and `event`, from the `update` tool |
 | `log-<holder>.txt` | Plugin | Log lines of one holder (`live` or `supervisor`), cut to the last 100 000 characters |
-| `meta.json` | Supervisor, `spawn_child`, `orch new` | `{ id, parent, title, cwd, createdBy, createdAt, started, worktree, agent, skills, repo, branch }`. With `worktree: true`, the first turn makes a git worktree: `cwd` becomes the worktree folder, `repo` the repository and `branch` its branch. A session with `createdBy` and no `started` gets a new `claude -p` session with this id |
+| `meta.json` | Supervisor, `spawn_child`, `orch new` | `{ id, parent, title, cwd, createdBy, createdAt, started, worktree, agent, skills, repo, branch, allowDefaults }`. `allowDefaults: true` (only from the user: `orch new --allow-defaults` or the API) lets `orch merge` carry unapproved defaults of this session and of its children. With `worktree: true`, the first turn makes a git worktree: `cwd` becomes the worktree folder, `repo` the repository and `branch` its branch. A session with `createdBy` and no `started` gets a new `claude -p` session with this id |
 | `blocked.json` | Plugin, supervisor | `{ reason, since }`. `reason` is `null` when the session is not blocked |
 | `docs-checks/<id>.json` | Supervisor | `{ answered, answer, source, at }`: the result of the docs check of one decision |
 | `reviews/<id>.json` | Supervisor | `{ verdict: approve \| change \| refuse, text, at }` |
@@ -82,6 +82,7 @@ The fields from `question` to `waitSeconds` are the decision template (`template
 | `open` | A draft PR exists |
 | `ready` | The user approved it. The PR is ready for review |
 | `closed` | The user refused it, or a version below it. The branch stays |
+| `merged` | `orch merge` merged a branch that carried this version |
 
 A version id is the decision id for version 1 and `<decision>-v<n>` after it. A review applies to the newest version that is not `planned`, and `reviews/<version id>.json` keeps it.
 
@@ -150,6 +151,15 @@ A review of a default decision (texts in `templates/notice/render/review-*.md`):
 | `approve` | `orch decision ready <id>`: mark the PR ready for review. Do not merge |
 | `change` | Change the decision branch and commit. `orch stack rebase <id>` rebases and pushes each branch above it |
 | `refuse` | `orch stack close <id>` closes the PR and each PR above it, keeps the branches and plans a `-v2` version of each. `orch decision start` and `orch decision pr` make the new versions in the direction of the user |
+
+### Merge
+
+`orch merge <pr>` finds each decision version whose branch tip is in the head of the PR and not in its base. With no GitHub remote, use `orch merge <branch> --base <base>`.
+
+- The command refuses the merge while a carried version has an answer by `policy` and no `approve` review. A `change` review also blocks.
+- `allowDefaults` on the session or on a parent permits the merge.
+- A refusal writes one `merge.block` event for each blocker. A merge writes `pr.merge` and sets each carried version to `merged`.
+- The plugin denies `gh pr merge` in Bash and PowerShell in orchestrator sessions.
 
 ## Rules
 

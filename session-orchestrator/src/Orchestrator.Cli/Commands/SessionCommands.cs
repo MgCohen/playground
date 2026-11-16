@@ -19,6 +19,7 @@ public static class SessionCommands
             Agent = a.Option("agent"),
             Cwd = Path.GetFullPath(a.Option("cwd") ?? c.Cwd).Replace('\\', '/'),
             Worktree = a.Flag("worktree") ? true : null,
+            AllowDefaults = a.Flag("allow-defaults") ? true : null,
             Parent = a.Option("parent") is { } parent ? c.Messages.RequireSession(parent) : null,
         };
         var id = c.Messages.NewSession(brief, a.Option("created-by") ?? "orch", brief.Parent is { } p ? Parties.Session(p) : Parties.User);

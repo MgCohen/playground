@@ -20,6 +20,7 @@ public sealed record BriefFields
     public string? Cwd { get; init; }
     public bool? Worktree { get; init; }
     public string? Parent { get; init; }
+    public bool? AllowDefaults { get; init; }
 }
 
 public sealed class Messages(FileStore store)
@@ -27,13 +28,13 @@ public sealed class Messages(FileStore store)
     public string NewSession(BriefFields brief, string createdBy, string from = Parties.User)
     {
         var fields = Fields(("title", brief.Title), ("goal", brief.Goal), ("scope", brief.Scope), ("doneWhen", brief.DoneWhen),
-            ("skills", brief.Skills), ("agent", brief.Agent), ("cwd", brief.Cwd), ("worktree", brief.Worktree), ("parent", brief.Parent));
+            ("skills", brief.Skills), ("agent", brief.Agent), ("cwd", brief.Cwd), ("worktree", brief.Worktree), ("parent", brief.Parent), ("allowDefaults", brief.AllowDefaults));
         Check(Kinds.Brief, fields);
         if (string.IsNullOrEmpty(brief.Cwd)) throw new MessageException("brief: cwd is necessary");
         var id = Guid.NewGuid().ToString();
         var text = store.Templates.Render(Kinds.Brief, fields);
         store.Events.Append(EventKinds.Brief, from, Parties.Session(id), new Dictionary<string, object?>(fields) { ["text"] = text }, brief.Parent is { } p ? Fields(("parent", p)) : null, id);
-        store.Create(new Meta(id) { Title = brief.Title, Cwd = brief.Cwd, Parent = brief.Parent, CreatedBy = createdBy, Worktree = brief.Worktree, Agent = brief.Agent, Skills = brief.Skills?.ToList() }, text);
+        store.Create(new Meta(id) { Title = brief.Title, Cwd = brief.Cwd, Parent = brief.Parent, CreatedBy = createdBy, Worktree = brief.Worktree, Agent = brief.Agent, Skills = brief.Skills?.ToList(), AllowDefaults = brief.AllowDefaults }, text);
         return id;
     }
 

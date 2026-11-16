@@ -40,7 +40,7 @@ Each decision has one row in [`decisions.md`](decisions.md): 52 rows. The rows b
 | `orch` is a global .NET tool. `orch doctor` shows a stale install (user review: kept) | `dotnet tool uninstall -g Orchestrator.Cli` |
 | The private repository `MgCohen/orch-m5-vsa-copy` is the test repository. Delete it at the end (user review) | `gh repo delete MgCohen/orch-m5-vsa-copy` |
 | `mod/orch/` stays until the next restart of the app, then one commit deletes it (user review) | Delete the folder later |
-| The `orchestrator` agent merges a PR stacked on defaults only after their review | Edit `plugin/agents/orchestrator.md` |
+| `orch merge` refuses a merge that carries unapproved defaults, and a hook blocks `gh pr merge` (user review: enforce in code) | Run `orch new --allow-defaults` for a root that may merge defaults |
 
 ## Blocked
 

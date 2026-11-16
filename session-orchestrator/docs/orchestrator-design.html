@@ -582,7 +582,7 @@ flowchart LR
       <tr><td>Turns</td><td><code>turn.start</code>, <code>turn.end</code>, <code>turn.fail</code></td></tr>
       <tr><td>Lease</td><td><code>lease.take</code>, <code>lease.release</code></td></tr>
       <tr><td>Problems</td><td><code>blocked</code>, <code>unblocked</code>, <code>lease.conflict</code></td></tr>
-      <tr><td>Git</td><td><code>branch.create</code>, <code>branch.rebase</code>, <code>pr.open</code>, <code>pr.ready</code>, <code>pr.close</code></td></tr>
+      <tr><td>Git</td><td><code>branch.create</code>, <code>branch.rebase</code>, <code>pr.open</code>, <code>pr.ready</code>, <code>pr.close</code>, <code>pr.merge</code>, <code>merge.block</code></td></tr>
     </table></div>
   </section>
 
@@ -662,6 +662,7 @@ flowchart TD
       <tr><td><code>orch events</code></td><td>User, UI, sessions</td><td>Query the stream: time, session, kind</td></tr>
       <tr><td><code>orch decision start</code>, <code>pr</code></td><td>Sessions</td><td>Make the branch and the draft PR</td></tr>
       <tr><td><code>orch stack rebase</code>, <code>close</code></td><td>Sessions</td><td>Do the git part of a verdict</td></tr>
+      <tr><td><code>orch merge</code></td><td>Root sessions</td><td>Merge a PR. Refuse it while it carries a default with no approve review</td></tr>
       <tr><td><code>orch stop</code>, <code>archive</code>, <code>open</code></td><td>User</td><td>Stop, archive, open in the app</td></tr>
       <tr><td><code>orch template</code></td><td>User, sessions</td><td>Show the fields of a template, check a file</td></tr>
       <tr><td><code>orch doctor</code></td><td>User</td><td>Check settings, plugin path, store, supervisor</td></tr>

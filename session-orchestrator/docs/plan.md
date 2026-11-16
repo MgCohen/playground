@@ -378,7 +378,7 @@ A real vsa-template stream ran under the orchestrator on a private copy, `MgCohe
 
 Findings:
 
-- PR #3 had the top decision branch as its head, so its merge took the commits of the two unreviewed defaults. The `orchestrator` agent now merges such a PR only after the user reviewed the defaults, or when the brief allows it.
+- PR #3 had the top decision branch as its head, so its merge took the commits of the two unreviewed defaults. Fix (user review, 2026-11-16): `orch merge` refuses such a merge in code, and a hook blocks `gh pr merge` in orchestrator sessions.
 - The root did not archive the child, because the child has open PRs. This follows the archive rule.
 - The default option of a decision can be a long text. The PR title cuts it at 60 characters.
 
