@@ -309,6 +309,24 @@ Findings:
 - The session followed each `orch` instruction with no extra text in the brief. The brief of the test was the same as in P3.
 - The title of a rebuilt PR cuts a long direction of the user at 60 characters.
 
+## M2 result (2026-11-16)
+
+| Part | Result | Evidence |
+|---|---|---|
+| Spike: relative import in a hook | ✅ | `helper.ts` ran at `session.start` |
+| Spike: plugin skills and agents | ✅ Through `--plugin-dir` and `CLAUDE_CODE_PLUGIN_DIRS`, with `orch:` names | A session listed `orch:orch-ask` to `orch:orch-stack` and `orch:worker` |
+| Thin plugin | ✅ Five hook modules. Each tool takes its schema from its template. `spawn_child` runs `orch new` | `plugin/`, `ContractTests` |
+| Event fixes in the plugin | ✅ No empty `session.output`. Tool calls are `session.tool`. Each `session.input` names its sender. `report.forward` and `turn.end` link their pair in `refs` | Session `19d1b782` and its child `99961e91` |
+| Short brief with skills | ✅ A five-line brief that names `orch-ask`, `orch-stack` and `orch-report` gave three stacked default PRs | Session `5bec7d79`, test repository deleted |
+| Parent and child with agents | ✅ The `orchestrator` root started a `worker` child. The user answered GREEN (not an option), and both reports named GREEN | `summary.txt` = GREEN |
+| Settings | ✅ `CLAUDE_CODE_PLUGIN_DIRS` points to `plugin/` | `settings.json.bak-m2-plugin` |
+| Unit tests | ✅ 46 tests | `dotnet test --solution Orchestrator.slnx` |
+
+Findings:
+
+- A session loads the skills of its brief with the `Skill` tool before its first step. The events show each load as a `session.tool` event.
+- The test supervisor ran the plugin with `--plugin-dir` and `--permission-mode auto`, so the settings stayed unchanged until the end of the test.
+
 ## Next steps
 
 Status: the user reviewed the design page and accepted it. The user then asked for the folder structure, the code topology and a roadmap to a stable version. They are on the page (tabs Code and Roadmap) and in this file. The next work is M0, after the user accepts the roadmap. The notes arrive in the chat, or as comments on the page: read them with the `ArtifactComments` tool on the page URL. After a design change, edit `docs/orchestrator-design.html` and publish it with the `Artifact` tool and `url` set to the page URL.
@@ -340,17 +358,12 @@ Rules of the vsa-template work that the M5 stream must obey:
 
 | Question | Recommendation |
 |---|---|
-| Blazor mode | Blazor Server (interactive server), in the same process as the supervisor |
 | Use the VSA framework for the orchestrator? | Not now. Plain .NET until 1.0; decide after the VSA 0.1.0 release |
-| Does `claude -p` with `--session-id` and `--resume` keep the lease and the one-branch rule? | Spike at the M0 start |
-| Can a plugin hook import a relative `.ts` file? | Spike at the M2 start. If not, keep one file |
-| Does `CLAUDE_CODE_PLUGIN_DIRS` give the plugin skills and agents to a session? | Spike at the M2 start |
 | Worktrees: does the supervisor make them, or each brief? | The supervisor makes them and records the folder in `meta.json` |
 | Tunnel: which tool and which sign-in? | Cloudflare Tunnel with Cloudflare Access |
 | Store: files, or SQLite? | Files until M5 shows a real problem |
 | `medium` has `checkDocs: true`. The user named the docs answer only for `low` | Keep it, and ask the user at the M4 start |
 | Delete the old folder `Projects/claude-orchestrator`? It also holds a stray `session-orchestrator/` subfolder with copied type files | Yes, after the next app restart, when the user says so |
-| UI stack: plain HTML from `http.ts`, or a separate app? | Plain HTML and JS served by `http.ts`, no build step |
 | Sign-in for the API (it listens on 127.0.0.1 with no auth) | Cloudflare Access in front of the tunnel, plus a token header |
 | Swipe meaning on a decision card | Right: accept the default. Left: open the free-text answer |
 | Voice input: browser speech or phone dictation? | Phone dictation in the text field: no extra code |
@@ -364,7 +377,6 @@ Rules of the vsa-template work that the M5 stream must obey:
 - The supervisor does not restart a session after `maxFailures` (3) until the supervisor restarts.
 - `/orch-enable` is not tested in the app.
 - The supervisor has no API to stop or archive a session, but the goal needs both.
-- The mod does not write the event fixes of M1 (see `decisions.md`).
 
 ## Test sessions in the app sidebar
 

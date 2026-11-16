@@ -125,7 +125,7 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
             return;
         }
         var meta = store.Meta(id);
-        var request = new TurnRequest(id, cwd, pending.Text, meta.CreatedBy is not null && meta.Started != true);
+        var request = new TurnRequest(id, cwd, pending.Text, meta.CreatedBy is not null && meta.Started != true) { Agent = meta.Agent };
         Track(running, id, () => RunTurn(request, pending));
     }
 

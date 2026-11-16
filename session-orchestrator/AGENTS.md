@@ -42,6 +42,6 @@ C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the U
 - Use a template for each input and output (decision, answer, review, report, update, brief, notice). Templates make the messages the same each time and make the UI easy to build. See `templates/` and the Templates tab of the design page.
 - Show a folder layout as a foldable tree: one line for each folder or file, a short description, and a detail that opens under the line.
 
-## Load the mod
+## Load the plugin
 
-`~/.claude/settings.json` loads the mod for all sessions with two `env` lines: `CLAUDE_CODE_PLUGIN_DIRS` (the absolute path of `mod/orch`) and `CLAUDE_CODE_PLUGIN_DIR_WATCH=1` (hot reload). To remove the mod, delete the two lines. The settings history is in `docs/know-how.md`.
+`~/.claude/settings.json` loads the plugin for all sessions with two `env` lines: `CLAUDE_CODE_PLUGIN_DIRS` (the absolute path of `plugin/`) and `CLAUDE_CODE_PLUGIN_DIR_WATCH=1` (hot reload). To remove the plugin, delete the two lines. A test supervisor with `ORCH_PLUGIN_DIR` loads the plugin with `--plugin-dir` and does not use the settings. The settings history is in `docs/know-how.md`.

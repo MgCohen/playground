@@ -21,7 +21,7 @@ public static class SessionCommands
             Worktree = a.Flag("worktree") ? true : null,
             Parent = a.Option("parent") is { } parent ? c.Messages.RequireSession(parent) : null,
         };
-        var id = c.Messages.NewSession(brief, "orch", brief.Parent is { } p ? Parties.Session(p) : Parties.User);
+        var id = c.Messages.NewSession(brief, a.Option("created-by") ?? "orch", brief.Parent is { } p ? Parties.Session(p) : Parties.User);
         c.Output.WriteLine(id);
         return 0;
     }

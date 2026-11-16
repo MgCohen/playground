@@ -65,13 +65,20 @@ public static class Claude
     static string Last(string text, int length) => text.Length > length ? text[^length..] : text;
 }
 
-public sealed class ClaudeRunner(string storeRoot) : ITurnRunner
+public sealed class ClaudeRunner(string storeRoot, string? pluginDir = null) : ITurnRunner
 {
+    public const string PluginNamespace = "orch";
+
+    public static IReadOnlyList<string> SettingArguments(string? pluginDir) =>
+        pluginDir is null ? ["--setting-sources", "user"] : ["--setting-sources", "project,local", "--permission-mode", "auto", "--plugin-dir", pluginDir];
+
     public async Task<TurnResult> Run(TurnRequest request, CancellationToken cancel)
     {
         var watch = Stopwatch.StartNew();
         var session = request.IsNew ? "--session-id" : "--resume";
-        var call = new ClaudeCall(request.Cwd, request.Prompt, ["--setting-sources", "user", session, request.Id],
+        List<string> arguments = [.. SettingArguments(pluginDir), session, request.Id];
+        if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", agent.Contains(':') ? agent : $"{PluginNamespace}:{agent}"]);
+        var call = new ClaudeCall(request.Cwd, request.Prompt, arguments,
             new Dictionary<string, string> { ["ORCH_HOLDER"] = Holders.Supervisor, ["ORCH_STORE"] = storeRoot.Replace('\\', '/') });
         var output = await Claude.Run(call, null, cancel);
         return new TurnResult(output.Ok, output.Result, output.Error, Math.Round(watch.Elapsed.TotalSeconds));

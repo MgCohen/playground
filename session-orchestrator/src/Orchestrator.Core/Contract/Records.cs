@@ -28,6 +28,9 @@ public sealed record Decision(string Id, string Session)
 {
     public string Kind { get; init; } = "ask_user";
     public string? Question { get; init; }
+    public string? Context { get; init; }
+    public string? Snippet { get; init; }
+    public string? Recommendation { get; init; }
     public string[]? Options { get; init; }
     public JsonElement? Questions { get; init; }
     public string Risk { get; init; } = "medium";
