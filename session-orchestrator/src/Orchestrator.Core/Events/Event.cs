@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Orchestrator.Core.Events;
@@ -18,13 +19,17 @@ public sealed record Event(string Id, string At, string? Session, string Kind, s
         Refs.TryGetValue(key, out var value) && value.ValueKind == JsonValueKind.Array ? value.EnumerateArray().Select(v => v.GetString()).OfType<string>().ToList() : [];
 
     /// <summary>The envelope that this envelope forwards or acknowledges.</summary>
+    [JsonIgnore]
     public string? Of => Ref(RefKeys.Of);
 
     /// <summary>The envelope that this envelope answers.</summary>
+    [JsonIgnore]
     public string? Reply => Ref(RefKeys.Reply);
 
+    [JsonIgnore]
     public string? Via => Ref(RefKeys.Via);
 
+    [JsonIgnore]
     public bool IsForward => Of is not null && Kind != EventKinds.Ack;
 }
 

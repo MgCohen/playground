@@ -21,6 +21,18 @@ public sealed class StreamTests
     }
 
     [Test]
+    public void An_envelope_file_has_only_the_contract_fields()
+    {
+        using var t = new Rig();
+        var id = t.Create("start");
+        var e = t.Store.Send(id, "hello");
+        var day = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(e.Id.Split('-')[0])).UtcDateTime.ToString("yyyy-MM-dd");
+        var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(t.Folder, StoreFiles.Events, day, $"{e.Id}.json"))).RootElement;
+        var names = json.EnumerateObject().Select(p => p.Name).ToList();
+        Assert.That(names, Is.SubsetOf(new[] { "id", "at", "session", "kind", "from", "to", "subject", "body", "refs", "thread", "needs" }));
+    }
+
+    [Test]
     public void Post_refuses_a_body_that_fails_the_schema_and_names_the_field()
     {
         using var t = new Rig();
