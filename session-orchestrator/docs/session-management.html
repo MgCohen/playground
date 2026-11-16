@@ -1,0 +1,443 @@
+<title>Session Management Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one proposal for each tab, each tab starts with its picture. Same tokens as the design page. */
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --fg: #1b2126;
+  --muted: #5b6670;
+  --line: #d9dee3;
+  --accent: #0f6e78;
+  --accent-soft: #e2f1f2;
+  --ok: #2c7a3f;
+  --warn: #9a6200;
+  --bad: #b0322b;
+  --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --ok: #6cc684; --warn: #e0a548; --bad: #ef7d74;
+    --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --ok: #6cc684; --warn: #e0a548; --bad: #ef7d74;
+  --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 72ch; }
+p { margin: 0; }
+ul, ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 5px; }
+.summary { color: var(--muted); max-width: 72ch; }
+nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap;
+}
+nav button {
+  font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 24px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 12px; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+td code { white-space: nowrap; }
+pre.side {
+  margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.65; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg);
+}
+pre.side .c { color: var(--muted); }
+pre.side .a { color: var(--accent); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.grid2 > * { min-width: 0; }
+.verdict { display: flex; gap: 10px; flex-wrap: wrap; }
+.pill { font-family: var(--font-mono); font-size: 12px; border-radius: 12px; padding: 2px 9px; border: 1px solid var(--line); color: var(--muted); }
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+.pill.bad { color: var(--bad); border-color: var(--bad); }
+.pill.rec { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.walk { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); overflow: hidden; }
+.walk .row { display: grid; grid-template-columns: 74px 110px 1fr; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--line); align-items: start; }
+.walk .row:first-child { border-top: 0; }
+.walk .row > * { min-width: 0; }
+.walk .t { font-family: var(--font-mono); font-size: 12px; color: var(--muted); padding-top: 2px; }
+.walk .who { font-family: var(--font-mono); font-size: 12px; color: var(--accent); padding-top: 2px; }
+.walk .row.you .who { color: var(--warn); }
+@media (max-width: 560px) { .walk .row { grid-template-columns: 1fr; gap: 2px; } }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 72ch; }
+.yes { color: var(--ok); font-weight: 600; }
+.no { color: var(--bad); font-weight: 600; }
+.part { color: var(--warn); font-weight: 600; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · session management · 2026-11-16</div>
+  <h1>Session Management Options</h1>
+  <p class="summary">How the orchestrator starts, shows and controls its sessions in the Claude Code app. One proposal for each tab, each with the same worked example. The last tab gives the recommendation and the open questions.</p>
+</header>
+
+<nav role="tablist" aria-label="Proposals">
+  <button role="tab" data-tab="context" aria-selected="true">Context</button>
+  <button role="tab" data-tab="option-a" aria-selected="false">A. Supervisor first</button>
+  <button role="tab" data-tab="option-b" aria-selected="false">B. App first</button>
+  <button role="tab" data-tab="option-c" aria-selected="false">C. Both</button>
+  <button role="tab" data-tab="decision" aria-selected="false">Recommendation</button>
+</nav>
+
+<!-- CONTEXT -->
+<div class="panel" id="context" role="tabpanel">
+  <section>
+    <h2>Requirements</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Requirement</th><th>Weight</th></tr></thead>
+      <tbody>
+        <tr><td>R1</td><td>The orchestrator starts sessions when it needs them, with the settings and context they need</td><td>Must</td></tr>
+        <tr><td>R2</td><td>The sessions use the orchestrator tools</td><td>Must</td></tr>
+        <tr><td>R3</td><td>The orchestrator controls, adds and archives them</td><td>Must</td></tr>
+        <tr><td>R4</td><td>They show in the app, so you can read their data and talk to them</td><td>Must</td></tr>
+        <tr><td>R5</td><td>They show as attached child sessions</td><td>Wish. The visual part is the least important</td></tr>
+        <tr><td>R6</td><td>One writer at a time (the lease)</td><td>A limitation that we found. Review it later</td></tr>
+        <tr><td>—</td><td>Use the existing tools, with our templates and workflow on top. No own harness, no fight with the engine</td><td>Principle</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Findings</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Finding</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>F1</td><td><code>start_session</code> makes an attached session with its title. It works only in a turn that you started, or from a card that you click. So each of your messages gives one level</td><td>Probe tree</td></tr>
+        <tr><td>F2</td><td>The supervisor (<code>claude -p</code>) starts sessions at any time and depth. <code>claude --desktop --resume</code> puts them in the sidebar with their title</td><td>Run 1</td></tr>
+        <tr><td>F3</td><td>Only the app sets the parent link, when it creates the session. No CLI flag or API sets it later. A file edit is overwritten while the app runs. Request #106214 is open</td><td>Research, file test</td></tr>
+        <tr><td>F4</td><td><code>orch enable</code> lets any session join the store and get the tools, with no typed command</td><td>Probe tree</td></tr>
+        <tr><td>F5</td><td>A message from another session is plain text. It cannot run a command, and it cannot let that session start children</td><td>Probes</td></tr>
+        <tr><td>F6</td><td>The store id of an app session (<code>CLAUDE_CODE_SESSION_ID</code>) is not its app id (<code>CLAUDE_CODE_HOST_SESSION_ID</code>)</td><td>Probe tree</td></tr>
+        <tr><td>F7</td><td>The import starts the app process. The session then runs in the app with the lease <code>live</code>. When the app closes, the supervisor continues</td><td>Run 1</td></tr>
+        <tr><td>F8</td><td>The live hand-off works. The opened root got a child report and acted on it</td><td>Run 1</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>What the attachment gives, and how we replace it</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Behavior of an attached child</th><th>Our replacement</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td>The parent gets a note when a child ends a turn</td><td>The child report goes to the parent inbox and starts a parent turn</td><td><span class="yes">exists, tested</span></td></tr>
+        <tr><td>The parent wakes up</td><td>The inbox delivery starts the turn, in the app or under the supervisor</td><td><span class="yes">exists</span></td></tr>
+        <tr><td>A list of the children with their state</td><td><code>orch tree</code>, <code>orch status</code></td><td><span class="yes">exists</span></td></tr>
+        <tr><td>Archive the parent with its children</td><td><code>orch archive --tree</code></td><td><span class="part">small to add</span></td></tr>
+        <tr><td>Remote Control follows the parent</td><td><code>set_remote_control</code> after the import</td><td><span class="part">small to add</span></td></tr>
+        <tr><td>The tree in the sidebar</td><td>One sidebar group for each run</td><td><span class="part">optional, visual only</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>The worked example on each tab</h2>
+    <p>You ask for "run 2": a root orchestrator with three streams, D1, D2 and B1. While you are away, D1 asks a question, and B1 needs one sub-session for a spike. You come back, talk to D1 directly, and the run ends. Each proposal tab follows these steps and shows what you see in the sidebar.</p>
+  </section>
+</div>
+
+<!-- OPTION A -->
+<div class="panel off" id="option-a" role="tabpanel">
+  <section>
+    <h2>A. Supervisor first</h2>
+    <div class="verdict"><span class="pill rec">recommended</span><span class="pill ok">R1 R2 R3 R4</span><span class="pill bad">R5 no</span><span class="pill ok">one start path</span></div>
+    <p>The supervisor starts each session with <code>claude -p</code> and the title (<code>-n</code>). After the first good turn, it imports the session into the app with <code>claude --desktop --resume</code>. The store keeps the real tree. I add Remote Control and the sidebar group with the app tools.</p>
+    <div class="box">
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor You
+  participant Me as This session
+  participant Sup as Supervisor
+  participant S as New session
+  participant App as Claude app
+  You->>Me: start run 2
+  Me->>Sup: orch new --agent orchestrator (root)
+  Sup->>S: claude -p --session-id id -n "Run 2: root"
+  S-->>Sup: first turn done
+  Sup->>App: claude --desktop --resume id
+  App->>S: app process starts, lease live
+  Me->>App: set_remote_control, move to group "Run 2"
+  S->>Sup: spawn_child (D1, D2, B1): same steps, any time, any depth
+</pre>
+    </div>
+  </section>
+  <section>
+    <h2>Walkthrough</h2>
+    <div class="walk">
+      <div class="row you"><div class="t">09:00</div><div class="who">you</div><div>"Start run 2 with the tracks D1, D2 and B1."</div></div>
+      <div class="row"><div class="t">09:00</div><div class="who">this session</div><div><code>orch new --agent orchestrator --title "Run 2: root"</code> with the brief.</div></div>
+      <div class="row"><div class="t">09:01</div><div class="who">supervisor</div><div>Runs the root's first turn, then imports it. The root shows in the sidebar as "Run 2: root".</div></div>
+      <div class="row"><div class="t">09:02</div><div class="who">root</div><div><code>spawn_child</code> three times. Each child runs its first turn and gets imported: "Run 2: D1 merge guard", "Run 2: D2 stop", "Run 2: B1 UI".</div></div>
+      <div class="row"><div class="t">09:03</div><div class="who">this session</div><div>Moves the four sessions into the sidebar group "Run 2" and turns on Remote Control for each.</div></div>
+      <div class="row"><div class="t">10:30</div><div class="who">D1</div><div>Asks a question with <code>ask_user</code>. It shows in <code>orch decisions</code> and in the Queue.</div></div>
+      <div class="row"><div class="t">10:40</div><div class="who">B1</div><div><code>spawn_child</code> for a spike. The supervisor starts and imports "Run 2: B1 spike". You are away, and that is fine. I move it to the group at my next turn.</div></div>
+      <div class="row you"><div class="t">18:00</div><div class="who">you</div><div>Open "Run 2: D1 merge guard" in the sidebar and type the answer and more context. The lease moves to <code>live</code>.</div></div>
+      <div class="row"><div class="t">18:05</div><div class="who">D1</div><div>Reports done. The report goes to the root's inbox. The root reviews the PR.</div></div>
+      <div class="row you"><div class="t">18:30</div><div class="who">you</div><div>"Merge the ready PRs and end run 2."</div></div>
+      <div class="row"><div class="t">18:31</div><div class="who">this session</div><div><code>orch merge</code> for each PR, then <code>orch archive --tree</code> on the root, then <code>archive_session</code> for each app session.</div></div>
+    </div>
+  </section>
+  <section>
+    <h2>The sidebar</h2>
+    <div class="grid2">
+<pre class="side"><span class="c">Group "Run 2"</span>
+  Run 2: root
+  Run 2: D1 merge guard
+  Run 2: D2 stop
+  Run 2: B1 UI
+  Run 2: B1 spike
+<span class="c">(flat inside the group, not attached)</span></pre>
+<pre class="side"><span class="c">orch tree (the real tree)</span>
+<span class="a">Run 2: root</span>
+  D1 merge guard
+  D2 stop
+  B1 UI
+    B1 spike</pre>
+    </div>
+  </section>
+  <section>
+    <h2>Work to build</h2>
+    <ul>
+      <li>Store the app id of each session (F6).</li>
+      <li>Make the import reliable: confirm that the app knows the session before <code>imported</code> is recorded, and make <code>orch open</code> check <code>turn.json</code>.</li>
+      <li><code>orch archive --tree</code>, and a cleanup of the old untitled store sessions.</li>
+      <li>My steps after each import: Remote Control and the sidebar group.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Limits</h2>
+    <ul>
+      <li>No attachment in the sidebar until the app adds a parent flag (#106214). Then the import gets one more argument.</li>
+      <li>The group and Remote Control need a turn of this session. A session that starts while I am idle gets them at my next turn.</li>
+    </ul>
+  </section>
+</div>
+
+<!-- OPTION B -->
+<div class="panel off" id="option-b" role="tabpanel">
+  <section>
+    <h2>B. App first</h2>
+    <div class="verdict"><span class="pill ok">R2 R3 R4 R5</span><span class="pill warn">R1 only on your message</span><span class="pill warn">needs you for each level</span></div>
+    <p>All sessions are app sessions. Each one starts with <code>start_session</code> in a turn that you started, or from a card that you click. The first step of each brief is <code>orch enable</code>, so each session joins the store.</p>
+    <div class="box">
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor You
+  participant Me as This session
+  participant R as Root (app session)
+  participant C as Child (app session)
+  You->>Me: start run 2
+  Me->>R: start_session "Run 2: root", brief starts with orch enable
+  R->>R: orch enable, tools and inbox active
+  R--xC: start_session refused: the turn came from my brief
+  R->>You: card "start D1"
+  You->>R: click the card, or type "start the tracks" in the root
+  R->>C: start_session "Run 2: D1", attached to the root
+</pre>
+    </div>
+  </section>
+  <section>
+    <h2>Walkthrough</h2>
+    <div class="walk">
+      <div class="row you"><div class="t">09:00</div><div class="who">you</div><div>"Start run 2 with the tracks D1, D2 and B1."</div></div>
+      <div class="row"><div class="t">09:00</div><div class="who">this session</div><div><code>start_session</code> "Run 2: root". It is attached to this session.</div></div>
+      <div class="row"><div class="t">09:01</div><div class="who">root</div><div>Runs <code>orch enable</code>. Its starts of D1, D2 and B1 are refused, so it shows three cards.</div></div>
+      <div class="row you"><div class="t">09:02</div><div class="who">you</div><div>Open the root and type "start the tracks", or click the three cards.</div></div>
+      <div class="row"><div class="t">09:03</div><div class="who">root</div><div>Starts D1, D2 and B1, attached to the root. Each runs <code>orch enable --parent</code>.</div></div>
+      <div class="row"><div class="t">10:30</div><div class="who">D1</div><div>Asks a question. It shows in the Queue.</div></div>
+      <div class="row"><div class="t">10:40</div><div class="who">B1</div><div>Wants a spike session. The start is refused, so it shows a card. <strong>Nothing starts while you are away.</strong> B1 waits, or does the spike itself.</div></div>
+      <div class="row you"><div class="t">18:00</div><div class="who">you</div><div>Open D1 and answer. Click B1's card, and "Run 2: B1 spike" starts, attached to B1.</div></div>
+      <div class="row you"><div class="t">18:30</div><div class="who">you</div><div>"Merge the ready PRs and end run 2."</div></div>
+      <div class="row"><div class="t">18:31</div><div class="who">this session</div><div><code>orch merge</code>, then archive the root. The app also archives its finished children.</div></div>
+    </div>
+  </section>
+  <section>
+    <h2>The sidebar</h2>
+<pre class="side">This session
+  <span class="a">Run 2: root</span>
+    Run 2: D1 merge guard
+    Run 2: D2 stop
+    Run 2: B1 UI
+      Run 2: B1 spike   <span class="c">(only after your click at 18:00)</span></pre>
+  </section>
+  <section>
+    <h2>Work to build</h2>
+    <ul>
+      <li>Store the app id (F6).</li>
+      <li>Change the orchestrator prompts: start children with <code>start_session</code> and show a card when the start is refused.</li>
+      <li><code>spawn_child</code> stays only for supervisor runs.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Limits</h2>
+    <ul>
+      <li>R1 fails while you are away: no new session starts without your message or click.</li>
+      <li>Each level of the tree needs one action from you in the parent.</li>
+      <li>The supervisor runs these sessions only when the app is closed (lease <code>none</code>).</li>
+      <li>"You type in the parent" and "card click" are not tested yet.</li>
+    </ul>
+  </section>
+</div>
+
+<!-- OPTION C -->
+<div class="panel off" id="option-c" role="tabpanel">
+  <section>
+    <h2>C. Both</h2>
+    <div class="verdict"><span class="pill ok">R1 R2 R3 R4</span><span class="pill warn">R5 for part of the tree</span><span class="pill warn">two start paths</span></div>
+    <p>When you are in the chat and ask for a start, the session starts with <code>start_session</code> and is attached (B). When the orchestrator needs a session on its own, the supervisor starts and imports it (A).</p>
+    <div class="box">
+<pre class="mermaid">
+flowchart LR
+  need["A session is needed"] --> q{"Does the turn come from your message?"}
+  q -- yes --> b["start_session: attached, then orch enable"]
+  q -- no --> a["supervisor: claude -p, import, group"]
+  b --> store[("store: the real tree")]
+  a --> store
+</pre>
+    </div>
+  </section>
+  <section>
+    <h2>Walkthrough</h2>
+    <div class="walk">
+      <div class="row you"><div class="t">09:00</div><div class="who">you</div><div>"Start run 2 with the tracks D1, D2 and B1."</div></div>
+      <div class="row"><div class="t">09:00</div><div class="who">this session</div><div>Your message started this turn, so I use <code>start_session</code> for the root <strong>and</strong> the three tracks. They are all attached to this session, side by side. <code>--parent</code> links the tracks to the root in the store.</div></div>
+      <div class="row"><div class="t">10:30</div><div class="who">D1</div><div>Asks a question. It shows in the Queue.</div></div>
+      <div class="row"><div class="t">10:40</div><div class="who">B1</div><div>Wants a spike. Its turn is not from you, so the supervisor starts and imports "Run 2: B1 spike". It is not attached.</div></div>
+      <div class="row you"><div class="t">18:00</div><div class="who">you</div><div>Open D1 in the sidebar and answer.</div></div>
+      <div class="row you"><div class="t">18:30</div><div class="who">you</div><div>"Merge the ready PRs and end run 2."</div></div>
+      <div class="row"><div class="t">18:31</div><div class="who">this session</div><div><code>orch merge</code>, <code>orch archive --tree</code>, then <code>archive_session</code> for the app sessions.</div></div>
+    </div>
+  </section>
+  <section>
+    <h2>The sidebar</h2>
+<pre class="side">This session
+  Run 2: root
+  Run 2: D1 merge guard
+  Run 2: D2 stop
+  Run 2: B1 UI
+Run 2: B1 spike   <span class="c">(top level, or in group "Run 2")</span></pre>
+  </section>
+  <section>
+    <h2>Work to build</h2>
+    <ul>
+      <li>All the work of A.</li>
+      <li>The start rule in the orchestrator prompts: <code>start_session</code> when the turn is from you, else <code>spawn_child</code>.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Limits</h2>
+    <ul>
+      <li>Two start paths, so twice the cases to test: an app session and a supervisor session behave differently when the app closes.</li>
+      <li>The attachment follows who started the turn, not the real tree. The tracks are attached to this session, not to the root.</li>
+      <li>The sidebar mixes attached and grouped sessions.</li>
+    </ul>
+  </section>
+</div>
+
+<!-- DECISION -->
+<div class="panel off" id="decision" role="tabpanel">
+  <section>
+    <h2>Comparison</h2>
+    <div class="scroll"><table>
+      <thead><tr><th></th><th>A. Supervisor first</th><th>B. App first</th><th>C. Both</th></tr></thead>
+      <tbody>
+        <tr><td>R1 starts at any time</td><td class="yes">yes</td><td class="no">only on your message or click</td><td class="yes">yes</td></tr>
+        <tr><td>R2 tools</td><td class="yes">yes</td><td class="yes">yes, after <code>orch enable</code></td><td class="yes">yes</td></tr>
+        <tr><td>R3 control and archive</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>R4 in the app, you can talk to it</td><td class="yes">yes, after the import</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>R5 attached</td><td class="no">no, grouped</td><td class="yes">yes, real tree</td><td class="part">part, flat</td></tr>
+        <tr><td>Works while you are away</td><td class="yes">yes</td><td class="no">no</td><td class="yes">yes</td></tr>
+        <tr><td>Start paths to keep</td><td>1</td><td>1</td><td>2</td></tr>
+        <tr><td>Already tested</td><td class="yes">M5, run 1</td><td class="part">root only</td><td class="part">parts</td></tr>
+        <tr><td>Uses only documented features</td><td class="yes">yes</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>Recommendation: A</h2>
+    <p>A meets each must, works while you are away, and has one start path. Each behavior of the attachment except the visual tree already exists in our store, or is a small addition. When the app adds a parent flag (#106214), A gets the real tree with one more argument on the import.</p>
+    <p>Use <code>start_session</code> only for a session that you want next to this chat, for example a probe.</p>
+  </section>
+  <section>
+    <h2>Do</h2>
+    <ol>
+      <li>Store the app id of each session.</li>
+      <li>Make the import reliable: confirm it, and make <code>orch open</code> check <code>turn.json</code>.</li>
+      <li>Add Remote Control after the import, <code>orch archive --tree</code>, and the cleanup of the old store sessions.</li>
+      <li>Record the decision and the findings in <code>plan.md</code> and <code>decisions.md</code>.</li>
+    </ol>
+  </section>
+  <section>
+    <h2>Do not</h2>
+    <ul>
+      <li>Edit the app's session files.</li>
+      <li>Restart the app on purpose to make a change stick.</li>
+      <li>Use the app's private messaging channel to act as you.</li>
+      <li>Build our own harness.</li>
+      <li>Wait for the attachment before the next run.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Questions for you</h2>
+    <ol>
+      <li>Option A, or C? A is simpler. C attaches the sessions that start while you are in the chat.</li>
+      <li>Sidebar groups for each run, or are the titles enough for now?</li>
+    </ol>
+  </section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["context", "option-a", "option-b", "option-c", "decision"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "context";
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
+    document.querySelectorAll("nav button").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
+    });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>

@@ -9,6 +9,7 @@ Read these files before you change this project:
 | `docs/know-how.md` | Engine limits, mod rules, live test recipe, app import, settings |
 | `docs/orchestrator-design.html` | The design page (https://claude.ai/artifact/EggEYH4ivUuPGG9Pw4k1y1) |
 | `docs/how-it-works.html` | How it works today: processes, folders, store files, call stack, sequences (https://claude.ai/artifact/CP2ozBgysFuJSwhrgoHugt) |
+| `docs/session-management.html` | The options for session management, with a worked example each (https://claude.ai/artifact/SRBob5ix2xQ2ArpwDXTJaW) |
 
 ## Rules
 
