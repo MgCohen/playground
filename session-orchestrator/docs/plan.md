@@ -543,6 +543,25 @@ Findings:
 | F8 | `orch archive` archives the store side only. The app keeps the session in the sidebar. Only the app tool `archive_session` removes it | Open. Not known yet if an imported root has the app tools |
 | F9 | The app refuses `archive_session` while Remote Control is on ("live work"), and while the session is open on screen | Turn Remote Control off first. The user closes or archives an open session |
 
+## Sum test, run 2 (2026-11-16)
+
+A new root ("Sum test 2: root", `ca72efff`) ran with the question relay. The 4 children gave 37, 5, 8 and 16. The total is 66. The user said that the flow works.
+
+| Check | Result |
+|---|---|
+| The questions of children 2 and 4 reached the root inbox | ✅ notice `child-question`, event `question.forward` |
+| The root showed each question in its reply | ✅ |
+| The user answered child 2 in the root chat | ✅ the root called `mcp__orch__answer`. Child 2 got "use 5" and reported 5 |
+| Child 4 took the default after 90 s | ✅ |
+
+Findings:
+
+| # | Finding | State |
+|---|---|---|
+| F10 | The policy answered step 1 of child 4. Then the root sent a user answer to the same decision. `orch answer` replaced the default answer, so the store lost the record of the default | Fixed: `orch answer` refuses a decision that has an answer (commit `b967593`) |
+| F11 | The root does not know when a question closes (a default, or an answer in the child chat). Its list of open questions in its replies becomes old | Open |
+| F12 | The format of the root replies is not fixed. It is not clear which items wait for the user and which are done. There is no rule for repeated notices of open questions | Open: next work item. The user asked for a better format of reports and notices |
+
 ## Test sessions in the app sidebar
 
 None of these is archived. Archive them only when the user says so.
