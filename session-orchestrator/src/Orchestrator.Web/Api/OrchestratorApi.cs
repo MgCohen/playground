@@ -1,10 +1,20 @@
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
+using Orchestrator.Core.Policy;
 using Orchestrator.Store;
 
 namespace Orchestrator.Web;
 
-public sealed record NewSession(string? Title, string? Cwd, string? Brief, string? Parent);
+public sealed record NewSession(string? Title, string? Cwd, string? Brief, string? Parent)
+{
+    public string? Goal { get; init; }
+    public string? Scope { get; init; }
+    public string? DoneWhen { get; init; }
+    public List<string>? Skills { get; init; }
+    public string? Agent { get; init; }
+    public bool? Worktree { get; init; }
+}
+
 public sealed record SendText(string? Text);
 public sealed record AnswerText(string? Answer);
 public sealed record ReviewInput(string? Verdict, string? Text);
@@ -33,46 +43,60 @@ public static class OrchestratorApi
 
         api.MapGet("/decisions", (FileStore store) => store.Sessions().SelectMany(store.OpenDecisions));
 
-        api.MapPost("/sessions", (NewSession input, Supervisor.Supervisor s, FileStore store) =>
+        api.MapPost("/sessions", (NewSession input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
         {
-            if (string.IsNullOrEmpty(input.Brief) || string.IsNullOrEmpty(input.Cwd)) return Results.BadRequest(new { error = "brief and cwd are necessary" });
-            var id = Guid.NewGuid().ToString();
-            store.Events.Append("brief", Parties.User, Parties.Session(id), Data(("title", input.Title), ("cwd", input.Cwd), ("text", input.Brief)), null, id);
-            store.Create(new Meta(id) { Title = input.Title, Cwd = input.Cwd, Parent = input.Parent, CreatedBy = Parties.Supervisor }, input.Brief);
+            var brief = new BriefFields
+            {
+                Title = input.Title, Goal = input.Goal ?? input.Brief, Scope = input.Scope, DoneWhen = input.DoneWhen, Skills = input.Skills,
+                Agent = input.Agent, Cwd = input.Cwd, Worktree = input.Worktree, Parent = input.Parent,
+            };
+            var id = new Messages(store).NewSession(brief, Parties.Supervisor);
             s.Tick();
             return Results.Created($"/api/sessions/{id}", new { id });
-        });
+        }));
 
-        api.MapPost("/sessions/{id}/send", (string id, SendText input, Supervisor.Supervisor s, FileStore store) =>
+        api.MapPost("/sessions/{id}/send", (string id, SendText input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
         {
-            var text = input.Text ?? "";
-            var e = store.Events.Append("message", Parties.User, Parties.Session(id), Data(("text", text)), null, id);
-            var name = store.Send(id, text);
+            var (inbox, e) = new Messages(store).Send(id, input.Text ?? "");
             s.Tick();
-            return Results.Accepted(value: new { inbox = name, @event = e.Id });
-        });
+            return Results.Accepted(value: new { inbox, @event = e });
+        }));
 
-        api.MapGet("/events", (FileStore store) => store.Events.All());
+        api.MapGet("/events", (FileStore store, string? since, string? kind, string? session, string? from, bool? open, bool? ledger) => Guard(() =>
+            Results.Ok(store.Query(new EventFilter
+            {
+                Since = since is null ? null : Durations.Since(since, store.Clock.GetUtcNow()),
+                Kinds = kind?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(),
+                Session = session, From = from, Open = open ?? false, Ledger = ledger ?? false,
+            }).ToList())));
 
-        api.MapGet("/ledger", (FileStore store) => store.LedgerLines());
+        api.MapGet("/ledger", (FileStore store) => store.Ledger());
 
-        api.MapPost("/decisions/{session}/{decision}/review", (string session, string decision, ReviewInput input, Supervisor.Supervisor s) =>
+        api.MapPost("/decisions/{session}/{decision}/review", (string session, string decision, ReviewInput input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
         {
-            if (input.Verdict is null || !Verdicts.All.Contains(input.Verdict)) return Results.BadRequest(new { error = "verdict is approve, change or refuse" });
-            var name = s.Review(session, decision, input.Verdict, input.Text ?? "");
+            if (!Verdict.IsValid(input.Verdict)) return Results.BadRequest(new { error = "verdict is approve, change or refuse" });
+            var name = new Messages(store).Review(session, decision, input.Verdict!, input.Text ?? "");
             s.Tick();
             return Results.Accepted(value: new { inbox = name });
-        });
+        }));
 
-        api.MapPost("/decisions/{session}/{decision}", (string session, string decision, AnswerText input, Supervisor.Supervisor s, FileStore store) =>
+        api.MapPost("/decisions/{session}/{decision}", (string session, string decision, AnswerText input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
         {
-            var text = input.Answer ?? "";
-            store.Events.Append("answer", Parties.User, Parties.Session(session), Data(("text", text)), Data(("decision", decision)), session);
-            store.SaveAnswer(session, decision, new Answer { Value = text, By = Parties.User });
+            new Messages(store).Answer(session, decision, input.Answer ?? "");
             s.Tick();
             return Results.Accepted(value: new { answered = decision });
-        });
+        }));
     }
 
-    static Dictionary<string, object?> Data(params (string Key, object? Value)[] pairs) => pairs.ToDictionary(p => p.Key, p => p.Value);
+    static IResult Guard(Func<IResult> work)
+    {
+        try
+        {
+            return work();
+        }
+        catch (Exception e) when (e is MessageException or FormatException)
+        {
+            return Results.BadRequest(new { error = e.Message });
+        }
+    }
 }

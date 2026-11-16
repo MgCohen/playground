@@ -4,6 +4,7 @@
     <Project Path="src/Orchestrator.Store/Orchestrator.Store.csproj" />
     <Project Path="src/Orchestrator.Supervisor/Orchestrator.Supervisor.csproj" />
     <Project Path="src/Orchestrator.Web/Orchestrator.Web.csproj" />
+    <Project Path="src/Orchestrator.Cli/Orchestrator.Cli.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Orchestrator.Tests/Orchestrator.Tests.csproj" />

@@ -15,7 +15,7 @@ public sealed class EventStream(string root, TimeProvider clock, string writer =
         var day = Day(at);
         var body = $"{StoreFiles.Bodies}/{day}/{id}.json";
         Files.WriteJson(Path.Combine(root, body), data);
-        var e = new Event(id, Times.Format(at), session, kind, from, to, Subjects.Of(data), body, ToElements(refs));
+        var e = new Event(id, Times.Format(at), session, kind, from, to, Subjects.Of(kind, data), body, ToElements(refs));
         Files.WriteJson(Path.Combine(root, StoreFiles.Events, day, $"{id}.json"), e);
         return e;
     }

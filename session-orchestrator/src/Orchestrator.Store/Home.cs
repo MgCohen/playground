@@ -8,7 +8,11 @@ public static class Home
     public const string Solution = "Orchestrator.slnx";
 
     public static string Root() =>
-        Environment.GetEnvironmentVariable("ORCH_HOME") is { Length: > 0 } home ? home : FindUp(AppContext.BaseDirectory) ?? FindUp(Environment.CurrentDirectory) ?? Environment.CurrentDirectory;
+        Environment.GetEnvironmentVariable("ORCH_HOME") is { Length: > 0 } home ? home : FindUp(AppContext.BaseDirectory) ?? Built() ?? Environment.CurrentDirectory;
+
+    static string? Built() =>
+        typeof(Home).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false).OfType<System.Reflection.AssemblyMetadataAttribute>()
+            .FirstOrDefault(a => a.Key == "OrchHome")?.Value is { } path && File.Exists(Path.Combine(path, Solution)) ? Path.GetFullPath(path) : null;
 
     public static string StoreRoot() =>
         Environment.GetEnvironmentVariable("ORCH_STORE") is { Length: > 0 } store ? Path.GetFullPath(store) : Path.Combine(Root(), "store");

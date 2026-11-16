@@ -25,6 +25,9 @@ public static class StoreFiles
     public const string SupervisorLog = "supervisor/log.txt";
     public const string Events = "events";
     public const string Bodies = "bodies";
+    public const string Stack = "stack";
+    public const string Turn = "turn.json";
+    public const string LastOutput = "last-output.json";
 
     public static string Json(string id) => $"{id}.json";
 }

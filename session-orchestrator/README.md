@@ -10,6 +10,8 @@ Design page: https://claude.ai/artifact/EggEYH4ivUuPGG9Pw4k1y1 (source `docs/orc
 | `src/Orchestrator.Store/` | Atomic file IO, session files, the event stream |
 | `src/Orchestrator.Supervisor/` | The tick, the decision policy, the `claude -p` runner |
 | `src/Orchestrator.Web/` | One process: the supervisor and the HTTP API |
+| `src/Orchestrator.Cli/` | The `orch` command (a .NET tool): sessions, decisions, stack, events, templates, doctor |
+| `templates/` | One folder for each message kind: `schema.json`, `render.md`, `example.json` |
 | `tests/Orchestrator.Tests/` | NUnit tests with a fake runner and a temporary store |
 | `mod/orch/` | The Claude Code mod: inbox, heartbeat, lease, mirror, tools `ask_user`, `report`, `spawn_child` |
 | `config/` | The decision policies |

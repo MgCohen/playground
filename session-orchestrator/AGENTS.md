@@ -28,6 +28,8 @@ C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the U
 | Build and test | `dotnet test --solution Orchestrator.slnx` |
 | Start the supervisor | `dotnet run --project src/Orchestrator.Web` |
 | Test store and port | Set `ORCH_STORE` and `ORCH_PORT` before the start |
+| Install or update `orch` | `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` |
+| Check the setup | `orch doctor` |
 
 ## Work with the user
 

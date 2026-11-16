@@ -14,5 +14,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Orchestrator.Web/Orchestrator.Web.csproj" />
+    <ProjectReference Include="../../src/Orchestrator.Cli/Orchestrator.Cli.csproj" />
   </ItemGroup>
 </Project>
