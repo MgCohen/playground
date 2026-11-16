@@ -31,6 +31,7 @@ public sealed class Cli(IServiceProvider services)
         pe stable <id> [--domain d]               final call: trial -> stable
         pe remove <id> [--domain d]               final call: the pattern leaves the catalog
         pe trials [domain]                        metrics of each trial pattern; notifications at the thresholds
+        pe review <result.json> [...] [--title t]  build the review page: one card for each run
         """;
 
     private readonly ISender sender = services.GetRequiredService<ISender>();
@@ -60,6 +61,7 @@ public sealed class Cli(IServiceProvider services)
                 "stable" => await Print(sender.SendAsync(new LifecycleCommand(LifecycleAction.Stable, a.Positional(0)!, a.Value("domain")))),
                 "remove" => await Print(sender.SendAsync(new LifecycleCommand(LifecycleAction.Remove, a.Positional(0)!, a.Value("domain")))),
                 "trials" => await TrialsAsync(a),
+                "review" => await Print(sender.SendAsync(new Features.Review.Slices.BuildReview.BuildReviewCommand(a.All, a.Value("title")))),
                 _ => Fail($"unknown command \"{args[0]}\"\n\n{Usage}"),
             };
         }
@@ -240,6 +242,8 @@ public sealed class Cli(IServiceProvider services)
         }
 
         public string? Positional(int i) => i < positional.Count ? positional[i] : null;
+
+        public IReadOnlyList<string> All => positional;
 
         public bool Flag(string key) => named.ContainsKey(key);
 

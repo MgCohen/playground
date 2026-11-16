@@ -6,6 +6,8 @@ paths:
   agents: agents                         # the engine agent files; a pack can replace one in <pack>/agents
   results: results                       # result files (in git)
   runs: results/runs                     # run outputs (not in git)
+  review: results/review                 # review pages (not in git)
+  review_template: src/PatternEngine/Features/Review/template.html
   sandboxes: ""                          # empty = the system temp folder
 
 default_domain: shapes
