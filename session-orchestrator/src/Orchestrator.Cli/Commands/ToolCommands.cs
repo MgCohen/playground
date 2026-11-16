@@ -62,6 +62,7 @@ public static class ToolCommands
         }
         var shell = new Shell(c.Cwd);
         Check("home", () => (File.Exists(Path.Combine(Home.Root(), Home.Solution)), Home.Root()));
+        Check("install", () => Install.Check(new Shell(Home.Root()), Install.Commit));
         Check("store", () => (Directory.Exists(c.Store.Root), c.Store.Root));
         Check("policy", () =>
         {
