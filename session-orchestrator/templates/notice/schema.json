@@ -5,7 +5,7 @@
   "type": "object",
   "required": ["kind"],
   "properties": {
-    "kind": { "enum": ["default-stacked-pr", "default-commit", "default-none", "docs", "review-approve", "review-change", "review-refuse", "child-report", "child-question", "question-reminder", "question-closed", "blocked"] },
+    "kind": { "enum": ["default-stacked-pr", "default-commit", "default-none", "docs", "review-approve", "review-change", "review-refuse", "child-report", "child-question", "question-reminder", "question-closed", "archive-self", "blocked"] },
     "decision": { "type": "string" },
     "question": { "type": "string" },
     "reason": { "type": "string" },

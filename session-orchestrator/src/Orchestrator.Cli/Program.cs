@@ -20,7 +20,7 @@ namespace Orchestrator.Cli
               orch status <session>
               orch stop <session> [--reason R]
               orch resume <session>
-              orch archive <session> [--force] [--tree]
+              orch archive <session> [--force] [--tree] [--store-only] [--wait <seconds>]
               orch open <session> [--dry-run]
             Decisions
               orch decisions

@@ -25,7 +25,12 @@ public static class LifecycleCommands
     {
         var id = c.Session(1);
         var lifecycle = new Lifecycle(c.Store);
-        var lines = c.Args.Flag("tree") ? lifecycle.ArchiveTree(id, Parties.User, c.Args.Flag("force")) : lifecycle.Archive(id, Parties.User, c.Args.Flag("force"));
+        var tree = c.Args.Flag("tree");
+        foreach (var blocked in (tree ? lifecycle.TreeOf(id) : [id]).Where(s => !c.Args.Flag("force") && lifecycle.ArchiveBlockers(s).Count > 0))
+            throw new MessageException($"session {blocked} is not archived: {string.Join("; ", lifecycle.ArchiveBlockers(blocked))}. Use --force to archive it anyway.");
+        if (!c.Args.Flag("store-only"))
+            foreach (var line in lifecycle.ArchiveInApp(tree ? lifecycle.TreeOf(id) : [id], TimeSpan.FromSeconds(double.TryParse(c.Args.Option("wait"), out var seconds) ? seconds : 120))) c.Output.WriteLine(line);
+        var lines = tree ? lifecycle.ArchiveTree(id, Parties.User, c.Args.Flag("force")) : lifecycle.Archive(id, Parties.User, c.Args.Flag("force"));
         foreach (var line in lines) c.Output.WriteLine(line);
         return 0;
     }
