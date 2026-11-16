@@ -27,7 +27,8 @@ public static class Claude
         foreach (var argument in new[] { "-p", "--output-format", "stream-json", "--verbose" }.Concat(call.Arguments)) info.ArgumentList.Add(argument);
         foreach (var (key, value) in call.Environment) info.Environment[key] = value;
         using var process = Process.Start(info) ?? throw new InvalidOperationException($"cannot start {Executable}");
-        using var kill = cancel.Register(() => { try { process.Kill(entireProcessTree: true); } catch (InvalidOperationException) { } });
+        using var tree = new ProcessTree(process, ProcessTree.DefaultInterval);
+        using var kill = cancel.Register(tree.KillAll);
         await process.StandardInput.WriteAsync(call.Prompt);
         process.StandardInput.Close();
         var errors = process.StandardError.ReadToEndAsync(CancellationToken.None);

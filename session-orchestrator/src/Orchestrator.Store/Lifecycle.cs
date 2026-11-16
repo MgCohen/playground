@@ -55,9 +55,37 @@ public sealed class Lifecycle(FileStore store)
         if (!Directory.Exists(worktree)) return $"The worktree {worktree} does not exist.";
         if (new Shell(worktree).Git("status", "--porcelain") is { Ok: true } status && status.Text.Length > 0)
             return $"The worktree {worktree} has changes that are not committed, so it stays.";
-        var remove = shell.Git("worktree", "remove", worktree);
-        return remove.Ok ? $"Removed the worktree {worktree}. The branch {branch} stays." : $"The worktree {worktree} stays: {remove.Error.Trim()}";
+        var error = "";
+        foreach (var delay in RemoveDelays.Prepend(TimeSpan.Zero))
+        {
+            Thread.Sleep(delay);
+            if (File.Exists(Path.Combine(worktree, ".git")))
+            {
+                var remove = shell.Git("worktree", "remove", worktree);
+                if (!remove.Ok) error = remove.Error.Trim();
+            }
+            if (Directory.Exists(worktree) && !File.Exists(Path.Combine(worktree, ".git")))
+            {
+                try
+                {
+                    Directory.Delete(worktree, recursive: true);
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    error = e.Message;
+                }
+            }
+            if (!Directory.Exists(worktree))
+            {
+                shell.Git("worktree", "prune");
+                return $"Removed the worktree {worktree}. The branch {branch} stays.";
+            }
+        }
+        return $"The worktree {worktree} stays: {error}";
     }
+
+    public static IReadOnlyList<TimeSpan> RemoveDelays { get; set; } =
+        [TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(4)];
 
     public static (string Repo, string Path, string Branch) WorktreePlan(string cwd, string id)
     {
