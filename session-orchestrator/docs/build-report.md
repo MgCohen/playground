@@ -39,7 +39,7 @@ Each decision has one row in [`decisions.md`](decisions.md): 52 rows. The rows b
 | `~/.claude/settings.json` loads `plugin/` instead of `mod/orch` | Copy `settings.json.bak-m2-plugin` back |
 | `orch` is a global .NET tool. `orch doctor` shows a stale install (user review: kept) | `dotnet tool uninstall -g Orchestrator.Cli` |
 | The private repository `MgCohen/orch-m5-vsa-copy` is the test repository. Delete it at the end (user review) | `gh repo delete MgCohen/orch-m5-vsa-copy` |
-| `mod/orch/` stays until the open sessions that loaded it end | Delete the folder later |
+| `mod/orch/` stays until the next restart of the app, then one commit deletes it (user review) | Delete the folder later |
 | The `orchestrator` agent merges a PR stacked on defaults only after their review | Edit `plugin/agents/orchestrator.md` |
 
 ## Blocked
