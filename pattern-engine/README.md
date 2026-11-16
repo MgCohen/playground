@@ -6,13 +6,15 @@ A generic engine that turns a request into an output with a catalog of patterns,
 |---|---|
 | [docs/design/](docs/design/README.md) | Features, architecture, plan, decisions, build log |
 | `src/PatternEngine/` | The C# engine: `App/Host`, `Plugins/`, `Features/`, `Domains/` |
-| `agents/` | The agent files: decider, composer, escalation, pattern-author |
+| `agents/` | The agent files: decider, composer, escalation, pattern-author; for composition: composer-decider, grader, decomposer |
 | `tests/PatternEngine.Tests/` | Unit, scripted engine and parity tests (no model) |
 | `pe.settings.yaml` | Every value; a pack overrides it in `Domains/<Pack>/pack.settings.yaml` |
 | `results/` | Result files (in git); run outputs and review pages are not in git |
 | [spike/](spike/README.md) | The Node spike: the parity reference for `shapes` |
 
 Domains: `shapes` (SVG drawings), `circuits` (logic circuits, graded by a truth table), `topology` (design patterns with typed ports, graded by data flow).
+
+Composition has its own loop in `Features/Compose` and its own domain, `Domains/Party`: a party of heroes for one or more quests, with no ports. See [the composition plan](docs/design/plans/composition.md).
 
 ## Commands
 
@@ -31,6 +33,8 @@ pe propose <run folder>/<id>.md   # a proposed pattern of a run goes into the ca
 pe approve <id>                   # a person approves: proposed -> trial
 pe trials [domain]                # metrics of each trial pattern; notifications at the thresholds
 pe stable <id> | pe remove <id>   # the final call of a person
+pe compose eval --rung budget --strategy compare   # party cases with the compose loop; the oracle grades each run
+pe compose grader-check           # the grader agent on fixed pairs, against the oracle
 ```
 
 Run the tests with `dotnet test`. The agent calls use the Claude CLI with your login.

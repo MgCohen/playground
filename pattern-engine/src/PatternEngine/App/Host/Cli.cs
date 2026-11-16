@@ -32,6 +32,10 @@ public sealed class Cli(IServiceProvider services)
         pe remove <id> [--domain d]               final call: the pattern leaves the catalog
         pe trials [domain]                        metrics of each trial pattern; notifications at the thresholds
         pe review <result.json> [...] [--title t]  build the review page: one card for each run
+        pe compose eval [--rung r | --only a,b] [--strategy s] [--mode smoke|dev] [--k n] [--model m] [--label t] [--dry]
+                        [--spec decompose|given] [--lore on|off]   (prose cases)
+                                                  run party cases with the compose loop; the oracle grades each run
+        pe compose grader-check [--mode dev] [--model m]   grade the fixed pairs; compare each verdict with the oracle
         """;
 
     private readonly ISender sender = services.GetRequiredService<ISender>();
@@ -61,6 +65,7 @@ public sealed class Cli(IServiceProvider services)
                 "stable" => await Print(sender.SendAsync(new LifecycleCommand(LifecycleAction.Stable, a.Positional(0)!, a.Value("domain")))),
                 "remove" => await Print(sender.SendAsync(new LifecycleCommand(LifecycleAction.Remove, a.Positional(0)!, a.Value("domain")))),
                 "trials" => await TrialsAsync(a),
+                "compose" => await ComposeAsync(a),
                 "review" => await Print(sender.SendAsync(new Features.Review.Slices.BuildReview.BuildReviewCommand(a.All, a.Value("title")))),
                 _ => Fail($"unknown command \"{args[0]}\"\n\n{Usage}"),
             };
@@ -198,6 +203,58 @@ public sealed class Cli(IServiceProvider services)
             Console.WriteLine($"  {c}");
         }
 
+        return 0;
+    }
+
+    private async Task<int> ComposeAsync(Args a)
+    {
+        var root = services.GetRequiredService<EngineRoot>();
+        var settings = services.GetRequiredService<Plugins.Settings.Settings>();
+        var pack = Domains.Party.PartyPack.Load(Path.Combine(root.Path(settings.Section("paths").Text("domains")), "Party"), Path.Combine(root.Dir, EngineRoot.SettingsFile));
+        if (pack.Errors.Count > 0)
+        {
+            return Fail($"the party pack has errors:\n{string.Join('\n', pack.Errors)}");
+        }
+
+        var mode = a.Value("mode") ?? "dev";
+        var m = pack.Settings.Section("eval", "modes", mode);
+        var rung = a.Value("rung");
+        var cases = a.List("only").Count > 0 ? a.List("only") : pack.Cases.Where(c => rung is null || c.Rung == rung).Select(c => c.Id).ToList();
+        var decomposer = pack.Settings.Section("party", "decomposer");
+        var options = new Domains.Party.PartyRunOptions(
+            mode,
+            a.Value("model") ?? m.Text("model"),
+            a.Int("k") ?? m.Int("k"),
+            cases,
+            a.Value("strategy") ?? pack.Settings.Section("compose").Text("strategy"),
+            a.Value("label"),
+            a.Value("spec") ?? decomposer.Text("spec"),
+            (a.Value("lore") ?? decomposer.Text("lore")) is "on" or "true" or "True");
+        if (a.Flag("dry"))
+        {
+            Console.WriteLine($"Mode {mode}: model {options.Model}, k={options.K}, strategy {options.Strategy}, cases {string.Join(", ", cases)}");
+            return 0;
+        }
+
+        var judge = pack.Settings.Section("judge", "cli");
+        var agents = new Plugins.Agents.AgentCatalog([root.Path(pack.Settings.Section("paths").Text("agents"))]);
+        var cli = new Plugins.Agents.CliJudgeSettings(judge.Text("executable"), options.Model, judge.Int("retries"), judge.Int("timeout_seconds"));
+        var limits = pack.Settings.Section("engine", "limits", "run");
+        var runner = new Domains.Party.PartyRunner(
+            pack,
+            () => new Plugins.Agents.CliJudge(agents, cli),
+            new Features.Engine.Domain.RunLimits(limits.Int("agent_calls"), limits.Number("cost_usd"), limits.Int("seconds")),
+            Path.Combine(Path.GetTempPath(), "pattern-engine-runs"));
+        var result = a.Positional(0) switch
+        {
+            "eval" => await runner.RunAsync(options, Console.WriteLine, CancellationToken.None),
+            "grader-check" => await runner.GraderCheckAsync(options, Console.WriteLine, CancellationToken.None),
+            _ => throw new InvalidOperationException("use pe compose eval or pe compose grader-check"),
+        };
+        var file = Domains.Party.PartyRunner.Write(result, root.Path(pack.Settings.Section("paths").Text("results")));
+        Console.WriteLine();
+        Console.WriteLine(result.Report);
+        Console.WriteLine($"Result: {Path.GetRelativePath(root.Dir, file)}");
         return 0;
     }
 

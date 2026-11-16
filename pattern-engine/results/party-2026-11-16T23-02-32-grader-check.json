@@ -1,0 +1,215 @@
+{
+  "run_id": "2026-11-16T23-02-32-grader-check",
+  "kind": "grader-check",
+  "mode": "dev",
+  "model": "haiku",
+  "strategy": "greedy",
+  "calls": 20,
+  "cost": 0.009435339999999999,
+  "runs": [],
+  "grader_check": [
+    {
+      "quest": "c1",
+      "party": [
+        "paladin"
+      ],
+      "right": 2,
+      "total": 2,
+      "wrong": []
+    },
+    {
+      "quest": "c1",
+      "party": [
+        "cleric"
+      ],
+      "right": 2,
+      "total": 2,
+      "wrong": []
+    },
+    {
+      "quest": "c2",
+      "party": [
+        "thief"
+      ],
+      "right": 2,
+      "total": 2,
+      "wrong": []
+    },
+    {
+      "quest": "c2",
+      "party": [
+        "ranger"
+      ],
+      "right": 2,
+      "total": 2,
+      "wrong": []
+    },
+    {
+      "quest": "c3",
+      "party": [
+        "paladin",
+        "ranger"
+      ],
+      "right": 4,
+      "total": 4,
+      "wrong": []
+    },
+    {
+      "quest": "c3",
+      "party": [
+        "champion"
+      ],
+      "right": 4,
+      "total": 4,
+      "wrong": []
+    },
+    {
+      "quest": "c4",
+      "party": [
+        "archmage",
+        "thief",
+        "hunter"
+      ],
+      "right": 4,
+      "total": 4,
+      "wrong": []
+    },
+    {
+      "quest": "c4",
+      "party": [
+        "druid",
+        "thief"
+      ],
+      "right": 4,
+      "total": 4,
+      "wrong": []
+    },
+    {
+      "quest": "b1",
+      "party": [
+        "cleric",
+        "guard",
+        "squire"
+      ],
+      "right": 4,
+      "total": 4,
+      "wrong": []
+    },
+    {
+      "quest": "b1",
+      "party": [
+        "paladin",
+        "cleric"
+      ],
+      "right": 4,
+      "total": 4,
+      "wrong": []
+    },
+    {
+      "quest": "b1",
+      "party": [
+        "paladin",
+        "knight"
+      ],
+      "right": 4,
+      "total": 4,
+      "wrong": []
+    },
+    {
+      "quest": "b2",
+      "party": [
+        "cleric",
+        "guard",
+        "thief"
+      ],
+      "right": 4,
+      "total": 4,
+      "wrong": []
+    },
+    {
+      "quest": "b3",
+      "party": [
+        "archmage"
+      ],
+      "right": 3,
+      "total": 3,
+      "wrong": []
+    },
+    {
+      "quest": "b4",
+      "party": [
+        "cleric",
+        "guard",
+        "thief",
+        "apprentice"
+      ],
+      "right": 5,
+      "total": 5,
+      "wrong": []
+    },
+    {
+      "quest": "a1",
+      "party": [
+        "paladin"
+      ],
+      "right": 5,
+      "total": 5,
+      "wrong": []
+    },
+    {
+      "quest": "a1",
+      "party": [
+        "cleric",
+        "guard",
+        "squire"
+      ],
+      "right": 5,
+      "total": 5,
+      "wrong": []
+    },
+    {
+      "quest": "a2",
+      "party": [
+        "sage",
+        "spellblade"
+      ],
+      "right": 4,
+      "total": 4,
+      "wrong": []
+    },
+    {
+      "quest": "s1",
+      "party": [
+        "guard",
+        "barbarian",
+        "squire"
+      ],
+      "right": 3,
+      "total": 3,
+      "wrong": []
+    },
+    {
+      "quest": "s1",
+      "party": [
+        "barbarian",
+        "squire"
+      ],
+      "right": 3,
+      "total": 3,
+      "wrong": []
+    },
+    {
+      "quest": "s3",
+      "party": [
+        "cleric",
+        "guard",
+        "hunter",
+        "squire"
+      ],
+      "right": 5,
+      "total": 5,
+      "wrong": []
+    }
+  ],
+  "report": "Grader accuracy: 73 of 73 verdicts true. 20 agent calls, $0.009."
+}
