@@ -437,7 +437,25 @@ Rules of the vsa-template work that the M5 stream must obey:
 
 - PR comments show the user (`MgCohen`) as author. Each orchestrator PR title, body and comment starts with `[orch]`, so a reader can tell them apart.
 - Supervisor sessions are not in the app sidebar. Open them with the app import (`docs/know-how.md`).
-- `/orch-enable` is not tested in the app.
+
+## App session probes (2026-11-16)
+
+Two app sessions, started from an app session with `start_session`, tested the plugin in the desktop app.
+
+| Check | Result | Evidence |
+|---|---|---|
+| A child app session loads the plugin | ✅ The 4 `orch:` skills and the 3 `orch:` agents load. The old mod does not load. `orch` and `CLAUDE_CODE_PLUGIN_DIRS` work | Probe `plugin-probe` |
+| `/orch-enable` from a message of another session | ❌ It arrives as plain text, not as a command. Only text that the user types runs a command | Probe `enable-probe` |
+| `/orch-enable` typed by the user | ✅ `enabled`, lease `live`, heartbeat, and the 4 `mcp__orch__*` tools | Store session `a3f17453` |
+| Inbox delivery in a live session | ✅ `orch send` PING reached the idle chat in about 2 s | `session.input` from `plugin` |
+| `ask_user` and the answer | ✅ The decision showed in `orch decisions`. The free-text answer MANGO (not an option) arrived as "Answer to decision" | `decision`, `answer`, `delivered/` |
+| `report` | ✅ `report.json` with state `done`, and a `report` event | `orch status a3f1` |
+
+Findings:
+
+- `/orch-enable` writes no `meta.json`. The session has no title (the queue shows its id) and no `cwd`. If its lease becomes `none`, the supervisor fails its turns with "no cwd".
+- The reply of `/orch-enable` starts with `orch:` two times.
+- An app session can be the root of a run only if the user types `/orch-enable` in it.
 
 ## Test sessions in the app sidebar
 
