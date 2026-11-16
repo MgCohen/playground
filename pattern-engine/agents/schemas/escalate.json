@@ -2,7 +2,7 @@
   "type": "object",
   "properties": {
     "action": { "type": "string", "enum": ["decide", "question"] },
-    "status": { "type": "string", "enum": ["solved", "partial", "none"] },
+    "status": { "type": "string", "enum": ["solved", "partial_fit", "none"] },
     "pattern": { "type": "string" },
     "variant": { "type": "string" },
     "params": { "type": "object", "additionalProperties": { "type": "string" } },

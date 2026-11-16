@@ -57,7 +57,7 @@ flowchart TD
     Q[Work queue] --> C[Catalog query]
     C --> D[Decide: agent call]
     D -->|solved| K[Child nodes from parts]
-    D -->|partial| R[Open requirements back to the queue]
+    D -->|partial fit| R[Remainder back to the queue]
     D -->|needs input| U[Question to the user]
     D -->|none| AU[Author agent: proposed pattern]
     D -->|unclear| E[Escalation agent]
@@ -75,7 +75,7 @@ flowchart TD
     X -->|pass| T[Assemble + trace]
 ```
 
-- **`partial`:** the pattern covers a part of the requirements. The decider names the open requirements, and they go back into the queue for other patterns.
+- **`partial_fit`:** a pattern is always complete, but it can cover only a part of the request. The decider names the remainder in `open`. Each remainder item goes back into the queue for the top-level patterns. A remainder is always in scope: code reads `outside` as a no-fit, and pattern-author fills the gap. The trace records each remainder item in `remainder`, and a case can expect them with `remainder: [no-fit]`.
 - **Needs input:** a pattern declares its inputs. If the request does not give a required input, the engine asks. It does not guess.
 - **`none`:** the author agent writes a proposed pattern with the authoring guide. Code validates it and runs the novelty check. The pattern makes the output of this run and goes into the promotion flow.
 - **Limits:** each node has limits on depth, retries and escalations. Each run has limits on agent calls, cost and time. A stop writes a stop reason in the trace.

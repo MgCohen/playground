@@ -12,7 +12,7 @@
 |---|---|---|---|
 | Q1 | Engine | Hybrid or agent-led? | Hybrid. The balance between code and agents is designed with the owner before phase A2: which element is code, which is an agent, who starts whom |
 | Q2 | Engine | Keep the `modular` harness? | One engine: a modular hybrid, made of small files that a person can edit. The `modular` harness stays as a reference for the next rounds. It is not ported |
-| Q3 | Engine | What does `partial` mean? | A `partial` pattern covers a part of the requirements. Other patterns cover the rest. The decider names the requirements that stay open |
+| Q3 | Engine | What does `partial` mean? | A pattern is always complete: it has inputs and outputs. "Partial" is a property of the fit, not of the pattern. In a `partial_fit`, the pattern covers a part of the requirements; the rest is the remainder. Each remainder item is a new node, decided with the top-level patterns. A remainder is always in scope. If no pattern fits a remainder item, pattern-author fills the gap, and the full request stays a match |
 | Q4 | Engine | Depth and budget limits | Both. For each node: depth, retries, escalations. For each run: agent calls, cost, time. A stop writes a stop reason in the trace |
 | Q5 | Catalog | Promotion criteria | A person approves `proposed` → `trial`. A `trial` pattern is in the index and in use. Code records its metrics and sends a notification at a good or a bad threshold. A person makes the final call: `stable` or removal |
 | Q6 | Catalog | Versions of patterns | Each result records the catalog hash and a hash for each pattern that it used. An edit to a `trial` pattern restarts its metrics |
@@ -36,9 +36,9 @@
 | Review | How notes become asserts and operators |
 | Code | How a domain pack fits the VSA layout: a feature module, a plugin module, or a separate assembly that the app loads |
 | Code | Does a persistent `stream-json` CLI process keep `--agent` and `--json-schema` for each message? Not tested yet: one process for each call works and keeps the context clean |
-| Cases | A no-fit inside a partial: if one open requirement has no pattern, is the expected outcome a no-fit for the full request, or a partial with a proposed pattern for that requirement? |
-| Cases | The topology case "a query handler that also saves the changes" goes to the system pattern. Change the case, or add a rule to the system pattern? |
-| Engine | A partial with open requirements: how does a pack join the outputs of the other patterns into one output? Today the open requirements are decided and recorded, but not composed |
+| Cases | The topology case "a query handler that also saves the changes" goes to the system pattern. Owner view: both, a command pipeline whose entry point also needs a save part. This is a partial fit (Q3). To discuss: where the save part connects, and if a pattern can name a slot for it |
+| Cases | A partial-fit request has more than one correct split. "Retry a payment with a delay" gave an observer with two authored items, and a command pipeline with no remainder. How does a case accept each correct split? |
+| Engine | A partial fit: how does a pack join the outputs of the remainder into one output? Proposal: code joins by the ports, an output to an input of the same type. Today the remainder is decided, authored and recorded, but not composed |
 | Engine | An escalation during compose can change the pattern of a node. Child nodes that the new pattern needs are not decided |
 
 ## Non-goals

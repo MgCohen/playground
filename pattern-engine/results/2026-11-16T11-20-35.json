@@ -1,0 +1,290 @@
+{
+  "runId": "2026-11-16T11-20-35",
+  "domain": "topology",
+  "engine": "csharp-hybrid",
+  "mode": "dev",
+  "label": null,
+  "model": "haiku",
+  "k": 2,
+  "ablate": [],
+  "graders": [
+    "selection",
+    "built",
+    "structure",
+    "rules",
+    "flow",
+    "proposed",
+    "questions"
+  ],
+  "catalog": "f6fc3237a768",
+  "cases": 1,
+  "runs": [
+    {
+      "case": "hand-partialfit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "partial-fit"
+      ],
+      "request": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "command_pipeline"
+        },
+        "remainder": [
+          "no-fit"
+        ]
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "observer",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [
+          "Retry the failed payment charge up to three times (changing payment data is covered by command_pipeline)",
+          "Wait a delay between each retry attempt (no catalog pattern covers timed retries)"
+        ],
+        "remainder": [
+          {
+            "text": "Retry the failed payment charge up to three times (changing payment data is covered by command_pipeline)",
+            "outcome": "no-fit",
+            "pattern": "payment-retry",
+            "proposed": "patterns/payment-retry.md"
+          },
+          {
+            "text": "Wait a delay between each retry attempt (no catalog pattern covers timed retries)",
+            "outcome": "no-fit",
+            "pattern": "delayed-retry",
+            "proposed": "patterns/delayed-retry.md"
+          }
+        ],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "eb61085d3aa0",
+          "patterns": {
+            "observer": "0bd02ed5500e",
+            "payment-retry": "ef096bd6d586",
+            "delayed-retry": "42d4f1137007"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+            "status": "partial_fit",
+            "pattern": "observer",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2
+            ],
+            "open": [
+              "Retry the failed payment charge up to three times (changing payment data is covered by command_pipeline)",
+              "Wait a delay between each retry attempt (no catalog pattern covers timed retries)"
+            ],
+            "reason": "The part reacts to a failed-payment event on its own, which matches observer; the charge attempts and the timed retry loop are not covered by it and are listed as open requirements."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "Retry the failed payment charge up to three times (changing payment data is covered by command_pipeline)",
+            "status": "none",
+            "pattern": "payment-retry",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "No catalog pattern covers a retry loop with a count limit and a delay between attempts; command_pipeline is the closest because it performs the charge as a stepwise data change, but the retry control logic is missing, so no candidate fits."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "Wait a delay between each retry attempt (no catalog pattern covers timed retries)",
+            "status": "none",
+            "pattern": "delayed-retry",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The remainder asks for timed retries with a delay between attempts, and no catalog pattern covers timed retry; observer is the nearest because it reacts to a failed-payment event, but it lacks the delay and repeated attempts."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "command_pipeline: expected \"command_pipeline\", got \"observer\"",
+              "expected remainder [no-fit], got [no-fit, no-fit]"
+            ]
+          },
+          "built": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "command_pipeline: expected \"command_pipeline\", got \"observer\""
+            ]
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": false,
+        "consistent": true
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 46848,
+        "Cost": 0.00638933,
+        "Calls": 6,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-partialfit-001",
+      "run": 2,
+      "tags": [
+        "hand",
+        "partial-fit"
+      ],
+      "request": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "command_pipeline"
+        },
+        "remainder": [
+          "no-fit"
+        ]
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "command_pipeline",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "f6fc3237a768",
+          "patterns": {
+            "command_pipeline": "8019f2632f29"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request changes data by retrying a payment in steps (up to three attempts with a delay), which is a single change job, so command_pipeline fits; cqrs_system needs two or more jobs and observer only reacts to events, and no input check is named so the plain variant applies."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "expected remainder [no-fit], got []"
+            ]
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": false,
+        "consistent": true
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 14986,
+        "Cost": 0.0019078,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    }
+  ]
+}

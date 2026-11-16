@@ -58,6 +58,16 @@ public sealed class SelectionGrader : IGrader
                     failures.AddRange(TreeNode.Diff(expect.Tree, trace.Tree));
                 }
 
+                if (expect.Remainder is { } remainder)
+                {
+                    var want = string.Join(", ", remainder.Order(StringComparer.Ordinal));
+                    var got = string.Join(", ", trace.Remainder.Select(r => r.Outcome).Order(StringComparer.Ordinal));
+                    if (want != got)
+                    {
+                        failures.Add($"expected remainder [{want}], got [{got}]");
+                    }
+                }
+
                 break;
         }
 

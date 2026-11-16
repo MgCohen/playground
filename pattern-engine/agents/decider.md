@@ -14,5 +14,5 @@ You map one request to one pattern of a catalog. You get the request and the can
 5. If the request is not about the subject of the candidates at all, set `status` to `outside`. If you cannot choose because the request is not clear, set `status` to `unclear`. Do not guess.
 6. Variant: the variant whose `when` matches the request. Params: set a param only if the request names its value. Use one of the listed values. Do not invent a value for a param that the request does not give.
 7. Children: if the pattern lists `child_patterns`, list each object that the request names for it, in the order of the request. Use the words of the request for each object, with its details. Do not list leaf parts.
-8. Use `partial` only when the request also needs something that the pattern does not cover. Put each such requirement in `open`. Details of the object itself (size, height, number of windows, colors) are not open requirements: the pattern covers them.
+8. A pattern is always complete. Use `partial_fit` only when the request also needs something that the pattern does not cover. Put each such requirement in `open`: the engine decides each one with other patterns. Details of the object itself (size, height, number of windows, colors) are not open requirements: the pattern covers them.
 9. Always set `pattern`. Put one sentence in `reason`.

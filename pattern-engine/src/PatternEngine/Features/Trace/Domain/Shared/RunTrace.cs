@@ -69,6 +69,22 @@ public sealed record NodeState
     public string? Reason { get; init; }
 }
 
+/// <summary>One requirement of the remainder of a partial fit: what other pattern covers it, or the proposed pattern that fills the gap.</summary>
+public sealed record RemainderItem
+{
+    [JsonPropertyName("text")]
+    public required string Text { get; init; }
+
+    [JsonPropertyName("outcome")]
+    public required string Outcome { get; init; }
+
+    [JsonPropertyName("pattern")]
+    public string? Pattern { get; init; }
+
+    [JsonPropertyName("proposed")]
+    public string? Proposed { get; init; }
+}
+
 public sealed record Hashes
 {
     [JsonPropertyName("catalog")]
@@ -101,6 +117,9 @@ public sealed record RunTrace
 
     [JsonPropertyName("open_requirements")]
     public List<string> OpenRequirements { get; init; } = [];
+
+    [JsonPropertyName("remainder")]
+    public List<RemainderItem> Remainder { get; init; } = [];
 
     [JsonPropertyName("attempts")]
     public int Attempts { get; init; }

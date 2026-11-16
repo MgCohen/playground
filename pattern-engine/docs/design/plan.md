@@ -28,7 +28,7 @@ flowchart LR
 | P0 Skeleton | Solution, app project, test project (NUnit), `Result` and `Error`, settings file, `IJudge` with `ScriptedJudge` | `pe --help` runs; one test passes |
 | P1 Catalog | Pattern records with typed `inputs` and `outputs`; loader, validator, index; catalog and pattern hashes | A unit test for each validator rule; the same index as the spike for `shapes` |
 | P2 Shapes + grader trust | `shapes` adapter, reference, operators; the five graders; regrade | References and mutations give the same counts as the spike; regrade of stored outputs gives the same verdicts |
-| P3 Engine core | Work queue, node states, `partial` with open requirements, compose and check loop, limits for each node and each run, stop reasons, trace; `CliJudge` (no `--bare`) | Scripted judge: loop, recursion, retries, limits and trace with no model; one smoke run with the CLI judge |
+| P3 Engine core | Work queue, node states, `partial_fit` with a remainder, compose and check loop, limits for each node and each run, stop reasons, trace; `CliJudge` (no `--bare`) | Scripted judge: loop, recursion, retries, limits and trace with no model; one smoke run with the CLI judge |
 | P4 Eval + report | Case generator, hand cases, runner (modes, sandbox, concurrency), report, targets | The same case list as the spike for the same seed; a dev run meets the targets |
 | P5 Questions | Typed pattern inputs make questions; cases with hidden facts; simulated user; question graders | Scripted tests for needed, extra and used answers; a smoke run on 3 ask cases |
 | Design step | With the owner: the map of code and agents, who starts whom | The owner approves the map |
