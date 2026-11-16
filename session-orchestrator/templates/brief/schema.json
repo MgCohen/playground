@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "brief",
+  "description": "The start of a session. The session knows only its brief.",
+  "type": "object",
+  "required": ["title", "goal"],
+  "properties": {
+    "title": { "type": "string", "minLength": 1, "description": "A short title that names all of the scope." },
+    "goal": { "type": "string", "minLength": 1, "description": "What the session must make, and why. Steps go here too." },
+    "scope": { "type": "string", "description": "What is in scope and what is not." },
+    "doneWhen": { "type": "string", "description": "The check that shows that the work is done." },
+    "skills": { "type": "array", "items": { "type": "string" }, "description": "The plugin skills to load first." },
+    "agent": { "type": "string", "description": "The agent role, for example worker." },
+    "cwd": { "type": "string", "description": "The working folder. Default: the folder of the parent." },
+    "worktree": { "type": "boolean", "description": "true: the supervisor makes a git worktree for this session." },
+    "parent": { "type": "string", "description": "The full id of the parent session." }
+  },
+  "additionalProperties": false
+}

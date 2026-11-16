@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "report",
+  "description": "A session tells its parent or the user that the work is done or blocked. The reader must act.",
+  "type": "object",
+  "required": ["state", "summary"],
+  "properties": {
+    "state": { "enum": ["working", "blocked", "done"] },
+    "summary": { "type": "string", "minLength": 1, "description": "One or two sentences." },
+    "done": { "type": "array", "items": { "type": "string" }, "description": "The finished parts." },
+    "next": { "type": "array", "items": { "type": "string" }, "description": "The next steps." },
+    "blockers": { "type": "array", "items": { "type": "string" }, "description": "The problems that stop the work." },
+    "links": { "type": "array", "items": { "type": "string" }, "description": "Branches, PRs and files." },
+    "details": { "type": "string" }
+  },
+  "additionalProperties": false
+}

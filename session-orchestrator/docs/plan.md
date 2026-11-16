@@ -34,11 +34,11 @@ The folders today:
 session-orchestrator/
 ├─ mod/orch/       Claude Code mod; loads in each session; inert unless the session is enabled
 │   inbox → $.prompt.submit, mirror rows, heartbeat, status, lease, tools (ask_user, report, spawn_child)
-├─ supervisor/     Node process, Agent SDK
-│   store, scheduler, heartbeat check, decision policy, SDK runner, HTTP API
+├─ src/            the C# supervisor: Core, Store, Supervisor, Web (see the target folders below)
+├─ tests/          NUnit tests
 ├─ config/         policy.default.json, policy.test.json
-├─ spikes/         spike scripts and the test briefs (p2, p3, p4)
-└─ store/          runtime files, ignored by git: sessions/<id>/..., ledger.jsonl, policy.json
+├─ spikes/         spike scripts, the test briefs (p2 to p5), m0-cli, supervisor-ts (frozen)
+└─ store/          runtime files, ignored by git: sessions/<id>/..., events/, bodies/, ledger.jsonl, policy.json
 ```
 
 The stack is C# on .NET 10 and the `claude` CLI. The user uses C# for all projects. The UI is Blazor. Only the plugin hooks stay in TypeScript, because the Claude Code engine runs them, and the Blazor UI can have a little JavaScript. The supervisor runs session turns with `claude -p` (`--session-id` for a new session, `--resume` for the next turn, `--output-format stream-json`), because the Agent SDK has no C# version.
@@ -272,6 +272,61 @@ Findings:
 - The supervisor and the mod write the new shape (16 tests pass, the mod validates). A new live run is not done: the converted sample shows the shape.
 - The `orch events` query and the C# port are still to do (M1).
 
+## M0 result (2026-11-16)
+
+The supervisor runs in C#. `spikes/supervisor-ts/` keeps the TypeScript version, frozen. The decisions of the build are in `decisions.md`.
+
+| Part | Result | Evidence |
+|---|---|---|
+| Spike: `claude -p` from C# | ✅ Fixed session id, resume, stream-json lines, mod loaded | `spikes/m0-cli`: turn 2 knew KIWI |
+| NUnit tests | ✅ The 16 tests of the TypeScript supervisor, ported | `dotnet test --solution Orchestrator.slnx` |
+| PR stack live test | ✅ Three defaults gave the stack #1 ← #2 ← #3. Approve made #1 ready. Change rebased #3 on #2. Refuse closed #2 and #3 and made #4 and #5 on `-v2` branches | Test repository `MgCohen/orch-m0-stack-test` (deleted), session `67c78a43` |
+| Event stream | ✅ 69 events, each direction | `GET /api/events` of the test store |
+
+Findings:
+
+- The TypeScript findings of the PR stack test are still true in C#: the rebuilt PR keeps the old title, and the session writes the PR text by itself. M1 fixes them with the stack commands and the PR templates.
+- The session saw a conflict between the direction of the user and `AGENTS.md` again, followed the user, and wrote it in the PR body.
+- `session.output` still has empty rows and `session.input` has the origin `unclassified`. M1 fixes them in the mod.
+
+## M1 result (2026-11-16)
+
+| Part | Result | Evidence |
+|---|---|---|
+| Templates | ✅ Seven kinds in `templates/`. Each example matches its schema, and each render fills its places | `TemplateTests` |
+| Session texts | ✅ The defaults, reviews, docs notes and child reports come from `templates/notice/render/` | `PolicyTests` |
+| `orch` command | ✅ `new`, `send`, `tree`, `status`, `decisions`, `answer`, `review`, `events`, `decision start/pr/ready`, `stack rebase/close`, `template`, `doctor` | `CliTests` with a local git repository |
+| PR stack test on `orch` | ✅ The session used `orch decision start` and `orch decision pr` for each default, `orch decision ready` for approve, `orch stack rebase` for change and `orch stack close` for refuse. The user part used `orch review` | Test repository `MgCohen/orch-m1-stack-test` (deleted), session `a1b09966`, 89 events |
+| Decision versions | ✅ The refuse planned `-v2` of the refused decision and of the decision above it. A review after it named the `-v2` branch and wrote `reviews/<id>-v2.json` | Rebuilt PRs #4 and #5 |
+| PR texts | ✅ Each title starts with `[orch]` and names its origin: "default decision" or "direction of the user". The body of a rebuilt PR has the new answer, its version and "It replaces PR #2" | PRs #1 to #5 |
+| Event fixes, supervisor side | ✅ Each inbox file names its sender. `turn.json` gives the senders of a turn. `report.forward` links `refs.report`, `turn.end` links `refs.output` | `Supervisor.cs` |
+| Event fixes, mod side | ❌ Blocked: auto mode could not evaluate edits to `mod/orch/hooks/register.ts`. The fixes go into the plugin of M2 | `decisions.md` |
+| Unit tests | ✅ 41 tests | `dotnet test --solution Orchestrator.slnx` |
+
+Findings:
+
+- A supervisor that runs from `src/Orchestrator.Web/bin/` locks its DLLs, so a build fails while it runs. Run live tests from a published copy in the scratchpad.
+- The session followed each `orch` instruction with no extra text in the brief. The brief of the test was the same as in P3.
+- The title of a rebuilt PR cuts a long direction of the user at 60 characters.
+
+## M2 result (2026-11-16)
+
+| Part | Result | Evidence |
+|---|---|---|
+| Spike: relative import in a hook | ✅ | `helper.ts` ran at `session.start` |
+| Spike: plugin skills and agents | ✅ Through `--plugin-dir` and `CLAUDE_CODE_PLUGIN_DIRS`, with `orch:` names | A session listed `orch:orch-ask` to `orch:orch-stack` and `orch:worker` |
+| Thin plugin | ✅ Five hook modules. Each tool takes its schema from its template. `spawn_child` runs `orch new` | `plugin/`, `ContractTests` |
+| Event fixes in the plugin | ✅ No empty `session.output`. Tool calls are `session.tool`. Each `session.input` names its sender. `report.forward` and `turn.end` link their pair in `refs` | Session `19d1b782` and its child `99961e91` |
+| Short brief with skills | ✅ A five-line brief that names `orch-ask`, `orch-stack` and `orch-report` gave three stacked default PRs | Session `5bec7d79`, test repository deleted |
+| Parent and child with agents | ✅ The `orchestrator` root started a `worker` child. The user answered GREEN (not an option), and both reports named GREEN | `summary.txt` = GREEN |
+| Settings | ✅ `CLAUDE_CODE_PLUGIN_DIRS` points to `plugin/` | `settings.json.bak-m2-plugin` |
+| Unit tests | ✅ 46 tests | `dotnet test --solution Orchestrator.slnx` |
+
+Findings:
+
+- A session loads the skills of its brief with the `Skill` tool before its first step. The events show each load as a `session.tool` event.
+- The test supervisor ran the plugin with `--plugin-dir` and `--permission-mode auto`, so the settings stayed unchanged until the end of the test.
+
 ## Next steps
 
 Status: the user reviewed the design page and accepted it. The user then asked for the folder structure, the code topology and a roadmap to a stable version. They are on the page (tabs Code and Roadmap) and in this file. The next work is M0, after the user accepts the roadmap. The notes arrive in the chat, or as comments on the page: read them with the `ArtifactComments` tool on the page URL. After a design change, edit `docs/orchestrator-design.html` and publish it with the `Artifact` tool and `url` set to the page URL.
@@ -303,17 +358,12 @@ Rules of the vsa-template work that the M5 stream must obey:
 
 | Question | Recommendation |
 |---|---|
-| Blazor mode | Blazor Server (interactive server), in the same process as the supervisor |
 | Use the VSA framework for the orchestrator? | Not now. Plain .NET until 1.0; decide after the VSA 0.1.0 release |
-| Does `claude -p` with `--session-id` and `--resume` keep the lease and the one-branch rule? | Spike at the M0 start |
-| Can a plugin hook import a relative `.ts` file? | Spike at the M2 start. If not, keep one file |
-| Does `CLAUDE_CODE_PLUGIN_DIRS` give the plugin skills and agents to a session? | Spike at the M2 start |
 | Worktrees: does the supervisor make them, or each brief? | The supervisor makes them and records the folder in `meta.json` |
 | Tunnel: which tool and which sign-in? | Cloudflare Tunnel with Cloudflare Access |
 | Store: files, or SQLite? | Files until M5 shows a real problem |
 | `medium` has `checkDocs: true`. The user named the docs answer only for `low` | Keep it, and ask the user at the M4 start |
 | Delete the old folder `Projects/claude-orchestrator`? It also holds a stray `session-orchestrator/` subfolder with copied type files | Yes, after the next app restart, when the user says so |
-| UI stack: plain HTML from `http.ts`, or a separate app? | Plain HTML and JS served by `http.ts`, no build step |
 | Sign-in for the API (it listens on 127.0.0.1 with no auth) | Cloudflare Access in front of the tunnel, plus a token header |
 | Swipe meaning on a decision card | Right: accept the default. Left: open the free-text answer |
 | Voice input: browser speech or phone dictation? | Phone dictation in the text field: no extra code |
@@ -322,7 +372,7 @@ Rules of the vsa-template work that the M5 stream must obey:
 
 ### Known gaps
 
-- PR comments show the user (`MgCohen`) as author. Start each orchestrator text with `[orch]`.
+- PR comments show the user (`MgCohen`) as author. Each orchestrator PR title, body and comment starts with `[orch]`, so a reader can tell them apart.
 - Supervisor sessions are not in the app sidebar. Open them with the app import (`docs/know-how.md`).
 - The supervisor does not restart a session after `maxFailures` (3) until the supervisor restarts.
 - `/orch-enable` is not tested in the app.

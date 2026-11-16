@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>orch</ToolCommandName>
+    <PackageId>Orchestrator.Cli</PackageId>
+    <AssemblyName>orch</AssemblyName>
+    <RootNamespace>Orchestrator.Cli</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Orchestrator.Store/Orchestrator.Store.csproj" />
+  </ItemGroup>
+</Project>

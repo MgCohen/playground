@@ -19,21 +19,17 @@ Read these files before you change this project:
 
 ## Stack
 
-C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the UI, NUnit for the tests. Do not add TypeScript or JavaScript, with two exceptions: the plugin hooks (the Claude Code engine runs only TypeScript) and small JavaScript parts of the Blazor UI. The code in `supervisor/` is the TypeScript version from the spikes. Milestone M0 ports it to C#.
+C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the UI, NUnit for the tests. Do not add TypeScript or JavaScript, with two exceptions: the plugin hooks (the Claude Code engine runs only TypeScript) and small JavaScript parts of the Blazor UI. `spikes/supervisor-ts/` is the frozen TypeScript supervisor of the spikes. Do not change it.
 
 ## Commands
 
-Commands of the TypeScript supervisor of today (until M0 ends):
-
-`npm test` and `npm start` fail on this computer: the cmd shell that npm opens cannot find `node`. Run node directly.
-
-```bash
-cd supervisor && node --test test/
-```
-
-```bash
-cd supervisor && node src/main.ts
-```
+| Job | Command |
+|---|---|
+| Build and test | `dotnet test --solution Orchestrator.slnx` |
+| Start the supervisor | `dotnet run --project src/Orchestrator.Web` |
+| Test store and port | Set `ORCH_STORE` and `ORCH_PORT` before the start |
+| Install or update `orch` | `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` |
+| Check the setup | `orch doctor` |
 
 ## Work with the user
 
@@ -46,6 +42,6 @@ cd supervisor && node src/main.ts
 - Use a template for each input and output (decision, answer, review, report, update, brief, notice). Templates make the messages the same each time and make the UI easy to build. See `templates/` and the Templates tab of the design page.
 - Show a folder layout as a foldable tree: one line for each folder or file, a short description, and a detail that opens under the line.
 
-## Load the mod
+## Load the plugin
 
-`~/.claude/settings.json` loads the mod for all sessions with two `env` lines: `CLAUDE_CODE_PLUGIN_DIRS` (the absolute path of `mod/orch`) and `CLAUDE_CODE_PLUGIN_DIR_WATCH=1` (hot reload). To remove the mod, delete the two lines. The settings history is in `docs/know-how.md`.
+`~/.claude/settings.json` loads the plugin for all sessions with two `env` lines: `CLAUDE_CODE_PLUGIN_DIRS` (the absolute path of `plugin/`) and `CLAUDE_CODE_PLUGIN_DIR_WATCH=1` (hot reload). To remove the plugin, delete the two lines. A test supervisor with `ORCH_PLUGIN_DIR` loads the plugin with `--plugin-dir` and does not use the settings. The settings history is in `docs/know-how.md`.
