@@ -25,10 +25,10 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - Check the mod with `claude plugin validate mod/orch`.
 - Type-check the mod: `npx -y --package=typescript@5.6.3 -- tsc -p .` in `mod/orch`. Exit 2 with only TS2589 is a pass.
 
-## Node and the SDK
+## Node and the SDK (spikes only)
 
 - Node 26 runs `.ts` files directly (type stripping). There is no build step.
-- npm scripts fail, because the cmd shell of npm cannot find `node`. Run `node --test test/` and `node src/main.ts`.
+- npm scripts fail, because the cmd shell of npm cannot find `node`. Run `node --test test/` in `spikes/supervisor-ts/`.
 - `spikes/sdk` has no `node_modules`. Run `npm i` there before `s5.mjs`, `s6.mjs` or `s9.mjs`.
 - The Agent SDK (`@anthropic-ai/claude-agent-sdk` 0.3.325) uses the local login of the subscription (`apiKeySource: none`). No API key.
 - The supervisor sets `ORCH_HOLDER=supervisor` and `ORCH_STORE` for each SDK turn. `ORCH_PORT` sets the HTTP port (default 7777).
@@ -38,7 +38,7 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 1. Make a git repository in the scratchpad. Put an `AGENTS.md` with one rule in it, for the docs check.
 2. If the test needs PRs, make a private GitHub repository with `gh repo create --private --source . --push`. Before you delete it, copy the PR bodies and comments into `plan.md`: GitHub holds the only copy. The user allows you to create and delete test repositories without a question. The user also allows a public test repository if a private one is blocked.
 3. Copy `config/policy.test.json` into a new store folder as `policy.json` (medium: 30 s).
-4. Start the supervisor in the background: `ORCH_STORE=<store> ORCH_PORT=7779 node src/main.ts` in `supervisor/`.
+4. Build once (`dotnet build src/Orchestrator.Web`), then start the supervisor in the background: `ORCH_STORE=<store> ORCH_PORT=7779 dotnet src/Orchestrator.Web/bin/Debug/net10.0/Orchestrator.Web.dll`. The built DLL starts faster than `dotnet run` and does not lock the sources.
 5. Copy `spikes/p3/root.json` (one repository) or `spikes/p4/root.json` (PR stack) to the scratchpad, change its `cwd`, then send it: `curl -X POST -H 'content-type: application/json' --data @root.json http://127.0.0.1:7779/api/sessions`.
 6. Play the user with `POST /api/decisions/<session>/<id>` (answer) and `.../review` (`approve`, `change`, `refuse`).
 7. Watch `answers/`, `report.json` and `blocked.json` of the session. A POST starts a tick at once, so two close reviews run as two turns.
@@ -57,3 +57,11 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 | `~/.claude/settings.json` | Mod env lines, `defaultMode: auto`, `deny: ["AskUserQuestion"]` |
 | `settings.json.bak-askuser` | Before the deny rule (mod path of `claude-orchestrator`) |
 | `settings.json.bak-bypass` | Older state, with no mod lines and no `defaultMode` |
+
+## The claude CLI from C#
+
+- `claude -p --output-format stream-json --verbose` writes one JSON object on each line. The last line has `type: result`, `subtype: success` and `result` (the last text).
+- `--session-id <uuid>` starts a session with that id. `--resume <uuid>` continues it.
+- Give the prompt on standard input. A long brief as an argument breaks on the Windows command line.
+- At the end of a `claude -p` process, `session.end` fires, so the mod sets the lease to `none`.
+- The process inherits `ORCH_HOLDER` and `ORCH_STORE` from the runner, so the mod writes to the test store.

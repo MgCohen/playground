@@ -19,21 +19,15 @@ Read these files before you change this project:
 
 ## Stack
 
-C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the UI, NUnit for the tests. Do not add TypeScript or JavaScript, with two exceptions: the plugin hooks (the Claude Code engine runs only TypeScript) and small JavaScript parts of the Blazor UI. The code in `supervisor/` is the TypeScript version from the spikes. Milestone M0 ports it to C#.
+C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the UI, NUnit for the tests. Do not add TypeScript or JavaScript, with two exceptions: the plugin hooks (the Claude Code engine runs only TypeScript) and small JavaScript parts of the Blazor UI. `spikes/supervisor-ts/` is the frozen TypeScript supervisor of the spikes. Do not change it.
 
 ## Commands
 
-Commands of the TypeScript supervisor of today (until M0 ends):
-
-`npm test` and `npm start` fail on this computer: the cmd shell that npm opens cannot find `node`. Run node directly.
-
-```bash
-cd supervisor && node --test test/
-```
-
-```bash
-cd supervisor && node src/main.ts
-```
+| Job | Command |
+|---|---|
+| Build and test | `dotnet test --solution Orchestrator.slnx` |
+| Start the supervisor | `dotnet run --project src/Orchestrator.Web` |
+| Test store and port | Set `ORCH_STORE` and `ORCH_PORT` before the start |
 
 ## Work with the user
 

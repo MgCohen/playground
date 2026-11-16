@@ -34,11 +34,11 @@ The folders today:
 session-orchestrator/
 ├─ mod/orch/       Claude Code mod; loads in each session; inert unless the session is enabled
 │   inbox → $.prompt.submit, mirror rows, heartbeat, status, lease, tools (ask_user, report, spawn_child)
-├─ supervisor/     Node process, Agent SDK
-│   store, scheduler, heartbeat check, decision policy, SDK runner, HTTP API
+├─ src/            the C# supervisor: Core, Store, Supervisor, Web (see the target folders below)
+├─ tests/          NUnit tests
 ├─ config/         policy.default.json, policy.test.json
-├─ spikes/         spike scripts and the test briefs (p2, p3, p4)
-└─ store/          runtime files, ignored by git: sessions/<id>/..., ledger.jsonl, policy.json
+├─ spikes/         spike scripts, the test briefs (p2 to p5), m0-cli, supervisor-ts (frozen)
+└─ store/          runtime files, ignored by git: sessions/<id>/..., events/, bodies/, ledger.jsonl, policy.json
 ```
 
 The stack is C# on .NET 10 and the `claude` CLI. The user uses C# for all projects. The UI is Blazor. Only the plugin hooks stay in TypeScript, because the Claude Code engine runs them, and the Blazor UI can have a little JavaScript. The supervisor runs session turns with `claude -p` (`--session-id` for a new session, `--resume` for the next turn, `--output-format stream-json`), because the Agent SDK has no C# version.
@@ -271,6 +271,23 @@ Findings:
 - Some events repeat one fact from two sides (`report` and `report.forward`, the last `session.output` and `turn.end`). Keep both, and link them with `refs`, because each side is a different direction.
 - The supervisor and the mod write the new shape (16 tests pass, the mod validates). A new live run is not done: the converted sample shows the shape.
 - The `orch events` query and the C# port are still to do (M1).
+
+## M0 result (2026-11-16)
+
+The supervisor runs in C#. `spikes/supervisor-ts/` keeps the TypeScript version, frozen. The decisions of the build are in `decisions.md`.
+
+| Part | Result | Evidence |
+|---|---|---|
+| Spike: `claude -p` from C# | ✅ Fixed session id, resume, stream-json lines, mod loaded | `spikes/m0-cli`: turn 2 knew KIWI |
+| NUnit tests | ✅ The 16 tests of the TypeScript supervisor, ported | `dotnet test --solution Orchestrator.slnx` |
+| PR stack live test | ✅ Three defaults gave the stack #1 ← #2 ← #3. Approve made #1 ready. Change rebased #3 on #2. Refuse closed #2 and #3 and made #4 and #5 on `-v2` branches | Test repository `MgCohen/orch-m0-stack-test` (deleted), session `67c78a43` |
+| Event stream | ✅ 69 events, each direction | `GET /api/events` of the test store |
+
+Findings:
+
+- The TypeScript findings of the PR stack test are still true in C#: the rebuilt PR keeps the old title, and the session writes the PR text by itself. M1 fixes them with the stack commands and the PR templates.
+- The session saw a conflict between the direction of the user and `AGENTS.md` again, followed the user, and wrote it in the PR body.
+- `session.output` still has empty rows and `session.input` has the origin `unclassified`. M1 fixes them in the mod.
 
 ## Next steps
 
