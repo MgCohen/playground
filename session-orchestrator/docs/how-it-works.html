@@ -519,7 +519,7 @@ flowchart BT
     <p class="summary">The supervisor does all its work in this loop. Nothing else starts a turn.</p>
 <pre class="stack"><span class="k">TickService.ExecuteAsync</span>                     <span class="c">every 3 s</span>
 └─ <span class="k">Supervisor.Tick</span>                          <span class="c">one lock, one pass</span>
-   ├─ StopRunningTurns                       <span class="c">control.json stopped → cancel → kill the claude process tree</span>
+   ├─ StopRunningTurns                       <span class="c">control.json stopped → cancel → kill each recorded descendant of claude</span>
    ├─ for each enabled session that is not stopped:
    │  ├─ ReleaseStaleLease                   <span class="c">lease live + heartbeat older than 15 s → lease none</span>
    │  ├─ ForwardReport                       <span class="c">report done/blocked, not forwarded → inbox of the parent</span>
