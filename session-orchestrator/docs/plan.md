@@ -429,7 +429,7 @@ Rules of the vsa-template work that the M5 stream must obey:
 | `medium` has `checkDocs: true`. The user named the docs answer only for `low` | Keep it, and ask the user at the M4 start |
 | Delete the old folder `Projects/claude-orchestrator`? It also holds a stray `session-orchestrator/` subfolder with copied type files | Yes, after the next app restart, when the user says so |
 | Which vsa-template stream runs first in M5? | Ask the user at the M5 start. Use the stable roadmap of vsa-template |
-| Does a Cloudflare account with a domain exist for the tunnel? | Ask the user. The tunnel is blocked until then. Today: `ORCH_BIND` with `ORCH_TOKEN` on the local network |
+| Does a Cloudflare account with a domain exist for the tunnel? | The user decided: Cloudflare, as the last step. Until then, local tests on this PC only |
 
 ### Known gaps
 

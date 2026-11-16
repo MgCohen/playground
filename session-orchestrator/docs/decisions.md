@@ -45,6 +45,7 @@ The build session made these decisions while the user was away. The user reviews
 | 2026-11-16 | Swipe on a decision card | Right accepts the default, left focuses the free-text field. 25 lines of JavaScript in `wwwroot/swipe.js` | The open question of `plan.md`. The stack allows small JavaScript parts in the UI |
 | 2026-11-16 | Voice input | Phone dictation in the text field. No extra code | The open question of `plan.md` |
 | 2026-11-16 | **Blocked**: Cloudflare Tunnel and Cloudflare Access | Not made | They need a Cloudflare account and a domain of the user |
+| 2026-11-16 | When does remote access come? (user) | Cloudflare, as the last step after all other work. Until then, tests run only on this PC | The user decided it |
 | 2026-11-16 | Sign-in without the tunnel | `ORCH_TOKEN`: open the page once with `?token=<token>` (a cookie for 30 days), or send the header `X-Orch-Token`. With no `ORCH_TOKEN`, the UI is open on 127.0.0.1 | The open question of `plan.md` asked for a token header with Cloudflare Access. The token works alone on a private network too |
 | 2026-11-16 | Address for a phone on the local network | `ORCH_BIND` (default `127.0.0.1`). `ORCH_BIND=0.0.0.0` with `ORCH_TOKEN` serves the phone on the same Wi-Fi | A step before the tunnel, with no account |
 | 2026-11-16 | The phone test | The browser pane of the desktop app at 375 × 812, not a real phone | A real phone needs the tunnel or a network address, and the user is away |
