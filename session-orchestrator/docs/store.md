@@ -25,7 +25,7 @@ The plugin `plugin/` and the supervisor share one folder for each session: `stor
 | `docs-checks/<id>.json` | Supervisor | `{ answered, answer, source, at }`: the result of the docs check of one decision |
 | `reviews/<id>.json` | Supervisor | `{ verdict: approve \| change \| refuse, text, at }` |
 | `forwarded.json` | Supervisor | `{ at }` of the last child report that the supervisor sent to the parent |
-| `turn.json` | Supervisor | `{ event, from, at }`: the `turn.start` event of the current supervisor turn and its senders. The plugin uses it as the sender of `session.input` |
+| `turn.json` | Supervisor | `{ event, from, at, ended }`: the `turn.start` event of the last supervisor turn, its senders, and the end time. The plugin uses `from` as the sender of `session.input`. A marker with no `ended` and no running turn is an interrupted turn (see Recovery) |
 | `last-output.json` | Plugin | `{ event, at }`: the last `session.output` event. `turn.end` links it in `refs.output` |
 | `stack/<decision>.json` | `orch decision`, `orch stack` | The versions of one decision on the stack (below) |
 | `control.json` | `orch stop`, `orch resume`, `orch archive`, the API | `{ state: active | stopped | archived, at, by, reason }`. The supervisor runs no turn of a stopped or archived session, and ends its running turn |
@@ -90,6 +90,7 @@ A version id is the decision id for version 1 and `<decision>-v<n>` after it. A 
 | Path | Content |
 |---|---|
 | `store/supervisor/log.txt` | One line for each turn, lease release, report forward, docs answer and default |
+| `store/version.json` | `{ version, at }`. The supervisor writes version 1 into a new store, and refuses to start on a store with a newer version |
 | `store/policy.json` | The policy in use. The supervisor writes it at start from `config/policy.default.json` if it does not exist. The plugin reads the levels from it |
 | `store/events/<day>/<id>.json` | One small file for each event: `{ id, at, session, kind, from, to, subject, body, refs }`. `from` and `to` are `user`, `supervisor`, `docs`, `policy` or `session:<full id>`. `subject` is one line of 80 characters maximum. Written by the supervisor, the plugin and `orch`. The ledger is a query of this stream: `answer` events from `docs` or `policy`, and each `review` event |
 | `store/bodies/<day>/<id>.json` | The full fields of one event (the template data), with the same id as the event. A reader opens it only for the full text |
@@ -157,3 +158,16 @@ A review of a default decision (texts in `templates/notice/render/review-*.md`):
 3. Only one writer has the lease. The plugin delivers inbox files and answers only with holder `live`. With any other holder, the supervisor delivers them with `claude -p`.
 4. A lease `live` counts as live while the heartbeat or the lease is less than 15 s old. After that, the supervisor releases it (`none`). The plugin takes a released lease back at its next beat.
 5. When a child reports `done` or `blocked`, the supervisor writes the inbox file of the notice `child-report` to the parent.
+
+## Recovery
+
+The supervisor can stop at any moment, for example in a crash. At each tick, it examines the `turn.json` of each session that has no running turn:
+
+| Case | Action |
+|---|---|
+| `ended` is set | None |
+| No `ended`, and the lease holder is `supervisor` with a heartbeat less than 15 s old | Wait: the old `claude` process still runs |
+| No `ended`, and a `session.input` event has `refs.turnStart` of this turn | The prompt arrived: mark the inbox files and answers of the turn as sent, and write `turn.end` with `recovered: true` |
+| No `ended`, and no such event | The prompt did not arrive: write `turn.fail` with `recovered: true`. The inbox stays and goes in the next turn |
+
+The cursor moves only forward, so a recovery never sends an old inbox file again.

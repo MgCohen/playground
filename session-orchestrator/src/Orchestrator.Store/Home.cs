@@ -30,6 +30,20 @@ public static class Home
         return policy;
     }
 
+    public static StoreVersion CheckVersion(string storeRoot, DateTimeOffset now)
+    {
+        var path = Path.Combine(storeRoot, StoreFiles.Version);
+        if (Files.ReadJson<StoreVersion>(path) is { } found)
+        {
+            if (found.Version > StoreVersion.Current)
+                throw new InvalidDataException($"store {storeRoot} has version {found.Version}, newer than this supervisor ({StoreVersion.Current}). Update the orchestrator.");
+            return found;
+        }
+        var version = new StoreVersion(StoreVersion.Current, Core.Leases.Times.Format(now));
+        Files.WriteJson(path, version);
+        return version;
+    }
+
     static string? FindUp(string start)
     {
         for (var dir = new DirectoryInfo(start); dir is not null; dir = dir.Parent)

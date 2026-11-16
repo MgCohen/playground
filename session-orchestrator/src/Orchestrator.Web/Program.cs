@@ -19,6 +19,7 @@ builder.Services.AddSingleton(services => new SignIn(services.GetRequiredService
 builder.Services.AddHostedService<TickService>();
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
+Home.CheckVersion(root, DateTimeOffset.UtcNow);
 var app = builder.Build();
 app.UseMiddleware<SignInMiddleware>();
 app.UseAntiforgery();
