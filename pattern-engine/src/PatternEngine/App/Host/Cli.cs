@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using PatternEngine.Features.Cases.Domain;
 using PatternEngine.Features.Catalog.Slices.BuildCatalog;
+using PatternEngine.Features.Catalog.Slices.Lifecycle;
+using PatternEngine.Features.Report.Slices.Trials;
 using PatternEngine.Features.Engine.Domain.Shared;
 using PatternEngine.Features.Engine.Slices.Solve;
 using PatternEngine.Features.Eval.Domain;
@@ -24,6 +26,11 @@ public sealed class Cli(IServiceProvider services)
                 [--concurrency n] [--ablate a,b] [--label text] [--count n --seed n --max-children n] [--dry]
         pe report <result.json> [baseline.json]
         pe regrade <result.json>
+        pe propose <run folder>/<id>.md [--domain d]   copy a proposed pattern of a run into the catalog
+        pe approve <id> [--domain d]              a person approves: proposed -> trial (in the index)
+        pe stable <id> [--domain d]               final call: trial -> stable
+        pe remove <id> [--domain d]               final call: the pattern leaves the catalog
+        pe trials [domain]                        metrics of each trial pattern; notifications at the thresholds
         """;
 
     private readonly ISender sender = services.GetRequiredService<ISender>();
@@ -48,6 +55,11 @@ public sealed class Cli(IServiceProvider services)
                 "eval" => await EvalAsync(a),
                 "report" => await Print(sender.SendAsync(new ShowReportCommand(a.Positional(0)!, a.Positional(1)))),
                 "regrade" => await RegradeAsync(a),
+                "propose" => await Print(sender.SendAsync(new LifecycleCommand(LifecycleAction.Propose, a.Positional(0)!, a.Value("domain")))),
+                "approve" => await Print(sender.SendAsync(new LifecycleCommand(LifecycleAction.Approve, a.Positional(0)!, a.Value("domain")))),
+                "stable" => await Print(sender.SendAsync(new LifecycleCommand(LifecycleAction.Stable, a.Positional(0)!, a.Value("domain")))),
+                "remove" => await Print(sender.SendAsync(new LifecycleCommand(LifecycleAction.Remove, a.Positional(0)!, a.Value("domain")))),
+                "trials" => await TrialsAsync(a),
                 _ => Fail($"unknown command \"{args[0]}\"\n\n{Usage}"),
             };
         }
@@ -151,6 +163,28 @@ public sealed class Cli(IServiceProvider services)
         Console.WriteLine(r.Report);
         Console.WriteLine(r.Targets.Text(mode));
         return r.Targets.Ok ? 0 : 1;
+    }
+
+    private async Task<int> TrialsAsync(Args a)
+    {
+        var r = (await sender.SendAsync(new TrialsCommand(a.Positional(0)))).Value;
+        Console.WriteLine($"{"trial pattern",-24}{"version",-14}{"runs",6}{"pass",6}  state");
+        foreach (var m in r.Metrics)
+        {
+            Console.WriteLine($"{m.Id,-24}{m.Hash,-14}{m.Runs,6}{m.Passes,6}  {m.State}");
+        }
+
+        if (r.Metrics.Count == 0)
+        {
+            Console.WriteLine("No trial patterns.");
+        }
+
+        foreach (var n in r.Notifications)
+        {
+            Console.WriteLine($"notification: {n}");
+        }
+
+        return 0;
     }
 
     private async Task<int> RegradeAsync(Args a)

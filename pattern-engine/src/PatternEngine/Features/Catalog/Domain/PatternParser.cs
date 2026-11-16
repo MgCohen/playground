@@ -79,9 +79,11 @@ public static class PatternParser
             ParseErrors: errors);
     }
 
+    /// <summary>The version of a pattern file. The status line is not part of it, so an approval does not restart the metrics; any other edit does.</summary>
     public static string Hash(string text)
     {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(text.Replace("\r\n", "\n", StringComparison.Ordinal)));
+        var lines = text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').Where(l => !l.StartsWith("status:", StringComparison.Ordinal));
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', lines)));
         return Convert.ToHexStringLower(bytes)[..12];
     }
 

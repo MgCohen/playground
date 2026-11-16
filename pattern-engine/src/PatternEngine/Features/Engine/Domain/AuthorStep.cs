@@ -180,5 +180,5 @@ public static class AuthorStep
 
     private static string? Get(JsonElement e, string field) => e.TryGetProperty(field, out var v) && v.ValueKind != JsonValueKind.Null ? v.ToString() : null;
 
-    private static string Quote(string s) => JsonSerializer.Serialize(s);
+    private static string Quote(string s) => JsonSerializer.Serialize(s, new JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
 }
