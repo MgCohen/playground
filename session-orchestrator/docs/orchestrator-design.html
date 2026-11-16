@@ -75,6 +75,27 @@ details { background: var(--panel); border: 1px solid var(--line); border-radius
 details[open] { padding-bottom: 14px; }
 summary { cursor: pointer; font-weight: 500; }
 details > div { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); align-items: center; }
+.tag { font: 500 11px var(--font-mono); letter-spacing: .03em; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+.t-now { color: var(--ok); background: var(--code-bg); }
+.t-m { color: var(--accent); background: var(--accent-soft); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.toolbar button { font: 500 13px var(--font-body); border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.ftree { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 0; overflow-x: auto; }
+.frow { display: flex; align-items: center; gap: 8px; padding: 3px 12px 3px calc(12px + var(--d, 0) * 18px); min-width: 0; }
+.frow:hover { background: var(--bg); }
+.froot { font: 600 14px var(--font-mono); }
+.ftog { width: 18px; height: 22px; border: none; background: transparent; color: var(--muted); padding: 0; font-size: 10px; cursor: pointer; flex: none; transition: transform .12s; }
+.ftog[aria-expanded="true"] { transform: rotate(90deg); }
+.ftog.leaf { visibility: hidden; }
+.fname { font: 600 14px var(--font-mono); white-space: nowrap; flex: none; cursor: pointer; }
+.fname.dir::after { content: "/"; color: var(--muted); }
+.fname.file { font-weight: 400; color: var(--muted); }
+.fdesc { flex: 1 1 auto; min-width: 0; text-align: right; font: 13px var(--font-body); color: var(--muted); background: transparent; border: none; padding: 0; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fdesc:hover, .fdesc.on { color: var(--fg); }
+.fdetail { margin: 2px 12px 6px calc(48px + var(--d, 0) * 18px); padding: 6px 10px; border-left: 2px solid var(--accent); font-size: 14px; color: var(--fg); max-width: 70ch; }
+.ftog:focus-visible, .fdesc:focus-visible, .toolbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 560px) { .fdesc { display: none; } }
 footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 12px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -91,8 +112,8 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
   <button role="tab" data-tab="topology" aria-selected="false">Runtime</button>
   <button role="tab" data-tab="flows" aria-selected="false">Flows</button>
   <button role="tab" data-tab="decisions" aria-selected="false">Decisions</button>
-  <button role="tab" data-tab="code" aria-selected="false">Code</button>
-  <button role="tab" data-tab="roadmap" aria-selected="false">Roadmap</button>
+  <button role="tab" data-tab="templates" aria-selected="false">Templates</button>
+  <button role="tab" data-tab="build" aria-selected="false">Build</button>
 </nav>
 
 <!-- OVERVIEW -->
@@ -211,7 +232,7 @@ stateDiagram-v2
       <tr><td>Branches</td><td>Each session has its own stack</td></tr>
       <tr><td>Results</td><td>Children report up to the parent</td></tr>
     </table></div>
-    <p>Two code sessions in one folder share one working tree and break each other's branches. Give each code session its own git worktree. The supervisor does not make worktrees yet: see Roadmap, M3.</p>
+    <p>Two code sessions in one folder share one working tree and break each other's branches. Give each code session its own git worktree. The supervisor does not make worktrees yet: see Build, milestone M3.</p>
   </section>
 </div>
 
@@ -355,8 +376,162 @@ flowchart LR
   </section>
 </div>
 
-<!-- CODE -->
-<div class="panel off" id="code" role="tabpanel">
+<!-- TEMPLATES -->
+<div class="panel off" id="templates" role="tabpanel">
+  <div class="card">
+    <div class="vtitle">Each message is a filled template: one schema, one text, one card</div>
+    <div class="scroll"><pre class="mermaid">
+flowchart LR
+  S[Sender: session, user, supervisor] -->|fields| V[core: validate]
+  V -->|ok| F[Store file, JSON]
+  F --> R[render.md: text for a session]
+  F --> C[UI card for the user]
+  V -->|error| E[Sender fixes the fields]
+    </pre></div>
+    <p>A sender never writes free text into the store. It fills the fields of a template. <code>core</code> validates the fields against the schema of the template, and refuses a message with a missing field. Then each reader shows the same data in its own way: a session gets text from <code>render.md</code>, and the phone UI draws the card of that template.</p>
+  </div>
+
+  <section>
+    <h2>The seven templates</h2>
+    <div class="scroll"><table>
+      <tr><th>Template</th><th>From → to</th><th>Sent with</th></tr>
+      <tr><td><code>decision</code></td><td>Session → user</td><td><code>ask_user</code> tool</td></tr>
+      <tr><td><code>answer</code></td><td>User, docs, policy → session</td><td>UI, <code>orch answer</code>, supervisor</td></tr>
+      <tr><td><code>review</code></td><td>User → session</td><td>UI, <code>orch review</code></td></tr>
+      <tr><td><code>report</code></td><td>Session → parent, user</td><td><code>report</code> tool</td></tr>
+      <tr><td><code>update</code></td><td>Session → user</td><td><code>update</code> tool</td></tr>
+      <tr><td><code>brief</code></td><td>User, parent → new session</td><td><code>spawn_child</code>, <code>orch new</code></td></tr>
+      <tr><td><code>notice</code></td><td>Supervisor → session</td><td>Supervisor only</td></tr>
+    </table></div>
+    <p>A <code>report</code> needs an action from the reader: the work is done or blocked. An <code>update</code> needs no action: it only shows progress, so the UI shows it in the session tree and not in the decision queue.</p>
+  </section>
+
+  <section>
+    <h2>Template fields</h2>
+    <div class="toolbar"><button type="button" class="fold-all" data-open="1">Open all</button><button type="button" class="fold-all" data-open="0">Close all</button></div>
+
+    <details>
+      <summary><code>decision</code> · question, context, options, recommendation, risk</summary>
+      <div>
+        <p>The fields follow the question format that the user wants: the question, the context, a snippet, the options and the recommendation. The options are suggestions: the answer is free text.</p>
+        <div class="scroll"><table>
+          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
+          <tr><td><code>question</code></td><td>One question, one sentence</td><td>Yes</td></tr>
+          <tr><td><code>context</code></td><td>Why the question comes up now</td><td>Yes</td></tr>
+          <tr><td><code>snippet</code></td><td>Code or text that shows the problem</td><td>No</td></tr>
+          <tr><td><code>options</code></td><td>Two to four suggestions</td><td>Yes</td></tr>
+          <tr><td><code>recommendation</code></td><td>The pick and its reason</td><td>Yes</td></tr>
+          <tr><td><code>risk</code>, <code>defaultOption</code></td><td>Policy level, the default answer</td><td>Yes</td></tr>
+        </table></div>
+        <pre class="code">{ "question": "Which color do we use in color.txt?",
+  "context": "Step 3 of the brief writes one color file.",
+  "options": ["RED", "BLUE"],
+  "recommendation": "BLUE: the other files use cool colors.",
+  "risk": "medium", "defaultOption": "BLUE" }</pre>
+      </div>
+    </details>
+
+    <details>
+      <summary><code>answer</code> · text, by, source, note</summary>
+      <div>
+        <div class="scroll"><table>
+          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
+          <tr><td><code>decision</code></td><td>The decision id</td><td>Yes</td></tr>
+          <tr><td><code>text</code></td><td>The answer in free text</td><td>Yes</td></tr>
+          <tr><td><code>by</code></td><td><code>user</code>, <code>docs</code> or <code>policy</code></td><td>Yes</td></tr>
+          <tr><td><code>source</code></td><td>The docs file and section</td><td>If by docs</td></tr>
+          <tr><td><code>note</code></td><td>A notice for the session, for example the stack steps</td><td>No</td></tr>
+        </table></div>
+      </div>
+    </details>
+
+    <details>
+      <summary><code>review</code> · verdict, text</summary>
+      <div>
+        <div class="scroll"><table>
+          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
+          <tr><td><code>decision</code></td><td>The decision id and its version</td><td>Yes</td></tr>
+          <tr><td><code>verdict</code></td><td><code>approve</code>, <code>change</code> or <code>refuse</code></td><td>Yes</td></tr>
+          <tr><td><code>text</code></td><td>The change or the new direction</td><td>If change or refuse</td></tr>
+        </table></div>
+      </div>
+    </details>
+
+    <details>
+      <summary><code>report</code> · state, summary, done, next, blockers, links</summary>
+      <div>
+        <div class="scroll"><table>
+          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
+          <tr><td><code>state</code></td><td><code>done</code> or <code>blocked</code></td><td>Yes</td></tr>
+          <tr><td><code>summary</code></td><td>The result in two sentences</td><td>Yes</td></tr>
+          <tr><td><code>done</code></td><td>List of finished items</td><td>Yes</td></tr>
+          <tr><td><code>next</code></td><td>List of steps that are left</td><td>No</td></tr>
+          <tr><td><code>blockers</code></td><td>What stops the work, and who can fix it</td><td>If blocked</td></tr>
+          <tr><td><code>links</code></td><td>Branches, PRs, commits, pages</td><td>No</td></tr>
+        </table></div>
+        <pre class="code">{ "state": "done",
+  "summary": "Three files written on three stacked branches.",
+  "done": ["shape.txt SQUARE", "size.txt LARGE", "color.txt BLUE"],
+  "links": [{ "kind": "pr", "url": "https://github.com/…/pull/1" }] }</pre>
+      </div>
+    </details>
+
+    <details>
+      <summary><code>update</code> · step, progress, summary</summary>
+      <div>
+        <div class="scroll"><table>
+          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
+          <tr><td><code>step</code></td><td>The name of the current step</td><td>Yes</td></tr>
+          <tr><td><code>progress</code></td><td>Done and total, for example 2 of 5</td><td>No</td></tr>
+          <tr><td><code>summary</code></td><td>One sentence</td><td>Yes</td></tr>
+        </table></div>
+      </div>
+    </details>
+
+    <details>
+      <summary><code>brief</code> · title, goal, scope, done when, skills</summary>
+      <div>
+        <div class="scroll"><table>
+          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
+          <tr><td><code>title</code></td><td>Names all of the scope</td><td>Yes</td></tr>
+          <tr><td><code>goal</code></td><td>What the session must make</td><td>Yes</td></tr>
+          <tr><td><code>scope</code></td><td>Files and folders it may change</td><td>Yes</td></tr>
+          <tr><td><code>doneWhen</code></td><td>The check that ends the work</td><td>Yes</td></tr>
+          <tr><td><code>skills</code>, <code>agent</code></td><td>Skills to load, agent definition</td><td>No</td></tr>
+          <tr><td><code>cwd</code>, <code>worktree</code></td><td>Folder, and whether it needs a worktree</td><td>Yes</td></tr>
+        </table></div>
+      </div>
+    </details>
+
+    <details>
+      <summary><code>notice</code> · kind, decision, steps</summary>
+      <div>
+        <p>The supervisor sends a notice in four cases: a default answer with its stack steps, a review instruction, a child report to the parent, and a block message. Each case is one <code>render.md</code> file, so the text is not in the code.</p>
+        <div class="scroll"><table>
+          <tr><th>Field</th><th>Content</th><th>Need</th></tr>
+          <tr><td><code>kind</code></td><td><code>default</code>, <code>review</code>, <code>child-report</code>, <code>blocked</code></td><td>Yes</td></tr>
+          <tr><td><code>decision</code>, <code>child</code></td><td>The id that the notice is about</td><td>If it applies</td></tr>
+          <tr><td><code>steps</code></td><td>The <code>orch</code> commands to run</td><td>No</td></tr>
+        </table></div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Files of one template</h2>
+    <div class="scroll"><table>
+      <tr><th>File</th><th>Content</th><th>Reader</th></tr>
+      <tr><td><code>schema.json</code></td><td>Fields, types, required fields</td><td><code>core</code>, tools, CLI</td></tr>
+      <tr><td><code>render.md</code></td><td>Text with <code>{{field}}</code> places</td><td>Sessions</td></tr>
+      <tr><td><code>card.js</code></td><td>The card of this template</td><td>Phone UI</td></tr>
+      <tr><td><code>example.json</code></td><td>One valid message</td><td>Tests, docs</td></tr>
+    </table></div>
+    <p>To add a template, add its folder in <code>templates/</code> with these four files, and add one row to the table above. A test examines each <code>example.json</code> against its <code>schema.json</code>, so a template cannot drift from its example.</p>
+  </section>
+</div>
+
+<!-- BUILD -->
+<div class="panel off" id="build" role="tabpanel">
   <section>
     <h2>Code today</h2>
     <div class="scroll"><table>
@@ -368,30 +543,22 @@ flowchart LR
       <tr><td><code>supervisor/src/sdk.ts</code>, <code>policy.ts</code>, <code>main.ts</code></td><td>127</td><td>SDK runner, policy texts, start</td></tr>
       <tr><td><code>supervisor/test/supervisor.test.ts</code></td><td>263</td><td>16 unit tests</td></tr>
     </table></div>
-    <p>Four problems: the mod and the supervisor each have their own copy of the store rules. The texts to the sessions are in the code. There is no command-line tool. There are no agent or skill files, so each brief and each note repeats the instructions.</p>
+    <p>Four problems: the mod and the supervisor each have their own copy of the store rules. The texts to the sessions are in the code. There is no command-line tool. There are no agent, skill or template files, so each brief repeats the instructions.</p>
   </section>
 
-  <div class="card">
-    <div class="vtitle">Target folders: one place for each kind of thing</div>
-    <pre class="code">session-orchestrator/
-├─ packages/
-│  ├─ core/        store contract: types, file names, order, texts. No file IO
-│  ├─ store/       file IO of the contract (atomic write, read, list)
-│  ├─ supervisor/  tick, lease, policy, SDK runner, HTTP API
-│  ├─ cli/         the orch command for the user, scripts and sessions
-│  └─ ui/          phone web page, served by the supervisor
-├─ plugin/         the Claude Code plugin that each session loads
-│  ├─ hooks/       register.ts + inbox, lease, mirror, tools (one file each)
-│  ├─ skills/      how-to files that sessions load when they need them
-│  ├─ agents/      subagent definitions
-│  └─ commands/    slash commands (orch-enable)
-├─ prompts/        text templates: default note, review texts, briefs
-├─ config/         policy.default.json, policy.test.json
-├─ tests/          unit, contract and end-to-end tests
-├─ docs/           plan, store contract, know-how, design page
-├─ spikes/         P0 to P3 spikes, frozen
-└─ store/          runtime data, ignored by git</pre>
-  </div>
+  <section>
+    <h2>Target folders</h2>
+    <p>Open a folder to see its parts. Click a line to read what goes there. The tag gives the milestone that builds the part.</p>
+    <div class="legend">
+      <span><span class="tag t-now">today</span> exists now</span>
+      <span><span class="tag t-m">M0</span> to <span class="tag t-m">M4</span> built in that milestone</span>
+    </div>
+    <div class="toolbar">
+      <button type="button" id="tree-open">Open all</button>
+      <button type="button" id="tree-close">Close all</button>
+    </div>
+    <div class="ftree" id="ftree" role="tree" aria-label="Target folders"></div>
+  </section>
 
   <div class="card">
     <div class="vtitle">Each package uses only the packages below it</div>
@@ -403,40 +570,26 @@ flowchart TD
   ST --> CO[core]
   PL[plugin hooks] --> CO
   SK[plugin skills] -->|run| CLI
-  SV -->|reads| PR[prompts]
+  CO -->|reads| TP[templates]
     </pre></div>
     <p>The plugin cannot use Node file IO: it writes through <code>$.fs</code>. So it uses <code>core</code> only, with its own small IO part. A spike must show that a plugin hook can import a relative <code>.ts</code> file.</p>
   </div>
 
   <section>
     <h2>The orch command</h2>
-    <p>Each read and write of the store goes through one tool, so nobody writes store files by hand. The user, the tests and the sessions use the same commands.</p>
+    <p>Each read and write of the store goes through one tool, so nobody writes store files by hand. Each command that sends a message takes the fields of a template, and <code>core</code> validates them.</p>
     <div class="scroll"><table>
       <tr><th>Command</th><th>User</th><th>Does</th></tr>
-      <tr><td><code>orch new</code>, <code>orch send</code></td><td>User, scripts</td><td>Start a session, add an inbox file</td></tr>
+      <tr><td><code>orch new</code>, <code>orch send</code></td><td>User, scripts</td><td>Start a session from a brief, add an inbox message</td></tr>
       <tr><td><code>orch tree</code>, <code>orch status</code></td><td>User, sessions</td><td>Show the session tree and states</td></tr>
       <tr><td><code>orch decisions</code>, <code>orch answer</code></td><td>User, scripts</td><td>List and answer decisions</td></tr>
       <tr><td><code>orch review</code>, <code>orch ledger</code></td><td>User</td><td>Give a verdict, show the record</td></tr>
       <tr><td><code>orch decision start</code>, <code>pr</code></td><td>Sessions</td><td>Make the branch and the draft PR</td></tr>
       <tr><td><code>orch stack rebase</code>, <code>close</code></td><td>Sessions</td><td>Do the git part of a verdict</td></tr>
       <tr><td><code>orch stop</code>, <code>archive</code>, <code>open</code></td><td>User</td><td>Stop, archive, open in the app</td></tr>
+      <tr><td><code>orch template</code></td><td>User, sessions</td><td>Show the fields of a template, check a file</td></tr>
       <tr><td><code>orch doctor</code></td><td>User</td><td>Check settings, plugin path, store, supervisor</td></tr>
     </table></div>
-    <p>The stack commands replace the 5 steps of the default note. The session runs one command, and the command gives the same branch names and PR bodies each time.</p>
-  </section>
-
-  <section>
-    <h2>Agents and skills</h2>
-    <div class="scroll"><table>
-      <tr><th>File</th><th>Kind</th><th>Job</th></tr>
-      <tr><td><code>agents/orchestrator.md</code></td><td>Agent</td><td>Root session: split work, start children</td></tr>
-      <tr><td><code>agents/worker.md</code></td><td>Agent</td><td>Child session: do one task, report</td></tr>
-      <tr><td><code>agents/docs-checker.md</code></td><td>Agent</td><td>Read-only docs answer for a decision</td></tr>
-      <tr><td><code>skills/orch-ask</code></td><td>Skill</td><td>Pick a risk level, write a question</td></tr>
-      <tr><td><code>skills/orch-stack</code></td><td>Skill</td><td>Default and review steps with orch</td></tr>
-      <tr><td><code>skills/orch-brief</code></td><td>Skill</td><td>Write a child brief, with the rules</td></tr>
-    </table></div>
-    <p>The plugin carries these files, so each session gets them from the same plugin path. A spike must show that a plugin from <code>CLAUDE_CODE_PLUGIN_DIRS</code> also gives its skills and agents to the session.</p>
   </section>
 
   <section>
@@ -444,25 +597,13 @@ flowchart TD
     <div class="scroll"><table>
       <tr><th>Level</th><th>Folder</th><th>Checks</th></tr>
       <tr><td>Unit</td><td><code>tests/unit</code></td><td>core, store, supervisor, cli with a fake runner</td></tr>
+      <tr><td>Template</td><td><code>tests/templates</code></td><td>Each example against its schema and its render</td></tr>
       <tr><td>Contract</td><td><code>tests/contract</code></td><td>Plugin and supervisor read the same files</td></tr>
       <tr><td>End to end</td><td><code>tests/e2e</code></td><td>The live test recipe as one script</td></tr>
     </table></div>
-    <p>Today, step 1 below is automatic and steps 2 to 7 are manual. The end-to-end script makes them one command.</p>
-    <ol>
-      <li>Run the unit tests: <code>node --test test/</code> in <code>supervisor/</code> (16 tests, a fake runner).</li>
-      <li>Make a test repository in the scratchpad, with short policy timeouts.</li>
-      <li>Start a test supervisor with its own <code>ORCH_STORE</code> and <code>ORCH_PORT</code>.</li>
-      <li>Send a scripted brief through <code>POST /api/sessions</code>.</li>
-      <li>Send scripted answers and reviews through the API, as the user.</li>
-      <li>Examine the store, the ledger, the git graph and the PRs.</li>
-      <li>Make sure that each transcript has one leaf.</li>
-      <li>Record each result and each finding in <code>docs/plan.md</code>.</li>
-    </ol>
+    <p>Today, only the unit tests are automatic (<code>node --test test/</code> in <code>supervisor/</code>, 16 tests). The live test recipe in <code>docs/know-how.md</code> is manual. The end-to-end script makes it one command.</p>
   </section>
-</div>
 
-<!-- ROADMAP -->
-<div class="panel off" id="roadmap" role="tabpanel">
   <div class="card">
     <div class="vtitle">Seven milestones to the stable version 1.0</div>
     <div class="scroll"><pre class="mermaid">
@@ -482,11 +623,11 @@ flowchart LR
     <div class="scroll"><table>
       <tr><th>Id</th><th>Work</th><th>Done when</th><th>State</th></tr>
       <tr><td>P0-P3</td><td>Spikes, mod, supervisor, policy, PR stack</td><td>Live tests pass</td><td><span class="pill ok">done</span></td></tr>
-      <tr><td>M0</td><td>Packages, core, prompts as files, plugin split</td><td>Same 16 tests pass, no behavior change</td><td><span class="pill todo">next</span></td></tr>
+      <tr><td>M0</td><td>Packages, core, templates, plugin split</td><td>Same 16 tests pass, no behavior change</td><td><span class="pill todo">next</span></td></tr>
       <tr><td>M1</td><td>orch command, stack commands, decision versions</td><td>The PR stack test runs on orch commands</td><td><span class="pill todo">todo</span></td></tr>
       <tr><td>M2</td><td>Agents, skills, commands in the plugin</td><td>Briefs refer to skills, not long texts</td><td><span class="pill todo">todo</span></td></tr>
       <tr><td>M3</td><td>Stop, archive, worktrees, restart, app import</td><td>Two code sessions run in one repository</td><td><span class="pill todo">todo</span></td></tr>
-      <tr><td>M4</td><td>Phone UI, tunnel, sign-in</td><td>You answer and review from the phone</td><td><span class="pill todo">todo</span></td></tr>
+      <tr><td>M4</td><td>Phone UI from the template cards, tunnel</td><td>You answer and review from the phone</td><td><span class="pill todo">todo</span></td></tr>
       <tr><td>M5</td><td>One vsa-template stream under the orchestrator</td><td>Start to merge with no lost decision</td><td><span class="pill todo">todo</span></td></tr>
       <tr><td>M6</td><td>End-to-end script, crash recovery, store version</td><td>A supervisor restart loses nothing</td><td><span class="pill todo">todo</span></td></tr>
     </table></div>
@@ -512,13 +653,13 @@ flowchart LR
     <ul>
       <li>Language of the orch command: Node, the same as the supervisor? Recommendation: yes, Node 26 with no build step.</li>
       <li>Package layout: npm workspaces in one <code>package.json</code>? Recommendation: yes.</li>
+      <li>Schema format: JSON Schema with a small validator in <code>core</code>, or plain TypeScript checks? Recommendation: JSON Schema, because the UI and the tools can read the same file.</li>
       <li>Plugin imports: can a hook import a relative <code>.ts</code> file? Recommendation: a small spike at the M0 start. If not, keep one file and generate it.</li>
       <li>Plugin skills and agents: does <code>CLAUDE_CODE_PLUGIN_DIRS</code> give them to the session? Recommendation: a small spike at the M2 start.</li>
       <li>Tunnel: which tool, and which sign-in? Recommendation: Cloudflare Tunnel with Cloudflare Access.</li>
       <li>Worktrees: does the supervisor make them? Recommendation: yes, and it records the folder in <code>meta.json</code>.</li>
       <li>Store: files, or SQLite? Recommendation: files until M5 shows a real problem.</li>
       <li>Docs check for <code>medium</code>: keep it on? Recommendation: keep it.</li>
-      <li>UI stack: plain HTML from the supervisor? Recommendation: yes, no build step.</li>
       <li>Swipe meaning on a card? Recommendation: right accepts the default, left opens the free-text answer.</li>
       <li>Delete the old folder <code>claude-orchestrator</code>? Recommendation: yes, after the next app restart.</li>
     </ul>
@@ -530,7 +671,7 @@ flowchart LR
 
 <script>
 (function () {
-  var names = ["overview", "topology", "flows", "decisions", "code", "roadmap"];
+  var names = ["overview", "topology", "flows", "decisions", "templates", "build"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "overview";
     names.forEach(function (n) {
@@ -545,5 +686,130 @@ flowchart LR
   });
   window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
   show(location.hash.slice(1));
+})();
+(function () {
+  var T = [
+    ["package.json", "M0", "npm workspaces of all packages", "One root package.json lists packages/* as workspaces. One npm install gets the dependencies of all packages. The npm scripts fail on this computer, so each script also has a direct node command in AGENTS.md."],
+    ["README.md", "today", "What the project is, how to start it", "The summary, the folder table, the start command and the link to the design page."],
+    ["AGENTS.md", "today", "Rules for each agent that works here", "Files to read first, the rules of the project, the commands, how to work with the user, and how the plugin loads. CLAUDE.md contains only @AGENTS.md."],
+    ["packages", "M0", "The code, one package for each job", "Each package has src/ and its own package.json. A package uses only the packages below it in the package graph."],
+    ["packages/core", "M0", "The store contract, with no file IO", "The single copy of the rules that the plugin and the supervisor share. No Node API, so the plugin can use it too."],
+    ["packages/core/src/contract.ts", "M0", "File names and folder layout of a session", "The names of each store file (lease.json, inbox/, decisions/, answers/ and the others) and the types of their content. store.md documents the same contract."],
+    ["packages/core/src/order.ts", "M0", "Inbox names and their order", "Makes a new inbox name that sorts after all earlier names, and sorts names in numeric order. Today the mod and the supervisor each have a copy."],
+    ["packages/core/src/lease.ts", "M0", "The lease rules", "isLive: a live lease counts while its heartbeat or the lease is less than 15 s old. Who may write which turn."],
+    ["packages/core/src/policy.ts", "M0", "Policy levels and the default rule", "Loads and validates a policy, finds the level of a decision (an unknown level is the strictest), and decides when a default applies."],
+    ["packages/core/src/templates.ts", "M0", "Validate and render a template", "Reads schema.json and render.md of a template, validates the fields of a message, and makes the text for a session."],
+    ["packages/store", "M0", "File IO of the contract for Node", "Atomic write (temporary file, then rename), read, list, the ledger file. The supervisor and the CLI use it."],
+    ["packages/store/src/fs-store.ts", "M0", "Read and write store files", "The Store class of today without the rules, which move to core."],
+    ["packages/store/src/ledger.ts", "M0", "Append to ledger.jsonl", "One line for each docs answer, default and review, with the time."],
+    ["packages/supervisor", "today", "The scheduler process", "Today it is supervisor/ at the root. M0 moves it here and splits it into one file for each job."],
+    ["packages/supervisor/src/tick.ts", "M0", "One pass over all sessions", "Releases stale leases, forwards child reports, applies the policy and starts turns, up to maxRuns at one time."],
+    ["packages/supervisor/src/policy-runner.ts", "M0", "Docs answers and default answers", "Runs the docs check for each level with checkDocs, and writes a default answer after the timeout of its level."],
+    ["packages/supervisor/src/runner-sdk.ts", "today", "Agent SDK turns", "Starts or resumes a session with the Agent SDK and the local login. Sets ORCH_HOLDER and ORCH_STORE."],
+    ["packages/supervisor/src/http.ts", "today", "HTTP API and the UI files", "The API of store.md. From M4 it also serves packages/ui."],
+    ["packages/supervisor/src/main.ts", "today", "Start of the process", "Reads ORCH_STORE and ORCH_PORT, loads the policy, starts the tick timer and the HTTP server."],
+    ["packages/cli", "M1", "The orch command", "One command for each operation. The user, the test scripts and the sessions use the same commands, so nobody writes store files by hand."],
+    ["packages/cli/src/main.ts", "M1", "Argument parse and help", "Finds the command and its options, and prints the help of each command."],
+    ["packages/cli/src/commands", "M1", "One file for each command", "new, send, tree, status, decisions, answer, review, ledger, decision, stack, stop, archive, open, template, doctor."],
+    ["packages/cli/src/git.ts", "M1", "Git and gh steps of a stack", "Makes decision branches, opens draft PRs with the PR template, rebases the branches above a change, and closes the PRs above a refuse."],
+    ["packages/ui", "M4", "The phone page", "Plain HTML and JS with no build step. The supervisor serves it. Reached through the tunnel."],
+    ["packages/ui/index.html", "M4", "Session tree and decision queue", "Two views: the tree of sessions with their last update, and the queue of open decisions and default reviews."],
+    ["packages/ui/app.js", "M4", "Reads the API, draws the cards", "Gets the sessions and the decisions, and draws each message with the card.js of its template."],
+    ["plugin", "today", "The plugin that each session loads", "Today it is mod/orch. M0 moves it here. CLAUDE_CODE_PLUGIN_DIRS in the user settings points to this folder."],
+    ["plugin/.claude-plugin/plugin.json", "today", "Plugin name and version", "The manifest of the plugin."],
+    ["plugin/hooks", "today", "The hooks module", "hooks.json names register.ts. M0 splits the 382 lines of today into one file for each part."],
+    ["plugin/hooks/register.ts", "today", "Activation and timers", "Activates the session if it has the enabled file, starts the heartbeat timer and the inbox timer, registers the tools."],
+    ["plugin/hooks/inbox.ts", "M0", "Submit inbox turns", "Sends each new inbox message as a turn when the session is idle. Handles the Stop latch and blocked.json."],
+    ["plugin/hooks/lease.ts", "M0", "Lease and heartbeat", "Writes the heartbeat every 3 s, writes the lease, takes back a released lease."],
+    ["plugin/hooks/mirror.ts", "M0", "Copy transcript rows", "Writes the prompt, response and tool-result rows to mirror/."],
+    ["plugin/hooks/io.ts", "M0", "Store IO through $.fs", "The plugin version of packages/store: the same contract from core, with $.fs in place of Node."],
+    ["plugin/hooks/tools", "M0", "One file for each session tool", "ask-user.ts (decision template), report.ts (report template), update.ts (update template), spawn-child.ts (brief template). Each tool takes the fields of its template."],
+    ["plugin/hooks/questions.ts", "today", "Refuse click questions", "Hides AskUserQuestion and refuses it, as the fallback of the deny rule in the user settings."],
+    ["plugin/skills", "M2", "How-to files that sessions load when needed", "Each skill is a folder with SKILL.md. A brief names the skills to load, so the brief stays short."],
+    ["plugin/skills/orch-ask/SKILL.md", "M2", "How to ask the user", "How to fill the decision template, how to pick a risk level from the policy definitions, when to ask and when to decide."],
+    ["plugin/skills/orch-report/SKILL.md", "M2", "How to report and update", "When to send a report and when an update, and how to fill each template."],
+    ["plugin/skills/orch-stack/SKILL.md", "M2", "Default and review steps", "The orch decision and orch stack commands for a default answer and for each verdict."],
+    ["plugin/skills/orch-brief/SKILL.md", "M2", "How to start a child", "How to fill the brief template: one decision group, a title that names all of the scope, the done check, the archive rule."],
+    ["plugin/agents", "M2", "Subagent and session roles", "Markdown files with a role, its tools and its rules. The brief template names one."],
+    ["plugin/agents/orchestrator.md", "M2", "Root session role", "Splits the work, starts children with briefs, checks them, and reports to the user."],
+    ["plugin/agents/worker.md", "M2", "Child session role", "Does one task in its scope, asks with the decision template, ends with a report."],
+    ["plugin/agents/docs-checker.md", "M2", "Read-only docs answer", "Reads the docs paths of the policy and answers a decision only if the docs answer it, with the source. The supervisor runs it."],
+    ["plugin/commands/orch-enable.md", "M2", "Put a session under the orchestrator", "The slash command that writes the enabled file for the current session."],
+    ["templates", "M0", "One folder for each message kind", "decision, answer, review, report, update, brief, notice. Each folder has schema.json, render.md, card.js and example.json. See the Templates tab."],
+    ["templates/decision", "M0", "Session asks the user", "Fields: question, context, snippet, options, recommendation, risk, defaultOption."],
+    ["templates/answer", "M0", "Answer to a decision", "Fields: decision, text, by, source, note."],
+    ["templates/review", "M0", "Verdict on a default", "Fields: decision, verdict, text."],
+    ["templates/report", "M0", "Work done or blocked", "Fields: state, summary, done, next, blockers, links."],
+    ["templates/update", "M0", "Progress, no action needed", "Fields: step, progress, summary."],
+    ["templates/brief", "M0", "Start of a session", "Fields: title, goal, scope, doneWhen, skills, agent, cwd, worktree."],
+    ["templates/notice", "M0", "Supervisor text to a session", "One render.md for each kind: default, review, child-report, blocked. These are the texts that are in the code today."],
+    ["config", "today", "Policies", "policy.default.json (low 30 min, medium 4 h, high never) and policy.test.json (short timeouts for live tests)."],
+    ["tests", "M0", "All tests in one place", "Today the tests are in supervisor/test. M0 moves them."],
+    ["tests/unit", "M0", "Unit tests with a fake runner", "core, store, supervisor and cli. The 16 tests of today are the start."],
+    ["tests/templates", "M0", "Template tests", "Each example.json against its schema.json, and each render.md with its example."],
+    ["tests/contract", "M1", "Plugin and supervisor agree", "Writes store files with one side and reads them with the other side."],
+    ["tests/e2e", "M6", "The live test as one script", "The recipe of know-how.md: a test repository, a test supervisor, scripted answers and reviews, checks of the ledger and the PRs."],
+    ["docs", "today", "Plan, contract, know-how, design page", "plan.md (goal, phases, results, next steps), store.md (contract and API), know-how.md (limits and recipes), orchestrator-design.html (this page)."],
+    ["spikes", "today", "Spike scripts and test briefs", "Frozen. The briefs p3 and p4 of the live tests stay here until tests/e2e replaces them."],
+    ["store", "today", "Runtime data", "One folder for each session, the ledger and policy.json. Git ignores it. Tests use their own store in the scratchpad."]
+  ];
+  var box = document.getElementById("ftree");
+  if (!box) return;
+  var open = {};
+  function parentOf(p) { var i = p.lastIndexOf("/"); return i < 0 ? "" : p.slice(0, i); }
+  function baseOf(p) { var i = p.lastIndexOf("/"); return i < 0 ? p : p.slice(i + 1); }
+  function kids(p) { return T.filter(function (r) { return parentOf(r[0]) === p; }); }
+  function isFile(p) { return /\.[a-z]+$/i.test(baseOf(p)); }
+  function el(t, cls, text) { var e = document.createElement(t); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+  function node(r, depth) {
+    var ch = kids(r[0]);
+    var wrap = el("div", "fnode");
+    wrap.setAttribute("role", "treeitem");
+    var row = el("div", "frow");
+    row.style.setProperty("--d", depth);
+    var tog = el("button", "ftog" + (ch.length ? "" : " leaf"), "▶");
+    tog.type = "button";
+    tog.setAttribute("aria-label", "Open or close " + r[0]);
+    var name = el("span", "fname " + (isFile(r[0]) ? "file" : "dir"), baseOf(r[0]));
+    var tag = el("span", "tag " + (r[1] === "today" ? "t-now" : "t-m"), r[1]);
+    var desc = el("button", "fdesc", r[2]);
+    desc.type = "button";
+    row.appendChild(tog); row.appendChild(name); row.appendChild(tag); row.appendChild(desc);
+    var detail = el("div", "fdetail", r[3]);
+    detail.style.setProperty("--d", depth);
+    detail.hidden = true;
+    var group = el("div", "");
+    group.setAttribute("role", "group");
+    ch.forEach(function (c) { group.appendChild(node(c, depth + 1)); });
+    function paint() {
+      var o = !!open[r[0]];
+      group.hidden = !o;
+      tog.setAttribute("aria-expanded", String(o));
+      wrap.setAttribute("aria-expanded", String(o));
+    }
+    tog.addEventListener("click", function () { open[r[0]] = !open[r[0]]; paint(); });
+    desc.addEventListener("click", function () { detail.hidden = !detail.hidden; desc.classList.toggle("on", !detail.hidden); });
+    name.addEventListener("click", function () { if (ch.length) { open[r[0]] = !open[r[0]]; paint(); } else { detail.hidden = !detail.hidden; } });
+    wrap.appendChild(row); wrap.appendChild(detail); wrap.appendChild(group);
+    paint();
+    return wrap;
+  }
+  function render() {
+    box.textContent = "";
+    var root = el("div", "frow froot", "session-orchestrator/");
+    box.appendChild(root);
+    kids("").forEach(function (r) { box.appendChild(node(r, 1)); });
+  }
+  document.getElementById("tree-open").addEventListener("click", function () { T.forEach(function (r) { open[r[0]] = true; }); render(); });
+  document.getElementById("tree-close").addEventListener("click", function () { open = {}; render(); });
+  render();
+})();
+(function () {
+  document.querySelectorAll(".fold-all").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var o = b.dataset.open === "1";
+      b.closest("section").querySelectorAll("details").forEach(function (d) { d.open = o; });
+    });
+  });
 })();
 </script>

@@ -53,10 +53,10 @@ session-orchestrator/
 │  └─ ui/          phone web page, served by the supervisor
 ├─ plugin/         the Claude Code plugin that each session loads
 │  ├─ hooks/       register.ts + inbox, lease, mirror, tools (one file each)
-│  ├─ skills/      orch-ask, orch-stack, orch-brief
+│  ├─ skills/      orch-ask, orch-report, orch-stack, orch-brief
 │  ├─ agents/      orchestrator, worker, docs-checker
 │  └─ commands/    orch-enable
-├─ prompts/        text templates: default note, review texts, briefs
+├─ templates/      one folder for each message kind: schema.json, render.md, card.js, example.json
 ├─ config/         policy.default.json, policy.test.json
 ├─ tests/          unit, contract, e2e
 ├─ docs/
@@ -64,7 +64,19 @@ session-orchestrator/
 └─ store/          runtime, ignored by git
 ```
 
-The `orch` command (M1) does each read and write of the store, for the user, the scripts and the sessions: `new`, `send`, `tree`, `status`, `decisions`, `answer`, `review`, `ledger`, `decision start`, `decision pr`, `stack rebase`, `stack close`, `stop`, `archive`, `open`, `doctor`. The stack commands replace the 5 steps of the default note.
+Each message is a filled template. A sender gives the fields, `core` validates them against `schema.json`, a session gets the text of `render.md`, and the phone UI draws `card.js`. The design page, tab Templates, gives the fields of each template.
+
+| Template | From → to | Sent with |
+|---|---|---|
+| `decision` | Session → user | `ask_user`: question, context, snippet, options, recommendation, risk, defaultOption |
+| `answer` | User, docs, policy → session | UI, `orch answer`, supervisor: text, by, source, note |
+| `review` | User → session | UI, `orch review`: verdict, text |
+| `report` | Session → parent, user | `report`: state (done, blocked), summary, done, next, blockers, links |
+| `update` | Session → user | `update`: step, progress, summary. No action needed |
+| `brief` | User, parent → new session | `spawn_child`, `orch new`: title, goal, scope, doneWhen, skills, agent, cwd, worktree |
+| `notice` | Supervisor → session | default, review, child-report, blocked |
+
+The `orch` command (M1) does each read and write of the store, for the user, the scripts and the sessions: `new`, `send`, `tree`, `status`, `decisions`, `answer`, `review`, `ledger`, `decision start`, `decision pr`, `stack rebase`, `stack close`, `stop`, `archive`, `open`, `template`, `doctor`. The stack commands replace the 5 steps of the default note.
 
 ## Phases
 
@@ -79,7 +91,7 @@ After P3, the work continues in milestones to the stable version 1.0:
 
 | Milestone | Work | Done when |
 |---|---|---|
-| M0 | Packages, `core`, prompts as files, plugin split | The same 16 tests pass, with no behavior change |
+| M0 | Packages, `core`, templates, plugin split | The same 16 tests pass, with no behavior change |
 | M1 | `orch` command, stack commands, decision versions, new PR bodies, `[orch]` tag | The PR stack test runs on `orch` commands |
 | M2 | Agents, skills and commands in the plugin | Briefs refer to skills, not long texts |
 | M3 | Stop, archive, worktrees, restart after failures, app import | Two code sessions run in one repository |
