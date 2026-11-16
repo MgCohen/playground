@@ -12,6 +12,7 @@ store/
   bodies/<day>/<id>.json             bodies, write once
   subscriptions/<party>/<name>.json  { party, name, cursor, recent, at, filter } of one subscriber
   nudges/<party>                     a nudge: the write time is the signal, the text is an envelope id or empty
+  claims/answer/<thread>             the claim of the first answer in a thread: an exclusive create, the text is the sender
   sessions/<id>/                     the lifecycle files of one session (below)
   supervisor/log.txt                 one line for each turn, relay, default, nudge and blocked delivery
 ```
@@ -64,7 +65,9 @@ There is no other communication file. The inbox, the answers, the reviews, the r
 3. A message kind must match `templates/<kind>/schema.json`. Its `from` and `to` must be in `meta.json`. A `refs.reply` must name an envelope whose type takes this reply type. An error names the type and each wrong field.
 4. Post refuses a second answer in one thread, and gives the first answer in the error text. A forward is not a second answer.
 5. A forward is a new envelope with a new `to`, the same body, the same `from` and `thread`, and `refs.of`.
-6. The plugin checks the required fields and `meta.json`; the engine checks the full schema before the tool call.
+6. Before an answer, the writer creates `claims/answer/<thread>` with an exclusive create. If the file exists, the post is refused with the first answer. So the first answer wins also between processes (the supervisor, `orch`, the UI).
+7. The plugin refuses an unknown kind, a message kind with no `meta.json`, missing required fields, and a `from` or `to` that `meta.json` does not allow. The engine checks the full schema before the tool call. The plugin never posts an answer or a review: these go through `orch`, so the reply-type and first-answer checks are in C# only.
+8. The envelope file holds only the fields in the table above. The C# record has computed helpers (`Of`, `Reply`, `Via`, `IsForward`); they are not in the file.
 
 ## Types
 
@@ -94,7 +97,8 @@ Other kinds have no template: traces (`session.input`, `session.output`, `sessio
 | `subscriptions/supervisor/relay.json` | The supervisor | decision, query, plan, and a report with `needs` from a session | The supervisor, after the forward |
 
 - A subscriber waits for a push of `StreamWatcher` (a file watcher on `events/` and `nudges/`). It also queries from its cursor after `delivery.sweepSeconds` with no push, because a file watcher can drop events.
-- `Next()` gives the matching envelopes after the cursor that the subscriber did not mark done. Envelopes of other writers can arrive a little late, so the file keeps the done ids of the last 30 s in `recent`.
+- `Next()` gives the matching envelopes after the cursor that the subscriber did not mark done. Envelopes of other writers can arrive a little late, so the scan starts 120 s before the cursor, and the file keeps the done ids of these 120 s in `recent`. Limit: an envelope that appears more than 120 s after its id time can be missed by a subscription.
+- The delivery cursor moves only over acknowledged envelopes before the first open one. It never passes an envelope that waits for its ack.
 - The deliverable kinds are brief, message, decision, query, plan, answer, review, report and notice. A report is deliverable only with `needs` or as a forward.
 - Each delivered envelope gets an ack: `{ kind: ack, from: <receiver>, to: <sender>, refs.of, body: { state: delivered | read, by } }`. `by` is `live`, `supervisor`, `tool-result`, `chat` or `user`.
 - The envelopes to a session with no ack are its pending deliveries. The ack is the truth; the cursor only marks where the scan starts.
@@ -278,7 +282,7 @@ A review of a default decision (`templates/review/render/<verdict>.md`):
 1. Write each file in one write: a temporary file, then a move.
 2. Only one writer has the lease. The plugin delivers only with holder `live`. With any other holder, the supervisor delivers with `claude -p`.
 3. A lease `live` counts as live while the heartbeat or the lease is less than 15 s old. After that, the supervisor releases it (`none`). The plugin takes a released lease back at its next beat.
-4. The supervisor refuses a store with another version. There is no migration from version 1: move the old store to another folder and start with a new store.
+4. The supervisor and each `orch` command (except `doctor` and `template`) refuse a store with another version. The plugin stays inactive in a store whose `version.json` is not version 2. There is no migration from version 1: move the old store to another folder and start with a new store.
 
 ## Recovery
 

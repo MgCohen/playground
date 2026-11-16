@@ -214,9 +214,10 @@ public sealed class Supervisor
         var delivery = options.Policy.Delivery;
         var live = store.IsLive(id, now);
         var status = store.Status(id);
+        var blocked = store.Events.All().Where(b => b.Kind == EventKinds.DeliveryBlocked).Select(b => b.Ref("envelope")).OfType<string>().ToHashSet();
         foreach (var e in open)
         {
-            if (Blocked(e)) continue;
+            if (blocked.Contains(e.Id)) continue;
             if (!live)
             {
                 if (failures.TryGetValue(id, out var failure) && failure.Count >= options.MaxFailures)
@@ -236,8 +237,6 @@ public sealed class Supervisor
             }
         }
     }
-
-    bool Blocked(Event e) => store.Events.All().Any(b => b.Kind == EventKinds.DeliveryBlocked && b.Ref("envelope") == e.Id);
 
     void PostBlocked(string id, Event e, string reason)
     {

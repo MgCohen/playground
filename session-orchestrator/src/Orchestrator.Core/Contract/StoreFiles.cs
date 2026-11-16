@@ -17,6 +17,7 @@ public static class StoreFiles
     public const string Bodies = "bodies";
     public const string Subscriptions = "subscriptions";
     public const string Nudges = "nudges";
+    public const string Claims = "claims";
     public const string Stack = "stack";
     public const string Turn = "turn.json";
     public const string LastOutput = "last-output.json";

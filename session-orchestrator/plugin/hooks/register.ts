@@ -47,7 +47,16 @@ async function mirror($: any, e: any): Promise<void> {
   await emitRow($, e)
 }
 
+export const STORE_VERSION = 2
+
+// A store of another version has another contract: the plugin stays inactive and writes nothing.
+async function versionOk($: any): Promise<boolean> {
+  const version = await readJson($, `${await storeRoot($)}/version.json`)
+  return version === undefined || version.version === STORE_VERSION
+}
+
 async function activate($: any, dir: string, reason: unknown): Promise<void> {
+  if (!(await versionOk($))) return
   S.id = await $.session.id()
   S.dir = dir
   S.home = await homeRoot($)

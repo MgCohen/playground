@@ -67,6 +67,7 @@ public sealed class EventStream
         lock (gate)
         {
             Check(post);
+            Claim(post);
             var (id, ms) = NewId();
             var day = Day(ms);
             var body = $"{StoreFiles.Bodies}/{day}/{id}.json";
@@ -141,6 +142,29 @@ public sealed class EventStream
         {
             var text = Fields(first).TryGetValue("text", out var t) ? t : "";
             throw new MessageException($"decision {thread} already has an answer from {first.From}: {text}. The session has this answer. Nothing changed.");
+        }
+    }
+
+    /// <summary>
+    /// First answer wins between processes too: before an answer is posted, its writer creates claims/answer/&lt;thread&gt;
+    /// with an exclusive create. A second writer gets the first answer in the error text.
+    /// </summary>
+    void Claim(PostInput post)
+    {
+        if (post.Kind != EventKinds.Answer || post.Thread is not { } thread) return;
+        var path = Path.Combine(root, StoreFiles.Claims, "answer", thread);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        try
+        {
+            using var claim = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            claim.Write(System.Text.Encoding.UTF8.GetBytes(post.From));
+        }
+        catch (IOException) when (File.Exists(path))
+        {
+            for (var attempt = 0; attempt < 20 && FirstAnswer(thread) is null; attempt++) System.Threading.Thread.Sleep(50);
+            var first = FirstAnswer(thread);
+            var text = first is null ? "(the answer is not written yet)" : Fields(first).GetValueOrDefault("text");
+            throw new MessageException($"decision {thread} already has an answer from {first?.From ?? Files.ReadText(path) ?? "another writer"}: {text}. The session has this answer. Nothing changed.");
         }
     }
 
@@ -317,7 +341,11 @@ public sealed class EventStream
 /// </summary>
 public sealed class StreamSubscription
 {
-    public static readonly TimeSpan Grace = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// A writer takes the id time before its two writes, so its envelope can appear a little after newer ids.
+    /// An envelope that appears more than this time after its id time can be missed by a subscription.
+    /// </summary>
+    public static readonly TimeSpan Grace = TimeSpan.FromSeconds(120);
 
     sealed record State(string Party, string Name, string? Cursor, List<string> Recent, string At)
     {

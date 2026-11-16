@@ -58,6 +58,7 @@ namespace Orchestrator.Cli
             var command = new CommandContext(store, args, output, cwd);
             try
             {
+                if (args.Positional[0] is not ("doctor" or "template")) Home.CheckVersion(store.Root, store.Clock.GetUtcNow());
                 return args.Positional[0] switch
                 {
                     "new" => SessionCommands.New(command),
@@ -94,7 +95,7 @@ namespace Orchestrator.Cli
                 error.WriteLine("Run orch --help for the commands.");
                 return 2;
             }
-            catch (Exception e) when (e is MessageException or ShellException or FormatException or IOException)
+            catch (Exception e) when (e is MessageException or ShellException or FormatException or IOException or InvalidDataException)
             {
                 error.WriteLine($"orch: {e.Message}");
                 return 1;

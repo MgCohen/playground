@@ -123,6 +123,93 @@ public sealed class StreamTests
     }
 
     [Test]
+    public void The_cursor_does_not_pass_an_open_envelope_when_a_later_one_has_an_ack()
+    {
+        using var t = new Rig();
+        var id = t.Create("first");
+        t.Store.MarkSent(id, t.Store.Pending(id).Envelopes, Holders.Supervisor);
+        var open = t.Store.Send(id, "E1 waits");
+        t.Clock.Advance(TimeSpan.FromSeconds(40));
+        t.Decide(id, "d1", "high", null);
+        var answer = new Messages(t.Store).Answer(id, "d1", "GREEN");
+        t.Store.Events.Ack(answer, Parties.Session(id), "tool-result");
+        Assert.That(t.Store.Undelivered(id).Select(e => e.Id), Is.EqualTo(new[] { open.Id }));
+        t.Clock.Advance(TimeSpan.FromMinutes(10));
+        Assert.That(t.Store.Undelivered(id).Select(e => e.Id), Is.EqualTo(new[] { open.Id }));
+        Assert.That(Core.Ordering.Names.Order.Compare(t.Store.Deliveries(id).Cursor, open.Id), Is.LessThan(0));
+    }
+
+    [Test]
+    public void An_answer_claim_of_another_process_refuses_the_answer()
+    {
+        using var t = new Rig();
+        var id = t.Create("start");
+        t.Decide(id, "d1", "low", "A");
+        Files.Write(Path.Combine(t.Folder, StoreFiles.Claims, "answer", "d1"), "policy");
+        var refused = Assert.Throws<MessageException>(() => new Messages(t.Store).Answer(id, "d1", "B"))!;
+        Assert.That(refused.Message, Does.Contain("already has an answer from policy"));
+        Assert.That(t.Store.Answer(id, "d1"), Is.Null);
+    }
+
+    [Test]
+    public void Two_stores_on_one_folder_post_only_one_answer()
+    {
+        using var t = new Rig();
+        var id = t.Create("start");
+        t.Decide(id, "d1", "low", "A");
+        var other = new FileStore(t.Folder, t.Clock);
+        var results = new[] { t.Store, other }.AsParallel().Select(store =>
+        {
+            try
+            {
+                new Messages(store).Answer(id, "d1", store == other ? "B" : "A");
+                return true;
+            }
+            catch (MessageException)
+            {
+                return false;
+            }
+        }).ToList();
+        Assert.That(results.Count(ok => ok), Is.EqualTo(1));
+        Assert.That(new FileStore(t.Folder, t.Clock).Events.All().Count(e => e.Kind == EventKinds.Answer), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void A_subscription_sees_an_envelope_that_appears_one_minute_after_its_id_time()
+    {
+        using var t = new Rig();
+        var subscription = t.Store.Events.Subscribe(Parties.Supervisor, "late", e => e.Kind == EventKinds.Message);
+        var id = t.Create("first");
+        var first = subscription.Next().Single();
+        subscription.Done(first.Id);
+        var ms = long.Parse(first.Id.Split('-')[0]) - 60_000;
+        var late = $"{ms}-00000060-live";
+        var day = DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime.ToString("yyyy-MM-dd");
+        Files.Write(Path.Combine(t.Folder, StoreFiles.Bodies, day, $"{late}.json"), """{ "text": "late" }""");
+        Files.Write(Path.Combine(t.Folder, StoreFiles.Events, day, $"{late}.json"),
+            $$"""{ "id": "{{late}}", "at": "x", "session": "{{id}}", "kind": "message", "from": "user", "to": "session:{{id}}", "subject": "late", "body": "bodies/{{day}}/{{late}}.json", "refs": {} }""");
+        Assert.That(subscription.Next().Select(e => e.Id), Is.EqualTo(new[] { late }));
+    }
+
+    [Test]
+    public void Each_orch_command_refuses_a_store_of_version_1()
+    {
+        using var t = new Rig();
+        Files.WriteJson(Path.Combine(t.Folder, StoreFiles.Version), new StoreVersion(1, "x"));
+        Environment.SetEnvironmentVariable("ORCH_STORE", t.Folder);
+        try
+        {
+            var output = new StringWriter();
+            Assert.That(Cli.Cli.Run(["decisions"], output, output, t.Folder), Is.EqualTo(1));
+            Assert.That(output.ToString(), Does.Contain("no migration"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ORCH_STORE", null);
+        }
+    }
+
+    [Test]
     public void An_update_to_the_user_and_a_working_report_are_not_deliveries()
     {
         using var t = new Rig();

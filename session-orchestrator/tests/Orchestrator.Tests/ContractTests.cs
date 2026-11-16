@@ -45,6 +45,23 @@ public sealed class ContractTests
     }
 
     [Test]
+    public void The_plugin_refuses_an_unknown_kind()
+    {
+        var module = new Uri(Path.Combine(Hooks, "stream.ts")).AbsoluteUri;
+        var output = Node($"import {{ knownKind }} from '{module}'; console.log([knownKind('decision'), knownKind('ack'), knownKind('session.input'), knownKind('decisoin'), knownKind('question.forward')].join(','))");
+        if (output is null) Assert.Ignore("node is not on the PATH");
+        Assert.That(output, Is.EqualTo("true,true,true,false,false"));
+    }
+
+    [Test]
+    public void The_plugin_knows_the_store_version_of_the_supervisor()
+    {
+        var register = File.ReadAllText(Path.Combine(Hooks, "register.ts"));
+        Assert.That(register, Does.Contain($"export const STORE_VERSION = {StoreVersion.Current}"));
+        Assert.That(register, Does.Contain("if (!(await versionOk($))) return"));
+    }
+
+    [Test]
     public void An_envelope_of_the_plugin_reads_with_its_thread_needs_and_body()
     {
         using var t = new Rig();

@@ -197,18 +197,21 @@ public sealed class FileStore
     public static bool IsDeliverable(Event e) =>
         EventKinds.Deliverable.Contains(e.Kind) && (e.Kind != EventKinds.Report || e.Needs is not null || e.IsForward);
 
-    /// <summary>The envelopes to the session with no ack, in order. Moves the shared cursor over the acknowledged ones.</summary>
+    /// <summary>
+    /// The envelopes to the session with no ack, in order. The shared cursor moves only over the acknowledged envelopes
+    /// before the first open one, so it never passes an envelope that still waits for its ack.
+    /// </summary>
     public IReadOnlyList<Event> Undelivered(string id)
     {
         var subscription = Deliveries(id);
-        var acked = new List<string>();
+        var done = new List<string>();
         var open = new List<Event>();
         foreach (var e in subscription.Next())
         {
-            if (Events.IsAcked(e.Id)) acked.Add(e.Id);
-            else open.Add(e);
+            if (!Events.IsAcked(e.Id)) open.Add(e);
+            else if (open.Count == 0) done.Add(e.Id);
         }
-        subscription.Done(acked);
+        subscription.Done(done);
         return open;
     }
 

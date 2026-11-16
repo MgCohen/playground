@@ -8,6 +8,14 @@ export type PostOptions = { thread?: string; needs?: string; refs?: Record<strin
 
 const META: Record<string, any> = {}
 
+// The kinds that the plugin may post. A message kind needs its templates/<kind>/meta.json.
+export const MESSAGE_KINDS = ['brief', 'message', 'decision', 'query', 'plan', 'answer', 'review', 'report', 'update', 'notice', 'ack']
+export const TRACE_KINDS = ['session.input', 'session.output', 'session.tool', 'blocked']
+
+export function knownKind(kind: string): boolean {
+  return MESSAGE_KINDS.includes(kind) || TRACE_KINDS.includes(kind)
+}
+
 // The one subject rule. Subjects.Of in Event.cs has the same rule, and the contract tests check both.
 export function subject(kind: string, data: Record<string, unknown>): string {
   let text: string
@@ -37,9 +45,14 @@ function allows(list: string[], party: string): boolean {
 
 // Level 2 and 3 of the type check: a known type, the required fields, and the from and to of meta.json.
 // The engine checks the full schema before the tool call (level 1).
+// The plugin posts no reply and no answer, so the reply-type and the first-answer checks stay in C#: an answer and a
+// review always go through orch (orch answer, orch chat-answer, orch review).
 async function check($: any, kind: string, from: string, to: string, body: Record<string, unknown>): Promise<void> {
+  if (!knownKind(kind)) throw new Error(`${kind}: unknown kind. Known: ${[...MESSAGE_KINDS, ...TRACE_KINDS].join(', ')}`)
+  if (!MESSAGE_KINDS.includes(kind)) return
+  if (kind === 'answer' || kind === 'review') throw new Error(`${kind}: post it with orch, which checks the reply type and the first answer`)
   const m = await meta($, kind)
-  if (m === null) return
+  if (m === null) throw new Error(`${kind}: no templates/${kind}/meta.json`)
   const missing = (m.required as string[]).filter(field => body[field] === undefined || body[field] === null)
   if (missing.length > 0) throw new Error(`${kind}: missing fields ${missing.join(', ')}`)
   if (!allows(m.from, from)) throw new Error(`${kind}: from ${from} is not allowed. Allowed: ${m.from.join(', ')}`)
