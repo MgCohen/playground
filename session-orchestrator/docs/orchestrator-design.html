@@ -88,10 +88,10 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
 
 <nav role="tablist" aria-label="Sections">
   <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
-  <button role="tab" data-tab="topology" aria-selected="false">Topology</button>
+  <button role="tab" data-tab="topology" aria-selected="false">Runtime</button>
   <button role="tab" data-tab="flows" aria-selected="false">Flows</button>
   <button role="tab" data-tab="decisions" aria-selected="false">Decisions</button>
-  <button role="tab" data-tab="operate" aria-selected="false">Operate</button>
+  <button role="tab" data-tab="code" aria-selected="false">Code</button>
   <button role="tab" data-tab="roadmap" aria-selected="false">Roadmap</button>
 </nav>
 
@@ -187,6 +187,32 @@ stateDiagram-v2
       <tr><td><code>spawn_child</code></td><td>Start a child session with a brief</td></tr>
     </table></div>
   </section>
+
+  <section>
+    <h2>What keeps track of what</h2>
+    <div class="scroll"><table>
+      <tr><th>Question</th><th>Source</th></tr>
+      <tr><td>Is the session alive?</td><td><code>heartbeat.txt</code>, <code>lease.json</code></td></tr>
+      <tr><td>Is it running or idle?</td><td><code>status.json</code>, supervisor runs</td></tr>
+      <tr><td>What did it say last?</td><td><code>report.json</code>, <code>mirror/</code></td></tr>
+      <tr><td>Why does it not move?</td><td><code>blocked.json</code>, open decisions</td></tr>
+      <tr><td>Which defaults wait for review?</td><td><code>ledger.jsonl</code>, draft PRs</td></tr>
+      <tr><td>What happened when?</td><td>Supervisor log, <code>log-&lt;holder&gt;.txt</code></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Parallel sessions</h2>
+    <div class="scroll"><table>
+      <tr><th>Limit</th><th>Rule</th></tr>
+      <tr><td>Turns at one time</td><td><code>maxRuns</code> (4); six tested</td></tr>
+      <tr><td>Writers for each session</td><td>One, by the lease</td></tr>
+      <tr><td>Writers for each folder</td><td>One code writer; others read only</td></tr>
+      <tr><td>Branches</td><td>Each session has its own stack</td></tr>
+      <tr><td>Results</td><td>Children report up to the parent</td></tr>
+    </table></div>
+    <p>Two code sessions in one folder share one working tree and break each other's branches. Give each code session its own git worktree. The supervisor does not make worktrees yet: see Roadmap, M3.</p>
+  </section>
 </div>
 
 <!-- FLOWS -->
@@ -247,6 +273,19 @@ sequenceDiagram
       <tr><td>Two messages close together</td><td>Two turns, in order</td></tr>
     </table></div>
     <p>After a Stop, the engine refuses plugin turns until the user types. The supervisor shows this state and never goes around the Stop.</p>
+  </section>
+
+  <section>
+    <h2>Communication channels</h2>
+    <div class="scroll"><table>
+      <tr><th>From</th><th>To</th><th>Channel</th></tr>
+      <tr><td>User</td><td>Session</td><td>UI → <code>/send</code> → inbox file</td></tr>
+      <tr><td>Session</td><td>User</td><td><code>ask_user</code> → decision card</td></tr>
+      <tr><td>User</td><td>Decision</td><td>UI → answer file or review</td></tr>
+      <tr><td>Parent</td><td>Child</td><td><code>spawn_child</code> brief, then inbox</td></tr>
+      <tr><td>Child</td><td>Parent</td><td><code>report</code> → parent inbox</td></tr>
+      <tr><td>Session</td><td>Everyone</td><td><code>report.json</code>, PRs, mirror</td></tr>
+    </table></div>
   </section>
 </div>
 
@@ -316,49 +355,99 @@ flowchart LR
   </section>
 </div>
 
-<!-- OPERATE -->
-<div class="panel off" id="operate" role="tabpanel">
+<!-- CODE -->
+<div class="panel off" id="code" role="tabpanel">
   <section>
-    <h2>Communication channels</h2>
+    <h2>Code today</h2>
     <div class="scroll"><table>
-      <tr><th>From</th><th>To</th><th>Channel</th></tr>
-      <tr><td>User</td><td>Session</td><td>UI → <code>/send</code> → inbox file</td></tr>
-      <tr><td>Session</td><td>User</td><td><code>ask_user</code> → decision card</td></tr>
-      <tr><td>User</td><td>Decision</td><td>UI → answer file or review</td></tr>
-      <tr><td>Parent</td><td>Child</td><td><code>spawn_child</code> brief, then inbox</td></tr>
-      <tr><td>Child</td><td>Parent</td><td><code>report</code> → parent inbox</td></tr>
-      <tr><td>Session</td><td>Everyone</td><td><code>report.json</code>, PRs, mirror</td></tr>
+      <tr><th>File</th><th>Lines</th><th>Job</th></tr>
+      <tr><td><code>mod/orch/hooks/register.ts</code></td><td>382</td><td>All of the mod in one file</td></tr>
+      <tr><td><code>supervisor/src/store.ts</code></td><td>182</td><td>Store reads and writes</td></tr>
+      <tr><td><code>supervisor/src/supervisor.ts</code></td><td>152</td><td>Tick: lease, reports, policy, turns</td></tr>
+      <tr><td><code>supervisor/src/http.ts</code></td><td>77</td><td>HTTP API</td></tr>
+      <tr><td><code>supervisor/src/sdk.ts</code>, <code>policy.ts</code>, <code>main.ts</code></td><td>127</td><td>SDK runner, policy texts, start</td></tr>
+      <tr><td><code>supervisor/test/supervisor.test.ts</code></td><td>263</td><td>16 unit tests</td></tr>
     </table></div>
+    <p>Four problems: the mod and the supervisor each have their own copy of the store rules. The texts to the sessions are in the code. There is no command-line tool. There are no agent or skill files, so each brief and each note repeats the instructions.</p>
+  </section>
+
+  <div class="card">
+    <div class="vtitle">Target folders: one place for each kind of thing</div>
+    <pre class="code">session-orchestrator/
+├─ packages/
+│  ├─ core/        store contract: types, file names, order, texts. No file IO
+│  ├─ store/       file IO of the contract (atomic write, read, list)
+│  ├─ supervisor/  tick, lease, policy, SDK runner, HTTP API
+│  ├─ cli/         the orch command for the user, scripts and sessions
+│  └─ ui/          phone web page, served by the supervisor
+├─ plugin/         the Claude Code plugin that each session loads
+│  ├─ hooks/       register.ts + inbox, lease, mirror, tools (one file each)
+│  ├─ skills/      how-to files that sessions load when they need them
+│  ├─ agents/      subagent definitions
+│  └─ commands/    slash commands (orch-enable)
+├─ prompts/        text templates: default note, review texts, briefs
+├─ config/         policy.default.json, policy.test.json
+├─ tests/          unit, contract and end-to-end tests
+├─ docs/           plan, store contract, know-how, design page
+├─ spikes/         P0 to P3 spikes, frozen
+└─ store/          runtime data, ignored by git</pre>
+  </div>
+
+  <div class="card">
+    <div class="vtitle">Each package uses only the packages below it</div>
+    <div class="scroll"><pre class="mermaid">
+flowchart TD
+  UI[ui] -->|HTTP| SV[supervisor]
+  CLI[cli] --> ST[store]
+  SV --> ST
+  ST --> CO[core]
+  PL[plugin hooks] --> CO
+  SK[plugin skills] -->|run| CLI
+  SV -->|reads| PR[prompts]
+    </pre></div>
+    <p>The plugin cannot use Node file IO: it writes through <code>$.fs</code>. So it uses <code>core</code> only, with its own small IO part. A spike must show that a plugin hook can import a relative <code>.ts</code> file.</p>
+  </div>
+
+  <section>
+    <h2>The orch command</h2>
+    <p>Each read and write of the store goes through one tool, so nobody writes store files by hand. The user, the tests and the sessions use the same commands.</p>
+    <div class="scroll"><table>
+      <tr><th>Command</th><th>User</th><th>Does</th></tr>
+      <tr><td><code>orch new</code>, <code>orch send</code></td><td>User, scripts</td><td>Start a session, add an inbox file</td></tr>
+      <tr><td><code>orch tree</code>, <code>orch status</code></td><td>User, sessions</td><td>Show the session tree and states</td></tr>
+      <tr><td><code>orch decisions</code>, <code>orch answer</code></td><td>User, scripts</td><td>List and answer decisions</td></tr>
+      <tr><td><code>orch review</code>, <code>orch ledger</code></td><td>User</td><td>Give a verdict, show the record</td></tr>
+      <tr><td><code>orch decision start</code>, <code>pr</code></td><td>Sessions</td><td>Make the branch and the draft PR</td></tr>
+      <tr><td><code>orch stack rebase</code>, <code>close</code></td><td>Sessions</td><td>Do the git part of a verdict</td></tr>
+      <tr><td><code>orch stop</code>, <code>archive</code>, <code>open</code></td><td>User</td><td>Stop, archive, open in the app</td></tr>
+      <tr><td><code>orch doctor</code></td><td>User</td><td>Check settings, plugin path, store, supervisor</td></tr>
+    </table></div>
+    <p>The stack commands replace the 5 steps of the default note. The session runs one command, and the command gives the same branch names and PR bodies each time.</p>
   </section>
 
   <section>
-    <h2>What keeps track of what</h2>
+    <h2>Agents and skills</h2>
     <div class="scroll"><table>
-      <tr><th>Question</th><th>Source</th></tr>
-      <tr><td>Is the session alive?</td><td><code>heartbeat.txt</code>, <code>lease.json</code></td></tr>
-      <tr><td>Is it running or idle?</td><td><code>status.json</code>, supervisor runs</td></tr>
-      <tr><td>What did it say last?</td><td><code>report.json</code>, <code>mirror/</code></td></tr>
-      <tr><td>Why does it not move?</td><td><code>blocked.json</code>, open decisions</td></tr>
-      <tr><td>Which defaults wait for review?</td><td><code>ledger.jsonl</code>, draft PRs</td></tr>
-      <tr><td>What happened when?</td><td>Supervisor log, <code>log-&lt;holder&gt;.txt</code></td></tr>
+      <tr><th>File</th><th>Kind</th><th>Job</th></tr>
+      <tr><td><code>agents/orchestrator.md</code></td><td>Agent</td><td>Root session: split work, start children</td></tr>
+      <tr><td><code>agents/worker.md</code></td><td>Agent</td><td>Child session: do one task, report</td></tr>
+      <tr><td><code>agents/docs-checker.md</code></td><td>Agent</td><td>Read-only docs answer for a decision</td></tr>
+      <tr><td><code>skills/orch-ask</code></td><td>Skill</td><td>Pick a risk level, write a question</td></tr>
+      <tr><td><code>skills/orch-stack</code></td><td>Skill</td><td>Default and review steps with orch</td></tr>
+      <tr><td><code>skills/orch-brief</code></td><td>Skill</td><td>Write a child brief, with the rules</td></tr>
     </table></div>
+    <p>The plugin carries these files, so each session gets them from the same plugin path. A spike must show that a plugin from <code>CLAUDE_CODE_PLUGIN_DIRS</code> also gives its skills and agents to the session.</p>
   </section>
 
   <section>
-    <h2>Parallel sessions</h2>
+    <h2>Tests</h2>
     <div class="scroll"><table>
-      <tr><th>Limit</th><th>Rule</th></tr>
-      <tr><td>Turns at one time</td><td><code>maxRuns</code> (4); six tested</td></tr>
-      <tr><td>Writers for each session</td><td>One, by the lease</td></tr>
-      <tr><td>Writers for each folder</td><td>One code writer; others read only</td></tr>
-      <tr><td>Branches</td><td>Each session has its own stack</td></tr>
-      <tr><td>Results</td><td>Children report up to the parent</td></tr>
+      <tr><th>Level</th><th>Folder</th><th>Checks</th></tr>
+      <tr><td>Unit</td><td><code>tests/unit</code></td><td>core, store, supervisor, cli with a fake runner</td></tr>
+      <tr><td>Contract</td><td><code>tests/contract</code></td><td>Plugin and supervisor read the same files</td></tr>
+      <tr><td>End to end</td><td><code>tests/e2e</code></td><td>The live test recipe as one script</td></tr>
     </table></div>
-    <p>Two code sessions in one folder share one working tree and break each other's branches. Give each code session its own git worktree. The supervisor does not make worktrees yet: see Roadmap.</p>
-  </section>
-
-  <section>
-    <h2>How a change is validated</h2>
+    <p>Today, step 1 below is automatic and steps 2 to 7 are manual. The end-to-end script makes them one command.</p>
     <ol>
       <li>Run the unit tests: <code>node --test test/</code> in <code>supervisor/</code> (16 tests, a fake runner).</li>
       <li>Make a test repository in the scratchpad, with short policy timeouts.</li>
@@ -374,44 +463,63 @@ flowchart LR
 
 <!-- ROADMAP -->
 <div class="panel off" id="roadmap" role="tabpanel">
+  <div class="card">
+    <div class="vtitle">Seven milestones to the stable version 1.0</div>
+    <div class="scroll"><pre class="mermaid">
+flowchart LR
+  D[P0-P3 done] --> M0[M0 Structure]
+  M0 --> M1[M1 CLI]
+  M1 --> M2[M2 Plugin]
+  M2 --> M3[M3 Lifecycle]
+  M3 --> M4[M4 Phone UI]
+  M4 --> M5[M5 Real stream]
+  M5 --> M6[M6 Stable 1.0]
+    </pre></div>
+  </div>
+
   <section>
-    <h2>Phases</h2>
+    <h2>Milestones</h2>
     <div class="scroll"><table>
-      <tr><th>Phase</th><th>Work</th><th>State</th></tr>
-      <tr><td>P0</td><td>Spikes S0 to S11</td><td><span class="pill ok">done</span></td></tr>
-      <tr><td>P1</td><td>Mod: inbox, lease, heartbeat, tools</td><td><span class="pill ok">done</span></td></tr>
-      <tr><td>P2</td><td>Supervisor, session tree, hand-off</td><td><span class="pill ok">done</span></td></tr>
-      <tr><td>P3</td><td>Policy, defaults, stacked PRs, reviews</td><td><span class="pill ok">done</span></td></tr>
-      <tr><td>P4</td><td>Phone UI, tunnel, decision versions</td><td><span class="pill todo">next</span></td></tr>
-      <tr><td>P5</td><td>Run vsa-template work under it</td><td><span class="pill todo">later</span></td></tr>
+      <tr><th>Id</th><th>Work</th><th>Done when</th><th>State</th></tr>
+      <tr><td>P0-P3</td><td>Spikes, mod, supervisor, policy, PR stack</td><td>Live tests pass</td><td><span class="pill ok">done</span></td></tr>
+      <tr><td>M0</td><td>Packages, core, prompts as files, plugin split</td><td>Same 16 tests pass, no behavior change</td><td><span class="pill todo">next</span></td></tr>
+      <tr><td>M1</td><td>orch command, stack commands, decision versions</td><td>The PR stack test runs on orch commands</td><td><span class="pill todo">todo</span></td></tr>
+      <tr><td>M2</td><td>Agents, skills, commands in the plugin</td><td>Briefs refer to skills, not long texts</td><td><span class="pill todo">todo</span></td></tr>
+      <tr><td>M3</td><td>Stop, archive, worktrees, restart, app import</td><td>Two code sessions run in one repository</td><td><span class="pill todo">todo</span></td></tr>
+      <tr><td>M4</td><td>Phone UI, tunnel, sign-in</td><td>You answer and review from the phone</td><td><span class="pill todo">todo</span></td></tr>
+      <tr><td>M5</td><td>One vsa-template stream under the orchestrator</td><td>Start to merge with no lost decision</td><td><span class="pill todo">todo</span></td></tr>
+      <tr><td>M6</td><td>End-to-end script, crash recovery, store version</td><td>A supervisor restart loses nothing</td><td><span class="pill todo">todo</span></td></tr>
     </table></div>
   </section>
 
   <section>
     <h2>Known gaps</h2>
     <div class="scroll"><table>
-      <tr><th>Gap</th><th>Effect</th><th>Plan</th></tr>
-      <tr><td>Rebuilt PR has no decision version</td><td>A review cannot reach it</td><td><span class="pill warn">P4</span></td></tr>
-      <tr><td>Rebuilt PR keeps old text</td><td>Wrong question in the body</td><td><span class="pill warn">P4</span></td></tr>
-      <tr><td>No worktree for each session</td><td>Parallel code sessions collide</td><td><span class="pill warn">P4</span></td></tr>
-      <tr><td>PR comments show the user</td><td>No sign of the orchestrator</td><td><span class="pill todo">later</span></td></tr>
-      <tr><td>SDK sessions not in sidebar</td><td>Open with <code>--resume</code></td><td><span class="pill todo">later</span></td></tr>
-      <tr><td>No restart after 3 failures</td><td>Session stays blocked</td><td><span class="pill todo">later</span></td></tr>
-      <tr><td><code>/orch-enable</code> not tested</td><td>Unknown in the app</td><td><span class="pill todo">later</span></td></tr>
+      <tr><th>Gap</th><th>Effect</th><th>Fix in</th></tr>
+      <tr><td>Rebuilt PR has no decision version</td><td>A review cannot reach it</td><td><span class="pill warn">M1</span></td></tr>
+      <tr><td>Rebuilt PR keeps old text</td><td>Wrong question in the body</td><td><span class="pill warn">M1</span></td></tr>
+      <tr><td>PR comments show the user</td><td>No sign of the orchestrator</td><td><span class="pill warn">M1</span></td></tr>
+      <tr><td>No stop or archive API</td><td>Manual clean-up</td><td><span class="pill warn">M3</span></td></tr>
+      <tr><td>No worktree for each session</td><td>Parallel code sessions collide</td><td><span class="pill warn">M3</span></td></tr>
+      <tr><td>No restart after 3 failures</td><td>Session stays blocked</td><td><span class="pill warn">M3</span></td></tr>
+      <tr><td>SDK sessions not in sidebar</td><td>Open with the app import</td><td><span class="pill warn">M3</span></td></tr>
+      <tr><td><code>/orch-enable</code> not tested</td><td>Unknown in the app</td><td><span class="pill warn">M2</span></td></tr>
     </table></div>
   </section>
 
   <section>
     <h2>Open questions</h2>
     <ul>
-      <li>Tunnel: which tool, and which sign-in protects the phone page? Recommendation: Cloudflare Tunnel with Cloudflare Access.</li>
-      <li>Worktrees: does the supervisor make them, or does each brief ask the session? Recommendation: the supervisor makes them and records the folder in <code>meta.json</code>.</li>
-      <li>Store: files only, or SQLite after P4? Recommendation: files until P5 shows a real problem.</li>
-      <li>Docs check for <code>medium</code>: keep it on? Recommendation: keep it, and ask at the P4 start.</li>
-      <li>UI stack: plain HTML from <code>http.ts</code>, or a separate app? Recommendation: plain HTML and JS from <code>http.ts</code>, no build step.</li>
-      <li>Sign-in for the API, which has no auth on 127.0.0.1? Recommendation: Cloudflare Access in front of the tunnel, plus a token header.</li>
+      <li>Language of the orch command: Node, the same as the supervisor? Recommendation: yes, Node 26 with no build step.</li>
+      <li>Package layout: npm workspaces in one <code>package.json</code>? Recommendation: yes.</li>
+      <li>Plugin imports: can a hook import a relative <code>.ts</code> file? Recommendation: a small spike at the M0 start. If not, keep one file and generate it.</li>
+      <li>Plugin skills and agents: does <code>CLAUDE_CODE_PLUGIN_DIRS</code> give them to the session? Recommendation: a small spike at the M2 start.</li>
+      <li>Tunnel: which tool, and which sign-in? Recommendation: Cloudflare Tunnel with Cloudflare Access.</li>
+      <li>Worktrees: does the supervisor make them? Recommendation: yes, and it records the folder in <code>meta.json</code>.</li>
+      <li>Store: files, or SQLite? Recommendation: files until M5 shows a real problem.</li>
+      <li>Docs check for <code>medium</code>: keep it on? Recommendation: keep it.</li>
+      <li>UI stack: plain HTML from the supervisor? Recommendation: yes, no build step.</li>
       <li>Swipe meaning on a card? Recommendation: right accepts the default, left opens the free-text answer.</li>
-      <li>Voice input: browser speech or phone dictation? Recommendation: phone dictation in the text field.</li>
       <li>Delete the old folder <code>claude-orchestrator</code>? Recommendation: yes, after the next app restart.</li>
     </ul>
   </section>
@@ -422,7 +530,7 @@ flowchart LR
 
 <script>
 (function () {
-  var names = ["overview", "topology", "flows", "decisions", "operate", "roadmap"];
+  var names = ["overview", "topology", "flows", "decisions", "code", "roadmap"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "overview";
     names.forEach(function (n) {

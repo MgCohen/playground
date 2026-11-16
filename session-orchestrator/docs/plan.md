@@ -28,6 +28,8 @@ A hand-off only moves the lease. The transcript stays one branch.
 
 ## Parts
 
+The folders today:
+
 ```
 session-orchestrator/
 ├─ mod/orch/       Claude Code mod; loads in each session; inert unless the session is enabled
@@ -36,9 +38,33 @@ session-orchestrator/
 │   store, scheduler, heartbeat check, decision policy, SDK runner, HTTP API
 ├─ config/         policy.default.json, policy.test.json
 ├─ spikes/         spike scripts and the test briefs (p2, p3, p4)
-├─ ui/             (P4, not made) local web app for the phone: session tree, decision cards
 └─ store/          runtime files, ignored by git: sessions/<id>/..., ledger.jsonl, policy.json
 ```
+
+The target folders (milestone M0). The design page, tab Code, gives the reasons and the package graph:
+
+```
+session-orchestrator/
+├─ packages/
+│  ├─ core/        store contract: types, file names, order, texts. No file IO
+│  ├─ store/       file IO of the contract (atomic write, read, list)
+│  ├─ supervisor/  tick, lease, policy, SDK runner, HTTP API
+│  ├─ cli/         the orch command for the user, scripts and sessions
+│  └─ ui/          phone web page, served by the supervisor
+├─ plugin/         the Claude Code plugin that each session loads
+│  ├─ hooks/       register.ts + inbox, lease, mirror, tools (one file each)
+│  ├─ skills/      orch-ask, orch-stack, orch-brief
+│  ├─ agents/      orchestrator, worker, docs-checker
+│  └─ commands/    orch-enable
+├─ prompts/        text templates: default note, review texts, briefs
+├─ config/         policy.default.json, policy.test.json
+├─ tests/          unit, contract, e2e
+├─ docs/
+├─ spikes/         frozen
+└─ store/          runtime, ignored by git
+```
+
+The `orch` command (M1) does each read and write of the store, for the user, the scripts and the sessions: `new`, `send`, `tree`, `status`, `decisions`, `answer`, `review`, `ledger`, `decision start`, `decision pr`, `stack rebase`, `stack close`, `stop`, `archive`, `open`, `doctor`. The stack commands replace the 5 steps of the default note.
 
 ## Phases
 
@@ -48,8 +74,18 @@ session-orchestrator/
 | P1 | Mod: inbox, mirror, heartbeat, lease, `ask_user`, `report` | A desktop session gets inbox turns and its rows are in the store |
 | P2 | Supervisor: store, SDK runner, lease rules, heartbeat check, `spawn_child` | The supervisor starts a session tree and resumes idle sessions |
 | P3 | Decision policy: risk levels, timeouts, default, record, commit or tag | An unanswered low-risk decision gets its default and a record |
-| P4 | UI: session tree, decision cards, answer to `answers/`; tunnel to the phone | You answer a decision from the phone |
-| P5 | Move the vsa-template work to the orchestrator | One stream runs under the orchestrator from start to merge |
+
+After P3, the work continues in milestones to the stable version 1.0:
+
+| Milestone | Work | Done when |
+|---|---|---|
+| M0 | Packages, `core`, prompts as files, plugin split | The same 16 tests pass, with no behavior change |
+| M1 | `orch` command, stack commands, decision versions, new PR bodies, `[orch]` tag | The PR stack test runs on `orch` commands |
+| M2 | Agents, skills and commands in the plugin | Briefs refer to skills, not long texts |
+| M3 | Stop, archive, worktrees, restart after failures, app import | Two code sessions run in one repository |
+| M4 | Phone UI, tunnel, sign-in | You answer and review from the phone |
+| M5 | One vsa-template stream under the orchestrator | Start to merge with no lost decision |
+| M6 | End-to-end script, crash recovery, store version | A supervisor restart loses nothing |
 
 ## Spikes (P0)
 
@@ -153,7 +189,7 @@ The supervisor is in `supervisor/` (Node 26 runs the TypeScript files directly).
 
 ## Change: no click questions (2026-11-15)
 
-The user answers by voice and in free text, so click questions (A, B, C or other) are not used. The `AskUserQuestion` redirect from S8 is removed. A deny rule in the user settings removes the tool, and the mod refuses it as a fallback. Questions go to the reply text (normal sessions) or to `ask_user` (orchestrator sessions). P3 and P4 must show free-text answers, with the options as suggestions only.
+The user answers by voice and in free text, so click questions (A, B, C or other) are not used. The `AskUserQuestion` redirect from S8 is removed. A deny rule in the user settings removes the tool, and the mod refuses it as a fallback. Questions go to the reply text (normal sessions) or to `ask_user` (orchestrator sessions). The decision cards (M4) must show free-text answers, with the options as suggestions only.
 
 ## P3 result (2026-11-15)
 
@@ -182,7 +218,7 @@ A supervisor session on a private GitHub test repository (`MgCohen/orch-pr-test`
 Findings:
 
 - Two reviews that arrive 2 s apart run as two turns, because a POST starts a tick at once. This is correct.
-- The rebuilt PRs (#4, #5) use the branches `orch/decision-<same id>-v2` and name the old decision id in their bodies. But `reviewText` names the closed branch `orch/decision-<id>`, not the `-v2` branch. Also, decision #2 already has a refuse review, so a second review of the same id is not clear. #5 holds a default (BLUE) that nobody reviewed. Fix in P4: a rebuild makes a new decision version (`<id>-v2`) in the store, the refuse text names that suffix, and `reviewText` uses the newest version.
+- The rebuilt PRs (#4, #5) use the branches `orch/decision-<same id>-v2` and name the old decision id in their bodies. But `reviewText` names the closed branch `orch/decision-<id>`, not the `-v2` branch. Also, decision #2 already has a refuse review, so a second review of the same id is not clear. #5 holds a default (BLUE) that nobody reviewed. Fix in M1: a rebuild makes a new decision version (`<id>-v2`) in the store, the refuse text names that suffix, and `reviewText` uses the newest version.
 - The body of #4 still has the old question ("Which size do we use in size.txt?"), and its title has no "(default decision)". The rebuild must write a new body.
 - Each PR comment has the author `MgCohen`, because the session uses the gh token of the user. Fix later: each orchestrator text starts with a fixed tag, for example `[orch]`.
 - The `mode` of a decision stays `pending` after an answer. This is correct: `mode` is how the session asked, and `answers/` holds the state.
@@ -198,17 +234,14 @@ PR format that the session used (the GitHub test repository is deleted):
 
 ## Next steps
 
-Status: the user reviews the design page. Wait for those notes before P4 starts. The notes arrive in the chat, or as comments on the page: read them with the `ArtifactComments` tool on the page URL. After a design change, edit `docs/orchestrator-design.html` and publish it with the `Artifact` tool and `url` set to the page URL.
+Status: the user reviewed the design page and accepted it. The user then asked for the folder structure, the code topology and a roadmap to a stable version. They are on the page (tabs Code and Roadmap) and in this file. The next work is M0, after the user accepts the roadmap. The notes arrive in the chat, or as comments on the page: read them with the `ArtifactComments` tool on the page URL. After a design change, edit `docs/orchestrator-design.html` and publish it with the `Artifact` tool and `url` set to the page URL.
 
-### P4 scope (agreed)
+### Agreed details of M1 and M4
 
-1. Decision versions first: a rebuild after a refuse makes `<id>-v2` in the store, the refuse text names the `-v2` branch, and `reviewText` uses the newest version.
-2. A rebuilt PR gets a new title and body.
-3. Phone UI: the session tree and the decision cards. Each card has a free-text field and voice input. The options show as suggestions only. A default decision has the buttons approve, change and refuse.
-4. A tunnel from the phone to the local API.
-5. One git worktree for each code session (see the open questions).
+- M1: a rebuild after a refuse makes `<id>-v2` in the store, the refuse text names the `-v2` branch, and `reviewText` uses the newest version. A rebuilt PR gets a new title and body.
+- M4: the session tree and the decision cards. Each card has a free-text field and voice input. The options show as suggestions only. A default decision has the buttons approve, change and refuse.
 
-### P5 scope
+### M5 scope
 
 Run one vsa-template stream under the orchestrator from start to merge. The supervisor must copy these habits of the manual orchestrator session:
 
@@ -220,7 +253,7 @@ Run one vsa-template stream under the orchestrator from start to merge. The supe
 - If an archive is refused, turn off Remote Control, then rename the session with `[archive/done]`.
 - Detach exploration sessions, and relay their results only when the user asks.
 
-Rules of the vsa-template work that the P5 stream must obey:
+Rules of the vsa-template work that the M5 stream must obey:
 
 - The orchestrator may review and merge PRs, except PR #8 (rules and analyzers).
 - Run CI only at the end of a stream, one manual run (no CI on each PR before 0.1.0).
@@ -230,17 +263,21 @@ Rules of the vsa-template work that the P5 stream must obey:
 
 | Question | Recommendation |
 |---|---|
+| Language of the `orch` command | Node 26, the same as the supervisor, no build step |
+| Package layout | npm workspaces in one `package.json` |
+| Can a plugin hook import a relative `.ts` file? | Spike at the M0 start. If not, keep one file and generate it |
+| Does `CLAUDE_CODE_PLUGIN_DIRS` give the plugin skills and agents to a session? | Spike at the M2 start |
 | Worktrees: does the supervisor make them, or each brief? | The supervisor makes them and records the folder in `meta.json` |
 | Tunnel: which tool and which sign-in? | Cloudflare Tunnel with Cloudflare Access |
-| Store: files, or SQLite after P4? | Files until P5 shows a real problem |
-| `medium` has `checkDocs: true`. The user named the docs answer only for `low` | Keep it, and ask the user at the P4 start |
+| Store: files, or SQLite? | Files until M5 shows a real problem |
+| `medium` has `checkDocs: true`. The user named the docs answer only for `low` | Keep it, and ask the user at the M4 start |
 | Delete the old folder `Projects/claude-orchestrator`? It also holds a stray `session-orchestrator/` subfolder with copied type files | Yes, after the next app restart, when the user says so |
 | UI stack: plain HTML from `http.ts`, or a separate app? | Plain HTML and JS served by `http.ts`, no build step |
 | Sign-in for the API (it listens on 127.0.0.1 with no auth) | Cloudflare Access in front of the tunnel, plus a token header |
 | Swipe meaning on a decision card | Right: accept the default. Left: open the free-text answer |
 | Voice input: browser speech or phone dictation? | Phone dictation in the text field: no extra code |
-| Which vsa-template stream runs first in P5? | Ask the user at the P5 start. Use the stable roadmap of vsa-template |
-| Does a Cloudflare account with a domain exist for the tunnel? | Ask the user at the P4 start. A Cloudflare connector exists in the sessions |
+| Which vsa-template stream runs first in M5? | Ask the user at the M5 start. Use the stable roadmap of vsa-template |
+| Does a Cloudflare account with a domain exist for the tunnel? | Ask the user at the M4 start. A Cloudflare connector exists in the sessions |
 
 ### Known gaps
 

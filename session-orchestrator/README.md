@@ -12,7 +12,7 @@ Design page: https://claude.ai/artifact/EggEYH4ivUuPGG9Pw4k1y1 (source `docs/orc
 | `docs/` | `plan.md` (phases, test results, next steps), `store.md` (store contract and API), `know-how.md` (engine limits, test recipe, settings), the design page |
 | `spikes/` | The spike scripts of P0 to P2, and the test briefs of the live tests (`p3/`: one repository, `p4/`: the PR stack test of P3) |
 | `mod/orch-spike/` | The P0 spike mod. The settings do not load it. Keep it only as a reference |
-| `ui/` | P4: the phone UI, served by `supervisor/src/http.ts`. Not made yet |
+| `ui/` | M4: the phone UI, served by `supervisor/src/http.ts`. Not made yet |
 | `store/` | Runtime data. Git ignores it |
 
 Start the supervisor:
