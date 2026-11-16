@@ -143,12 +143,30 @@ public sealed class Lifecycle(FileStore store)
         return meta;
     }
 
-    public void Import(string id)
+    public bool Import(string id, TimeSpan? wait = null)
     {
         var meta = store.Meta(id);
         var command = OpenCommand(id, store.Cwd(id));
         new Shell(store.Cwd(id) ?? Environment.CurrentDirectory).Must(command[0], [.. command.Skip(1)]);
-        store.SaveMeta(store.Meta(id) with { Imported = true });
-        store.Events.Append(EventKinds.SessionImport, Parties.Supervisor, Parties.Session(id), Messages.Fields(("text", $"{meta.Title ?? id} imported into the desktop app")), null, id);
+        var appId = $"local_{id}";
+        var end = DateTime.UtcNow + (wait ?? TimeSpan.FromSeconds(30));
+        while (!AppRecords.Exists(appId) && DateTime.UtcNow < end) Thread.Sleep(1000);
+        if (!AppRecords.Exists(appId))
+        {
+            store.Log($"{id} import not confirmed: the app has no record {appId}");
+            return false;
+        }
+        store.SaveMeta(store.Meta(id) with { Imported = true, AppId = appId });
+        store.Events.Append(EventKinds.SessionImport, Parties.Supervisor, Parties.Session(id), Messages.Fields(("text", $"{meta.Title ?? id} imported into the desktop app"), ("appId", appId)), null, id);
+        return true;
+    }
+
+    public IReadOnlyList<string> ArchiveTree(string id, string by, bool force)
+    {
+        var lines = new List<string>();
+        foreach (var child in store.AllSessions().Where(s => store.Meta(s).Parent == id && Control(s).State != ControlStates.Archived))
+            lines.AddRange(ArchiveTree(child, by, force));
+        lines.AddRange(Archive(id, by, force));
+        return lines;
     }
 }
