@@ -224,7 +224,7 @@ stateDiagram-v2
     <details class="example"><summary>start <span class="d">· new session, no good first turn</span></summary><div class="body"><dl class="facts">
       <dt>Enter</dt><dd><code>spawn_child</code>, <code>orch new</code> or <code>POST /api/sessions</code> writes <code>meta.json</code> and <code>enabled</code>.</dd>
       <dt>Detect</dt><dd><code>createdBy</code> is set and <code>started</code> is not <code>true</code>.</dd>
-      <dt>Action</dt><dd>The supervisor makes the worktree and runs <code>claude -p --session-id</code> with the brief. After the first good turn, it imports the session into the app.</dd>
+      <dt>Action</dt><dd>The supervisor makes the worktree and runs <code>claude -p --session-id</code> with the brief. After the first good turn, it imports the session into the app and turns Remote Control on, unless the brief says <code>background: true</code> (F4).</dd>
       <dt>Exit</dt><dd>A good turn goes to <span class="st">running</span>, then <span class="st">idle</span>. Three failed turns go to <span class="st fault">not responding</span>.</dd>
       <dt>In the app</dt><dd><code>orch enable</code> in an app session skips this state. It writes <code>started: true</code>, so the session is <span class="st">running</span> at once.</dd>
     </dl></div></details>
@@ -350,6 +350,7 @@ stateDiagram-v2
         <tr><td>Child stopped</td><td>Notice</td><td>Supervisor → parent</td><td>Enter and leave stopped</td><td>No</td></tr>
         <tr><td>Child archived</td><td>Notice</td><td>Supervisor → parent</td><td>Archive by the user or the app</td><td>No</td></tr>
         <tr><td>Archive reminder</td><td>Notice</td><td>Supervisor → parent</td><td>Done for 1 h, not archived</td><td>No</td></tr>
+        <tr><td>Remote Control self</td><td>Notice</td><td>Supervisor → session</td><td>After the import, no <code>background</code></td><td>No</td></tr>
         <tr><td><code>archive-self</code></td><td>Notice</td><td><code>orch</code> → session</td><td>Archive of a live app session</td><td>Yes</td></tr>
         <tr><td><code>blocked</code></td><td>Notice</td><td>Supervisor → session</td><td>Retry after the backoff</td><td>Yes</td></tr>
       </tbody>
@@ -367,7 +368,7 @@ stateDiagram-v2
     <table>
       <thead><tr><th>Item</th><th>Problem</th><th>Design</th><th>State after B2</th></tr></thead>
       <tbody>
-        <tr><td>F4</td><td>An imported session has no Remote Control</td><td>Root turns it on with <code>set_remote_control</code></td><td>Needs a probe</td></tr>
+        <tr><td>F4</td><td>An imported session has no Remote Control</td><td>On by default; off only for a background session</td><td>Needs a probe</td></tr>
         <tr><td>F5</td><td>A child reports a step as <code>done</code></td><td>Forward at turn end; skill and tool rule</td><td>Closed</td></tr>
         <tr><td>F8</td><td><code>orch archive</code> keeps the sidebar entry</td><td>Three archive paths, in order</td><td>Partly closed</td></tr>
         <tr><td><code>mod/orch/</code></td><td>Old mod folder in the repository</td><td>Deleted on the B1 branch</td><td>Closed</td></tr>
@@ -378,8 +379,24 @@ stateDiagram-v2
   </section>
 
   <section>
-    <h3>F4: Remote Control for an imported session</h3>
-    <p>Only the app tool <code>set_remote_control</code> works, and only an app session can call it. Rule F15 applies: Remote Control is on for the root only, and on for a child only when the user asks. If the user asks, the root calls <code>set_remote_control</code> with the <code>appId</code> of the child from <code>meta.json</code>. <code>meta.json</code> records <code>remoteControl: true</code>, because an archive needs it off first (F9).</p>
+    <h3>F4: Remote Control on by default</h3>
+    <p>Each session has Remote Control on, also a child. A session has it off only when its brief says <code>background: true</code>. This rule replaces the F15 rule "root only". <code>claude --desktop --resume --remote-control</code> does not import (F4), so the start does not use a CLI flag.</p>
+    <div class="box">
+<pre class="mermaid">
+flowchart TD
+  A[First good turn] --> B[Import into the app]
+  B --> C{background: true?}
+  C -->|yes| D[Remote Control stays off]
+  C -->|no| E[remote-control-self notice]
+  E --> F[Session calls set_remote_control on itself]
+  F -->|refused| G[Parent calls it with child appId]
+</pre>
+    </div>
+    <ul>
+      <li>The self call uses the same method as <code>archive-self</code> (F14): an inbox notice, and the session calls the app tool with <code>self</code>.</li>
+      <li><code>meta.json</code> records <code>remoteControl: true</code> or <code>false</code>. The archive reads it.</li>
+      <li>An archive needs Remote Control off first (F9). <code>enabled: false</code> shows an app prompt (F15). With Remote Control on by default, each archive of a child can show this prompt.</li>
+    </ul>
   </section>
 
   <section>
@@ -420,7 +437,8 @@ flowchart TD
       <thead><tr><th>Question</th><th>Recommendation</th></tr></thead>
       <tbody>
         <tr><td>Timers: forgotten 15 min, input not taken 2 min, hung turn 30 min?</td><td>Yes, in <code>policy.json</code>, so a test can change them</td></tr>
-        <tr><td>Can the root call <code>set_remote_control</code> for a child?</td><td>Probe it in B2</td></tr>
+        <tr><td>Can a session call <code>set_remote_control</code> on itself, and can the root call it for a child?</td><td>Probe both in B2</td></tr>
+        <tr><td>Each archive turns Remote Control off, and the app shows a prompt (F15). Is this prompt acceptable?</td><td>Accept it for now. B2 tests if the prompt also shows when the session turns it off for itself</td></tr>
         <tr><td>Can the root call <code>archive_session</code> for a child?</td><td>Probe it in B2</td></tr>
       </tbody>
     </table>
@@ -446,7 +464,7 @@ flowchart TD
         <tr><td>Forgotten</td><td>Nudge, marker file, notice to the parent</td><td><code>Supervisor.cs</code>, <code>docs/store.md</code></td></tr>
         <tr><td>F5</td><td>Forward at turn end, refuse early <code>done</code></td><td><code>Supervisor.cs</code>, <code>plugin/hooks/tools.ts</code>, skill</td></tr>
         <tr><td>F8</td><td>Parent archive path, sidebar archive watch</td><td><code>Store/Lifecycle.cs</code></td></tr>
-        <tr><td>F4</td><td><code>remoteControl</code> in meta, root rule</td><td><code>Records.cs</code>, <code>agents/orchestrator.md</code></td></tr>
+        <tr><td>F4</td><td><code>background</code> in the brief, <code>remoteControl</code> in meta, self notice after import</td><td><code>Records.cs</code>, <code>Supervisor.cs</code>, <code>templates/brief</code></td></tr>
         <tr><td>Timers</td><td>Three lifecycle timers in the policy</td><td><code>config/policy.*.json</code>, <code>Policy.cs</code></td></tr>
         <tr><td>API</td><td><code>state</code> and wait reason in <code>GET /api/sessions</code></td><td><code>Api/OrchestratorApi.cs</code></td></tr>
         <tr><td>Live test</td><td>Stale, forgotten, stop and archive in one run</td><td><code>tests/Orchestrator.E2E</code></td></tr>
