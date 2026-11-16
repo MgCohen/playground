@@ -14,9 +14,7 @@ public sealed class PartyTask(PartyPack pack, PartyCase c, IReadOnlyList<string>
 
     public string Catalog => string.Join('\n', pack.Heroes.Heroes.Select(Line));
 
-    public string Brief => c.Many
-        ? $"## Rules over all parties\n\n{c.Anchor.Context}\n{string.Join('\n', c.Anchor.Visible.Select(r => $"- {r.Id}: {r.Ask}"))}"
-        : string.Empty;
+    public Anchor? Whole => c.Many ? c.Anchor : null;
 
     public string Strategy => File.ReadAllText(Path.Combine(pack.Dir, "strategies", $"{strategy}.md"));
 

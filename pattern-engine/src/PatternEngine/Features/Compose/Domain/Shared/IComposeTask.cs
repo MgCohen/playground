@@ -14,8 +14,8 @@ public interface IComposeTask
     /// <summary>The text of the catalog, with only the fields that the agents see.</summary>
     string Catalog { get; }
 
-    /// <summary>Extra context for the decider, for example the rubrics over all sets. Can be empty.</summary>
-    string Brief { get; }
+    /// <summary>The anchor with the rubrics over all sets together, for example "no entry in two sets". Null if the task has one spec only.</summary>
+    Anchor? Whole { get; }
 
     /// <summary>The strategy text of the decider (a strategy file).</summary>
     string Strategy { get; }

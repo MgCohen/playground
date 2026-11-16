@@ -13,14 +13,23 @@ public sealed record RubricVerdict(
     [property: JsonPropertyName("ok")] bool? Ok,
     [property: JsonPropertyName("reason")] string Reason);
 
-/// <summary>One graded set. The remainder is each rubric that is not true.</summary>
+/// <summary>One set for one spec, inside an assignment. A null set means "none" for that spec.</summary>
+public sealed record SpecSet(
+    [property: JsonPropertyName("spec")] string Spec,
+    [property: JsonPropertyName("set")] IReadOnlyList<string>? Set);
+
+/// <summary>
+/// One graded set. The remainder is each rubric that is not true.
+/// An assignment grade has Parts (one set for each spec) and grades the rubrics of the whole anchor; Set is then all entries of the parts.
+/// </summary>
 public sealed record GradeRecord(
     [property: JsonPropertyName("spec")] string Spec,
     [property: JsonPropertyName("set")] IReadOnlyList<string> Set,
     [property: JsonPropertyName("verdicts")] IReadOnlyList<RubricVerdict> Verdicts,
     [property: JsonPropertyName("remainder")] IReadOnlyList<string> Remainder,
     [property: JsonPropertyName("cached")] bool Cached,
-    [property: JsonPropertyName("error")] string? Error);
+    [property: JsonPropertyName("error")] string? Error,
+    [property: JsonPropertyName("parts")] IReadOnlyList<SpecSet>? Parts = null);
 
 /// <summary>The final answer for one spec. A null set means "none".</summary>
 public sealed record SetCommit(
@@ -167,8 +176,36 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
     {
         var limits = settings.Limits;
         var refused = new List<string>();
-        var accepted = new List<(Anchor Spec, IReadOnlyList<string> Set)>();
+        var accepted = new List<(string Key, Anchor Spec, IReadOnlyList<string> Set, IReadOnlyList<SpecSet>? Parts)>();
         var thisTurn = 0;
+
+        void Accept(string key, Anchor spec, IReadOnlyList<string> set, IReadOnlyList<SpecSet>? parts, string label)
+        {
+            if (accepted.Any(a => a.Key == key))
+            {
+                return;
+            }
+
+            if (!(settings.Cache && cache.ContainsKey(key)))
+            {
+                if (thisTurn >= limits.GradesPerTurn)
+                {
+                    refused.Add($"{label}: limit of {limits.GradesPerTurn} grades in one turn");
+                    return;
+                }
+
+                if (grades + thisTurn >= limits.Grades)
+                {
+                    refused.Add($"{label}: limit of {limits.Grades} grades in the run");
+                    return;
+                }
+
+                thisTurn++;
+            }
+
+            accepted.Add((key, spec, set, parts));
+        }
+
         foreach (var item in Items(answer, "grade"))
         {
             var spec = Text(item, "spec");
@@ -180,30 +217,20 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
                 continue;
             }
 
-            var key = Key(spec, set);
-            if (accepted.Any(a => Key(a.Spec.Id, a.Set) == key))
+            Accept(Key(spec, set), task.Specs.First(x => x.Id == spec), set, null, $"[{string.Join(", ", set)}] for \"{spec}\"");
+        }
+
+        if (answer.Field("assignment") is { ValueKind: JsonValueKind.Array })
+        {
+            var (parts, problem) = ReadAssignment(answer);
+            if (problem is not null)
             {
-                continue;
+                refused.Add($"assignment: {problem}");
             }
-
-            if (!(settings.Cache && cache.ContainsKey(key)))
+            else
             {
-                if (thisTurn >= limits.GradesPerTurn)
-                {
-                    refused.Add($"[{string.Join(", ", set)}] for \"{spec}\": limit of {limits.GradesPerTurn} grades in one turn");
-                    continue;
-                }
-
-                if (grades + thisTurn >= limits.Grades)
-                {
-                    refused.Add($"[{string.Join(", ", set)}] for \"{spec}\": limit of {limits.Grades} grades in the run");
-                    continue;
-                }
-
-                thisTurn++;
+                Accept(AssignmentKey(parts), task.Whole!, parts.SelectMany(p => p.Set ?? []).ToList(), parts, "assignment");
             }
-
-            accepted.Add((task.Specs.First(x => x.Id == spec), set));
         }
 
         if (accepted.Count == 0 && refused.Count == 0)
@@ -214,8 +241,7 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
         using var gate = new SemaphoreSlim(Math.Max(1, settings.Concurrency));
         var records = await Task.WhenAll(accepted.Select(async a =>
         {
-            var key = Key(a.Spec.Id, a.Set);
-            if (settings.Cache && cache.TryGetValue(key, out var hit))
+            if (settings.Cache && cache.TryGetValue(a.Key, out var hit))
             {
                 Interlocked.Increment(ref cacheHits);
                 return hit with { Cached = true };
@@ -225,7 +251,7 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
             try
             {
                 Interlocked.Increment(ref grades);
-                return await GradeOneAsync(a.Spec, a.Set, ct);
+                return await GradeOneAsync(a.Spec, a.Set, a.Parts, ct);
             }
             finally
             {
@@ -233,23 +259,78 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
             }
         }));
 
-        foreach (var r in records)
+        foreach (var (r, a) in records.Zip(accepted))
         {
             graded.Add(r);
             if (settings.Cache && !r.Cached && r.Error is null)
             {
-                cache[Key(r.Spec, r.Set)] = r;
+                cache[a.Key] = r;
             }
         }
 
         return (records, refused);
     }
 
-    private async Task<GradeRecord> GradeOneAsync(Anchor spec, IReadOnlyList<string> set, CancellationToken ct)
+    /// <summary>The cache key of an assignment: each spec with its sorted set, in the order of the specs.</summary>
+    public static string AssignmentKey(IEnumerable<SpecSet> parts) =>
+        "assignment|" + string.Join(";", parts.Select(p => Key(p.Spec, p.Set ?? ["none"])));
+
+    private (IReadOnlyList<SpecSet> Parts, string? Problem) ReadAssignment(AgentAnswer answer)
     {
-        var answer = await gateway.CallAsync(GraderAgent, GraderInput(task, spec, set), ct);
+        if (task.Whole is null)
+        {
+            return ([], "this task has no rubrics over all sets");
+        }
+
+        var given = new Dictionary<string, IReadOnlyList<string>?>(StringComparer.Ordinal);
+        foreach (var item in Items(answer, "assignment"))
+        {
+            var spec = Text(item, "spec");
+            var set = item.TryGetProperty("set", out var s) && s.ValueKind == JsonValueKind.Array ? Ids(s) : null;
+            var problem = SpecProblem(spec) ?? (set is null ? null : SetProblem(set));
+            if (problem is not null)
+            {
+                return ([], problem);
+            }
+
+            if (!given.TryAdd(spec, set))
+            {
+                return ([], $"spec \"{spec}\" is in the assignment more than once");
+            }
+        }
+
+        var missing = task.Specs.Where(s => !given.ContainsKey(s.Id)).Select(s => s.Id).ToList();
+        return missing.Count > 0
+            ? ([], $"give one set (or null) for each spec; missing {string.Join(", ", missing)}")
+            : (task.Specs.Select(s => new SpecSet(s.Id, given[s.Id])).ToList(), null);
+    }
+
+    private async Task<GradeRecord> GradeOneAsync(Anchor spec, IReadOnlyList<string> set, IReadOnlyList<SpecSet>? parts, CancellationToken ct)
+    {
+        var input = parts is null ? GraderInput(task, spec, set) : AssignmentInput(task, parts);
+        var answer = await gateway.CallAsync(GraderAgent, input, ct);
         var verdicts = ReadVerdicts(answer, spec.Visible);
-        return new GradeRecord(spec.Id, set, verdicts, verdicts.Where(v => v.Ok != true).Select(v => v.Rubric).ToList(), false, answer.Ok ? null : answer.Error);
+        return new GradeRecord(spec.Id, set, verdicts, verdicts.Where(v => v.Ok != true).Select(v => v.Rubric).ToList(), false, answer.Ok ? null : answer.Error, parts);
+    }
+
+    /// <summary>The input of one assignment grade: the pack rules, the whole anchor, each spec with its set, and the rubrics over all sets.</summary>
+    public static string AssignmentInput(IComposeTask task, IReadOnlyList<SpecSet> parts)
+    {
+        var whole = task.Whole ?? throw new InvalidOperationException("the task has no whole anchor");
+        var b = new StringBuilder();
+        b.Append("# Rules\n\n").Append(task.GraderRules.Trim()).Append("\n\n# Spec\n\n").Append(whole.Context).Append("\n\n# Sets\n");
+        foreach (var p in parts)
+        {
+            b.Append("\n## ").Append(p.Spec).Append("\n\n").Append(p.Set is null ? "none" : task.SetText(p.Set).Trim()).Append('\n');
+        }
+
+        b.Append("\n# Rubrics\n\n");
+        foreach (var r in whole.Visible)
+        {
+            b.Append("- ").Append(r.Id).Append(": ").Append(r.Ask).Append('\n');
+        }
+
+        return b.ToString();
     }
 
     /// <summary>One verdict for each rubric, in the order of the rubrics. A rubric with no verdict in the answer gets Ok null.</summary>
@@ -314,9 +395,15 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
             }
         }
 
-        if (task.Brief.Length > 0)
+        if (task.Whole is { } whole)
         {
-            b.Append('\n').Append(task.Brief.Trim()).Append('\n');
+            b.Append("\n# Rubrics over all sets\n\n").Append(whole.Context).Append('\n');
+            foreach (var r in whole.Visible)
+            {
+                b.Append("- ").Append(r.Id).Append(": ").Append(r.Ask).Append('\n');
+            }
+
+            b.Append("\nTo grade these rubrics, put one set (or null) for each spec in `assignment` in a grade action.\n");
         }
 
         b.Append("\n# Catalog\n\n").Append(task.Catalog.Trim()).Append("\n\n# Graded sets\n\n");
@@ -325,9 +412,12 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
             b.Append("None yet.\n");
         }
 
-        foreach (var g in graded.DistinctBy(g => Key(g.Spec, g.Set)))
+        foreach (var g in graded.DistinctBy(g => g.Parts is null ? Key(g.Spec, g.Set) : AssignmentKey(g.Parts)))
         {
-            b.Append("- spec ").Append(g.Spec).Append(", set [").Append(string.Join(", ", g.Set)).Append("]: ")
+            var what = g.Parts is null
+                ? $"- spec {g.Spec}, set [{string.Join(", ", g.Set)}]: "
+                : $"- assignment [{string.Join(" | ", g.Parts.Select(p => $"{p.Spec}: {(p.Set is null ? "none" : string.Join(", ", p.Set))}"))}]: ";
+            b.Append(what)
                 .Append(string.Join("; ", g.Verdicts.Select(v => $"{v.Rubric} {(v.Ok is { } ok ? (ok ? "yes" : "no") : "no verdict")}")))
                 .Append(". Remainder: ").Append(g.Remainder.Count == 0 ? "none" : string.Join(", ", g.Remainder)).Append('\n');
         }

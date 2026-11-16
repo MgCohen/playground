@@ -137,6 +137,17 @@ public sealed class PartyRunner(PartyPack pack, Func<IJudge> judge, RunLimits li
         var total = 0;
         foreach (var g in trace.Turns.SelectMany(t => t.Grades).Where(g => !g.Cached))
         {
+            if (g.Parts is { } parts)
+            {
+                foreach (var (rubric, verdict) in c.Anchor.Visible.Zip(g.Verdicts))
+                {
+                    total++;
+                    right += verdict.Ok == Oracle.PoolTruth(rubric, parts.Select(p => p.Set).ToList()) ? 1 : 0;
+                }
+
+                continue;
+            }
+
             var quest = c.Quests.First(q => q.Id == g.Spec);
             var heroes = g.Set.Select(pack.Heroes.Get).OfType<Hero>().ToList();
             foreach (var (rubric, verdict) in quest.Visible.Zip(g.Verdicts))

@@ -14,6 +14,18 @@
         "required": ["spec", "set"]
       }
     },
+    "assignment": {
+      "type": "array",
+      "description": "grade only, and only if the input has rubrics over all sets: one set (or null) for each spec, graded together",
+      "items": {
+        "type": "object",
+        "properties": {
+          "spec": { "type": "string" },
+          "set": { "type": ["array", "null"], "items": { "type": "string" } }
+        },
+        "required": ["spec", "set"]
+      }
+    },
     "commit": {
       "type": "array",
       "description": "commit only: one item for each spec; set null means none",

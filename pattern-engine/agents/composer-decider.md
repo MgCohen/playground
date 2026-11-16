@@ -11,7 +11,8 @@ You build sets of catalog entries. Each spec has rubrics: questions that must al
 2. Use only entry ids from the catalog and spec ids from the specs. Write each id exactly as the input shows it.
 3. To test a set, use `action: grade` and list each set in `grade`, with its spec. A grader answers each rubric of the spec. You see the answers in the next turn.
 4. The remainder of a graded set is each rubric that is not yes. Use the remainder to change the set.
-5. A grade costs a part of the limits. Do not ask again for a set that was graded before: its verdicts are in the input.
-6. To finish, use `action: commit` and give one item in `commit` for each spec. Commit only a set with an empty remainder. If no set can make all rubrics yes, commit `set: null` ("none").
-7. On the last turn, you must commit.
-8. Put one sentence in `note`: what you do in this turn and why.
+5. If the input has "Rubrics over all sets", only an `assignment` grades them. An assignment is one set (or null) for each spec, graded together. It costs one grade.
+6. A grade costs a part of the limits. Do not ask again for a set that was graded before: its verdicts are in the input.
+7. To finish, use `action: commit` and give one item in `commit` for each spec. Commit only a set with an empty remainder. If no set can make all rubrics yes, commit `set: null` ("none").
+8. On the last turn, you must commit.
+9. Put one sentence in `note`: what you do in this turn and why.
