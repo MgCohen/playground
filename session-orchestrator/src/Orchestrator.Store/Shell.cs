@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Orchestrator.Cli.Git;
+namespace Orchestrator.Store;
 
 public sealed record ShellResult(int Exit, string Output, string Error)
 {

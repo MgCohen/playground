@@ -22,6 +22,8 @@ public sealed record Meta(string Id)
     public bool? Worktree { get; init; }
     public string? Agent { get; init; }
     public List<string>? Skills { get; init; }
+    public string? Repo { get; init; }
+    public string? Branch { get; init; }
 }
 
 public sealed record Decision(string Id, string Session)
@@ -109,3 +111,15 @@ public sealed record InboxMessage(string Text, string? From);
 public sealed record TurnMarker(string Event, string From, string At);
 
 public sealed record LastOutput(string Event, string At);
+
+public static class ControlStates
+{
+    public const string Active = "active";
+    public const string Stopped = "stopped";
+    public const string Archived = "archived";
+}
+
+public sealed record Control(string State, string At, string By)
+{
+    public string? Reason { get; init; }
+}

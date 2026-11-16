@@ -21,7 +21,8 @@ public sealed class FakeRunner(bool ok) : ITurnRunner
     public async Task<TurnResult> Run(TurnRequest request, CancellationToken cancel)
     {
         lock (Turns) Turns.Add(request);
-        if (Gate is { } gate) await gate.Task;
+        if (Gate is { } gate) await Task.WhenAny(gate.Task, Task.Delay(Timeout.Infinite, cancel)).ContinueWith(_ => { });
+        if (cancel.IsCancellationRequested) return new TurnResult(false, null, "stopped", 0);
         return ok ? new TurnResult(true, "done", null, 0) : new TurnResult(false, null, "boom", 0);
     }
 }

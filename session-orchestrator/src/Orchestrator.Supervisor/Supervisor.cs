@@ -9,10 +9,14 @@ namespace Orchestrator.Supervisor;
 
 public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker docs, SupervisorOptions options)
 {
+    sealed record Failure(int Count, int Rounds, DateTimeOffset? Until, string? Error);
+
     readonly Lock gate = new();
     readonly ConcurrentDictionary<string, Task> running = new();
+    readonly ConcurrentDictionary<string, CancellationTokenSource> stops = new();
     readonly ConcurrentDictionary<string, Task> checks = new();
-    readonly ConcurrentDictionary<string, int> failures = new();
+    readonly ConcurrentDictionary<string, Failure> failures = new();
+    readonly Lifecycle lifecycle = new(store);
 
     public FileStore Store => store;
     public SupervisorOptions Options => options;
@@ -26,7 +30,8 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         lock (gate)
         {
             var now = Now;
-            var sessions = store.Sessions();
+            StopRunningTurns();
+            var sessions = store.Sessions().Where(id => !lifecycle.IsStopped(id)).ToList();
             foreach (var id in sessions)
             {
                 ReleaseStaleLease(id, now);
@@ -44,6 +49,16 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
     public async Task Idle()
     {
         while (!running.IsEmpty || !checks.IsEmpty) await Task.WhenAll([.. running.Values, .. checks.Values]);
+    }
+
+    void StopRunningTurns()
+    {
+        foreach (var id in running.Keys)
+            if (lifecycle.IsStopped(id) && stops.TryGetValue(id, out var stop) && !stop.IsCancellationRequested)
+            {
+                store.Log($"{id} turn stopped: {lifecycle.Control(id).State}");
+                stop.Cancel();
+            }
     }
 
     void ReleaseStaleLease(string id, DateTimeOffset now)
@@ -110,8 +125,17 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
 
     public string Review(string id, string decision, string verdict, string text) => new Messages(store).Review(id, decision, verdict, text);
 
-    bool CanRun(string id, DateTimeOffset now) =>
-        !running.ContainsKey(id) && failures.GetValueOrDefault(id) < options.MaxFailures && !store.IsLive(id, now);
+    bool CanRun(string id, DateTimeOffset now)
+    {
+        if (running.ContainsKey(id) || store.IsLive(id, now)) return false;
+        if (!failures.TryGetValue(id, out var failure) || failure.Count < options.MaxFailures) return true;
+        if (failure.Until is not { } until || now < until) return false;
+        store.Send(id, store.Texts.Blocked(failure.Count, failure.Error ?? "unknown"), Parties.Supervisor);
+        store.Events.Append(EventKinds.Unblocked, Parties.Supervisor, Parties.Session(id), Data.Of(("text", $"restart after {failure.Count} failed turns"), ("count", failure.Count), ("error", failure.Error)), null, id);
+        store.Log($"{id} restart after {failure.Count} failed turns");
+        failures[id] = failure with { Count = 0, Until = null };
+        return true;
+    }
 
     void StartTurn(string id, DateTimeOffset now)
     {
@@ -121,12 +145,14 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         if (store.Cwd(id) is not { } cwd)
         {
             store.Log($"{id} skipped: no cwd");
-            failures[id] = options.MaxFailures;
+            failures[id] = new Failure(options.MaxFailures, 0, null, "no cwd");
             return;
         }
         var meta = store.Meta(id);
         var request = new TurnRequest(id, cwd, pending.Text, meta.CreatedBy is not null && meta.Started != true) { Agent = meta.Agent };
-        Track(running, id, () => RunTurn(request, pending));
+        var stop = new CancellationTokenSource();
+        stops[id] = stop;
+        Track(running, id, () => RunTurn(request, pending, stop.Token));
     }
 
     void Track(ConcurrentDictionary<string, Task> tasks, string key, Func<Task> work)
@@ -138,10 +164,19 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         start.SetResult();
     }
 
-    async Task RunTurn(TurnRequest request, Pending pending)
+    async Task RunTurn(TurnRequest request, Pending pending, CancellationToken stop)
     {
         var id = request.Id;
-        store.Log($"{id} turn start new={request.IsNew} inbox={string.Join(',', pending.Inbox)} answers={string.Join(',', pending.Answers)}");
+        try
+        {
+            if (request.IsNew) request = request with { Cwd = lifecycle.MakeWorktree(id).Cwd ?? request.Cwd };
+        }
+        catch (Exception e) when (e is ShellException or IOException)
+        {
+            Fail(request, $"worktree: {e.Message}", null);
+            return;
+        }
+        store.Log($"{id} turn start new={request.IsNew} cwd={request.Cwd} inbox={string.Join(',', pending.Inbox)} answers={string.Join(',', pending.Answers)}");
         if (request.IsNew) store.SaveMeta(store.Meta(id) with { Started = true });
         var from = string.Join(',', pending.Senders.DefaultIfEmpty(Parties.Supervisor));
         var start = store.Events.Append(EventKinds.TurnStart, Parties.Supervisor, Parties.Session(id), Data.Of(("isNew", request.IsNew), ("senders", pending.Senders), ("prompt", request.Prompt)), Data.Of(("inbox", pending.Inbox), ("answers", pending.Answers)), id);
@@ -149,16 +184,22 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         TurnResult result;
         try
         {
-            result = await runner.Run(request, CancellationToken.None);
+            result = await runner.Run(request, stop);
         }
         catch (Exception e)
         {
             result = new TurnResult(false, null, e.Message, 0);
         }
+        if (stop.IsCancellationRequested)
+        {
+            store.Events.Append(EventKinds.TurnFail, Parties.Session(id), Parties.Supervisor, Data.Of(("text", "stopped"), ("error", "stopped")), Data.Of(("turnStart", start.Id)), id);
+            store.Log($"{id} turn stopped after {result.Seconds}s; the inbox stays for a later turn");
+            return;
+        }
         if (result.Ok)
         {
             store.MarkSent(id, pending);
-            failures.TryRemove(id, out _);
+            if (failures.TryRemove(id, out _)) store.SaveBlocked(id, null);
             var output = store.ReadJson<LastOutput>(id, StoreFiles.LastOutput);
             store.Events.Append(EventKinds.TurnEnd, Parties.Session(id), Parties.Supervisor, Data.Of(("ok", true), ("seconds", result.Seconds), ("text", result.Text ?? "")),
                 Data.Of(("turnStart", start.Id), ("output", output is { } o && string.CompareOrdinal(o.Event, start.Id) > 0 ? o.Event : null)), id);
@@ -166,10 +207,21 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
             return;
         }
         if (request.IsNew) store.SaveMeta(store.Meta(id) with { Started = false });
-        var count = failures.AddOrUpdate(id, 1, (_, n) => n + 1);
-        store.SaveBlocked(id, $"supervisor turn failed {count} times: {result.Error}");
-        store.Events.Append(EventKinds.TurnFail, Parties.Session(id), Parties.Supervisor, Data.Of(("count", count), ("error", result.Error)), Data.Of(("turnStart", start.Id)), id);
-        store.Log($"{id} turn failed ({count}): {result.Error}");
+        Fail(request, result.Error ?? "unknown", start.Id);
+    }
+
+    void Fail(TurnRequest request, string error, string? turnStart)
+    {
+        var id = request.Id;
+        var failure = failures.AddOrUpdate(id, new Failure(1, 0, null, error), (_, f) => f with { Count = f.Count + 1, Error = error });
+        if (failure.Count >= options.MaxFailures)
+        {
+            failure = failure with { Until = Now + options.RetryAfter * Math.Pow(2, failure.Rounds), Rounds = failure.Rounds + 1 };
+            failures[id] = failure;
+        }
+        store.SaveBlocked(id, $"supervisor turn failed {failure.Count} times: {error}{(failure.Until is { } until ? $". Next try at {Times.Format(until)}" : "")}");
+        store.Events.Append(EventKinds.TurnFail, Parties.Session(id), Parties.Supervisor, Data.Of(("count", failure.Count), ("error", error)), Data.Of(("turnStart", turnStart)), id);
+        store.Log($"{id} turn failed ({failure.Count}): {error}");
     }
 
     static string Cut(string text, int length) => text.Length > length ? text[..length] : text;

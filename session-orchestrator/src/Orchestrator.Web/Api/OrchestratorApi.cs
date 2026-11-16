@@ -62,7 +62,28 @@ public static class OrchestratorApi
             return Results.Accepted(value: new { inbox, @event = e });
         }));
 
-        api.MapGet("/events", (FileStore store, string? since, string? kind, string? session, string? from, bool? open, bool? ledger) => Guard(() =>
+        api.MapPost("/sessions/{id}/stop", (string id, Supervisor.Supervisor s, FileStore store) => Guard(() =>
+        {
+            new Lifecycle(store).Stop(id, Parties.User);
+            s.Tick();
+            return Results.Accepted(value: new { stopped = id });
+        }));
+
+        api.MapPost("/sessions/{id}/resume", (string id, Supervisor.Supervisor s, FileStore store) => Guard(() =>
+        {
+            new Lifecycle(store).Resume(id, Parties.User);
+            s.Tick();
+            return Results.Accepted(value: new { resumed = id });
+        }));
+
+        api.MapPost("/sessions/{id}/archive", (string id, bool? force, Supervisor.Supervisor s, FileStore store) => Guard(() =>
+        {
+            var lines = new Lifecycle(store).Archive(id, Parties.User, force ?? false);
+            s.Tick();
+            return Results.Accepted(value: new { archived = id, lines });
+        }));
+
+        api.MapGet("/events",(FileStore store, string? since, string? kind, string? session, string? from, bool? open, bool? ledger) => Guard(() =>
             Results.Ok(store.Query(new EventFilter
             {
                 Since = since is null ? null : Durations.Since(since, store.Clock.GetUtcNow()),

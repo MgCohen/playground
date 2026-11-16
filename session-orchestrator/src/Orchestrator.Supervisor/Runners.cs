@@ -21,7 +21,10 @@ public interface IDocsChecker
     Task<DocsResult> Check(DocsRequest request, CancellationToken cancel);
 }
 
-public sealed record SupervisorOptions(int MaxRuns, int MaxFailures, int MaxChecks, Core.Policy.Policy Policy);
+public sealed record SupervisorOptions(int MaxRuns, int MaxFailures, int MaxChecks, Core.Policy.Policy Policy)
+{
+    public TimeSpan RetryAfter { get; init; } = TimeSpan.FromMinutes(5);
+}
 
 static class Data
 {
