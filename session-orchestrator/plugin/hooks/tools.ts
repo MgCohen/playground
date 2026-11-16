@@ -181,7 +181,7 @@ export async function askUser($: any, e: any): Promise<any> {
   const fields = { question: e.question, context: e.context, snippet: e.snippet, options: e.options, recommendation: e.recommendation, risk: decision.risk, defaultOption: e.defaultOption, mode: decision.mode }
   await emit($, 'decision', `session:${S.id}`, 'user', fields, { decision: decision.id })
   await writeJson($, `${S.dir}/decisions/${decision.id}.json`, decision)
-  const later = `Decision ${decision.id} is in the user queue. If you have a parent session, it sees the question too. Write the question in your reply text in full, so that the user can read it here. The user can answer in this chat or in the parent session. End your turn now. An answer in this chat is your answer. An answer from elsewhere arrives as a new message that starts with "Answer to decision ${decision.id}".`
+  const later = `Decision ${decision.id} is in the user queue. If you have a parent session, it sees the question too. Write the question in your reply text with the "Question" template of the skill orch:orch-reply, so that the user can read it here. The user can answer in this chat or in the parent session. End your turn now. An answer in this chat is your answer. An answer from elsewhere arrives as a new message that starts with "Answer to decision ${decision.id}".`
   if (wait === 0) {
     await log($, `ask_user ${decision.id} pending`)
     return { result: `PENDING: ${later}` }

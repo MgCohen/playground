@@ -25,7 +25,7 @@ The plugin `plugin/` and the supervisor share one folder for each session: `stor
 | `docs-checks/<id>.json` | Supervisor | `{ answered, answer, source, at }`: the result of the docs check of one decision |
 | `reviews/<id>.json` | Supervisor | `{ verdict: approve \| change \| refuse, text, at }` |
 | `forwarded.json` | Supervisor | `{ at }` of the last child report that the supervisor sent to the parent |
-| `forwarded-questions/<decision>.json` | Supervisor | `{ at }` when the supervisor sent this open question of a child to the parent inbox. One time for each decision |
+| `forwarded-questions/<decision>.json` | Supervisor | `{ at, reminders, remindedAt, closedAt }`: when the supervisor sent this open question of a child to the parent inbox, the reminders it sent (first after 10 min, then each hour, only if no default will apply), and when it sent the "Question closed" notice |
 | `turn.json` | Supervisor | `{ event, from, at, ended }`: the `turn.start` event of the last supervisor turn, its senders, and the end time. The plugin uses `from` as the sender of `session.input`. A marker with no `ended` and no running turn is an interrupted turn (see Recovery) |
 | `last-output.json` | Plugin | `{ event, at }`: the last `session.output` event. `turn.end` links it in `refs.output` |
 | `stack/<decision>.json` | `orch decision`, `orch stack` | The versions of one decision on the stack (below) |

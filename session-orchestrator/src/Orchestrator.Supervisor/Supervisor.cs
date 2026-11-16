@@ -86,6 +86,11 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
     {
         var meta = store.Meta(id);
         if (meta.Parent is not { } parent) return;
+        var title = meta.Title ?? id;
+        var folder = store.PathOf(id, StoreFiles.QuestionsForwarded);
+        if (Directory.Exists(folder))
+            foreach (var path in Directory.EnumerateFiles(folder, "*.json"))
+                FollowQuestion(id, parent, title, path);
         foreach (var decision in store.OpenDecisions(id))
         {
             var marker = store.PathOf(id, StoreFiles.QuestionsForwarded, StoreFiles.Json(decision.Id));
@@ -95,10 +100,33 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
                 : level.TimeoutSeconds is { } seconds ? $"If nobody answers in {seconds:0} s, the policy answers \"{option}\"."
                 : $"The default is \"{option}\", but this level never applies it.";
             store.Send(parent, store.Texts.ChildQuestion(meta.Title ?? id, id, decision, defaultText), Parties.Session(id));
-            Files.WriteJson(marker, new Forwarded(Times.Format(Now)));
+            Files.WriteJson(marker, new QuestionRelay(Times.Format(Now)));
             store.Events.Append(EventKinds.QuestionForward, Parties.Session(id), Parties.Session(parent), Data.Of(("decision", decision.Id), ("question", decision.Question)), Data.Of(("child", id), ("decision", decision.Id)), parent);
             store.Log($"{id} question {decision.Id} forwarded to {parent}");
         }
+    }
+
+    void FollowQuestion(string id, string parent, string title, string path)
+    {
+        var relay = Files.ReadJson<QuestionRelay>(path);
+        var decisionId = Path.GetFileNameWithoutExtension(path);
+        if (relay is null || relay.ClosedAt is not null || store.Decision(id, decisionId) is not { } decision) return;
+        if (store.Answer(id, decisionId) is { } answer)
+        {
+            store.Send(parent, store.Texts.QuestionClosed(title, id, decision, answer.Value ?? answer.Text ?? "(no text)", answer.By ?? "unknown"), Parties.Session(id));
+            Files.WriteJson(path, relay with { ClosedAt = Times.Format(Now) });
+            store.Events.Append(EventKinds.QuestionClose, Parties.Session(id), Parties.Session(parent), Data.Of(("decision", decisionId), ("by", answer.By)), Data.Of(("child", id), ("decision", decisionId)), parent);
+            return;
+        }
+        if (!store.IsOpen(id, decisionId) || decision.DefaultOption is not null && options.Policy.LevelOf(decision.Risk).TimeoutSeconds is not null) return;
+        var since = Times.Parse(relay.RemindedAt ?? relay.At) ?? Now;
+        var wait = relay.Reminders == 0 ? options.FirstReminder : options.NextReminder;
+        if (Now - since < wait) return;
+        var waited = Now - (Times.Parse(relay.At) ?? Now);
+        var text = waited.TotalHours >= 1 ? $"{waited.TotalHours:0.#} h" : $"{waited.TotalMinutes:0} min";
+        store.Send(parent, store.Texts.QuestionReminder(title, id, decision, text), Parties.Session(id));
+        Files.WriteJson(path, relay with { Reminders = relay.Reminders + 1, RemindedAt = Times.Format(Now) });
+        store.Events.Append(EventKinds.QuestionRemind, Parties.Session(id), Parties.Session(parent), Data.Of(("decision", decisionId), ("waited", text)), Data.Of(("child", id), ("decision", decisionId)), parent);
     }
 
     void ApplyPolicy(string id, DateTimeOffset now)

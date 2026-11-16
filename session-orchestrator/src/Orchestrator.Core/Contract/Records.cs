@@ -95,6 +95,13 @@ public sealed record Blocked(string? Reason, string Since);
 
 public sealed record Forwarded(string At);
 
+public sealed record QuestionRelay(string At)
+{
+    public int Reminders { get; init; }
+    public string? RemindedAt { get; init; }
+    public string? ClosedAt { get; init; }
+}
+
 public sealed record Status(string State, string? TurnId, string At);
 
 public sealed record DocsCheck(bool Answered, string? Answer, string? Source, string At)
