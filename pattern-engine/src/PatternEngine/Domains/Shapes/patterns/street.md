@@ -18,14 +18,16 @@ parts:
   - { ref: tower, count: "0..n" }
   - { ref: tree, count: "0..n" }
   - { ref: shed, count: "0..n" }
-related: [house, tower, tree, shed]
+  - { ref: sign, count: "0..n" }
+related: [house, tower, tree, shed, sign]
 asserts:
-  - count(house,tower,tree,shed) >= 2
+  - count(house,tower,tree,shed,sign) >= 2
   - all house.bottom == ground.top
   - all tower.bottom == ground.top
   - all tree.bottom == ground.top
   - all shed.bottom == ground.top
-  - no-overlap house tower tree shed
+  - all sign.bottom == ground.top
+  - no-overlap house tower tree shed sign
 ---
 ## Intent
 Two or more buildings or trees in one row, on one ground line.

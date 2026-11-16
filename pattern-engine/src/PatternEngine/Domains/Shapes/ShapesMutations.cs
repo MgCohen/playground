@@ -50,6 +50,17 @@ public static partial class ShapesMutations
             var s = i.Output;
             return s[..a.Index] + b.Text + s[(a.Index + a.Text.Length)..b.Index] + a.Text + s[(b.Index + b.Text.Length)..];
         }),
+        new MutationOperator("change-board", ["built"], "Paint the boards that have the asked color in another color", i =>
+        {
+            var color = AllParams(i.Tree).Select(p => p.GetValueOrDefault("board_fill")).FirstOrDefault(v => v is not null);
+            var re = color is null ? null : new Regex($"(<g data-p=\"board\"><rect [^>]*fill=\"){Regex.Escape(color)}(\")");
+            return re is not null && re.IsMatch(i.Output) ? re.Replace(i.Output, "${1}black$2") : null;
+        }),
+        new MutationOperator("board-off-post", ["structure"], "Move the first board up, off the post", i =>
+        {
+            var m = LeafRe("board").Match(i.Output);
+            return m.Success ? ReplaceFirst(i.Output, m.Value, SetAttr(m.Value, "y", Num(m.Value, "y") - 40)) : null;
+        }),
         new MutationOperator("change-param", ["built"], "Paint the doors that have the asked color in another color", i =>
         {
             var color = AllParams(i.Tree).Select(p => p.GetValueOrDefault("door_fill")).FirstOrDefault(v => v is not null);
@@ -149,7 +160,7 @@ public static partial class ShapesMutations
         }
     }
 
-    [GeneratedRegex("<g data-p=\"(house|tower|shed|tree)\" data-v=\"[^\"]*\">(?:<g data-p=\"[a-z]+\"><[^>]*\\/><\\/g>)+<\\/g>")]
+    [GeneratedRegex("<g data-p=\"(house|tower|shed|tree|sign)\" data-v=\"[^\"]*\">(?:<g data-p=\"[a-z]+\"><[^>]*\\/><\\/g>)+<\\/g>")]
     private static partial Regex ObjectForm();
 
     [GeneratedRegex("(\\s(?:x|cx)=\")([-\\d.]+)(\")")]

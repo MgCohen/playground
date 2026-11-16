@@ -52,7 +52,7 @@ public static class Metrics
             new Metric("escalated", "runs with an escalation", runs.Count(r => r.Agent.Escalations > 0), runs.Count),
             new Metric("stopped", "runs stopped by a limit", runs.Count(r => r.Trace?.StopReason is not null), runs.Count),
             new Metric("agent-errors", "agent errors", runs.Count(r => r.Agent.Error is not null), runs.Count),
-            new Metric("trace", "trace matches output", runs.Count(r => r.Grades.Consistent), runs.Count),
+            new Metric("trace", "trace matches output", runs.Count(r => r.Grades.Consistent), runs.Count(r => r.Trace?.Tree is not null && r.Agent.Error is null)),
         ];
     }
 

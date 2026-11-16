@@ -15,7 +15,7 @@ public sealed class SimulatedUser(Case c) : IUserChannel
     public Task<string?> AskAsync(Question question, CancellationToken ct)
     {
         var hidden = c.Hidden ?? [];
-        if (hidden.TryGetValue(question.Key, out var value))
+        if (hidden.TryGetValue(question.Key, out var value) || hidden.TryGetValue(question.About, out value))
         {
             return Task.FromResult<string?>(value);
         }

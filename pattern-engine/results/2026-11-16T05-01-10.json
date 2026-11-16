@@ -1,0 +1,560 @@
+{
+  "runId": "2026-11-16T05-01-10",
+  "domain": "shapes",
+  "engine": "csharp-hybrid",
+  "mode": "smoke",
+  "label": "ask-cases",
+  "model": "haiku",
+  "k": 1,
+  "ablate": [],
+  "graders": [
+    "selection",
+    "built",
+    "structure",
+    "rules",
+    "proposed",
+    "questions"
+  ],
+  "catalog": "d7aa27854781",
+  "cases": 4,
+  "runs": [
+    {
+      "case": "hand-ask-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "ask"
+      ],
+      "request": "Draw a sign.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "sign",
+          "v": "plain",
+          "params": {
+            "board_fill": "green"
+          }
+        },
+        "asks": [
+          "board_fill"
+        ]
+      },
+      "hidden": {
+        "board_fill": "green"
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "sign",
+          "v": "plain",
+          "params": {
+            "board_fill": "green"
+          }
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          {
+            "node": 0,
+            "about": "input",
+            "key": "board_fill",
+            "text": "Which board fill do you want for the sign? Options: red, blue, green, yellow.",
+            "options": [
+              "red",
+              "blue",
+              "green",
+              "yellow"
+            ],
+            "answer": "green"
+          }
+        ],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "d7aa27854781",
+          "patterns": {
+            "sign": "946c61d8d8a7"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Draw a sign.",
+            "status": "solved",
+            "pattern": "sign",
+            "variant": "plain",
+            "params": {
+              "board_fill": "green"
+            },
+            "children": [],
+            "open": [],
+            "reason": "The request names a sign, which matches only the sign pattern, and its do_not_use_when list is empty; the required board_fill param is not named in the request, so it is left unset."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 18346,
+        "Cost": 0.00160662,
+        "Calls": 2,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-ask-002",
+      "run": 1,
+      "tags": [
+        "hand",
+        "ask"
+      ],
+      "request": "Draw a street with, from left to right, a house and a sign.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "house"
+            },
+            {
+              "p": "sign",
+              "params": {
+                "board_fill": "red"
+              }
+            }
+          ]
+        },
+        "asks": [
+          "board_fill"
+        ]
+      },
+      "hidden": {
+        "board_fill": "red"
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "street",
+          "v": "row",
+          "parts": [
+            {
+              "p": "house",
+              "v": "plain"
+            },
+            {
+              "p": "sign",
+              "v": "plain",
+              "params": {
+                "board_fill": "red"
+              }
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          {
+            "node": 2,
+            "about": "input",
+            "key": "board_fill",
+            "text": "Which board fill do you want for the sign? Options: red, blue, green, yellow.",
+            "options": [
+              "red",
+              "blue",
+              "green",
+              "yellow"
+            ],
+            "answer": "red"
+          }
+        ],
+        "open_requirements": [],
+        "attempts": 2,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "d7aa27854781",
+          "patterns": {
+            "street": "db00a9962959",
+            "house": "ba07160d2afb",
+            "sign": "946c61d8d8a7"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Draw a street with, from left to right, a house and a sign.",
+            "status": "solved",
+            "pattern": "street",
+            "variant": "row",
+            "params": null,
+            "children": [
+              1,
+              2
+            ],
+            "open": [],
+            "reason": "The request names a street with two objects in a left-to-right row, which matches the street group's row variant; the house child uses the plain variant since no chimney is named, and the sign's required board_fill is not given in the request, so it is left unset."
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "a house",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The request names a house, which matches the house pattern; it is not tall or a tool building, and no chimney is named, so the plain variant applies with no params set."
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "a sign",
+            "status": "solved",
+            "pattern": "sign",
+            "variant": "plain",
+            "params": {
+              "board_fill": "red"
+            },
+            "children": [],
+            "open": [],
+            "reason": "The request names a sign, which matches only the sign pattern, with no exclusion applying and the plain variant always matching; board_fill is required but the request gives no value, so it is left unset rather than invented."
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 26890,
+        "Cost": 0.00380019,
+        "Calls": 5,
+        "Escalations": 0,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-ask-003",
+      "run": 1,
+      "tags": [
+        "hand",
+        "ask"
+      ],
+      "request": "Draw a building.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "house"
+        },
+        "asks": [
+          "pattern choice"
+        ]
+      },
+      "hidden": {
+        "pattern choice": "house"
+      },
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "house",
+          "v": "plain"
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          {
+            "node": 0,
+            "about": "pattern choice",
+            "key": "house",
+            "text": "Which kind of building should I draw?",
+            "options": [
+              "house",
+              "shed",
+              "tower"
+            ],
+            "answer": "house"
+          }
+        ],
+        "open_requirements": [],
+        "attempts": 1,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "d7aa27854781",
+          "patterns": {
+            "house": "ba07160d2afb"
+          }
+        },
+        "notes": [
+          "node 0: escalation (the decider could not choose (unclear)): unclear: The request says only \"a building\" without naming a house, shed, tower, or other type, and nothing in it shows whether the building is tall, narrow, or a storage hut, so no candidate's use_when clearly matches and choosing one would be a guess.",
+          "node 0: decided again with the answer of the user"
+        ],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Draw a building.",
+            "status": "solved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "The user answered \"house\", which matches the house pattern's use_when; no do_not_use_when condition applies (not tall or narrow, not a storage building), no chimney is named so the plain variant is used, and no door_fill value is given."
+          },
+          {
+            "id": 1,
+            "parent": null,
+            "depth": 0,
+            "text": "Draw a building. (The user answered: house)",
+            "status": "unresolved",
+            "pattern": "house",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "merged into node 0"
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 34350,
+        "Cost": 0.0036478,
+        "Calls": 4,
+        "Escalations": 2,
+        "Error": null
+      }
+    },
+    {
+      "case": "hand-ask-004",
+      "run": 1,
+      "tags": [
+        "hand",
+        "ask"
+      ],
+      "request": "Write me a short poem about the sea.",
+      "expect": {
+        "outcome": "ask",
+        "asks": [
+          "domain"
+        ]
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "ask",
+        "tree": {
+          "p": null
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [
+          {
+            "node": 0,
+            "about": "domain",
+            "key": "sea poem",
+            "text": "This engine only draws catalog objects, and a sea poem is outside that scope. Do you want to draw one of the allowed objects instead?",
+            "options": [
+              "street",
+              "house",
+              "shed",
+              "sign",
+              "tower",
+              "tree"
+            ],
+            "answer": null
+          }
+        ],
+        "open_requirements": [],
+        "attempts": 0,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "d7aa27854781",
+          "patterns": {}
+        },
+        "notes": [
+          "node 0: escalation (the request may be outside the domain): outside the domain: The request asks for a poem about the sea, which is not about drawing any of the catalog's objects (street, house, shed, sign, tower, tree), so no pattern applies."
+        ],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Write me a short poem about the sea.",
+            "status": "asking",
+            "pattern": null,
+            "variant": null,
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "asked: This engine only draws catalog objects, and a sea poem is outside that scope. Do you want to draw one of the allowed objects instead?"
+          }
+        ]
+      },
+      "grades": {
+        "verdicts": {
+          "selection": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "built": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "structure": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": false
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 15151,
+        "Cost": 0.00213495,
+        "Calls": 2,
+        "Escalations": 1,
+        "Error": null
+      }
+    }
+  ]
+}

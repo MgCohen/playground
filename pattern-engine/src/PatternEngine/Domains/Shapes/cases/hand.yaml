@@ -40,3 +40,23 @@
   tags: [near-miss]
   request: Draw a garage that a family has made into their home.
   expect: { outcome: match, tree: { p: house } }
+# Ask: the request does not give a needed fact. The simulated user gives it only when the engine asks.
+- id: hand-ask-001
+  tags: [ask]
+  request: Draw a sign.
+  hidden: { board_fill: green }
+  expect: { outcome: match, tree: { p: sign, v: plain, params: { board_fill: green } }, asks: [board_fill] }
+- id: hand-ask-002
+  tags: [ask]
+  request: Draw a street with, from left to right, a house and a sign.
+  hidden: { board_fill: red }
+  expect: { outcome: match, tree: { p: street, v: row, parts: [ { p: house }, { p: sign, params: { board_fill: red } } ] }, asks: [board_fill] }
+- id: hand-ask-003
+  tags: [ask]
+  request: Draw a building.
+  hidden: { pattern choice: house }
+  expect: { outcome: match, tree: { p: house }, asks: [pattern choice] }
+- id: hand-ask-004
+  tags: [ask]
+  request: Write me a short poem about the sea.
+  expect: { outcome: ask, asks: [domain] }

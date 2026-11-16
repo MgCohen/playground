@@ -23,14 +23,14 @@ public sealed class QuestionsGrader : IGrader
         var c = input.Case;
         var asks = c.Expect.Asks ?? [];
         var hidden = c.Hidden ?? [];
-        var keys = trace.Questions.Select(q => q.Key).ToList();
+        bool Covers(Question q, string name) => q.Key == name || q.About == name;
         var failures = new List<string>();
-        foreach (var need in asks.Where(a => !keys.Contains(a)))
+        foreach (var need in asks.Where(a => !trace.Questions.Any(q => Covers(q, a))))
         {
             failures.Add($"did not ask for \"{need}\"");
         }
 
-        foreach (var q in trace.Questions.Where(q => !asks.Contains(q.Key) && !hidden.ContainsKey(q.Key)))
+        foreach (var q in trace.Questions.Where(q => !asks.Any(a => Covers(q, a)) && !hidden.Keys.Any(h => Covers(q, h))))
         {
             failures.Add($"extra question about \"{q.Key}\" ({q.About}): {q.Text}");
         }

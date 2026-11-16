@@ -14,10 +14,10 @@ public sealed class ShapesReference : IReferenceRenderer
     private static readonly Dictionary<string, string> Colors = new()
     {
         ["body"] = "#f3ead6", ["roof"] = "#7a7470", ["door"] = "brown", ["window"] = "#9fd3f0", ["chimney"] = "#a0522d",
-        ["ground"] = "#7cb36b", ["trunk"] = "#8b5a2b", ["crown"] = "green",
+        ["ground"] = "#7cb36b", ["trunk"] = "#8b5a2b", ["crown"] = "green", ["post"] = "#6b4f3a", ["board"] = "gray",
     };
 
-    private static readonly Dictionary<string, double> Factor = new() { ["house"] = 1.04, ["tower"] = 2.75, ["shed"] = 0.85, ["tree"] = 1.08 };
+    private static readonly Dictionary<string, double> Factor = new() { ["house"] = 1.04, ["tower"] = 2.75, ["shed"] = 0.85, ["tree"] = 1.08, ["sign"] = 1.1 };
 
     private static readonly Dictionary<string, Func<TreeNode, double, double, double, List<string>>> Draw = new()
     {
@@ -25,6 +25,7 @@ public sealed class ShapesReference : IReferenceRenderer
         ["tower"] = Tower,
         ["shed"] = Shed,
         ["tree"] = Tree,
+        ["sign"] = Sign,
     };
 
     public string? Render(TreeNode tree, PatternCatalog catalog) => Svg(tree);
@@ -111,6 +112,17 @@ public sealed class ShapesReference : IReferenceRenderer
         [
             Leaf("trunk", Rect(cx - (tw / 2), b - th, tw, th, Colors["trunk"])),
             Leaf("crown", $"<circle cx=\"{R(cx)}\" cy=\"{R(cy)}\" r=\"{R(cr)}\" fill=\"{Colors["crown"]}\"/>"),
+        ];
+    }
+
+    private static List<string> Sign(TreeNode t, double x, double b, double w)
+    {
+        double pw = 0.12 * w, ph = 0.7 * w, cx = x + (0.5 * w), bh = 0.45 * w, top = b - ph;
+        var fill = t.Params?.GetValueOrDefault("board_fill") ?? Colors["board"];
+        return
+        [
+            Leaf("post", Rect(cx - (pw / 2), top, pw, ph, Colors["post"])),
+            Leaf("board", Rect(x, top + (0.1 * w) - bh, w, bh, fill)),
         ];
     }
 

@@ -15,7 +15,7 @@ namespace PatternEngine.Tests.Engine;
 /// <summary>A scripted judge for the shapes pack: the decider reads keywords, the composer draws the reference object in its slot.</summary>
 public static partial class ShapesScript
 {
-    public static readonly string[] Objects = ["house", "tower", "shed", "tree"];
+    public static readonly string[] Objects = ["house", "tower", "shed", "tree", "sign"];
 
     public static Settings Settings => Settings.Load(Repo.Path("pe.settings.yaml"));
 
@@ -71,8 +71,8 @@ public static partial class ShapesScript
         {
             p = pm.Groups[1].Value;
             v = pm.Groups[2].Value;
-            var color = DoorForm().Match(input);
-            parameters = color.Success ? new() { ["door_fill"] = color.Groups[1].Value } : null;
+            var json = ParamsForm().Match(input);
+            parameters = json.Success ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(json.Groups[1].Value) : null;
         }
         else
         {
@@ -109,8 +109,8 @@ public static partial class ShapesScript
     [GeneratedRegex(@"Pattern: (\w+), variant: (\w+)")]
     private static partial Regex PatternForm();
 
-    [GeneratedRegex("\"door_fill\":\"(\\w+)\"")]
-    private static partial Regex DoorForm();
+    [GeneratedRegex(@"params: (\{[^}]*\})\.")]
+    private static partial Regex ParamsForm();
 
     [GeneratedRegex("Make the new pattern \"([\\w-]+)\"")]
     private static partial Regex NewForm();
