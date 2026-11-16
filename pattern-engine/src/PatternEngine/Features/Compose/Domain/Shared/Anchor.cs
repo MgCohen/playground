@@ -31,6 +31,9 @@ public sealed record Anchor(
 
     public IReadOnlyList<string> List(string key) => Node.Strings(Fields.Raw(key));
 
+    /// <summary>The fields that only the domain uses, in the block "domain". A rename of a generic field does not touch them.</summary>
+    public IReadOnlyDictionary<string, object?> Domain => Node.Map(Fields.Raw("domain"));
+
     /// <summary>The rubrics that the run can see.</summary>
     public IReadOnlyList<Rubric> Visible => Rubrics.Where(r => !r.Hidden).ToList();
 

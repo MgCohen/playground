@@ -1,5 +1,6 @@
 using PatternEngine.Domains.Party;
 using PatternEngine.Features.Compose.Domain.Shared;
+using PatternEngine.Plugins.Yaml;
 
 namespace PatternEngine.Tests.Party;
 
@@ -43,6 +44,15 @@ public sealed class LoaderTests
         Assert.That(a.Context, Is.EqualTo("Heal."));
         Assert.That(a.Rubrics.Single().Hidden, Is.True);
         Assert.That(a.Visible, Is.Empty);
+    }
+
+    [Test]
+    public void The_domain_fields_are_in_their_own_block()
+    {
+        var a = Anchor.Parse("---\nid: m\nkind: success\nlevel: case\ndomain: { rung: many, quests: [q1, q2] }\n---\nTwo.\n", "m.md");
+        Assert.That(a.Domain.Get("rung"), Is.EqualTo("many"));
+        Assert.That(PatternEngine.Plugins.Yaml.Node.Strings(a.Domain.Raw("quests")), Is.EqualTo(new[] { "q1", "q2" }));
+        Assert.That(a.Field("rung"), Is.Null);
     }
 
     [Test]

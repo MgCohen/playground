@@ -9,7 +9,7 @@ namespace PatternEngine.Domains.Party;
 /// </summary>
 public sealed record PartyCase(string Id, string Rung, Anchor Anchor, IReadOnlyList<Anchor> Quests)
 {
-    public bool Many => Anchor.List("quests").Count > 0;
+    public bool Many => Node.Strings(Anchor.Domain.Raw("quests")).Count > 0;
 
     /// <summary>The rubrics over the full assignment (the pool rubric). Empty for a one-quest case.</summary>
     public IReadOnlyList<Rubric> CaseRubrics => Many ? Anchor.Rubrics : [];
@@ -78,13 +78,13 @@ public sealed class PartyPack
         var cases = new List<PartyCase>();
         foreach (var a in anchors.Where(a => a.Level == "case"))
         {
-            var rung = a.Field("rung") ?? string.Empty;
+            var rung = a.Domain.Get("rung") ?? string.Empty;
             if (!Rungs.Contains(rung))
             {
                 errors.Add($"case {a.Id}: rung must be one of {string.Join(", ", Rungs)}");
             }
 
-            var questIds = a.List("quests");
+            var questIds = Node.Strings(a.Domain.Raw("quests"));
             var quests = new List<Anchor>();
             foreach (var q in questIds)
             {
@@ -147,9 +147,9 @@ public sealed class PartyPack
             }
         }
 
-        foreach (var id in anchor.List("unavailable").Where(id => !heroes.Has(id)))
+        foreach (var id in Node.Strings(anchor.Domain.Raw("unavailable")).Where(id => !heroes.Has(id)))
         {
-            yield return $"unavailable: unknown hero \"{id}\"";
+            yield return $"domain.unavailable: unknown hero \"{id}\"";
         }
     }
 }
