@@ -12,6 +12,8 @@ public sealed record DefaultToReview(string Session, string Title, Decision Deci
 
 public sealed record UpdateView(string? Step, double? Progress, string Summary, string At);
 
+public sealed record ParentOption(string Id, string Name, string? Cwd);
+
 public sealed record SessionNode(Meta Meta, string Holder, bool Live, bool Running, string State, string Control, Report? Report, UpdateView? Update, string? Blocked, int Open, IReadOnlyList<SessionNode> Children);
 
 public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
@@ -81,6 +83,13 @@ public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
     {
         supervisor.Review(session, decision, verdict, text);
         supervisor.Tick();
+    }
+
+    public string NewSession(NewSession input)
+    {
+        var id = messages.NewSession(input.ToBrief(), Parties.Supervisor);
+        supervisor.Tick();
+        return id;
     }
 
     public void Send(string session, string text)

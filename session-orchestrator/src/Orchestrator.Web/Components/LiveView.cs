@@ -25,18 +25,21 @@ public abstract class LiveView : ComponentBase, IDisposable
 
     protected abstract void Load();
 
-    protected void Act(Action action, string done)
+    protected bool Act(Action action, string done)
     {
+        var ok = false;
         try
         {
             action();
             Message = done;
+            ok = true;
         }
         catch (Exception e) when (e is MessageException or IOException or ShellException)
         {
             Message = e.Message;
         }
         Load();
+        return ok;
     }
 
     public void Dispose()

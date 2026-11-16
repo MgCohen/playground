@@ -27,7 +27,10 @@
         </div>
     }
     <label class="answer-label" for="answer-@D.Id">Your answer, in free text</label>
-    <textarea id="answer-@D.Id" class="answer" rows="2" placeholder="Type or dictate the answer" @bind="text" @bind:event="oninput" data-swipe-left></textarea>
+    <div class="speech-field">
+        <textarea id="answer-@D.Id" class="answer" rows="2" placeholder="Type or dictate the answer" @bind="text" @bind:event="oninput" data-swipe-left></textarea>
+        <Mic For="@($"answer-{D.Id}")" />
+    </div>
     <div class="actions">
         <button type="button" class="primary" disabled="@string.IsNullOrWhiteSpace(text)" @onclick="Send">Send answer</button>
         @if (D.DefaultOption is { } option)
