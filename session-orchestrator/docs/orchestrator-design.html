@@ -702,10 +702,10 @@ flowchart LR
       <tr><td>M0</td><td>C# solution: Core, Store, Supervisor, Web API, claude -p runner</td><td>16 tests pass in NUnit, PR stack test passes</td><td><span class="pill ok">done</span></td></tr>
       <tr><td>M1</td><td>Templates, event stream, orch command, stack commands, decision versions</td><td>The PR stack test runs on orch commands</td><td><span class="pill ok">done</span></td></tr>
       <tr><td>M2</td><td>Thin plugin: tool schemas from templates, skills, agents</td><td>Briefs refer to skills, not long texts</td><td><span class="pill ok">done</span></td></tr>
-      <tr><td>M3</td><td>Stop, archive, worktrees, restart, app import</td><td>Two code sessions run in one repository</td><td><span class="pill todo">next</span></td></tr>
-      <tr><td>M4</td><td>Blazor UI: tree, cards, timeline; tunnel</td><td>You answer and review from the phone</td><td><span class="pill todo">todo</span></td></tr>
-      <tr><td>M5</td><td>One vsa-template stream under the orchestrator</td><td>Start to merge with no lost decision</td><td><span class="pill todo">todo</span></td></tr>
-      <tr><td>M6</td><td>End-to-end script, crash recovery, store version</td><td>A supervisor restart loses nothing</td><td><span class="pill todo">todo</span></td></tr>
+      <tr><td>M3</td><td>Stop, archive, worktrees, restart, app import</td><td>Two code sessions run in one repository</td><td><span class="pill ok">done</span></td></tr>
+      <tr><td>M4</td><td>Blazor UI: tree, cards, timeline; tunnel</td><td>You answer and review from the phone</td><td><span class="pill ok">done</span></td></tr>
+      <tr><td>M5</td><td>One vsa-template stream under the orchestrator</td><td>Start to merge with no lost decision</td><td><span class="pill ok">done (copy)</span></td></tr>
+      <tr><td>M6</td><td>End-to-end script, crash recovery, store version</td><td>A supervisor restart loses nothing</td><td><span class="pill ok">done</span></td></tr>
     </table></div>
   </section>
 
@@ -713,11 +713,11 @@ flowchart LR
     <h2>Known gaps</h2>
     <div class="scroll"><table>
       <tr><th>Gap</th><th>Effect</th><th>Fix in</th></tr>
-      <tr><td>No stop or archive API</td><td>Manual clean-up</td><td><span class="pill warn">M3</span></td></tr>
-      <tr><td>No worktree for each session</td><td>Parallel code sessions collide</td><td><span class="pill warn">M3</span></td></tr>
-      <tr><td>No restart after 3 failures</td><td>Session stays blocked</td><td><span class="pill warn">M3</span></td></tr>
-      <tr><td>Supervisor sessions not in sidebar</td><td>Open with the app import</td><td><span class="pill warn">M3</span></td></tr>
-      <tr><td><code>/orch-enable</code> not tested</td><td>Unknown in the app</td><td><span class="pill warn">M3</span></td></tr>
+      <tr><td>Supervisor sessions not in sidebar</td><td><code>orch open</code>, not run live</td><td><span class="pill warn">user</span></td></tr>
+      <tr><td>No tunnel to the phone</td><td>Cloudflare account needed</td><td><span class="pill warn">user</span></td></tr>
+      <tr><td>Stop misses tool grandchildren</td><td>A folder can stay locked</td><td><span class="pill warn">later</span></td></tr>
+      <tr><td>M5 on the real repository</td><td>The user picks the stream</td><td><span class="pill warn">user</span></td></tr>
+      <tr><td><code>/orch-enable</code> not tested</td><td>Unknown in the app</td><td><span class="pill warn">user</span></td></tr>
     </table></div>
   </section>
 
@@ -780,8 +780,8 @@ flowchart LR
     ["src/Orchestrator.Supervisor/ClaudeRunner.cs", "today", "claude -p calls and the docs check", "Starts and resumes sessions, reads the stream-json lines, adds --agent orch:<agent>, and runs the read-only docs check."],
     ["src/Orchestrator.Web", "today", "The one process: API, supervisor, UI", "ASP.NET Core. Hosts the supervisor, serves the HTTP API of store.md, and from M4 the Blazor UI. Start: dotnet run --project src/Orchestrator.Web."],
     ["src/Orchestrator.Web/Api", "today", "HTTP endpoints", "Sessions, send, decisions, answers, reviews, events. Each endpoint takes the fields of a template."],
-    ["src/Orchestrator.Web/Components", "M4", "Blazor pages", "Three views: the session tree with the last update of each session, the queue of open decisions and default reviews, and the timeline of all events with filters."],
-    ["src/Orchestrator.Web/Components/Cards", "M4", "One Blazor card for each template", "DecisionCard.razor, ReportCard.razor, UpdateCard.razor and the others. A card shows the data of one event of its template."],
+    ["src/Orchestrator.Web/Components", "today", "Blazor pages", "Three views: the session tree with the last update of each session, the queue of open decisions and default reviews, and the timeline of all events with filters."],
+    ["src/Orchestrator.Web/Components/Cards", "today", "Cards of the queue and the timeline", "DecisionCard and DefaultCard take an answer or a review. ReportFields, UpdateFields, BriefFields and the other Fields cards show the data of one event of their template."],
     ["src/Orchestrator.Cli", "today", "The orch command", "A .NET tool (dotnet tool). One command for each operation. The user, the test scripts and the sessions use the same commands, so nobody writes store files by hand."],
     ["src/Orchestrator.Cli/Commands", "today", "One class for each command", "new, send, tree, status, decisions, answer, review, events, decision, stack, stop, archive, open, template, doctor."],
     ["src/Orchestrator.Cli/Git", "today", "Git and gh steps of a stack", "Makes decision branches, opens draft PRs from the PR template, rebases the branches above a change, and closes the PRs above a refuse."],
@@ -811,7 +811,7 @@ flowchart LR
     ["config", "today", "Policies", "policy.default.json (low 30 min, medium 4 h, high never) and policy.test.json (short timeouts for live tests)."],
     ["tests", "today", "All tests", "NUnit, as in vsa-template. Run with dotnet test --solution Orchestrator.slnx."],
     ["tests/Orchestrator.Tests", "today", "Unit, template and contract tests", "Unit: Core, Store, Supervisor with a fake runner (the 16 tests of today, ported). Templates: each example.json against its schema.json. Contract: files that the plugin writes, read by C#."],
-    ["tests/e2e", "M6", "The live test as one script", "The recipe of know-how.md: a test repository, a test supervisor, scripted answers and reviews, checks of the event stream and the PRs."],
+    ["tests/Orchestrator.E2E", "today", "The live test as one script", "A console app: a test repository, a published supervisor, a real session with two decisions, two supervisor crashes, and eight checks of the store and the event stream."],
     ["docs", "today", "Plan, contract, know-how, design page", "plan.md (goal, phases, results, next steps), store.md (contract and API), know-how.md (limits and recipes), orchestrator-design.html (this page)."],
     ["spikes", "today", "Spike scripts and test briefs", "Frozen, in TypeScript and JavaScript. The TypeScript supervisor of P2 and P3 moves here after the port. The briefs p3 and p4 stay until tests/e2e replaces them."],
     ["store", "today", "Runtime data", "One folder for each session (the current state), events/ (the stream of all that happened) and policy.json. Git ignores it. Tests use their own store in the scratchpad."],

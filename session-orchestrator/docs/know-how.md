@@ -91,3 +91,9 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - A published copy finds its `wwwroot/` through `ContentRootPath = AppContext.BaseDirectory`, so it runs from any folder.
 - Test the phone layout in the browser pane of the desktop app: `preview_start` with the URL, then `resize_window` with the preset `mobile`.
 - The browser pane resets the viewport size when the pane width changes. Set `mobile` again before each screenshot.
+
+## The end-to-end script
+
+- `dotnet run --project tests/Orchestrator.E2E -- 7790` runs the live recipe as one command: a test repository, a published supervisor on port 7790, a real session with a `high` and a `medium` decision, two supervisor crashes, and eight checks of the store and the stream. It takes about 3 minutes and prints PASS or FAIL for each check.
+- It kills the supervisor process only, not its `claude` child, so the second crash leaves an old process that the recovery must wait for.
+- The test folder stays in `%TEMP%/orch-e2e-*` for a later look.

@@ -364,6 +364,34 @@ Findings:
 - A view reloads every 2 s. An open `<details>` card stays open across a reload, because each card has a `@key`.
 - A review notice arrives at the session as `session.input` from `supervisor`, because the supervisor writes the review text. The `review` event before it names the user.
 
+## M5 result (2026-11-16)
+
+A real vsa-template stream ran under the orchestrator on a private copy, `MgCohen/orch-m5-vsa-copy`: issue #140, "a validator is only in the slice of its handler". The run on the real repository waits for the user (`decisions.md`).
+
+| Step | Result |
+|---|---|
+| Root | An `orchestrator` session (`fddb233c`) started one `worker` child with a worktree |
+| Child | `91089ede` asked two design questions (medium). The policy applied both defaults after 120 s. Each default got its own draft PR (#1, #2). The work went to PR #3 to `main` |
+| Review and merge | The root read the diff, ran Architecture.Tests (164 passed) and Engine.Tests (22 passed), and merged PR #3. No CI, no full suite |
+| Report | The root reported done, with each default to review and the child kept open for its PRs |
+| Decisions | 2 of 2 have an answer and a delivery mark. No decision was lost. 106 events |
+
+Findings:
+
+- PR #3 had the top decision branch as its head, so its merge took the commits of the two unreviewed defaults. The `orchestrator` agent now merges such a PR only after the user reviewed the defaults, or when the brief allows it.
+- The root did not archive the child, because the child has open PRs. This follows the archive rule.
+- The default option of a decision can be a long text. The PR title cuts it at 60 characters.
+
+## M6 result (2026-11-16)
+
+| Part | Result | Evidence |
+|---|---|---|
+| End-to-end script | ✅ `dotnet run --project tests/Orchestrator.E2E`: a test repository, a published supervisor, a real session with two decisions | 8 of 8 checks pass |
+| Crash while the session waits | ✅ The user answered while the supervisor was down. After the start, the answer arrived once | "the answer GREEN reached the session once" |
+| Crash in the middle of a turn | ✅ The new supervisor waited for the old `claude` process, found the `session.input` of the turn, and marked it sent. No prompt went twice | `recovered turn …: the prompt arrived` |
+| Store version | ✅ `version.json`. A newer store stops the supervisor | `RecoveryTests` |
+| Unit tests | ✅ 62 tests | `dotnet test --solution Orchestrator.slnx` |
+
 ## Next steps
 
 Status: the user reviewed the design page and accepted it. The user then asked for the folder structure, the code topology and a roadmap to a stable version. They are on the page (tabs Code and Roadmap) and in this file. The next work is M0, after the user accepts the roadmap. The notes arrive in the chat, or as comments on the page: read them with the `ArtifactComments` tool on the page URL. After a design change, edit `docs/orchestrator-design.html` and publish it with the `Artifact` tool and `url` set to the page URL.

@@ -154,7 +154,8 @@ public sealed class FileStore
 
     public void MarkSent(string id, Pending pending)
     {
-        if (pending.Inbox.Count > 0) Files.Write(PathOf(id, StoreFiles.Cursor), pending.Inbox[^1]);
+        var cursor = (Files.ReadText(PathOf(id, StoreFiles.Cursor)) ?? "").Trim();
+        if (pending.Inbox.Count > 0 && (cursor.Length == 0 || Names.Order.Compare(pending.Inbox[^1], cursor) > 0)) Files.Write(PathOf(id, StoreFiles.Cursor), pending.Inbox[^1]);
         foreach (var decision in pending.Answers) Files.WriteJson(PathOf(id, StoreFiles.Delivered, StoreFiles.Json(decision)), new Delivered(Holders.Supervisor, Now));
     }
 

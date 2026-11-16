@@ -13,6 +13,7 @@ Design page: https://claude.ai/artifact/EggEYH4ivUuPGG9Pw4k1y1 (source `docs/orc
 | `src/Orchestrator.Cli/` | The `orch` command (a .NET tool): sessions, decisions, stack, events, templates, doctor |
 | `templates/` | One folder for each message kind: `schema.json`, `render.md`, `example.json` |
 | `tests/Orchestrator.Tests/` | NUnit tests with a fake runner and a temporary store |
+| `tests/Orchestrator.E2E/` | The live end-to-end script with two supervisor crashes |
 | `plugin/` | The Claude Code plugin: hooks (inbox, heartbeat, lease, mirror, events), the tools `ask_user`, `report`, `update`, `spawn_child`, the `orch-*` skills and three agents |
 | `mod/orch/` | The first mod. The settings do not load it. Keep it until each open session that loaded it ends |
 | `config/` | The decision policies |

@@ -17,6 +17,7 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
     readonly ConcurrentDictionary<string, Task> checks = new();
     readonly ConcurrentDictionary<string, Failure> failures = new();
     readonly Lifecycle lifecycle = new(store);
+    readonly Recovery recovery = new(store);
 
     public FileStore Store => store;
     public SupervisorOptions Options => options;
@@ -139,6 +140,12 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
 
     void StartTurn(string id, DateTimeOffset now)
     {
+        if (running.ContainsKey(id)) return;
+        if (recovery.Interrupted(id) is { } marker)
+        {
+            if (recovery.IsOldProcessAlive(id, now)) return;
+            recovery.Recover(id, marker);
+        }
         if (!CanRun(id, now)) return;
         var pending = store.Pending(id);
         if (pending.IsEmpty) return;
@@ -194,6 +201,7 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
         {
             store.Events.Append(EventKinds.TurnFail, Parties.Session(id), Parties.Supervisor, Data.Of(("text", "stopped"), ("error", "stopped")), Data.Of(("turnStart", start.Id)), id);
             store.Log($"{id} turn stopped after {result.Seconds}s; the inbox stays for a later turn");
+            EndMarker(id, start);
             return;
         }
         if (result.Ok)
@@ -204,11 +212,16 @@ public sealed class Supervisor(FileStore store, ITurnRunner runner, IDocsChecker
             store.Events.Append(EventKinds.TurnEnd, Parties.Session(id), Parties.Supervisor, Data.Of(("ok", true), ("seconds", result.Seconds), ("text", result.Text ?? "")),
                 Data.Of(("turnStart", start.Id), ("output", output is { } o && string.CompareOrdinal(o.Event, start.Id) > 0 ? o.Event : null)), id);
             store.Log($"{id} turn done {result.Seconds}s: {Cut(result.Text ?? "", 200)}");
+            EndMarker(id, start);
             return;
         }
         if (request.IsNew) store.SaveMeta(store.Meta(id) with { Started = false });
         Fail(request, result.Error ?? "unknown", start.Id);
+        EndMarker(id, start);
     }
+
+    void EndMarker(string id, Event start) =>
+        store.WriteJson(id, new TurnMarker(start.Id, store.ReadJson<TurnMarker>(id, StoreFiles.Turn)?.From ?? Parties.Supervisor, start.At) { Ended = store.Now }, StoreFiles.Turn);
 
     void Fail(TurnRequest request, string error, string? turnStart)
     {

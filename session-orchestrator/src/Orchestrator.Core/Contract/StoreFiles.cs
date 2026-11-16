@@ -29,6 +29,7 @@ public static class StoreFiles
     public const string Turn = "turn.json";
     public const string LastOutput = "last-output.json";
     public const string Control = "control.json";
+    public const string Version = "version.json";
     public const string Update = "update.json";
 
     public static string Json(string id) => $"{id}.json";

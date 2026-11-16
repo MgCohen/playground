@@ -24,6 +24,9 @@ public sealed class EventStream(string root, TimeProvider clock, string writer =
 
     public IEnumerable<Event> Since(DateTimeOffset since) => Read(since);
 
+    public Event? Find(string id) =>
+        long.TryParse(id.Split('-')[0], out var ms) ? Files.ReadJson<Event>(Path.Combine(root, StoreFiles.Events, Day(DateTimeOffset.FromUnixTimeMilliseconds(ms)), $"{id}.json")) : null;
+
     public JsonElement? Body(Event e) => Files.ReadJson<JsonElement>(Path.Combine(root, e.Body)) is { ValueKind: not JsonValueKind.Undefined } body ? body : null;
 
     IEnumerable<Event> Read(DateTimeOffset? since)

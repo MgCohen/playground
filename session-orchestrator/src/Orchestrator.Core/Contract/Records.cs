@@ -108,7 +108,15 @@ public sealed record Pending(string Text, IReadOnlyList<string> Inbox, IReadOnly
 
 public sealed record InboxMessage(string Text, string? From);
 
-public sealed record TurnMarker(string Event, string From, string At);
+public sealed record TurnMarker(string Event, string From, string At)
+{
+    public string? Ended { get; init; }
+}
+
+public sealed record StoreVersion(int Version, string At)
+{
+    public const int Current = 1;
+}
 
 public sealed record LastOutput(string Event, string At);
 
