@@ -1,0 +1,23 @@
+<dl class="facts">
+    @foreach (var (key, label) in Rows)
+    {
+        if (Fields.TryGetValue(key, out var value) && Text(value) is { Length: > 0 } text)
+        {
+            <dt>@label</dt>
+            <dd class="@(key is "snippet" or "text" or "details" or "prompt" ? "long" : "")">@text</dd>
+        }
+    }
+</dl>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyDictionary<string, object?> Fields { get; set; } = default!;
+    [Parameter, EditorRequired] public (string Key, string Label)[] Rows { get; set; } = [];
+
+    static string Text(object? value) => value switch
+    {
+        null => "",
+        string s => s,
+        System.Collections.IEnumerable items => string.Join(", ", items.Cast<object?>().Select(Text)),
+        _ => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "",
+    };
+}

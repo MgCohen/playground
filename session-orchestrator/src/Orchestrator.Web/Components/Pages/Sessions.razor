@@ -1,0 +1,45 @@
+@page "/sessions"
+@inherits LiveView
+
+<PageTitle>Sessions · orch</PageTitle>
+
+<section class="view" aria-labelledby="tree-title">
+    <h1 id="tree-title">Sessions <span class="count">@count</span></h1>
+    @if (Message is not null)
+    {
+        <p class="toast" role="status">@Message</p>
+    }
+    @if (tree.Count == 0)
+    {
+        <p class="empty">No sessions in this store. Start one with <code>orch new</code>.</p>
+    }
+    <ul class="tree">
+        @foreach (var node in tree)
+        {
+            <SessionCard @key="node.Meta.Id" Node="node" OnStop="Stop" OnResume="Resume" OnArchive="Archive" OnSend="Send" />
+        }
+    </ul>
+</section>
+
+@code {
+    IReadOnlyList<SessionNode> tree = [];
+    int count;
+
+    protected override void Load()
+    {
+        tree = Board.Tree();
+        count = Count(tree);
+    }
+
+    static int Count(IReadOnlyList<SessionNode> nodes) => nodes.Sum(n => 1 + Count(n.Children));
+
+    void Stop(SessionNode n) => Act(() => Board.Stop(n.Meta.Id), $"Stopped {Name(n)}.");
+
+    void Resume(SessionNode n) => Act(() => Board.Resume(n.Meta.Id), $"Resumed {Name(n)}.");
+
+    void Archive((SessionNode Node, bool Force) a) => Act(() => Board.Archive(a.Node.Meta.Id, a.Force), $"Archived {Name(a.Node)}.");
+
+    void Send((SessionNode Node, string Text) s) => Act(() => Board.Send(s.Node.Meta.Id, s.Text), $"Message sent to {Name(s.Node)}.");
+
+    static string Name(SessionNode n) => n.Meta.Title ?? n.Meta.Id[..8];
+}
