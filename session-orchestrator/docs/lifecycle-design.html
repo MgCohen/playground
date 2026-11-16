@@ -380,7 +380,7 @@ stateDiagram-v2
 
   <section>
     <h3>F4: Remote Control on by default</h3>
-    <p>Each session has Remote Control on, also a child. A session has it off only when its brief says <code>background: true</code>. This rule replaces the F15 rule "root only". <code>claude --desktop --resume --remote-control</code> does not import (F4), so the start does not use a CLI flag.</p>
+    <p>Each session, root or child, has Remote Control on. A session has it off only when its brief says <code>background: true</code>. This rule replaces the F15 rule "root only". <code>claude --desktop --resume --remote-control</code> does not import (F4), so the start does not use a CLI flag.</p>
     <div class="box">
 <pre class="mermaid">
 flowchart TD
