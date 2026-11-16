@@ -370,7 +370,7 @@ stateDiagram-v2
         <tr><td>F4</td><td>An imported session has no Remote Control</td><td>Root turns it on with <code>set_remote_control</code></td><td>Needs a probe</td></tr>
         <tr><td>F5</td><td>A child reports a step as <code>done</code></td><td>Forward at turn end; skill and tool rule</td><td>Closed</td></tr>
         <tr><td>F8</td><td><code>orch archive</code> keeps the sidebar entry</td><td>Three archive paths, in order</td><td>Partly closed</td></tr>
-        <tr><td><code>mod/orch/</code></td><td>Old mod folder in the repository</td><td>Delete after the app restart</td><td>Waits for the user</td></tr>
+        <tr><td><code>mod/orch/</code></td><td>Old mod folder in the repository</td><td>Deleted on the B1 branch</td><td>Closed</td></tr>
         <tr><td>W1</td><td><code>enabled</code> with no active plugin</td><td>Stale state with a process check</td><td>Closed</td></tr>
       </tbody>
     </table>
@@ -410,7 +410,7 @@ flowchart TD
 
   <section>
     <h3>Delete of <code>mod/orch/</code></h3>
-    <p>The settings load <code>plugin/</code>. An app process that started before M2 can still have the <code>mod/orch</code> path in its environment. After a restart of the desktop app, no process uses it. Then B2 deletes <code>mod/orch/</code>. <code>mod/orch-spike/</code> stays as a spike record.</p>
+    <p>The B1 branch deletes <code>mod/orch/</code>. No session loads it: <code>CLAUDE_CODE_PLUGIN_DIRS</code> points to <code>plugin/</code>, and no code refers to the folder. The user approved the delete before the next app restart. <code>mod/orch-spike/</code> stays as a spike record.</p>
   </section>
 
   <section>
@@ -422,7 +422,6 @@ flowchart TD
         <tr><td>Timers: forgotten 15 min, input not taken 2 min, hung turn 30 min?</td><td>Yes, in <code>policy.json</code>, so a test can change them</td></tr>
         <tr><td>Can the root call <code>set_remote_control</code> for a child?</td><td>Probe it in B2</td></tr>
         <tr><td>Can the root call <code>archive_session</code> for a child?</td><td>Probe it in B2</td></tr>
-        <tr><td>Did the desktop app restart after M2?</td><td>If yes, delete <code>mod/orch/</code> in B2</td></tr>
       </tbody>
     </table>
     </div>
@@ -450,7 +449,6 @@ flowchart TD
         <tr><td>F4</td><td><code>remoteControl</code> in meta, root rule</td><td><code>Records.cs</code>, <code>agents/orchestrator.md</code></td></tr>
         <tr><td>Timers</td><td>Three lifecycle timers in the policy</td><td><code>config/policy.*.json</code>, <code>Policy.cs</code></td></tr>
         <tr><td>API</td><td><code>state</code> and wait reason in <code>GET /api/sessions</code></td><td><code>Api/OrchestratorApi.cs</code></td></tr>
-        <tr><td>Old mod</td><td>Delete <code>mod/orch/</code> after the app restart</td><td><code>mod/orch/</code></td></tr>
         <tr><td>Live test</td><td>Stale, forgotten, stop and archive in one run</td><td><code>tests/Orchestrator.E2E</code></td></tr>
       </tbody>
     </table>

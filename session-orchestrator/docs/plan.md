@@ -32,8 +32,9 @@ The folders today:
 
 ```
 session-orchestrator/
-├─ mod/orch/       Claude Code mod; loads in each session; inert unless the session is enabled
-│   inbox → $.prompt.submit, mirror rows, heartbeat, status, lease, tools (ask_user, report, spawn_child)
+├─ plugin/         Claude Code plugin; loads in each session; inert unless the session is enabled
+│   inbox → $.prompt.submit, mirror rows, heartbeat, status, lease, tools, skills, agents
+├─ mod/orch-spike/ the spike mod of P0 (frozen)
 ├─ src/            the C# supervisor: Core, Store, Supervisor, Web (see the target folders below)
 ├─ tests/          NUnit tests
 ├─ config/         policy.default.json, policy.test.json
