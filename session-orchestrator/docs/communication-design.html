@@ -129,7 +129,7 @@ flowchart LR
 </section>
 
 <section>
-  <h2>Five primitives</h2>
+  <h2>Six primitives</h2>
   <div class="box">
 <pre class="mermaid">
 sequenceDiagram
@@ -142,6 +142,7 @@ sequenceDiagram
   R->>S: query(filter)
   R->>S: read(body path)
   R->>S: post(reply)
+  A--)R: nudge (optional)
 </pre>
   </div>
   <div class="scroll">
@@ -152,17 +153,19 @@ sequenceDiagram
     <tr><td>2</td><td>Subscribe and notify</td><td>Filter</td><td>Each new matching envelope, in order</td></tr>
     <tr><td>3</td><td>Query</td><td>Filter</td><td>Matching envelopes</td></tr>
     <tr><td>4</td><td>Read</td><td>Envelope id, optional receiver</td><td>Body, or its render for the receiver</td></tr>
+    <tr><td>5</td><td>Nudge</td><td>Address, optional envelope id</td><td>A wake-up signal: "look at the stream"</td></tr>
   </table>
   </div>
   <p>Permissions are a layer above these primitives. This page does not design them.</p>
 </section>
 
 <section>
-  <h2>Three rules</h2>
+  <h2>Four rules</h2>
   <ol>
     <li>Each communication is one post: one body file in the store and one envelope in the stream.</li>
     <li>Each party is always subscribed to the envelopes with <code>to</code> = its address. Other filters are optional.</li>
     <li>A receiver decides what to do. It reads the body only when it needs the content.</li>
+    <li>A nudge carries no content. It only makes the receiver look at the stream sooner.</li>
   </ol>
 </section>
 </div>
@@ -179,9 +182,28 @@ sequenceDiagram
     <tr><td>Subscribe</td><td><code>Subscribe(name, filter)</code></td><td><code>orch events --follow</code></td><td><code>GET /api/stream/live</code> (SSE)</td><td><code>subscribe(name, filter)</code></td></tr>
     <tr><td>Query</td><td><code>Query(filter)</code></td><td><code>orch events</code></td><td><code>GET /api/events</code></td><td><code>query(filter)</code></td></tr>
     <tr><td>Read</td><td><code>Read(id, for?)</code></td><td><code>orch read &lt;id&gt; [--for P]</code></td><td><code>GET /api/events/&lt;id&gt;</code></td><td><code>orch read</code> for a render</td></tr>
+    <tr><td>Nudge</td><td><code>Nudge(to, id?)</code></td><td><code>orch nudge &lt;party&gt; [id]</code></td><td><code>POST /api/nudge</code></td><td>Reacts to a nudge</td></tr>
   </table>
   </div>
   <p>The C# and TypeScript bindings share one contract test set. Only C# renders, so the plugin calls <code>orch read --for</code> to get a text for the model.</p>
+</section>
+
+<section>
+  <h2>Nudge: a direct ping, not a message</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Receiver state</th><th>The nudge does</th><th>Transport</th></tr>
+    <tr><td>Subscriber process runs</td><td>Wakes it before the next poll</td><td><code>nudges/&lt;party&gt;</code> touch, file watcher; SSE for the UI</td></tr>
+    <tr><td>Session live in the app, process ended</td><td>Starts the app process again</td><td>Peer message <code>look at the stream</code></td></tr>
+    <tr><td>Session not live</td><td>Starts a supervisor turn now</td><td>Supervisor tick</td></tr>
+  </table>
+  </div>
+  <ol>
+    <li>A nudge never carries content. The receiver queries from its cursor and reads what it needs.</li>
+    <li>A nudge is best effort. It can be lost or arrive two times. The poll still delivers each envelope.</li>
+    <li>A post does not need a nudge. A sender nudges only when the receiver must act soon.</li>
+    <li>The stream records no nudge. The receiver records what it does as usual.</li>
+  </ol>
 </section>
 
 <section>
@@ -190,6 +212,7 @@ sequenceDiagram
   events/&lt;day&gt;/&lt;id&gt;.json        <span class="c">// envelopes, append only, one file each</span>
   bodies/&lt;day&gt;/&lt;id&gt;.json        <span class="c">// bodies, write once</span>
   subscriptions/&lt;party&gt;/&lt;name&gt;.json  <span class="c">// { filter, cursor } of one subscriber</span>
+  nudges/&lt;party&gt;                <span class="c">// empty file; its time stamp is the nudge</span>
   sessions/&lt;id&gt;/                <span class="c">// lifecycle files of stream B: lease, heartbeat, meta</span></pre>
   <p>The stream has no other communication files. <code>inbox/</code>, <code>answers/</code>, <code>delivered/</code>, <code>reviews/</code>, <code>report.json</code>, <code>update.json</code>, <code>cursor.txt</code> and <code>forwarded*</code> are queries. A reactor can keep a cache, if it can make the cache again from the stream.</p>
 </section>
@@ -544,6 +567,7 @@ flowchart LR
     <tr><td>Subject</td><td>One rule, in the contract tests of both bindings</td><td><code>Subjects</code>, <code>events.ts</code></td><td>G2</td></tr>
     <tr><td>TS binding</td><td><code>post</code>, <code>subscribe</code>, <code>query</code> in the plugin. Render through <code>orch read --for</code></td><td><code>plugin/hooks/stream.ts</code> (new)</td><td>G2</td></tr>
     <tr><td>Kinds</td><td>Add <code>ack</code>. Retire the relay kinds and <code>unblocked</code></td><td><code>EventKinds.cs</code></td><td>G7</td></tr>
+    <tr><td>Nudge</td><td><code>Nudge(to)</code>, <code>orch nudge</code>, <code>POST /api/nudge</code>. Plugin and supervisor react to it</td><td><code>Stream.cs</code>, <code>inbox.ts</code>, <code>Supervisor.cs</code></td><td>None: lower delay</td></tr>
   </table>
   </div>
 </section>
@@ -591,6 +615,7 @@ flowchart LR
     <tr><td>Notify: a file watcher, or a poll of the day folder each 1 to 3 s?</td><td>Both. The watcher wakes the subscriber; the poll catches a lost event. The cursor makes it safe</td></tr>
     <tr><td>The plugin renders through <code>orch read --for</code> (about 1 s for each message). Is the delay acceptable?</td><td>Yes. One renderer stays in C#</td></tr>
     <tr><td>A chat line with two or more open decisions: which decision gets it?</td><td>None. The model asks the user which question it answers</td></tr>
+    <tr><td>Nudge a live app session whose process ended: a peer message, or <code>claude --resume</code>?</td><td>A peer message. It keeps one writer. Stream B owns the lease rule</td></tr>
     <tr><td>Keep old stores readable after the change?</td><td>No migration. Archive the old store and start a new one</td></tr>
   </table>
   </div>
