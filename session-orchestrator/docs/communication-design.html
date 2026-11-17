@@ -285,9 +285,9 @@ flowchart LR
   <h2>Envelope</h2>
 <pre class="code">{
   "id": "1763300000000-a1b2c3d4-cli", "at": "…", "session": "&lt;session id&gt;",
-  "kind": "decision", "from": "session:&lt;id&gt;", "to": "user",
+  "kind": "question", "from": "session:&lt;id&gt;", "to": "user",
   "subject": "Which color do we use in color.txt?", "body": "bodies/&lt;day&gt;/&lt;id&gt;.json",
-  <span class="k">"thread"</span>: "toolu_01RAQ",   <span class="c">// groups a decision with its answer, review and notices</span>
+  <span class="k">"thread"</span>: "toolu_01RAQ",   <span class="c">// groups a question with its answer, review and notices</span>
   <span class="k">"needs"</span>: "answer",         <span class="c">// answer | review | ack | null: the receiver must act</span>
   "refs": { <span class="k">"reply"</span>: "&lt;id&gt;", <span class="k">"via"</span>: "session:&lt;root&gt; | chat", <span class="k">"of"</span>: "&lt;id&gt;" }
 }</pre>
@@ -333,7 +333,7 @@ flowchart LR
   <div class="scroll">
   <table>
     <tr><th>Class</th><th>Kinds</th></tr>
-    <tr><td>Message</td><td><code>brief</code> <code>message</code> <code>decision</code> <code>answer</code> <code>review</code> <code>report</code> <code>update</code> <code>notice</code></td></tr>
+    <tr><td>Message</td><td><code>brief</code> <code>message</code> <code>question</code> <code>plan</code> <code>answer</code> <code>review</code> <code>report</code> <code>update</code> <code>notice</code></td></tr>
     <tr><td>Act</td><td><code>ack</code> (delivered, read)</td></tr>
     <tr><td>Trace</td><td><code>session.*</code> <code>turn.*</code></td></tr>
     <tr><td>Lifecycle</td><td>Names only. Stream B owns them</td></tr>
@@ -368,11 +368,11 @@ flowchart LR
     <tr><td>Session deliverer</td><td>Plugin, holder <code>live</code></td><td><code>to</code> = self, message kinds</td><td><code>orch read --for</code>, submit a turn</td><td><code>ack</code> delivered</td></tr>
     <tr><td>Turn runner</td><td>Supervisor</td><td><code>to</code> = a session that is not live, no <code>ack</code></td><td>Runs <code>claude -p</code> with the renders</td><td><code>turn.*</code>, <code>ack</code> delivered</td></tr>
     <tr><td>Ask wait</td><td>Plugin, <code>ask_user</code> wait mode</td><td><code>answer</code>, <code>thread</code> = decision</td><td>Returns the tool result</td><td><code>ack</code> delivered</td></tr>
-    <tr><td>Question relay</td><td>Supervisor</td><td><code>decision</code> from a child</td><td>Forward to the parent</td><td><code>decision</code> forward</td></tr>
+    <tr><td>Question relay</td><td>Supervisor</td><td><code>question</code> or <code>plan</code> from a child</td><td>Forward to the parent</td><td><code>question</code> forward</td></tr>
     <tr><td>Report relay</td><td>Supervisor</td><td><code>report</code> done or blocked from a child</td><td>Forward to the parent</td><td><code>report</code> forward</td></tr>
-    <tr><td>Question follow</td><td>Supervisor</td><td>Forwarded <code>decision</code>, its <code>thread</code></td><td>Timer, answer check</td><td><code>notice</code> reminder, closed</td></tr>
-    <tr><td>Docs check</td><td><code>docs</code></td><td><code>decision</code>, level with <code>checkDocs</code></td><td>Runs the checker</td><td><code>answer</code> from docs</td></tr>
-    <tr><td>Default</td><td><code>policy</code></td><td>Open <code>decision</code>, timeout of its level</td><td>Applies the default option</td><td><code>answer</code> from policy</td></tr>
+    <tr><td>Question follow</td><td>Supervisor</td><td>Forwarded <code>question</code>, its <code>thread</code></td><td>Timer, answer check</td><td><code>notice</code> reminder, closed</td></tr>
+    <tr><td>Docs check</td><td><code>docs</code></td><td><code>question</code> with a <code>risk</code>, level with <code>checkDocs</code></td><td>Runs the checker</td><td><code>answer</code> from docs</td></tr>
+    <tr><td>Default</td><td><code>policy</code></td><td>Open <code>question</code> with a <code>defaultOption</code>, timeout of its level</td><td>Applies the default option</td><td><code>answer</code> from policy</td></tr>
     <tr><td>User inbox</td><td>Web UI, <code>orch inbox</code></td><td><code>to</code> = user, <code>needs</code> set, no reply</td><td>Shows a card</td><td><code>answer</code>, <code>review</code>, <code>ack</code></td></tr>
     <tr><td>Session tree</td><td>Web UI</td><td><code>update</code>, <code>report</code>, lifecycle</td><td>Shows the newest state</td><td>None</td></tr>
     <tr><td>Watchdog</td><td>Supervisor</td><td>Envelopes to a session with no <code>ack</code> in time</td><td>Nudges on the next channel</td><td><code>delivery.blocked</code></td></tr>
@@ -392,7 +392,7 @@ sequenceDiagram
   participant V as Supervisor
   participant R as Root
   participant U as User inbox
-  C->>S: post decision, to user
+  C->>S: post question, to user
   S-->>U: notify, needs answer
   S-->>V: notify (question relay)
   V->>S: post forward, to root
@@ -413,7 +413,7 @@ sequenceDiagram
   <div class="scroll">
   <table>
     <tr><th>Card</th><th>Needs</th><th>Quick view</th><th>Accept posts</th><th>Refuse posts</th></tr>
-    <tr><td><code>decision</code></td><td><code>answer</code></td><td>Question, recommendation, default, risk</td><td><code>answer</code> = default. No default: text field</td><td>Text field, then <code>answer</code></td></tr>
+    <tr><td><code>question</code></td><td><code>answer</code></td><td>Question, recommendation, default, risk, context</td><td><code>answer</code> = default. No default: text field</td><td>Text field, then <code>answer</code></td></tr>
     <tr><td><code>answer</code> by docs or policy</td><td><code>review</code></td><td>Question, answer, by, reason, PR</td><td><code>review</code> approve</td><td><code>review</code> refuse, optional text</td></tr>
     <tr><td><code>report</code> done or blocked</td><td><code>ack</code></td><td>Summary, done or blockers, links</td><td><code>ack</code></td><td>Text field, then <code>message</code></td></tr>
   </table>
@@ -460,18 +460,18 @@ flowchart LR
   <table>
     <tr><th>Type</th><th>Use it when</th><th>Session tool</th><th>Needs</th><th>Reply type</th></tr>
     <tr><td><code>brief</code></td><td>You start a session</td><td><code>spawn_child</code></td><td>none</td><td><code>report</code></td></tr>
-    <tr><td><code>decision</code></td><td>The user must choose, with options and a default</td><td><code>ask_user</code></td><td><code>answer</code></td><td><code>answer</code></td></tr>
-    <tr><td><code>query</code></td><td>You need facts from a party, no choice, no default</td><td><code>query</code> (new)</td><td><code>answer</code></td><td><code>answer</code></td></tr>
+    <tr><td><code>question</code></td><td>You need an answer: a choice with options and a default, or facts with no default. The target (<code>to</code>) gives the direction</td><td><code>ask_user</code></td><td><code>answer</code></td><td><code>answer</code></td></tr>
     <tr><td><code>plan</code></td><td>You propose steps before you do them</td><td><code>plan</code> (new)</td><td><code>review</code></td><td><code>review</code></td></tr>
     <tr><td><code>report</code></td><td>Your work is done, blocked, or ready for review</td><td><code>report</code></td><td><code>ack</code> (done, blocked)</td><td><code>ack</code>, <code>message</code></td></tr>
     <tr><td><code>update</code></td><td>A step starts or ends</td><td><code>update</code></td><td>none</td><td>None</td></tr>
     <tr><td><code>message</code></td><td>None of the other types fits</td><td><code>send</code> (new)</td><td>none</td><td><code>message</code></td></tr>
-    <tr><td><code>answer</code></td><td>You reply to a decision or a query</td><td><code>answer</code></td><td><code>review</code> (docs, policy)</td><td><code>review</code></td></tr>
+    <tr><td><code>answer</code></td><td>You reply to a question</td><td><code>answer</code></td><td><code>review</code> (docs, policy)</td><td><code>review</code></td></tr>
     <tr><td><code>review</code></td><td>You approve, change or refuse a plan or a default</td><td>UI, <code>orch review</code></td><td>none</td><td>None</td></tr>
     <tr><td><code>notice</code></td><td>The supervisor tells a session a fixed fact</td><td>None: supervisor only</td><td>none</td><td>None</td></tr>
     <tr><td><code>ack</code></td><td>You got an envelope, or you read a card</td><td>None: automatic</td><td>none</td><td>None</td></tr>
   </table>
   </div>
+  <p class="note">One kind <code>question</code> replaces the old kinds <code>decision</code> and <code>query</code> (A3-7). Only <code>question</code> is required, and a <code>defaultOption</code> needs a <code>risk</code>. A question with no risk and no default gets no docs check and no default. The stream reads the old kinds of an old store as <code>question</code>.</p>
 </section>
 
 <section>
@@ -481,11 +481,15 @@ flowchart LR
   meta.json        <span class="c">// purpose, from, to, needs, reply types, card fields (new)</span>
   render/&lt;for&gt;.md  <span class="c">// one text for each receiver: session.md, parent.md, pr-body.md</span>
   example.json     <span class="c">// one valid body, used by the tests</span></pre>
-<pre class="code"><span class="c">// templates/decision/meta.json</span>
-{ "type": "decision", "version": 1,
-  "purpose": "The user must choose, with options and a default.",
-  "from": ["session"], "to": ["user"], "needs": "answer", "replies": ["answer"],
-  "card": { "title": "question", "quick": ["recommendation", "defaultOption", "risk"],
+<pre class="code"><span class="c">// templates/question/schema.json: the one place of the field rule</span>
+{ "required": ["question"],
+  "dependentRequired": { "defaultOption": ["risk"] }, … }
+
+<span class="c">// templates/question/meta.json</span>
+{ "type": "question", "version": 1,
+  "purpose": "You need an answer: a choice with options and a default, or facts with no default.",
+  "from": ["session"], "to": ["user", "session"], "needs": "answer", "replies": ["answer"],
+  "card": { "title": "question", "quick": ["recommendation", "defaultOption", "risk", "context"],
             "accept": { "post": "answer", "text": "defaultOption" },
             "refuse": { "post": "answer", "needsText": true } } }</pre>
   <p>The UI draws each card from <code>meta.json</code>. A new type needs a new folder and a tool, but no new card code.</p>
@@ -525,7 +529,7 @@ flowchart LR
   <table>
     <tr><th>Type</th><th>Render for a session</th><th>Prefix of the text</th></tr>
     <tr><td><code>brief</code></td><td><code>brief/render/session.md</code></td><td><code># &lt;title&gt;</code></td></tr>
-    <tr><td><code>decision</code>, <code>query</code></td><td><code>render/parent.md</code></td><td><code>Question from child</code></td></tr>
+    <tr><td><code>question</code></td><td><code>question/render/parent.md</code></td><td><code>Question from child</code></td></tr>
     <tr><td><code>plan</code></td><td><code>plan/render/parent.md</code></td><td><code>Plan from child</code></td></tr>
     <tr><td><code>answer</code></td><td><code>answer/render/session.md</code> + note</td><td><code>Answer to decision</code></td></tr>
     <tr><td><code>review</code></td><td><code>review/render/&lt;verdict&gt;.md</code></td><td><code>Review of decision</code></td></tr>

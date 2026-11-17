@@ -41,7 +41,7 @@ There is no other communication file. The inbox, the answers, the reviews, the r
 | `from`, `to` | `user`, `supervisor`, `docs`, `policy` or `session:<full id>`. One receiver for each envelope |
 | `subject` | One line of 80 characters maximum. One rule in `Subjects.Of` (C#) and `subject` (`stream.ts`); the contract tests check both |
 | `body` | The path of the body. A forward points to the body of the original |
-| `thread` | Groups one conversation. For a decision, a query or a plan it is the tool call id; the answer, the review and the notices use the same thread |
+| `thread` | Groups one conversation. For a question or a plan it is the tool call id; the answer, the review and the notices use the same thread |
 | `needs` | `answer`, `review` or `ack`: the receiver must act. Absent: nothing to do |
 | `refs.reply` | The envelope that this envelope answers. It closes that envelope |
 | `refs.of` | A forward (same body, new receiver) or an ack: the original envelope |
@@ -84,12 +84,12 @@ A flag key is true when it is present with no value, or with `true` or `1`. The 
 | Named query (`StreamQueries`) | View | Filters |
 |---|---|---|
 | `Inbox` | `inbox` | `to = user`, open, the newest of each thread |
-| `OpenDecisions(session?)` | `decisions` | decision and query from a session, no forwards, open |
+| `OpenDecisions(session?)` | `decisions` | question from a session, no forwards, open |
 | `Timeline(filter, limit)` | `timeline` | The filter, newest first, 300 maximum |
 | `Thread(thread)` | `thread` | One conversation in order |
 | `Ledger` | `ledger` | The ledger |
 
-The views of a session are queries too: `Report` and `Update` are the newest post of the session, `Blocked` is the newest `blocked` envelope about the session, and `OpenDecisions` is the named query.
+The views of a session are queries too: `Report` and `Update` are the newest post of the session, `Blocked` is the newest `blocked` envelope about the session, and `OpenDecisions` is the named query. The plugin posts `blocked` when a submit drops and when it goes through again (the stop latch); the supervisor (`SaveBlocked`) posts it when the reason of a failed turn changes. `Blocked.By` is `supervisor` for an envelope from the supervisor, else null (the stop latch). No session file holds the blocked state.
 
 ## Post rules
 
@@ -99,7 +99,7 @@ The views of a session are queries too: `Report` and `Update` are the newest pos
 4. Post refuses a second answer in one thread, and gives the first answer in the error text. A forward is not a second answer.
 5. A forward is a new envelope with a new `to`, the same body, the same `from` and `thread`, and `refs.of`.
 6. Before an answer, the writer creates `claims/answer/<thread>` with an exclusive create. If the file exists, the post is refused with the first answer. So the first answer wins also between processes (the supervisor, `orch`, the UI).
-7. The plugin refuses an unknown kind, a message kind with no `meta.json`, missing required fields, and a `from` or `to` that `meta.json` does not allow. The engine checks the full schema before the tool call. The plugin never posts an answer or a review: these go through `orch`, so the reply-type and first-answer checks are in C# only.
+7. The plugin refuses an unknown kind, a message kind with no `meta.json`, missing `required` or `dependentRequired` fields of `schema.json`, and a `from` or `to` that `meta.json` does not allow. The engine checks the full schema before the tool call. The plugin never posts an answer or a review: these go through `orch`, so the reply-type and first-answer checks are in C# only.
 8. The envelope file holds only the fields in the table above. The C# record has computed helpers (`Of`, `Reply`, `Via`, `IsForward`); they are not in the file.
 
 ## Types
@@ -110,8 +110,7 @@ Each message type has a folder `templates/<type>/` with `schema.json`, `meta.jso
 |---|---|---|---|---|---|
 | `brief` | user, session, supervisor | session | | report | `render/session.md` |
 | `message` | user, session, supervisor | session, user | | message | `render/session.md`: "Message from <sender>:"; no prefix from the user |
-| `decision` | session | user; forward to the parent | answer | answer | `render/parent.md`: "Question from child" |
-| `query` | session | user; forward to the parent | answer | answer | `render/parent.md` |
+| `question` | session | user; forward to the parent | answer | answer | `render/parent.md`: "Question from child" |
 | `plan` | session | user; forward to the parent | review | review | `render/parent.md`: "Plan from child" |
 | `report` | session | user; forward to the parent | ack (done, blocked) | ack, message | `render/parent.md`: "Report from child" |
 | `update` | session | user | | | Not delivered |
@@ -146,13 +145,13 @@ A root session has no parent: each notice to the parent goes to the user as a `m
 | Subscription | Party | Filter | Who moves the cursor |
 |---|---|---|---|
 | `subscriptions/session-<id>/deliver.json` | The session | `to = self`, a deliverable kind | The supervisor and `orch watch`, after each ack |
-| `subscriptions/supervisor/relay.json` | The supervisor | decision, query, plan, and a report with `needs` from a session | The supervisor, after the forward |
+| `subscriptions/supervisor/relay.json` | The supervisor | question, plan, and a report with `needs` from a session | The supervisor, after the forward |
 
 - A subscriber waits for a push of `StreamWatcher` (a file watcher on `events/` and `nudges/`). It also queries from its cursor after `delivery.sweepSeconds` with no push, because a file watcher can drop events.
 - `Next()` gives the matching envelopes after the cursor that the subscriber did not mark done. Envelopes of other writers can arrive a little late, so the scan starts 120 s before the cursor, and the file keeps the done ids of these 120 s in `recent`. Limit: an envelope that appears more than 120 s after its id time can be missed by a subscription.
 - The delivery cursor moves only over acknowledged envelopes before the first open one. It never passes an envelope that waits for its ack.
 - `Done` reads, merges and writes the file under the lock `<name>.json.lock`. So two writers of one cursor (the supervisor and `orch watch`) lose no done id.
-- The deliverable kinds are brief, message, decision, query, plan, answer, review, report and notice. A report is deliverable only with `needs` or as a forward.
+- The deliverable kinds are brief, message, question, plan, answer, review, report and notice. A report is deliverable only with `needs` or as a forward.
 - Each delivered envelope gets an ack: `{ kind: ack, from: <receiver>, to: <sender>, refs.of, body: { state: delivered | read, by } }`. `by` is `live`, `supervisor`, `tool-result`, `chat` or `user`.
 - The envelopes to a session with no ack are its pending deliveries. The ack is the truth; the cursor only marks where the scan starts.
 
@@ -180,7 +179,7 @@ The watchdog does not count the time while the live session runs a turn. A sessi
 | Session deliverer | Plugin, holder `live` | Submits a turn | ack |
 | Turn runner | Supervisor | `claude -p` with the renders | `turn.*`, ack |
 | Ask wait | Plugin, `ask_user` with a wait | Returns the tool result | ack |
-| Question relay | Supervisor | Forwards each decision, query and plan of a child to its parent at once | forward |
+| Question relay | Supervisor | Forwards each question and plan of a child to its parent at once | forward |
 | Report relay | Supervisor (subscription `reports-<id>` for each session) | At the end of a turn, forwards the newest done or blocked report of a child to its parent. A turn is open while the supervisor turn runs, or while `status.json` says running and the lease is `live` (an old heartbeat does not end it). An older report of the same turn gets an ack `{ state: read, by: superseded }` from the supervisor (F5). An ack of the user does not stop the forward | forward, ack |
 | Lifecycle | Supervisor | One step of the state machine for each session at each tick (below) | `session.state`, `state.conflict`, `lease.release`, notices |
 | Meta writer | Supervisor (subscription `meta`) | Applies each `meta.update { session, field, value }` from a plugin: `appId` of the sender itself, `remoteControl` of the sender or of its child. Other updates are refused and logged | `meta.json` |
@@ -192,7 +191,7 @@ The watchdog does not count the time while the live session runs a turn. A sessi
 ### User inbox
 
 ```
-open cards = envelopes to = user with needs (or a decision or query with no answer)
+open cards = envelopes to = user with needs (or a question with no answer)
              minus envelopes with a reply (refs.reply) or an ack (refs.of)
              minus a report with needs ack whose forward has an ack (the parent got it)
              the newest envelope of each thread
@@ -200,7 +199,7 @@ open cards = envelopes to = user with needs (or a decision or query with no answ
 
 | Card | Accept posts | Refuse posts |
 |---|---|---|
-| decision, query | answer = `defaultOption` (or the text) | answer = the text |
+| question | answer = `defaultOption` (or the text); with no default, the text is required | answer = the text |
 | answer by docs or policy | review approve | review refuse with the text |
 | report done or blocked, `delivery.blocked` | ack (`state: read`) | message with the text to the session, then ack |
 
@@ -217,7 +216,6 @@ The plugin and the supervisor share one folder for each session: `store/sessions
 | `mirror/<ms>-<uuid>.json` | Plugin | `{ door, origin, uuid, message }` for the doors `prompt`, `response` and `tool-result`. `message` is JSON, cut to 4000 characters |
 | `log-<holder>.txt` | Plugin | Log lines of one holder (`live` or `supervisor`), cut to the last 100 000 characters |
 | `meta.json` | Supervisor, `spawn_child`, `orch new`, `orch enable`, `/orch-enable` (creation only). A plugin never changes it: it posts `meta.update`, and the supervisor writes the field | `{ id, parent, title, cwd, createdBy, createdAt, started, worktree, agent, skills, repo, branch, allowDefaults, imported, appId, background, remoteControl }`. `imported: true` after the app confirmed an import. `appId` is the id of the session in the app. `background: true` (from the brief) keeps Remote Control off. `remoteControl` is `true` or `false` after a `set_remote_control` call on the session: by the session itself, or by its parent with the app id `local_<id>`. The plugin of the caller posts `meta.update`. `allowDefaults: true` (only from the user) lets `orch merge` carry unapproved defaults. With `worktree: true`, the first turn makes a git worktree: `cwd` becomes the worktree folder, `repo` the repository and `branch` its branch. A session with `createdBy` and no `started` gets a new `claude -p` session with this id |
-| `blocked.json` | Plugin | `{ reason, since }`. No reader. The truth is the newest `blocked` envelope about the session: the plugin posts it when a submit drops and when it goes through again; the supervisor (`SaveBlocked`) posts it when the reason of a failed turn changes. `reason` is absent when the session is not blocked. The lifecycle reads the sender: a `blocked` envelope from `supervisor` is a failed supervisor turn; one from the session is the stop latch of the plugin |
 | `state.json` | Supervisor | The lifecycle state: `{ state, since, requested, inferred, guard, fault, waitReason, reminded, remoteControlAsked, history }` (below) |
 | `state-check.json` | Supervisor | `{ state, reason, at, error }`: the last answer of the fallback agent `orch:state-checker` |
 | `forgotten.json` | Supervisor | `{ report, nudged, notified }`: one forgotten episode. `report` is `<last report id>|<last input id>` (an input from another party than the supervisor). A new report or a new input starts a new episode: one nudge, then one notice to the parent. The file is deleted when the session goes from forgotten to done, stopped or archived |
@@ -266,13 +264,26 @@ The checks run in this order, and the first yes wins. With a `state.json`, only 
 | Notice to the parent | See the lifecycle notices above |
 | Store side of the archive | An `auto-archive` request, when the app archived the session or the session is not in the app |
 
-## Decision, answer and review
+## Question, answer and review
 
-A decision is the envelope `decision` from a session, with `thread` = the tool call id and the decision template as body. It is open while its thread has no answer that is not a forward.
+A question is the envelope `question` from a session, with `thread` = the tool call id and the question template as body. The thread id is the decision id. The target (`to`) gives the direction. A question is open while its thread has no answer that is not a forward.
+
+| Question fields | Rule (in `templates/question/schema.json`) |
+|---|---|
+| `question` | Required |
+| `risk` | Required when `defaultOption` is present (`dependentRequired`) |
+| `context`, `snippet`, `options`, `recommendation`, `defaultOption`, `waitSeconds` | Optional |
+
+| Form | Fields | Policy |
+|---|---|---|
+| Choice (`Decision.Kind` = `ask_user`) | A `risk`, often `options` and a `defaultOption` | Docs check and default by the level of `risk` |
+| Facts (`Decision.Kind` = `query`) | No `risk` and no `defaultOption` | None: only a party answers. The risk reads as `high` |
+
+Old stores have the kinds `decision` and `query`. The stream reads them as `question` (`EventKinds.Current`), so the store version stays 2.
 
 | Read | Query |
 |---|---|
-| `Decision(thread)` | The first decision or query in the thread that is not a forward |
+| `Decision(thread)` | The first question in the thread that is not a forward |
 | `Answer(session, thread)` | The first answer in the thread that is not a forward. `by` is `user`, `docs` or `policy`; `note` is the render of `answer/render/note-*.md` |
 | `Review(session, version)` | The newest review in the thread with `version` = the version id |
 | `Report(session)` | The newest report from the session |
@@ -315,7 +326,7 @@ A version id is the decision id for version 1 and `<decision>-v<n>` after it. A 
 | `GET /api/events` | Query: the text keys | The same as `GET /api/stream` |
 | `GET /api/events/<id>` | Query: `for`, `render` | `{ envelope, body, text }`. `text` is the render for the receiver |
 | `POST /api/nudge` | `{ to, id? }` | `{ nudged }` |
-| `GET /api/inbox` | | The open cards: `{ id, kind, needs, session, title, envelope, fields, defaultAt }`. `defaultAt` is the ISO time when the policy answers an open decision with its `defaultOption` (the time of the decision + `timeoutSeconds` of its level). It is `null` for a query, a decision with no default, a level with no timeout, and each card that is not a decision |
+| `GET /api/inbox` | | The open cards: `{ id, kind, needs, session, title, envelope, fields, defaultAt }`. For a question, `kind` is `question`. `defaultAt` is the ISO time when the policy answers an open decision with its `defaultOption` (the time of the decision + `timeoutSeconds` of its level). It is `null` for a query, a decision with no default, a level with no timeout, and each card that is not a decision |
 | `POST /api/inbox/<id>/accept` | `{ text? }` | The posted envelope |
 | `POST /api/inbox/<id>/refuse` | `{ text }` | The posted envelope |
 | `GET /api/sessions` | | Each enabled session: title, parent, holder, live, running, status, report, blocked, open decisions, and from `state.json`: `state`, `waitReason`, `requested`, `fault`, `inferred` |
@@ -329,7 +340,7 @@ A version id is the decision id for version 1 and `<decision>-v<n>` after it. A 
 
 ## Questions to the user
 
-The user answers in free text, never with a click. The `options` of a decision are suggestions only.
+The user answers in free text, never with a click. The `options` of a question are suggestions only.
 
 | Layer | What it does |
 |---|---|
