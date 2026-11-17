@@ -10,3 +10,8 @@
 /* No browser scroll bar in the widget: the page scrolls with the wheel, touch and keys, as a phone app does. */
 html, body, * { scrollbar-width: none; }
 ::-webkit-scrollbar { display: none; }
+
+/* A backdrop behind the bottom app bar: the content under the bar fades into the canvas, so the bar never mixes with it.
+   It stays below the app bar (z-index 10), the sheets (20, 21) and the toast (15), and it lets clicks through. */
+body::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 92px; z-index: 9; pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--canvas) 55%); }

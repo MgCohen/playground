@@ -7,7 +7,7 @@ using Orchestrator.Web.Components;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The widget: 350 × 560 logical pixels, no title bar, rounded corners, a thin border, not in the taskbar.
+/// The widget: 350 × 720 logical pixels (lower on a small work area), no title bar, rounded corners, a thin border, not in the taskbar.
 /// It holds the BlazorWebView with the A4 views of Orchestrator.Web. A drag of the page header moves it. The saved place
 /// (place.json) keeps its position for the next show and the next start; without a saved place it opens in the corner above the tray.
 /// Close hides the widget. Only Exit in the tray menu stops the app.
@@ -15,7 +15,7 @@ namespace Orchestrator.Tray;
 public sealed partial class WidgetForm : Form
 {
     public const int LogicalWidth = 350;
-    public const int LogicalHeight = 560;
+    public const int LogicalHeight = 720;
 
     static readonly Color Border = Color.FromArgb(0x5a, 0x58, 0x54);
 
@@ -187,10 +187,13 @@ public sealed partial class WidgetForm : Form
         base.OnFormClosing(e);
     }
 
-    Size Scaled()
+    /// <summary>The widget size at the DPI. The height is at most the work area height less the gap above and below.</summary>
+    public Size Scaled()
     {
         var scale = DeviceDpi / 96f;
-        return new Size((int)(LogicalWidth * scale), (int)(LogicalHeight * scale));
+        var area = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
+        var height = Math.Min((int)(LogicalHeight * scale), area.Height - 2 * Gap);
+        return new Size((int)(LogicalWidth * scale), height);
     }
 
     /// <summary>Bottom right of the work area, above the tray, with a margin of 12 logical pixels.</summary>

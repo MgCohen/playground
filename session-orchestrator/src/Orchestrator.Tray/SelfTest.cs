@@ -67,7 +67,7 @@ public static class SelfTest
         await Task.Delay(1200);
         var scale = form.DeviceDpi / 96f;
         var size = form.Size;
-        var expect = new Size((int)(WidgetForm.LogicalWidth * scale), (int)(WidgetForm.LogicalHeight * scale));
+        var expect = form.Scaled();
         var home = form.HomeLocation();
         checks.Add(new Check("widget", size == expect && form.Location == home && !form.ShowInTaskbar && form.FormBorderStyle == FormBorderStyle.None,
             $"size {size.Width} × {size.Height} (expect {expect.Width} × {expect.Height}) at {form.DeviceDpi} DPI, location {form.Location.X},{form.Location.Y} (home {home.X},{home.Y}), not in the taskbar, no title bar", ""));
@@ -81,6 +81,10 @@ public static class SelfTest
         var bar = JsonSerializer.Deserialize<double>(await web.ExecuteScriptAsync("window.innerWidth - document.documentElement.clientWidth"));
         var scrolls = JsonSerializer.Deserialize<bool>(await web.ExecuteScriptAsync("document.documentElement.scrollHeight > window.innerHeight"));
         checks.Add(new Check("no-scroll-bar", bar == 0 && scrolls, $"scroll bar width {bar} px (expect 0), the home page scrolls {scrolls}", ""));
+        // The backdrop behind the app bar: a fixed layer under the bar that fades the content into the canvas.
+        var backdrop = JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync(
+            "(s => s.position + ' ' + s.zIndex + ' ' + s.height + ' ' + (s.backgroundImage.startsWith('linear-gradient') ? 'gradient' : 'none'))(getComputedStyle(document.body, '::after'))"));
+        checks.Add(new Check("app-bar-backdrop", backdrop == "fixed 9 92px gradient", $"body::after {backdrop} (expect fixed 9 92px gradient)", ""));
         var corner = Path.Combine(folder, "tray-desktop-corner.png");
         checks.Add(new Check("desktop-corner", Corner(form, corner), "screenshot of the screen corner with the widget and the tray", corner));
         checks.Add(await Pin(form, web, folder));
