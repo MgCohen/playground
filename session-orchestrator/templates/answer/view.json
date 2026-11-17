@@ -1,0 +1,26 @@
+{
+  "label": "Answer",
+  "icon": "pen",
+  "tone": "accent",
+  "document": {
+    "title": ["{{text}}"],
+    "subtitle": ["{{question}}"],
+    "facts": [
+      { "field": "by", "label": "By", "as": "pill", "tones": { "user": "accent", "docs": "new", "policy": "pending" } },
+      { "field": "onDefault", "label": "Then", "as": "code" }
+    ],
+    "blocks": [
+      { "field": "reason", "label": "Reason" },
+      { "field": "source", "label": "Source", "as": "well" }
+    ]
+  },
+  "preview": {
+    "title": ["{{text}}"],
+    "line": ["{{question}}"],
+    "well": [
+      { "field": "reason", "label": "Reason" },
+      { "field": "source", "label": "Source" }
+    ],
+    "pill": { "field": "by", "label": "By", "as": "pill", "tones": { "user": "accent", "docs": "new", "policy": "pending" } }
+  }
+}
