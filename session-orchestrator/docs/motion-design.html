@@ -297,6 +297,48 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 @keyframes fpulse { 0%,100% { box-shadow: 0 0 6px rgba(255,106,26,.3), 0 0 0 0 rgba(255,106,26,.5), 0 6px 14px -4px rgba(0,0,0,.45); } 50% { box-shadow: 0 0 6px rgba(255,106,26,.3), 0 0 0 11px rgba(255,106,26,0), 0 6px 14px -4px rgba(0,0,0,.45); } }
 .tl { font: 12px var(--f-mono); color: var(--page-mu); min-height: 1.4em; margin-top: 6px; }
 
+/* Notify tab */
+.ndesk { height: 440px; }
+.nwid { position: absolute; right: 12px; bottom: 52px; width: 210px; height: 340px; border-radius: 12px; background: var(--canvas); box-shadow: 0 12px 30px -10px rgba(0,0,0,.45); padding: 8px; display: flex; flex-direction: column; gap: 7px; }
+.nmini { position: absolute; right: 16px; bottom: 54px; display: grid; place-items: center; z-index: 2; }
+.nmini[data-place="corner"] { bottom: auto; top: 16px; }
+.nmini[data-place="edge"] { bottom: auto; top: 42%; }
+.nmini[data-form="edge"] { right: 0; }
+.nmini[data-form="edge"][data-place="tray"] { bottom: 70px; }
+.nshape { position: relative; display: grid; place-items: center; }
+.nball { border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px rgba(255,106,26,.3), 0 6px 14px -4px rgba(0,0,0,.45); }
+.nring { position: absolute; inset: 0; }
+.nring circle { fill: none; }
+.nbadge { position: absolute; top: -4px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--b-blk); color: #fff; font: 700 11px/20px var(--f-body); text-align: center; box-shadow: 0 0 0 2px var(--page); }
+.npill { display: flex; align-items: center; gap: 8px; padding: 5px 14px 5px 5px; border-radius: 999px; background: var(--surf); box-shadow: var(--sh-raise), 0 8px 18px -8px rgba(0,0,0,.4); font: 600 12px var(--f-body); color: var(--text); white-space: nowrap; }
+.ncard { display: flex; align-items: center; gap: 10px; width: 250px; padding: 10px 12px; border-radius: 14px; background: var(--canvas); box-shadow: 0 12px 26px -10px rgba(0,0,0,.45); color: var(--text); }
+.ncard .tx { display: grid; gap: 2px; min-width: 0; }
+.ncard .tx b { font: 600 12.5px var(--f-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nedge { display: grid; place-items: center start; padding-left: 6px; border-radius: 999px 0 0 999px; background: var(--surf); box-shadow: var(--sh-raise), 0 8px 18px -8px rgba(0,0,0,.4); }
+.nlayer { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.ntoast { position: absolute; right: 12px; bottom: 52px; width: 300px; padding: 12px 14px 14px; border-radius: 8px; background: #f3f3f3; color: #1b1b1b; border: 1px solid rgba(0,0,0,.08); box-shadow: 0 16px 32px -8px rgba(0,0,0,.35); font: 13px "Segoe UI", system-ui, sans-serif; display: grid; gap: 10px; pointer-events: auto; }
+.ntoast .app { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #5c5c5c; }
+.ntoast .app i { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); }
+.ntoast .app span:last-child { margin-left: auto; font-size: 14px; }
+.ntoast .body { display: grid; grid-template-columns: 48px 1fr; gap: 12px; align-items: start; }
+.ntoast .body b { display: block; font-weight: 600; }
+.ntoast .body small { color: #5c5c5c; font-size: 12px; }
+.ntoast .acts { display: flex; gap: 6px; }
+.ntoast .acts span { flex: 1; text-align: center; padding: 6px 0; border-radius: 4px; background: #fbfbfb; border: 1px solid rgba(0,0,0,.1); font-size: 12.5px; }
+.ntoast .acts span.p { background: #0067c0; color: #fff; border-color: #0067c0; }
+.ntoast .reply { display: flex; gap: 6px; }
+.ntoast .reply span:first-child { flex: 1; padding: 6px 8px; border-radius: 4px; background: #fff; border: 1px solid rgba(0,0,0,.14); border-bottom: 2px solid #0067c0; color: #8a8a8a; font-size: 12.5px; }
+.ntoast .reply span:last-child { width: 32px; border-radius: 4px; background: #0067c0; }
+.npeek { position: absolute; max-width: 230px; padding: 9px 14px; border-radius: 16px; background: var(--surf); box-shadow: var(--sh-raise), 0 10px 22px -10px rgba(0,0,0,.45); color: var(--text); display: grid; gap: 2px; transform-origin: 100% 50%; }
+.npeek b { font: 600 12.5px var(--f-body); }
+.nmcard { position: absolute; width: 240px; padding: 12px; border-radius: 16px; background: var(--canvas); box-shadow: 0 16px 30px -10px rgba(0,0,0,.5); color: var(--text); display: grid; gap: 8px; transform-origin: 100% 100%; }
+.nmcard .crd { padding: 10px 12px; display: grid; gap: 2px; border-left: 4px solid var(--c); }
+.nmcard .crd b { font: 600 12.5px var(--f-body); }
+.nmcard .row { display: flex; gap: 6px; }
+.nmcard .row span { flex: 1; text-align: center; padding: 7px 0; border-radius: 10px; background: var(--surf); box-shadow: var(--sh-raise-sm); font: 600 12px var(--f-body); }
+.nmcard .row span.p { background: var(--accent); color: var(--on-accent); }
+.ncounts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+
 /* Answer box */
 .answer { margin-top: 36px; padding: 18px 20px; border-radius: 18px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); display: grid; gap: 8px; }
 .answer code { display: block; padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); overflow-x: auto; white-space: pre; }
@@ -306,11 +348,12 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 
 <main>
   <h1>Inbox Motion</h1>
-  <p class="lede">Round 1 of the visual stream. Three tabs: the motion of the components, the screen transitions, and the grow of the tray widget. Each item has a live sample. Pick an option, or change the values, and tell me the result line. The A4 views, the theme and the layout stay as agreed.</p>
+  <p class="lede">Round 1 of the visual stream. Four tabs: the motion of the components, the screen transitions, the grow of the tray widget, and the minimized form with the notifications. Each item has a live sample. Pick an option, or change the values, and tell me the result line. The A4 views, the theme and the layout stay as agreed.</p>
   <nav class="tabs" role="tablist" aria-label="Topics">
     <button role="tab" id="tab-components" data-tab="components" aria-selected="true">Components</button>
     <button role="tab" id="tab-transitions" data-tab="transitions" aria-selected="false">Screen transitions</button>
     <button role="tab" id="tab-grow" data-tab="grow" aria-selected="false">Tray grow</button>
+    <button role="tab" id="tab-notify" data-tab="notify" aria-selected="false">Minimize and notify</button>
   </nav>
   <div class="panel" id="p-components" role="tabpanel" aria-labelledby="tab-components">
   <h2 style="margin-bottom:12px">Gaps from the self-test</h2>
@@ -617,6 +660,74 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     <code>G1: reveal + rise, quint out, show 340 ms, hide 180 ms, shadow fade in after 220 ms; load: pulse 500 ms, shadows, content fade 180 ms; ball: if not ready, pop in 240 ms, gap 60 ms, yo-yo hold 400 ms, out 180 ms, bar unfold lag 0 %</code>
   </div>
   </div>
+  <div class="panel" id="p-notify" role="tabpanel" aria-labelledby="tab-notify" hidden>
+  <p class="intro">The widget can minimize into a small form that stays on the screen (N1). The app can also tell you when something needs you (N2). N2 uses the form that you pick in N1.</p>
+  <section class="item" id="n1">
+    <div>
+      <div class="desk ndesk" id="n1desk">
+        <div class="nwid" id="n1wid"><div class="crd" style="height:30px"></div><div class="crd" style="height:84px"></div><div class="crd" style="height:34px"></div><div class="crd" style="height:34px"></div><div style="flex:1"></div><div class="crd" style="height:30px;border-radius:999px"></div></div>
+        <div class="nmini" id="n1mini" hidden></div>
+        <div class="taskbar"><span>ENG</span><span class="tdot" title="Tray icon"></span><span>4:00 PM</span></div>
+      </div>
+      <div class="btns" style="margin-top:10px"><button id="n1-min">Minimize</button><button id="n1-res">Restore</button><button id="n1-ev" class="on">New event</button></div>
+    </div>
+    <div class="spec tweak">
+      <div class="head"><span class="tag">N1 · minimize</span><h2>Minimized form</h2></div>
+      <p>Minimize plays the shrink, then the form comes in. "New event" adds a question and plays the attention motion. A click on the form in the app grows the widget out of it.</p>
+      <div><div class="sub" style="margin-bottom:4px">Form</div>
+        <div class="sw" id="n-form"><button aria-pressed="false" data-v="ball">Ball</button><button aria-pressed="true" data-v="ring">Ball + ring</button><button aria-pressed="false" data-v="hole">Ring only</button><button aria-pressed="false" data-v="badge">Ball + badge</button><button aria-pressed="false" data-v="pill">Pill</button><button aria-pressed="false" data-v="card">Compact card</button><button aria-pressed="false" data-v="edge">Edge tab</button></div></div>
+      <div><div class="sub" style="margin-bottom:4px">Place</div>
+        <div class="sw" id="n-place"><button aria-pressed="true" data-v="tray">Above the tray</button><button aria-pressed="false" data-v="corner">Top right</button><button aria-pressed="false" data-v="edge">Right edge, middle</button></div></div>
+      <div><div class="sub" style="margin-bottom:4px">Attention at a new event</div>
+        <div class="sw" id="n-att"><button aria-pressed="true" data-v="pulse">Pulse</button><button aria-pressed="false" data-v="bounce">Bounce</button><button aria-pressed="false" data-v="spin">Ring spin</button><button aria-pressed="false" data-v="glow">Glow</button><button aria-pressed="false" data-v="none">None</button></div></div>
+      <label for="n-size">Ball size: <b id="n-size-v">40 px</b><input id="n-size" type="range" min="24" max="64" step="2" value="40"></label>
+      <div class="ncounts">
+        <label for="n-q">Questions: <b id="n-q-v">3</b><input id="n-q" type="range" min="0" max="8" value="3"></label>
+        <label for="n-rev">Reviews: <b id="n-rev-v">1</b><input id="n-rev" type="range" min="0" max="8" value="1"></label>
+        <label for="n-rep">Reports: <b id="n-rep-v">2</b><input id="n-rep" type="range" min="0" max="8" value="2"></label>
+        <label for="n-blk">Blocked: <b id="n-blk-v">1</b><input id="n-blk" type="range" min="0" max="8" value="1"></label>
+      </div>
+      <div class="opts">
+        <div class="opt"><b>●</b><span class="t">Ball, ball + ring, ring only, badge</span><span class="d">Small and personal. The ring shows the four states with the colors of the home ring. "Ring only" has a real hole: the desktop shows through it.</span></div>
+        <div class="opt"><b>▬</b><span class="t">Pill, compact card</span><span class="d">More traditional. They show text: the counts, or the top item. They use more space on the screen.</span></div>
+        <div class="opt"><b>◖</b><span class="t">Edge tab</span><span class="d">Half of it is off the screen, at the right edge. It is easy to find and it does not cover your work.</span></div>
+      </div>
+      <p class="cost">Build: all forms are one small native window that the app draws itself, not the web page. So soft edges, the hole and full transparency are possible. You can drag it to a new place.</p>
+    </div>
+  </section>
+  <section class="item" id="n2">
+    <div>
+      <div class="desk ndesk" id="n2desk">
+        <div class="nmini" id="n2mini"></div>
+        <div class="nlayer" id="n2layer"></div>
+        <div class="taskbar"><span>ENG</span><span class="tdot" title="Tray icon"></span><span>4:00 PM</span></div>
+      </div>
+      <div class="btns" style="margin-top:10px"><button id="n2-send" class="on">Send event</button><button id="n2-clear">Clear</button></div>
+    </div>
+    <div class="spec tweak">
+      <div class="head"><span class="tag">N2 · notify</span><h2>Notification</h2></div>
+      <p>Pick a kind and an event, then click "Send event". The first four kinds are the Windows toast: Windows draws it. The last three are our own window.</p>
+      <div><div class="sub" style="margin-bottom:4px">Kind</div>
+        <div class="sw" id="n-kind"><button aria-pressed="false" data-v="toast">Toast</button><button aria-pressed="true" data-v="toastbtn">Toast + buttons</button><button aria-pressed="false" data-v="reply">Toast + reply</button><button aria-pressed="false" data-v="reminder">Reminder</button><button aria-pressed="false" data-v="peek">Peek bubble</button><button aria-pressed="false" data-v="mcard">Mini card</button><button aria-pressed="false" data-v="flash">Form only</button></div></div>
+      <div><div class="sub" style="margin-bottom:4px">Event</div>
+        <div class="sw" id="n-evt"><button aria-pressed="true" data-v="q">Question</button><button aria-pressed="false" data-v="rep">Report</button><button aria-pressed="false" data-v="blk">Blocked</button></div></div>
+      <label for="n-hide">Hide after: <b id="n-hide-v">5 s</b><input id="n-hide" type="range" min="2" max="12" step="1" value="5"></label>
+      <div class="opts">
+        <div class="opt"><b>W</b><span class="t">Windows toast</span><span class="d">The look of Windows, with our logo (the ring). It works when the widget is closed and it stays in the notification center. Buttons and a reply box work from the toast. A reminder stays until you act.</span></div>
+        <div class="opt"><b>P</b><span class="t">Peek bubble</span><span class="d">A short text comes out of the form, then goes back into it. Our look, small.</span></div>
+        <div class="opt"><b>C</b><span class="t">Mini card</span><span class="d">A small card rises from the form, with the answer buttons. Our own toast.</span></div>
+        <div class="opt"><b>F</b><span class="t">Form only</span><span class="d">No text. Only the attention motion and the new count on the form. The quietest kind.</span></div>
+      </div>
+      <p class="cost">Build: the toast needs an app id that the install registers once. Windows owns the toast layout: no custom shapes and no motion. The peek bubble and the mini card are the same native window as the form.</p>
+      <div class="vals" id="n-vals"></div>
+    </div>
+  </section>
+  <div class="answer">
+    <h2>How to answer</h2>
+    <p>Copy the value line above, or say the change. You can pick more than one, for example a form for each case. For example:</p>
+    <code>N1: ball + ring, above the tray, pulse, size 40; N2: toast + buttons for questions, peek bubble for reports, hide after 5 s</code>
+  </div>
+  </div>
 </main>
 
 <script>
@@ -727,7 +838,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     l6: function (v) { load.mode = v; load.run(); },
     k7: function (v) { var k = document.getElementById("k7"); k.dataset.mode = v; k.classList.toggle("still", v === "now"); ring(v === "a"); }
   };
-  document.querySelectorAll(".sw").forEach(function (sw) {
+  document.querySelectorAll(".sw[data-for]").forEach(function (sw) {
     sw.addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;
       sw.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
@@ -823,7 +934,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 
 // ===== Tabs =====
 (function () {
-  var names = ["components", "transitions", "grow"];
+  var names = ["components", "transitions", "grow", "notify"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "components";
     names.forEach(function (n) {
@@ -1125,5 +1236,161 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     if (onTab && loop) cycle(); else { stop(); ballOff(); own(false); cur.p = 1; cur.c = 1; cur.s = 1; render(); }
   });
   if (location.hash === "#grow") { onTab = true; geo(); if (loop) cycle(); }
+})();
+// ===== N1, N2: minimize and notify =====
+(function () {
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ns = { form: "ring", place: "tray", att: "pulse", size: 40, kind: "toastbtn", evt: "q", hide: 5, c: { q: 3, rev: 1, rep: 2, blk: 1 } };
+  var COL = { q: "var(--b-q)", rev: "var(--b-rev)", rep: "var(--b-rep)", blk: "var(--b-blk)" };
+  var WORD = { q: ["question", "questions"], rev: ["review", "reviews"], rep: ["report", "reports"], blk: ["blocked", "blocked"] };
+  var EVT = {
+    q: { t: "Which sample set do you want?", s: "Pattern engine spike", b: ["Accept", "Other", "Open"] },
+    rep: { t: "Done: 4 sections", s: "Docs cleanup", b: ["Open", "Dismiss"] },
+    blk: { t: "Blocked: the benchmark needs a sample set", s: "Pattern engine spike", b: ["Open", "Dismiss"] }
+  };
+  var FORMS = { ball: "ball", ring: "ball + ring", hole: "ring only", badge: "ball + badge", pill: "pill", card: "compact card", edge: "edge tab" };
+  var PLACES = { tray: "above the tray", corner: "top right", edge: "right edge, middle" };
+  var KINDS = { toast: "toast", toastbtn: "toast + buttons", reply: "toast + reply", reminder: "reminder", peek: "peek bubble", mcard: "mini card", flash: "form only" };
+  var n1 = document.getElementById("n1mini"), n2 = document.getElementById("n2mini"), nwid = document.getElementById("n1wid"),
+      layer = document.getElementById("n2layer"), d2 = document.getElementById("n2desk");
+  var minimized = false;
+  function total() { return ns.c.q + ns.c.rev + ns.c.rep + ns.c.blk; }
+  function summary() {
+    var p = ["q", "rev", "rep", "blk"].filter(function (k) { return ns.c[k]; }).map(function (k) { return ns.c[k] + " " + WORD[k][ns.c[k] === 1 ? 0 : 1]; });
+    return p.length ? p.join(" · ") : "Nothing waits";
+  }
+  function ring(D, sw) {
+    var r = (D - sw) / 2, C = 2 * Math.PI * r, t = total(), gap = t > 1 ? Math.min(4, sw * .4) : 0, off = 0;
+    var h = '<svg class="nring" viewBox="0 0 ' + D + ' ' + D + '" width="' + D + '" height="' + D + '"><circle cx="' + D / 2 + '" cy="' + D / 2 + '" r="' + r + '" stroke="var(--sunken)" stroke-width="' + sw + '"/>';
+    ["q", "rev", "rep", "blk"].forEach(function (k) {
+      if (!t || !ns.c[k]) return;
+      var len = Math.max(0, C * ns.c[k] / t - gap);
+      h += '<circle cx="' + D / 2 + '" cy="' + D / 2 + '" r="' + r + '" stroke="' + COL[k] + '" stroke-width="' + sw + '" stroke-dasharray="' + len + ' ' + (C - len) + '" stroke-dashoffset="' + (-off) + '" transform="rotate(-90 ' + D / 2 + ' ' + D / 2 + ')"/>';
+      off += C * ns.c[k] / t;
+    });
+    return h + "</svg>";
+  }
+  function ball(S) { return '<div class="nball" style="width:' + S + 'px;height:' + S + 'px"></div>'; }
+  function shape(D, inner) { return '<div class="nshape" style="width:' + D + 'px;height:' + D + 'px">' + inner + "</div>"; }
+  function ringBall(D) { return shape(D, ring(D, Math.round(D * .1)) + ball(Math.round(D * .53))); }
+  function miniHTML() {
+    var S = ns.size, t = total();
+    switch (ns.form) {
+      case "ball": return shape(S, ball(S));
+      case "ring": return ringBall(Math.round(S * 1.55));
+      case "hole": var D = Math.round(S * 1.3); return shape(D, ring(D, Math.round(S * .3)));
+      case "badge": return shape(S, ball(S) + (t ? '<span class="nbadge">' + t + "</span>" : ""));
+      case "pill": return '<div class="npill">' + ringBall(Math.round(S * .9)) + "<span>" + summary() + "</span></div>";
+      case "card": return '<div class="ncard">' + ringBall(44) + '<div class="tx"><b>' + EVT.q.t + '</b><span class="sub">' + summary() + "</span></div></div>";
+      case "edge": var E = Math.round(S * 1.4); return '<div class="nedge" style="height:' + (E + 12) + "px;width:" + Math.round(E * .72 + 6) + 'px;overflow:hidden">' + ringBall(E) + "</div>";
+    }
+  }
+  function renderMini() {
+    [n1, n2].forEach(function (m) { m.dataset.form = ns.form; m.dataset.place = ns.place; m.innerHTML = miniHTML(); });
+    ["q", "rev", "rep", "blk"].forEach(function (k) { document.getElementById("n-" + k).value = ns.c[k]; document.getElementById("n-" + k + "-v").textContent = ns.c[k]; });
+    document.getElementById("n-size-v").textContent = ns.size + " px";
+    document.getElementById("n-hide-v").textContent = ns.hide + " s";
+    document.getElementById("n-vals").textContent = "N1: " + FORMS[ns.form] + ", " + PLACES[ns.place] + ", " + ns.att + ", size " + ns.size + "; N2: " + KINDS[ns.kind] + ", hide after " + ns.hide + " s";
+  }
+  function attention(m) {
+    var el = m.firstElementChild; if (!el || reduce || ns.att === "none") return;
+    if (ns.att === "pulse") el.animate([{ filter: "drop-shadow(0 0 0 rgba(255,106,26,.9))" }, { filter: "drop-shadow(0 0 16px rgba(255,106,26,0))" }], { duration: 700, iterations: 3 });
+    if (ns.att === "bounce") el.animate([{ transform: "none" }, { transform: "translateY(-16px)", offset: .3 }, { transform: "none", offset: .55 }, { transform: "translateY(-6px)", offset: .75 }, { transform: "none" }], { duration: 700, easing: "ease-out" });
+    if (ns.att === "glow") el.animate([{ filter: "brightness(1)" }, { filter: "brightness(1.35) drop-shadow(0 0 10px rgba(255,106,26,.8))", offset: .4 }, { filter: "brightness(1)" }], { duration: 900 });
+    if (ns.att === "spin") { var r = el.querySelector(".nring") || el; r.animate([{ transform: "rotate(0)" }, { transform: "rotate(360deg)" }], { duration: 800, easing: "cubic-bezier(.4,0,.2,1)" }); }
+  }
+  var POP = [{ transform: "scale(.2)", opacity: 0 }, { transform: "scale(1.15)", opacity: 1, offset: .6 }, { transform: "scale(1)", opacity: 1 }];
+  function minimize(done) {
+    if (minimized) { if (done) done(); return; }
+    minimized = true;
+    nwid.getAnimations().forEach(function (a) { a.cancel(); });
+    var a = nwid.animate([{ clipPath: "inset(0% 0 0 0 round 12px)" }, { clipPath: "inset(100% 0 0 0 round 12px)" }], { duration: reduce ? 1 : 220, easing: "ease-in", fill: "forwards" });
+    a.finished.then(function () {
+      n1.hidden = false;
+      var b = n1.firstElementChild.animate(POP, { duration: reduce ? 1 : 240, easing: "ease-out" });
+      b.finished.then(function () { if (done) done(); }, function () { });
+    }, function () { });
+  }
+  function restore() {
+    if (!minimized) return;
+    minimized = false;
+    var a = n1.firstElementChild.animate(POP.slice().reverse().map(function (k) { var c = Object.assign({}, k); if (c.offset != null) c.offset = 1 - c.offset; return c; }), { duration: reduce ? 1 : 160, easing: "ease-in", fill: "forwards" });
+    a.finished.then(function () {
+      n1.hidden = true; a.cancel();
+      nwid.getAnimations().forEach(function (x) { x.cancel(); });
+      nwid.animate([{ clipPath: "inset(100% 0 0 0 round 12px)" }, { clipPath: "inset(0% 0 0 0 round 12px)" }], { duration: reduce ? 1 : 280, easing: "cubic-bezier(.2,.8,.2,1)" });
+    }, function () { });
+  }
+  // N2
+  var hideTimer = 0;
+  function place(el, kind) {
+    var d = d2.getBoundingClientRect(), m = n2.firstElementChild.getBoundingClientRect();
+    if (kind === "peek") {
+      el.style.right = (d.right - m.left + 10) + "px";
+      el.style.top = (m.top - d.top + m.height / 2) + "px"; el.style.marginTop = (-el.offsetHeight / 2) + "px";
+    } else {
+      el.style.right = Math.max(12, d.right - m.right) + "px";
+      if (m.top - d.top > el.offsetHeight + 20) { el.style.bottom = (d.bottom - m.top + 10) + "px"; el.style.transformOrigin = "100% 100%"; }
+      else { el.style.top = (m.bottom - d.top + 10) + "px"; el.style.transformOrigin = "100% 0"; }
+    }
+  }
+  function dismiss(el, frames) {
+    if (!el.parentNode) return;
+    var a = el.animate(frames, { duration: reduce ? 1 : 200, easing: "ease-in", fill: "forwards" });
+    a.finished.then(function () { el.remove(); }, function () { el.remove(); });
+  }
+  function clear() { clearTimeout(hideTimer); Array.prototype.slice.call(layer.children).forEach(function (el) { dismiss(el, [{ opacity: 1 }, { opacity: 0 }]); }); }
+  function send() {
+    clear();
+    var k = ns.evt, e = EVT[k];
+    ns.c[k] = Math.min(8, ns.c[k] + 1); renderMini(); attention(n2);
+    var kind = ns.kind, el = null, inF, outF;
+    if (kind === "toast" || kind === "toastbtn" || kind === "reply" || kind === "reminder") {
+      el = document.createElement("div"); el.className = "ntoast";
+      var btns = kind === "reminder" ? ["Open", "Snooze", "Dismiss"] : kind === "toastbtn" ? e.b : [];
+      el.innerHTML = '<div class="app"><i></i><span>Orch Inbox</span><span>×</span></div><div class="body">' + ringBall(48) + "<div><b>" + e.t + "</b><small>" + e.s + "</small></div></div>" +
+        (btns.length ? '<div class="acts">' + btns.map(function (b, i) { return '<span class="' + (i ? "" : "p") + '">' + b + "</span>"; }).join("") + "</div>" : "") +
+        (kind === "reply" ? '<div class="reply"><span>Type an answer</span><span></span></div>' : "");
+      layer.appendChild(el);
+      inF = [{ transform: "translateX(calc(100% + 24px))" }, { transform: "none" }];
+      outF = [{ transform: "none", opacity: 1 }, { transform: "translateX(40px)", opacity: 0 }];
+      el.animate(inF, { duration: reduce ? 1 : 340, easing: "cubic-bezier(.1,.9,.2,1)" });
+    } else if (kind === "peek") {
+      el = document.createElement("div"); el.className = "npeek";
+      el.innerHTML = "<b>" + e.t + '</b><span class="sub">' + e.s + "</span>";
+      layer.appendChild(el); place(el, "peek");
+      inF = [{ transform: "scaleX(.2)", opacity: 0 }, { transform: "none", opacity: 1 }];
+      outF = [{ transform: "none", opacity: 1 }, { transform: "scaleX(.2)", opacity: 0 }];
+      el.animate(inF, { duration: reduce ? 1 : 260, easing: "cubic-bezier(.2,.8,.2,1)" });
+    } else if (kind === "mcard") {
+      el = document.createElement("div"); el.className = "nmcard";
+      el.innerHTML = '<div class="crd" style="--c:' + COL[k] + '"><b>' + e.t + '</b><span class="sub">' + e.s + '</span></div><div class="row">' + e.b.slice(0, 2).map(function (b, i) { return '<span class="' + (i ? "" : "p") + '">' + b + "</span>"; }).join("") + "</div>";
+      layer.appendChild(el); place(el, "card");
+      inF = [{ transform: "scale(.3)", opacity: 0 }, { transform: "scale(1.03)", opacity: 1, offset: .7 }, { transform: "none", opacity: 1 }];
+      outF = [{ transform: "none", opacity: 1 }, { transform: "scale(.3)", opacity: 0 }];
+      el.animate(inF, { duration: reduce ? 1 : 300, easing: "ease-out" });
+    }
+    if (el && kind !== "reminder") hideTimer = setTimeout(function () { dismiss(el, outF); }, ns.hide * 1000);
+  }
+  function seg(id, key) {
+    document.getElementById(id).addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      this.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      ns[key] = b.dataset.v; renderMini();
+      if (key === "form" || key === "place") { if (minimized) attention(n1); }
+      if (key === "att") { attention(n1); attention(n2); }
+    });
+  }
+  seg("n-form", "form"); seg("n-place", "place"); seg("n-att", "att"); seg("n-kind", "kind"); seg("n-evt", "evt");
+  document.getElementById("n-size").addEventListener("input", function () { ns.size = +this.value; renderMini(); });
+  document.getElementById("n-hide").addEventListener("input", function () { ns.hide = +this.value; renderMini(); });
+  ["q", "rev", "rep", "blk"].forEach(function (k) { document.getElementById("n-" + k).addEventListener("input", function () { ns.c[k] = +this.value; renderMini(); }); });
+  document.getElementById("n1-min").addEventListener("click", function () { minimize(); });
+  document.getElementById("n1-res").addEventListener("click", restore);
+  document.getElementById("n1-ev").addEventListener("click", function () { ns.c.q = Math.min(8, ns.c.q + 1); if (minimized) { renderMini(); attention(n1); } else minimize(function () { renderMini(); attention(n1); }); });
+  document.getElementById("n2-send").addEventListener("click", send);
+  document.getElementById("n2-clear").addEventListener("click", clear);
+  renderMini();
+  document.addEventListener("tabshown", function (e) { if (e.detail === "notify" && !minimized) setTimeout(function () { minimize(); }, 400); });
 })();
 </script>
