@@ -21,20 +21,24 @@ public sealed class WebTests
     }
 
     [Test]
-    public async Task The_queue_shows_an_open_decision_with_its_suggestions()
+    public async Task The_cards_page_shows_an_open_decision_with_its_suggestions()
     {
         var (factory, root) = Start();
         using var _ = factory;
         var store = new FileStore(root);
         var id = store.Create(new Meta("") { Title = "Color child", Cwd = "C:/x" }, "start");
         store.SaveDecision(new Decision("toolu_9", id) { Question = "Which color goes in color.txt?", Context = "Step 3", Options = ["RED", "BLUE"], Risk = "high", Asked = Times.Format(DateTimeOffset.UtcNow) });
-        var page = await factory.CreateClient().GetStringAsync("/");
+        var page = await factory.CreateClient().GetStringAsync("/cards");
         Assert.That(page, Does.Contain("Which color goes in color.txt?"));
         Assert.That(page, Does.Contain("BLUE"));
         Assert.That(page, Does.Contain("Color child"));
     }
 
+    [TestCase("/")]
+    [TestCase("/cards")]
+    [TestCase("/stream")]
     [TestCase("/sessions")]
+    [TestCase("/settings")]
     [TestCase("/timeline")]
     [TestCase("/api/sessions")]
     public async Task Each_view_answers(string path)

@@ -1,0 +1,85 @@
+@page "/stream"
+@page "/timeline"
+@inherits LiveView
+
+<PageTitle>Stream · orch</PageTitle>
+
+@if (lockNode is { } locked)
+{
+    <a class="back" href="sessions/@locked.Meta.Id"><Icon Name="chevL" />@Ui.Name(locked)</a>
+}
+else
+{
+    <header class="crd hd"><h1 class="title disp">Stream</h1></header>
+}
+
+<div class="stack">
+    @if (lockNode is { } node)
+    {
+        <span class="lock"><Icon Name="lock" />@Ui.Name(node)@(lockSessions.Count > 1 ? $" + {lockSessions.Count - 1} children" : "")</span>
+    }
+    <div class="bar">
+        <Seg Items="Views" Value="@view" Labels="ViewLabels" OnPick="v => { view = v; Load(); }" />
+        <button type="button" class="fbtn" aria-label="Filter and order" @onclick="() => filterOpen = true"><Icon Name="filter" />@if (filter.Active) {<i></i>}</button>
+    </div>
+    @if (events.Count == 0)
+    {
+        <div class="empty"><span class="nm">No events</span><span class="sub">No event matches the view and the filter.</span></div>
+    }
+    <div class="tl">
+        @foreach (var e in events)
+        {
+            <EventRow @key="e.Id" Event="e" />
+        }
+    </div>
+</div>
+
+@if (filterOpen)
+{
+    <FilterSheet Filter="filter" Orders="Orders" Sessions="FilterSessions" Show="@($"Show {events.Count} events")" OnChange="Load" OnClose="() => filterOpen = false" />
+}
+
+@code {
+    static readonly string[] Views = ["Messages", "All events", "Waits"];
+    static readonly string[] Orders = ["Newest", "Oldest"];
+
+    [SupplyParameterFromQuery] public string? Session { get; set; }
+
+    IReadOnlyList<Event> events = [];
+    readonly ViewFilter filter = new() { Order = "Newest", DefaultOrder = "Newest" };
+    string view = "Messages";
+    bool filterOpen;
+    int waits;
+    SessionNode? lockNode;
+    IReadOnlyList<string> lockSessions = [];
+    Dictionary<string, string> roots = [];
+    IReadOnlyList<(string Id, string Name, string Sub)> FilterSessions = [];
+
+    IReadOnlyDictionary<string, string> ViewLabels => new Dictionary<string, string> { ["Waits"] = waits > 0 ? $"Waits {waits}" : "Waits" };
+
+    protected override void OnParametersSet() => Load();
+
+    protected override void Load()
+    {
+        var tree = Board.Tree();
+        roots = [];
+        foreach (var root in tree)
+            foreach (var n in Ui.Flatten([root])) roots[n.Meta.Id] = root.Meta.Id;
+        lockNode = Session is { Length: > 0 } id ? Ui.Flatten(tree).FirstOrDefault(n => n.Meta.Id.StartsWith(id, StringComparison.OrdinalIgnoreCase)) : null;
+        lockSessions = lockNode is { } locked ? Ui.Flatten([locked]).Select(n => n.Meta.Id).ToList() : [];
+        FilterSessions = lockNode is null ? tree.Select(r => (r.Meta.Id, Ui.Name(r), Ui.Flatten(r.Children).Count() is var k && k > 0 ? $"and {k} children" : "no children")).ToList() : [];
+
+        var query = view switch
+        {
+            "Messages" => new StreamQuery { Kinds = EventKinds.Messages.ToHashSet(), Forwards = false },
+            "Waits" => new StreamQuery { Open = true, Forwards = false },
+            _ => new StreamQuery(),
+        };
+        var now = Board.Now;
+        var list = Board.Stream(query, lockNode is null ? null : lockSessions)
+            .Where(e => e.Kind != EventKinds.SessionTool)
+            .Where(e => filter.Keeps(e, e.Session is { } s ? roots.GetValueOrDefault(s, s) : null, now));
+        events = (filter.Order == "Oldest" ? list.Reverse() : list).ToList();
+        waits = Board.Stream(new StreamQuery { Open = true, Forwards = false }, lockNode is null ? null : lockSessions).Count;
+    }
+}
