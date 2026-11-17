@@ -938,35 +938,50 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 <script>
 // ===== Saved choices: the db of the page; this browser when the db is not there =====
 var Saved = (function () {
-  var dbp = new Promise(function (res) {
+  // Each person keeps their own choices: data/users/<id>/choices_<key>. A guest never changes the choices of the owner.
+  var cp = new Promise(function (res) {
     var t0 = Date.now();
     (function look() {
-      if (window.claude && typeof window.claude.use === "function") window.claude.use("db").then(res, function () { res(null); });
-      else if (Date.now() - t0 > 3000) res(null);
+      if (window.claude && typeof window.claude.use === "function") res(window.claude);
+      else if (Date.now() - t0 > 10000) res(null);
       else setTimeout(look, 100);
     })();
-  }).then(function (db) { return db; }, function () { return null; });
+  });
+  function use(n) { return cp.then(function (c) { return c ? c.use(n).then(function (x) { return x; }, function () { return null; }) : null; }); }
+  var dbp = use("db");
+  var basep = Promise.all([dbp, use("user")]).then(function (r) {
+    var db = r[0], u = r[1];
+    if (!db) return null;
+    var idp = u && typeof u.id === "function" ? Promise.resolve(u.id()).then(function (x) { return x; }, function () { return null; }) : Promise.resolve(null);
+    return idp.then(function (id) { return { db: db, base: id ? "data/users/" + id + "/choices_" : "choices/" }; });
+  });
   var timers = {};
   function status(t) { var el = document.getElementById("saved-st"); if (el) el.textContent = t; }
   function lsGet(k) { try { return JSON.parse(localStorage.getItem("motion-" + k) || "null"); } catch (_) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem("motion-" + k, JSON.stringify(v)); } catch (_) { } }
   function timeout(p, ms) { return Promise.race([p, new Promise(function (r) { setTimeout(function () { r(null); }, ms); })]); }
-  dbp.then(function (db) { status(db ? "Your choices are saved with the page. Claude can read them." : "Your choices are kept in this browser only."); });
+  status("Your choices are kept in this browser. The page is connecting to its store…");
+  timeout(basep, 12000).then(function (b) { status(b ? "Your choices are saved with the page, for you only. Claude can read them." : "Your choices are kept in this browser only."); });
+  function put(b, k, v) {
+    return b.db.doc(b.base + k).set(JSON.parse(JSON.stringify(v))).then(function () {
+      status("Your choices are saved with the page, for you only. Last save: " + new Date().toLocaleTimeString() + ".");
+    }, function (e) { status("Your choices are kept in this browser only (" + ((e && e.code) || "save error") + ")."); });
+  }
   function load(k) {
-    return timeout(dbp, 10000).then(function (db) {
-      if (!db) return lsGet(k);
-      return timeout(db.doc("choices/" + k).get(), 10000).then(function (snap) { return snap && snap.exists ? snap.data() : lsGet(k); }, function () { return lsGet(k); });
+    return timeout(basep, 12000).then(function (b) {
+      var local = lsGet(k);
+      if (!b) return local;
+      return timeout(b.db.doc(b.base + k).get(), 10000).then(function (snap) {
+        if (snap && snap.exists) return snap.data();
+        if (local) put(b, k, local);   // first open after this change: send the browser copy up
+        return local;
+      }, function () { return local; });
     });
   }
   function save(k, v) {
     lsSet(k, v);
     clearTimeout(timers[k]);
-    timers[k] = setTimeout(function () {
-      dbp.then(function (db) {
-        if (!db) return;
-        db.doc("choices/" + k).set(JSON.parse(JSON.stringify(v))).catch(function (e) { status("Your choices are kept in this browser only (" + ((e && e.code) || "save error") + ")."); });
-      });
-    }, 700);
+    timers[k] = setTimeout(function () { basep.then(function (b) { if (b) put(b, k, v); }); }, 600);
   }
   // Restore st from the store, set the controls to it, then save st after each change.
   function bind(k, st, ctl, after) {
