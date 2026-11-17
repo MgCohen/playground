@@ -1,9 +1,9 @@
 import type { Register } from 'claude-code'
 import { ROW_CHARS, S, TICK_MS, homeRoot, log, now, readJson, sessionDir, storeRoot, writeJson } from './state.ts'
 import { emitRow } from './events.ts'
-import { beat, releaseLease, writeLease } from './lease.ts'
+import { beat, findProcess, mayTakeLease, releaseLease, turnOpen, writeLease } from './lease.ts'
 import { deliver, tick, watchLoop } from './deliver.ts'
-import { NUDGE } from './stream.ts'
+import { NUDGE, post } from './stream.ts'
 import {
   ANSWER_TOOL,
   ASK_TOOL,
@@ -26,6 +26,24 @@ import {
   spawnChild,
   update,
 } from './tools.ts'
+
+const REMOTE_CONTROL_TOOL = 'mcp__ccd_session_mgmt__set_remote_control'
+
+function isSelf(id: unknown): boolean {
+  return id === undefined || id === 'self' || id === S.id || id === `local_${S.id}`
+}
+
+// The store id of the session that a set_remote_control call names: this session, or a child by its app id local_<id>.
+export function remoteControlTarget(id: unknown, self: string | undefined): string | undefined {
+  if (id === undefined || id === 'self' || id === self || id === `local_${self}`) return self
+  return typeof id === 'string' && id.startsWith('local_') ? id.slice('local_'.length) : undefined
+}
+
+// meta.json has one writer, the supervisor: the plugin posts the change, and the supervisor writes it (review of PR #14, item 2).
+async function postMetaUpdate($: any, session: string, field: string, value: unknown): Promise<void> {
+  await post($, 'meta.update', `session:${S.id}`, 'supervisor', { text: `${field} = ${String(value)}`, session, field, value })
+  await log($, `meta.update ${session} ${field} = ${String(value)}`)
+}
 
 const MIRROR_DOORS = ['prompt', 'response', 'tool-result']
 const ASK_IN_TEXT =
@@ -67,10 +85,13 @@ async function activate($: any, dir: string, reason: unknown): Promise<void> {
   const status = await readJson($, `${dir}/status.json`)
   S.idle = status?.state !== 'running'
   await $.fs.write(`${dir}/heartbeat.txt`, await now($))
-  await writeLease($, S.holder, reason)
+  await findProcess($)
+  const open = await turnOpen($)
+  if (mayTakeLease(S.holder, open.turn, open.lease, open.now)) await writeLease($, S.holder, reason)
+  else await log($, 'a supervisor turn runs: the lease waits for its end')
   const host = await $.env.get('CLAUDE_CODE_HOST_SESSION_ID')
   const meta = await readJson($, `${dir}/meta.json`)
-  if (host && meta && meta.appId !== host) await writeJson($, `${dir}/meta.json`, { ...meta, appId: host })
+  if (host && meta && meta.appId !== host) await postMetaUpdate($, S.id!, 'appId', host)
   await log($, `activate plugin holder=${S.holder} ${JSON.stringify(reason)}`)
   await registerTools($)
   if (S.holder === 'live') watchLoop($).catch((error: unknown) => log($, `watch failed: ${String(error)}`))
@@ -152,6 +173,15 @@ export const register: Register = on => {
       deliver($).catch((error: unknown) => log($, `deliver failed: ${String(error)}`))
     }
     return { consumed: 'orch nudge: the plugin looks at the stream' }
+  })
+
+  // F4: this session turned the Remote Control of itself or of a child on or off. meta.json of that session records it,
+  // so the supervisor sends no parent notice, and the archive knows the state.
+  on('tool.call', { tool: REMOTE_CONTROL_TOOL }, async ($: any, e: any, next: any) => {
+    const result = await next(e)
+    const target = S.dir ? remoteControlTarget(e.session_id, S.id) : undefined
+    if (target && !(result && (result.deny || result.isError))) postMetaUpdate($, target, 'remoteControl', e.enabled !== false).catch((error: unknown) => log($, `remote control record failed: ${String(error)}`))
+    return result
   })
 
   on('session.end', async ($, e, next) => {

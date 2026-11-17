@@ -32,12 +32,13 @@ public sealed class NewSessionFormTests
         rig.Store.Events.Body(rig.Store.Query(new StreamQuery { Kinds = new HashSet<string> { EventKinds.Brief }, Session = session }).Single())!.Value;
 
     [Test]
-    public void The_form_has_each_brief_field_except_allowDefaults()
+    public void The_form_has_each_brief_field_except_allowDefaults_and_background()
     {
+        // background (B2) is not in the form yet: the UI views are stream A4. A form session has Remote Control on, the default.
         using var context = new BunitContext();
         var form = context.Render<NewSessionForm>();
         var names = form.FindAll("form [name]").Select(e => e.GetAttribute("name")).ToList();
-        Assert.That(names, Is.EquivalentTo(BriefProperties().Where(p => p != "allowDefaults")));
+        Assert.That(names, Is.EquivalentTo(BriefProperties().Where(p => p is not ("allowDefaults" or "background"))));
         Assert.That(form.Markup, Does.Not.Contain("allowDefaults").IgnoreCase);
         Assert.That(form.Markup, Does.Not.Contain("default decisions").IgnoreCase);
     }

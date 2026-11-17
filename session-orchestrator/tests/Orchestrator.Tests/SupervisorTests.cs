@@ -41,11 +41,13 @@ public sealed class SupervisorTests
     }
 
     [Test]
-    public async Task A_live_lease_with_a_stale_heartbeat_is_released_and_the_session_runs()
+    public async Task A_live_lease_with_a_stale_heartbeat_and_no_process_id_is_released_and_the_session_runs()
     {
         using var t = new Rig();
         var id = t.Create("hello");
         t.MakeLive(id, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+        await t.Cycle();
+        Assert.That(t.Turns, Is.Empty, "the first tick finds the state stale and runs no turn");
         await t.Cycle();
         Assert.That(t.Store.Lease(id).Holder, Is.EqualTo(Holders.None));
         Assert.That(t.Turns, Has.Count.EqualTo(1));

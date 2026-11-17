@@ -19,6 +19,8 @@ export const S: {
   handled: Set<string>
   inputFrom: string
   lastMs: number
+  pid?: number
+  started?: string
 } = {
   dropped: '',
   holder: 'live',
@@ -60,6 +62,13 @@ export async function log($: any, line: string): Promise<void> {
   const old = (await readText($, path)) ?? ''
   const kept = old.length > 200000 ? old.slice(-100000) : old
   await $.fs.write(path, `${kept}${await now($)} ${line}\n`)
+}
+
+// The lifecycle control of the session: active, stopped or archived (control.json).
+export async function controlState($: any): Promise<string> {
+  if (!S.dir) return 'active'
+  const control = await readJson($, `${S.dir}/control.json`)
+  return typeof control?.state === 'string' ? control.state : 'active'
 }
 
 export function newId(): string {

@@ -1,8 +1,9 @@
 // The session deliverer: a reactor of the live session on the stream.
 // A child `orch watch --to session:<id>` pushes one JSON line for each new envelope. When the session is idle,
 // the deliverer lists the envelopes with no ack (with their texts), submits them as one turn, and posts an ack for each.
-import { S, log, now, orch, writeJson } from './state.ts'
+import { S, controlState, log, now, orch, writeJson } from './state.ts'
 import { ack, post, type Envelope } from './stream.ts'
+import { mayDeliver, turnOpen } from './lease.ts'
 
 export const SEPARATOR = '\n\n---\n\n'
 
@@ -67,6 +68,11 @@ export async function deliver($: any): Promise<void> {
   if (!S.dir || !S.id || S.busy || !S.idle || !S.wanted || S.holder !== 'live') return
   S.busy = true
   try {
+    // A stopped session keeps its inbox: no delivery until orch resume.
+    if ((await controlState($)) !== 'active') return
+    // A supervisor turn has these envelopes until its end: no second delivery, no second writer.
+    const open = await turnOpen($)
+    if (!mayDeliver(S.holder, open.turn, open.lease, open.now)) return
     const run = await orch($, ['watch', '--to', `session:${S.id}`, '--list'])
     if (!run.ok) {
       await log($, `list failed: ${run.text.slice(0, 200)}`)
@@ -94,5 +100,5 @@ export async function deliver($: any): Promise<void> {
 export async function tick($: any): Promise<void> {
   if (!S.dir || S.holder !== 'live') return
   if (!S.watching) watchLoop($).catch((error: unknown) => log($, `watch failed: ${String(error)}`))
-  if (S.wanted && S.dropped !== '') await deliver($)
+  if (S.wanted && (S.dropped !== '' || !S.busy)) await deliver($)
 }
