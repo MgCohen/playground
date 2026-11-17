@@ -144,7 +144,7 @@ public sealed partial class Supervisor
     void Forgotten(string id, DateTimeOffset now)
     {
         var self = Parties.Session(id);
-        var input = store.Events.All().LastOrDefault(e => e.To == self && e.From != Parties.Supervisor && FileStore.IsDeliverable(e))?.Id ?? "none";
+        var input = store.Events.Since(now - StateReader.Window).LastOrDefault(e => e.To == self && e.From != Parties.Supervisor && FileStore.IsDeliverable(e))?.Id ?? "none";
         var report = $"{store.Report(id)?.Event ?? "none"}|{input}";
         var marker = store.ReadJson<ForgottenMarker>(id, StoreFiles.Forgotten);
         if (marker is null || marker.Report != report)
@@ -165,11 +165,14 @@ public sealed partial class Supervisor
         var meta = store.Meta(id);
         if (file.RemoteControlAsked is not null || !s.InApp || s.AppArchived || meta.Background == true || meta.RemoteControl is not null || meta.AppId is not { } appId) return file;
         var self = Parties.Session(id);
-        var asked = store.Events.All().LastOrDefault(e => e.Kind == EventKinds.Notice && e.To == self && store.Events.Fields(e).GetValueOrDefault("kind") as string == "remote-control-self");
+        var asked = store.Events.Thread(RemoteControlThread(id)).LastOrDefault(e => e.Kind == EventKinds.Notice && e.To == self);
         if (asked is null || Times.Parse(asked.At) is not { } at || (now - at).TotalSeconds < s.Timers.RemoteControlSeconds) return file;
         NotifyParent(id, "remote-control-child", ("appId", appId));
         return file with { RemoteControlAsked = Times.Format(now) };
     }
+
+    /// <summary>The thread of the remote-control-self notice: a named query, not a scan of the stream.</summary>
+    public static string RemoteControlThread(string id) => $"remote-control:{id}";
 
     void ReleaseLease(string id, string reason)
     {
@@ -214,23 +217,39 @@ public sealed partial class Supervisor
 
     // F5: the report goes to the parent at the end of the turn. Two reports in one turn give one forward: the last one.
 
+    /// <summary>
+    /// A turn is open: a supervisor turn, or a live process whose status.json says running. An old heartbeat does not end
+    /// the turn; a released lease does (review of PR #14, item 8).
+    /// </summary>
+    static bool TurnOpen(Snapshot s) => s.SupervisorTurn || s.StatusRunning && s.Holder == Holders.Live;
+
+    /// <summary>
+    /// One subscription for each session: all reports of one session become done together at the end of its turn, so the
+    /// cursor never passes a report that waits. The user ack of a report does not hide it from the parent (item 5).
+    /// </summary>
     void RelayReports(string id, Snapshot s)
     {
-        if (s.Running || store.Meta(id).Parent is not { } parent) return;
-        var to = Parties.Session(parent);
         var self = Parties.Session(id);
-        var open = store.Events.All()
-            .Where(e => e.Kind == EventKinds.Report && !e.IsForward && e.From == self && e.Needs is not null
-                && !store.Events.ForwardsOf(e.Id).Any(f => f.To == to) && !store.Events.IsAcked(e.Id))
-            .ToList();
-        if (open.Count == 0) return;
-        foreach (var old in open.SkipLast(1))
+        var subscription = store.Events.Subscribe(Parties.Supervisor, $"reports-{id}",
+            e => e.Kind == EventKinds.Report && !e.IsForward && e.From == self && e.Needs is not null, $"done or blocked reports of {id}");
+        var open = subscription.Next();
+        if (open.Count == 0 || TurnOpen(s)) return;
+        if (store.Meta(id).Parent is { } parent)
         {
-            store.Events.Ack(old, Parties.Supervisor, "superseded", "read");
-            store.Log($"{id} report {old.Id} superseded by a later report of the same turn");
+            var to = Parties.Session(parent);
+            var waiting = open.Where(e => !store.Events.ForwardsOf(e.Id).Any(f => f.To == to)).ToList();
+            foreach (var old in waiting.SkipLast(1))
+            {
+                if (!store.Events.AcksOf(old.Id).Any(a => a.From == Parties.Supervisor)) store.Events.Ack(old, Parties.Supervisor, "superseded", "read");
+                store.Log($"{id} report {old.Id} superseded by a later report of the same turn");
+            }
+            if (waiting.Count > 0)
+            {
+                store.Events.Forward(waiting[^1], to);
+                store.Log($"{id} report {waiting[^1].Id} forwarded to {parent} at the end of the turn");
+            }
         }
-        store.Events.Forward(open[^1], to);
-        store.Log($"{id} report {open[^1].Id} forwarded to {parent} at the end of the turn");
+        subscription.Done(open.Select(e => e.Id));
     }
 
     // Notices to the parent. A root has no parent: its notices go to the user queue as a message that needs an ack.

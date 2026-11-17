@@ -62,6 +62,9 @@ public sealed record Snapshot(DateTimeOffset Now)
     /// <summary>A turn is in flight: a supervisor turn, or status.json running with a fresh heartbeat.</summary>
     public bool Running { get; init; }
 
+    /// <summary>status.json says running, with a fresh or an old heartbeat.</summary>
+    public bool StatusRunning { get; init; }
+
     /// <summary>The supervisor has a turn of this session in flight.</summary>
     public bool SupervisorTurn { get; init; }
 

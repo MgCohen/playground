@@ -19,6 +19,9 @@ public sealed class StateReader(FileStore store)
         return (file, file.State != States.Unknown && !States.IsKnown(file.State));
     }
 
+    /// <summary>The longest look back of a lifecycle query. Older envelopes changed the state long ago.</summary>
+    public static readonly TimeSpan Window = TimeSpan.FromHours(24);
+
     public void Save(string id, StateFile file) => store.WriteJson(id, file, StoreFiles.State);
 
     /// <summary>One read of the store for one session. The supervisor gives the facts that only it knows.</summary>
@@ -39,10 +42,12 @@ public sealed class StateReader(FileStore store)
         var report = store.Report(id);
         var reportAt = Times.Parse(report?.At);
         var self = Parties.Session(id);
-        var envelopes = store.Events.All().Where(e => e.Session == id || e.To == self || e.From == self).ToList();
-        var inputs = envelopes.Where(e => e.To == self && FileStore.IsDeliverable(e)).ToList();
+        // Bounded queries (review of PR #14, item 9): the own events of the hung window, the inputs after the report or the turn.
+        var hung = TimeSpan.FromMinutes(policy.Lifecycle.HungMinutes + 1);
+        var lastOwn = store.Events.Since(now - hung).Where(e => e.From == self || e.Kind == EventKinds.TurnStart && e.Session == id).Select(e => Times.Parse(e.At)).Max();
+        var floor = now - Window;
+        bool InputAfter(DateTimeOffset? at) => at is { } t && store.Events.Since(t > floor ? t : floor).Any(e => e.To == self && FileStore.IsDeliverable(e) && Times.Parse(e.At) > t);
         var undelivered = store.Undelivered(id);
-        var lastOwn = envelopes.Where(e => e.From == self || e.Kind == EventKinds.TurnStart).Select(e => Times.Parse(e.At)).Max();
         var openDecisions = store.OpenDecisions(id).Count;
         var blocked = store.Blocked(id);
         var appId = meta.AppId;
@@ -55,6 +60,7 @@ public sealed class StateReader(FileStore store)
             Control = new Lifecycle(store).Control(id).State,
             Started = meta.Started == true,
             Running = running,
+            StatusRunning = status?.State == "running",
             SupervisorTurn = supervisorTurn,
             Holder = lease.Holder,
             BeatAge = beatAge,
@@ -62,12 +68,12 @@ public sealed class StateReader(FileStore store)
             FailedTurns = failedTurns,
             StopLatch = blocked is { Reason: { } reason, By: null } ? reason : null,
             InputAge = undelivered.Count > 0 && Times.Parse(undelivered[0].At) is { } first ? now - first : null,
-            SinceEvent = lastOwn is { } own ? now - own : null,
+            SinceEvent = lastOwn is { } own ? now - own : hung,
             IdleFor = !running && idleSince is { } idle ? now - idle : null,
             Report = report?.State,
             ReportAge = reportAt is { } r ? now - r : null,
-            InputAfterReport = reportAt is { } ra && inputs.Any(e => Times.Parse(e.At) > ra),
-            InputAfterTurn = idleSince is { } t && inputs.Any(e => Times.Parse(e.At) > t),
+            InputAfterReport = InputAfter(reportAt),
+            InputAfterTurn = InputAfter(idleSince),
             WaitReason = WaitReason(id, openDecisions, report?.State),
             OpenDecisions = openDecisions,
             OpenPrs = store.Stacks(id).SelectMany(e => e.Versions).Count(v => v.State is VersionStates.Open or VersionStates.Ready && v.Pr is not null),

@@ -365,7 +365,7 @@ public sealed partial class Supervisor
             store.Log($"{id} imported into the desktop app");
             var meta = store.Meta(id);
             if (meta.Imported == true && meta.Background != true)
-                Notify(Parties.Session(id), null, store.Texts.Notice("remote-control-self"));
+                Notify(Parties.Session(id), RemoteControlThread(id), store.Texts.Notice("remote-control-self"));
         }
         catch (Exception e) when (e is ShellException or IOException or InvalidOperationException)
         {

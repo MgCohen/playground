@@ -76,6 +76,58 @@ public sealed class LifecycleStateTests
         Assert.That(State(t, child), Is.EqualTo(States.Done));
     }
 
+    static List<Event> ReportForwards(Rig t, string parent) =>
+        [.. t.Store.Events.All().Where(e => e.IsForward && e.Kind == EventKinds.Report && e.To == Parties.Session(parent))];
+
+    [Test]
+    public async Task A_user_ack_of_a_report_before_the_turn_ends_does_not_hide_it_from_the_parent()
+    {
+        using var t = new Rig();
+        var parent = await t.Started();
+        var child = t.Create("work", "child", parent);
+        t.Runner.Gate = new TaskCompletionSource();
+        Event? report = null;
+        t.Runner.OnRun = r => { if (r.Id == child) report = t.Store.SaveReport(child, ReportStates.Done, "done"); };
+        t.Supervisor.Tick();
+        Assert.That(SpinWait.SpinUntil(() => report is not null, 5000), Is.True);
+        new Messages(t.Store).Ack(report!.Id);
+        t.Runner.Gate.SetResult();
+        t.Runner.Gate = null;
+        t.Runner.OnRun = null;
+        await t.Supervisor.Idle();
+        await t.Cycle();
+        Assert.That(ReportForwards(t, parent).Select(e => e.Of), Does.Contain(report.Id), "review of PR #14, item 5");
+    }
+
+    [Test]
+    public async Task A_report_of_a_live_turn_waits_while_the_heartbeat_is_old_and_goes_when_the_lease_is_released()
+    {
+        using var t = new Rig();
+        var parent = await t.Started();
+        var child = t.Create("work", "child", parent);
+        await Cycles(t, 3);
+        using var self = System.Diagnostics.Process.GetCurrentProcess();
+        t.Store.SaveLease(child, new Lease(Holders.Live, Times.Format(t.Clock.Now - TimeSpan.FromSeconds(40))) { Pid = self.Id, Started = Times.Format(self.StartTime.ToUniversalTime()) });
+        Files.Write(t.Store.PathOf(child, StoreFiles.Heartbeat), Times.Format(t.Clock.Now - TimeSpan.FromSeconds(40)));
+        t.Store.WriteJson(child, new Status("running", "turn-1", Times.Format(t.Clock.Now - TimeSpan.FromMinutes(1))), StoreFiles.Status);
+        t.Store.SaveReport(child, ReportStates.Done, "done in the middle of a live turn");
+        await Cycles(t, 2);
+        Assert.That(ReportForwards(t, parent), Is.Empty, "review of PR #14, item 8: an old heartbeat does not end the turn");
+        t.Store.SaveLease(child, new Lease(Holders.None, Times.Format(t.Clock.Now)));
+        await t.Cycle();
+        Assert.That(ReportForwards(t, parent), Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task The_remote_control_notice_has_its_own_thread_so_the_check_is_a_named_query()
+    {
+        using var t = new Rig(import: true);
+        var id = t.Create("work", "visible");
+        await t.Cycle();
+        var notice = t.Store.Events.Thread(Orchestrator.Supervisor.Supervisor.RemoteControlThread(id)).Single();
+        Assert.That(t.Store.Events.Fields(notice).GetValueOrDefault("kind"), Is.EqualTo("remote-control-self"));
+    }
+
     [Test]
     public async Task A_forgotten_session_gets_one_nudge_then_its_parent_gets_one_notice()
     {

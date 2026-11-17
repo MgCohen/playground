@@ -147,7 +147,7 @@ The watchdog does not count the time while the live session runs a turn. A sessi
 | Turn runner | Supervisor | `claude -p` with the renders | `turn.*`, ack |
 | Ask wait | Plugin, `ask_user` with a wait | Returns the tool result | ack |
 | Question relay | Supervisor | Forwards each decision, query and plan of a child to its parent at once | forward |
-| Report relay | Supervisor | At the end of a turn (the session does not run), forwards the newest done or blocked report of a child to its parent. An older report of the same turn with no forward gets an ack `{ state: read, by: superseded }` from the supervisor (F5) | forward, ack |
+| Report relay | Supervisor (subscription `reports-<id>` for each session) | At the end of a turn, forwards the newest done or blocked report of a child to its parent. A turn is open while the supervisor turn runs, or while `status.json` says running and the lease is `live` (an old heartbeat does not end it). An older report of the same turn gets an ack `{ state: read, by: superseded }` from the supervisor (F5). An ack of the user does not stop the forward | forward, ack |
 | Lifecycle | Supervisor | One step of the state machine for each session at each tick (below) | `session.state`, `state.conflict`, `lease.release`, notices |
 | Meta writer | Supervisor (subscription `meta`) | Applies each `meta.update { session, field, value }` from a plugin: `appId` of the sender itself, `remoteControl` of the sender or of its child. Other updates are refused and logged | `meta.json` |
 | Question follow | Supervisor | A closed notice when the question of a child closes; reminders while it waits with no default (10 min, then each hour) | notice |
