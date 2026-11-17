@@ -1,4 +1,4 @@
-@* The facts and the blocks of a full document, in the order of the view.json of its kind. *@
+@* The facts and the blocks of a full document, in the order of the view.json of its kind. Each look draws its own frame (Ui/Looks). *@
 @using Orchestrator.Core.Templates
 @using Orchestrator.Web.Components.Ui.Looks
 @if (Doc.Facts.Count > 0)
@@ -13,7 +13,7 @@
 @foreach (var block in Doc.Blocks)
 {
     <h2 class="gt">@block.Label</h2>
-    <div class="crd pad doc blk @block.As" data-field="@block.Field" style="@(block.Tone is { } t ? $"--st:var(--{t})" : null)">
+    <div class="blk @block.As" data-field="@block.Field" style="@(block.Tone is { } t ? $"--st:var(--{t})" : null)">
         <DynamicComponent Type="LookComponents.Of(block.As)" Parameters="LookComponents.Parameters(LookValue.Of(block))" />
     </div>
 }
