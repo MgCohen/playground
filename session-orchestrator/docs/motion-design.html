@@ -375,6 +375,35 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 .hnote b { margin-top: 6px; } .hnote b:first-child { margin-top: 0; }
 .hball { position: absolute; right: 18px; bottom: 18px; width: 40px; height: 40px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px rgba(255,106,26,.3), 0 6px 14px -4px rgba(0,0,0,.45); }
 
+/* Ball: the same look as the home button of the app (app.css .nav2 .home) */
+:root {
+  --ball-bg: linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, #ffffff), color-mix(in srgb, var(--accent) 94%, #000000));
+  --ball-sh: inset 0 1px 0 rgba(255,255,255,.28), inset 0 -3px 6px rgba(110,35,0,.14), 0 6px 12px rgba(120,45,5,.24), 0 2px 3px rgba(120,45,5,.18);
+  --ball-ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1a18' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12H3l9-9 9 9h-2'/%3E%3Cpath d='M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7'/%3E%3C/svg%3E");
+}
+.wid .ab b, .fbtn, .nball, .hball { background: var(--ball-ic) center / 46% no-repeat, var(--ball-bg); box-shadow: var(--ball-sh); }
+.wid .ab b, .fbtn { width: 40px; height: 40px; }
+.wid .ab b { margin-top: -22px; }
+.fbtn.pulse { animation-name: bpulse; }
+@keyframes bpulse { 0%,100% { box-shadow: var(--ball-sh), 0 0 0 0 rgba(255,106,26,.5); } 50% { box-shadow: var(--ball-sh), 0 0 0 12px rgba(255,106,26,0); } }
+/* S1, S2 samples */
+.s1 .scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-bottom: 4px; }
+.s1 .kv { padding: 10px 14px; display: grid; gap: 2px; font-size: 13px; }
+.s1 .kv b { font-weight: 600; }
+.s1 .two { display: flex; gap: 8px; flex: none; }
+.s1 .two .btn { height: 42px; }
+.s1 .bar { display: flex; gap: 8px; }
+.s1 .bar .btn { height: 44px; }
+.s1[data-m="now"] .bar { position: absolute; left: 12px; right: 12px; bottom: 16px; z-index: 2; }
+.s1[data-m="now"] .scroll .bar-slot { display: none; }
+.s1 .tagnote { position: absolute; right: 16px; bottom: 66px; z-index: 3; font: 600 11px var(--f-body); color: #fff; background: var(--b-blk); padding: 3px 8px; border-radius: 999px; }
+.s1[data-m="a"] .tagnote { display: none; }
+.s2 .q { padding: 16px; display: grid; gap: 6px; }
+.s2 .q b { font-size: 15px; }
+.s2 .ctl2 { display: flex; gap: 8px; margin-top: auto; }
+.s2 .btn:active { transform: scale(.96); }
+.s2[data-m="a"] .btn.sk { background: var(--surf); box-shadow: var(--sh-raise); color: var(--muted); }
+
 /* Answer box */
 .answer { margin-top: 36px; padding: 18px 20px; border-radius: 18px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); display: grid; gap: 8px; }
 .answer code { display: block; padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); overflow-x: auto; white-space: pre; }
@@ -532,32 +561,54 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     </div>
   </section>
   <!-- Static fixes -->
-  <section class="item" id="s">
-    <div class="fix">
-      <div><div class="mini"><span class="cap">S1 now</span><div class="crd row"></div><div class="crd row"></div><div class="two"><span class="btn">Stop</span><span class="btn">Archive</span></div>
-        <div class="stick"><span class="btn">Message</span><span class="btn pri">Event stream</span></div></div></div>
-      <div><div class="mini"><span class="cap">S1 proposal</span><div class="crd row"></div><div class="crd row"></div>
-        <div class="two" style="margin-top:auto"><span class="btn">Message</span><span class="btn pri">Event stream</span></div><div class="two"><span class="btn">Stop</span><span class="btn">Archive</span></div></div></div>
-      <div><div class="mini"><span class="cap">S2 now · proposal</span><div style="flex:1"></div>
-        <div class="two"><span class="btn">Other</span><span class="btn sk" style="flex:0 0 56px">↓</span><span class="btn pri">Accept</span></div>
-        <div class="two"><span class="btn">Other</span><span class="btn" style="flex:0 0 56px;color:var(--muted)">↓</span><span class="btn pri">Accept</span></div></div></div>
+  <section class="item" id="s1">
+    <div>
+      <div class="sw" id="s1-sw"><button aria-pressed="true" data-v="now">Now</button><button aria-pressed="false" data-v="a">A fix</button></div>
+      <div class="phone s1" id="s1-ph" data-m="now">
+        <div class="crd hd2"><div class="path"><button class="cr">Sessions</button><span class="sep">›</span><span class="cur">orch-bad3</span></div></div>
+        <div class="scroll" id="s1-scroll">
+          <div class="crd kv"><b>State</b><span class="sub">Working · step 4 of 6</span></div>
+          <div class="crd kv"><b>Brief</b><span class="sub">Improve the look and the motion of the app.</span></div>
+          <div class="crd kv"><b>Branch</b><span class="sub">orch/session-bad3999b</span></div>
+          <div class="crd kv"><b>Last event</b><span class="sub">Report · 4 min ago</span></div>
+          <div class="crd kv"><b>Started</b><span class="sub">Today, 14:02</span></div>
+          <div class="crd kv"><b>Folder</b><span class="sub">playground.wt/orch-bad3999b</span></div>
+          <div class="crd kv"><b>Pull request</b><span class="sub">#25 · draft</span></div>
+          <div class="bar-slot"></div>
+          <div class="two"><span class="btn">Stop</span><span class="btn">Archive</span></div>
+        </div>
+        <div class="bar" id="s1-bar"><span class="btn">Message</span><span class="btn pri">Event stream</span></div>
+        <span class="tagnote">Stop and Archive are under here</span>
+      </div>
     </div>
     <div class="spec">
-      <div class="head"><span class="tag">S1 · S2</span><h2>Two static fixes</h2></div>
-      <p><b>S1:</b> on Session status, put Message and Event stream in the page flow, above Stop and Archive. Nothing covers the buttons.</p>
-      <p><b>S2:</b> give the skip button the raised look of the other buttons, with a muted icon. It must not look disabled.</p>
-      <div class="opts" data-key="S" data-nonow>
-        <div class="opt rec" data-v="both"><b>✓</b><span class="t">Both</span><span class="d">S1 and S2.</span></div>
-        <div class="opt" data-v="S1 only"><b>1</b><span class="t">S1 only</span><span class="d">Fix the overlap. Keep the skip button.</span></div>
-        <div class="opt" data-v="S2 only"><b>2</b><span class="t">S2 only</span><span class="d">Change the skip button. Keep the layout.</span></div>
-        <div class="opt" data-v="no"><b>–</b><span class="t">No</span><span class="d">Keep both as they are.</span></div>
+      <div class="head"><span class="tag">S1</span><h2>Session status: buttons under the bar</h2></div>
+      <p>This is the Session status page (Sessions › a session). Today, Message and Event stream float at the bottom of the screen. At the end of the page, they cover Stop and Archive, so you cannot tap them. Switch between "Now" and "A fix" in the sample, and scroll it.</p>
+      <div class="opts">
+        <div class="opt rec"><b>A</b><span class="t">Fix</span><span class="d">Message and Event stream go into the page, directly above Stop and Archive. They scroll with the page. Nothing covers a button.</span></div>
+      </div>
+    </div>
+  </section>
+  <section class="item" id="s2">
+    <div>
+      <div class="sw" id="s2-sw"><button aria-pressed="true" data-v="now">Now</button><button aria-pressed="false" data-v="a">A fix</button></div>
+      <div class="phone s2" id="s2-ph" data-m="now">
+        <div class="crd q"><span class="sub">Question · Pattern engine spike</span><b>Which sample set do you want?</b><span class="sub">Recommended: the 2 000 real patterns</span></div>
+        <div class="ctl2"><button class="btn">Other</button><button class="btn sk" aria-label="Skip" style="flex:0 0 56px"><svg viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button><button class="btn pri">Accept</button></div>
+      </div>
+    </div>
+    <div class="spec">
+      <div class="head"><span class="tag">S2</span><h2>Card skip button</h2></div>
+      <p>This is the button row under a card on the Cards page. The middle button skips the card for now. Today it is carved into the surface, so it looks disabled. Switch between "Now" and "A fix" in the sample, and tap the buttons.</p>
+      <div class="opts">
+        <div class="opt rec"><b>A</b><span class="t">Fix</span><span class="d">The skip button gets the raised look of Other and Accept, with a muted icon. It looks like a real button, but quieter than Accept.</span></div>
       </div>
     </div>
   </section>
   <div class="answer">
     <h2>How to answer</h2>
     <p>Name an option for each item, or "no". For example:</p>
-    <code>M1 A, M2 A, M3 A, M5 A, M6 A, M7 all, S1 yes, S2 yes</code>
+    <code>M1 A, M2 A, M3 A, M5 A, M6 A, M7 all, S1 A, S2 A</code>
     <p class="sub">Click an option card to pick it. The bar at the bottom shows your picks. Copy it into the chat. My recommendation is the line above.</p>
   </div>
   <div class="picks" data-scope="p-components"><b>Your picks</b><div class="vals"></div><button type="button" class="cp">Copy</button><button type="button" class="ghost rs">Reset</button></div>
@@ -1165,7 +1216,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     var keep = [wid.style.transform, wid.style.height, inner.style.transform];
     wid.style.transform = ""; wid.style.height = H + "px"; inner.style.transform = "";
     var a = ab.getBoundingClientRect(), b = abBtn.getBoundingClientRect(), d = desk.getBoundingClientRect();
-    g.abW = a.width; g.by = b.top + b.height / 2 - a.top;
+    g.abW = a.width; g.bs = b.height; g.by = b.top + b.height / 2 - a.top;
     fbtn.style.left = (b.left - d.left) + "px"; fbtn.style.top = (b.top - d.top) + "px";
     wid.style.transform = keep[0]; wid.style.height = keep[1]; inner.style.transform = keep[2];
   }
@@ -1188,7 +1239,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     ph.style.opacity = String(mo * (1 - cur.c));
     // App bar: a pill that starts as a circle behind the ball and unfolds sideways.
     var L = st.blag / 100, q = st.bar === "unfold" ? Math.max(0, Math.min(1, (cl - L) / (1 - L))) : 1;
-    var w = 34 + (g.abW - 34) * q, h = 34 + 2 * q, cy = g.by + (18 - g.by) * q;
+    var bs = g.bs || 34, w = bs + (g.abW - bs) * q, h = bs + (36 - bs) * q, cy = g.by + (18 - g.by) * q;
     ab.style.setProperty("--w", w + "px"); ab.style.setProperty("--h", h + "px"); ab.style.setProperty("--y", (cy - h / 2) + "px");
     var sh = st.mode === "resize" || st.mode === "stretch" ? Math.max(0, p) : cl;
     if (st.shadow === "with") { wsh.style.height = H * sh + "px"; wsh.style.opacity = p > 0.001 ? "1" : "0"; }
@@ -1587,5 +1638,22 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   }
   sw("h3-sw", "path"); sw("h4-sw", "btn");
   stack = ["sessions", "s1", "sstream"]; show(0);
+})();
+// ===== S1, S2 =====
+(function () {
+  [["s1-sw", "s1-ph"], ["s2-sw", "s2-ph"]].forEach(function (x) {
+    document.getElementById(x[0]).addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      this.querySelectorAll("button").forEach(function (y) { y.setAttribute("aria-pressed", y === b ? "true" : "false"); });
+      var ph = document.getElementById(x[1]); ph.dataset.m = b.dataset.v;
+      if (x[0] === "s1-sw") {
+        var bar = document.getElementById("s1-bar"), slot = ph.querySelector(".bar-slot");
+        if (b.dataset.v === "a") slot.appendChild(bar); else ph.insertBefore(bar, ph.querySelector(".tagnote"));
+        var sc = document.getElementById("s1-scroll"); sc.scrollTop = sc.scrollHeight;
+      }
+    });
+  });
+  document.addEventListener("tabshown", function (e) { if (e.detail === "components") { var sc = document.getElementById("s1-scroll"); sc.scrollTop = sc.scrollHeight; } });
+  var sc = document.getElementById("s1-scroll"); sc.scrollTop = sc.scrollHeight;
 })();
 </script>
