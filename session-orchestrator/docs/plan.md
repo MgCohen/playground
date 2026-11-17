@@ -716,7 +716,7 @@ A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked (
 - `dotnet test --solution Orchestrator.slnx`: 159 passed, 0 failed.
 - Screenshots: `docs/screens/tray-*.png` and `docs/screens/tray-desktop-corner.png`.
 - Finding: in the corner screenshot, the tray icon is in the hidden icons area (^) of Windows. To show it next to the clock, drag it out of that area once.
-- Finding (A4): at the widget height of 560, the Cards page puts the action buttons behind the bottom app bar. The answer sheet still opens with a tap on the card.
+- Finding (A4): at the widget height of 560, the Cards page puts the action buttons behind the bottom app bar. The self-test opens the answer sheet with a script click on the left button.
 - Finding (A4): on Session status, the sticky Message and Event stream bar covers Stop and Archive until the user scrolls.
 - `install.ps1` is not run yet. It needs the approval of the user.
 ## A4 design: inbox UI (2026-11-17)
