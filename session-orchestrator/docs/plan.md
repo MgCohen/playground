@@ -1115,7 +1115,7 @@ Each session is one entry in a session registry, `store/sessions/<id>/session.js
 | Entry | `id`, `code`, `engine` (kind, `sessionId`, `appId`: references only), `parent`, `title`, `owner`, `tags`, `stream`, `work`, `role`, `settings`, `lifecycle` (phase and a copy of the B2 state), `created`, `updated`. Children are a query |
 | Replaces | `meta.json` and `control.json` (store version 3) |
 | Engine first | If the engine gives a function (attach, title, Remote Control, archive, transcript), the adapter uses it. The registry keeps no copy of an engine fact; `adapter.Read` gets it on demand |
-| Adapter | Each engine call goes through `IEngineAdapter`: `Create`, `Attach`, `Open`, `Turn`, `Read`, `Set`, `Archive`. Today only the Claude Code adapter |
+| Adapter | The direction decides. Code that touches a model or a model session goes through `IEngineAdapter`: `Create`, `Attach`, `Open`, `Turn`, `Read`, `Set`, `Archive`, `Ask` (one-shot call for the docs and state checks). A call into our system (start the tray, write a record, post an envelope) needs no adapter, whoever makes it. Today only the Claude Code adapter |
 | Attach | Each adapter has its own attach. Claude Code: the official attach (`start_session`, app parent link and parent control) when the turn permits it (F1), else create and import. Codex later: its own attach, not in the Claude app. The registry records the parent for all engines |
 | Store root | The registry, the run state and the event stream stay under one store root (`ORCH_STORE`, else `<orch home>/store`). `StoreBackends.Create(root)` makes the three ports. Engine data stays in the engine |
 | Settings | Each setting can be set at create and updated by the parent or the user. A setting not set at create is a copy of the parent value; a root copies `policy.json` `sessionDefaults` |
@@ -1144,7 +1144,7 @@ C5 scope: the Claude Code coupling in the code today (review of 2026-11-17).
 | `Store/AppRecords.cs`, `StateReader.cs` | Reads the internal app files (`Claude-Data/*/claude-code-sessions/*.json`, `isArchived`) | Adapter `Read`. It stays a file read: the supervisor process has no app tool |
 | `Core/Contract/Records.cs`, `States.cs`, `Policy.cs` | `Imported`, `RemoteControl`, `AppId`, `Background`, `RemoteControlAsked`, `RemoteControlSeconds` in the core contract | `engine` references and adapter facts; the policy value goes to the adapter options |
 | `Cli` `SessionCommands`, `EventCommands`, `ToolCommands` | `CLAUDE_CODE_SESSION_ID`, the `doctor` checks of `claude` and `~/.claude/settings.json` | An adapter method `CurrentSessionId()`, a doctor check for each adapter |
-| `Supervisor/ClaudeRunner.cs` | `ClaudeRunner`, `ClaudeDocsChecker`, `ClaudeStateChecker` | Already behind ports (`ITurnRunner`, `IDocsChecker`, `IStateChecker`). `ClaudeRunner` becomes adapter `Turn` |
+| `Supervisor/ClaudeRunner.cs` | `ClaudeRunner`, `ClaudeDocsChecker`, `ClaudeStateChecker` call `claude -p` directly | `ClaudeRunner` becomes adapter `Turn`; the two checkers keep their ports and call adapter `Ask` |
 | `templates/*/render/*.md` | The text names `mcp__orch__*` tools and `orch:` skills | A render for each engine, or tool names from the adapter |
 | `plugin/` | The live side in Claude Code | Stays: it is the Claude Code part of the adapter |
 

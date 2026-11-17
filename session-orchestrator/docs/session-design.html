@@ -155,7 +155,7 @@ flowchart LR
       <li>One writer for the registry: the registry service. Plugins send a request envelope.</li>
       <li>Settings are typed fields, not brief text. A mode is a preset of four axes. The brief shows a render of them.</li>
       <li><strong>Engine first.</strong> If the engine gives a function (attach, title, Remote Control, archive, transcript), the adapter uses it. The registry keeps only a reference and adds only what no engine gives.</li>
-      <li><strong>Each engine call goes through the adapter.</strong> Create, attach, read, set, turn and archive are adapter methods. Today there is one adapter: Claude Code.</li>
+      <li><strong>The direction decides.</strong> Code that touches a model or a model session (create, talk, change it on the engine side) goes through the adapter. A call into our system (start the tray, write a record, post an envelope) needs no adapter, whoever makes it.</li>
       <li><strong>One store root.</strong> The registry, the run state and the event stream stay together under one root. If the root moves, all of it moves.</li>
       <li>All engines use the same envelopes. Only the adapter knows the engine.</li>
     </ul>
@@ -195,7 +195,7 @@ flowchart LR
   "tags": ["design", "orch"],
   "stream": "S1",                      <span class="c">// work stream key (C1 owns the workflow)</span>
   "work": { "cwd": "…", "repo": "…", "branch": "orch/session-6f1c2a90", "worktree": true },
-  "role": { "agent": "worker", "skills": ["orch:orch-ask"] },
+  "role": { "agent": "worker", "skills": ["orch:orch-ask"] }, <span class="c">// a record; only the adapter reads it to start the session</span>
   "settings": { "mode": "auto", "visibility": "public", "policy": "default",
                 "reportOn": ["done", "blocked", "asked"], "allowDefaults": false },
   "lifecycle": { "phase": "active", "state": "idle", "since": "…", "by": "supervisor" },
@@ -613,6 +613,7 @@ public interface IEngineAdapter
     Task&lt;EngineFacts&gt; Read(SessionEntry s);                 <span class="c">// facts that the engine keeps</span>
     Task Set(SessionEntry s, EngineSetting setting);          <span class="c">// title, visibility, model: written in the engine</span>
     Task Archive(SessionEntry s);                             <span class="c">// engine side of the archive</span>
+    Task&lt;AskResult&gt; Ask(AskRequest r);                      <span class="c">// one-shot model call, no session (docs check, state check)</span>
 }
 <span class="c">// ISessionRegistry.Create calls adapter.Create or adapter.Attach, then writes the entry.
 // No other code calls an engine.</span></pre>
@@ -626,6 +627,39 @@ public interface IEngineAdapter
         <tr><td><code>Attach</code></td><td>App <code>start_session</code></td><td>Its own attach</td><td>Registry parent only</td></tr>
       </tbody>
     </table></div>
+  </section>
+
+  <section>
+    <h2>The direction of the call decides if the adapter is necessary</h2>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  subgraph IN["Into our system: no adapter"]
+    U["User"] --> API["orch CLI, HTTP API, tray, MCP tools"]
+    M["A model session"] --> API
+    SC["A script"] --> API
+  end
+  API --> ST[("Store: records, stream, run state")]
+  ST --> OUT["Supervisor, registry service, tray"]
+  subgraph OUTB["Out to a model: adapter only"]
+    OUT --> AD["IEngineAdapter"]
+    AD --> CC["Claude Code"]
+    AD -.-> CX["Codex, later"]
+  end
+    </pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Action</th><th>Touches a model?</th><th>Path</th></tr></thead>
+      <tbody>
+        <tr><td>Start a session, attach it</td><td>Yes</td><td>Adapter <code>Create</code>, <code>Attach</code>, <code>Open</code></td></tr>
+        <tr><td>Talk to a session: a supervisor turn</td><td>Yes</td><td>Adapter <code>Turn</code></td></tr>
+        <tr><td>Change a session on the engine side: title, Remote Control, archive, model</td><td>Yes</td><td>Adapter <code>Set</code>, <code>Archive</code></td></tr>
+        <tr><td>Read an engine fact: in the app, archived in the app</td><td>Yes</td><td>Adapter <code>Read</code></td></tr>
+        <tr><td>A one-shot model call: docs check, state check</td><td>Yes</td><td>Adapter <code>Ask</code>, behind <code>IDocsChecker</code> and <code>IStateChecker</code></td></tr>
+        <tr><td>Start the tray or the supervisor</td><td>No</td><td>Direct, from a person, a model or a script</td></tr>
+        <tr><td>Write a record: tags, code, a setting, a note</td><td>No</td><td><code>orch</code>, the API or the registry service</td></tr>
+        <tr><td>Post or read an envelope</td><td>No</td><td><code>orch post</code>, <code>orch watch</code>, the MCP tools</td></tr>
+      </tbody>
+    </table></div>
+    <p>Only the adapter knows how to start, talk to or change a model session. Each other part of the system is the same for each engine and for each caller.</p>
   </section>
 
   <section>
