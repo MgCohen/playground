@@ -1122,6 +1122,7 @@ Findings:
 | E1-4 | The user asked if the outline is necessary. It is not: the widget had a 1-pixel form padding and a system border color | Done: no outline. The rounded corners and the shadow of the system mark the edge. Self-test 25 of 25 PASS; `docs/screens/tray-grow-1.png`, `tray-grow-3.png` |
 | E1-3 | The proposal page has three tabs: Components (M1 to M3, M5 to M7, S1, S2), Screen transitions (T1 tab change, T2 open a document) and Tray grow (G1, with live controls for mode, curve and times). The user tweaks the grow there | Open: user review |
 | E1-5 | User feedback: the shadow pops on at the end of the grow. The user also wants a load flow: if the page is ready, only grow. If not, the home button floats and pulses (about 500 ms), the widget grows behind it with a placeholder, and the content fades in after the grow. The Windows shadow cannot fade, so a fade needs a second see-through window that draws the shadow. Page version 4 has clickable picks and these controls | Open: user tweaks in the Tray grow tab |
+| E1-6 | User feedback: the home button becomes a ball with its own motion. It comes in first (pop, scale, drop or fade, with a time), and the widget grows out of it. The app bar unfolds sideways from a circle behind the ball, and ends when the grow ends. At hide, a yo-yo: the widget shrinks into the ball, the ball stays (hold time), then goes. Page version 5 has these controls | Open: user tweaks in the Tray grow tab |
 
 Next steps of E1, in order:
 
