@@ -251,7 +251,7 @@ A version id is the decision id for version 1 and `<decision>-v<n>` after it. A 
 | `GET /api/events` | Query: the text keys | The same as `GET /api/stream` |
 | `GET /api/events/<id>` | Query: `for`, `render` | `{ envelope, body, text }`. `text` is the render for the receiver |
 | `POST /api/nudge` | `{ to, id? }` | `{ nudged }` |
-| `GET /api/inbox` | | The open cards: `{ id, kind, needs, session, title, envelope, fields }` |
+| `GET /api/inbox` | | The open cards: `{ id, kind, needs, session, title, envelope, fields, defaultAt }`. `defaultAt` is the ISO time when the policy answers an open decision with its `defaultOption` (the time of the decision + `timeoutSeconds` of its level). It is `null` for a query, a decision with no default, a level with no timeout, and each card that is not a decision |
 | `POST /api/inbox/<id>/accept` | `{ text? }` | The posted envelope |
 | `POST /api/inbox/<id>/refuse` | `{ text }` | The posted envelope |
 | `GET /api/sessions` | | Each enabled session: title, parent, holder, live, running, status, report, blocked, open decisions |

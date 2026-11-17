@@ -120,6 +120,17 @@ public sealed class FileStore
         };
     }
 
+    /// <summary>
+    /// The time when the policy answers this open decision with its default, by the rule of the supervisor: only a
+    /// decision (not a query), with a defaultOption, at a level with a timeout. None for any other envelope.
+    /// </summary>
+    public DateTimeOffset? DefaultAt(Event e)
+    {
+        if (e.Kind != EventKinds.Decision || e.IsForward || e.Thread is null || Events.FirstAnswer(e.Thread) is not null) return null;
+        var decision = ToDecision(e);
+        return DefaultRule.At(decision, Policy.LevelOf(decision.Risk));
+    }
+
     public Answer? Answer(string id, string decision) => Events.FirstAnswer(decision) is { } e ? ToAnswer(e) : null;
 
     Answer ToAnswer(Event e)

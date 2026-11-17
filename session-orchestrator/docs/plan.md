@@ -676,7 +676,7 @@ Each reader asks the stream with one typed query, `StreamQuery`. No C# reader re
 | Blocked | The newest `blocked` envelope about the session. `SaveBlocked` posts it when the reason changes and writes no `blocked.json` |
 | Indexes | By kind and by sender. The watchdog, the question follow, `Report`, `Update` and `Decisions` do not copy the full stream |
 | Cursor lock | `Done` reads, merges and writes the cursor under `<name>.json.lock` |
-| Unit tests | 144 pass (`dotnet test --solution Orchestrator.slnx`) |
+| Unit tests | 145 pass (`dotnet test --solution Orchestrator.slnx`) |
 
 ### Live sum test (scratchpad store, port 7793)
 
@@ -700,4 +700,6 @@ A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked (
 | A3-1 | The plugin still writes `blocked.json` in `deliver.ts`. No reader uses it | Open: stream B can remove the two writes. The plugin is out of the A3 scope |
 | A3-2 | `status.json`, `lease.json`, `heartbeat.txt`, `control.json` and `stack/` are lifecycle or git state, not messages | Kept as files. Stream B owns them |
 | A3-3 | The global `orch` tool on this computer is older than A2 (no `orch init`). A live test must put its own `orch` first in `PATH` | Recorded. The live test used `dotnet tool install --tool-path` in the scratchpad |
+| A3-5 | Request of A4: a card must show when its default applies | Done: `defaultAt` on each card of `GET /api/inbox` and on `Card.DefaultAt`. `DefaultRule.At` is the one rule; `IsDue` uses it. A docs check can still answer before that time |
+| A3-6 | `dotnet test` stopped two times after 22 and 40 tests with "error: 1" and no failed test. The next 3 runs passed (145). A supervisor of the user listens on port 7777 during the runs | Open: watch it. Not reproduced |
 | A3-4 | The inbox order changed a little: the cards are in the id order of the newest envelope of each thread | Accepted |

@@ -7,6 +7,9 @@ public sealed record Card(Event Envelope, string Session, string Title, IReadOnl
 {
     public string Kind => Envelope.Kind;
     public string? Needs => Envelope.Needs ?? (EventKinds.Questions.Contains(Envelope.Kind) ? Core.Events.Needs.Answer : null);
+
+    /// <summary>The ISO time when the policy answers an open decision with its default. None when no default will apply.</summary>
+    public string? DefaultAt { get; init; }
 }
 
 /// <summary>
@@ -23,7 +26,10 @@ public sealed class Inbox(FileStore store)
     Card ToCard(Event e)
     {
         var session = e.Session ?? Parties.SessionId(e.From) ?? "";
-        return new Card(e, session, store.Meta(session).Title ?? (session.Length > 8 ? session[..8] : session), store.Events.Fields(e));
+        return new Card(e, session, store.Meta(session).Title ?? (session.Length > 8 ? session[..8] : session), store.Events.Fields(e))
+        {
+            DefaultAt = store.DefaultAt(e) is { } at ? Core.Leases.Times.Format(at) : null,
+        };
     }
 
     public Card Find(string id) =>

@@ -42,6 +42,22 @@ public sealed class QueryTests
     }
 
     [Test]
+    public void An_inbox_card_has_the_time_when_its_default_applies()
+    {
+        using var t = new Rig();
+        var id = t.Create("start", "child");
+        var asked = Core.Leases.Times.Format(t.Clock.GetUtcNow());
+        t.Store.SaveDecision(new Decision("toolu_low", id) { Question = "Q1", Risk = "low", DefaultOption = "A", Asked = asked });
+        t.Store.SaveDecision(new Decision("toolu_high", id) { Question = "Q2", Risk = "high", DefaultOption = "A" });
+        t.Store.SaveDecision(new Decision("toolu_none", id) { Question = "Q3", Risk = "low" });
+        var cards = new Inbox(t.Store).Cards().ToDictionary(c => c.Envelope.Thread!);
+        var at = Core.Leases.Times.Parse(cards["toolu_low"].DefaultAt);
+        Assert.That(at, Is.EqualTo(Core.Leases.Times.Parse(cards["toolu_low"].Envelope.At)!.Value.AddSeconds(60)));
+        Assert.That(cards["toolu_high"].DefaultAt, Is.Null);
+        Assert.That(cards["toolu_none"].DefaultAt, Is.Null);
+    }
+
+    [Test]
     public void The_open_decisions_query_skips_answers_and_forwards()
     {
         using var t = new Rig();
@@ -154,6 +170,8 @@ public sealed class QueryTests
         Assert.That(await Ids("/api/events?needs=true"), Is.EqualTo(new[] { asked.Id }));
         Assert.That(await Ids("/api/stream/timeline?limit=1"), Has.Count.EqualTo(1));
         Assert.That(await Ids("/api/inbox"), Is.EqualTo(new[] { asked.Id }));
+        var card = JsonDocument.Parse(await client.GetStringAsync("/api/inbox")).RootElement[0];
+        Assert.That(card.TryGetProperty("defaultAt", out var defaultAt), Is.True);
         Assert.That((await client.GetAsync("/api/stream?view=nothing")).StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
     }
 }

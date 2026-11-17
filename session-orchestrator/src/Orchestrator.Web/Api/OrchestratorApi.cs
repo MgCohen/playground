@@ -152,7 +152,7 @@ public static class OrchestratorApi
             return Results.Accepted(value: new { nudged = input.To });
         }));
 
-        api.MapGet("/inbox", (FileStore store) => new Inbox(store).Cards().Select(c => new { id = c.Envelope.Id, c.Kind, c.Needs, c.Session, c.Title, envelope = c.Envelope, fields = c.Fields }));
+        api.MapGet("/inbox", (FileStore store) => new Inbox(store).Cards().Select(c => new { id = c.Envelope.Id, c.Kind, c.Needs, c.Session, c.Title, envelope = c.Envelope, fields = c.Fields, defaultAt = c.DefaultAt }));
 
         api.MapPost("/inbox/{id}/accept", (string id, CardText? input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
         {
