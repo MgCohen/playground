@@ -1,7 +1,0 @@
-<FieldRows Fields="Fields" Rows="Rows" />
-
-@code {
-    [Parameter, EditorRequired] public IReadOnlyDictionary<string, object?> Fields { get; set; } = default!;
-
-    static readonly (string, string)[] Rows = [("step", "Step"), ("progress", "Progress"), ("summary", "Summary")];
-}

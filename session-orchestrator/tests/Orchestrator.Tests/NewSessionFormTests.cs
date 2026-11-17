@@ -130,17 +130,10 @@ public sealed class NewSessionFormTests
     }
 
     [Test]
-    public void Each_free_text_field_of_the_cards_has_a_mic_button()
+    public void Each_free_text_field_of_the_form_has_a_mic_button()
     {
         using var context = new BunitContext();
-        var decision = new Decision("toolu_1", "s1") { Question = "Which color?", Risk = "low", Asked = Times.Format(DateTimeOffset.UtcNow) };
-        var cards = new[]
-        {
-            context.Render<DecisionCard>(p => p.Add(c => c.Item, new OpenDecision("s1", "One", decision))).Markup,
-            context.Render<DefaultCard>(p => p.Add(c => c.Item, new DefaultToReview("s1", "One", decision, new Answer { Value = "RED", By = Parties.Policy }, null))).Markup,
-            context.Render<SessionCard>(p => p.Add(c => c.Node, new SessionNode(new Meta("s1-00000000") { Cwd = "C:/x" }, "", false, false, "new", ControlStates.Active, null, null, null, 0, []))).Markup,
-            context.Render<NewSessionForm>().Markup,
-        };
+        var cards = new[] { context.Render<NewSessionForm>().Markup };
         foreach (var markup in cards)
         {
             var html = new HtmlParser().ParseDocument(markup);

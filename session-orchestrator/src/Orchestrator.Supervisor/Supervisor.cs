@@ -56,6 +56,7 @@ public sealed partial class Supervisor
 
     public void Tick()
     {
+        if (!options.Ticks) return;
         lock (gate)
         {
             var now = Now;

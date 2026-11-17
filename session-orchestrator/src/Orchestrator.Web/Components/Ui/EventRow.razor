@@ -1,0 +1,29 @@
+@inject Board Board
+@{ var f = Board.Fields(Event); var state = Ui.Text(f.GetValueOrDefault("state")); var open = Board.IsOpen(Event); }
+<div class="tli">
+    <span class="node"><KindRing Kind="@Event.Kind" State="@state" P="@(open ? .5 : 1)" Size="30" /></span>
+    <a class="crd row ev" href="events/@Event.Id">
+        <span class="grow">
+            <span class="l1"><b class="grow ell">@Ui.KindLabel(Event.Kind, f) · @Route</b><span class="mono sub">@Ui.Clock(Ui.Time(Event))</span></span>
+            <span class="t2 ell">@Event.Subject</span>
+            <span class="l3"><Pill Label="@Status(open, state)" State="@Color(open, state)" /></span>
+        </span>
+    </a>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Event Event { get; set; } = default!;
+
+    string Route => Event.From == Parties.User ? $"you → {Board.Party(Event.To)}" : Event.To == Parties.User ? Board.Party(Event.From) : $"{Board.Party(Event.From)} → {Board.Party(Event.To)}";
+
+    string Status(bool open, string state) => open ? "waits" : Event.Kind switch
+    {
+        EventKinds.Report => state is { Length: > 0 } ? state : "report",
+        EventKinds.Question => "answered",
+        EventKinds.Ack => "ack",
+        _ when EventKinds.Messages.Contains(Event.Kind) && Event.To.StartsWith(Parties.SessionPrefix) => Board.IsAcked(Event) ? "delivered" : "sent",
+        _ => Event.Kind,
+    };
+
+    static string Color(bool open, string state) => open ? "pending" : state == "blocked" ? "failed" : "done";
+}

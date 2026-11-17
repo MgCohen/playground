@@ -50,6 +50,10 @@ public static class DecisionKinds
 
     /// <summary>A question with no risk and no default: only a party answers it.</summary>
     public const string Query = "query";
+
+    /// <summary>The policy form of the fields of a question: <see cref="AskUser"/> with a risk or a default, else <see cref="Query"/>.</summary>
+    public static string Of(IReadOnlyDictionary<string, object?> fields) =>
+        fields.GetValueOrDefault("risk") is null && fields.GetValueOrDefault("defaultOption") is null ? Query : AskUser;
 }
 
 public sealed record Decision(string Id, string Session)

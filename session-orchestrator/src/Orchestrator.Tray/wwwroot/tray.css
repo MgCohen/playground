@@ -1,0 +1,17 @@
+/* The widget header of the tray app: a drag of the header moves the window, and the pin keeps it on top. */
+.hd.win { display: flex; align-items: center; gap: 8px; user-select: none; cursor: default; }
+.hd.win .title { flex: 1; min-width: 0; }
+.pin { width: 32px; height: 32px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--muted);
+  display: grid; place-items: center; flex: none; cursor: pointer; }
+.pin .ic { width: 18px; height: 18px; }
+.pin:hover { background: var(--sunken); color: var(--text); }
+.pin.on { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-glow); }
+
+/* No browser scroll bar in the widget: the page scrolls with the wheel, touch and keys, as a phone app does. */
+html, body, * { scrollbar-width: none; }
+::-webkit-scrollbar { display: none; }
+
+/* A backdrop behind the bottom app bar: the content under the bar fades into the canvas, so the bar never mixes with it.
+   It stays below the app bar (z-index 10), the sheets (20, 21) and the toast (15), and it lets clicks through. */
+body::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 92px; z-index: 9; pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--canvas) 55%); }

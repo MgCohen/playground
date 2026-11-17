@@ -121,4 +121,90 @@ public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
     }
 
     public IReadOnlyList<string> Archive(string session, bool force) => lifecycle.Archive(session, Parties.User, force);
+
+    // ===== Inbox UI (A4) =====
+
+    public DateTimeOffset Now => store.Clock.GetUtcNow();
+
+    /// <summary>The cards of the pile, in arrival order, with the actions of their type.</summary>
+    public IReadOnlyList<CardView> Cards() => inbox.Cards().Select(Ui.Classify).OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
+
+    /// <summary>Accept a card: the default, a fixed text (yes), an approve, or an ack.</summary>
+    public void Accept(string id, string? text = null)
+    {
+        inbox.Accept(id, text);
+        supervisor.Tick();
+    }
+
+    /// <summary>Refuse a card with a text: an answer, a refuse, or a message and an ack.</summary>
+    public void Refuse(string id, string text)
+    {
+        inbox.Refuse(id, text);
+        supervisor.Tick();
+    }
+
+    /// <summary>The text of the answer sheet. A default to review gets a change; the other cards get the text as a refuse.</summary>
+    public void SendSheet(CardView card, string text)
+    {
+        if (card.Type == "review" && card.Card.Envelope.Thread is { } thread)
+        {
+            supervisor.Review(card.Session, thread, Verdicts.Change, text);
+            supervisor.Tick();
+            return;
+        }
+        Refuse(card.Id, text);
+    }
+
+    public Event? Find(string id) => store.Events.Find(id);
+
+    public IReadOnlyDictionary<string, object?> Fields(Event e) => store.Events.Fields(e);
+
+    public bool IsOpen(Event e) => EventQuery.IsOpen(store, e);
+
+    public bool IsAcked(Event e) => store.Events.IsAcked(e.Id);
+
+    /// <summary>The envelopes after <paramref name="e"/> that answer, review or acknowledge it.</summary>
+    public IReadOnlyList<Event> Results(Event e)
+    {
+        var thread = e.Thread is { } t ? store.Events.Thread(t) : [];
+        return thread.Where(x => string.CompareOrdinal(x.Id, e.Id) > 0 && !x.IsForward && x.Kind is EventKinds.Answer or EventKinds.Review)
+            .Concat(store.Events.RepliesTo(e.Id)).Concat(store.Events.AcksOf(e.Id))
+            .DistinctBy(x => x.Id).OrderBy(x => x.Id, StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>The stream, newest first. With sessions: only the envelopes of these sessions.</summary>
+    public IReadOnlyList<Event> Stream(StreamQuery filter, IReadOnlyCollection<string>? sessions = null)
+    {
+        var events = store.Query(StreamQueries.Timeline(filter, sessions is null ? TimelineLimit : TimelineLimit * 4));
+        if (sessions is null) return events;
+        var matchers = sessions.Select(s => new StreamQuery { Session = s }).ToList();
+        return events.Where(e => matchers.Any(m => m.Matches(e))).Take(TimelineLimit).ToList();
+    }
+
+    /// <summary>The number of envelopes in each of the last <paramref name="hours"/> hours, oldest first.</summary>
+    public int[] Activity(int hours = 24)
+    {
+        var now = Now;
+        var counts = new int[hours];
+        foreach (var e in store.Query(new StreamQuery { Since = now.AddHours(-hours) }))
+        {
+            if (Ui.Time(e) is not { } at) continue;
+            var slot = hours - 1 - (int)Math.Floor((now - at).TotalHours);
+            if (slot >= 0 && slot < hours) counts[slot]++;
+        }
+        return counts;
+    }
+
+    public int EventCount(string session) => store.Query(new StreamQuery { Session = session }).Count;
+
+    /// <summary>The links in the reports and the briefs of a session, newest first, each one time.</summary>
+    public IReadOnlyList<string> Links(string session) =>
+        store.Query(new StreamQuery { Session = session, Kinds = new HashSet<string> { EventKinds.Report, EventKinds.Brief }, Forwards = false, Newest = true })
+            .SelectMany(e => Ui.List(store.Events.Fields(e).GetValueOrDefault("links"))).Distinct().ToList();
+
+    /// <summary>The time of the newest envelope of a session.</summary>
+    public DateTimeOffset? LastActive(string session) =>
+        store.Query(new StreamQuery { Session = session, Newest = true, Limit = 1 }).FirstOrDefault() is { } e ? Ui.Time(e) : null;
+
+    public string StoreRoot => store.Root;
 }

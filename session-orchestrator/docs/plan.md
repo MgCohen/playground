@@ -893,3 +893,120 @@ A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked w
 | Inbox accept | ✅ a `review approve` to child 3, an `ack` for the root report; the inbox is empty after |
 | `blocked.json` | ✅ no file in any session folder |
 
+
+## T1: Desktop tray app (visual only)
+
+- `src/Orchestrator.Tray`: a WinForms tray icon and a widget with a BlazorWebView, one instance at a time. The design is the same as the runner widget.
+- Widget: 350 × 720 logical pixels scaled to the DPI (lower if the work area is smaller), no title bar, rounded corners, a 1-pixel border, not in the taskbar. It opens at the home location in the corner above the tray.
+- Tray icon: a left click shows or hides the widget. The menu has Show, Pin on top (TopMost) and Exit. `--pin` starts the widget pinned. `--hidden` starts with the widget hidden.
+- Drag: a drag of the page header moves the widget (the runner code: `ReleaseCapture` and `WM_NCLBUTTONDOWN` with `HTCAPTION`). The new place goes to `%LOCALAPPDATA%\Orchestrator.Tray\place.json`. The next show and the next start use it, if the full widget is on a screen. Else the widget uses its home location.
+- Pin: a pin button in the page header sets or removes TopMost. The tray menu item and the header button show the same state (`IWidgetWindow.PinnedChanged`).
+- A4 change for the header icon only: `PageHeader.razor` replaces the header of Home, Cards, Stream, Sessions and Settings. It also adds the `pin` icon to `Ui.Icons`. On the web server there is no `IWidgetWindow`, so the header has the same markup as before. The pin style is in the tray `tray.css`, not in `app.css`.
+- The widget shows the A4 views of `Orchestrator.Web` (PR #15, merged into this branch) through a project reference. No change in `Orchestrator.Web`.
+- Mock data: a new store in a temporary folder (`MockStore`). The real store does not change. No tick service, no claude process (`NoRunner`).
+- Self-test (`.\tray.ps1 -SelfTest`): PASS for 8 views and the widget check: size 525 × 840 pixels at 144 DPI, at the home location. It also copies the screen corner to `tray-desktop-corner.png`.
+- Self-test of the behaviors: PASS. Pin: two clicks set TopMost off, then on. Drag: a real mouse drag (SendInput) moves the widget from 2017,670 to 1777,490, and the place file has 1777,490. Toggle: hide, then show again at the saved place. The drag check moves the mouse pointer for about one second.
+- `dotnet test --solution Orchestrator.slnx`: 159 passed, 0 failed.
+- Screenshots: `docs/screens/tray-*.png` and `docs/screens/tray-desktop-corner.png`.
+- Finding: in the corner screenshot, the tray icon is in the hidden icons area (^) of Windows. To show it next to the clock, drag it out of that area once.
+- Finding (A4): at the old widget height of 560, the Cards page puts the action buttons behind the bottom app bar. The self-test opens the answer sheet with a script click on the left button.
+- Finding (A4): on Session status, the sticky Message and Event stream bar covers Stop and Archive until the user scrolls.
+- `install.ps1` is not run yet. It needs the approval of the user.
+## I1 result: T1 + Q1 integration, live tray (2026-11-17)
+
+Branch `orch/integration-t1-q1`: Q1 (`orch/session-913e5c4c`) with T1 (`orch/session-88155eec`, the tray widget and the A4 views) merged in.
+
+| Part | Result |
+|---|---|
+| Merge conflicts | `docs/plan.md`: both sides kept. `EventCard.razor` and `Timeline.razor`: deleted, as in T1 (the A4 views replace them) |
+| A4 views on the kind `question` | `Ui.cs`, `Open.razor`, `EventRow.razor`, `MockStore.cs`, `DemoSeed.cs` and `InboxUiTests.cs` use `EventKinds.Question`. `DecisionKinds.Of(fields)` gives the sub-type: `ask_user` with a risk or a default, else `query`. The label is "Decision" or "Question", and the field rows and the card actions follow the sub-type. The look does not change |
+| Scroll bar | `tray.css` hides the browser scroll bar in the widget. The page scrolls with the wheel, touch and keys |
+| Height | Request of the user: a taller widget with the same width. 350 × 720 logical pixels (525 × 1080 at 144 DPI). On a smaller work area the height is the work area height less the two gaps |
+| App bar backdrop | Request of the user: content under the bottom app bar mixed with it (the "WAITING · NEWEST FIRST" list). A fixed layer (`body::after`, 92 px, z-index 9) under the app bar fades the content into the canvas. It lets clicks through and stays below the sheets and the toast |
+| End of each view | The app bar is sticky in the page flow, so its own space is the bottom padding of the page. At full scroll the last content ends at 619 px (home, cards, stream) of a 719 px view: above the backdrop (627 px) and the home button (634 px). On Cards the actions Other, skip and Accept show above the bar. Self-test check `scroll-end` |
+| Taskbar gap | The home location has a gap of 12 logical pixels above the work area (18 px at 144 DPI), as the runner. A saved place or a drop on the edge moves in to the same gap (`WidgetForm.Fit`) |
+| Live mode | `Orchestrator.Tray --live <store> [--port <port>]` (`tray.ps1 -Live <store> -Port <port>`). The tray writes with the writer id `tray` and runs no tick (`SupervisorOptions.Ticks` false). The supervisor process of the store delivers. Mock mode stays the default |
+| Unit tests | `dotnet test --solution Orchestrator.slnx`: 221 passed, 1 skipped (`Seed_a_demo_store`, explicit) |
+| Tray self-test | 17 of 17 PASS: 8 views and the checks widget (525 × 1080), taskbar-gap (18 px), no-scroll-bar (0 px), app-bar-backdrop, scroll-end, desktop-corner, pin, drag and toggle. Desktop corner screenshots at the new height (mock data): `docs/screens/tray-corner-home.png`, `tray-corner-cards.png`, `tray-corner-stream.png` |
+
+### Live test (scratchpad store, port 7841, plugin of the worktree)
+
+A supervisor of this branch (published copy, `ORCH_IMPORT=0`, the `orch` tool of this branch first in `PATH`) and the tray in live mode on the same store. The policy level medium had a timeout of 420 s, so the timer shows on the card. The root started 3 children with `spawn_child`.
+
+| Check | Result |
+|---|---|
+| Real question cards in the widget | ✅ "Question · Sum child A" (no default, the context row "Why") and "Decision · Sum child B" (options 8 and 12, default 8) |
+| Default timer (`defaultAt`) | ✅ The card of child B showed the ring with 6:19 left. The policy answered 8 at 05:47:02 |
+| Answer from the widget | ✅ Type, "9", Send. Envelope `1794890478426-cb7773ae-tray`: `answer` from `user` to child A, reply to the question |
+| The answer reached the child | ✅ Child A ran a turn at once and reported "Child A: 9". The session stream shows question, answer and report |
+| Sum | ✅ The root reported "Total: 44 (9 + 8 + 27)" |
+| Default for review | ✅ The card "Review · default" for child B: "8 · level medium, no answer in 420 s" |
+| No tick in the tray | ✅ All turns, relays and the default came from the supervisor process |
+
+The live screenshots show the widget at the earlier height of 560. Screenshots (desktop corner, live data): `docs/screens/tray-live-home.png`, `tray-live-card-a.png`, `tray-live-card-b.png`, `tray-live-answer-sheet.png`, `tray-live-answer-sent.png`, `tray-live-stream.png`, `tray-live-sessions.png`, `tray-live-session-status.png`, `tray-live-session-stream.png`, `tray-live-card-review.png`.
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| I1-1 | A Git Bash `PATH` entry with a drive letter (`C:/...`) splits at the colon. The first root used the old global `orch`, which needs `templates/brief/render.md`, and `spawn_child` failed. With `/c/...` the test `orch` was first | Test note: use the `/c/...` form. Install the global tool again after the merge (A3-3) |
+| I1-2 | The tray in live mode does not know the turns of the supervisor process, so `IsRunning` is false in the tray. The views show the lease and the state files | Accepted |
+| I1-3 | A script drove the widget through the WebView2 debug port (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=<port>`) with clicks on the real buttons. No code change | Test note |
+| I1-4 | The supervisor sent "Archive ... from the app sidebar" messages for the done children, with `ORCH_IMPORT=0` | Open: examine if these messages are necessary when no session was imported |
+
+## A4 design: inbox UI (2026-11-17)
+
+The user approved the design after four rounds. The design page is `docs/inbox-design.html` (https://claude.ai/artifact/RbSF83MgxWHbWo5V3JsGEE).
+
+| Part | Decision |
+|---|---|
+| Theme | Porcelain Orange of Runner Studio: raised cards, carved wells, arc rings. Doto for titles and numbers, Inter for text, JetBrains Mono for ids and times. Light and dark |
+| App bar | A floating pill: Cards, Stream, Home (raised orange circle in the center), Sessions, Settings. A dot under the active side item |
+| Home | A deep ring of the waiting cards by type (bright colors, carved ring, raised center), active sessions that fold open with "See all", events of the last 24 h as dots, and the waiting items as a list that grows. An empty state for each block |
+| Cards | One pile in arrival order. Right and left actions come from the card type. Down skips: the card goes to the end of the pile, and a new card goes after it. A tap opens the full document |
+| Card types | Yes or no: Yes / No. Default: Accept / Other. Opinion and question: Speak (mic on) / Type. Review and plan: Approve / Change. Report and blocked: Got it / Reply |
+| Undo | The UI waits 5 s before it sends an act. A toast shows Undo |
+| Filter and order | One sheet for Cards and Stream: order, date, sessions, source |
+| Open | The full render of the template. A closed item opens the same way; its actions are off and the result shows who closed it |
+| Stream | All events, newest first, on a timeline with ring nodes. The session stream is the same view, locked to one session and its children |
+| Sessions | One foldable tree. A status page for each session: state, numbers, children, related artifacts, details, and the event stream |
+| Version 2 | A form for each message type, made from its schema |
+
+Findings:
+
+| # | Finding | State |
+|---|---|---|
+| A4-1 | The Design canvas type is slow for small changes. A plain HTML page with static frames was faster for the review rounds | Decided: plain page |
+| A4-2 | The skip order stays in the UI session. On another device the pile goes back to arrival order | Accepted |
+| A4-3 | A card shows the preview of its template, Open shows the full render. The templates have no preview render file; the UI uses the card fields of `meta.json` and fixed fields for each type | Open: a preview render for each template (templates are not in the A4 scope) |
+
+## A4 result: inbox UI build (2026-11-17)
+
+The Blazor UI follows the approved design. It is stacked on A3 (`orch/session-5b4701b7`) and uses `defaultAt` of the inbox cards for the timer ring.
+
+| Part | Result | Evidence |
+|---|---|---|
+| Home | ✅ Deep ring of the waiting cards by type, active sessions that fold open, events of 24 h as dots, the waiting list, empty states | `InboxUiTests`, `docs/screens/inbox-home-phone.jpg` |
+| Cards | ✅ One pile in arrival order. The card type sets the right and left actions. Skip puts the card at the end; a card that arrives later goes after it | `InboxUiTests`, `docs/screens/inbox-cards-phone.jpg` |
+| Undo | ✅ An act waits 5 s; Undo cancels it. A view that closes sends the waiting act | `InboxUiTests` |
+| Answer sheet | ✅ Suggestions, free text, mic. Speak starts the mic | `InboxUiTests`, `docs/screens/inbox-answer-sheet-phone.jpg` |
+| Gestures | ✅ Pointer swipe right, left and down on the top card (small JavaScript, `swipe.js`). A tap opens the document | Browser pane, a pointer sequence: skip moved the card to the end |
+| Stream | ✅ Timeline with ring nodes, views Messages / All events / Waits, filter and order sheet. `?session=` locks it to a session and its children | `InboxUiTests`, `docs/screens/inbox-stream-phone.jpg` |
+| Sessions | ✅ Foldable tree, search, new session form | `NewSessionFormTests`, `docs/screens/inbox-sessions-phone.jpg` |
+| Session status | ✅ Progress ring, counts, children, related artifacts (report links), details, stop, resume, archive, message, event stream | `InboxUiTests`, `docs/screens/inbox-session-status-phone.jpg` |
+| Open | ✅ The full render of each envelope. A closed item shows its result, and its actions are off | `InboxUiTests`, `docs/screens/inbox-open-closed-phone.jpg` |
+| Unit tests | ✅ 159 pass, 1 explicit seed test skipped | `dotnet test --solution Orchestrator.slnx` |
+
+The live test used a scratchpad store and port 7795 with demo data from the explicit test `DemoSeed` (`ORCH_SEED=<folder> dotnet test --project tests/Orchestrator.Tests --filter "FullyQualifiedName~DemoSeed"`), and a fake `claude` (`ORCH_CLAUDE`) that prints one success result line. The browser pane emulated 390 × 844.
+
+Findings:
+
+| # | Finding | State |
+|---|---|---|
+| A4-4 | `.card` was the class of the pile card and of the new session form, so the form took the absolute position of the pile card | Fixed: the pile card is `.pcard` |
+| A4-5 | A toast at the bottom covered the action buttons, so a tap hit the toast | Fixed: the toast is at the top |
+| A4-6 | The Messages view showed each forward to the root as a second row with another state | Fixed: Messages hides forwards; All events shows them |
+| A4-7 | The drag tool of the browser pane sends too few pointer moves for a swipe. A pointer event sequence works | Test note |
+| A4-8 | The supervisor runs a turn in the `Cwd` of the session. A demo store needs a folder that exists | Test note: the seed uses the temp folder |
+| A4-9 | A child report card closes when the root gets its forward (A2-4). With a working root, the user sees few report cards | Open: confirm with the user that a child report needs no card when the root got it |
+| A4-10 | The pile order, the skip order and the filter stay in the UI circuit. A reload goes back to arrival order | Accepted (A4-2) |

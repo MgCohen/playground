@@ -36,7 +36,7 @@ There is no other communication file. The inbox, the answers, the reviews, the r
 
 | Field | Use |
 |---|---|
-| `id` | `<ms>-<8 hex>-<writer>`. The ids of one writer always grow. The writer is `supervisor` (the supervisor, or the plugin in a supervisor turn), `cli` or `live` |
+| `id` | `<ms>-<8 hex>-<writer>`. The ids of one writer always grow. The writer is `supervisor` (the supervisor, or the plugin in a supervisor turn), `cli`, `live` or `tray` (the tray app in live mode) |
 | `session` | The session that the envelope is about |
 | `from`, `to` | `user`, `supervisor`, `docs`, `policy` or `session:<full id>`. One receiver for each envelope |
 | `subject` | One line of 80 characters maximum. One rule in `Subjects.Of` (C#) and `subject` (`stream.ts`); the contract tests check both |

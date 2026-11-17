@@ -107,7 +107,7 @@ public sealed class FileStore
         return new Decision(e.Thread ?? e.Id, Parties.SessionId(e.From) ?? e.Session ?? "")
         {
             // A question with no risk and no default takes no policy: the old kind query.
-            Kind = risk is null && f.GetValueOrDefault("defaultOption") is null ? DecisionKinds.Query : DecisionKinds.AskUser,
+            Kind = DecisionKinds.Of(f),
             Question = f.GetValueOrDefault("question") as string,
             Context = f.GetValueOrDefault("context") as string,
             Snippet = f.GetValueOrDefault("snippet") as string,
