@@ -1118,4 +1118,10 @@ Findings:
 | # | Finding | State |
 |---|---|---|
 | E1-1 | The system frame (rounded corners, border, shadow) has the full window size, also with a window region. During the grow it showed a full-height border around an empty area | Fixed: the grow turns the frame off (no rounding, no border color, no non-client rendering) and turns it on again at the end |
-| E1-2 | Transparent parts of the widget: a window region or a color key gives any shape with hard edges, and the cut parts let clicks through. Soft edges and part transparency (alpha) need WebView2 composition hosting, which BlazorWebView for WinForms does not give | Open: a spike if the user wants a ring shape |
+| E1-2 | Transparent parts of the widget: a window region or a color key gives any shape with hard edges, and the cut parts let clicks through. Soft edges and part transparency (alpha) need WebView2 composition hosting, which BlazorWebView for WinForms does not give | Open: spike E1-S1, last item of the stream |
+| E1-3 | The proposal page has three tabs: Components (M1 to M3, M5 to M7, S1, S2), Screen transitions (T1 tab change, T2 open a document) and Tray grow (G1, with live controls for mode, curve and times). The user tweaks the grow there | Open: user review |
+
+Next steps of E1, in order:
+
+1. User review of the three tabs. Build the chosen items, one commit each, with self-test proof.
+2. Spike E1-S1, last: composition hosting for the tray widget. Find what it gives (soft-edge shapes such as a ring with a transparent hole, part transparency, blur behind), what it costs (WebView2 `CoreWebView2CompositionController` and DirectComposition in place of the BlazorWebView HWND control), and if it is worth it. Discuss with the user before the build.

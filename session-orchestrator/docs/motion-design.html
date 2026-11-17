@@ -215,6 +215,49 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 .still .press, .still .fold .rows, .still .fold .chev { transition: none; }
 .still .press:active { transform: none; box-shadow: var(--sh-raise); }
 
+/* Tabs */
+.tabs { display: flex; gap: 6px; margin: 0 0 24px; flex-wrap: wrap; }
+.tabs button { font: 600 13px var(--f-body); color: var(--page-tx); background: transparent; border: 1px solid var(--page-line); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--page-tx); color: var(--page); border-color: var(--page-tx); }
+.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.intro { color: var(--page-mu); max-width: 68ch; margin: 0 0 8px; }
+
+/* T2: open a document */
+.stack { position: relative; flex: 1; min-height: 0; overflow: hidden; border-radius: 18px; }
+.lay { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; background: var(--canvas); }
+.lay .t { font: 800 22px/1 var(--f-disp); padding: 4px 6px; }
+.lrow { padding: 12px 14px; display: grid; gap: 2px; cursor: pointer; text-align: left; border: 0; font: inherit; color: var(--text); }
+.back { align-self: flex-start; border: 0; background: none; font: 600 13px var(--f-body); color: var(--text); padding: 4px 6px; cursor: pointer; }
+.doc { padding: 14px 16px; display: grid; gap: 10px; }
+.doc .line { height: 10px; border-radius: 5px; background: var(--sunken); box-shadow: var(--sh-carve); }
+
+/* G1: tray grow */
+.desk { position: relative; height: 560px; border-radius: 16px; overflow: hidden; background: var(--page); border: 1px solid var(--page-line);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 22px, var(--page-line) 22px 24px); }
+.taskbar { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; background: var(--canvas); border-top: 1px solid var(--page-line); display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 0 12px; font: 11px var(--f-mono); color: var(--canvas-tx); }
+.taskbar .tdot { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--surf); }
+.wid { position: absolute; right: 12px; bottom: 52px; width: 230px; height: 440px; border-radius: 12px; overflow: hidden; background: var(--canvas); border: 1px solid var(--muted);
+  box-shadow: 0 12px 30px -10px rgba(0,0,0,.45); display: flex; flex-direction: column; padding: 8px; transform-origin: 50% 100%; }
+.wid .in { display: flex; flex-direction: column; gap: 7px; flex: 1; min-height: 0; }
+.wid .hdr { height: 34px; flex: none; display: flex; align-items: center; padding: 0 10px; font: 800 14px var(--f-disp); }
+.wid .ringc { height: 96px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 10px; }
+.wid .ringc i { width: 70px; height: 70px; border-radius: 50%; border: 12px solid var(--b-q); border-right-color: var(--b-rep); border-bottom-color: var(--b-rev); border-left-color: var(--b-blk); }
+.wid .rw { height: 40px; flex: none; }
+.wid .sp { flex: 1; }
+.wid .ab { height: 36px; flex: none; border-radius: 999px; background: var(--surf); box-shadow: var(--sh-raise-sm); display: grid; place-items: center; }
+.wid .ab b { width: 34px; height: 34px; margin-top: -18px; border-radius: 50%; background: var(--accent); box-shadow: var(--sh-glow); }
+.tweak label { display: grid; gap: 4px; font-size: 13px; }
+.tweak input[type=range] { width: 100%; accent-color: var(--accent); }
+.tweak .sw { margin-bottom: 0; flex-wrap: wrap; }
+.tweak .sw button { flex: 1 0 auto; }
+.vals { font: 12.5px var(--f-mono); padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); color: var(--sunken-tx); overflow-x: auto; white-space: nowrap; }
+.curve { width: 100%; max-width: 220px; height: auto; }
+.curve path { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.curve line { stroke: var(--page-line); stroke-width: 1; }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btns button { border: 1px solid var(--page-line); background: var(--surf); color: var(--text); border-radius: 999px; padding: 7px 14px; font: 600 13px var(--f-body); cursor: pointer; }
+.btns button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
 /* Static fixes */
 .fix { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
 .mini { border-radius: 18px; background: var(--canvas); padding: 10px; display: grid; gap: 8px; color: var(--text); position: relative; height: 210px; overflow: hidden; }
@@ -234,8 +277,13 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 
 <main>
   <h1>Inbox Motion</h1>
-  <p class="lede">Round 1 of the visual stream. Each item has a live sample with an option switch. Drag the top card in the pile samples. The views, the theme and the layout stay as agreed in A4. CSS does the motion; JavaScript only sets a class or waits for the end of an animation.</p>
-
+  <p class="lede">Round 1 of the visual stream. Three tabs: the motion of the components, the screen transitions, and the grow of the tray widget. Each item has a live sample. Pick an option, or change the values, and tell me the result line. The A4 views, the theme and the layout stay as agreed.</p>
+  <nav class="tabs" role="tablist" aria-label="Topics">
+    <button role="tab" id="tab-components" data-tab="components" aria-selected="true">Components</button>
+    <button role="tab" id="tab-transitions" data-tab="transitions" aria-selected="false">Screen transitions</button>
+    <button role="tab" id="tab-grow" data-tab="grow" aria-selected="false">Tray grow</button>
+  </nav>
+  <div class="panel" id="p-components" role="tabpanel" aria-labelledby="tab-components">
   <h2 style="margin-bottom:12px">Gaps from the self-test</h2>
   <div class="tbl-wrap"><table>
     <thead><tr><th>#</th><th>Gap</th><th>Where</th><th>Item</th></tr></thead>
@@ -269,7 +317,6 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <p class="cost">Build: <code>swipe.js</code> adds a class and clicks the action button on <code>animationend</code>. About 15 lines more.</p>
     </div>
   </section>
-
   <!-- M2 -->
   <section class="item" id="m2">
     <div>
@@ -287,7 +334,6 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <p class="cost">Build: two classes and one <code>transitionend</code> in <code>swipe.js</code>. Blazor moves the card in the order after the animation.</p>
     </div>
   </section>
-
   <!-- M3 -->
   <section class="item" id="m3">
     <div>
@@ -305,33 +351,6 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <p class="cost">Build: <code>Cards.razor</code> renders the top three cards with <code>@key</code> and <code>--i</code>. CSS only.</p>
     </div>
   </section>
-
-  <!-- M4 -->
-  <section class="item" id="m4">
-    <div>
-      <div class="sw" data-for="v4"><button aria-pressed="true" data-v="a">A rise</button><button aria-pressed="false" data-v="b">B slide</button><button aria-pressed="false" data-v="c">C rise + stagger</button><button aria-pressed="false" data-v="now">Now</button></div>
-      <div class="phone"><div class="view" id="v4"></div>
-        <div class="nav" id="n4">
-          <button data-i="0" aria-label="Cards"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="3"/></svg></button>
-          <button data-i="1" aria-label="Stream"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
-          <button data-i="2" class="home on" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg></button>
-          <button data-i="3" aria-label="Sessions"><svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v10a2 2 0 0 0 2 2h8M6 12h10"/></svg></button>
-          <button data-i="4" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></button>
-          <span class="dot"></span>
-        </div></div>
-    </div>
-    <div class="spec">
-      <div class="head"><span class="tag">M4 · G4</span><h2>View change</h2></div>
-      <p>Tap the app bar. The header and the app bar stay. Only the page body moves. The nav dot moves to the new item.</p>
-      <div class="opts">
-        <div class="opt rec"><b>A</b><span class="t">Rise</span><span class="d">The new page fades in and rises 10 px in 240 ms. Calm, and the same for each view.</span></div>
-        <div class="opt"><b>B</b><span class="t">Slide</span><span class="d">The page slides 28 px from the side of the tapped item. It shows the place in the app bar.</span></div>
-        <div class="opt"><b>C</b><span class="t">Rise and stagger</span><span class="d">Rise, but each block starts 40 ms after the block above it. More motion.</span></div>
-      </div>
-      <p class="cost">Build: a <code>@key</code> on the page in <code>MainLayout</code> and one CSS animation. B needs the old and new index (small C#).</p>
-    </div>
-  </section>
-
   <!-- M5 -->
   <section class="item" id="m5">
     <div>
@@ -353,7 +372,6 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <p class="cost">Build: CSS for enter. The close waits for <code>animationend</code> (small JavaScript), then Blazor removes the sheet.</p>
     </div>
   </section>
-
   <!-- M6 -->
   <section class="item" id="m6">
     <div>
@@ -370,7 +388,6 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <p class="cost">Build: static HTML in <code>index.html</code> and <code>App.razor</code> before Blazor starts. Blazor replaces it. CSS only.</p>
     </div>
   </section>
-
   <!-- M7 -->
   <section class="item" id="m7">
     <div>
@@ -406,7 +423,6 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <p class="cost">Build: CSS only. The fold uses <code>grid-template-rows</code>.</p>
     </div>
   </section>
-
   <!-- Static fixes -->
   <section class="item" id="s">
     <div class="fix">
@@ -424,12 +440,112 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <p><b>S2:</b> give the skip button the raised look of the other buttons, with a muted icon. It must not look disabled.</p>
     </div>
   </section>
-
   <div class="answer">
     <h2>How to answer</h2>
     <p>Name an option for each item, or "no". For example:</p>
-    <code>M1 A, M2 A, M3 A, M4 A, M5 A, M6 A, M7 all, S1 yes, S2 yes</code>
+    <code>M1 A, M2 A, M3 A, M5 A, M6 A, M7 all, S1 yes, S2 yes</code>
     <p class="sub">My recommendation is the line above. I build each item as one commit, with a self-test screenshot.</p>
+  </div>
+  </div>
+  <div class="panel" id="p-transitions" role="tabpanel" aria-labelledby="tab-transitions" hidden>
+  <p class="intro">Two kinds of screen change: a tab change in the app bar (same level), and a move to a deeper page and back.</p>
+  <!-- T1 -->
+  <section class="item" id="m4">
+    <div>
+      <div class="sw" data-for="v4"><button aria-pressed="true" data-v="a">A rise</button><button aria-pressed="false" data-v="b">B slide</button><button aria-pressed="false" data-v="c">C rise + stagger</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="phone"><div class="view" id="v4"></div>
+        <div class="nav" id="n4">
+          <button data-i="0" aria-label="Cards"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="3"/></svg></button>
+          <button data-i="1" aria-label="Stream"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+          <button data-i="2" class="home on" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg></button>
+          <button data-i="3" aria-label="Sessions"><svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v10a2 2 0 0 0 2 2h8M6 12h10"/></svg></button>
+          <button data-i="4" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></button>
+          <span class="dot"></span>
+        </div></div>
+    </div>
+    <div class="spec">
+      <div class="head"><span class="tag">T1 · G4</span><h2>Tab change</h2></div>
+      <p>Tap the app bar. The header and the app bar stay. Only the page body moves. The nav dot moves to the new item.</p>
+      <div class="opts">
+        <div class="opt rec"><b>A</b><span class="t">Rise</span><span class="d">The new page fades in and rises 10 px in 240 ms. Calm, and the same for each view.</span></div>
+        <div class="opt"><b>B</b><span class="t">Slide</span><span class="d">The page slides 28 px from the side of the tapped item. It shows the place in the app bar.</span></div>
+        <div class="opt"><b>C</b><span class="t">Rise and stagger</span><span class="d">Rise, but each block starts 40 ms after the block above it. More motion.</span></div>
+      </div>
+      <p class="cost">Build: a <code>@key</code> on the page in <code>MainLayout</code> and one CSS animation. B needs the old and new index (small C#).</p>
+    </div>
+  </section>
+  <section class="item" id="t2">
+    <div>
+      <div class="sw" data-for="d2"><button aria-pressed="true" data-v="a">A push</button><button aria-pressed="false" data-v="b">B zoom from row</button><button aria-pressed="false" data-v="c">C rise</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="phone"><div class="stack" id="d2">
+        <div class="lay" id="d2-list"><div class="t">Stream</div>
+          <button class="crd lrow"><b>Report · Docs cleanup</b><span class="sub">The know-how page is current.</span></button>
+          <button class="crd lrow"><b>Question · Pattern engine spike</b><span class="sub">Which sample set do you want?</span></button>
+          <button class="crd lrow"><b>Review · R2 Render model</b><span class="sub">Render the Open view from view.json</span></button>
+          <button class="crd lrow"><b>Brief · you → Docs cleanup</b><span class="sub">Make the know-how page current.</span></button>
+        </div>
+        <div class="lay" id="d2-doc" hidden><button class="back">‹ Stream</button>
+          <div class="crd doc"><b id="d2-title">Report</b><div class="line" style="width:90%"></div><div class="line" style="width:70%"></div><div class="line" style="width:80%"></div><div class="well" style="height:90px"></div><div class="line" style="width:60%"></div></div>
+        </div>
+      </div></div>
+    </div>
+    <div class="spec">
+      <div class="head"><span class="tag">T2</span><h2>Open a document</h2></div>
+      <p>Tap a row to open the full document (the Open view). Tap "Stream" to go back. The same motion applies to a card, a session row and a waiting item.</p>
+      <div class="opts">
+        <div class="opt rec"><b>A</b><span class="t">Push</span><span class="d">The document slides in from the right in 300 ms. The list moves 30 % to the left and dims. Back plays it in reverse.</span></div>
+        <div class="opt"><b>B</b><span class="t">Zoom from row</span><span class="d">The document opens out of the tapped row to the full view. It shows which item you opened.</span></div>
+        <div class="opt"><b>C</b><span class="t">Rise</span><span class="d">The same rise as a tab change. Calm, but no sense of depth.</span></div>
+      </div>
+      <p class="cost">Build: WebView2 is Chromium, so the View Transitions API is available. A small JavaScript hook on the Blazor navigation starts it, and CSS sets the motion.</p>
+    </div>
+  </section>
+  <div class="answer">
+    <h2>How to answer</h2>
+    <p>Name an option for each item. For example:</p>
+    <code>T1 A, T2 A</code>
+    <p class="sub">T1 is for the app bar tabs (same level). T2 is for a move to a deeper page and back.</p>
+  </div>
+  </div>
+  <div class="panel" id="p-grow" role="tabpanel" aria-labelledby="tab-grow" hidden>
+  <p class="intro">The grow of the tray widget at show, and the shrink at hide. The build works; this tab is for the tweaks.</p>
+  <section class="item" id="g1">
+    <div>
+      <div class="desk">
+        <div class="wid" id="wid"><div class="in" id="wid-in">
+          <div class="crd hdr">Home</div>
+          <div class="crd ringc"><i></i><span class="sub">8 wait</span></div>
+          <div class="crd rw"></div><div class="crd rw"></div><div class="crd rw"></div>
+          <div class="sp"></div>
+          <div class="ab"><b></b></div>
+        </div></div>
+        <div class="taskbar"><span>ENG</span><span class="tdot" title="Tray icon"></span><span>4:00 PM</span></div>
+      </div>
+      <div class="btns" style="margin-top:10px"><button id="g-show">Show</button><button id="g-hide">Hide</button><button id="g-loop" class="on">Loop</button></div>
+    </div>
+    <div class="spec tweak">
+      <div class="head"><span class="tag">G1 · tray</span><h2>Widget grow and shrink</h2></div>
+      <p>The sample shows the tray widget above the taskbar. Change the values. The loop plays show, then hide. "Now" marks the values of the current build.</p>
+      <div><div class="sub" style="margin-bottom:4px">Mode</div>
+        <div class="sw" id="g-mode"><button aria-pressed="true" data-v="reveal">Reveal (now)</button><button aria-pressed="false" data-v="rise">Reveal + rise</button><button aria-pressed="false" data-v="fade">Reveal + fade</button><button aria-pressed="false" data-v="resize">Resize</button><button aria-pressed="false" data-v="stretch">Stretch</button></div></div>
+      <div><div class="sub" style="margin-bottom:4px">Curve</div>
+        <div class="sw" id="g-curve"><button aria-pressed="true" data-v="cubic">Cubic out (now)</button><button aria-pressed="false" data-v="quint">Quint out</button><button aria-pressed="false" data-v="back">Overshoot</button><button aria-pressed="false" data-v="spring">Spring</button><button aria-pressed="false" data-v="linear">Linear</button></div></div>
+      <svg class="curve" viewBox="0 0 220 120" role="img" aria-label="Curve of the grow: height against time"><line x1="10" y1="100" x2="210" y2="100"/><line x1="10" y1="20" x2="210" y2="20"/><path id="g-path"/></svg>
+      <label for="g-ms">Show time: <b id="g-ms-v">280 ms</b><input id="g-ms" type="range" min="100" max="800" step="20" value="280"></label>
+      <label for="g-hms">Hide time: <b id="g-hms-v">200 ms</b><input id="g-hms" type="range" min="80" max="600" step="20" value="200"></label>
+      <div class="opts">
+        <div class="opt"><b>R</b><span class="t">Reveal</span><span class="d">The page stays still. The top edge goes up and shows more of it. This is the build now.</span></div>
+        <div class="opt"><b>+</b><span class="t">Reveal + rise or fade</span><span class="d">Reveal, and the page also rises 40 px or fades in. Softer.</span></div>
+        <div class="opt"><b>Z</b><span class="t">Resize or stretch</span><span class="d">Resize changes the real height, so the page lays out again on each frame. Stretch squashes the page. Both cost more in the app.</span></div>
+      </div>
+      <div class="vals" id="g-vals"></div>
+    </div>
+  </section>
+  <div class="answer">
+    <h2>How to answer</h2>
+    <p>Copy the value line above, or say the change. For example:</p>
+    <code>G1: reveal + rise, quint out, show 340 ms, hide 180 ms</code>
+  </div>
   </div>
 </main>
 
@@ -572,6 +688,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   }
   document.getElementById("n4").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) showView(+b.dataset.i); });
   showView(2);
+  document.addEventListener("tabshown", function (e) { if (e.detail === "transitions") showView(view.at); });
 
   // M5 sheet and toast
   var layer = document.getElementById("s5-layer"), s5 = document.getElementById("s5"), timer = 0;
@@ -632,5 +749,144 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   }
   document.getElementById("k7-r").addEventListener("click", function () { ring(k7.dataset.mode !== "now"); });
   ring(true);
+})();
+
+// ===== Tabs =====
+(function () {
+  var names = ["components", "transitions", "grow"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "components";
+    names.forEach(function (n) {
+      document.getElementById("p-" + n).hidden = n !== name;
+      document.getElementById("tab-" + n).setAttribute("aria-selected", n === name ? "true" : "false");
+    });
+    document.dispatchEvent(new CustomEvent("tabshown", { detail: name }));
+  }
+  document.querySelectorAll("[data-tab]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      show(b.dataset.tab);
+      try { history.replaceState(null, "", "#" + b.dataset.tab); } catch (_) { }
+    });
+  });
+  addEventListener("hashchange", function () { if (location.hash) show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+
+// ===== T2: open a document =====
+(function () {
+  var list = document.getElementById("d2-list"), doc = document.getElementById("d2-doc"), mode = "a", from = null;
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ease = "cubic-bezier(.2,.8,.2,1)";
+  document.querySelector('.sw[data-for="d2"]').addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    this.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+    mode = b.dataset.v;
+  });
+  function inset(row) {
+    var s = doc.parentElement.getBoundingClientRect(), r = row.getBoundingClientRect();
+    return "inset(" + (r.top - s.top) + "px " + (s.right - r.right) + "px " + (s.bottom - r.bottom) + "px " + (r.left - s.left) + "px round 22px)";
+  }
+  function open(row) {
+    from = row;
+    document.getElementById("d2-title").textContent = row.querySelector("b").textContent;
+    doc.hidden = false;
+    if (mode === "now" || reduce) { list.hidden = true; return; }
+    var a;
+    if (mode === "a") {
+      list.animate([{ transform: "none", opacity: 1 }, { transform: "translateX(-30%)", opacity: .5 }], { duration: 300, easing: ease, fill: "forwards" });
+      a = doc.animate([{ transform: "translateX(100%)" }, { transform: "none" }], { duration: 300, easing: ease });
+    } else if (mode === "b") {
+      a = doc.animate([{ clipPath: inset(row), opacity: .4 }, { clipPath: "inset(0px 0px 0px 0px round 0px)", opacity: 1 }], { duration: 340, easing: ease });
+    } else {
+      a = doc.animate([{ transform: "translateY(10px)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 240, easing: ease });
+    }
+    a.onfinish = function () { list.hidden = true; list.getAnimations().forEach(function (x) { x.cancel(); }); };
+  }
+  function back() {
+    list.hidden = false;
+    if (mode === "now" || reduce) { doc.hidden = true; return; }
+    var a;
+    if (mode === "a") {
+      list.animate([{ transform: "translateX(-30%)", opacity: .5 }, { transform: "none", opacity: 1 }], { duration: 280, easing: ease });
+      a = doc.animate([{ transform: "none" }, { transform: "translateX(100%)" }], { duration: 280, easing: ease });
+    } else if (mode === "b" && from) {
+      a = doc.animate([{ clipPath: "inset(0px 0px 0px 0px round 0px)", opacity: 1 }, { clipPath: inset(from), opacity: 0 }], { duration: 280, easing: ease });
+    } else {
+      a = doc.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180 });
+    }
+    a.onfinish = function () { doc.hidden = true; };
+  }
+  list.addEventListener("click", function (e) { var r = e.target.closest(".lrow"); if (r) open(r); });
+  doc.querySelector(".back").addEventListener("click", back);
+})();
+
+// ===== G1: tray grow =====
+(function () {
+  var wid = document.getElementById("wid"), inner = document.getElementById("wid-in");
+  var H = 440, st = { mode: "reveal", curve: "cubic", ms: 280, hms: 200 }, loop = true, timer = 0, anim = 0, onTab = false;
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var curves = {
+    cubic: function (t) { return 1 - Math.pow(1 - t, 3); },
+    quint: function (t) { return 1 - Math.pow(1 - t, 5); },
+    back: function (t) { var c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
+    spring: function (t) { return t >= 1 ? 1 : 1 - Math.exp(-6.5 * t) * Math.cos(11 * t); },
+    linear: function (t) { return t; }
+  };
+  var names = { cubic: "cubic out", quint: "quint out", back: "overshoot", spring: "spring", linear: "linear" };
+  var modes = { reveal: "reveal", rise: "reveal + rise", fade: "reveal + fade", resize: "resize", stretch: "stretch" };
+  function apply(p) {
+    var cl = Math.max(0, Math.min(1, p));
+    wid.style.clipPath = ""; wid.style.height = H + "px"; wid.style.transform = ""; inner.style.transform = ""; inner.style.opacity = "";
+    wid.style.visibility = p <= 0.001 ? "hidden" : "visible";
+    if (st.mode === "resize") { wid.style.height = Math.max(0, H * p) + "px"; return; }
+    if (st.mode === "stretch") { wid.style.transform = "scaleY(" + Math.max(0, p) + ")"; return; }
+    wid.style.clipPath = "inset(" + ((1 - cl) * 100) + "% 0 0 0 round 12px)";
+    if (st.mode === "rise") inner.style.transform = "translateY(" + ((1 - p) * 40) + "px)";
+    if (st.mode === "fade") inner.style.opacity = String(cl);
+  }
+  // Show: the curve. Hide: the mirror of the curve (an ease in). The overshoot and the spring hide with the cubic curve.
+  function run(show, done) {
+    cancelAnimationFrame(anim);
+    var dur = show ? st.ms : st.hms, start = performance.now();
+    var f = curves[st.curve], g = st.curve === "back" || st.curve === "spring" ? curves.cubic : f;
+    if (reduce) { apply(show ? 1 : 0); if (done) done(); return; }
+    (function step(now) {
+      var t = Math.min(1, (now - start) / dur);
+      apply(show ? f(t) : g(1 - t));
+      if (t < 1) anim = requestAnimationFrame(step); else if (done) done();
+    })(start);
+  }
+  function cycle() {
+    clearTimeout(timer);
+    run(true, function () { timer = setTimeout(function () { run(false, function () { timer = setTimeout(function () { if (loop && onTab) cycle(); }, 500); }); }, 1100); });
+  }
+  function draw() {
+    var f = curves[st.curve], d = "";
+    for (var i = 0; i <= 60; i++) { var t = i / 60; d += (i ? "L" : "M") + (10 + t * 200).toFixed(1) + " " + (100 - f(t) * 80).toFixed(1); }
+    document.getElementById("g-path").setAttribute("d", d);
+    document.getElementById("g-ms-v").textContent = st.ms + " ms";
+    document.getElementById("g-hms-v").textContent = st.hms + " ms";
+    document.getElementById("g-vals").textContent = "G1: " + modes[st.mode] + ", " + names[st.curve] + ", show " + st.ms + " ms, hide " + st.hms + " ms";
+  }
+  function seg(id, key) {
+    document.getElementById(id).addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      this.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      st[key] = b.dataset.v; draw(); if (loop) cycle(); else run(true);
+    });
+  }
+  seg("g-mode", "mode"); seg("g-curve", "curve");
+  document.getElementById("g-ms").addEventListener("input", function () { st.ms = +this.value; draw(); });
+  document.getElementById("g-hms").addEventListener("input", function () { st.hms = +this.value; draw(); });
+  document.getElementById("g-show").addEventListener("click", function () { clearTimeout(timer); run(true); });
+  document.getElementById("g-hide").addEventListener("click", function () { clearTimeout(timer); run(false); });
+  document.getElementById("g-loop").addEventListener("click", function () { loop = !loop; this.classList.toggle("on", loop); if (loop) cycle(); else clearTimeout(timer); });
+  draw();
+  apply(1);
+  document.addEventListener("tabshown", function (e) {
+    onTab = e.detail === "grow";
+    if (onTab && loop) cycle(); else { clearTimeout(timer); cancelAnimationFrame(anim); apply(1); }
+  });
+  if (location.hash === "#grow") { onTab = true; if (loop) cycle(); }
 })();
 </script>
