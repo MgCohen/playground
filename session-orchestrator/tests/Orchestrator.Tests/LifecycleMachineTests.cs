@@ -170,6 +170,29 @@ public sealed class LifecycleMachineTests
     }
 
     [Test]
+    public void A_hung_process_stays_not_responding_and_goes_stale_then_idle_when_the_process_ends()
+    {
+        // Live test B2: the global stale fired from not responding, and the state flipped at each tick.
+        var hung = S() with { Holder = Holders.Live, BeatAge = TimeSpan.FromMinutes(3), ProcessAlive = true };
+        var nr = Step(States.Stale, hung).File;
+        Assert.That((nr.State, nr.Fault), Is.EqualTo((States.NotResponding, Faults.HungProcess)));
+        for (var i = 0; i < 5; i++) Assert.That(Machine.Step(nr, hung).Changed, Is.False);
+        Assert.That(Step(States.Idle, hung).File.State, Is.EqualTo(States.NotResponding), "from idle a hung process is not responding, not stale");
+        var stale = Machine.Step(nr, hung with { ProcessAlive = false }).File;
+        Assert.That(stale.State, Is.EqualTo(States.Stale));
+        Assert.That(Machine.Step(stale, hung with { ProcessAlive = false }).File.State, Is.EqualTo(States.Idle));
+    }
+
+    [Test]
+    public void A_loop_from_not_responding_does_not_change_the_state_again()
+    {
+        var history = Enumerable.Range(1, 3).Select(i => new StateStep("stale", Times.Format(Now - TimeSpan.FromMinutes(i)))).ToList();
+        var file = In(States.NotResponding) with { Fault = Faults.HungTurn, History = history };
+        var r = Machine.Step(file, S() with { Holder = Holders.Live, BeatAge = TimeSpan.FromSeconds(30), ProcessAlive = false });
+        Assert.That((r.Changed, r.File.State, r.File.Fault, r.File.History.Count), Is.EqualTo((false, States.NotResponding, Faults.Loop, 3)));
+    }
+
+    [Test]
     public void Each_fault_gives_not_responding_and_the_session_leaves_it_when_the_fault_is_gone()
     {
         var live = S() with { Holder = Holders.Live, BeatAge = TimeSpan.FromSeconds(1) };
@@ -222,9 +245,10 @@ public sealed class LifecycleMachineTests
     {
         var archive = S() with { Control = ControlStates.Archived, Enabled = false, InApp = true };
         var requested = Step(States.Done, archive);
-        Assert.That(requested.File.Requested?.WaitsFor, Is.EqualTo(new[] { "enabled gone", "app archived" }));
+        Assert.That(requested.File.Requested?.WaitsFor, Is.EqualTo(new[] { "no supervisor turn", "enabled gone", "app archived" }));
         Assert.That(Machine.Step(requested.File, archive with { AppArchived = true }).File.State, Is.EqualTo(States.Archived));
         Assert.That(Step(States.Done, archive with { InApp = false }).File.State, Is.EqualTo(States.Archived), "not in the app: the store side commits");
+        Assert.That(Step(States.Running, archive with { InApp = false, Running = true, SupervisorTurn = true }).Requested, Is.True, "a supervisor turn still runs");
         var level1 = Machine.Step(requested.File, new Snapshot(Now + TimeSpan.FromSeconds(121)) { Control = ControlStates.Archived, Enabled = false, InApp = true });
         Assert.That(level1.Escalated, Is.EqualTo(1));
         var level2 = Machine.Step(level1.File, new Snapshot(Now + TimeSpan.FromMinutes(11)) { Control = ControlStates.Archived, Enabled = false, InApp = true });
@@ -235,7 +259,7 @@ public sealed class LifecycleMachineTests
     public void A_sidebar_archive_requests_the_archive_of_the_store_side()
     {
         var r = Step(States.Idle, S() with { InApp = true, AppArchived = true });
-        Assert.That((r.Requested, r.Taken?.Name, r.File.Requested?.WaitsFor), Is.EqualTo((true, "archive", new[] { "enabled gone", "app archived" })));
+        Assert.That((r.Requested, r.Taken?.Name, r.File.Requested?.WaitsFor), Is.EqualTo((true, "archive", new[] { "no supervisor turn", "enabled gone", "app archived" })));
     }
 
     [Test]

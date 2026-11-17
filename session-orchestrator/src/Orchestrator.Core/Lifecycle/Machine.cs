@@ -54,6 +54,9 @@ public static class Machine
         return null;
     }
 
+    /// <summary>A live lease with an old heartbeat, but not a hung process: a hung process is not responding, not stale.</summary>
+    static bool IsStale(Snapshot s) => s.Holder == Holders.Live && s.BeatOld && Fault(s) != Faults.HungProcess;
+
     static bool IsDone(Snapshot s) => s.Report == ReportStates.Done && !s.InputAfterReport;
 
     static bool IsForgotten(Snapshot s) =>
@@ -70,7 +73,7 @@ public static class Machine
     [
         new("archive", Any, States.Archived, 1, TransitionKind.Requested, s => s.Control == ControlStates.Archived || !s.Enabled || s.AppArchived) { CountsForLoop = false },
         new("stop", Any, States.Stopped, 2, TransitionKind.Requested, s => s.Control == ControlStates.Stopped) { CountsForLoop = false },
-        new("stale", Any, States.Stale, 3, TransitionKind.Immediate, s => s.Holder == Holders.Live && s.BeatOld),
+        new("stale", Any, States.Stale, 3, TransitionKind.Immediate, IsStale),
         new("fault", Any, States.NotResponding, 4, TransitionKind.Immediate, s => Fault(s) is not null),
     ];
 
@@ -110,7 +113,7 @@ public static class Machine
     [
         new(States.Archived, s => s.Control == ControlStates.Archived || !s.Enabled),
         new(States.Stopped, s => s.Control == ControlStates.Stopped),
-        new(States.Stale, s => s.Holder == Holders.Live && s.BeatOld),
+        new(States.Stale, IsStale),
         new(States.NotResponding, s => Fault(s) is not null),
         new(States.Start, s => !s.Started && !s.Running),
         new(States.Running, s => s.Running),
@@ -185,7 +188,7 @@ public static class Machine
     {
         if (transition.Kind == TransitionKind.Immediate) return Change(file, transition, s);
         var waits = transition.To == States.Stopped ? new[] { "no supervisor turn" }
-            : s.InApp ? ["enabled gone", "app archived"] : new[] { "enabled gone" };
+            : s.InApp ? ["no supervisor turn", "enabled gone", "app archived"] : new[] { "no supervisor turn", "enabled gone" };
         var deadline = s.Now + TimeSpan.FromSeconds(transition.To == States.Stopped ? s.Timers.StopSeconds : s.Timers.ArchiveSeconds);
         var request = new Request(transition.To, transition.Name, Times.Format(s.Now), Times.Format(deadline), waits);
         if (IsCommitted(request, s)) return Change(file, transition, s);
@@ -197,6 +200,7 @@ public static class Machine
         var at = Times.Format(s.Now);
         if (transition.CountsForLoop && transition.To != States.NotResponding && IsLooping(file, s, transition.Name))
         {
+            if (file.State == States.NotResponding) return new StepResult(file with { Fault = Faults.Loop }) { From = file.State };
             var loop = Globals.First(g => g.To == States.NotResponding);
             return new StepResult(file with { State = States.NotResponding, Since = at, Requested = null, Guard = Faults.Loop, Fault = Faults.Loop, Inferred = false, History = Add(file, s, loop.Name) })
             { From = file.State, Changed = true, Taken = loop };
@@ -232,7 +236,7 @@ public static class Machine
     static bool IsCommitted(Request request, Snapshot s) => request.To switch
     {
         States.Stopped => s.Control == ControlStates.Stopped && !s.SupervisorTurn,
-        States.Archived => !s.Enabled && (!s.InApp || s.AppArchived),
+        States.Archived => !s.Enabled && !s.SupervisorTurn && (!s.InApp || s.AppArchived),
         _ => false,
     };
 

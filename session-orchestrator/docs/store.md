@@ -213,7 +213,7 @@ The checks run in this order, and the first yes wins. With a `state.json`, only 
 
 ```json
 { "state": "idle", "since": "<time>", "guard": "turn-end", "waitReason": "none",
-  "requested": { "to": "archived", "transition": "archive", "since": "<time>", "deadline": "<time>", "waitsFor": ["enabled gone", "app archived"], "escalations": 0 },
+  "requested": { "to": "archived", "transition": "archive", "since": "<time>", "deadline": "<time>", "waitsFor": ["no supervisor turn", "enabled gone", "app archived"], "escalations": 0 },
   "history": [ { "transition": "forgotten", "at": "<time>" } ] }
 ```
 

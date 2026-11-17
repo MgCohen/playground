@@ -661,3 +661,63 @@ Low items (recorded, accepted):
 | The watchdog copied the full stream for each open envelope | Fixed: one set of blocked envelopes for each run |
 
 Unit tests: 136 pass.
+
+## B2 result: lifecycle code (2026-11-17)
+
+The code follows the lifecycle design (`docs/lifecycle-design.html`, tab "B2 changes"). All lifecycle messages use the Stream API of A2: `session.state` and `state.conflict` events, notices to a session, and a `message` to the user for a root. `docs/store.md` has the contract.
+
+| Part | Result |
+|---|---|
+| State machine | `Core/Lifecycle`: nine states, a detect check for each state, four global and 19 local guarded transitions with priorities and kinds, requests, the loop rule. No IO |
+| State file | `state.json` and a `session.state` event for each change, request, cancel and escalation |
+| Requested transitions | Stop, archive and auto-archive wait for their signals. A deadline escalates and does not change the state |
+| Fallback | `orch:state-checker` (`claude -p`, read only) for a `state.json` that is not valid or a conflict. The result has `inferred: true` and starts no action |
+| Lease process | The plugin writes `pid` and `started` from `orch process`. The supervisor releases a stale lease only when that process is gone, and runs no turn while the holder is `live` |
+| Stop in the plugin | No delivery while `control.json` is not `active` |
+| Not responding | Failed turns, stop latch, input not taken, hung turn, hung process; notices on enter and leave |
+| Forgotten | One nudge (`report-missing`), then one `child-forgotten` notice (`forgotten.json`) |
+| F5 | The report goes to the parent at the end of the turn, the last one only. The report tool refuses done with an open decision |
+| F8 | Sidebar archive watch (`child-archived-in-app`); parent path at the archive deadline (`archive-child` with the app id); then the user |
+| F4 | `background` in the brief and `meta.json`; `remote-control-self` notice after the import; the plugin records `remoteControl`; `remote-control-child` to the parent after `remoteControlSeconds` |
+| Policy | `lifecycle` timers and `autoArchive` (off) in `policy.json` |
+| API | `state`, `waitReason`, `requested`, `fault`, `inferred` in `GET /api/sessions` |
+| Unit tests | 174 pass (`dotnet test --solution Orchestrator.slnx`). `LifecycleMachineTests` has the guard overlap test on 20 000 sample snapshots |
+
+### Live test (scratchpad store, port 7823, plugin of the worktree)
+
+A root and five children. Test policy: forgotten 1 min, stale process 30 s, reminder 1 min, auto-archive on after 2 min. `ORCH_IMPORT=0`, so no session went into the app.
+
+| State | Path and action | Evidence |
+|---|---|---|
+| start, running, idle | `none → start (detect)`, `start → running (first-turn)`, `running → idle (turn-end)` | Each session |
+| forgotten | `idle → forgotten` after 1 min; nudge `report-missing`; `forgotten → running (nudge-turn)` | Forgotten child `84d264f2` |
+| done | `running → done (report-done)`. Two done reports in one turn: the first got an ack `superseded`, the second went to the root | Forgotten child |
+| done, archived | `archive-reminder` to the root after 1 min; `done → archived (auto-archive)` after 2 min; `child-archived` | Forgotten child |
+| stopped | `orch stop` in a running turn: `running (requested: stopped)`, then `running → stopped` 0.3 s later; `child-stopped`. `orch resume`: `stopped → idle (resume)`, `child-resumed`, the inbox went at once | Stop child `dc3a422c` |
+| archived | `orch archive --store-only` in a running turn: `running → archived (archive)`, `child-archived`, the turn stopped | Stop child |
+| stale, not responding | Live lease with the id of a running `powershell`: `idle → stale`, `stale → not-responding (process-hangs)` after 30 s, `child-not-responding`. The state stayed. After the kill: `not-responding → stale`, `stale → idle (process-gone)`, `lease.release` | Stale probe `11111111-b200-4000-8000-000000000003` |
+| unknown | A `state.json` with state `sleeping`: the real `orch:state-checker` inferred `idle` in 14 s; `state-inferred` to the root | Fallback probe `11111111-b200-4000-8000-000000000004` |
+| F5 refusal | A child called `ask_user`, then `report` done: the tool returned the refusal text, and no report was posted | Early done child `856cb929` |
+| Lease process | During a turn, `lease.json` had `pid` 185876, the process `claude.exe` | Root `c325cfbd` |
+
+### App probes
+
+| Probe | Result |
+|---|---|
+| Can a session call `set_remote_control` on itself, and can the root call it for a child? | Not run. This session runs as `claude -p` with no app tools (`mcp__ccd_session_mgmt__*`). A question to the user is open |
+| Can the root call `archive_session` for a child by its app id? | Not run, same reason |
+
+The F4 and F8 code works with both probe results: the self path is the first step, and the parent path is only an escalation after a deadline. If a parent call fails, the parent tells the user.
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| B2-1 | From `not-responding` (hung process), the global `stale` fired again, so the state flipped at each tick, and each flip sent a notice | Fixed in the live test: `stale` excludes a hung process. Tests `A_hung_process_stays_not_responding…`, `A_loop_from_not_responding…` |
+| B2-2 | The loop rule then gave `not-responding → not-responding` at each tick | Fixed: a loop in `not-responding` changes nothing |
+| B2-3 | An archive committed while the supervisor turn still ran | Fixed: an archive also waits for "no supervisor turn" |
+| B2-4 | The design counts each transition for the loop rule. A normal session takes `idle → running` many times in one hour | The main path does not count (`decisions.md`) |
+| B2-5 | A supervisor turn can start and end between two ticks, so the machine sees no `running` | Extra local transitions: `idle → done`, `done → idle`, `forgotten → done`, `forgotten → idle`, `not-responding → idle` (`decisions.md`) |
+| B2-6 | A state that the detect checks find after a supervisor restart sends no notice (no "from" state) | Open. A restart does not repeat old notices, but a new fault found at a restart is not told to the parent |
+| B2-7 | Each fallback is a finding: the supervisor log has a `FINDING:` line | One in the live test, made by hand. No conflict happened |
+| B2-8 | The new session form has no `background` field | Open for A4 (UI). A form session has Remote Control on, the default |
