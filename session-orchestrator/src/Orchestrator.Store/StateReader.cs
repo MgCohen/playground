@@ -49,7 +49,7 @@ public sealed class StateReader(FileStore store)
         // The hung window first; only when it is empty, the 24 h window. No event at all: null, not hung (a new turn).
         var lastOwn = store.Events.Since(now - hung).Where(Own).Select(e => Times.Parse(e.At)).Max()
             ?? store.Events.Since(floor).Where(Own).Select(e => Times.Parse(e.At)).Max();
-        bool InputAfter(DateTimeOffset? at) => at is { } t && store.Events.Since(t > floor ? t : floor).Any(e => e.To == self && FileStore.IsDeliverable(e) && Times.Parse(e.At) > t);
+        bool InputAfter(DateTimeOffset? at) => at is { } t && store.Events.Since(t > floor ? t : floor).Any(e => e.To == self && store.IsDeliverable(e) && Times.Parse(e.At) > t);
         var undelivered = store.Undelivered(id);
         var openDecisions = store.OpenDecisions(id).Count;
         var blocked = store.Blocked(id);

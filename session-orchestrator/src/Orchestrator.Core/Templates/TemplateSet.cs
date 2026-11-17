@@ -24,6 +24,11 @@ public sealed record TemplateMeta(string Type, int Version, string Purpose, IRea
 {
     public JsonElement? Card { get; init; }
 
+    /// <summary>meta.json "turn": a receiver session gets the message as a turn. Default: true when "to" allows a session.</summary>
+    public bool? Turn { get; init; }
+
+    public bool IsTurn => Turn ?? (To.Contains("*") || To.Contains("session"));
+
     public bool AllowsFrom(string partyClass) => From.Contains("*") || From.Contains(partyClass);
 
     public bool AllowsTo(string partyClass) => To.Contains("*") || To.Contains(partyClass);

@@ -204,18 +204,18 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
 
   <section class="doc-part tab" id="how">
     <h2>HOW IT WORKS</h2>
-    <p>Result first: the message fields have a real schema (JSON Schema). The views and the components have no schema file. Their shape exists only in C# records and Razor code. No parser finds templates in a folder: the code opens a fixed list of 10 names.</p>
+    <p>Result first (after F1): each template file has a spec in <code>templates/_spec/</code>. A folder scan of two roots finds the templates: the core set and the store. The code reads them only through the interface <code>ITemplateStore</code>. Each look has one Razor file and one entry in <code>looks.json</code>. One check (<code>TemplateCheck</code>) runs in <code>orch template check</code>, in <code>orch template add</code> and in the unit tests.</p>
 
     <h3>Topology: from the files to the screen</h3>
     <div class="lanes" role="table" aria-label="Topology">
       <div class="lane hd" role="row"><span role="columnheader">File (data)</span><span role="columnheader">Read by (code)</span><span role="columnheader">Result</span></div>
-      <div class="lane" role="row"><span class="nd data" role="cell"><code>schema.json</code></span><span class="nd code" role="cell"><code>TemplateSet</code> (Core) → <code>EventStream.Check</code> (Store)</span><span class="nd out" role="cell">A post with a bad body is rejected</span></div>
+      <div class="lane" role="row"><span class="nd data" role="cell"><code>schema.json</code></span><span class="nd code" role="cell"><code>ITemplateStore</code> → <code>TemplateSet</code> (Core) → <code>EventStream.Check</code> (Store)</span><span class="nd out" role="cell">A post with a bad body is rejected</span></div>
       <div class="lane" role="row"><span class="nd data" role="cell"><code>meta.json</code></span><span class="nd code" role="cell"><code>EventStream.Check</code> (Store)</span><span class="nd out" role="cell">Only the allowed from, to and reply kinds pass</span></div>
       <div class="lane" role="row"><span class="nd data" role="cell"><code>schema.json</code> + <code>meta.json</code></span><span class="nd code" role="cell"><code>plugin/hooks/tools.ts</code> (TypeScript)</span><span class="nd out" role="cell">The input schema and the text of each MCP tool</span></div>
       <div class="lane" role="row"><span class="nd data" role="cell"><code>view.json</code></span><span class="nd code" role="cell"><code>Views.Document</code>, <code>Views.Preview</code> (Core)</span><span class="nd out" role="cell"><code>DocumentModel</code>, <code>PreviewModel</code>: plain data, no HTML</span></div>
-      <div class="lane" role="row"><span class="nd data" role="cell">The two models</span><span class="nd code" role="cell"><code>DocBody</code>, <code>CardPreview</code>, <code>EventRow</code>, <code>FactValue</code> (Web, Razor)</span><span class="nd out" role="cell">The Open view, the card in the pile, the stream row</span></div>
-      <div class="lane" role="row"><span class="nd data" role="cell"><code>render/*.md</code></span><span class="nd code" role="cell"><code>Renderer</code> (Store): one switch case for each kind</span><span class="nd out" role="cell">The text that a session gets as a turn</span></div>
-      <div class="lane" role="row"><span class="nd data" role="cell"><code>example.json</code></span><span class="nd code" role="cell"><code>ViewTests</code>, <code>DesignPageTests</code></span><span class="nd out" role="cell">Unit tests and this page</span></div>
+      <div class="lane" role="row"><span class="nd data" role="cell">The two models</span><span class="nd code" role="cell"><code>DocBody</code>, <code>CardPreview</code>, <code>EventRow</code>, <code>FactValue</code> → <code>Ui/Looks/&lt;Name&gt;Look.razor</code> (Web)</span><span class="nd out" role="cell">The Open view, the card in the pile, the stream row</span></div>
+      <div class="lane" role="row"><span class="nd data" role="cell"><code>render/*.md</code></span><span class="nd code" role="cell"><code>Renderer</code> (Store): a case for each core kind; an added kind uses <code>render/session.md</code></span><span class="nd out" role="cell">The text that a session gets as a turn</span></div>
+      <div class="lane" role="row"><span class="nd data" role="cell"><code>example.json</code></span><span class="nd code" role="cell"><code>TemplateCheck</code>, <code>ViewTests</code>, <code>DesignPageTests</code></span><span class="nd out" role="cell">Unit tests and this page</span></div>
     </div>
     <p class="note"><span class="sw data"></span> data file, no build · <span class="sw code"></span> code, needs a build · <span class="sw out"></span> what the user or a session sees</p>
 
@@ -223,12 +223,12 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
     <div class="tw"><table class="t">
       <thead><tr><th>Layer</th><th>Where</th><th>Format defined by</th><th>Checked by</th><th>Something new needs</th></tr></thead>
       <tbody>
-        <tr><td>1. Message fields</td><td><code>schema.json</code></td><td>JSON Schema 2020-12, a standard</td><td>Each post, at runtime</td><td>Files, plus the name in <code>Kinds.All</code></td></tr>
-        <tr><td>2. Routing</td><td><code>meta.json</code></td><td>The C# record <code>TemplateMeta</code> only</td><td>Each post, at runtime</td><td>A file change</td></tr>
-        <tr><td>3. Views</td><td><code>view.json</code></td><td>The C# records <code>ViewSpec</code>, <code>DocumentSpec</code>, <code>PreviewSpec</code>, <code>FieldSpec</code> only</td><td>Unit tests only: each field exists, a title exists</td><td>A file change</td></tr>
-        <tr><td>4. Components</td><td>No file</td><td>The <code>Looks</code> constants, a switch in <code>DocBody.razor</code> and <code>FactValue.razor</code>, and a JavaScript copy in this page</td><td>Nothing. An unknown <code>as</code> shows as plain text</td><td>C#, Razor and JavaScript</td></tr>
+        <tr><td>1. Message fields</td><td><code>schema.json</code></td><td>JSON Schema 2020-12, a standard</td><td>Each post, at runtime. <code>TemplateCheck</code>: valid schema, example matches</td><td>A folder in the store</td></tr>
+        <tr><td>2. Routing</td><td><code>meta.json</code></td><td><code>_spec/meta.schema.json</code></td><td><code>TemplateCheck</code>; each post, at runtime</td><td>A file change</td></tr>
+        <tr><td>3. Views</td><td><code>view.json</code></td><td><code>_spec/view.schema.json</code></td><td><code>TemplateCheck</code>: no unknown keys, each field in the schema, each look known and in an allowed place</td><td>A file change</td></tr>
+        <tr><td>4. Components</td><td><code>_spec/looks.json</code></td><td>The catalog: name, places (fact, block), values</td><td>A unit test: each look has one <code>Ui/Looks/&lt;Name&gt;Look.razor</code> and one entry in the <code>LOOKS</code> object of this page</td><td>One Razor file, one catalog line, one page function</td></tr>
         <tr><td>5. Surfaces</td><td>No file</td><td>Razor components: Open, card, stream row</td><td>bUnit tests</td><td>A C# record, a model and a Razor component</td></tr>
-        <tr><td>6. Session text</td><td><code>render/*.md</code></td><td>A small mustache subset in <code>Render.cs</code></td><td>Nothing checks the placeholders</td><td>A file, but <code>Renderer.cs</code> picks the file by kind</td></tr>
+        <tr><td>6. Session text</td><td><code>render/*.md</code></td><td>A small mustache subset in <code>Render.cs</code></td><td>Nothing checks the placeholders</td><td>A file. An added kind uses <code>render/session.md</code></td></tr>
       </tbody>
     </table></div>
 
@@ -292,7 +292,7 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
         <tr><td><code>progress</code></td><td>A bar and a percent</td><td>number 0 to 100</td><td>update progress</td></tr>
       </tbody>
     </table></div>
-    <p>The column "Fits a field of type" is a rule in this page only. No code checks it today.</p>
+    <p><code>TemplateCheck</code> checks the place of each look (fact or block). The column "Fits a field of type" is in <code>looks.json</code> as <code>values</code>, but no code checks it yet.</p>
 
     <h3>What is guaranteed, and when</h3>
     <div class="tw"><table class="t">
@@ -300,20 +300,21 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
       <tbody>
         <tr><td>A message body matches its <code>schema.json</code></td><td>Each post</td><td><code>EventStream.Check</code></td></tr>
         <tr><td>From, to and reply kind match <code>meta.json</code></td><td>Each post</td><td><code>EventStream.Check</code></td></tr>
-        <tr><td>A view names only fields of its schema, and has a title</td><td>Unit tests</td><td><code>ViewTests</code></td></tr>
-        <tr><td>Each <code>example.json</code> renders a title in both views</td><td>Unit tests</td><td><code>ViewTests</code></td></tr>
+        <tr><td><code>meta.json</code> and <code>view.json</code> match their spec, with no unknown keys</td><td><code>orch template check</code>, <code>add</code>, unit tests</td><td><code>TemplateCheck</code></td></tr>
+        <tr><td>A view names only fields of its schema; each look is known and in an allowed place</td><td>The same</td><td><code>TemplateCheck</code></td></tr>
+        <tr><td>Each <code>example.json</code> matches the schema and renders a title in both views</td><td>The same, and unit tests</td><td><code>TemplateCheck</code>, <code>ViewTests</code></td></tr>
+        <tr><td>Each look has an app component and a page function</td><td>Unit tests</td><td><code>TemplateStoreTests</code></td></tr>
         <tr><td>Each component fits its field type</td><td>Never</td><td>Gap</td></tr>
-        <tr><td><code>view.json</code> and <code>meta.json</code> have no unknown keys</td><td>Never: the reader ignores unknown keys</td><td>Gap</td></tr>
         <tr><td>Each placeholder of a render is a schema field</td><td>Never</td><td>Gap</td></tr>
       </tbody>
     </table></div>
 
     <h3>How easy is it to add something?</h3>
     <div class="tw"><table class="t">
-      <thead><tr><th>New</th><th>Today</th><th>With the target below</th></tr></thead>
+      <thead><tr><th>New</th><th>Before F1</th><th>After F1</th></tr></thead>
       <tbody>
-        <tr><td>Template</td><td>4 files plus about 7 code places: <code>Kinds.All</code>, <code>EventKinds</code>, <code>Renderer</code>, <code>Ui.Look</code>, <code>Ui.Classify</code>, <code>tools.ts</code>, the order of this page</td><td>4 files, then <code>orch template add</code></td></tr>
-        <tr><td>Component</td><td>A constant, two Razor switch cases and a JavaScript copy</td><td>One Razor file and one line in <code>looks.json</code></td></tr>
+        <tr><td>Template</td><td>4 files plus about 7 code places: <code>Kinds.All</code>, <code>EventKinds</code>, <code>Renderer</code>, <code>Ui.Look</code>, <code>Ui.Classify</code>, <code>tools.ts</code>, the order of this page</td><td>4 files, then <code>orch template add</code>. No code change. Not yet: a plugin tool for the kind, and card actions from <code>meta.card</code></td></tr>
+        <tr><td>Component</td><td>A constant, two Razor switch cases and a JavaScript copy</td><td>One Razor file, one line in <code>looks.json</code>, one function in this page. A test finds a missing part</td></tr>
         <tr><td>Surface</td><td>A C# record, a model and a Razor component</td><td>The same. Surfaces change rarely</td></tr>
       </tbody>
     </table></div>
@@ -321,33 +322,37 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
     <h3>Where each layer lives</h3>
     <div class="tree">
       <details open><summary>session-orchestrator/ <span>the project</span></summary>
-        <details open><summary>templates/ <span>data: one folder for each core kind</span></summary>
-          <details><summary>&lt;kind&gt;/schema.json, meta.json, view.json, example.json, render/ <span>the files of one kind</span></summary><span class="d">Only the 10 names of <code>Kinds.All</code> are read.</span></details>
-          <details><summary>_spec/ <span>target: meta.schema.json, view.schema.json, looks.json</span></summary><span class="d">Does not exist yet (Q6).</span></details>
+        <details open><summary>templates/ <span>data: the core templates</span></summary>
+          <details><summary>&lt;kind&gt;/schema.json, meta.json, view.json, example.json, render/ <span>the files of one kind</span></summary><span class="d">Each folder with a valid name and a <code>schema.json</code> is a kind.</span></details>
+          <details><summary>_spec/ <span>meta.schema.json, view.schema.json, looks.json</span></summary><span class="d">The agreed format. It comes with the tool. A folder that starts with "_" is not a kind.</span></details>
         </details>
-        <details><summary>src/Orchestrator.Core/Templates/ <span>code: TemplateSet, View.cs (Views, specs, models), Render.cs</span></summary><span class="d">Reads the files and makes the models. No HTML.</span></details>
-        <details><summary>src/Orchestrator.Store/ <span>code: EventStream (checks each post), Renderer (session text)</span></summary></details>
-        <details><summary>src/Orchestrator.Web/Components/Ui/ <span>code: DocBody, CardPreview, EventRow, FactValue (the components and surfaces)</span></summary><span class="d">Target: one file for each component in <code>Ui/Looks/</code>.</span></details>
-        <details><summary>src/Orchestrator.Web/Ui.cs <span>code: card actions, kind icons and labels, by kind</span></summary></details>
-        <details><summary>plugin/hooks/tools.ts <span>code: one MCP tool for each kind, coded by hand</span></summary></details>
-        <details><summary>docs/render-design/page.html <span>this page: a JavaScript copy of the model and the components</span></summary></details>
+        <details><summary>src/Orchestrator.Core/Templates/ <span>code: ITemplateStore, LocalTemplateStore, TemplateCheck, TemplateSet, View.cs, Render.cs</span></summary><span class="d">The library contract and the local implementation. Reads the files and makes the models. No HTML.</span></details>
+        <details><summary>src/Orchestrator.Store/ <span>code: Home.LoadTemplates, EventStream (checks each post), Renderer (session text)</span></summary></details>
+        <details><summary>src/Orchestrator.Web/Components/Ui/Looks/ <span>code: one Razor file for each look</span></summary><span class="d"><code>DocBody</code> and <code>FactValue</code> pick the component by name with <code>DynamicComponent</code>.</span></details>
+        <details><summary>src/Orchestrator.Cli/ <span>code: orch template list, check, add, remove</span></summary><span class="d">Calls only <code>ITemplateStore</code>.</span></details>
+        <details><summary>plugin/hooks/tools.ts <span>code: one MCP tool for each core kind, coded by hand</span></summary><span class="d">No tool for an added kind yet.</span></details>
+        <details><summary>docs/render-design/page.html <span>this page: a JavaScript copy of the model, and the LOOKS object</span></summary></details>
       </details>
-      <details><summary>&lt;store&gt;/templates/ <span>target: added templates (Q1)</span></summary></details>
+      <details open><summary>&lt;store&gt;/templates/ <span>data: added templates, and replacements of core templates</span></summary>
+        <details><summary>&lt;kind&gt;/ <span>the same files as a core template</span></summary><span class="d">A core name replaces the core template.</span></details>
+        <details><summary>.removed/&lt;kind&gt;-&lt;time&gt;/ <span>removed or replaced store templates</span></summary></details>
+      </details>
     </div>
 
-    <h3>Target: one format, one check and one place for each layer</h3>
+    <h3>Built in F1: one format, one check and one place for each layer</h3>
     <ol class="flow">
-      <li><b>Spec files.</b> <code>templates/_spec/meta.schema.json</code> and <code>view.schema.json</code>. Each file points to them with <code>$schema</code>, so the editor checks it as you type.</li>
-      <li><b>Component catalog.</b> <code>templates/_spec/looks.json</code> lists each component and the field types that it accepts. The view schema takes its <code>as</code> values from it.</li>
-      <li><b>One Razor file for each component</b> in <code>Ui/Looks/</code>. This page renders the real components with bUnit, so the JavaScript copy goes away.</li>
-      <li><b>Registry.</b> A folder scan of the core and the added templates (tab Registry).</li>
-      <li><b>One check.</b> <code>orch template check</code> and the unit tests use the same spec files.</li>
+      <li><b>Spec files.</b> <code>templates/_spec/meta.schema.json</code> and <code>view.schema.json</code>. <b>Built.</b></li>
+      <li><b>Component catalog.</b> <code>templates/_spec/looks.json</code>: the name, the places and the values of each look. <b>Built.</b></li>
+      <li><b>One Razor file for each component</b> in <code>Ui/Looks/</code>. <b>Built.</b> This page keeps its JavaScript copy (the <code>LOOKS</code> object), and a test checks that the names match.</li>
+      <li><b>Registry.</b> <code>ITemplateStore</code> with <code>LocalTemplateStore</code>: a folder scan of the core and the store roots. <b>Built</b> (tab Registry).</li>
+      <li><b>One check.</b> <code>TemplateCheck</code> in <code>orch template check</code>, <code>orch template add</code> and the unit tests. <b>Built.</b></li>
     </ol>
   </section>
 
   <section class="doc-part tab" id="findings">
     <h2>TEMPLATE REVIEW (F1)</h2>
     <p>Result: the 10 templates are complete for the protocol. The main problems are in the looks, not in the data. Each kind band below has its own review notes. This table has the findings that apply to more than one kind.</p>
+    <p><b>Status after F1 (Q4):</b> X1 and X2 are built: they change no look. X5 is built, because the page showed it already and the app must match the page. The other findings stay proposals until the user reviews the looks.</p>
     <p><span class="tag gap">gap</span> a field or a look is missing · <span class="tag dup">dup</span> the same data is in two places · <span class="tag look">look</span> a change to the look, for discussion</p>
     <div class="tw"><table class="t">
       <thead><tr><th>Id</th><th>Type</th><th>Finding</th><th>Proposal</th></tr></thead>
@@ -369,14 +374,21 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
 
   <section class="doc-part tab" id="registry">
     <h2>TEMPLATE REGISTRY</h2>
-    <p>Goal: a new template needs only files: <code>schema.json</code>, <code>meta.json</code>, <code>view.json</code> and <code>example.json</code>. No C# change. Today <code>TemplateSet</code> reads only the 10 names in <code>Kinds.All</code>, so a new folder has no effect.</p>
+    <p>Result (built in F1): a new template needs only files: <code>schema.json</code>, <code>meta.json</code>, <code>view.json</code> and <code>example.json</code>. No C# change. The CLI calls only the interface <code>ITemplateStore</code>. Today one implementation exists: <code>LocalTemplateStore</code> (two folders). A later store (Notion, a cloud bucket) is a new implementation of the same interface (Q3).</p>
+    <pre class="src">public interface ITemplateStore
+{
+    IReadOnlyList&lt;TemplateInfo&gt; List();          // kind, source (core|store), replacesCore, location
+    TemplateFiles? Get(string kind);                // the text of each file: the agreed format
+    TemplateInfo Add(TemplateFiles files, bool replace = false);   // TemplateCheck first
+    void Remove(string kind);                       // to .removed/; a core template cannot be removed
+}</pre>
 
     <h3>Two kinds of templates</h3>
     <div class="tw"><table class="t">
       <thead><tr><th>Kind</th><th>Examples</th><th>Folder</th><th>What a file change can do</th></tr></thead>
       <tbody>
         <tr><td>Core</td><td>question, answer, review, report, plan, brief, notice, ack, message, update</td><td><code>&lt;home&gt;/templates/</code></td><td>Change the fields, the view and the renders. The behavior (defaults, stack, first answer wins, spawn) stays in C#. A core template cannot be removed.</td></tr>
-        <tr><td>Added</td><td>for example <code>risk-note</code>, <code>test-result</code>, <code>design-review</code></td><td><code>&lt;store&gt;/templates/</code> (Q1)</td><td>All of it. A session posts it, the stream checks it against the schema, the receiver gets it, the UI shows it, the user acks it.</td></tr>
+        <tr><td>Added</td><td>for example <code>risk-note</code>, <code>test-result</code>, <code>design-review</code></td><td><code>&lt;store&gt;/templates/</code> (Q1). A store folder with a core name replaces the core template (Q2)</td><td>All of it. A session posts it, the stream checks it against the schema, the receiver gets it, the UI shows it, the user acks it.</td></tr>
       </tbody>
     </table></div>
 
@@ -385,33 +397,32 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
       <details open><summary>&lt;store&gt;/templates/ <span>the added templates</span></summary>
         <details open><summary>test-result/ <span>one folder for each kind; the folder name is the kind</span></summary>
           <details><summary>schema.json <span>required: the fields (JSON Schema, object, no additional properties)</span></summary><span class="d">The plugin tool uses it as its input schema. The stream rejects a body that does not match.</span></details>
-          <details><summary>meta.json <span>required: purpose, from, to, needs, replies, card, turn, tool</span></summary><span class="d"><code>type</code> must be the folder name. New keys: <code>turn</code> (a receiver session gets it as a turn; default true when <code>to</code> has a session) and <code>tool</code> (the plugin tool to register).</span></details>
+          <details><summary>meta.json <span>required: purpose, from, to, replies; optional: needs, card, turn</span></summary><span class="d"><code>type</code> must be the folder name. New key <code>turn</code>: a receiver session gets the message as a turn (default true when <code>to</code> allows a session). Not built: <code>tool</code> (a plugin tool for the kind).</span></details>
           <details><summary>view.json <span>required: label, icon, tone, document, preview</span></summary><span class="d">The same spec as a core kind. Each field that it names must be in the schema.</span></details>
           <details><summary>example.json <span>required: one valid body</span></summary><span class="d">The check renders it. This page shows it.</span></details>
-          <details><summary>examples/ <span>optional: more named bodies (X9)</span></summary></details>
-          <details><summary>render/session.md <span>optional: the text that a receiver session gets</span></summary><span class="d">With no render, the session gets the preview title and the fields as a list.</span></details>
+          <details><summary>examples/ <span>not built: more named bodies (X9, a look proposal)</span></summary></details>
+          <details><summary>render/session.md <span>optional: the text that a receiver session gets</span></summary><span class="d">The default render for a session. With no render, the session gets the subject.</span></details>
         </details>
         <details><summary>.removed/ <span>removed templates, with a time stamp, for a restore</span></summary></details>
       </details>
     </div>
 
     <h3>Add a template</h3>
-    <ul class="oq">
-      <li>Write the folder, for example in the scratchpad. <code>orch template new test-result</code> writes a skeleton.</li>
-      <li><code>orch template check &lt;folder&gt;</code> runs the checks below.</li>
-      <li><code>orch template add &lt;folder&gt;</code> checks again and copies the folder to <code>&lt;store&gt;/templates/test-result/</code>.</li>
-      <li>The supervisor sees the change and loads the template set again. The UI shows the kind at once.</li>
-      <li>Sessions get the tool <code>mcp__orch__&lt;tool.name&gt;</code> at the next plugin load (hot reload).</li>
-    </ul>
+    <ol class="flow">
+      <li>Write the folder, for example in the scratchpad. Copy a core template as a start.</li>
+      <li><code>orch template check --folder &lt;folder&gt;</code> runs the checks below.</li>
+      <li><code>orch template add &lt;folder&gt; [--replace]</code> checks again and copies the folder to <code>&lt;store&gt;/templates/&lt;kind&gt;/</code>.</li>
+      <li>Each CLI call loads the templates again. A running supervisor loads them at its next start.</li>
+    </ol>
 
     <h3>Surfaces</h3>
     <div class="tw"><table class="t">
-      <thead><tr><th>Surface</th><th>List</th><th>Add</th><th>Remove</th></tr></thead>
+      <thead><tr><th>Surface</th><th>List</th><th>Add</th><th>Remove</th><th>Status</th></tr></thead>
       <tbody>
-        <tr><td>CLI</td><td><code>orch template</code>: kind, core or added, label, purpose. <code>orch template &lt;kind&gt;</code>: the fields</td><td><code>orch template new &lt;kind&gt;</code>, <code>check</code>, <code>add &lt;folder&gt; [--replace]</code></td><td><code>orch template remove &lt;kind&gt;</code>: moves the folder to <code>.removed/</code></td></tr>
-        <tr><td>HTTP API</td><td><code>GET /api/templates</code>, <code>GET /api/templates/{kind}</code> (schema, meta, view, example)</td><td>No (Q3)</td><td>No (Q3)</td></tr>
-        <tr><td>Plugin</td><td>Tool <code>mcp__orch__templates</code>: the kinds that this session can post, with purpose and fields</td><td>The session runs <code>orch template add</code> in its shell</td><td>The session runs <code>orch template remove</code></td></tr>
-        <tr><td>UI</td><td>Later: a Templates page in Settings, from the API</td><td>No</td><td>No</td></tr>
+        <tr><td>CLI</td><td><code>orch template</code>: kind, source (core, store, store replaces core), purpose. <code>orch template &lt;kind&gt;</code>: the fields</td><td><code>orch template check [&lt;kind&gt;] [--folder DIR]</code>, <code>add &lt;folder&gt; [--replace]</code></td><td><code>orch template remove &lt;kind&gt;</code>: moves the folder to <code>.removed/</code></td><td>Built</td></tr>
+        <tr><td>Library</td><td><code>ITemplateStore.List</code>, <code>Get</code></td><td><code>Add</code></td><td><code>Remove</code></td><td>Built</td></tr>
+        <tr><td>HTTP API</td><td><code>GET /api/templates</code></td><td>No</td><td>No</td><td>Later (Q3)</td></tr>
+        <tr><td>Plugin</td><td>Tool <code>mcp__orch__templates</code>, and one tool for each added kind</td><td>No</td><td>No</td><td>Later (Q3)</td></tr>
       </tbody>
     </table></div>
 
@@ -419,27 +430,28 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
     <div class="tw"><table class="t">
       <thead><tr><th>File</th><th>Check</th></tr></thead>
       <tbody>
-        <tr><td>name</td><td>Matches <code>^[a-z][a-z0-9-]{1,31}$</code>. No dot: dot names are system events (<code>pr.open</code>). Not a core name, unless <code>--replace</code> is allowed (Q2).</td></tr>
-        <tr><td>schema.json</td><td>A valid JSON Schema of type object.</td></tr>
-        <tr><td>meta.json</td><td><code>type</code> is the folder name. <code>from</code> and <code>to</code> use known party classes. <code>replies</code> names known kinds.</td></tr>
-        <tr><td>view.json</td><td>Each field is in the schema. Each tone is a known token. Each icon is a known icon. A title is present.</td></tr>
-        <tr><td>example.json</td><td>Valid against the schema. The document and the preview render with a title.</td></tr>
+        <tr><td>name</td><td>Matches <code>^[a-z][a-z0-9-]{1,31}$</code>. No dot: dot names are system events (<code>pr.open</code>). Not <code>list</code>, <code>check</code>, <code>add</code> or <code>remove</code>. A core name is allowed: it replaces the core template (Q2).</td></tr>
+        <tr><td>schema.json</td><td>A valid JSON Schema with <code>properties</code>.</td></tr>
+        <tr><td>meta.json</td><td>Matches <code>_spec/meta.schema.json</code>. <code>type</code> is the folder name.</td></tr>
+        <tr><td>view.json</td><td>Matches <code>_spec/view.schema.json</code> (no unknown keys, known tones). Each field in a title, fact, block or preview is in the schema. Each look is in <code>looks.json</code> and allowed in its place.</td></tr>
+        <tr><td>example.json</td><td>Valid against the schema.</td></tr>
       </tbody>
     </table></div>
 
     <h3>Remove a template</h3>
-    <p>Only an added template can be removed. Old messages of that kind stay in the stream. The UI shows them with the fallback model: each field as a text block. <code>orch template add</code> of the same folder restores the look.</p>
+    <p>Only a store template can be removed. If it replaced a core template, the core template applies again. Old messages of a removed kind stay in the stream. The UI shows them with the fallback model: each field as a text block. <code>orch template add</code> of the files in <code>.removed/</code> restores the look.</p>
 
-    <h3>One-time C# work (F1 builds it)</h3>
+    <h3>One-time C# work</h3>
     <div class="tw"><table class="t">
-      <thead><tr><th>Part</th><th>Change</th></tr></thead>
+      <thead><tr><th>Part</th><th>Change</th><th>Status</th></tr></thead>
       <tbody>
-        <tr><td><code>TemplateSet</code></td><td>Reads each folder with a <code>schema.json</code> in both roots. A broken folder is skipped and listed in <code>Errors</code>. <code>Reload()</code> after a change.</td></tr>
-        <tr><td><code>EventKinds</code></td><td>The message kinds and the turn kinds also come from the template set (<code>meta.turn</code>).</td></tr>
-        <tr><td><code>Renderer</code></td><td>An added kind uses <code>render/session.md</code>, else a fallback text.</td></tr>
-        <tr><td><code>Ui.Look</code>, <code>Ui.Classify</code></td><td>Read the view (X2). An added kind with <code>needs</code> gets a card with the actions of <code>meta.card</code>.</td></tr>
-        <tr><td>Plugin <code>tools.ts</code></td><td>Registers one tool for each added template with <code>meta.tool</code>, plus the tool <code>templates</code>.</td></tr>
-        <tr><td>Design page</td><td>Shows each template of the set, with no fixed order list.</td></tr>
+        <tr><td><code>TemplateSet</code></td><td>Loads each template of <code>ITemplateStore.List</code>. A broken folder is skipped and listed in <code>LoadErrors</code>.</td><td>Built</td></tr>
+        <tr><td><code>FileStore.IsDeliverable</code></td><td>An added kind with <code>meta.turn</code> goes to a receiver session as a turn.</td><td>Built</td></tr>
+        <tr><td><code>Renderer</code></td><td>An added kind uses <code>render/session.md</code> for a session, else the subject.</td><td>Built</td></tr>
+        <tr><td><code>KindRing</code></td><td>The ring takes its icon and color from the view (X2). The C# table stays for kinds with no template.</td><td>Built</td></tr>
+        <tr><td><code>Ui.Classify</code></td><td>An added kind with <code>needs</code> gets the report card (Got it, Reply). Not yet: the actions of <code>meta.card</code>.</td><td>Later</td></tr>
+        <tr><td>Plugin <code>tools.ts</code></td><td>One tool for each added template, plus the tool <code>templates</code>.</td><td>Later (Q3)</td></tr>
+        <tr><td>Design page</td><td>Shows the 10 core kinds, in a fixed order.</td><td>No change</td></tr>
       </tbody>
     </table></div>
   </section>

@@ -12,6 +12,7 @@
     "to": { "$ref": "#/$defs/parties", "description": "The party classes that may get it." },
     "needs": { "enum": [null, "answer", "review", "ack"], "description": "What the receiver must do. A value makes an inbox card." },
     "replies": { "type": "array", "items": { "type": "string" }, "uniqueItems": true, "description": "The kinds that may reply to it (refs.reply)." },
+    "turn": { "type": "boolean", "description": "An added kind only: a receiver session gets the message as a turn. Default: true when \"to\" allows a session. The core kinds have fixed rules in code." },
     "card": {
       "type": ["object", "null"],
       "description": "The two actions of the inbox card.",

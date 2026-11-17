@@ -88,6 +88,11 @@ public sealed class TemplateStoreTests
         Assert.That((doc.Title, doc.Tone, doc.Icon), Is.EqualTo(("The token is in the log.", "failed", "alert")));
         Assert.That(doc.Facts.Single().Tone, Is.EqualTo("failed"));
         Assert.That(store.Renderer.Text(posted, "session"), Is.EqualTo("Risk (high): The token is in the log."));
+
+        var other = store.Create(new Meta("") { Title = "Other", Cwd = "C:/x" });
+        var toSession = store.Events.Post(new PostInput("risk-note", Parties.Session(session), Parties.Session(other), new Dictionary<string, object?> { ["risk"] = "Disk full.", ["level"] = "low" }));
+        Assert.That(store.IsDeliverable(toSession), "meta.json to has session, so the receiver gets a turn");
+        Assert.That(store.Renderer.Text(toSession), Is.EqualTo("Risk (low): Disk full."), "render/session.md is the default render for a session");
     }
 
     [Test]
