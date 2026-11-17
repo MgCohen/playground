@@ -1324,7 +1324,7 @@ var Saved = (function () {
     });
   });
   groups.forEach(function (g) { pick(g, saved[g.key] || g.rec, false); });
-  Saved.load("picks").then(function (d) { if (d && typeof d === "object") { saved = d; groups.forEach(function (g) { pick(g, saved[g.key] || g.rec, false); }); } });
+  Saved.load("picks").then(function (d) { if (d && typeof d === "object") { saved = d; groups.forEach(function (g) { pick(g, saved[g.key] || g.rec, false); }); } else if (Object.keys(saved).length) Saved.save("picks", saved); });
 })();
 
 // ===== G1: tray grow =====
