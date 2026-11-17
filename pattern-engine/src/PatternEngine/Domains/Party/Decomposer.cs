@@ -126,7 +126,7 @@ public static class Decomposer
     public static Anchor Anchor(string id, string text, IReadOnlyList<string> tags, IReadOnlyList<(string Stat, int Min)> stats, int? budget)
     {
         var b = new StringBuilder();
-        b.Append(CultureInfo.InvariantCulture, $"---\nid: {id}\nkind: success\nlevel: quest\nscore: {{ rule: all }}\n---\n{text}\n\n");
+        b.Append(CultureInfo.InvariantCulture, $"---\nid: {id}\nkind: success\nlevel: case\nscore: {{ rule: all }}\n---\n{text}\n\n");
         foreach (var t in tags)
         {
             b.Append(CultureInfo.InvariantCulture, $"- id: {t}\n  ask: Does the party have {("aeiou".Contains(t[0], StringComparison.Ordinal) ? "an" : "a")} {t}?\n  check: grader\n  args: {{ tag: {t} }}\n");

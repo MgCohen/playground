@@ -90,16 +90,15 @@ Stats (S I A K): strength, intelligence, agility, knowledge. Tags: healer, tank,
 
 ## Quests
 
-A quest is an anchor file: context, then one rubric for each requirement. The fields follow the draft anchor format of [decider.md](decider.md) and [solution-grade.md](solution-grade.md).
+A quest is an anchor file: context, then one rubric for each requirement. The fields follow the anchor format (A1 in [decider.md](decider.md)). A prose case keeps its text in `domain.text`.
 
 ```yaml
 ---
 id: b1
 kind: success
 level: case
-rung: budget
 score: { rule: all }
-unavailable: []
+domain: { rung: budget, unavailable: [] }
 ---
 A quest in the hills. The party must heal, hold a line and fight. Budget: 12 gold.
 
@@ -118,7 +117,7 @@ The grader agent answers each `ask`. The oracle reads the typed `args`: `tag`, `
 | Rung | Case file |
 |---|---|
 | Many quests | `quests: [ids]`, plus a pool anchor with "No hero is in two parties" |
-| Prose | `text:` with the prose and the budget. All rubrics have `visibility: eval`, so the run never sees them |
+| Prose | `domain.text` with the prose and the budget. All rubrics have `visibility: eval`, so the run never sees them |
 
 ## Loop
 
