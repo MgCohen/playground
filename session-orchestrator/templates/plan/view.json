@@ -1,0 +1,18 @@
+{
+  "label": "Plan",
+  "icon": "review",
+  "tone": "new",
+  "document": {
+    "title": ["{{title}}"],
+    "facts": [],
+    "blocks": [
+      { "field": "context", "label": "Context" },
+      { "field": "steps", "label": "Steps", "as": "steps" }
+    ]
+  },
+  "preview": {
+    "title": ["{{title}}"],
+    "line": ["{{context}}"],
+    "list": { "field": "steps", "max": 4 }
+  }
+}

@@ -31,6 +31,9 @@ public sealed record TemplateMeta(string Type, int Version, string Purpose, IRea
 
 public sealed record Template(string Kind, string Folder, JsonSchema Schema, string SchemaText, TemplateMeta? Meta)
 {
+    /// <summary>The view.json of the type: the full document and the preview in the UI. See <see cref="Views"/>.</summary>
+    public ViewSpec? View { get; init; }
+
     public string RenderPath(string? name = null) => name is null ? Path.Combine(Folder, "render.md") : Path.Combine(Folder, "render", $"{name}.md");
 
     public bool HasRender(string? name = null) => File.Exists(RenderPath(name));
@@ -59,7 +62,9 @@ public sealed class TemplateSet
             var text = File.ReadAllText(Path.Combine(root, kind, "schema.json"));
             var metaPath = Path.Combine(root, kind, "meta.json");
             var meta = File.Exists(metaPath) ? StoreJson.Read<TemplateMeta>(File.ReadAllText(metaPath)) : null;
-            return new Template(kind, Path.Combine(root, kind), JsonSchema.FromText(text), text, meta);
+            var viewPath = Path.Combine(root, kind, "view.json");
+            var view = File.Exists(viewPath) ? StoreJson.Read<ViewSpec>(File.ReadAllText(viewPath)) : null;
+            return new Template(kind, Path.Combine(root, kind), JsonSchema.FromText(text), text, meta) { View = view };
         });
     }
 
