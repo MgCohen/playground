@@ -1117,15 +1117,19 @@ Recommendation: keep the files as the store. The needs today do not require a da
 | D. Notion as the store | No. No atomic create, rate limit of 3 requests/s |
 | E. Notion as a mirror | Optional, one way, from a supervisor reactor |
 
+A Notion implementation of the ports can work only behind one writer: Notion has no exclusive create and no lock.
+
 Measured on the main store (2026-11-17): 3,654 envelopes in 2 days; 2,350 on 11-17, of which 88 % are `session.tool`, `session.output` and `session.input`. Size: `events/` 6.0 MB, `bodies/` 9.6 MB, `sessions/` 28 MB.
 
 | Step | Change | When |
 |---|---|---|
-| S1 | Index by session in `EventStream` (fixes B2-9) | Now |
-| S2 | Day cache file for each closed day, so a new `orch` process reads one file for each day | Now |
-| S3 | Store out of the git checkout (default `ORCH_STORE`) | Now |
-| S4 | Copy of closed days to a backup folder | Now |
-| S5 | `IStreamBackend` seam, then SQLite | If a trigger fires: a tick or cold query above 1 s, more than 100,000 envelopes, or two PCs |
-| S6 | Notion mirror reactor | If the user wants it |
+| S1 | Storage ports `IEventLog` and `IDocStore` with file implementations. All C# store IO goes through them | Now |
+| S2 | Plugin `backend.ts`: the only hook module that uses `$.fs` for the store | Now |
+| S3 | Index by session in `EventStream` (fixes B2-9), and a day cache for each closed day | Now |
+| S4 | Store out of the git checkout (default `ORCH_STORE`) | Now |
+| S5 | Copy of closed days to a backup folder | Now |
+| S6 | Other implementation (SQLite, supervisor API, Notion) | If a trigger fires: a tick or cold query above 1 s, more than 100,000 envelopes, two PCs, or a user request |
+
+Port rule (user, 2026-11-17): all store operations go through the ports. One composition root (`StoreBackends.Create`, and `backend.ts` in the plugin) selects the implementation in code, with no configuration. An architecture test refuses store IO outside the implementations, and one contract test suite runs against each implementation. Callers that bypass the ports today: `Supervisor.cs`, `Supervisor.Lifecycle.cs`, `EventCommands.cs`, `StateReader.cs`, `Lifecycle.cs`, and the hooks `stream.ts`, `lease.ts`, `state.ts`, `register.ts`, `events.ts`.
 
 Cloud workers (G1 Q6a) and the phone (D1) reach the store only through the supervisor HTTP API and the tunnel.

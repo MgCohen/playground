@@ -79,3 +79,4 @@ The build session made these decisions while the user was away. The user reviews
 | 2026-11-17 | B2: is a background session imported? | Yes, with Remote Control off | The user wants each child in the app by default. `background` only keeps it off the phone |
 | 2026-11-17 | H1: are the Notion and D1 limits measured? | No. Values from the public limits pages; latency values are typical values | Plan only: the brief permits no account and no Notion write |
 | 2026-11-17 | H1: do cloud workers write the store directly? | No. They call the supervisor API through the tunnel | G1 Q6a. One writer path keeps the lease and claim rules in C# |
+| 2026-11-17 | H1: how is the storage made swappable? | Two ports, `IEventLog` and `IDocStore`, plus `backend.ts` in the plugin. One composition root selects the implementation in code, with no configuration | User request: change files to a server or Notion with only a new implementation |
