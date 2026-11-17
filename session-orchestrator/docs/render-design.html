@@ -139,6 +139,31 @@ a.lnk { color: var(--new); text-decoration: none; font: 12px var(--f-mono); disp
 .ev .l2 { color: var(--muted); font-size: 12px; display: block; margin-top: 1px; }
 .ev .l3 { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
 .miniprog { width: 80px; height: 6px; }
+/* ===== F1: review and registry (page prose, not app screens) ===== */
+section.doc-part { display: grid; gap: 14px; padding-block: 22px; border-top: 1px solid var(--page-line); max-width: 1100px; }
+section.doc-part h2 { font: 800 22px/1 var(--f-disp); letter-spacing: .03em; margin: 0; }
+section.doc-part h3 { font-size: 15px; margin: 8px 0 0; text-wrap: balance; }
+section.doc-part p { margin: 0; max-width: 75ch; }
+section.doc-part code, .rv code { font: 12px var(--f-mono); }
+.tw { overflow-x: auto; }
+table.t { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.t th, table.t td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--page-line); }
+table.t th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--page-mu); }
+table.t td:first-child { white-space: nowrap; font-weight: 600; }
+.tag { display: inline-block; font: 600 10.5px var(--f-body); letter-spacing: .05em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; }
+.tag.gap { color: var(--failed); } .tag.dup { color: var(--pending); } .tag.look { color: var(--new); } .tag.ok { color: var(--done); }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; list-style: none; padding: 0; margin: 0; counter-reset: s; }
+.flow li { counter-increment: s; flex: 1 1 170px; min-width: 0; border: 1px solid var(--page-line); border-radius: var(--r-sm); padding: 10px 12px; font-size: 13px; background: var(--page); }
+.flow li::before { content: counter(s); display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 6px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font: 700 11px var(--f-body); }
+.tree { font: 12.5px/1.6 var(--f-mono); }
+.tree details { padding-left: 16px; } .tree > details { padding-left: 0; }
+.tree summary { cursor: pointer; } .tree summary span, .tree .d { font-family: var(--f-body); color: var(--page-mu); font-size: 12.5px; }
+.tree .d { padding-left: 16px; display: block; }
+.oq { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+.oq li { border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; }
+.rv { font-size: 12.5px; display: grid; gap: 4px; margin-top: 6px; padding: 10px 12px; border: 1px dashed var(--page-line); border-radius: var(--r-sm); }
+.rv b { font-weight: 600; }
+.rv ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
 footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 80ch; display: grid; gap: 6px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -146,11 +171,124 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
 <main>
   <h1>MESSAGE RENDERS</h1>
   <p class="lede">The full document and the preview of each template kind, with the data of <code>templates/&lt;kind&gt;/example.json</code>. The page reads <code>templates/&lt;kind&gt;/view.json</code>: the same render spec that the C# model <code>Views</code> uses. A change to a spec changes this page and the UI together.</p>
+  <nav class="kinds" aria-label="Parts"><a href="#review">Review</a><a href="#registry">Registry</a><a href="#questions">Open questions</a></nav>
+
+  <section class="doc-part" id="review">
+    <h2>TEMPLATE REVIEW (F1)</h2>
+    <p>Result: the 10 templates are complete for the protocol. The main problems are in the looks, not in the data. Each kind band below has its own review notes. This table has the findings that apply to more than one kind.</p>
+    <p><span class="tag gap">gap</span> a field or a look is missing · <span class="tag dup">dup</span> the same data is in two places · <span class="tag look">look</span> a change to the look, for discussion</p>
+    <div class="tw"><table class="t">
+      <thead><tr><th>Id</th><th>Type</th><th>Finding</th><th>Proposal</th></tr></thead>
+      <tbody>
+        <tr><td>X1</td><td><span class="tag dup">dup</span></td><td><code>meta.json</code> <code>card.title</code> and <code>card.quick</code> repeat <code>view.json</code> <code>preview</code>. <code>Ui.Classify</code> makes the card title again in C#.</td><td>Remove <code>card.title</code> and <code>card.quick</code>. <code>card</code> keeps only the actions.</td></tr>
+        <tr><td>X2</td><td><span class="tag dup">dup</span></td><td><code>Ui.Look</code> repeats the <code>icon</code> and <code>tone</code> of each <code>view.json</code> (R2-4).</td><td><code>Ui.Look</code> reads the view first. The C# table stays only for kinds with no template (<code>blocked</code>, <code>pr.*</code>).</td></tr>
+        <tr><td>X3</td><td><span class="tag gap">gap</span></td><td>Enum values show raw: <code>stacked-pr</code>, <code>question-closed</code>, <code>policy</code>.</td><td>New field option <code>labels</code>: a map from value to text, next to <code>tones</code>.</td></tr>
+        <tr><td>X4</td><td><span class="tag gap">gap</span></td><td>A long text (message, answer, summary) becomes a very large title.</td><td>The title shows the first line, 140 characters maximum. If the model cuts the title, the document adds a block with the full text.</td></tr>
+        <tr><td>X5</td><td><span class="tag look">look</span></td><td>A <code>well</code> block is a well in a card: a double frame (R2-3).</td><td>A well block is only the well. A code block is only the well with mono text.</td></tr>
+        <tr><td>X6</td><td><span class="tag gap">gap</span></td><td>A <code>false</code> boolean fact shows "no" (brief: Background no, Worktree no).</td><td>A boolean fact shows only when it is true.</td></tr>
+        <tr><td>X7</td><td><span class="tag gap">gap</span></td><td>No condition on a field. Example: the question Default fact repeats the marked chip when options exist.</td><td>New field option <code>unless</code>: the name of a field. If that field has a value, the model skips this field.</td></tr>
+        <tr><td>X8</td><td><span class="tag gap">gap</span></td><td>Sessions write markdown in <code>goal</code>, <code>context</code> and <code>details</code>. The view shows it as plain text.</td><td>New look <code>markdown</code> (open question Q5).</td></tr>
+        <tr><td>X9</td><td><span class="tag gap">gap</span></td><td>Only one <code>example.json</code> for each kind. The notice has 18 renders, the report has 3 states.</td><td>Optional folder <code>examples/&lt;name&gt;.json</code>. The tests and this page show each example.</td></tr>
+        <tr><td>X10</td><td><span class="tag gap">gap</span></td><td><code>progress</code> is 0 to 100 in the schema, but the model reads 1 as 100 %.</td><td>Read <code>progress</code> as a percent only, as the schema says.</td></tr>
+        <tr><td>X11</td><td><span class="tag dup">dup</span></td><td><code>Event.Subject</code> makes a subject for each kind in C#. The preview title gives the same text.</td><td>No change in F1. The stream uses the preview title already.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="doc-part" id="registry">
+    <h2>TEMPLATE REGISTRY</h2>
+    <p>Goal: a new template needs only files: <code>schema.json</code>, <code>meta.json</code>, <code>view.json</code> and <code>example.json</code>. No C# change. Today <code>TemplateSet</code> reads only the 10 names in <code>Kinds.All</code>, so a new folder has no effect.</p>
+
+    <h3>Two kinds of templates</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>Kind</th><th>Examples</th><th>Folder</th><th>What a file change can do</th></tr></thead>
+      <tbody>
+        <tr><td>Core</td><td>question, answer, review, report, plan, brief, notice, ack, message, update</td><td><code>&lt;home&gt;/templates/</code></td><td>Change the fields, the view and the renders. The behavior (defaults, stack, first answer wins, spawn) stays in C#. A core template cannot be removed.</td></tr>
+        <tr><td>Added</td><td>for example <code>risk-note</code>, <code>test-result</code>, <code>design-review</code></td><td><code>&lt;store&gt;/templates/</code> (Q1)</td><td>All of it. A session posts it, the stream checks it against the schema, the receiver gets it, the UI shows it, the user acks it.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Folder of a template</h3>
+    <div class="tree">
+      <details open><summary>&lt;store&gt;/templates/ <span>the added templates</span></summary>
+        <details open><summary>test-result/ <span>one folder for each kind; the folder name is the kind</span></summary>
+          <details><summary>schema.json <span>required: the fields (JSON Schema, object, no additional properties)</span></summary><span class="d">The plugin tool uses it as its input schema. The stream rejects a body that does not match.</span></details>
+          <details><summary>meta.json <span>required: purpose, from, to, needs, replies, card, turn, tool</span></summary><span class="d"><code>type</code> must be the folder name. New keys: <code>turn</code> (a receiver session gets it as a turn; default true when <code>to</code> has a session) and <code>tool</code> (the plugin tool to register).</span></details>
+          <details><summary>view.json <span>required: label, icon, tone, document, preview</span></summary><span class="d">The same spec as a core kind. Each field that it names must be in the schema.</span></details>
+          <details><summary>example.json <span>required: one valid body</span></summary><span class="d">The check renders it. This page shows it.</span></details>
+          <details><summary>examples/ <span>optional: more named bodies (X9)</span></summary></details>
+          <details><summary>render/session.md <span>optional: the text that a receiver session gets</span></summary><span class="d">With no render, the session gets the preview title and the fields as a list.</span></details>
+        </details>
+        <details><summary>.removed/ <span>removed templates, with a time stamp, for a restore</span></summary></details>
+      </details>
+    </div>
+
+    <h3>Add a template</h3>
+    <ol class="flow">
+      <li>Write the folder, for example in the scratchpad. <code>orch template new test-result</code> writes a skeleton.</li>
+      <li><code>orch template check &lt;folder&gt;</code> runs the checks below.</li>
+      <li><code>orch template add &lt;folder&gt;</code> checks again and copies the folder to <code>&lt;store&gt;/templates/test-result/</code>.</li>
+      <li>The supervisor sees the change and loads the template set again. The UI shows the kind at once.</li>
+      <li>Sessions get the tool <code>mcp__orch__&lt;tool.name&gt;</code> at the next plugin load (hot reload).</li>
+    </ol>
+
+    <h3>Surfaces</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>Surface</th><th>List</th><th>Add</th><th>Remove</th></tr></thead>
+      <tbody>
+        <tr><td>CLI</td><td><code>orch template</code>: kind, core or added, label, purpose. <code>orch template &lt;kind&gt;</code>: the fields</td><td><code>orch template new &lt;kind&gt;</code>, <code>check</code>, <code>add &lt;folder&gt; [--replace]</code></td><td><code>orch template remove &lt;kind&gt;</code>: moves the folder to <code>.removed/</code></td></tr>
+        <tr><td>HTTP API</td><td><code>GET /api/templates</code>, <code>GET /api/templates/{kind}</code> (schema, meta, view, example)</td><td>No (Q3)</td><td>No (Q3)</td></tr>
+        <tr><td>Plugin</td><td>Tool <code>mcp__orch__templates</code>: the kinds that this session can post, with purpose and fields</td><td>The session runs <code>orch template add</code> in its shell</td><td>The session runs <code>orch template remove</code></td></tr>
+        <tr><td>UI</td><td>Later: a Templates page in Settings, from the API</td><td>No</td><td>No</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Checks (<code>orch template check</code>, <code>add</code>, and a unit test for each folder)</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>File</th><th>Check</th></tr></thead>
+      <tbody>
+        <tr><td>name</td><td>Matches <code>^[a-z][a-z0-9-]{1,31}$</code>. No dot: dot names are system events (<code>pr.open</code>). Not a core name, unless <code>--replace</code> is allowed (Q2).</td></tr>
+        <tr><td>schema.json</td><td>A valid JSON Schema of type object.</td></tr>
+        <tr><td>meta.json</td><td><code>type</code> is the folder name. <code>from</code> and <code>to</code> use known party classes. <code>replies</code> names known kinds.</td></tr>
+        <tr><td>view.json</td><td>Each field is in the schema. Each tone is a known token. Each icon is a known icon. A title is present.</td></tr>
+        <tr><td>example.json</td><td>Valid against the schema. The document and the preview render with a title.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Remove a template</h3>
+    <p>Only an added template can be removed. Old messages of that kind stay in the stream. The UI shows them with the fallback model: each field as a text block. <code>orch template add</code> of the same folder restores the look.</p>
+
+    <h3>One-time C# work (F1 builds it)</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>Part</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td><code>TemplateSet</code></td><td>Reads each folder with a <code>schema.json</code> in both roots. A broken folder is skipped and listed in <code>Errors</code>. <code>Reload()</code> after a change.</td></tr>
+        <tr><td><code>EventKinds</code></td><td>The message kinds and the turn kinds also come from the template set (<code>meta.turn</code>).</td></tr>
+        <tr><td><code>Renderer</code></td><td>An added kind uses <code>render/session.md</code>, else a fallback text.</td></tr>
+        <tr><td><code>Ui.Look</code>, <code>Ui.Classify</code></td><td>Read the view (X2). An added kind with <code>needs</code> gets a card with the actions of <code>meta.card</code>.</td></tr>
+        <tr><td>Plugin <code>tools.ts</code></td><td>Registers one tool for each added template with <code>meta.tool</code>, plus the tool <code>templates</code>.</td></tr>
+        <tr><td>Design page</td><td>Shows each template of the set, with no fixed order list.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="doc-part" id="questions">
+    <h2>OPEN QUESTIONS</h2>
+    <p>Each question goes to the user queue. The recommendation is in bold.</p>
+    <ol class="oq">
+      <li><b>Q1. Where do added templates live?</b> <b>In <code>&lt;store&gt;/templates/</code></b>, the store folder <code>~/.orch/templates</code>, or <code>&lt;home&gt;/templates/</code> in the repository.</li>
+      <li><b>Q2. Can an added template replace a core template?</b> <b>Only its <code>view.json</code></b>, all files, or no.</li>
+      <li><b>Q3. Which surfaces add and remove?</b> <b>CLI to add and remove, API and plugin tool to list</b>, or also API add and remove for a later UI page.</li>
+      <li><b>Q4. The look changes X1 to X10 and the notes of each kind.</b> <b>Do all</b>, or name the ones to skip or change.</li>
+      <li><b>Q5. A markdown look?</b> <b>Yes, with the Markdig package</b>, or no: keep plain text.</li>
+    </ol>
+  </section>
+
   <nav class="kinds" id="nav" aria-label="Kinds"></nav>
   <div id="kinds"></div>
   <footer>
     <div><b>Not shown.</b> The actions (Accept, Other, Approve, Change, Got it, Reply) come from <code>meta.json</code> card and stay as they are in the A4 views. The forms to make a message are a later part.</div>
-    <div><b>Open points for review.</b> The labels, the order of the facts and blocks, which field goes in the well of the card, and the title of a notice and an ack.</div>
+    <div><b>Review.</b> The F1 notes under each kind are proposals. They are not built yet.</div>
   </footer>
 </main>
 
@@ -277,6 +415,23 @@ function specLine(v) {
   </div>`;
 }
 
+const REVIEW = {
+  question: [['look', 'The Default fact repeats the marked chip. Show it only when there are no options (X7).'], ['ok', '<code>waitSeconds</code> is a tool control, but the decision mode reads it from the body. Keep it, do not show it.'], ['gap', 'Open shows no time left to the default. The card has the timer ring. Add the ring to the Open head.']],
+  answer: [['look', 'The title is the answer and the subtitle is the question. Proposal: title = question, a well "Answer" = text. The question is the context, the answer is the news.'], ['look', 'Then shows <code>stacked-pr</code> raw. Use labels (X3).'], ['look', 'Source is a file and a section: use code, not a well.'], ['dup', '<code>question</code> and <code>decision</code> repeat thread data. Keep them: the render needs them.']],
+  review: [['look', 'Branch, Base and Next branch are three code blocks, each in a frame. Move them to the facts, as code.'], ['dup', 'The stream line repeats the verdict of the pill. Line = the direction text only.'], ['ok', '<code>version</code> is not shown. It is internal.']],
+  report: [['ok', 'Fields and order are good: blockers first.'], ['gap', '<code>details</code> is often markdown (X8).'], ['look', 'The card well joins the first three items with a dot. Keep it.']],
+  update: [['gap', 'progress 1 shows 100 % (X10).'], ['ok', 'No other change.']],
+  brief: [['look', 'Background no and Worktree no are noise (X6).'], ['gap', '<code>goal</code> holds the steps, often as markdown (X8).'], ['ok', '<code>parent</code> is not shown: the tree shows it.']],
+  notice: [['dup', 'The title is the first line of the render, and the Text block repeats it. The block shows the render without its first line.'], ['look', 'Kind shows <code>question-closed</code> raw (X3). The label "Session" names the field <code>title</code>: rename to "Child title".'], ['gap', 'The schema is one union of the fields of 18 kinds. No kind has its required fields. Add a test: each placeholder of a render is a schema field.']],
+  plan: [['look', 'The icon is the review icon. Use a list icon, so plan and review differ in the stream.']],
+  message: [['look', 'The whole text is the title (X4).']],
+  ack: [['ok', 'Acks are hidden in most views. Title "delivered · live" is good enough.']],
+};
+function reviewNotes(k) {
+  const notes = REVIEW[k] || [];
+  return notes.length ? `<div class="rv"><b>F1 review</b><ul>${notes.map(([t, s]) => `<li><span class="tag ${t}">${t}</span> ${s}</li>`).join('')}</ul></div>` : '';
+}
+
 const order = ['question', 'answer', 'review', 'report', 'update', 'brief', 'notice', 'plan', 'message', 'ack'];
 document.getElementById('nav').innerHTML = order.map(k => `<a href="#${k}">${DATA[k].view.label}</a>`).join('');
 document.getElementById('kinds').innerHTML = order.map(k => {
@@ -286,7 +441,7 @@ document.getElementById('kinds').innerHTML = order.map(k => {
     <div class="trio">
       <div class="col"><span class="cap">Full document · Open view</span>${docView(k, dm)}</div>
       <div class="col"><span class="cap">Preview · card in the pile</span><div class="scr">${cardView(pm)}</div>
-        <span class="cap" style="margin-top:8px">Preview · row in the stream</span><div class="scr">${rowView(pm)}</div>${specLine(v)}</div>
+        <span class="cap" style="margin-top:8px">Preview · row in the stream</span><div class="scr">${rowView(pm)}</div>${specLine(v)}${reviewNotes(k)}</div>
     </div></section>`;
 }).join('');
 </script>
