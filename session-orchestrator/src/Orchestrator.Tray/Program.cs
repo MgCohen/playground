@@ -39,7 +39,8 @@ public static partial class Program
 
         using var mock = MockStore.Create();
         using var services = Services(mock.Store);
-        tray = new TrayApp(services, show: selfTest is not null || !args.Contains("--hidden"), pinned: selfTest is not null || args.Contains("--pin"));
+        tray = new TrayApp(services, show: selfTest is not null || !args.Contains("--hidden"), pinned: selfTest is not null || args.Contains("--pin"),
+            placeFile: selfTest is null ? Path.Combine(data, "place.json") : SelfTest.FreshPlaceFile(selfTest));
         var code = 0;
         if (selfTest is not null)
         {
@@ -73,6 +74,8 @@ public static partial class Program
         services.AddSingleton<Supervisor.Supervisor>();
         services.AddSingleton<Board>();
         services.AddSingleton<StreamHub>();
+        services.AddSingleton<WidgetWindow>();
+        services.AddSingleton<IWidgetWindow>(p => p.GetRequiredService<WidgetWindow>());
         return services.BuildServiceProvider();
     }
 

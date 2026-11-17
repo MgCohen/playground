@@ -29,6 +29,14 @@ public static class SelfTest
         new("session-stream", $"{Go}(document.querySelector('.sticky-acts a.pri').getAttribute('href'))", ".lock"),
     ];
 
+    /// <summary>The place file of the self-test: a new file in the self-test folder, so the widget starts at its home location.</summary>
+    public static string FreshPlaceFile(string folder)
+    {
+        var file = Path.Combine(folder, "place.json");
+        if (File.Exists(file)) File.Delete(file);
+        return file;
+    }
+
     public static async Task<int> Run(WidgetForm form, string folder)
     {
         Directory.CreateDirectory(folder);
@@ -65,9 +73,60 @@ public static class SelfTest
             $"size {size.Width} × {size.Height} (expect {expect.Width} × {expect.Height}) at {form.DeviceDpi} DPI, location {form.Location.X},{form.Location.Y} (home {home.X},{home.Y}), not in the taskbar, no title bar", ""));
         var corner = Path.Combine(folder, "tray-desktop-corner.png");
         checks.Add(new Check("desktop-corner", Corner(form, corner), "screenshot of the screen corner with the widget and the tray", corner));
+        checks.Add(await Pin(form, web, folder));
+        checks.Add(await Drag(form, web));
+        checks.Add(Toggle(form));
         foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
         await File.WriteAllTextAsync(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
         return checks.All(c => c.Pass) ? 0 : 1;
+    }
+
+    /// <summary>The pin in the page header: a click removes the pin (TopMost off), a second click sets it again.</summary>
+    static async Task<Check> Pin(WidgetForm form, CoreWebView2 web, string folder)
+    {
+        const string click = "document.querySelector('.hd.win .pin').click()";
+        var start = form.Pinned;
+        await web.ExecuteScriptAsync(click);
+        var off = await Until(() => Task.FromResult(form.Pinned ? null : "off"), TimeSpan.FromSeconds(5)) is not null
+            && await Found(web, ".hd.win .pin:not(.on)") is not null;
+        await web.ExecuteScriptAsync(click);
+        var on = await Until(() => Task.FromResult(form.Pinned ? "on" : null), TimeSpan.FromSeconds(5)) is not null
+            && await Until(() => Found(web, ".hd.win .pin.on"), TimeSpan.FromSeconds(5)) is not null;
+        await Task.Delay(400);
+        var png = Path.Combine(folder, "tray-pin.png");
+        await using (var file = File.Create(png)) await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, file);
+        return new Check("pin", start && off && on, $"pinned at start {start}, after click 1 off {off}, after click 2 on {on}", png);
+    }
+
+    /// <summary>A real mouse drag of the header title: the widget moves, and the new place is saved.</summary>
+    static async Task<Check> Drag(WidgetForm form, CoreWebView2 web)
+    {
+        var rect = JsonSerializer.Deserialize<double[]>(JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync(
+            "JSON.stringify((r => [r.left + 20, r.top + r.height / 2])(document.querySelector('.hd.win .title').getBoundingClientRect()))"))!)!;
+        var scale = form.DeviceDpi / 96f;
+        var client = form.PointToScreen(Point.Empty);
+        var from = new Point(client.X + form.Padding.Left + (int)(rect[0] * scale), client.Y + form.Padding.Top + (int)(rect[1] * scale));
+        var by = new Size(-(int)(160 * scale), -(int)(120 * scale));
+        var before = form.Location;
+        var back = Cursor.Position;
+        // The drag loop of Windows runs on the UI thread, so the mouse input comes from another thread.
+        await Task.Run(() => Mouse.Drag(from, from + by));
+        await Task.Delay(500);
+        Cursor.Position = back;
+        var moved = form.Location == before + by;
+        var saved = WidgetForm.LoadPlace(form.PlaceFile);
+        return new Check("drag", moved && form.Place == form.Location && saved == form.Location,
+            $"from {before.X},{before.Y} to {form.Location.X},{form.Location.Y} (expect {before.X + by.Width},{before.Y + by.Height}), saved place {form.Place}, place file {saved}", "");
+    }
+
+    /// <summary>The tray icon click: hide, then show again at the saved place.</summary>
+    static Check Toggle(WidgetForm form)
+    {
+        var place = form.Location;
+        form.Toggle();
+        var hidden = !form.Visible;
+        form.Toggle();
+        return new Check("toggle", hidden && form.Visible && form.Location == place, $"hidden {hidden}, visible again {form.Visible} at {form.Location.X},{form.Location.Y}", "");
     }
 
     /// <summary>Copies the bottom right part of the screen: the widget, the margin and the taskbar with the tray.</summary>

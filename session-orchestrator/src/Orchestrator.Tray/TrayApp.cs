@@ -1,5 +1,6 @@
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Orchestrator.Tray;
 
@@ -15,12 +16,14 @@ public sealed partial class TrayApp : ApplicationContext
     readonly Icon dot;
     bool exiting;
 
-    public TrayApp(IServiceProvider services, bool show, bool pinned)
+    public TrayApp(IServiceProvider services, bool show, bool pinned, string? placeFile)
     {
         dot = Dot(Accent);
-        Form = new WidgetForm(services, dot, pinned);
+        Form = new WidgetForm(services, dot, pinned, placeFile);
+        services.GetRequiredService<WidgetWindow>().Form = Form;
         var pin = new ToolStripMenuItem("Pin on top") { CheckOnClick = true, Checked = pinned };
-        pin.CheckedChanged += (_, _) => Form.TopMost = pin.Checked;
+        pin.CheckedChanged += (_, _) => Form.Pinned = pin.Checked;
+        Form.PinnedChanged += () => pin.Checked = Form.Pinned;
         var menu = new ContextMenuStrip();
         menu.Items.Add("Show", null, (_, _) => Form.ShowWidget());
         menu.Items.Add(pin);
