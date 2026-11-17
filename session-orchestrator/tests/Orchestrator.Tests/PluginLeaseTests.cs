@@ -86,6 +86,22 @@ public sealed class PluginLeaseTests
     }
 
     [Test]
+    public void The_plugin_writes_no_meta_of_another_session_and_names_the_target_of_a_remote_control_call()
+    {
+        // Review of PR #14, item 2: the parent plugin wrote the meta.json of the child. Now it posts meta.update.
+        var register = File.ReadAllText(Path.Combine(Hooks, "register.ts"));
+        Assert.That(System.Text.RegularExpressions.Regex.Matches(register, @"writeJson\(\$, [^
+]*meta\.json|writeJson\(\$, path,").Count, Is.EqualTo(1), "only /orch-enable creates the meta of its own session");
+        Assert.That(register, Does.Contain("postMetaUpdate($, S.id!, 'appId', host)"));
+        var output = Node($$"""
+            import { remoteControlTarget } from '{{Url("register.ts")}}';
+            console.log([remoteControlTarget('self', 'a'), remoteControlTarget(undefined, 'a'), remoteControlTarget('local_a', 'a'), remoteControlTarget('local_b', 'a'), remoteControlTarget('other', 'a')].join(','));
+            """);
+        if (output is null) Assert.Ignore("node is not on the PATH");
+        Assert.That(output, Is.EqualTo("a,a,a,b,"));
+    }
+
+    [Test]
     public void A_turn_marker_with_no_end_blocks_the_live_lease_only_for_a_short_time_with_no_supervisor_holder()
     {
         var script = $$"""

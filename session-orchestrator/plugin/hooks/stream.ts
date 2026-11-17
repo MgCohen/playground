@@ -10,7 +10,7 @@ const META: Record<string, any> = {}
 
 // The kinds that the plugin may post. A message kind needs its templates/<kind>/meta.json.
 export const MESSAGE_KINDS = ['brief', 'message', 'decision', 'query', 'plan', 'answer', 'review', 'report', 'update', 'notice', 'ack']
-export const TRACE_KINDS = ['session.input', 'session.output', 'session.tool', 'blocked']
+export const TRACE_KINDS = ['session.input', 'session.output', 'session.tool', 'blocked', 'meta.update']
 
 export function knownKind(kind: string): boolean {
   return MESSAGE_KINDS.includes(kind) || TRACE_KINDS.includes(kind)

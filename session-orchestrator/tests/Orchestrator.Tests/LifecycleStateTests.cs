@@ -264,6 +264,29 @@ public sealed class LifecycleStateTests
     }
 
     [Test]
+    public async Task Only_the_supervisor_writes_meta_and_it_applies_the_allowed_meta_updates()
+    {
+        using var t = new Rig();
+        var parent = await t.Started();
+        var child = t.Create("work", "child", parent);
+        var stranger = t.Create("work", "stranger");
+        Event Update(string from, string session, string field, object value) =>
+            t.Store.Events.Append(EventKinds.MetaUpdate, Parties.Session(from), Parties.Supervisor,
+                new Dictionary<string, object?> { ["text"] = $"{field} = {value}", ["session"] = session, ["field"] = field, ["value"] = value }, null, from);
+        Update(parent, child, "remoteControl", true);
+        Update(child, child, "appId", "local_host-1");
+        Update(stranger, child, "remoteControl", false);
+        Update(parent, child, "appId", "local_wrong");
+        Update(child, child, "title", "renamed");
+        await t.Cycle();
+        var meta = t.Store.Meta(child);
+        Assert.That((meta.RemoteControl, meta.AppId, meta.Title), Is.EqualTo(((bool?)true, "local_host-1", "child")));
+        Update(child, child, "remoteControl", false);
+        await t.Cycle();
+        Assert.That(t.Store.Meta(child).RemoteControl, Is.False, "a session may change its own remoteControl");
+    }
+
+    [Test]
     public void The_brief_takes_background_and_orch_new_writes_it_in_meta()
     {
         using var t = new Rig();

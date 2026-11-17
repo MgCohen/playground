@@ -173,6 +173,38 @@ public sealed partial class Supervisor
         store.Log($"{id} lease released: {reason}");
     }
 
+    // meta.json has one writer: the supervisor. A plugin posts meta.update; a session may change its own appId and
+    // remoteControl, and the remoteControl of its child (review of PR #14, item 2).
+
+    public const string MetaSubscription = "meta";
+
+    void ApplyMetaUpdates()
+    {
+        var subscription = store.Events.Subscribe(Parties.Supervisor, MetaSubscription, e => e.Kind == EventKinds.MetaUpdate, "meta.update from a plugin");
+        foreach (var e in subscription.Next())
+        {
+            var f = store.Events.Fields(e);
+            var from = Parties.SessionId(e.From);
+            var target = f.GetValueOrDefault("session") as string ?? from;
+            var field = f.GetValueOrDefault("field") as string;
+            var value = f.GetValueOrDefault("value");
+            var allowed = from is not null && target is not null && File.Exists(store.PathOf(target, StoreFiles.Meta)) && field switch
+            {
+                "appId" => target == from && value is string,
+                "remoteControl" => value is bool && (target == from || store.Meta(target).Parent == from),
+                _ => false,
+            };
+            if (allowed)
+            {
+                var meta = store.Meta(target!);
+                store.SaveMeta(field == "appId" ? meta with { AppId = (string)value! } : meta with { RemoteControl = (bool)value! });
+                store.Log($"{target} meta {field} = {value} (from {e.From})");
+            }
+            else store.Log($"meta.update {e.Id} refused: {field} of {target} from {e.From}");
+            subscription.Done(e.Id);
+        }
+    }
+
     // F5: the report goes to the parent at the end of the turn. Two reports in one turn give one forward: the last one.
 
     void RelayReports(string id, Snapshot s)

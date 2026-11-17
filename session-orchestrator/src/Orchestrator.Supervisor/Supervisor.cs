@@ -61,6 +61,7 @@ public sealed partial class Supervisor
             var now = Now;
             StopRunningTurns();
             Relay();
+            ApplyMetaUpdates();
             StepStates(now);
             var sessions = store.Sessions().Where(id => !lifecycle.IsStopped(id)).ToList();
             foreach (var id in sessions) ApplyPolicy(id, now);
