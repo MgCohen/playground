@@ -69,6 +69,13 @@ svg .arrowa { fill: var(--accent); }
     <p><strong>Decision (user, 2026-11-17):</strong> Cloudflare Tunnel + Access, the same as for the runner and the inbox. The build runs on the user's own PC, not on this borrowed PC.</p>
     <p><strong>Decision (user, 2026-11-17):</strong> The phone can do the same as the tray app. Each client reaches data through the same interfaces. A local store, a remote server or memory is only a different implementation, so the client does not change.</p>
     <p><strong>Decision (user, 2026-11-17):</strong> One user only, with no app accounts. Cloudflare Access is the only gate. Session length: the maximum that the plan allows (1 month). Roadmap: the Android app through Access, then a cloud host for more users with their own sessions.</p>
+    <p><strong>Decision (user, 2026-11-17):</strong> Plan only now. The code is a later task. Order of the clients:</p>
+    <ol>
+      <li>Tunnel + web UI in a computer browser.</li>
+      <li>Tunnel + installable web app on Android.</li>
+      <li>Native Android app.</li>
+      <li>Cloud host for more users (roadmap).</li>
+    </ol>
     <p><strong>Plan:</strong> a named Cloudflare Tunnel, run as a Windows service, sends <code>https://orch.&lt;domain&gt;</code> to a second supervisor port. Cloudflare Access signs in one email address before each request.</p>
     <p>Cost: US$0. The plan uses the Cloudflare account, the domain and the Access sign-in of the runner and the inbox again.</p>
     <p>The supervisor checks the Access token on the tunnel port. Local tools keep port 7777 with no change.</p>
