@@ -1,0 +1,161 @@
+<title>Orchestrator Vocabulary</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one column, a sticky filter bar, one table. Same tokens as the design pages. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --warn: #9a6200; --warn-soft: #f6ecd9; --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --warn-soft: #33281a; --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --warn-soft: #33281a; --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 4px 0 0; }
+.summary { color: var(--muted); max-width: 70ch; margin: 0; }
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 10px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px;
+}
+.row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.row .lbl { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); width: 72px; }
+input[type="search"] {
+  font: 400 15px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 7px 10px; width: 100%; max-width: 360px;
+}
+.chip {
+  font: 500 13px var(--font-body); color: var(--muted); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 14px; padding: 3px 11px; cursor: pointer;
+}
+.chip[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+.chip:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.count { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td.name { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; color: var(--fg); }
+td.cat { color: var(--muted); white-space: nowrap; }
+.st { font-family: var(--font-mono); font-size: 12px; padding: 1px 8px; border-radius: 10px; border: 1px solid; white-space: nowrap; }
+.st.Defined { color: var(--accent); border-color: var(--accent); }
+.st.Proposed { color: var(--fg); border-color: var(--muted); border-style: dashed; }
+.st.Uncertain { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+.empty { color: var(--muted); padding: 16px 10px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Session orchestrator</div>
+    <h1>Vocabulary</h1>
+    <p class="summary">Each term of the orchestrator, with its category and its status. Defined terms are in code or docs. Proposed terms come from the work stream design (C1). Uncertain terms are in use but have no clear definition.</p>
+  </header>
+
+  <div class="bar">
+    <div class="row"><input type="search" id="q" placeholder="Search a term or a meaning" aria-label="Search"></div>
+    <div class="row" id="cats"><span class="lbl">Category</span></div>
+    <div class="row" id="stats"><span class="lbl">Status</span></div>
+    <div class="count" id="count"></div>
+  </div>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Name</th><th>Category</th><th>What it is</th><th>Status</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  var T = [
+    ["event stream", "Storage", "The append-only store of all messages, one envelope file for each event", "Defined"],
+    ["event", "Storage", "One entry in the event stream: an envelope with a body", "Defined"],
+    ["envelope", "Storage", "The small event file: id, kind, from, to, subject, refs", "Defined"],
+    ["body", "Storage", "The template fields of one event, in a separate file", "Defined"],
+    ["store", "Storage", "The folder with events, bodies, sessions and subscriptions. Git does not track it", "Defined"],
+    ["supervisor", "Runtime", "The C# process that runs turns, relays messages and applies defaults", "Defined"],
+    ["plugin", "Runtime", "The Claude Code plugin: hooks, orch tools, skills and agents", "Defined"],
+    ["lease", "Runtime", "Which writer sends turns to a session: live, supervisor or none", "Defined"],
+    ["session", "Sessions", "One Claude Code conversation that the store knows", "Defined"],
+    ["root", "Sessions", "A session with no parent. It splits work into children", "Defined"],
+    ["child", "Sessions", "A session that another session started with spawn_child", "Defined"],
+    ["worker", "Sessions", "The agent role of a child with one task", "Defined"],
+    ["orchestrator (agent)", "Sessions", "The agent role of a root that splits work", "Defined"],
+    ["brief", "Messages", "The start message of a session: title, goal, scope, done check", "Defined"],
+    ["question", "Messages", "A message that needs an answer. Earlier names: decision, query", "Defined"],
+    ["answer", "Messages", "The reply to a question: from the user, the docs or the policy", "Defined"],
+    ["review", "Messages", "The verdict of the user: approve, change or refuse", "Defined"],
+    ["report", "Messages", "A session says done, blocked or working, with links", "Defined"],
+    ["update", "Messages", "Progress of a step. Nobody must act on it", "Defined"],
+    ["plan", "Messages", "Proposed steps that need a review before the work starts", "Defined"],
+    ["notice", "Messages", "A fixed message from the supervisor to a session", "Defined"],
+    ["message", "Messages", "Free text when no other type fits", "Defined"],
+    ["ack", "Messages", "The receipt of a delivered envelope", "Defined"],
+    ["decision", "Messages", "A question with options and a default. Also the name of its branch", "Uncertain"],
+    ["default decision", "Git", "The policy answer after a timeout, on its own stacked branch", "Defined"],
+    ["stack", "Git", "Branches on top of other branches, with one PR each", "Defined"],
+    ["integration branch", "Git", "A branch that merges several part branches for one test", "Uncertain"],
+    ["card", "UI", "One inbox UI item that needs your action", "Uncertain"],
+    ["stream (work)", "Work streams", "A unit of work, such as A or C. Collides with event stream", "Uncertain"],
+    ["work stream", "Work streams", "Proposed name for that unit: one goal, one owner, one integration branch", "Proposed"],
+    ["part", "Work streams", "One child with one task inside a work stream, such as C1", "Proposed"],
+    ["stream root", "Work streams", "The session that owns one work stream and starts its parts", "Proposed"],
+    ["top root", "Work streams", "The root above all stream roots", "Proposed"],
+    ["session kind", "Work streams", "The role of a part: design, code, integration, probe or review", "Proposed"],
+    ["probe", "Work streams", "A short test session that answers one question. It makes no PR", "Uncertain"],
+    ["gate", "Work streams", "A point where the user must approve: design, plan or merge", "Proposed"]
+  ];
+  var cats = [], stats = ["Defined", "Proposed", "Uncertain"];
+  T.forEach(function (r) { if (cats.indexOf(r[1]) < 0) cats.push(r[1]); });
+  var onCat = {}, onStat = {}, q = document.getElementById("q");
+
+  function chips(id, list, on) {
+    var box = document.getElementById(id);
+    list.forEach(function (v) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.textContent = v; b.setAttribute("aria-pressed", "false");
+      b.addEventListener("click", function () {
+        on[v] = !on[v]; b.setAttribute("aria-pressed", on[v] ? "true" : "false"); draw();
+      });
+      box.appendChild(b);
+    });
+  }
+  function any(on) { for (var k in on) if (on[k]) return true; return false; }
+  function esc(s) { return s.replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+
+  function draw() {
+    var text = q.value.trim().toLowerCase(), useCat = any(onCat), useStat = any(onStat);
+    var rows = T.filter(function (r) {
+      if (useCat && !onCat[r[1]]) return false;
+      if (useStat && !onStat[r[3]]) return false;
+      return !text || (r[0] + " " + r[2]).toLowerCase().indexOf(text) >= 0;
+    });
+    document.getElementById("rows").innerHTML = rows.length ? rows.map(function (r) {
+      return "<tr><td class=\"name\">" + esc(r[0]) + "</td><td class=\"cat\">" + esc(r[1]) + "</td><td>" + esc(r[2]) +
+        "</td><td><span class=\"st " + r[3] + "\">" + r[3] + "</span></td></tr>";
+    }).join("") : "<tr><td class=\"empty\" colspan=\"4\">No term matches the filter.</td></tr>";
+    document.getElementById("count").textContent = rows.length + " of " + T.length + " terms";
+  }
+  chips("cats", cats, onCat); chips("stats", stats, onStat);
+  q.addEventListener("input", draw);
+  draw();
+})();
+</script>
