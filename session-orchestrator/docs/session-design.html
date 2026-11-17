@@ -351,7 +351,7 @@ flowchart LR
   RS --> PL["Plugin"]
   RS --> BR["Brief render"]
     </pre></div>
-    <p>A field of the session wins. Else an inherited field of the nearest parent applies. Else the default of <code>policy.json</code> applies. The resolver is one C# function; the plugin gets its result with <code>orch session get --self</code>.</p>
+    <p>Each setting can be set on each session. A field of the session wins. Else the field of the nearest parent that sets it applies. Else the default of <code>policy.json</code> applies. The resolver is one C# function; the plugin gets its result with <code>orch session get --self</code>.</p>
   </section>
 
   <section>
@@ -372,16 +372,16 @@ flowchart LR
     <div class="scroll"><table>
       <thead><tr><th>Setting</th><th>Default</th><th>Inherits</th><th>Read by</th></tr></thead>
       <tbody>
-        <tr><td><code>mode</code></td><td>Root <code>chat</code>, child <code>relay</code></td><td>No</td><td>Relay, <code>ask_user</code>, brief render</td></tr>
-        <tr><td><code>background</code></td><td><code>false</code></td><td>No</td><td>Supervisor: Remote Control notices</td></tr>
+        <tr><td><code>mode</code></td><td><code>chat</code></td><td>Yes</td><td>Relay, <code>ask_user</code>, brief render</td></tr>
+        <tr><td><code>background</code></td><td><code>false</code></td><td>Yes</td><td>Supervisor: Remote Control notices</td></tr>
         <tr><td><code>policy</code></td><td><code>default</code></td><td>Yes</td><td>Supervisor: docs check, defaults</td></tr>
         <tr><td><code>allowDefaults</code></td><td><code>false</code></td><td>Yes</td><td><code>orch merge</code></td></tr>
         <tr><td><code>reportOn</code></td><td>done, blocked, asked</td><td>Yes</td><td>Plugin <code>report</code> tool</td></tr>
         <tr><td><code>reminders</code></td><td>10 min, then 60 min</td><td>Yes</td><td>Supervisor: question follow, forgotten</td></tr>
-        <tr><td><code>owner</code>, <code>stream</code></td><td>From the parent</td><td>Yes</td><td>UI, filters, C1</td></tr>
+        <tr><td><code>owner</code>, <code>stream</code></td><td><code>user</code>, none</td><td>Yes</td><td>UI, filters, C1</td></tr>
       </tbody>
     </table></div>
-    <p>All settings are fields of <code>settings</code> in <code>session.json</code>, except <code>owner</code> and <code>stream</code>, which are top-level fields. <code>policy.json</code> gets one block <code>sessionDefaults</code> and named profiles, for example <code>auto</code>.</p>
+    <p>The identity fields <code>id</code>, <code>parent</code> and <code>title</code> never inherit. All settings are fields of <code>settings</code> in <code>session.json</code>, except <code>owner</code> and <code>stream</code>, which are top-level fields. <code>policy.json</code> gets one block <code>sessionDefaults</code> and named profiles, for example <code>auto</code>.</p>
   </section>
 
   <section>
