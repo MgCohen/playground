@@ -35,6 +35,7 @@ pe trials [domain]                # metrics of each trial pattern; notifications
 pe stable <id> | pe remove <id>   # the final call of a person
 pe compose eval --rung budget --strategy compare   # party cases with the compose loop; the oracle grades each run
 pe compose grader-check           # the grader agent on fixed pairs, against the oracle
+pe grader-check <domain|party>     # the grader fixtures with known answers; writes the stamp that pe eval checks
 ```
 
 Run the tests with `dotnet test`. The agent calls use the Claude CLI with your login.
