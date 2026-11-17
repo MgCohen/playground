@@ -16,7 +16,7 @@ public sealed partial class TrayApp : ApplicationContext
     readonly Icon dot;
     bool exiting;
 
-    public TrayApp(IServiceProvider services, bool show, bool pinned, string? placeFile)
+    public TrayApp(IServiceProvider services, string label, bool show, bool pinned, string? placeFile)
     {
         dot = Dot(Accent);
         Form = new WidgetForm(services, dot, pinned, placeFile);
@@ -29,7 +29,7 @@ public sealed partial class TrayApp : ApplicationContext
         menu.Items.Add(pin);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Exit", null, (_, _) => Exit());
-        icon = new NotifyIcon { Icon = dot, Text = "Orchestrator (mock data)", ContextMenuStrip = menu, Visible = true };
+        icon = new NotifyIcon { Icon = dot, Text = Tip($"Orchestrator ({label})"), ContextMenuStrip = menu, Visible = true };
         icon.MouseClick += (_, e) =>
         {
             if (e.Button == MouseButtons.Left) Form.Toggle();
@@ -68,6 +68,9 @@ public sealed partial class TrayApp : ApplicationContext
         }
         base.Dispose(disposing);
     }
+
+    // The tray tip has a maximum of 127 characters.
+    static string Tip(string text) => text.Length <= 127 ? text : text[..124] + "...";
 
     /// <summary>A 16 × 16 dot of one color with a white ring.</summary>
     static Icon Dot(Color color)

@@ -71,6 +71,16 @@ public static class SelfTest
         var home = form.HomeLocation();
         checks.Add(new Check("widget", size == expect && form.Location == home && !form.ShowInTaskbar && form.FormBorderStyle == FormBorderStyle.None,
             $"size {size.Width} × {size.Height} (expect {expect.Width} × {expect.Height}) at {form.DeviceDpi} DPI, location {form.Location.X},{form.Location.Y} (home {home.X},{home.Y}), not in the taskbar, no title bar", ""));
+        var area = Screen.FromControl(form).WorkingArea;
+        var gap = area.Bottom - form.Bottom;
+        var margin = (int)(12 * scale);
+        var fit = form.Fit(new Point(form.Left, area.Bottom - form.Height));
+        checks.Add(new Check("taskbar-gap", gap == margin && area.Bottom - (fit.Y + form.Height) == margin,
+            $"gap {gap} px above the work area bottom (expect {margin}); a drop on the taskbar edge moves up to a gap of {area.Bottom - (fit.Y + form.Height)} px", ""));
+        // The scroll bar width of the page: the window width less the width of the content box.
+        var bar = JsonSerializer.Deserialize<double>(await web.ExecuteScriptAsync("window.innerWidth - document.documentElement.clientWidth"));
+        var scrolls = JsonSerializer.Deserialize<bool>(await web.ExecuteScriptAsync("document.documentElement.scrollHeight > window.innerHeight"));
+        checks.Add(new Check("no-scroll-bar", bar == 0 && scrolls, $"scroll bar width {bar} px (expect 0), the home page scrolls {scrolls}", ""));
         var corner = Path.Combine(folder, "tray-desktop-corner.png");
         checks.Add(new Check("desktop-corner", Corner(form, corner), "screenshot of the screen corner with the widget and the tray", corner));
         checks.Add(await Pin(form, web, folder));

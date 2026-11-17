@@ -7,8 +7,9 @@ using Orchestrator.Web;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The start of the tray app. Usage: Orchestrator.Tray.exe [--hidden] [--pin] [--selftest &lt;folder&gt;].
-/// The window shows mock data from a temporary store. The supervisor object only serves the actions of the views: no tick service runs.
+/// The start of the tray app. Usage: Orchestrator.Tray.exe [--hidden] [--pin] [--selftest &lt;folder&gt;] [--live &lt;store&gt; [--port &lt;port&gt;]].
+/// Mock mode (the default): the window shows mock data from a temporary store.
+/// Live mode: the window shows a real store. The supervisor process of that store (on the port) does the ticks; the tray only reads and posts.
 /// </summary>
 public static partial class Program
 {
@@ -37,9 +38,16 @@ public static partial class Program
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 
-        using var mock = MockStore.Create();
-        using var services = Services(mock.Store);
-        tray = new TrayApp(services, show: selfTest is not null || !args.Contains("--hidden"), pinned: selfTest is not null || args.Contains("--pin"),
+        var live = Value(args, "--live");
+        using var mock = live is null ? MockStore.Create() : null;
+        var store = live is null ? mock!.Store : new FileStore(live, writer: TrayWriter);
+        var port = int.TryParse(Value(args, "--port") ?? Environment.GetEnvironmentVariable("ORCH_PORT"), out var p) ? p : 7777;
+        var label = live is null ? "mock data" : $"live: {store.Root}, port {port}";
+        if (live is not null && !SupervisorAnswers(port))
+            Console.Error.WriteLine($"No supervisor answers on port {port}. The tray shows the store, but no tick delivers the answers. Start: ORCH_STORE={store.Root} ORCH_PORT={port} orch supervisor");
+        Console.WriteLine($"orch tray: {label}");
+        using var services = Services(store, live is null ? MockStore.MockPolicy : store.Policy, ticks: live is null);
+        tray = new TrayApp(services, label, show: selfTest is not null || !args.Contains("--hidden"), pinned: selfTest is not null || args.Contains("--pin"),
             placeFile: selfTest is null ? Path.Combine(data, "place.json") : SelfTest.FreshPlaceFile(selfTest));
         var code = 0;
         if (selfTest is not null)
@@ -63,12 +71,36 @@ public static partial class Program
         return code;
     }
 
-    static ServiceProvider Services(FileStore store)
+    /// <summary>The writer id of the envelopes of the tray in live mode. The supervisor of the store writes with its own id.</summary>
+    public const string TrayWriter = "tray";
+
+    static string? Value(string[] args, string name)
+    {
+        var at = Array.IndexOf(args, name);
+        return at >= 0 && at + 1 < args.Length ? args[at + 1] : null;
+    }
+
+    static bool SupervisorAnswers(int port)
+    {
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+            return http.GetAsync($"http://127.0.0.1:{port}/api/sessions").Result.IsSuccessStatusCode;
+        }
+        catch (AggregateException)
+        {
+            return false;
+        }
+    }
+
+    static ServiceProvider Services(FileStore store, Core.Policy.Policy policy, bool ticks)
     {
         var services = new ServiceCollection();
         services.AddWindowsFormsBlazorWebView();
         services.AddSingleton(store);
-        services.AddSingleton(new SupervisorOptions(1, 1, 1, MockStore.MockPolicy));
+        // Mock mode: a tick after an action relays and applies the policy on the mock store (NoRunner starts no claude process).
+        // Live mode: no tick. The supervisor process of the store does it, so the tray never takes a lease or applies a default.
+        services.AddSingleton(new SupervisorOptions(1, 1, 1, policy) { Ticks = ticks });
         services.AddSingleton<ITurnRunner, NoRunner>();
         services.AddSingleton<IDocsChecker, NoDocs>();
         services.AddSingleton<Supervisor.Supervisor>();

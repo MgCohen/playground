@@ -53,6 +53,28 @@ public sealed class InboxUiTests
     }
 
     [Test]
+    public void A_question_with_a_risk_or_a_default_has_the_label_decision()
+    {
+        Assert.That(Ui.KindLabel(EventKinds.Question, new Dictionary<string, object?> { ["question"] = "Q", ["risk"] = "low" }), Is.EqualTo("Decision"));
+        Assert.That(Ui.KindLabel(EventKinds.Question, new Dictionary<string, object?> { ["question"] = "Q", ["defaultOption"] = "A" }), Is.EqualTo("Decision"));
+        Assert.That(Ui.KindLabel(EventKinds.Question, new Dictionary<string, object?> { ["question"] = "Q" }), Is.EqualTo("Question"));
+        Assert.That(Ui.KindLabel(EventKinds.Question), Is.EqualTo("Question"));
+    }
+
+    [Test]
+    public async Task A_supervisor_with_no_ticks_starts_no_turn()
+    {
+        using var rig = new Rig();
+        var id = rig.Create("start");
+        var view = new Orchestrator.Supervisor.Supervisor(rig.Store, rig.Runner, rig.Docs, rig.Supervisor.Options with { Ticks = false });
+        view.Tick();
+        await view.Idle();
+        Assert.That(rig.Turns, Is.Empty);
+        await rig.Cycle();
+        Assert.That(rig.Turns.Select(t => t.Id), Is.EqualTo(new[] { id }));
+    }
+
+    [Test]
     public void The_pile_is_in_arrival_order_and_skip_moves_the_top_card_to_the_end()
     {
         using var rig = new Rig();

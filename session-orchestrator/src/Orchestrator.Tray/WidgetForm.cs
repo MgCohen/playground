@@ -99,7 +99,10 @@ public sealed partial class WidgetForm : Form
         var before = Location;
         ReleaseCapture();
         _ = SendMessage(Handle, WmNcLButtonDown, HtCaption, 0);
-        if (Location != before) SavePlace(Location);
+        if (Location == before) return;
+        // A drop on the edge of the work area keeps the margin, so the widget never touches the taskbar.
+        Location = Fit(Location);
+        SavePlace(Location);
     }
 
     void SavePlace(Point point)
@@ -134,8 +137,21 @@ public sealed partial class WidgetForm : Form
     sealed record SavedPlace(int X, int Y);
 
     // The saved place, if the full widget is on a screen. A place on a screen that is not there now gives the home location.
+    // The place moves in by the margin from the edges of its work area, so an old place on the taskbar edge gets the gap.
     Point Start() =>
-        place is { } p && Screen.AllScreens.Any(s => s.WorkingArea.Contains(new Rectangle(p, Size))) ? p : HomeLocation();
+        place is { } p && Screen.AllScreens.Any(s => s.WorkingArea.Contains(new Rectangle(p, Size))) ? Fit(p) : HomeLocation();
+
+    int Gap => (int)(12 * DeviceDpi / 96f);
+
+    /// <summary>The point moved into the work area of its screen, with the margin on each side.</summary>
+    public Point Fit(Point point)
+    {
+        var area = Screen.FromRectangle(new Rectangle(point, Size)).WorkingArea;
+        var m = Gap;
+        return new Point(
+            Math.Clamp(point.X, area.Left + m, Math.Max(area.Left + m, area.Right - Width - m)),
+            Math.Clamp(point.Y, area.Top + m, Math.Max(area.Top + m, area.Bottom - Height - m)));
+    }
 
     protected override void OnHandleCreated(EventArgs e)
     {
@@ -181,8 +197,7 @@ public sealed partial class WidgetForm : Form
     public Point HomeLocation()
     {
         var area = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1280, 720);
-        var margin = (int)(12 * DeviceDpi / 96f);
-        return new Point(area.Right - Width - margin, area.Bottom - Height - margin);
+        return new Point(area.Right - Width - Gap, area.Bottom - Height - Gap);
     }
 
     const int WmNcLButtonDown = 0xA1;

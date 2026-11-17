@@ -47,6 +47,9 @@ public sealed record SupervisorOptions(int MaxRuns, int MaxFailures, int MaxChec
 
     /// <summary>The wait before the fallback agent runs again for the same session.</summary>
     public TimeSpan FallbackWait { get; init; } = TimeSpan.FromMinutes(10);
+
+    /// <summary>False: <see cref="Supervisor.Tick"/> does nothing. A view process on the store of a running supervisor (the tray in live mode) uses only the actions.</summary>
+    public bool Ticks { get; init; } = true;
 }
 
 static class Data
