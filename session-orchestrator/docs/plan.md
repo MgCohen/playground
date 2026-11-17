@@ -703,3 +703,29 @@ A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked (
 | A3-5 | Request of A4: a card must show when its default applies | Done: `defaultAt` on each card of `GET /api/inbox` and on `Card.DefaultAt`. `DefaultRule.At` is the one rule; `IsDue` uses it. A docs check can still answer before that time |
 | A3-6 | `dotnet test` stopped two times after 22 and 40 tests with "error: 1" and no failed test. The next 3 runs passed (145). A supervisor of the user listens on port 7777 during the runs | Open: watch it. Not reproduced |
 | A3-4 | The inbox order changed a little: the cards are in the id order of the newest envelope of each thread | Accepted |
+
+## A4 design: inbox UI (2026-11-17)
+
+The user approved the design after four rounds. The design page is `docs/inbox-design.html` (https://claude.ai/artifact/RbSF83MgxWHbWo5V3JsGEE).
+
+| Part | Decision |
+|---|---|
+| Theme | Porcelain Orange of Runner Studio: raised cards, carved wells, arc rings. Doto for titles and numbers, Inter for text, JetBrains Mono for ids and times. Light and dark |
+| App bar | A floating pill: Cards, Stream, Home (raised orange circle in the center), Sessions, Settings. A dot under the active side item |
+| Home | A deep ring of the waiting cards by type (bright colors, carved ring, raised center), active sessions that fold open with "See all", events of the last 24 h as dots, and the waiting items as a list that grows. An empty state for each block |
+| Cards | One pile in arrival order. Right and left actions come from the card type. Down skips: the card goes to the end of the pile, and a new card goes after it. A tap opens the full document |
+| Card types | Yes or no: Yes / No. Default: Accept / Other. Opinion and question: Speak (mic on) / Type. Review and plan: Approve / Change. Report and blocked: Got it / Reply |
+| Undo | The UI waits 5 s before it sends an act. A toast shows Undo |
+| Filter and order | One sheet for Cards and Stream: order, date, sessions, source |
+| Open | The full render of the template. A closed item opens the same way; its actions are off and the result shows who closed it |
+| Stream | All events, newest first, on a timeline with ring nodes. The session stream is the same view, locked to one session and its children |
+| Sessions | One foldable tree. A status page for each session: state, numbers, children, related artifacts, details, and the event stream |
+| Version 2 | A form for each message type, made from its schema |
+
+Findings:
+
+| # | Finding | State |
+|---|---|---|
+| A4-1 | The Design canvas type is slow for small changes. A plain HTML page with static frames was faster for the review rounds | Decided: plain page |
+| A4-2 | The skip order stays in the UI session. On another device the pile goes back to arrival order | Accepted |
+| A4-3 | A card shows the preview of its template, Open shows the full render. The templates have no preview render file; the UI uses the card fields of `meta.json` and fixed fields for each type | Open: a preview render for each template (templates are not in the A4 scope) |
