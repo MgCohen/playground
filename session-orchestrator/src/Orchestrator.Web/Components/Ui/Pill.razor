@@ -1,0 +1,6 @@
+<span class="pill" style="--st:var(--@State)">@Label</span>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter] public string State { get; set; } = "new";
+}

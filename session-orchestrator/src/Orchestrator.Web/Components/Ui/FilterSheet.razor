@@ -1,0 +1,56 @@
+<div class="scrim" @onclick="OnClose"></div>
+<div class="crd sheet" role="dialog" aria-label="Filter and order">
+    <span class="grab"></span>
+    <div class="row flat"><span class="grow nm big-q">Filter and order</span><button type="button" class="link" @onclick="Reset">Reset</button></div>
+    <div class="fsec"><span class="gt">Order</span><Seg Items="Orders" Value="@Filter.Order" OnPick="v => Set(() => Filter.Order = v)" /></div>
+    <div class="fsec"><span class="gt">Date</span><Seg Items="ViewFilter.Dates" Value="@Filter.Date" OnPick="v => Set(() => Filter.Date = v)" /></div>
+    @if (Sessions.Count > 0)
+    {
+        <div class="fsec">
+            <span class="gt">Sessions</span>
+            <div class="crd">
+                @foreach (var (id, name, sub) in Sessions)
+                {
+                    var on = !Filter.HiddenSessions.Contains(id);
+                    <label class="row sep">
+                        <span class="grow"><span class="ell">@name</span><span class="sub">@sub</span></span>
+                        <input type="checkbox" class="tg" checked="@on" @onchange="_ => Set(() => Toggle(Filter.HiddenSessions, id))" />
+                    </label>
+                }
+            </div>
+        </div>
+    }
+    <div class="fsec">
+        <span class="gt">Source</span>
+        <div class="chips">
+            @foreach (var source in ViewFilter.Sources)
+            {
+                var shown = !Filter.HiddenSources.Contains(source);
+                <button type="button" class="chip @(shown ? "pick" : "")" aria-pressed="@(shown ? "true" : "false")" @onclick="() => Set(() => Toggle(Filter.HiddenSources, source))">@source</button>
+            }
+        </div>
+    </div>
+    <div class="acts"><button type="button" class="btn pri" @onclick="OnClose">@Show</button></div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ViewFilter Filter { get; set; } = default!;
+    [Parameter] public IReadOnlyList<string> Orders { get; set; } = ViewFilter.Orders;
+    [Parameter] public IReadOnlyList<(string Id, string Name, string Sub)> Sessions { get; set; } = [];
+    [Parameter] public string Show { get; set; } = "Show";
+    [Parameter] public EventCallback OnChange { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    static void Toggle(HashSet<string> set, string value)
+    {
+        if (!set.Remove(value)) set.Add(value);
+    }
+
+    Task Set(Action change)
+    {
+        change();
+        return OnChange.InvokeAsync();
+    }
+
+    Task Reset() => Set(Filter.Reset);
+}

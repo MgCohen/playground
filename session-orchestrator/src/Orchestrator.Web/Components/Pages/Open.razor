@@ -1,0 +1,146 @@
+@page "/events/{Id}"
+@inherits LiveView
+@inject NavigationManager Nav
+
+<PageTitle>@(e?.Subject ?? "Event") · orch</PageTitle>
+
+<a class="back" href="@(card is null ? "stream" : "cards")"><Icon Name="chevL" />@(card is null ? "Stream" : "Cards")</a>
+
+@if (e is null)
+{
+    <div class="empty"><span class="nm">No event @Id</span><span class="sub">The stream has no envelope with this id.</span></div>
+}
+else
+{
+    var state = Ui.Text(fields.GetValueOrDefault("state"));
+    <div class="stack doc-page">
+        @if (Message is not null)
+        {
+            <p class="toast inline" role="status">@Message</p>
+        }
+        <div class="crd">
+            <div class="row head">
+                <KindRing Kind="@e.Kind" State="@state" P="@(open ? .5 : 1)" />
+                <span class="grow"><span class="nm">@Ui.KindLabel(e.Kind)</span><span class="sub ell">@Board.Party(e.From) → @Board.Party(e.To) · @Ui.Clock(Ui.Time(e))</span></span>
+                <Pill Label="@(open ? "waits" : Closed)" State="@(open ? "pending" : "done")" />
+            </div>
+            <div class="pad"><p class="q">@(card?.Title ?? e.Subject)</p></div>
+        </div>
+
+        @foreach (var (key, label) in Rows)
+        {
+            var value = fields.GetValueOrDefault(key);
+            if (key is "question" or "summary" or "title" && (card?.Title ?? e.Subject) == Ui.Text(value)) continue;
+            var items = Ui.List(value);
+            if (items.Count == 0) continue;
+            <h2 class="gt">@label</h2>
+            <div class="crd pad doc">
+                @if (value is string text)
+                {
+                    <p class="pre">@text</p>
+                }
+                else
+                {
+                    <ul>@foreach (var item in items) {<li>@item</li>}</ul>
+                }
+            </div>
+        }
+
+        @if (results.Count > 0)
+        {
+            <h2 class="gt">Result</h2>
+            <div class="crd">
+                @foreach (var (r, i) in results.Select((r, i) => (r, i)))
+                {
+                    var rf = Board.Fields(r);
+                    var said = Ui.Text(rf.GetValueOrDefault("text")) is { Length: > 0 } t ? t : Ui.Text(rf.GetValueOrDefault("verdict")) is { Length: > 0 } v ? v : Ui.Text(rf.GetValueOrDefault("state"));
+                    <a class="row @(i > 0 ? "sep" : "")" href="events/@r.Id">
+                        <KindRing Kind="@r.Kind" Size="28" />
+                        <span class="grow"><span class="ell">@(said.Length > 0 ? said : r.Subject)</span><span class="sub">@Ui.KindLabel(r.Kind) · by @Board.Party(r.From)@(r.Via is { } via ? $" via {Board.Party(via)}" : "") · @Ui.Clock(Ui.Time(r))</span></span>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="acts sticky-acts @(card is null ? "off" : "")">
+        @{ var (left, right) = card is { } c ? (c.Left, c.Right) : Closed2(e.Kind); }
+        <button type="button" class="btn" disabled="@(card is null)" @onclick="() => Do(left)"><Icon Name="@left.Icon" />@left.Label</button>
+        <button type="button" class="btn pri" disabled="@(card is null)" @onclick="() => Do(right)"><Icon Name="@right.Icon" />@right.Label</button>
+    </div>
+
+    @if (sheet is { } s && card is not null)
+    {
+        <AnswerSheet Card="card" Voice="s" OnSend="Send" OnClose="() => sheet = null" />
+    }
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    Event? e;
+    CardView? card;
+    bool open;
+    IReadOnlyDictionary<string, object?> fields = new Dictionary<string, object?>();
+    IReadOnlyList<Event> results = [];
+    bool? sheet;
+
+    string Closed => results.LastOrDefault() is { } r ? r.Kind == EventKinds.Ack ? "seen" : r.Kind == EventKinds.Review ? "reviewed" : "answered" : "closed";
+
+    /// <summary>The field rows of the full render, in the order of the templates.</summary>
+    IEnumerable<(string Key, string Label)> Rows => e?.Kind switch
+    {
+        EventKinds.Decision => [("question", "Question"), ("context", "Context"), ("snippet", "Snippet"), ("recommendation", "Recommendation"), ("options", "Options"), ("defaultOption", "Default"), ("risk", "Risk")],
+        EventKinds.Query => [("question", "Question"), ("context", "Why")],
+        EventKinds.Plan => [("title", "Plan"), ("context", "Context"), ("steps", "Steps")],
+        EventKinds.Report => [("summary", "Summary"), ("done", "Done"), ("next", "Next"), ("blockers", "Blockers"), ("links", "Links"), ("details", "Details")],
+        EventKinds.Answer => [("question", "Question"), ("text", "Answer"), ("reason", "Reason"), ("source", "Source")],
+        EventKinds.Review => [("question", "Question"), ("verdict", "Verdict"), ("text", "Direction"), ("branch", "Branch")],
+        EventKinds.Update => [("step", "Step"), ("summary", "Summary"), ("progress", "Progress")],
+        EventKinds.Brief => [("title", "Title"), ("goal", "Goal"), ("scope", "Scope"), ("doneWhen", "Done when"), ("skills", "Skills"), ("agent", "Agent"), ("cwd", "Folder")],
+        _ => fields.Keys.Select(k => (k, char.ToUpperInvariant(k[0]) + k[1..])),
+    };
+
+    static (CardAction, CardAction) Closed2(string kind) => kind switch
+    {
+        EventKinds.Decision or EventKinds.Query => (new("Type", "pen", CardDo.Type), new("Speak", "mic", CardDo.Speak)),
+        EventKinds.Plan or EventKinds.Answer or EventKinds.Review => (new("Change", "pen", CardDo.Type), new("Approve", "check", CardDo.Accept)),
+        _ => (new("Reply", "pen", CardDo.Type), new("Got it", "check", CardDo.Accept)),
+    };
+
+    protected override void OnParametersSet() => Load();
+
+    protected override void Load()
+    {
+        e = Board.Find(Id);
+        if (e is null) return;
+        fields = Board.Fields(e);
+        open = Board.IsOpen(e);
+        card = Board.Cards().FirstOrDefault(c => c.Id == e.Id);
+        results = Board.Results(e);
+    }
+
+    void Do(CardAction action)
+    {
+        if (card is not { } c) return;
+        switch (action.Do)
+        {
+            case CardDo.Type: sheet = false; return;
+            case CardDo.Speak: sheet = true; return;
+            case CardDo.AcceptText: Done(Act(() => Board.Accept(c.Id, action.Text), $"{action.Label} · {c.SessionTitle}")); return;
+            case CardDo.RefuseText: Done(Act(() => Board.Refuse(c.Id, action.Text ?? ""), $"{action.Label} · {c.SessionTitle}")); return;
+            default: Done(Act(() => Board.Accept(c.Id), $"{action.Label} · {c.SessionTitle}")); return;
+        }
+    }
+
+    void Send(string text)
+    {
+        sheet = null;
+        if (card is { } c && text.Length > 0) Done(Act(() => Board.SendSheet(c, text), $"Sent to {c.SessionTitle}."));
+    }
+
+    void Done(bool ok)
+    {
+        if (ok) Nav.NavigateTo("cards");
+    }
+}
