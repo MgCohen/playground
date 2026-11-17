@@ -404,6 +404,48 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 .s2 .btn:active { transform: scale(.96); }
 .s2[data-m="a"] .btn.sk { background: var(--surf); box-shadow: var(--sh-raise); color: var(--muted); }
 
+/* S1: page actions */
+.ac { gap: 8px; }
+.ac .scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.ac .kv { padding: 10px 14px; display: grid; gap: 2px; font-size: 13px; }
+.ac .kv b { font-weight: 600; }
+.ac .abtn { height: 42px; border: 0; border-radius: var(--r-sm); background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); font: 600 12.5px var(--f-body); padding: 0 12px; cursor: pointer; white-space: nowrap; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ac .abtn.p { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow); }
+.ac .abtn.d { color: var(--failed); }
+.ac .abtn.more { flex: 0 0 46px; padding: 0; font-size: 18px; letter-spacing: 1px; }
+.ac .row2 { display: flex; gap: 8px; flex: none; }
+.ac .float { position: absolute; left: 12px; right: 12px; bottom: 16px; z-index: 2; display: flex; gap: 8px; }
+.ac .dock { flex: none; display: flex; gap: 8px; padding: 8px; border-radius: 20px; background: var(--surf); box-shadow: var(--sh-raise); }
+.ac .dock .abtn { box-shadow: none; background: var(--sunken); }
+.ac .dock .abtn.p { background: var(--accent); }
+.ac .nav3 { flex: none; display: grid; grid-template-columns: 1fr 1fr 56px 1fr 1fr; align-items: center; height: 54px; border-radius: 999px; background: var(--surf); box-shadow: var(--sh-raise); padding: 0 6px; }
+.ac .nav3 button { border: 0; background: none; font: 600 10.5px var(--f-body); color: var(--muted); cursor: pointer; display: grid; justify-items: center; gap: 2px; padding: 4px 0; min-width: 0; }
+.ac .nav3 button i { width: 18px; height: 18px; border-radius: 6px; background: var(--sunken); box-shadow: var(--sh-carve); }
+.ac .nav3 button.p { color: var(--accent); }
+.ac .nav3 button.p i { background: var(--accent); box-shadow: var(--sh-glow); }
+.ac .nav3 button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac .nav3 .ball { width: 46px; height: 46px; margin-top: -26px; justify-self: center; border-radius: 50%; background: var(--ball-ic) center / 46% no-repeat, var(--ball-bg); box-shadow: var(--ball-sh); }
+.ac .navx { flex: none; display: flex; justify-content: space-around; align-items: center; height: 46px; border-radius: 999px; background: var(--surf); box-shadow: var(--sh-raise); font: 600 11px var(--f-body); color: var(--muted); }
+.ac .navx .ball { width: 40px; height: 40px; margin-top: -22px; border-radius: 50%; background: var(--ball-ic) center / 46% no-repeat, var(--ball-bg); box-shadow: var(--ball-sh); }
+.ac .fab { position: absolute; right: 18px; bottom: 74px; z-index: 2; height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent); font: 600 13px var(--f-body); box-shadow: var(--sh-raise), 0 10px 20px -8px rgba(0,0,0,.45); cursor: pointer; }
+.ac .chips { display: flex; flex-wrap: wrap; gap: 6px; flex: none; }
+.ac .chips .abtn { flex: 0 0 auto; height: 32px; border-radius: 999px; font-size: 12px; }
+.ac .grp { display: grid; gap: 0; border-radius: var(--r); background: var(--surf); box-shadow: var(--sh-raise); overflow: hidden; flex: none; }
+.ac .grp .gh { font: 600 10.5px var(--f-body); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: 10px 14px 4px; }
+.ac .grp button { border: 0; border-top: 1px solid var(--line-c); background: none; text-align: left; padding: 11px 14px; font: 600 13px var(--f-body); color: var(--failed); cursor: pointer; }
+.ac .ascrim { position: absolute; inset: 0; z-index: 5; background: var(--scrim); border-radius: inherit; }
+.ac .asheet { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 6; padding: 10px; border-radius: 22px; background: var(--canvas); display: grid; gap: 6px; box-shadow: 0 -10px 30px -10px rgba(0,0,0,.4); }
+.ac .asheet .abtn { flex: none; text-align: left; }
+.ac .asheet hr { border: 0; border-top: 1px solid var(--line-c); margin: 4px 2px; }
+.ac .amenu { position: absolute; right: 14px; top: 62px; z-index: 6; display: grid; padding: 6px; min-width: 160px; border-radius: 12px; background: var(--surf); box-shadow: var(--sh-raise), 0 12px 24px -10px rgba(0,0,0,.4); }
+.ac .amenu button { border: 0; background: none; text-align: left; padding: 9px 10px; border-radius: 8px; font: 500 13px var(--f-body); color: var(--text); cursor: pointer; }
+.ac .amenu button.d { color: var(--failed); }
+.ac .amenu hr { border: 0; border-top: 1px solid var(--line-c); margin: 4px 0; }
+.ac .hd2 .wb button { font-size: 16px; }
+.tweak2 { display: grid; gap: 8px; margin-top: 10px; }
+.tweak2 label { display: grid; gap: 4px; font-size: 13px; }
+.tweak2 input[type=range] { width: 100%; accent-color: var(--accent); }
+
 /* Answer box */
 .answer { margin-top: 36px; padding: 18px 20px; border-radius: 18px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); display: grid; gap: 8px; }
 .answer code { display: block; padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); overflow-x: auto; white-space: pre; }
@@ -563,30 +605,29 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   <!-- Static fixes -->
   <section class="item" id="s1">
     <div>
-      <div class="sw" id="s1-sw"><button aria-pressed="true" data-v="now">Now</button><button aria-pressed="false" data-v="a">A fix</button></div>
-      <div class="phone s1" id="s1-ph" data-m="now">
-        <div class="crd hd2"><div class="path"><button class="cr">Sessions</button><span class="sep">›</span><span class="cur">orch-bad3</span></div></div>
-        <div class="scroll" id="s1-scroll">
-          <div class="crd kv"><b>State</b><span class="sub">Working · step 4 of 6</span></div>
-          <div class="crd kv"><b>Brief</b><span class="sub">Improve the look and the motion of the app.</span></div>
-          <div class="crd kv"><b>Branch</b><span class="sub">orch/session-bad3999b</span></div>
-          <div class="crd kv"><b>Last event</b><span class="sub">Report · 4 min ago</span></div>
-          <div class="crd kv"><b>Started</b><span class="sub">Today, 14:02</span></div>
-          <div class="crd kv"><b>Folder</b><span class="sub">playground.wt/orch-bad3999b</span></div>
-          <div class="crd kv"><b>Pull request</b><span class="sub">#25 · draft</span></div>
-          <div class="bar-slot"></div>
-          <div class="two"><span class="btn">Stop</span><span class="btn">Archive</span></div>
-        </div>
-        <div class="bar" id="s1-bar"><span class="btn">Message</span><span class="btn pri">Event stream</span></div>
-        <span class="tagnote">Stop and Archive are under here</span>
+      <div class="sw" id="s1-sw"><button aria-pressed="false" data-v="a">A dock</button><button aria-pressed="true" data-v="b">B app bar</button><button aria-pressed="false" data-v="c">C header + main</button><button aria-pressed="false" data-v="d">D in the page</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="phone ac" id="s1-ph"></div>
+      <div class="tweak2">
+        <div class="sw" id="s1-doc" style="margin:0"><button aria-pressed="true" data-v="session">Session status</button><button aria-pressed="false" data-v="card">Card document</button></div>
+        <label for="s1-n">Actions on the page: <b id="s1-n-v">4</b><input id="s1-n" type="range" min="1" max="6" value="4"></label>
       </div>
     </div>
     <div class="spec">
-      <div class="head"><span class="tag">S1</span><h2>Session status: buttons under the bar</h2></div>
-      <p>This is the Session status page (Sessions › a session). Today, Message and Event stream float at the bottom of the screen. At the end of the page, they cover Stop and Archive, so you cannot tap them. Switch between "Now" and "A fix" in the sample, and scroll it.</p>
+      <div class="head"><span class="tag">S1</span><h2>Page actions</h2></div>
+      <p>A sub-page can have 1 to 6 actions, for example Event stream, Message, Stop and Archive on a session. Today two of them float at the bottom and cover the others. This item is one rule for all pages. Change the number of actions and the page in the sample. Tap "⋯" to see the rest.</p>
+      <p>Each action has a role. The role sets the place, so a new page gets the same layout with no extra work:</p>
+      <ul class="sub" style="margin:0;padding-left:18px">
+        <li><b>Main:</b> one per page, the most used act (Event stream, Accept). Always visible, in the accent color.</li>
+        <li><b>Other:</b> the normal acts (Message, Other, Skip). Visible while there is space, then in "⋯".</li>
+        <li><b>Danger:</b> acts that stop or remove (Stop, Archive). Never in the first row. They are last, in red, and ask to confirm.</li>
+      </ul>
       <div class="opts">
-        <div class="opt rec"><b>A</b><span class="t">Fix</span><span class="d">Message and Event stream go into the page, directly above Stop and Archive. They scroll with the page. Nothing covers a button.</span></div>
+        <div class="opt"><b>A</b><span class="t">Dock</span><span class="d">One bar at the bottom of the page, above the app bar: the main act, one other act and "⋯". The page ends above it, so it covers nothing.</span></div>
+        <div class="opt rec"><b>B</b><span class="t">App bar becomes the actions</span><span class="d">On a sub-page, the header path is the way back, so the app bar shows the page acts around the home ball: up to 3 acts and "⋯". The home ball stays. Compact, and the same place on each page.</span></div>
+        <div class="opt"><b>C</b><span class="t">Header menu + main button</span><span class="d">The main act is a floating button. All other acts are in a "⋯" menu in the header. Clean, but the other acts are always one tap away.</span></div>
+        <div class="opt"><b>D</b><span class="t">In the page</span><span class="d">Nothing floats. The acts are chips under the header, and the danger acts are a group at the end of the page. Simple, but the acts scroll away.</span></div>
       </div>
+      <p class="cost">Build: a page gives its acts as a list with a role (main, other, danger). One shared Blazor component places them by the picked option. The roles can later come from the document type.</p>
     </div>
   </section>
   <section class="item" id="s2">
@@ -608,7 +649,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   <div class="answer">
     <h2>How to answer</h2>
     <p>Name an option for each item, or "no". For example:</p>
-    <code>M1 A, M2 A, M3 A, M5 A, M6 A, M7 all, S1 A, S2 A</code>
+    <code>M1 A, M2 A, M3 A, M5 A, M6 A, M7 all, S1 B, S2 A</code>
     <p class="sub">Click an option card to pick it. The bar at the bottom shows your picks. Copy it into the chat. My recommendation is the line above.</p>
   </div>
   <div class="picks" data-scope="p-components"><b>Your picks</b><div class="vals"></div><button type="button" class="cp">Copy</button><button type="button" class="ghost rs">Reset</button></div>
@@ -1639,21 +1680,94 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   sw("h3-sw", "path"); sw("h4-sw", "btn");
   stack = ["sessions", "s1", "sstream"]; show(0);
 })();
-// ===== S1, S2 =====
+// ===== S1: page actions, S2: skip button =====
 (function () {
-  [["s1-sw", "s1-ph"], ["s2-sw", "s2-ph"]].forEach(function (x) {
-    document.getElementById(x[0]).addEventListener("click", function (e) {
+  document.getElementById("s2-sw").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    this.querySelectorAll("button").forEach(function (y) { y.setAttribute("aria-pressed", y === b ? "true" : "false"); });
+    document.getElementById("s2-ph").dataset.m = b.dataset.v;
+  });
+  var DOCS = {
+    session: { path: ["Sessions", "orch-bad3"], rows: [["State", "Working · step 4 of 6"], ["Brief", "Improve the look and the motion of the app."], ["Branch", "orch/session-bad3999b"], ["Last event", "Report · 4 min ago"], ["Started", "Today, 14:02"], ["Pull request", "#25 · draft"]],
+      acts: [["Event stream", "p"], ["Stop", "d"], ["Message", "o"], ["Archive", "d"], ["Open folder", "o"], ["Copy branch", "o"]] },
+    card: { path: ["Cards", "Question"], rows: [["Question", "Which sample set do you want?"], ["Session", "Pattern engine spike"], ["Recommended", "The 2 000 real patterns"], ["Context", "The benchmark needs a sample set before the run."], ["Asked", "12 min ago"]],
+      acts: [["Accept", "p"], ["Other", "o"], ["Skip", "o"], ["Dismiss", "d"], ["Open session", "o"], ["Copy text", "o"]] }
+  };
+  var st = { mode: "b", doc: "session", n: 4 }, ph = document.getElementById("s1-ph");
+  function esc(t) { return t; }
+  function btn(a, cls) { return '<button class="abtn ' + (a[1] === "p" ? "p " : a[1] === "d" ? "d " : "") + (cls || "") + '">' + esc(a[0]) + "</button>"; }
+  function header(menu) {
+    var d = DOCS[st.doc];
+    return '<div class="crd hd2"><div class="path"><button class="cr">' + d.path[0] + '</button><span class="sep">›</span><span class="cur">' + d.path[1] + "</span></div>" +
+      (menu ? '<div class="wb"><button data-more="menu" aria-label="More acts" title="More acts">⋯</button></div>' : "") + "</div>";
+  }
+  function rows() { return DOCS[st.doc].rows.map(function (r) { return '<div class="crd kv"><b>' + r[0] + '</b><span class="sub">' + r[1] + "</span></div>"; }).join(""); }
+  function list(items) {
+    var o = items.filter(function (a) { return a[1] !== "d"; }), d = items.filter(function (a) { return a[1] === "d"; });
+    return o.map(function (a) { return btn(a); }).join("") + (o.length && d.length ? "<hr>" : "") + d.map(function (a) { return btn(a); }).join("");
+  }
+  var NAV = '<div class="navx"><span>Cards</span><span>Sessions</span><span class="ball"></span><span>Stream</span><span>Settings</span></div>';
+  function render() {
+    var all = DOCS[st.doc].acts.slice(0, st.n);
+    var main = all.filter(function (a) { return a[1] === "p"; }), oth = all.filter(function (a) { return a[1] === "o"; }), dng = all.filter(function (a) { return a[1] === "d"; });
+    var h = "", more = [];
+    if (st.mode === "now") {
+      var fl = main.concat(oth).slice(0, 2), rest = all.filter(function (a) { return fl.indexOf(a) < 0; });
+      h = header(false) + '<div class="scroll">' + rows() + (rest.length ? '<div class="row2" style="flex-wrap:wrap">' + rest.map(function (a) { return btn(a, ""); }).join("") + "</div>" : "") + "</div>" +
+        (fl.length ? '<div class="float">' + fl.map(function (a) { return btn(a); }).join("") + "</div>" : "");
+    } else if (st.mode === "a") {
+      var vis = main.concat(oth).slice(0, 2); more = all.filter(function (a) { return vis.indexOf(a) < 0; });
+      h = header(false) + '<div class="scroll">' + rows() + '</div><div class="dock">' + vis.map(function (a) { return btn(a); }).join("") +
+        (more.length ? '<button class="abtn more" data-more="sheet" aria-label="More acts">⋯</button>' : "") + "</div>" + NAV;
+    } else if (st.mode === "b") {
+      var v = main.concat(oth), slots = [], needMore = v.length > 3 || dng.length > 0;
+      var shown = v.slice(0, needMore ? 3 : 4); more = all.filter(function (a) { return shown.indexOf(a) < 0; });
+      var cell = function (a) { return a ? '<button class="' + (a[1] === "p" ? "p" : "") + '"><i></i><span>' + a[0] + "</span></button>" : "<span></span>"; };
+      var left = [shown[0], shown[1]], right = [shown[2], needMore ? null : shown[3]];
+      h = header(false) + '<div class="scroll">' + rows() + '</div><div class="nav3">' + cell(left[0]) + cell(left[1]) + '<span class="ball"></span>' + cell(right[0]) +
+        (needMore ? '<button data-more="sheet"><i></i><span>More</span></button>' : cell(right[1])) + "</div>";
+    } else if (st.mode === "c") {
+      more = oth.concat(dng);
+      h = header(more.length > 0) + '<div class="scroll" style="padding-bottom:60px">' + rows() + "</div>" + (main.length ? '<button class="fab">' + main[0][0] + "</button>" : "") + NAV;
+    } else {
+      var chips = main.concat(oth);
+      h = header(false) + '<div class="scroll"><div class="chips">' + chips.map(function (a) { return btn(a); }).join("") + "</div>" + rows() +
+        (dng.length ? '<div class="grp"><div class="gh">Danger</div>' + dng.map(function (a) { return "<button>" + a[0] + "</button>"; }).join("") + "</div>" : "") + "</div>" + NAV;
+    }
+    ph.innerHTML = h; ph._more = more;
+    var sc = ph.querySelector(".scroll"); if (st.mode === "now") sc.scrollTop = sc.scrollHeight;
+    document.getElementById("s1-n-v").textContent = st.n;
+  }
+  function closeAll() { ph.querySelectorAll(".ascrim, .asheet, .amenu").forEach(function (x) { x.remove(); }); }
+  ph.addEventListener("click", function (e) {
+    if (e.target.closest(".ascrim")) { closeAll(); return; }
+    var m = e.target.closest("[data-more]");
+    if (m) {
+      if (ph.querySelector(".asheet, .amenu")) { closeAll(); return; }
+      if (m.dataset.more === "menu") {
+        var mm = document.createElement("div"); mm.className = "amenu";
+        var o = ph._more.filter(function (a) { return a[1] !== "d"; }), d = ph._more.filter(function (a) { return a[1] === "d"; });
+        mm.innerHTML = o.map(function (a) { return "<button>" + a[0] + "</button>"; }).join("") + (o.length && d.length ? "<hr>" : "") + d.map(function (a) { return '<button class="d">' + a[0] + "</button>"; }).join("");
+        ph.appendChild(mm); return;
+      }
+      var sc = document.createElement("div"); sc.className = "ascrim";
+      var sh = document.createElement("div"); sh.className = "asheet"; sh.innerHTML = list(ph._more);
+      ph.appendChild(sc); ph.appendChild(sh);
+      sh.animate([{ transform: "translateY(100%)" }, { transform: "none" }], { duration: 280, easing: "cubic-bezier(.2,.8,.2,1)" });
+      sc.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+      return;
+    }
+    if (e.target.closest(".asheet button, .amenu button")) closeAll();
+  });
+  function sw(id, key) {
+    document.getElementById(id).addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;
       this.querySelectorAll("button").forEach(function (y) { y.setAttribute("aria-pressed", y === b ? "true" : "false"); });
-      var ph = document.getElementById(x[1]); ph.dataset.m = b.dataset.v;
-      if (x[0] === "s1-sw") {
-        var bar = document.getElementById("s1-bar"), slot = ph.querySelector(".bar-slot");
-        if (b.dataset.v === "a") slot.appendChild(bar); else ph.insertBefore(bar, ph.querySelector(".tagnote"));
-        var sc = document.getElementById("s1-scroll"); sc.scrollTop = sc.scrollHeight;
-      }
+      st[key] = b.dataset.v; render();
     });
-  });
-  document.addEventListener("tabshown", function (e) { if (e.detail === "components") { var sc = document.getElementById("s1-scroll"); sc.scrollTop = sc.scrollHeight; } });
-  var sc = document.getElementById("s1-scroll"); sc.scrollTop = sc.scrollHeight;
+  }
+  sw("s1-sw", "mode"); sw("s1-doc", "doc");
+  document.getElementById("s1-n").addEventListener("input", function () { st.n = +this.value; render(); });
+  render();
 })();
 </script>
