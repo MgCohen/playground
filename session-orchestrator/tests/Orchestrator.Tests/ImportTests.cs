@@ -27,6 +27,33 @@ public sealed class ImportTests
     }
 
     [Test]
+    public async Task A_new_session_is_imported_after_a_short_opening_turn_and_its_brief_waits_for_the_app()
+    {
+        using var rig = new Rig(import: true);
+        var id = rig.Create("Do the work.", "child");
+        await rig.Cycle();
+        Assert.That(rig.Turns, Has.Count.EqualTo(1));
+        Assert.That(rig.Turns[0].IsNew, Is.True);
+        Assert.That(rig.Turns[0].Prompt, Does.Contain("opens this session in the desktop app").And.Not.Contain("Do the work."));
+        Assert.That(rig.Imports, Is.EqualTo(new[] { id }), "the import comes right after the opening turn, before the brief");
+        Assert.That(rig.Store.Pending(id).Text, Does.StartWith("Do the work."), "the brief waits for the live app session");
+        rig.Clock.Advance(TimeSpan.FromMinutes(1));
+        await rig.Cycle();
+        Assert.That(rig.Turns, Has.Count.EqualTo(2), "if the app does not take the lease, the supervisor delivers the brief");
+        Assert.That(rig.Turns[1].IsNew, Is.False);
+        Assert.That(rig.Turns[1].Prompt, Does.StartWith("Do the work.").And.Contain("Remote Control"));
+    }
+
+    [Test]
+    public async Task With_no_import_option_the_first_turn_is_the_brief()
+    {
+        using var rig = new Rig();
+        rig.Create("Do the work.");
+        await rig.Cycle();
+        Assert.That(rig.Turns.Single().Prompt, Is.EqualTo("Do the work."));
+    }
+
+    [Test]
     public async Task With_no_import_option_nothing_is_imported()
     {
         using var rig = new Rig();

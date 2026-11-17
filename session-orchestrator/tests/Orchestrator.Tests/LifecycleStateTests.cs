@@ -259,8 +259,8 @@ public sealed class LifecycleStateTests
         var id = t.Create("work", "visible");
         var quiet = t.Store.Create(new Meta("") { Title = "quiet", Cwd = "C:/x", CreatedBy = "supervisor", Background = true }, "work");
         await t.Cycle();
-        Assert.That(NoticesTo(t, id), Is.EqualTo(new[] { "remote-control-self" }));
-        Assert.That(NoticesTo(t, quiet), Is.Empty);
+        Assert.That(NoticesTo(t, id), Is.EqualTo(new[] { "open-in-app", "remote-control-self" }));
+        Assert.That(NoticesTo(t, quiet), Is.EqualTo(new[] { "open-in-app" }), "a background session is in the app too, with Remote Control off");
     }
 
     [Test]

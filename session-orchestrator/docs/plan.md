@@ -758,3 +758,17 @@ Limit: a process that ends before the first scan that sees it is not recorded, a
 Likely cause of the abort (not proved): an external kill of the command. The Windows Application log of the last two days has no crash event of `Orchestrator.Tests.exe`; an unhandled exception writes one, a kill does not. A full `dotnet test --solution` builds first and then runs the tests: here 1 min 12 s to 1 min 33 s for the tests alone. The default timeout of the Bash tool of a session is 120 s, and its kill ends the command with no error. The point of the kill moves with the build time, which fits an end after test 3, 39, 65 or 107. Run the full suite with a timeout of 600 s, or in the background.
 
 Open: the abort is not proved. If it comes again after this fix, run the test exe with `--output Detailed` to see the last test, and look in the Windows event log (Application) for a crash of `Orchestrator.Tests.exe`.
+
+### Child sessions in the app from their start (user decision, 2026-11-17)
+
+The user cannot follow a child before its first turn ends, because the supervisor imported a session only after its first good turn. The user decided: show each child in the app by default, from its start, with Remote Control on (off only for a background brief).
+
+| Part | Change |
+|---|---|
+| Opening turn | With `ORCH_IMPORT` on, the first turn of a new session has only the notice `open-in-app`: reply READY, no work, no tool. The app can import only a session that has a transcript, so this short turn is the earliest point |
+| Import | Right after the opening turn. The brief and the other envelopes stay undelivered |
+| Brief | The plugin of the live app session delivers it, so the work runs in the app. If the app does not take the lease in `ImportWait` (30 s), the supervisor delivers it with `claude -p --resume` |
+| Remote Control | `remote-control-self` after the import, as before. A background session is in the app too, with Remote Control off |
+| Tests | `ImportTests`: the opening turn, the import before the brief, the fallback delivery, no opening turn with no import. 182 of 182 pass |
+
+Not tested live: the import opens the session in the main window of the app and takes the focus (F14), so a live test disturbs the user. The root can run it with the app probes.

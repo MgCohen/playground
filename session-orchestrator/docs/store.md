@@ -100,6 +100,7 @@ The lifecycle notices of the supervisor:
 | `child-archived` | Parent | The archive committed |
 | `child-archived-in-app` | Parent | The user archived the session in the app sidebar, and the store side is not archived |
 | `archive-reminder` | Parent | Done for `reminderMinutes`, no open PR, not archived. One time |
+| `open-in-app` | Session | The only input of the first turn of a new session when the supervisor imports sessions (`ORCH_IMPORT`). The turn makes the transcript, the import follows, and the brief waits for the live app session |
 | `remote-control-self` | Session | After the import into the app, unless `meta.background` (F4) |
 | `remote-control-child` | Parent | `remoteControlSeconds` after `remote-control-self`, and `meta.remoteControl` is not set. Field `appId` |
 | `archive-child` | Parent | An archive request reached its deadline and the app still shows the session (F8, path 2). Field `appId` |

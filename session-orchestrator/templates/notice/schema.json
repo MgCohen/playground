@@ -25,7 +25,8 @@
         "remote-control-self",
         "remote-control-child",
         "archive-child",
-        "state-inferred"
+        "state-inferred",
+        "open-in-app"
       ]
     },
     "decision": {

@@ -265,6 +265,7 @@ public sealed partial class Supervisor
         if (!CanRun(id, now)) return;
         var pending = store.Pending(id);
         if (pending.IsEmpty) return;
+        if (OpeningTurn(id) is { } opening) pending = opening;
         if (store.Cwd(id) is not { } cwd)
         {
             store.Log($"{id} skipped: no cwd");
@@ -276,6 +277,21 @@ public sealed partial class Supervisor
         var stop = new CancellationTokenSource();
         stops[id] = stop;
         Track(running, id, () => RunTurn(request, pending, stop.Token));
+    }
+
+    /// <summary>
+    /// The first turn of a new session that the supervisor imports into the app: only the notice open-in-app. The turn makes
+    /// the transcript, so that the import can follow at once. The brief stays undelivered: the live app session gets it
+    /// from its plugin, and the user can follow the work from its start (decision of the user, 2026-11-17).
+    /// </summary>
+    Pending? OpeningTurn(string id)
+    {
+        var meta = store.Meta(id);
+        if (options.Import is null || meta.Imported == true || meta.CreatedBy is null || meta.Started == true) return null;
+        var self = Parties.Session(id);
+        var notice = store.Undelivered(id).FirstOrDefault(e => e.Kind == EventKinds.Notice && store.Events.Fields(e).GetValueOrDefault("kind") as string == "open-in-app")
+            ?? Notify(self, null, store.Texts.Notice("open-in-app"));
+        return new Pending(store.Renderer.Join([notice]), [notice.Id]) { Senders = [Parties.Supervisor] };
     }
 
     void Track(ConcurrentDictionary<string, Task> tasks, string key, Func<Task> work)
