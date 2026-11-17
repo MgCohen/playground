@@ -104,7 +104,7 @@ pre.side .a { color: var(--accent); }
 <header>
   <div class="eyebrow">session-orchestrator · S1 design · 2026-11-17</div>
   <h1>Session Registry Design</h1>
-  <p class="summary">Each session is one entry in a session registry: one engine-neutral id, its tree, its title, owner, tags, work stream, mode and settings. The registry is a storage port with one writer, apart from the run state (lease, turn, heartbeat). Claude Code is one engine behind an engine adapter, so another engine joins with the same messages.</p>
+  <p class="summary">Each session is one entry in a session registry: an id, a cascading code, a title, its tree, owner, tags, work stream, mode and settings. The registry is a storage port with one writer, apart from the run state (lease, turn, heartbeat). Claude Code is one engine behind an engine adapter, so another engine joins with the same messages.</p>
 </header>
 
 <nav role="tablist" aria-label="Topics">
@@ -149,7 +149,8 @@ flowchart LR
   <section>
     <h2>Design rules</h2>
     <ul>
-      <li>One id for each session: the registry id. Engine ids are attributes of the entry.</li>
+      <li>Three names for each session: the id finds it, the code places it in the plan, the title tells what it does.</li>
+      <li>The app title starts with the full code, for example <code>[O2 P1 S1]</code>, so the user finds the root of each session.</li>
       <li>One writer for the registry: the registry service. Plugins send a request envelope.</li>
       <li>Settings are typed fields, not brief text. The brief shows a render of them.</li>
       <li>The registry tells the engine what to do. The engine tells the registry only facts.</li>
@@ -180,13 +181,14 @@ flowchart LR
     <h2>One registry entry for each session</h2>
     <pre class="side"><span class="c">// sessions/&lt;id&gt;/session.json, written only through ISessionRegistry</span>
 {
-  "id": "6f1c2a90-…",                  <span class="c">// registry id, a UUID</span>
+  "id": "73cc50ac-…",                  <span class="c">// today: the Claude Code session id</span>
+  "code": "S1",                        <span class="c">// own code, unique among the siblings</span>
   "rev": 7,                            <span class="c">// grows on each write</span>
   "engine": { "kind": "claude-code",
               "sessionId": "6f1c2a90-…", "appId": "local_6f1c2a90-…",
               "started": true, "imported": true, "remoteControl": false },
   "parent": "ca72efff-…",              <span class="c">// null for a root</span>
-  "title": "S1: Session management",
+  "title": "Session management and registry",
   "owner": "user:matheus",
   "tags": ["design", "orch"],
   "stream": "S1",                      <span class="c">// work stream key (C1 owns the workflow)</span>
@@ -201,11 +203,32 @@ flowchart LR
   </section>
 
   <section>
+    <h2>Three names: id, code and title</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Name</th><th>Example</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>Id</td><td><code>73cc50ac-b388-…</code></td><td>The system finds the session</td></tr>
+        <tr><td>Code</td><td><code>S1</code></td><td>Plans, roadmaps, the list of children</td></tr>
+        <tr><td>Full code</td><td><code>O2 P1 S1</code></td><td>The codes from the root down</td></tr>
+        <tr><td>Title</td><td><code>Session management and registry</code></td><td>The human-readable name</td></tr>
+        <tr><td>App title</td><td><code>[O2 P1 S1] Session management and registry</code></td><td>The app sidebar and the phone</td></tr>
+      </tbody>
+    </table></div>
+    <ul>
+      <li>A plan uses the own code only: a parent lists its children as <code>S1</code>, <code>S2</code>.</li>
+      <li>The full code is a query of the parent chain. The registry does not store it, so a moved code cannot become old.</li>
+      <li>A root also has a code. If the creator gives no code, the registry gives the next free <code>O&lt;n&gt;</code> for a root and <code>C&lt;n&gt;</code> for a child.</li>
+      <li>A code is unique among the children of one parent. The full code is unique in the store.</li>
+    </ul>
+  </section>
+
+  <section>
     <h2>Each field has one source</h2>
     <div class="scroll"><table>
       <thead><tr><th>Field</th><th>Set by</th><th>Change</th></tr></thead>
       <tbody>
-        <tr><td><code>id</code></td><td>Registry, at create</td><td>Never</td></tr>
+        <tr><td><code>id</code></td><td>Engine, at create</td><td>Never</td></tr>
+        <tr><td><code>code</code></td><td>Creator, else the next free code</td><td><code>orch session set</code></td></tr>
         <tr><td><code>engine.*</code></td><td>Adapter facts</td><td><code>session.update</code> from the plugin</td></tr>
         <tr><td><code>parent</code></td><td>Creator</td><td>Never</td></tr>
         <tr><td><code>title</code>, <code>tags</code>, <code>stream</code>, <code>owner</code></td><td>Creator, user</td><td><code>orch session set</code>, API</td></tr>
@@ -224,7 +247,8 @@ flowchart LR
     <pre class="side"><span class="c">// Orchestrator.Core/Sessions. The file implementation uses IDocStore keys.</span>
 public interface ISessionRegistry
 {
-    SessionEntry Create(NewSession spec);                 <span class="c">// mints the id, posts session.created</span>
+    SessionEntry Create(NewSession spec);                 <span class="c">// id from the engine, posts session.created</span>
+    string FullCode(string id);                           <span class="c">// "O2 P1 S1": codes from the root down</span>
     SessionEntry? Get(string id);
     IReadOnlyList&lt;SessionEntry&gt; List(SessionQuery q);   <span class="c">// parent, tag, stream, owner, phase</span>
     SessionEntry Update(string id, int rev, SessionPatch patch, string by); <span class="c">// refuses an old rev</span>
@@ -264,7 +288,7 @@ public static class StoreBackends   <span class="c">// H1 composition root, one 
 <!-- CLAUDE CODE -->
 <div class="panel off" id="claude-code" role="tabpanel">
   <section>
-    <h2>Start of a child: the registry id becomes the Claude Code id</h2>
+    <h2>Start of a child: the Claude Code id becomes the registry id</h2>
     <div class="box"><pre class="mermaid">
 sequenceDiagram
   participant P as Parent
@@ -281,7 +305,7 @@ sequenceDiagram
   A->>A: brief from the inbox
   A->>R: session.update remoteControl
     </pre></div>
-    <p>The supervisor gives the registry id to <code>--session-id</code>. So for each session that the supervisor starts, the two ids are equal. The code never relies on this: it reads <code>engine.sessionId</code>.</p>
+    <p>The registry uses the id that Claude Code uses. The id stays modular: the code reads the engine id only from <code>engine.sessionId</code>, and the adapter gives the registry id. So a registry-made id can come later with one change in the adapter.</p>
   </section>
 
   <section>
@@ -294,6 +318,7 @@ sequenceDiagram
         <tr><td>Join from the app</td><td><code>/orch-enable [title]</code></td><td>Create with the existing id</td></tr>
         <tr><td>Attached child</td><td>App <code>start_session</code>, then <code>orch enable</code></td><td>Create with the parent from the brief</td></tr>
         <tr><td>Remote Control</td><td><code>set_remote_control</code>, self or parent</td><td><code>engine.remoteControl</code></td></tr>
+        <tr><td>App title</td><td><code>set_session_title</code>, self or parent</td><td>Title <code>[full code] title</code></td></tr>
         <tr><td>Archive (F8)</td><td>Remote Control off, <code>archive_session</code></td><td>Phase <code>archived</code> after the signals</td></tr>
         <tr><td>Archive on screen (F14)</td><td><code>archive-self</code> notice</td><td>Same</td></tr>
         <tr><td>User archives in the app</td><td>Sidebar action</td><td>Notice <code>child-archived-in-app</code>, phase stays</td></tr>
@@ -549,7 +574,7 @@ orch post report   --from session:&lt;id&gt; --body r.json</pre>
   <section>
     <h2>Open questions</h2>
     <ul>
-      <li>Push the registry title to the app sidebar: is there a supported way?</li>
+      <li>Probe: does <code>set_session_title</code> work from a child on itself, and from the parent with the app id?</li>
       <li>First engine after Claude Code: Codex CLI, or a plain script?</li>
       <li>Owner values: one user today. Is a team owner needed?</li>
     </ul>
