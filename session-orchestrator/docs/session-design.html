@@ -152,7 +152,7 @@ flowchart LR
       <li>Three names for each session: the id finds it, the code places it in the plan, the title tells what it does.</li>
       <li>The app title starts with the full code, for example <code>[O2 P1 S1]</code>, so the user finds the root of each session.</li>
       <li>One writer for the registry: the registry service. Plugins send a request envelope.</li>
-      <li>Settings are typed fields, not brief text. The brief shows a render of them.</li>
+      <li>Settings are typed fields, not brief text. A mode is a preset of three axes. The brief shows a render of them.</li>
       <li>The registry tells the engine what to do. The engine tells the registry only facts.</li>
       <li>All engines use the same envelopes. Only the adapter knows the engine.</li>
     </ul>
@@ -165,8 +165,8 @@ flowchart LR
       <tbody>
         <tr><td>C1</td><td><code>ISessionRegistry</code>, file implementation, contract tests</td><td>Medium</td></tr>
         <tr><td>C2</td><td>Store version 3: <code>meta.json</code> and <code>control.json</code> into <code>session.json</code></td><td>Small</td></tr>
-        <tr><td>C3</td><td>Settings resolver and the settings block in the brief render</td><td>Medium</td></tr>
-        <tr><td>C4</td><td>Mode in the question relay, <code>ask_user</code> and the report filter</td><td>Medium</td></tr>
+        <tr><td>C3</td><td>Settings schema, copy at create, <code>mcp__orch__configure</code>, the settings block in the brief</td><td>Medium</td></tr>
+        <tr><td>C4</td><td><code>templates/modes/</code> and the readers of the three axes</td><td>Medium</td></tr>
         <tr><td>C5</td><td><code>IEngineAdapter</code> with the Claude Code adapter (code moves only)</td><td>Medium</td></tr>
         <tr><td>C6</td><td><code>orch session</code> CLI, <code>/api/sessions</code> fields, tree view with tags</td><td>Small</td></tr>
         <tr><td>C7</td><td><code>orch session join</code> for other engines, with lease and heartbeat</td><td>Small</td></tr>
@@ -194,7 +194,7 @@ flowchart LR
   "stream": "S1",                      <span class="c">// work stream key (C1 owns the workflow)</span>
   "work": { "cwd": "…", "repo": "…", "branch": "orch/session-6f1c2a90", "worktree": true },
   "role": { "agent": "worker", "skills": ["orch:orch-ask"] },
-  "settings": { "mode": "relay", "background": false, "policy": "default",
+  "settings": { "mode": "auto", "background": false, "policy": "default",
                 "reportOn": ["done", "blocked", "asked"], "allowDefaults": false },
   "lifecycle": { "phase": "active", "state": "idle", "since": "…", "by": "supervisor" },
   "created": { "at": "…", "by": "session:ca72efff-…" },
@@ -365,48 +365,96 @@ sequenceDiagram
 <!-- SETTINGS -->
 <div class="panel off" id="settings" role="tabpanel">
   <section>
-    <h2>Settings resolve from the session, the parent chain and the policy</h2>
+    <h2>Settings are copied from the parent at create</h2>
     <div class="box"><pre class="mermaid">
 flowchart LR
-  B["Brief fields"] --> E["settings in session.json"]
-  E --> RS["Settings resolver"]
-  PC["Parent chain"] --> RS
-  PD["policy.json sessionDefaults"] --> RS
-  RS --> SV["Supervisor"]
-  RS --> PL["Plugin"]
-  RS --> BR["Brief render"]
+  SP["Spec of the creator"] --> CR["Create"]
+  PA["Parent settings now"] -->|fields not in spec| CR
+  PD["policy.json sessionDefaults"] -->|root only| CR
+  CR --> E["settings in session.json"]
+  PU["Parent or user update"] --> E
+  E --> SV["Supervisor"]
+  E --> PL["Plugin"]
+  E --> BR["Brief render"]
     </pre></div>
-    <p>Each setting can be set on each session. A field of the session wins. Else the field of the nearest parent that sets it applies. Else the default of <code>policy.json</code> applies. The resolver is one C# function; the plugin gets its result with <code>orch session get --self</code>.</p>
+    <ul>
+      <li>The creator can set each setting in the spec of <code>spawn_child</code>.</li>
+      <li>Each setting that the spec does not set is a copy of the value of the parent at that time. A root copies <code>policy.json</code> <code>sessionDefaults</code>.</li>
+      <li>The parent or the user can change a setting of a child at any time: <code>mcp__orch__configure</code> or <code>orch session set</code>. The supervisor applies only an update from the parent or the user.</li>
+      <li>There is no lookup at read time. Each entry holds all its settings, so each reader reads one file.</li>
+    </ul>
   </section>
 
   <section>
-    <h2>Three modes set the route of questions</h2>
+    <h2>A mode is a named preset of three axes</h2>
     <div class="scroll"><table>
-      <thead><tr><th>Mode</th><th>Questions go to</th><th>User answers</th><th>Policy</th></tr></thead>
+      <thead><tr><th>Axis</th><th>Question</th><th>Values</th></tr></thead>
       <tbody>
-        <tr><td><code>chat</code></td><td>The session reply text</td><td>In the session chat, with <code>answer:</code></td><td>Session policy</td></tr>
-        <tr><td><code>relay</code></td><td>The parent, by the question relay</td><td>In the parent chat; the parent calls <code>mcp__orch__answer</code></td><td>Session policy</td></tr>
-        <tr><td><code>auto</code></td><td>The parent, as information</td><td>Only high risk waits</td><td>Low and medium: default at once</td></tr>
+        <tr><td><code>interaction</code></td><td>When does the session end?</td><td><code>task</code>, <code>conversation</code>, <code>one-shot</code></td></tr>
+        <tr><td><code>autonomy</code></td><td>When does it wait for a person?</td><td><code>auto</code>, <code>ask</code>, <code>approve</code></td></tr>
+        <tr><td><code>route</code></td><td>Who gets its questions?</td><td><code>parent</code>, <code>user</code></td></tr>
       </tbody>
     </table></div>
-    <p>In each mode, the user can answer in the session chat with <code>answer:</code>. The sum test 2 modes map to these: "ask" is <code>relay</code>, "chat" is <code>chat</code>, "auto" is <code>auto</code>. "Approve" is a policy level, not a mode.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Value</th><th>Behavior</th></tr></thead>
+      <tbody>
+        <tr><td><code>task</code></td><td>Works to the goal. Reports done when the check passes</td></tr>
+        <tr><td><code>conversation</code></td><td>Talks and waits for the next message. Done only when the user or parent says done</td></tr>
+        <tr><td><code>one-shot</code></td><td>One exchange. Reports done after the answer, with no confirmation</td></tr>
+        <tr><td><code>auto</code></td><td>Continues alone. Asks only for a high-risk decision</td></tr>
+        <tr><td><code>ask</code></td><td>Asks each decision that the policy does not answer</td></tr>
+        <tr><td><code>approve</code></td><td>Works alone, then waits for an approval before each step and before done</td></tr>
+        <tr><td><code>parent</code></td><td>Questions go to the parent, which handles them or asks the user</td></tr>
+        <tr><td><code>user</code></td><td>Questions go to the session chat; the user answers with <code>answer:</code></td></tr>
+      </tbody>
+    </table></div>
   </section>
 
   <section>
-    <h2>Each setting, where it is stored, who reads it</h2>
+    <h2>The four modes of the sum test are presets</h2>
     <div class="scroll"><table>
-      <thead><tr><th>Setting</th><th>Default</th><th>Inherits</th><th>Read by</th></tr></thead>
+      <thead><tr><th>Mode</th><th>Interaction</th><th>Autonomy</th><th>Route</th></tr></thead>
       <tbody>
-        <tr><td><code>mode</code></td><td><code>chat</code></td><td>Yes</td><td>Relay, <code>ask_user</code>, brief render</td></tr>
-        <tr><td><code>background</code></td><td><code>false</code></td><td>Yes</td><td>Supervisor: Remote Control notices</td></tr>
-        <tr><td><code>policy</code></td><td><code>default</code></td><td>Yes</td><td>Supervisor: docs check, defaults</td></tr>
-        <tr><td><code>allowDefaults</code></td><td><code>false</code></td><td>Yes</td><td><code>orch merge</code></td></tr>
-        <tr><td><code>reportOn</code></td><td>done, blocked, asked</td><td>Yes</td><td>Plugin <code>report</code> tool</td></tr>
-        <tr><td><code>reminders</code></td><td>10 min, then 60 min</td><td>Yes</td><td>Supervisor: question follow, forgotten</td></tr>
-        <tr><td><code>owner</code>, <code>stream</code></td><td><code>user</code>, none</td><td>Yes</td><td>UI, filters, C1</td></tr>
+        <tr><td><code>auto</code></td><td><code>task</code></td><td><code>auto</code></td><td><code>parent</code></td></tr>
+        <tr><td><code>chat</code></td><td><code>conversation</code></td><td><code>ask</code></td><td><code>user</code></td></tr>
+        <tr><td><code>ask</code></td><td><code>one-shot</code></td><td><code>ask</code></td><td><code>parent</code></td></tr>
+        <tr><td><code>approve</code></td><td><code>task</code></td><td><code>approve</code></td><td><code>parent</code></td></tr>
       </tbody>
     </table></div>
-    <p>The identity fields <code>id</code>, <code>parent</code> and <code>title</code> never inherit. All settings are fields of <code>settings</code> in <code>session.json</code>, except <code>owner</code> and <code>stream</code>, which are top-level fields. <code>policy.json</code> gets one block <code>sessionDefaults</code> and named profiles, for example <code>auto</code>.</p>
+    <pre class="side"><span class="c">// templates/modes/chat/mode.json. A new mode is a new folder; no code change.</span>
+{ "name": "chat", "interaction": "conversation", "autonomy": "ask", "route": "user",
+  "describe": "Talk with the user until the user or the parent says done." }
+<span class="c">// templates/modes/chat/render/session.md: the mode text of the settings block.</span></pre>
+    <ul>
+      <li>A session stores the mode name and the three axis values. A spec can set an axis to change one value of a preset.</li>
+      <li>A new mode is a folder in <code>templates/modes/</code>. A new axis value needs code in the reader of that axis.</li>
+      <li>The settings have one schema, <code>templates/settings/schema.json</code>. A new setting is one property with its default.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Each setting, its default and its readers</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Setting</th><th>Root default</th><th>Read by</th></tr></thead>
+      <tbody>
+        <tr><td><code>mode</code> and axes</td><td><code>chat</code></td><td>Plugin, relay, brief render</td></tr>
+        <tr><td><code>background</code></td><td><code>false</code></td><td>Supervisor: Remote Control notices</td></tr>
+        <tr><td><code>policy</code></td><td><code>default</code></td><td>Supervisor: docs check, defaults</td></tr>
+        <tr><td><code>allowDefaults</code></td><td><code>false</code></td><td><code>orch merge</code></td></tr>
+        <tr><td><code>reportOn</code></td><td>done, blocked, asked</td><td>Plugin <code>report</code> tool</td></tr>
+        <tr><td><code>reminders</code></td><td>10 min, then 60 min</td><td>Supervisor: question follow, forgotten</td></tr>
+        <tr><td><code>owner</code>, <code>stream</code></td><td><code>user</code>, none</td><td>UI, filters, C1</td></tr>
+      </tbody>
+    </table></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Axis</th><th>Reader</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td><code>interaction</code></td><td>Plugin <code>report</code>, lifecycle</td><td>Refuses done before the end rule; no forgotten while a conversation waits</td></tr>
+        <tr><td><code>autonomy</code></td><td>Policy, <code>ask_user</code></td><td>Profile of timeouts; approval gates</td></tr>
+        <tr><td><code>route</code></td><td>Question relay, <code>ask_user</code> text</td><td>Forward to the parent, or ask in the chat</td></tr>
+      </tbody>
+    </table></div>
+    <p>The identity fields <code>id</code>, <code>code</code>, <code>parent</code> and <code>title</code> are never copied. With each route, the user can answer in the session chat with <code>answer:</code>.</p>
   </section>
 
   <section>
@@ -427,7 +475,7 @@ flowchart LR
     <h2>The session sees its settings as a fixed block</h2>
     <pre class="side"><span class="c">// The brief render adds this block from the resolved settings.</span>
 Session settings
-- Mode: relay. Ask with mcp__orch__ask_user. Your parent shows the question to the user.
+- Mode: auto (task, auto, parent). Work alone. Send a high-risk question with mcp__orch__ask_user; your parent handles it.
 - Report: only when done, blocked, or when the user or the parent asks.
 - Background: no. Remote Control is on.
 - Policy: default. Low and medium questions take the default after the timeout.</pre>
@@ -473,7 +521,7 @@ stateDiagram-v2
       <tbody>
         <tr><td>1</td><td>A parent or the user starts a session</td><td>Parent → session</td><td><code>brief</code></td><td>After the opening turn and the import</td></tr>
         <tr><td>2</td><td>A parent has new work or a reply</td><td>Parent → session</td><td><code>message</code></td><td>At the next idle</td></tr>
-        <tr><td>3</td><td>The session needs a decision</td><td>Session → user</td><td><code>question</code></td><td>Mode <code>relay</code>, <code>auto</code>: forward to the parent at once</td></tr>
+        <tr><td>3</td><td>The session needs a decision</td><td>Session → user</td><td><code>question</code></td><td>Route <code>parent</code>: forward to the parent at once</td></tr>
         <tr><td>4</td><td>The user, parent, docs or policy decides</td><td>Party → session</td><td><code>answer</code></td><td>Next idle; first answer wins</td></tr>
         <tr><td>5</td><td>The question closes</td><td>Supervisor → parent</td><td><code>notice</code> question-closed</td><td>Next idle of the parent</td></tr>
         <tr><td>6</td><td>The session is done or blocked</td><td>Session → user</td><td><code>report</code></td><td>Forward to the parent at turn end</td></tr>
@@ -485,7 +533,7 @@ stateDiagram-v2
   </section>
 
   <section>
-    <h2>One question in mode relay</h2>
+    <h2>One question with route parent</h2>
     <div class="box"><pre class="mermaid">
 sequenceDiagram
   participant C as Child
