@@ -197,7 +197,8 @@ flowchart LR
   "work": { "cwd": "…", "repo": "…", "branch": "orch/session-6f1c2a90", "worktree": true },
   "role": { "agent": "worker", "skills": ["orch:orch-ask"] }, <span class="c">// a record; only the adapter reads it to start the session</span>
   "settings": { "mode": "auto", "visibility": "public", "policy": "default",
-                "reportOn": ["done", "blocked", "asked"], "allowDefaults": false },
+                "reportOn": ["done", "blocked", "asked"], "allowDefaults": false,
+                "permissions": "auto" },
   "lifecycle": { "phase": "active", "state": "idle", "since": "…", "by": "supervisor" },
   "created": { "at": "…", "by": "session:ca72efff-…" },
   "updated": { "at": "…", "by": "supervisor" }
@@ -469,6 +470,7 @@ flowchart LR
         <tr><td><code>mode</code> and axes</td><td><code>chat</code></td><td>Plugin, relay, brief render</td></tr>
         <tr><td><code>policy</code></td><td><code>default</code></td><td>Supervisor: docs check, defaults</td></tr>
         <tr><td><code>allowDefaults</code></td><td><code>false</code></td><td><code>orch merge</code></td></tr>
+        <tr><td><code>permissions</code></td><td><code>auto</code></td><td>Adapter <code>Create</code>, <code>Turn</code>: <code>auto</code> gives <code>--permission-mode auto</code>, <code>bypass</code> gives <code>--permission-mode bypassPermissions</code>. A change to <code>bypass</code> posts a high-risk <code>session.changed</code></td></tr>
         <tr><td><code>reportOn</code></td><td>done, blocked, asked</td><td>Plugin <code>report</code> tool</td></tr>
         <tr><td><code>reminders</code></td><td>10 min, then 60 min</td><td>Supervisor: question follow, forgotten</td></tr>
         <tr><td><code>owner</code>, <code>stream</code></td><td><code>user</code>, none</td><td>UI, filters, C1</td></tr>
