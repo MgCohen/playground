@@ -994,6 +994,7 @@ var Saved = (function () {
       });
       Object.keys(ctl.range || {}).forEach(function (id) { var el = document.getElementById(id); if (el) el.value = st[ctl.range[id]]; });
     }
+    sync();
     Object.keys(ctl.sw || {}).concat(Object.keys(ctl.range || {})).forEach(function (id) {
       var el = document.getElementById(id); if (!el) return;
       el.addEventListener("click", function () { save(k, pick()); });
@@ -1338,6 +1339,8 @@ var Saved = (function () {
       save();
     });
   });
+  var OWNER = { T1: "C" };   // the owner's picks where they differ from the recommendation
+  groups.forEach(function (g) { g.rec = OWNER[g.key] || g.rec; });
   groups.forEach(function (g) { pick(g, saved[g.key] || g.rec, false); });
   Saved.load("picks").then(function (d) { if (d && typeof d === "object") { saved = d; groups.forEach(function (g) { pick(g, saved[g.key] || g.rec, false); }); } else if (Object.keys(saved).length) Saved.save("picks", saved); });
 })();
@@ -1348,8 +1351,9 @@ var Saved = (function () {
       ph = document.getElementById("wid-ph"), wsh = document.getElementById("wsh"), fbtn = document.getElementById("fbtn"), tl = document.getElementById("g-tl"),
       ab = wid.querySelector(".ab");
   var H = 440;
-  var st = { mode: "reveal", curve: "cubic", ms: 280, hms: 200, shadow: "fade", sms: 220, page: "first", load: 1200, pms: 500, ph: "shadows", fms: 180,
-             bopen: "slow", bstyle: "pop", bin: 240, bgap: 60, bhide: "yoyo", bhold: 400, bout: 180, bar: "unfold", blag: 0 };
+  // Start values: the choices of the owner (saved on 2026-11-17).
+  var st = { mode: "fade", curve: "cubic", ms: 280, hms: 200, shadow: "with", sms: 220, page: "first", load: 1200, pms: 500, ph: "skeleton", fms: 180,
+             bopen: "always", bstyle: "pop", bin: 240, bgap: 60, bhide: "first", bhold: 400, bout: 180, bar: "unfold", blag: 0 };
   var SLIDERS = ["ms", "hms", "sms", "load", "pms", "fms", "bin", "bgap", "bhold", "bout", "blag"];
   var loop = true, onTab = false, tok = 0, timers = [], opens = 0;
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
