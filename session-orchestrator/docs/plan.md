@@ -1102,3 +1102,35 @@ Screenshots (mock mode, desktop corner): `docs/screens/r2-corner-open-question.p
 - R2-2: the mock store now has a report with done, next and links, and a `question-closed` notice. The self-test needs them for the render screenshots.
 - R2-3: the well block of Open is a well in a card. It shows a double frame. Accepted for the later block review.
 - R2-4: `Ui.Look` and the `icon` and `tone` of `view.json` overlap. The ring still uses `Ui.Look`, because it also covers kinds with no template. Open question for the block review.
+
+## S1 design: session registry (2026-11-17)
+
+Page: `docs/session-design.html` (https://claude.ai/artifact/QKh7x9SkrnUp8q5E4rbYTs). Design only: no code change.
+
+Each session is one entry in a session registry, `store/sessions/<id>/session.json`. The registry is one more storage port (`ISessionRegistry`) on the H1 rules. Only the registry service in C# writes it; a plugin posts `session.update`. The run state (lease, heartbeat, status, turn, `state.json`) stays in its own files.
+
+| Part | Design |
+|---|---|
+| Names | Id (today the Claude Code id, behind the engine adapter), code (`S1`), title. The full code is the codes from the root down; the app title is `[O2 P1 S1] <title>` |
+| Entry | `id`, `code`, `engine` (ids, started, imported, Remote Control), `parent`, `title`, `owner`, `tags`, `stream`, `work`, `role`, `settings`, `lifecycle` (phase and a copy of the B2 state), `created`, `updated`. Children are a query |
+| Replaces | `meta.json` and `control.json` (store version 3) |
+| Claude Code | The registry sends commands (start, import, Remote Control, title, archive). Claude Code sends only facts (`appId`, Remote Control state, imported). The registry never reads or writes Claude Code files |
+| Settings | Each setting can be set at create and updated by the parent or the user. A setting not set at create is a copy of the parent value; a root copies `policy.json` `sessionDefaults` |
+| Modes | A mode is a preset of three axes: `interaction` (task, conversation, one-shot), `autonomy` (auto, ask, approve), `route` (parent, user). Presets in `templates/modes/`: `auto`, `chat`, `ask`, `approve` (the sum test modes) |
+| Report rules | `reportOn` (done, blocked, asked). The plugin changes a `working` report with no status request into an `update` (sum test F5) |
+| Loop | The table of who sends what is on the Loop tab. A chat line closes a decision only with `answer:` (F2, PR #27) |
+| Other engines | `IEngineAdapter` with capabilities. A tool joins with `orch session join`, takes the lease, and uses `orch watch` and `orch post` with the same envelopes |
+
+Code parts (proposal):
+
+| # | Part | Size |
+|---|---|---|
+| C1 | `ISessionRegistry`, file implementation, contract tests | Medium |
+| C2 | Store version 3: `meta.json` and `control.json` into `session.json` | Small |
+| C3 | Settings schema, copy at create, `mcp__orch__configure`, the settings block in the brief | Medium |
+| C4 | `templates/modes/` and the readers of the three axes | Medium |
+| C5 | `IEngineAdapter` with the Claude Code adapter (code moves only) | Medium |
+| C6 | `orch session` CLI, `/api/sessions` fields, codes and app titles (`set_session_title`) | Small |
+| C7 | `orch session join` for other engines, with lease and heartbeat | Small |
+
+Open: a probe of `set_session_title` from a child and from the parent; the first engine after Claude Code; a team owner.
