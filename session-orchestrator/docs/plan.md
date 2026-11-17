@@ -1115,8 +1115,8 @@ Each session is one entry in a session registry, `store/sessions/<id>/session.js
 | Entry | `id`, `code`, `engine` (kind, `sessionId`, `appId`: references only), `parent`, `title`, `owner`, `tags`, `stream`, `work`, `role`, `settings`, `lifecycle` (phase and a copy of the B2 state), `created`, `updated`. Children are a query |
 | Replaces | `meta.json` and `control.json` (store version 3) |
 | Engine first | If the engine gives a function (attach, title, Remote Control, archive, transcript), the adapter uses it. The registry keeps no copy of an engine fact; `adapter.Read` gets it on demand |
-| Adapter | The direction decides. Code that touches a model or a model session goes through `IEngineAdapter`: `Create`, `Attach`, `Open`, `Turn`, `Read`, `Set`, `Archive`, `Ask` (one-shot call for the docs and state checks). A call into our system (start the tray, write a record, post an envelope) needs no adapter, whoever makes it. Today only the Claude Code adapter |
-| Attach | Each adapter has its own attach. Claude Code: the official attach (`start_session`, app parent link and parent control) when the turn permits it (F1), else create and import. Codex later: its own attach, not in the Claude app. The registry records the parent for all engines |
+| Adapter | The direction decides. Code that touches a model or a model session goes through `IEngineAdapter`: `Create`, `Open`, `Turn`, `Read`, `Set`, `Archive`, `Ask` (one-shot call for the docs and state checks). A call into our system (start the tray, write a record, post an envelope) needs no adapter, whoever makes it. Today only the Claude Code adapter |
+| Start | One start path: the chat (`spawn_child`), our app (UI, tray) and `orch new` call `ISessionRegistry.Create`, which calls adapter `Create` and `Open`. No official attach (`start_session`): F1 permits it only in a turn that the user started, and the app tree is not needed. A session started by hand joins with `orch enable` (a call into our system, no adapter). If the app adds a parent flag to the import (#106214), `Open` uses it |
 | Store root | The registry, the run state and the event stream stay under one store root (`ORCH_STORE`, else `<orch home>/store`). `StoreBackends.Create(root)` makes the three ports. Engine data stays in the engine |
 | Permissions | Setting `permissions`: `auto` (default) or `bypass`. The adapter maps it to the engine flag (`--permission-mode auto` or `bypassPermissions`). It is copied at create like each setting, and a change to `bypass` is a high-risk event. It does not permit `start_session` in a program turn |
 | Settings | Each setting can be set at create and updated by the parent or the user. A setting not set at create is a copy of the parent value; a root copies `policy.json` `sessionDefaults` |
@@ -1133,7 +1133,7 @@ Code parts (proposal):
 | C2 | Store version 3: `meta.json` and `control.json` into `session.json` | Small |
 | C3 | Settings schema, copy at create, `mcp__orch__configure`, the settings block in the brief | Medium |
 | C4 | `templates/modes/` and the readers of the four axes | Medium |
-| C5 | `IEngineAdapter` (create, attach, open, turn, read, set, archive) with the Claude Code adapter. No other code calls an engine | Medium |
+| C5 | `IEngineAdapter` (create, open, turn, read, set, archive) with the Claude Code adapter. No other code calls an engine | Medium |
 | C6 | `orch session` CLI, `/api/sessions` fields, codes and app titles (`set_session_title`) | Small |
 | C7 | `orch session join` for other engines, with lease and heartbeat | Small |
 
