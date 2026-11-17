@@ -268,6 +268,31 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 .mini .two { display: flex; gap: 6px; }
 .mini .two .btn { height: 34px; font-size: 12px; }
 
+/* Picks */
+.opts[data-key] .opt { cursor: pointer; }
+.opts[data-key] .opt:hover { background: var(--surf); }
+.opts[data-key] .opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt.pick { background: var(--surf); box-shadow: var(--sh-raise-sm); border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: -2px; }
+.opt .mine { display: none; margin-left: 8px; font: 700 10px var(--f-body); text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 999px; background: var(--accent); color: var(--on-accent); vertical-align: 1px; }
+.opt.pick .mine { display: inline-block; }
+.picks { position: sticky; bottom: 12px; z-index: 5; margin-top: 28px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 12px; border-radius: 14px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); }
+.picks .vals { flex: 1 1 260px; }
+.picks button { border: 0; border-radius: 999px; padding: 8px 14px; font: 600 13px var(--f-body); background: var(--accent); color: var(--on-accent); cursor: pointer; }
+.picks button.ghost { background: var(--sunken); color: var(--sunken-tx); box-shadow: var(--sh-carve); }
+/* G1 load flow */
+.wsh { position: absolute; right: 12px; bottom: 52px; width: 230px; border-radius: 12px; box-shadow: 0 12px 30px -10px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.04); pointer-events: none; }
+.wid { box-shadow: none !important; }
+.wid .ph { position: absolute; inset: 8px; display: flex; flex-direction: column; gap: 7px; pointer-events: none; opacity: 0; }
+.wid .ph i { display: block; border-radius: var(--r); flex: none; }
+.wid .ph[data-k="empty"] i { visibility: hidden; }
+.wid .ph[data-k="shadows"] i { background: transparent; box-shadow: var(--sh-carve); opacity: .55; }
+.wid .ph[data-k="skeleton"] i { background: var(--sunken); box-shadow: var(--sh-carve); background-image: linear-gradient(100deg, transparent 30%, var(--shine) 50%, transparent 70%); background-size: 200% 100%; animation: shim 1.1s linear infinite; }
+@keyframes shim { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+.fbtn { position: absolute; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); pointer-events: none; opacity: 0; transform: scale(.4); transition: opacity 140ms ease-out, transform 220ms cubic-bezier(.3,1.5,.6,1); }
+.fbtn.on { opacity: 1; transform: none; animation: fpulse 1s ease-in-out infinite; }
+@keyframes fpulse { 0%,100% { box-shadow: 0 0 6px rgba(255,106,26,.3), 0 0 0 0 rgba(255,106,26,.5), 0 6px 14px -4px rgba(0,0,0,.45); } 50% { box-shadow: 0 0 6px rgba(255,106,26,.3), 0 0 0 11px rgba(255,106,26,0), 0 6px 14px -4px rgba(0,0,0,.45); } }
+.tl { font: 12px var(--f-mono); color: var(--page-mu); min-height: 1.4em; margin-top: 6px; }
+
 /* Answer box */
 .answer { margin-top: 36px; padding: 18px 20px; border-radius: 18px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); display: grid; gap: 8px; }
 .answer code { display: block; padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); overflow-x: auto; white-space: pre; }
@@ -438,14 +463,21 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <div class="head"><span class="tag">S1 · S2</span><h2>Two static fixes</h2></div>
       <p><b>S1:</b> on Session status, put Message and Event stream in the page flow, above Stop and Archive. Nothing covers the buttons.</p>
       <p><b>S2:</b> give the skip button the raised look of the other buttons, with a muted icon. It must not look disabled.</p>
+      <div class="opts" data-key="S" data-nonow>
+        <div class="opt rec" data-v="both"><b>✓</b><span class="t">Both</span><span class="d">S1 and S2.</span></div>
+        <div class="opt" data-v="S1 only"><b>1</b><span class="t">S1 only</span><span class="d">Fix the overlap. Keep the skip button.</span></div>
+        <div class="opt" data-v="S2 only"><b>2</b><span class="t">S2 only</span><span class="d">Change the skip button. Keep the layout.</span></div>
+        <div class="opt" data-v="no"><b>–</b><span class="t">No</span><span class="d">Keep both as they are.</span></div>
+      </div>
     </div>
   </section>
   <div class="answer">
     <h2>How to answer</h2>
     <p>Name an option for each item, or "no". For example:</p>
     <code>M1 A, M2 A, M3 A, M5 A, M6 A, M7 all, S1 yes, S2 yes</code>
-    <p class="sub">My recommendation is the line above. I build each item as one commit, with a self-test screenshot.</p>
+    <p class="sub">Click an option card to pick it. The bar at the bottom shows your picks. Copy it into the chat. My recommendation is the line above.</p>
   </div>
+  <div class="picks" data-scope="p-components"><b>Your picks</b><div class="vals"></div><button type="button" class="cp">Copy</button><button type="button" class="ghost rs">Reset</button></div>
   </div>
   <div class="panel" id="p-transitions" role="tabpanel" aria-labelledby="tab-transitions" hidden>
   <p class="intro">Two kinds of screen change: a tab change in the app bar (same level), and a move to a deeper page and back.</p>
@@ -504,24 +536,29 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     <h2>How to answer</h2>
     <p>Name an option for each item. For example:</p>
     <code>T1 A, T2 A</code>
-    <p class="sub">T1 is for the app bar tabs (same level). T2 is for a move to a deeper page and back.</p>
+    <p class="sub">T1 is for the app bar tabs (same level). T2 is for a move to a deeper page and back. Click an option card to pick it.</p>
   </div>
+  <div class="picks" data-scope="p-transitions"><b>Your picks</b><div class="vals"></div><button type="button" class="cp">Copy</button><button type="button" class="ghost rs">Reset</button></div>
   </div>
   <div class="panel" id="p-grow" role="tabpanel" aria-labelledby="tab-grow" hidden>
   <p class="intro">The grow of the tray widget at show, and the shrink at hide. The build works; this tab is for the tweaks.</p>
   <section class="item" id="g1">
     <div>
-      <div class="desk">
+      <div class="desk" id="desk"><div class="wsh" id="wsh"></div>
         <div class="wid" id="wid"><div class="in" id="wid-in">
           <div class="crd hdr">Home</div>
           <div class="crd ringc"><i></i><span class="sub">8 wait</span></div>
           <div class="crd rw"></div><div class="crd rw"></div><div class="crd rw"></div>
           <div class="sp"></div>
           <div class="ab"><b></b></div>
-        </div></div>
+        </div>
+        <div class="ph" id="wid-ph" data-k="shadows"><i style="height:34px"></i><i style="height:96px"></i><i style="height:40px"></i><i style="height:40px"></i><i style="height:40px"></i></div>
+        </div>
+        <div class="fbtn" id="fbtn"></div>
         <div class="taskbar"><span>ENG</span><span class="tdot" title="Tray icon"></span><span>4:00 PM</span></div>
       </div>
       <div class="btns" style="margin-top:10px"><button id="g-show">Show</button><button id="g-hide">Hide</button><button id="g-loop" class="on">Loop</button></div>
+      <div class="tl" id="g-tl"></div>
     </div>
     <div class="spec tweak">
       <div class="head"><span class="tag">G1 · tray</span><h2>Widget grow and shrink</h2></div>
@@ -533,18 +570,31 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <svg class="curve" viewBox="0 0 220 120" role="img" aria-label="Curve of the grow: height against time"><line x1="10" y1="100" x2="210" y2="100"/><line x1="10" y1="20" x2="210" y2="20"/><path id="g-path"/></svg>
       <label for="g-ms">Show time: <b id="g-ms-v">280 ms</b><input id="g-ms" type="range" min="100" max="800" step="20" value="280"></label>
       <label for="g-hms">Hide time: <b id="g-hms-v">200 ms</b><input id="g-hms" type="range" min="80" max="600" step="20" value="200"></label>
+      <div><div class="sub" style="margin-bottom:4px">Shadow</div>
+        <div class="sw" id="g-shadow"><button aria-pressed="false" data-v="pop">Pop at end (now)</button><button aria-pressed="true" data-v="fade">Fade in after</button><button aria-pressed="false" data-v="with">Grow with</button></div></div>
+      <label for="g-sms">Shadow fade: <b id="g-sms-v">220 ms</b><input id="g-sms" type="range" min="80" max="600" step="20" value="220"></label>
+      <div class="head" style="margin-top:8px"><span class="tag">G1 · load</span><h2>Open before the page is ready</h2></div>
+      <p>If the page is ready, the widget only grows. If not, the home button floats and pulses, then the widget grows behind it. The content fades in when it is ready, but never during the grow.</p>
+      <div><div class="sub" style="margin-bottom:4px">Page at open</div>
+        <div class="sw" id="g-page"><button aria-pressed="true" data-v="slow">Not ready</button><button aria-pressed="false" data-v="ready">Ready</button></div></div>
+      <label for="g-load">Load time (sample only): <b id="g-load-v">1200 ms</b><input id="g-load" type="range" min="0" max="3000" step="100" value="1200"></label>
+      <label for="g-pms">Button pulse before the grow: <b id="g-pms-v">500 ms</b><input id="g-pms" type="range" min="0" max="1200" step="50" value="500"></label>
+      <div><div class="sub" style="margin-bottom:4px">While it loads</div>
+        <div class="sw" id="g-ph"><button aria-pressed="false" data-v="empty">Empty</button><button aria-pressed="true" data-v="shadows">Shadows</button><button aria-pressed="false" data-v="skeleton">Skeleton</button></div></div>
+      <label for="g-fms">Content fade in: <b id="g-fms-v">180 ms</b><input id="g-fms" type="range" min="0" max="600" step="20" value="180"></label>
       <div class="opts">
         <div class="opt"><b>R</b><span class="t">Reveal</span><span class="d">The page stays still. The top edge goes up and shows more of it. This is the build now.</span></div>
         <div class="opt"><b>+</b><span class="t">Reveal + rise or fade</span><span class="d">Reveal, and the page also rises 40 px or fades in. Softer.</span></div>
         <div class="opt"><b>Z</b><span class="t">Resize or stretch</span><span class="d">Resize changes the real height, so the page lays out again on each frame. Stretch squashes the page. Both cost more in the app.</span></div>
       </div>
+      <p class="cost">Build cost in the app. The Windows shadow cannot fade: it is on or off. "Fade in after" and "Grow with" need a second, see-through window behind the widget that draws the shadow. The floating button is a small native window too, because the page is not there yet. The skeleton and the content fade are CSS in the page.</p>
       <div class="vals" id="g-vals"></div>
     </div>
   </section>
   <div class="answer">
     <h2>How to answer</h2>
     <p>Copy the value line above, or say the change. For example:</p>
-    <code>G1: reveal + rise, quint out, show 340 ms, hide 180 ms</code>
+    <code>G1: reveal + rise, quint out, show 340 ms, hide 180 ms, shadow fade in after 220 ms; load: pulse 500 ms, shadows, content fade 180 ms</code>
   </div>
   </div>
 </main>
@@ -820,10 +870,75 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   doc.querySelector(".back").addEventListener("click", back);
 })();
 
+// ===== Picks =====
+(function () {
+  var KEY = "motion-picks-v1", saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (_) { saved = {}; }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (_) { } }
+  var groups = [];
+  ["p-components", "p-transitions"].forEach(function (pid) {
+    document.querySelectorAll("#" + pid + " section.item").forEach(function (sec) {
+      var opts = sec.querySelector(".opts"); if (!opts) return;
+      var key = opts.dataset.key;
+      if (!key) { var tag = sec.querySelector(".tag"); key = tag ? tag.textContent.split("·")[0].trim() : sec.id; opts.dataset.key = key; }
+      if (!opts.hasAttribute("data-nonow")) {
+        var n = document.createElement("div"); n.className = "opt"; n.dataset.v = "now";
+        n.innerHTML = '<b>N</b><span class="t">Keep now</span><span class="d">No change. Keep the current build.</span>';
+        opts.appendChild(n);
+      }
+      var g = { key: key, panel: pid, sec: sec, opts: [], rec: null };
+      opts.querySelectorAll(".opt").forEach(function (o) {
+        if (!o.dataset.v) o.dataset.v = o.querySelector("b").textContent.trim();
+        o.tabIndex = 0; o.setAttribute("role", "button");
+        var m = document.createElement("span"); m.className = "mine"; m.textContent = "your pick";
+        o.querySelector(".t").appendChild(m);
+        if (o.classList.contains("rec") && !g.rec) g.rec = o.dataset.v;
+        o.addEventListener("click", function () { pick(g, o.dataset.v, true); });
+        o.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(g, o.dataset.v, true); } });
+        g.opts.push(o);
+      });
+      groups.push(g);
+    });
+  });
+  function label(g, v) { return v === "now" ? "now" : g.key === "M7" && v === "A" ? "all" : v; }
+  function pick(g, v, user) {
+    g.value = v;
+    g.opts.forEach(function (o) { var on = o.dataset.v === v; o.classList.toggle("pick", on); o.setAttribute("aria-pressed", on ? "true" : "false"); });
+    if (user) {
+      saved[g.key] = v; save();
+      var sw = g.sec.querySelector(".sw"), b = sw && sw.querySelector('button[data-v="' + v.toLowerCase() + '"]');
+      if (b) b.click();
+    }
+    bars();
+  }
+  function bars() {
+    document.querySelectorAll(".picks").forEach(function (bar) {
+      bar.querySelector(".vals").textContent = groups.filter(function (g) { return g.panel === bar.dataset.scope; })
+        .map(function (g) { return g.key + " " + label(g, g.value); }).join(", ");
+    });
+  }
+  document.querySelectorAll(".picks").forEach(function (bar) {
+    bar.querySelector(".cp").addEventListener("click", function () {
+      var t = bar.querySelector(".vals").textContent, btn = this;
+      function ok() { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy"; }, 1200); }
+      try { navigator.clipboard.writeText(t).then(ok, function () { sel(); }); } catch (_) { sel(); }
+      function sel() { var r = document.createRange(); r.selectNodeContents(bar.querySelector(".vals")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Press Ctrl+C"; }
+    });
+    bar.querySelector(".rs").addEventListener("click", function () {
+      groups.forEach(function (g) { if (g.panel === bar.dataset.scope) { delete saved[g.key]; pick(g, g.rec, false); } });
+      save();
+    });
+  });
+  groups.forEach(function (g) { pick(g, saved[g.key] || g.rec, false); });
+})();
+
 // ===== G1: tray grow =====
 (function () {
-  var wid = document.getElementById("wid"), inner = document.getElementById("wid-in");
-  var H = 440, st = { mode: "reveal", curve: "cubic", ms: 280, hms: 200 }, loop = true, timer = 0, anim = 0, onTab = false;
+  var desk = document.getElementById("desk"), wid = document.getElementById("wid"), inner = document.getElementById("wid-in"),
+      ph = document.getElementById("wid-ph"), wsh = document.getElementById("wsh"), fbtn = document.getElementById("fbtn"), tl = document.getElementById("g-tl");
+  var H = 440;
+  var st = { mode: "reveal", curve: "cubic", ms: 280, hms: 200, shadow: "fade", sms: 220, page: "slow", load: 1200, pms: 500, ph: "shadows", fms: 180 };
+  var loop = true, onTab = false, tok = 0, timers = [];
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   var curves = {
     cubic: function (t) { return 1 - Math.pow(1 - t, 3); },
@@ -834,58 +949,120 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   };
   var names = { cubic: "cubic out", quint: "quint out", back: "overshoot", spring: "spring", linear: "linear" };
   var modes = { reveal: "reveal", rise: "reveal + rise", fade: "reveal + fade", resize: "resize", stretch: "stretch" };
-  function apply(p) {
-    var cl = Math.max(0, Math.min(1, p));
-    wid.style.clipPath = ""; wid.style.height = H + "px"; wid.style.transform = ""; inner.style.transform = ""; inner.style.opacity = "";
+  // p: grow level. c: content level (0 = placeholder, 1 = content). s: shadow level.
+  var cur = { p: 1, c: 1, s: 1 };
+  function render() {
+    var p = cur.p, cl = Math.max(0, Math.min(1, p)), mo = 1, ty = 0;
+    wid.style.clipPath = ""; wid.style.height = H + "px"; wid.style.transform = "";
     wid.style.visibility = p <= 0.001 ? "hidden" : "visible";
-    if (st.mode === "resize") { wid.style.height = Math.max(0, H * p) + "px"; return; }
-    if (st.mode === "stretch") { wid.style.transform = "scaleY(" + Math.max(0, p) + ")"; return; }
-    wid.style.clipPath = "inset(" + ((1 - cl) * 100) + "% 0 0 0 round 12px)";
-    if (st.mode === "rise") inner.style.transform = "translateY(" + ((1 - p) * 40) + "px)";
-    if (st.mode === "fade") inner.style.opacity = String(cl);
+    if (st.mode === "resize") wid.style.height = Math.max(0, H * p) + "px";
+    else if (st.mode === "stretch") wid.style.transform = "scaleY(" + Math.max(0, p) + ")";
+    else {
+      wid.style.clipPath = "inset(" + ((1 - cl) * 100) + "% 0 0 0 round 12px)";
+      if (st.mode === "rise") ty = (1 - p) * 40;
+      if (st.mode === "fade") mo = cl;
+    }
+    [inner, ph].forEach(function (el) { el.style.transform = ty ? "translateY(" + ty + "px)" : ""; });
+    inner.style.opacity = String(mo * cur.c);
+    ph.style.opacity = String(mo * (1 - cur.c));
+    var sh = st.mode === "resize" || st.mode === "stretch" ? Math.max(0, p) : cl;
+    if (st.shadow === "with") { wsh.style.height = H * sh + "px"; wsh.style.opacity = p > 0.001 ? "1" : "0"; }
+    else { wsh.style.height = H + "px"; wsh.style.opacity = String(cur.s); }
   }
-  // Show: the curve. Hide: the mirror of the curve (an ease in). The overshoot and the spring hide with the cubic curve.
-  function run(show, done) {
-    cancelAnimationFrame(anim);
-    var dur = show ? st.ms : st.hms, start = performance.now();
-    var f = curves[st.curve], g = st.curve === "back" || st.curve === "spring" ? curves.cubic : f;
-    if (reduce) { apply(show ? 1 : 0); if (done) done(); return; }
+  function later(ms, fn) { var id = tok; timers.push(setTimeout(function () { if (id === tok) fn(); }, ms)); }
+  function tween(key, to, ms, ease, done) {
+    var id = tok, from = cur[key], start = performance.now();
+    if (reduce || ms <= 0) { cur[key] = to; render(); if (done) done(); return; }
     (function step(now) {
+      if (id !== tok) return;
+      var t = Math.min(1, (now - start) / ms);
+      cur[key] = from + (to - from) * ease(t); render();
+      if (t < 1) requestAnimationFrame(step); else if (done) done();
+    })(start);
+  }
+  function stop() { tok++; timers.forEach(clearTimeout); timers = []; }
+  var t0 = 0, log = [];
+  function mark(s) { log.push(Math.round(performance.now() - t0) + " ms " + s); tl.textContent = log.join(" · "); }
+  function placeBtn() {
+    var b = wid.querySelector(".ab b"), keep = [wid.style.transform, wid.style.height];
+    wid.style.transform = ""; wid.style.height = H + "px";
+    var d = desk.getBoundingClientRect(), r = b.getBoundingClientRect();
+    wid.style.transform = keep[0]; wid.style.height = keep[1];
+    fbtn.style.left = (r.left - d.left) + "px"; fbtn.style.top = (r.top - d.top) + "px";
+  }
+  function open(done) {
+    stop(); t0 = performance.now(); log = [];
+    var loaded = st.page === "ready", grown = false, f = curves[st.curve];
+    cur.p = 0; cur.s = 0; cur.c = loaded ? 1 : 0; render();
+    ph.dataset.k = st.ph;
+    function contentIn() {
+      mark("content in");
+      fbtn.classList.remove("on");
+      tween("c", 1, st.fms, curves.cubic, done);
+    }
+    function grow() {
+      mark("grow");
+      tween("p", 1, st.ms, f, function () {
+        grown = true; mark("grow end");
+        if (st.shadow === "fade") tween("s", 1, st.sms, curves.cubic); else cur.s = 1, render();
+        if (loaded) { if (cur.c < 1) contentIn(); else { fbtn.classList.remove("on"); if (done) done(); } }
+      });
+    }
+    if (!loaded) later(st.load, function () {
+      loaded = true; mark("page ready");
+      if (grown) contentIn();
+    });
+    if (loaded) grow();
+    else {
+      placeBtn(); fbtn.classList.add("on"); mark("button");
+      later(st.pms, function () { if (loaded) cur.c = 1; grow(); });
+    }
+  }
+  function close(done) {
+    stop(); t0 = performance.now(); log = []; mark("hide");
+    fbtn.classList.remove("on");
+    var f = curves[st.curve], g = st.curve === "back" || st.curve === "spring" ? curves.cubic : f;
+    if (st.shadow === "fade") tween("s", 0, Math.min(120, st.hms), curves.linear); else { cur.s = 0; }
+    var id = tok, start = performance.now(), dur = st.hms;
+    if (reduce) { cur.p = 0; render(); if (done) done(); return; }
+    (function step(now) {
+      if (id !== tok) return;
       var t = Math.min(1, (now - start) / dur);
-      apply(show ? f(t) : g(1 - t));
-      if (t < 1) anim = requestAnimationFrame(step); else if (done) done();
+      cur.p = g(1 - t); render();
+      if (t < 1) requestAnimationFrame(step); else { mark("gone"); if (done) done(); }
     })(start);
   }
   function cycle() {
-    clearTimeout(timer);
-    run(true, function () { timer = setTimeout(function () { run(false, function () { timer = setTimeout(function () { if (loop && onTab) cycle(); }, 500); }); }, 1100); });
+    open(function () { later(1300, function () { close(function () { later(700, function () { if (loop && onTab) cycle(); }); }); }); });
   }
   function draw() {
     var f = curves[st.curve], d = "";
     for (var i = 0; i <= 60; i++) { var t = i / 60; d += (i ? "L" : "M") + (10 + t * 200).toFixed(1) + " " + (100 - f(t) * 80).toFixed(1); }
     document.getElementById("g-path").setAttribute("d", d);
-    document.getElementById("g-ms-v").textContent = st.ms + " ms";
-    document.getElementById("g-hms-v").textContent = st.hms + " ms";
-    document.getElementById("g-vals").textContent = "G1: " + modes[st.mode] + ", " + names[st.curve] + ", show " + st.ms + " ms, hide " + st.hms + " ms";
+    ["ms", "hms", "sms", "load", "pms", "fms"].forEach(function (k) { document.getElementById("g-" + k + "-v").textContent = st[k] + " ms"; });
+    var sh = st.shadow === "pop" ? "shadow pop at end" : st.shadow === "with" ? "shadow grow with" : "shadow fade in after " + st.sms + " ms";
+    document.getElementById("g-vals").textContent = "G1: " + modes[st.mode] + ", " + names[st.curve] + ", show " + st.ms + " ms, hide " + st.hms + " ms, " + sh +
+      "; load: pulse " + st.pms + " ms, " + st.ph + ", content fade " + st.fms + " ms";
   }
+  function restart() { if (loop && onTab) cycle(); else open(); }
   function seg(id, key) {
     document.getElementById(id).addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;
       this.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
-      st[key] = b.dataset.v; draw(); if (loop) cycle(); else run(true);
+      st[key] = b.dataset.v; draw(); restart();
     });
   }
-  seg("g-mode", "mode"); seg("g-curve", "curve");
-  document.getElementById("g-ms").addEventListener("input", function () { st.ms = +this.value; draw(); });
-  document.getElementById("g-hms").addEventListener("input", function () { st.hms = +this.value; draw(); });
-  document.getElementById("g-show").addEventListener("click", function () { clearTimeout(timer); run(true); });
-  document.getElementById("g-hide").addEventListener("click", function () { clearTimeout(timer); run(false); });
-  document.getElementById("g-loop").addEventListener("click", function () { loop = !loop; this.classList.toggle("on", loop); if (loop) cycle(); else clearTimeout(timer); });
-  draw();
-  apply(1);
+  seg("g-mode", "mode"); seg("g-curve", "curve"); seg("g-shadow", "shadow"); seg("g-page", "page"); seg("g-ph", "ph");
+  ["ms", "hms", "sms", "load", "pms", "fms"].forEach(function (k) {
+    document.getElementById("g-" + k).addEventListener("input", function () { st[k] = +this.value; draw(); });
+  });
+  document.getElementById("g-show").addEventListener("click", function () { open(); });
+  document.getElementById("g-hide").addEventListener("click", function () { close(); });
+  document.getElementById("g-loop").addEventListener("click", function () { loop = !loop; this.classList.toggle("on", loop); if (loop) cycle(); else stop(); });
+  draw(); render();
   document.addEventListener("tabshown", function (e) {
     onTab = e.detail === "grow";
-    if (onTab && loop) cycle(); else { clearTimeout(timer); cancelAnimationFrame(anim); apply(1); }
+    if (onTab && loop) cycle(); else { stop(); fbtn.classList.remove("on"); cur.p = 1; cur.c = 1; cur.s = 1; render(); }
   });
   if (location.hash === "#grow") { onTab = true; if (loop) cycle(); }
 })();
