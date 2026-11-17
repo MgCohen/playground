@@ -85,6 +85,10 @@ public static class SelfTest
         var backdrop = JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync(
             "(s => s.position + ' ' + s.zIndex + ' ' + s.height + ' ' + (s.backgroundImage.startsWith('linear-gradient') ? 'gradient' : 'none'))(getComputedStyle(document.body, '::after'))"));
         checks.Add(new Check("app-bar-backdrop", backdrop == "fixed 9 92px gradient", $"body::after {backdrop} (expect fixed 9 92px gradient)", ""));
+        checks.Add(await ScrollEnd(web));
+        await web.ExecuteScriptAsync($"{Go}('')");
+        await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
+        await Task.Delay(800);
         var corner = Path.Combine(folder, "tray-desktop-corner.png");
         checks.Add(new Check("desktop-corner", Corner(form, corner), "screenshot of the screen corner with the widget and the tray", corner));
         checks.Add(await Pin(form, web, folder));
@@ -93,6 +97,33 @@ public static class SelfTest
         foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
         await File.WriteAllTextAsync(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
         return checks.All(c => c.Pass) ? 0 : 1;
+    }
+
+    /// <summary>
+    /// At full scroll, the last content of each view ends above the backdrop of the app bar and above the home button.
+    /// The app bar is sticky in the page flow, so its own space is the bottom padding of the page.
+    /// </summary>
+    static async Task<Check> ScrollEnd(CoreWebView2 web)
+    {
+        var lines = new List<string>();
+        var pass = true;
+        foreach (var view in new[] { "", "cards", "stream", "sessions" })
+        {
+            await web.ExecuteScriptAsync($"{Go}('{view}')");
+            await Task.Delay(1500);
+            await web.ExecuteScriptAsync("window.scrollTo(0, 1e6)");
+            await Task.Delay(400);
+            var m = JsonSerializer.Deserialize<double[]>(await web.ExecuteScriptAsync("""
+                (() => { const page = document.querySelector('.page');
+                  const kids = [...page.children].filter(e => !e.matches('.nav2') && e.getBoundingClientRect().height > 0);
+                  const fade = innerHeight - parseFloat(getComputedStyle(document.body, '::after').height);
+                  return [Math.max(...kids.map(e => e.getBoundingClientRect().bottom)), fade, document.querySelector('.nav2 .home').getBoundingClientRect().top]; })()
+                """))!;
+            var ok = m[0] <= m[1] && m[0] <= m[2];
+            pass &= ok;
+            lines.Add($"/{view} last {m[0]:0}{(ok ? "" : " (under the bar)")}");
+        }
+        return new Check("scroll-end", pass, $"{string.Join(", ", lines)}; each must end above the backdrop and the home button", "");
     }
 
     /// <summary>The pin in the page header: a click removes the pin (TopMost off), a second click sets it again.</summary>
