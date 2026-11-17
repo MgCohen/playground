@@ -893,3 +893,44 @@ A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked w
 | Inbox accept | ✅ a `review approve` to child 3, an `ack` for the root report; the inbox is empty after |
 | `blocked.json` | ✅ no file in any session folder |
 
+
+## R1 result: document render and preview, first setup (2026-11-17)
+
+Branch `orch/session-d7cf20ac` on top of Q1 (`orch/session-913e5c4c`). This is a first setup for review with the user, not a final design. Design page: `docs/render-design.html` (https://claude.ai/artifact/VvGbvARDGC1gxmfUqT99af).
+
+| Part | Result |
+|---|---|
+| Render spec | `templates/<kind>/view.json` for each of the 10 kinds: `label`, `icon`, `tone`, optional `toneBy`, `document` (title, subtitle, facts, blocks) and `preview` (title, line, well, chips, list, pill, progress) |
+| Render model | `Orchestrator.Core.Templates.Views`: `Document(set, kind, fields)` gives a `DocumentModel`, `Preview(set, kind, fields)` gives a `PreviewModel`. `TemplateSet` reads `view.json` into `Template.View` |
+| Looks | A field spec has `as`: `text`, `code`, `well`, `list`, `steps`, `chips`, `links`, `pill` or `progress`. A pill maps each value to a color token (`tones`) |
+| Titles | A title is a list of templates in the `render.md` syntax. The model uses the first one that has all its fields. `{{render:kind}}` is the first line of the render file that the field names (for a notice) |
+| Unit tests | `ViewTests`: one test for each kind with its `example.json`, plus checks that each view names only schema fields and gives a title. 249 of 249 pass |
+| Design page | `docs/render-design/page.html` is the source and `docs/render-design/build.py` builds the page. The build embeds each `view.json`, `example.json` and the inbox tokens of `docs/inbox-design.html` (branch `orch/session-06ade234`) |
+
+### Render of each kind
+
+| Kind | Document: title · facts · blocks | Preview: title · well or list · pill |
+|---|---|---|
+| question | question · Risk, Default · Context, Snippet, Options (default marked), Recommendation | question · Recommendation, else Context · options chips, Risk |
+| answer | text, subtitle question · By, Then · Reason, Source | text · Reason, else Source · By |
+| review | question, else "Review of <decision>" · Verdict, About · Direction, Branch, Base, Next branch | question · Direction · Verdict |
+| report | summary · State · Blockers (failed tone), Done, Next, Links, Details | summary · Blockers, else Done, else Next · State |
+| update | summary, subtitle step · Progress | summary · progress bar |
+| brief | title · Agent, Folder, Worktree, Background, Allow defaults · Goal, Scope, Done when, Skills | title · Done when |
+| notice | first line of `render/<kind>.md` · Kind, Session, Child · full render text | first line · Kind |
+| plan | title · none · Context, Steps | title · first 4 steps |
+| message | text · none · none | text |
+| ack | "<state> · <by>" · State, By | "<state> · <by>" |
+
+A report with state `blocked` uses the tone `failed` and the icon `alert` (`toneBy`). The stream row uses the preview title and `line`.
+
+### Findings and notes
+
+- The A4 views do not use the model yet. The integration child replaces `Open.razor` `Rows`, `CardPreview.razor` `Well()` and the kind part of `Ui.Look` with `Views`.
+- `meta.json` `card.quick` and the preview spec overlap. Keep `card` for the actions (accept, refuse) only, and remove `quick` after the views use `Views`.
+- The first sentence of a notice render is not a good title: the question text has a `?`. The model uses the first line.
+- Forms (later part): a form can use the same `view.json` field order and labels, with the input type from `schema.json`.
+
+### Open questions
+
+- The user reviews the design page: the labels, the order, the well of each card, and the titles of a notice and an ack (decision sent with risk high, no default).

@@ -1,0 +1,239 @@
+<title>Orch Message Renders</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one band for each template kind. Each band shows the full document (Open view),
+   the card preview (pile) and the stream row, side by side; they stack at phone width.
+   Theme: the tokens of docs/inbox-design.html (Porcelain Orange), copied as they are. */
+/*TOKENS*/
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--page-tx); font: 14px/1.45 var(--f-body); }
+main { padding-block: 24px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 1320px; margin: 0 auto; }
+h1 { font: 800 30px/1 var(--f-disp); letter-spacing: .02em; margin: 0 0 8px; }
+.lede { margin: 0 0 18px; color: var(--page-mu); max-width: 72ch; }
+.lede code, .spec code { font: 12px var(--f-mono); }
+nav.kinds { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 28px; }
+nav.kinds a { font: 600 12.5px var(--f-body); color: var(--page-tx); text-decoration: none; border: 1px solid var(--page-line); border-radius: 999px; padding: 6px 12px; }
+nav.kinds a:hover, nav.kinds a:focus-visible { border-color: var(--accent); outline: none; }
+section.kind { display: grid; gap: 12px; padding-block: 22px; border-top: 1px solid var(--page-line); scroll-margin-top: 12px; }
+.kh { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.kh h2 { font: 800 22px/1 var(--f-disp); letter-spacing: .03em; margin: 0; }
+.kh p { margin: 0; color: var(--page-mu); font-size: 13px; }
+.trio { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .trio { grid-template-columns: minmax(0, 1fr); } }
+.col { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.cap { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--page-mu); }
+.spec { font-size: 12.5px; color: var(--page-mu); margin: 4px 0 0; display: grid; gap: 3px; }
+.spec b { color: var(--page-tx); font-weight: 600; }
+
+/* ===== Screen surface (the canvas of the app) ===== */
+.scr { background: var(--canvas); color: var(--text); font: 13px/1.4 var(--f-body); border-radius: 26px; padding: 12px; display: grid; gap: 10px; min-width: 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 20px 40px -24px rgba(0,0,0,.4); }
+.scr svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.crd { background: var(--surf); box-shadow: var(--sh-raise); border-radius: var(--r); min-width: 0; }
+.well { background: var(--sunken); box-shadow: var(--sh-carve); color: var(--sunken-tx); border-radius: var(--r-sm); padding: 10px 12px; min-width: 0; }
+.well .sub { display: block; margin-bottom: 2px; }
+.gt { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--canvas-tx); margin: 2px 6px -4px; }
+.row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-width: 0; }
+.grow { flex: 1; min-width: 0; }
+.ell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.nm { font-weight: 600; display: block; }
+.sub { font-size: 11.5px; color: var(--muted); }
+.mono { font-family: var(--f-mono); font-size: 11.5px; }
+.pad { padding: 12px 14px; }
+.q { font-size: 19px; line-height: 1.25; font-weight: 600; letter-spacing: -.01em; text-wrap: balance; margin: 0; overflow-wrap: anywhere; }
+.subq { margin: 6px 0 0; color: var(--tx2); }
+.back { display: flex; align-items: center; gap: 4px; color: var(--canvas-tx); font-weight: 600; padding: 2px 4px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: var(--st); background: color-mix(in srgb, var(--st) 14%, transparent); border: 1px solid color-mix(in srgb, var(--st) 40%, transparent); white-space: nowrap; flex: none; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--st); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.chip { padding: 6px 11px; border-radius: 999px; background: var(--surf); box-shadow: var(--sh-raise-sm); font-weight: 500; }
+.well .chip { background: var(--surf); }
+.chip.def { outline: 2px solid var(--accent); outline-offset: -2px; font-weight: 600; }
+.facts { display: grid; }
+.kv { display: flex; align-items: center; gap: 10px; padding: 8px 14px; min-width: 0; }
+.kv + .kv { border-top: 1px solid var(--line-c); }
+.kv .k { flex: none; width: 104px; color: var(--muted); font-size: 12px; }
+.kv .v { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.bar { height: 8px; border-radius: 999px; background: var(--sunken); box-shadow: var(--sh-carve); overflow: hidden; flex: 1; min-width: 60px; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.doc { padding: 12px 14px; overflow-wrap: anywhere; }
+.doc p { margin: 0; white-space: pre-wrap; }
+.doc ul, .doc ol { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+.doc.tone-failed { box-shadow: var(--sh-raise), inset 3px 0 0 var(--failed); }
+pre.code { margin: 0; padding: 10px 12px; font: 12px/1.5 var(--f-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.code-inline { font: 12px var(--f-mono); }
+a.lnk { color: var(--new); text-decoration: none; font: 12px var(--f-mono); display: inline-flex; gap: 5px; align-items: center; }
+.acts { display: flex; gap: 8px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 42px; padding: 0 14px; border-radius: var(--r-sm); background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); font-weight: 600; flex: 1; }
+.btn.pri { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow); }
+.acts.off .btn { opacity: .38; box-shadow: none; }
+.ring { position: relative; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--sunken); box-shadow: var(--sh-carve); }
+.ring .fill { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(var(--rc, var(--accent)) calc(var(--p) * 1turn), transparent 0);
+  -webkit-mask: radial-gradient(circle, transparent calc(50% - var(--th) - 1px), #000 calc(50% - var(--th))); mask: radial-gradient(circle, transparent calc(50% - var(--th) - 1px), #000 calc(50% - var(--th))); }
+.ring .hole { position: absolute; inset: calc(var(--th) + 1px); border-radius: 50%; background: var(--surf); box-shadow: var(--sh-raise-sm); }
+.ring .rc { position: relative; z-index: 2; display: grid; place-items: center; color: var(--tx2); line-height: 1; }
+.ring .rc svg { width: 15px; height: 15px; }
+.card .in { padding: 4px 16px 16px; display: grid; gap: 12px; }
+.card .head { padding: 12px 14px 6px; }
+.tli { display: flex; gap: 10px; align-items: flex-start; }
+.tli .node { padding-top: 10px; }
+.ev { display: block; flex: 1; min-width: 0; padding: 10px 12px; text-decoration: none; color: inherit; }
+.ev .l1 { display: flex; gap: 8px; align-items: baseline; }
+.ev .l1 b { font-weight: 600; }
+.ev .t2 { color: var(--tx2); display: block; margin-top: 1px; }
+.ev .l2 { color: var(--muted); font-size: 12px; display: block; margin-top: 1px; }
+.ev .l3 { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.miniprog { width: 80px; height: 6px; }
+footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 80ch; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <h1>MESSAGE RENDERS</h1>
+  <p class="lede">The full document and the preview of each template kind, with the data of <code>templates/&lt;kind&gt;/example.json</code>. The page reads <code>templates/&lt;kind&gt;/view.json</code>: the same render spec that the C# model <code>Views</code> uses. A change to a spec changes this page and the UI together.</p>
+  <nav class="kinds" id="nav" aria-label="Kinds"></nav>
+  <div id="kinds"></div>
+  <footer>
+    <div><b>Not shown.</b> The actions (Accept, Other, Approve, Change, Got it, Reply) come from <code>meta.json</code> card and stay as they are in the A4 views. The forms to make a message are a later part.</div>
+    <div><b>Open points for review.</b> The labels, the order of the facts and blocks, which field goes in the well of the card, and the title of a notice and an ack.</div>
+  </footer>
+</main>
+
+<script type="application/json" id="data">/*DATA*/</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const ICON = {
+  q: '<path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.7V15M12 18h.01"/>',
+  check: '<path d="M5 12l5 5 9-11"/>', x: '<path d="M18 6L6 18M6 6l12 12"/>',
+  pen: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/>', mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>', doc: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
+  review: '<path d="M4 12l4 4 12-12"/><path d="M4 20h16"/>', chevL: '<path d="M15 6l-6 6l6 6"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  brief: '<path d="M4 7h16v12H4z"/><path d="M9 7V5h6v2"/>', chat: '<path d="M4 5h16v11H9l-5 4z"/>',
+  dot: '<circle cx="12" cy="12" r="2"/>', stream: '<path d="M4 7h16M4 12h10M4 17h13"/>',
+};
+const ACTS = { question: ['Other', 'pen', 'Accept', 'check'], answer: ['Change', 'pen', 'Approve', 'check'], plan: ['Change', 'pen', 'Approve', 'check'], report: ['Reply', 'pen', 'Got it', 'check'] };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ic = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[n] || ICON.dot}</svg>`;
+const tok = t => `var(--${t === 'muted' ? 'muted' : t})`;
+const ring = (p, size, th, center, color) => `<span class="ring" style="width:${size}px;height:${size}px;--p:${p};--th:${th}px;--rc:${color}"><span class="fill"></span><span class="hole"></span><span class="rc">${center}</span></span>`;
+const pill = (text, tone) => `<span class="pill" style="--st:${tok(tone || 'muted')}">${esc(text)}</span>`;
+
+// The same rules as src/Orchestrator.Core/Templates/View.cs.
+const present = v => v != null && v !== '' && !(Array.isArray(v) && v.length === 0);
+const text = v => v == null ? '' : typeof v === 'boolean' ? (v ? 'yes' : 'no') : Array.isArray(v) ? v.map(text).join(', ') : String(v);
+const items = v => v == null ? [] : Array.isArray(v) ? v.map(text).filter(Boolean) : text(v) ? [text(v)] : [];
+const percent = v => typeof v === 'number' ? (v > 0 && v <= 1 ? v * 100 : v) : null;
+function mustache(t, f) {
+  t = t.replace(/\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, k, body) => present(f[k]) && f[k] !== false ? mustache(body, f) : '');
+  return t.replace(/\{\{(\w+)\}\}/g, (_, k) => typeof f[k] === 'boolean' ? (f[k] ? 'True' : 'False') : text(f[k])).replace(/[\r\n]+$/, '');
+}
+const renderOf = (k, field, f) => { const r = (DATA[k].renders || {})[text(f[field])]; return r ? mustache(r, f) : null; };
+const firstLine = s => s.split('\n')[0].trim();
+function first(k, list, f) {
+  for (const t of list || []) {
+    const outside = t.replace(/\{\{#(\w+)\}\}[\s\S]*?\{\{\/\1\}\}/g, '');
+    if ([...outside.matchAll(/\{\{(\w+)\}\}/g)].some(m => !present(f[m[1]]))) continue;
+    const s = mustache(t.replace(/\{\{render:(\w+)\}\}/g, (_, fld) => firstLine(renderOf(k, fld, f) || '')), f).trim();
+    if (s) return s;
+  }
+  return null;
+}
+function look(v, f) { if (!v.toneBy) return [v.tone, v.icon]; const val = text(f[v.toneBy.field]); return [v.toneBy.values[val] || v.tone, (v.toneBy.icons || {})[val] || v.icon]; }
+function fact(s, f) {
+  const v = f[s.field]; if (!present(v)) return null;
+  const t = s.as === 'progress' && percent(v) != null ? `${+percent(v).toFixed(1)} %` : text(v);
+  return { field: s.field, label: s.label || s.field, text: t, as: s.as || 'text', tone: (s.tones || {})[t], value: v };
+}
+function block(k, s, f) {
+  if (s.render) { const t = renderOf(k, s.render, f); return t ? { label: s.label, as: s.as || 'text', text: t, items: [], tone: s.tone } : null; }
+  const v = f[s.field]; if (!present(v)) return null;
+  return { field: s.field, label: s.label || s.field, as: s.as || 'text', text: typeof v === 'string' ? v : text(v), items: items(v), tone: s.tone, marked: s.mark ? text(f[s.mark]) || null : null };
+}
+function documentModel(k, f) {
+  const v = DATA[k].view, d = v.document, [tone, icon] = look(v, f);
+  return { label: v.label, tone, icon, title: first(k, d.title, f) || v.label, subtitle: d.subtitle ? first(k, d.subtitle, f) : null,
+    facts: d.facts.map(s => fact(s, f)).filter(Boolean), blocks: d.blocks.map(s => block(k, s, f)).filter(Boolean) };
+}
+function previewModel(k, f) {
+  const v = DATA[k].view, p = v.preview, [tone, icon] = look(v, f);
+  const well = (p.well || []).map(w => items(f[w.field]).length ? { label: w.label, text: items(f[w.field]).slice(0, 3).join(' · ') } : null).find(Boolean) || null;
+  return { label: v.label, tone, icon, title: first(k, p.title, f) || v.label, line: p.line ? first(k, p.line, f) : null, well,
+    chips: p.chips ? items(f[p.chips.field]) : [], marked: p.chips && p.chips.mark ? text(f[p.chips.mark]) || null : null,
+    list: p.list ? items(f[p.list.field]).slice(0, p.list.max || 99) : [], pill: p.pill ? fact(p.pill, f) : null,
+    progress: p.progress ? percent(f[p.progress]) : null };
+}
+
+// Views
+const kindRing = (m, p, size) => ring(p, size, 3, ic(m.icon), tok(m.tone));
+function factValue(x) {
+  if (x.as === 'pill') return pill(x.text, x.tone);
+  if (x.as === 'code') return `<span class="code-inline">${esc(x.text)}</span>`;
+  if (x.as === 'progress') return `<span style="display:flex;gap:10px;align-items:center"><span class="bar"><i style="width:${Math.min(100, percent(x.value))}%"></i></span><span class="mono">${esc(x.text)}</span></span>`;
+  return esc(x.text);
+}
+function blockBody(b) {
+  switch (b.as) {
+    case 'code': return `<div class="well"><pre class="code" style="padding:0">${esc(b.text)}</pre></div>`;
+    case 'well': return `<div class="well">${esc(b.text)}</div>`;
+    case 'chips': return `<div class="chips">${b.items.map(o => `<span class="chip ${o === b.marked ? 'def' : ''}">${esc(o)}</span>`).join('')}</div>`;
+    case 'list': return `<div class="crd doc ${b.tone ? 'tone-' + b.tone : ''}"><ul>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
+    case 'steps': return `<div class="crd doc"><ol>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</ol></div>`;
+    case 'links': return `<div class="crd doc" style="display:grid;gap:6px">${b.items.map(i => `<a class="lnk" href="#">${ic('link')}${esc(i)}</a>`).join('')}</div>`;
+    default: return `<div class="crd doc"><p>${esc(b.text)}</p></div>`;
+  }
+}
+function docView(k, m) {
+  const acts = ACTS[k];
+  return `<div class="scr">
+    <span class="back">${ic('chevL')}Cards</span>
+    <div class="crd">
+      <div class="row">${kindRing(m, .5, 36)}<span class="grow"><span class="nm">${esc(m.label)}</span><span class="sub ell">Color child → you · 14:02</span></span>${pill(acts ? 'waits' : 'closed', acts ? 'pending' : 'done')}</div>
+      <div class="pad" style="padding-top:2px"><p class="q">${esc(m.title)}</p>${m.subtitle ? `<p class="subq">${esc(m.subtitle)}</p>` : ''}</div>
+      ${m.facts.length ? `<div class="facts" style="border-top:1px solid var(--line-c)">${m.facts.map(x => `<div class="kv"><span class="k">${esc(x.label)}</span><span class="v">${factValue(x)}</span></div>`).join('')}</div>` : ''}
+    </div>
+    ${m.blocks.map(b => `<h3 class="gt">${esc(b.label)}</h3>${blockBody(b)}`).join('')}
+    ${acts ? `<div class="acts"><span class="btn">${ic(acts[1])}${acts[0]}</span><span class="btn pri">${ic(acts[3])}${acts[2]}</span></div>` : ''}
+  </div>`;
+}
+function cardView(m) {
+  return `<div class="crd card">
+    <div class="row head">${kindRing(m, .5, 34)}<span class="grow"><span class="nm">${esc(m.label)}</span><span class="sub ell">Color child</span></span><span class="mono sub">14:02</span></div>
+    <div class="in">
+      <p class="q" style="font-size:18px">${esc(m.title)}</p>
+      ${m.well ? `<div class="well"><span class="sub">${esc(m.well.label)}</span>${esc(m.well.text)}</div>` : ''}
+      ${m.list.length ? `<div class="doc" style="padding:0"><ol>${m.list.map(i => `<li>${esc(i)}</li>`).join('')}</ol></div>` : ''}
+      ${m.chips.length || m.pill || m.progress != null ? `<div class="chips">${m.chips.map(o => `<span class="chip ${o === m.marked ? 'def' : ''}">${esc(o)}</span>`).join('')}${m.pill ? pill(m.pill.text, m.pill.tone) : ''}${m.progress != null ? `<span class="bar miniprog"><i style="width:${m.progress}%"></i></span><span class="mono sub">${m.progress} %</span>` : ''}</div>` : ''}
+    </div></div>`;
+}
+function rowView(m) {
+  return `<div class="tli"><span class="node">${kindRing(m, 1, 30)}</span><span class="crd ev">
+    <span class="l1"><b class="grow ell">${esc(m.label)} · Color child</b><span class="mono sub">14:02</span></span>
+    <span class="t2 ell">${esc(m.title)}</span>${m.line ? `<span class="l2 ell">${esc(m.line)}</span>` : ''}
+    ${m.pill || m.progress != null ? `<span class="l3">${m.pill ? pill(m.pill.text, m.pill.tone) : ''}${m.progress != null ? `<span class="bar miniprog"><i style="width:${m.progress}%"></i></span>` : ''}</span>` : ''}
+  </span></div>`;
+}
+function specLine(v) {
+  const d = v.document, p = v.preview;
+  const names = l => l.map(s => s.label).join(', ') || 'none';
+  return `<div class="spec">
+    <div><b>Document:</b> title, ${d.subtitle ? 'subtitle, ' : ''}facts (${names(d.facts)}), blocks (${names(d.blocks)})</div>
+    <div><b>Preview:</b> title${p.line ? ', stream line' : ''}${p.well ? `, well (first of ${names(p.well)})` : ''}${p.list ? ', steps' : ''}${p.chips ? ', chips' : ''}${p.pill ? `, pill (${p.pill.label})` : ''}${p.progress ? ', progress' : ''}</div>
+  </div>`;
+}
+
+const order = ['question', 'answer', 'review', 'report', 'update', 'brief', 'notice', 'plan', 'message', 'ack'];
+document.getElementById('nav').innerHTML = order.map(k => `<a href="#${k}">${DATA[k].view.label}</a>`).join('');
+document.getElementById('kinds').innerHTML = order.map(k => {
+  const f = DATA[k].example, v = DATA[k].view, dm = documentModel(k, f), pm = previewModel(k, f);
+  return `<section class="kind" id="${k}">
+    <div class="kh"><h2>${v.label.toUpperCase()}</h2><p>${esc(DATA[k].purpose)}</p></div>
+    <div class="trio">
+      <div class="col"><span class="cap">Full document · Open view</span>${docView(k, dm)}</div>
+      <div class="col"><span class="cap">Preview · card in the pile</span><div class="scr">${cardView(pm)}</div>
+        <span class="cap" style="margin-top:8px">Preview · row in the stream</span><div class="scr">${rowView(pm)}</div>${specLine(v)}</div>
+    </div></section>`;
+}).join('');
+</script>
