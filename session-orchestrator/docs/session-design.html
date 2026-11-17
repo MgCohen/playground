@@ -341,13 +341,14 @@ sequenceDiagram
         <tr><td><code>Create</code></td><td><code>claude -p --session-id</code>, opening turn</td><td>Entry with the Claude Code id</td></tr>
         <tr><td>Join (not an adapter method)</td><td>A session that you started in the app runs <code>/orch-enable [title]</code> or <code>orch enable</code></td><td>Entry with the existing id</td></tr>
         <tr><td><code>Open</code>, public</td><td><code>claude --desktop --resume</code></td><td><code>appId</code></td></tr>
-        <tr><td><code>Set</code> visibility</td><td><code>set_remote_control</code></td><td>None: Claude Code keeps the state</td></tr>
-        <tr><td><code>Set</code> title</td><td><code>set_session_title</code> <code>[full code] title</code></td><td>None: a render of code and title</td></tr>
+        <tr><td><code>Set</code> visibility</td><td>Notice to the session or the parent; the model calls <code>set_remote_control</code></td><td>None: Claude Code keeps the state</td></tr>
+        <tr><td><code>Set</code> title</td><td>Notice; the model calls <code>set_session_title</code> <code>[full code] title</code></td><td>None: a render of code and title</td></tr>
         <tr><td><code>Read</code></td><td><code>get_session</code>, <code>list_sessions</code></td><td>None: imported, Remote Control, app archive, model</td></tr>
-        <tr><td><code>Archive</code> (F8, F14)</td><td>Remote Control off, <code>archive_session</code> or <code>archive-self</code></td><td>Phase <code>archived</code> after the signals</td></tr>
+        <tr><td><code>Archive</code> (F8, F14)</td><td>Notice <code>archive-self</code> or <code>archive-child</code>; the model turns Remote Control off and calls <code>archive_session</code>. <code>Read</code> confirms</td><td>Phase <code>archived</code> after the signals</td></tr>
         <tr><td>User archives in the app</td><td>Sidebar action, seen by <code>Read</code></td><td>Notice <code>child-archived-in-app</code>, phase stays</td></tr>
       </tbody>
     </table></div>
+    <p>The Claude Code adapter does <code>Set</code> and <code>Archive</code> through a model, because the app gives these functions only as model tools. The adapter writes the notice text, waits, and confirms with <code>Read</code> within a time limit. The result is <code>done</code>, <code>waiting</code> (no live model: try again later, or archive in the app by hand) or <code>failed</code>. No code outside the adapter names an app tool.</p>
     <p>The adapter does not use the official attach (<code>start_session</code>). The app permits it only in a turn that the user started (F1), so it would be a second start path. Each child starts with <code>Create</code> and <code>Open</code>: it is in the app, but not under its parent. The registry tree and our UI show the correct tree. If the app adds a parent flag to the import (#106214), <code>Open</code> uses it, and nothing else changes.</p>
   </section>
 
@@ -612,8 +613,8 @@ public interface IEngineAdapter
     Task Open(SessionEntry s);                                <span class="c">// first turn; public: show it where the engine can</span>
     Task&lt;TurnResult&gt; Turn(SessionEntry s, string input);    <span class="c">// delivery when not live</span>
     Task&lt;EngineFacts&gt; Read(SessionEntry s);                 <span class="c">// facts that the engine keeps</span>
-    Task Set(SessionEntry s, EngineSetting setting);          <span class="c">// title, visibility, model: written in the engine</span>
-    Task Archive(SessionEntry s);                             <span class="c">// engine side of the archive</span>
+    Task&lt;OpResult&gt; Set(SessionEntry s, EngineSetting setting); <span class="c">// title, visibility, model; done, waiting or failed</span>
+    Task&lt;OpResult&gt; Archive(SessionEntry s);                <span class="c">// engine side of the archive; done, waiting or failed</span>
     Task&lt;AskResult&gt; Ask(AskRequest r);                      <span class="c">// one-shot model call, no session (docs check, state check)</span>
 }
 <span class="c">// ISessionRegistry.Create calls adapter.Create, writes the entry, then calls adapter.Open.
