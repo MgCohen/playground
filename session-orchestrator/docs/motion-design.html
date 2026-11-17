@@ -463,6 +463,12 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 .ac .amenu.corner { top: auto; transform-origin: 100% 100%; }
 .ac.nobar .navx { display: none; }
 
+/* S1 v3: page action bar */
+.ac .pbar { flex: none; display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 20px; background: var(--surf); box-shadow: var(--sh-raise); }
+.ac .pbar .abtn { box-shadow: none; background: var(--sunken); height: 38px; }
+.ac .pbar .abtn.p { background: var(--accent); }
+.ac .pbar .abtn.d { flex: 0 0 auto; background: none; padding: 0 8px; }
+
 /* Answer box */
 .answer { margin-top: 36px; padding: 18px 20px; border-radius: 18px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); display: grid; gap: 8px; }
 .answer code { display: block; padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); overflow-x: auto; white-space: pre; }
@@ -622,13 +628,11 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   <!-- Static fixes -->
   <section class="item" id="s1">
     <div>
-      <div class="sw" id="s1-sw"><button aria-pressed="true" data-v="a">A corner button</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="sw" id="s1-sw"><button aria-pressed="true" data-v="a">A page bar + corner button</button><button aria-pressed="false" data-v="now">Now</button></div>
       <div class="phone ac" id="s1-ph"></div>
       <div class="tweak2">
         <div><div class="sub" style="margin-bottom:4px">Page</div>
           <div class="sw" id="s1-doc" style="margin:0;flex-wrap:wrap"><button aria-pressed="true" data-v="question">Question</button><button aria-pressed="false" data-v="plan">Plan</button><button aria-pressed="false" data-v="report">Report</button><button aria-pressed="false" data-v="review">Review</button><button aria-pressed="false" data-v="session">Session status</button></div></div>
-        <div><div class="sub" style="margin-bottom:4px">Corner button opens as</div>
-          <div class="sw" id="s1-open" style="margin:0"><button aria-pressed="true" data-v="dial">Speed dial</button><button aria-pressed="false" data-v="sheet">Sheet</button><button aria-pressed="false" data-v="menu">Menu</button></div></div>
         <div><div class="sub" style="margin-bottom:4px">App bar on this page</div>
           <div class="sw" id="s1-bar" style="margin:0"><button aria-pressed="false" data-v="show">Shown</button><button aria-pressed="true" data-v="hide">Hidden</button></div></div>
         <div class="vals" id="s1-vals"></div>
@@ -636,17 +640,17 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     </div>
     <div class="spec">
       <div class="head"><span class="tag">S1</span><h2>Page actions</h2></div>
-      <p>The Document page is one page for many types: a question, a plan, a report, a review. Each type has its own acts. The Session status page has only fixed acts. Change the page in the sample and tap the corner button.</p>
+      <p>The Document page is one page for many types: a question, a plan, a report, a review. Change the page in the sample and tap the corner button.</p>
       <ul class="sub" style="margin:0;padding-left:18px">
-        <li><b>Type acts</b> (Accept, Approve, Acknowledge…) are in the corner button. A tap opens them as a speed dial, a sheet or a menu. The main act is first. Danger acts (Refuse) are last, in red.</li>
-        <li><b>Page defaults</b> (Open session, Archive) are the same for all types of the page. They are at the end of the page, in the page flow. Danger defaults are quiet red text.</li>
-        <li>A page with no type acts (Session status) has no corner button. Its acts are all page defaults.</li>
-        <li><b>App bar:</b> each page sets if it shows the app bar. A page that needs the full height hides it. The header path is the way back. The corner button moves down when the app bar is hidden.</li>
+        <li><b>Page actions</b> belong to the page, not to its content: Open session and Archive are on each Document page. They are in a bar at the bottom of the screen, always in the same place. The page content scrolls above the bar and never goes under it.</li>
+        <li><b>Content actions</b> change with the content: Accept for a question, Approve for a plan. They are in the corner button, which floats above the page bar. A tap opens them as a speed dial. The main action is first. Danger actions are last, in red.</li>
+        <li>The corner button shows only when the content has actions. Any page can use it, so it is the one place for content actions. Session status has only page actions, so it has no corner button.</li>
+        <li><b>App bar:</b> each page sets if it shows the app bar. A page that needs the full height hides it. The header path is the way back.</li>
       </ul>
       <div class="opts">
-        <div class="opt rec"><b>A</b><span class="t">Corner button + page defaults</span><span class="d">Your design. Pick the open style and the app bar rule in the sample. The value line under the sample has your choice.</span></div>
+        <div class="opt rec"><b>A</b><span class="t">Page bar + corner button</span><span class="d">Your design: page actions in a fixed bar at the bottom, content actions in a corner speed dial above it. Pick the app bar rule in the sample.</span></div>
       </div>
-      <p class="cost">Build: a page gives two lists: the type acts and the page defaults, each act with a role. A shared corner button component shows the type acts. A layout flag on the page hides the app bar. The type acts can later come from the document type.</p>
+      <p class="cost">Build: a page gives two lists, each action with a role: page actions and content actions. A shared page bar shows the first list. A shared corner button shows the second. A layout flag on the page hides the app bar. The content actions can later come from the document type.</p>
     </div>
   </section>
   <section class="item" id="s2">
@@ -1718,14 +1722,13 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     session: { path: ["Sessions", "orch-bad3"], rows: [["State", "Working · step 4 of 6"], ["Brief", "Improve the look and the motion of the app."], ["Branch", "orch/session-bad3999b"], ["Last event", "Report · 4 min ago"], ["Pull request", "#25 · draft"]],
       type: [], defs: [["Event stream", "p"], ["Message", "o"], ["Stop", "d"], ["Archive", "d"]] }
   };
-  var st = { mode: "a", doc: "question", open: "dial", bar: "hide" }, ph = document.getElementById("s1-ph");
+  var st = { mode: "a", doc: "question", bar: "hide" }, ph = document.getElementById("s1-ph");
   var PLUS = '<svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round"><path d="M12 5v14M5 12h14"/></svg>';
   var NAV = '<div class="navx"><span>Cards</span><span>Sessions</span><span class="ball"></span><span>Stream</span><span>Settings</span></div>';
   function btn(a, cls) { return '<button class="abtn ' + (a[1] === "p" ? "p " : a[1] === "d" ? "d " : "") + (cls || "") + '">' + a[0] + "</button>"; }
   function header() { var d = DOCS[st.doc]; return '<div class="crd hd2"><div class="path"><button class="cr">' + d.path[0] + '</button><span class="sep">›</span><span class="cur">' + d.path[1] + "</span></div></div>"; }
   function rows() { return DOCS[st.doc].rows.map(function (r) { return '<div class="crd kv"><b>' + r[0] + '</b><span class="sub">' + r[1] + "</span></div>"; }).join(""); }
   function order(list) { return list.filter(function (a) { return a[1] === "p"; }).concat(list.filter(function (a) { return a[1] === "o"; }), list.filter(function (a) { return a[1] === "d"; })); }
-  function fabBottom() { return st.bar === "show" && st.mode !== "now" ? 74 : 18; }
   function render() {
     var d = DOCS[st.doc], h;
     ph.classList.toggle("nobar", st.bar === "hide" && st.mode !== "now");
@@ -1734,45 +1737,32 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       h = header() + '<div class="scroll">' + rows() + (rest.length ? '<div class="defs">' + rest.map(function (a) { return btn(a); }).join("") + "</div>" : "") + "</div>" +
         '<div class="float">' + fl.map(function (a) { return btn(a); }).join("") + "</div>" + NAV;
     } else {
-      var defs = d.defs, od = defs.filter(function (a) { return a[1] !== "d"; }), dd = defs.filter(function (a) { return a[1] === "d"; });
-      h = header() + '<div class="scroll" style="padding-bottom:' + (d.type.length ? 70 : 8) + 'px">' + rows() +
-        '<div class="defs">' + od.map(function (a) { return btn(a); }).join("") + dd.map(function (a) { return btn(a); }).join("") + "</div></div>" + NAV +
-        (d.type.length ? '<button class="cfab" data-fab aria-label="Acts" style="bottom:' + fabBottom() + 'px">' + PLUS + '<span class="lb">' + d.type.length + " acts</span></button>" : "");
+      h = header() + '<div class="scroll" style="padding-bottom:' + (d.type.length ? 64 : 4) + 'px">' + rows() + "</div>" +
+        '<div class="pbar">' + order(d.defs).map(function (a) { return btn(a); }).join("") + "</div>" + NAV +
+        (d.type.length ? '<button class="cfab" data-fab aria-label="Content actions">' + PLUS + '<span class="lb">' + d.type.length + " actions</span></button>" : "");
     }
     ph.innerHTML = h;
     if (st.mode === "now") { var sc = ph.querySelector(".scroll"); sc.scrollTop = sc.scrollHeight; }
-    document.getElementById("s1-vals").textContent = "S1: corner button opens as " + ({ dial: "speed dial", sheet: "sheet", menu: "menu" })[st.open] + "; app bar " + (st.bar === "hide" ? "hidden" : "shown") + " on document pages";
+    else placeFab();
+    document.getElementById("s1-vals").textContent = "S1: page actions in a bottom bar; content actions in a corner speed dial; app bar " + (st.bar === "hide" ? "hidden" : "shown") + " on document pages";
   }
+  // The corner button floats 10 px above the page bar.
+  function fabBottom() { var pb = ph.querySelector(".pbar"); return pb ? ph.getBoundingClientRect().bottom - pb.getBoundingClientRect().top + 10 : 18; }
+  function placeFab() { var f = ph.querySelector(".cfab"); if (f) f.style.bottom = fabBottom() + "px"; }
   function closeAll() {
-    ph.querySelectorAll(".ascrim, .asheet, .amenu, .dial").forEach(function (x) { x.remove(); });
+    ph.querySelectorAll(".ascrim, .dial").forEach(function (x) { x.remove(); });
     var f = ph.querySelector(".cfab"); if (f) f.classList.remove("open");
   }
   function openActs(f) {
-    var list = order(DOCS[st.doc].type), fb = fabBottom(), ease = "cubic-bezier(.2,.8,.2,1)";
+    var list = order(DOCS[st.doc].type), fb = fabBottom();
     f.classList.add("open");
-    if (st.open === "dial") {
-      var sc = document.createElement("div"); sc.className = "ascrim"; sc.style.background = "rgba(0,0,0,.18)";
-      var dl = document.createElement("div"); dl.className = "dial"; dl.style.bottom = (fb + 62) + "px";
-      dl.innerHTML = list.slice().reverse().map(function (a) { return btn(a); }).join("");
-      ph.appendChild(sc); ph.appendChild(dl);
-      Array.prototype.slice.call(dl.children).reverse().forEach(function (el, i) {
-        el.animate([{ transform: "translateY(14px) scale(.85)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 220, delay: i * 40, easing: ease, fill: "backwards" });
-      });
-    } else if (st.open === "sheet") {
-      var sc2 = document.createElement("div"); sc2.className = "ascrim";
-      var sh = document.createElement("div"); sh.className = "asheet";
-      var o = list.filter(function (a) { return a[1] !== "d"; }), dd = list.filter(function (a) { return a[1] === "d"; });
-      sh.innerHTML = '<div class="ttl">' + DOCS[st.doc].path[1] + " acts</div>" + o.map(function (a) { return btn(a); }).join("") + (o.length && dd.length ? "<hr>" : "") + dd.map(function (a) { return btn(a); }).join("");
-      ph.appendChild(sc2); ph.appendChild(sh);
-      sh.animate([{ transform: "translateY(100%)" }, { transform: "none" }], { duration: 280, easing: ease });
-      sc2.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
-    } else {
-      var mm = document.createElement("div"); mm.className = "amenu corner"; mm.style.bottom = (fb + 60) + "px";
-      var o2 = list.filter(function (a) { return a[1] !== "d"; }), d2 = list.filter(function (a) { return a[1] === "d"; });
-      mm.innerHTML = o2.map(function (a) { return "<button" + (a[1] === "p" ? ' style="font-weight:700"' : "") + ">" + a[0] + "</button>"; }).join("") + (o2.length && d2.length ? "<hr>" : "") + d2.map(function (a) { return '<button class="d">' + a[0] + "</button>"; }).join("");
-      ph.appendChild(mm);
-      mm.animate([{ transform: "scale(.6)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 200, easing: ease });
-    }
+    var sc = document.createElement("div"); sc.className = "ascrim"; sc.style.background = "rgba(0,0,0,.18)";
+    var dl = document.createElement("div"); dl.className = "dial"; dl.style.bottom = (fb + 62) + "px";
+    dl.innerHTML = list.slice().reverse().map(function (a) { return btn(a); }).join("");
+    ph.appendChild(sc); ph.appendChild(dl);
+    Array.prototype.slice.call(dl.children).reverse().forEach(function (el, i) {
+      el.animate([{ transform: "translateY(14px) scale(.85)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 220, delay: i * 40, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+    });
   }
   ph.addEventListener("click", function (e) {
     var f = e.target.closest("[data-fab]");
@@ -1786,7 +1776,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       st[key] = b.dataset.v; render();
     });
   }
-  sw("s1-sw", "mode"); sw("s1-doc", "doc"); sw("s1-open", "open"); sw("s1-bar", "bar");
+  sw("s1-sw", "mode"); sw("s1-doc", "doc"); sw("s1-bar", "bar");
   render();
 })();
 </script>
