@@ -1128,6 +1128,30 @@ Options page: https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX (source `docs/se
 | `orch doctor` | ✅ `app: built from 1db5718f, store ..., port 7861` |
 | Unit tests | ✅ `dotnet test --solution Orchestrator.slnx`: 301 passed, 1 skipped (`Seed_a_demo_store`, explicit) |
 
+### C0 probe: not run (2026-11-17)
+
+The user approved the probe (Q6b). The session could not start it: `start_session` with `target: cloud` refused twice with "The user is working over Remote Control, and this turn can't start that session". Each turn of this session comes from an orch plugin message, so the app treats it as a Remote Control turn. No other tool makes a cloud environment or a cloud session.
+
+Steps for the user:
+
+1. In the desktop app, start a new session: target **Cloud**, repository `MgCohen/playground`, branch `orch/session-c46c4a77`, the default cloud environment.
+2. Paste this brief:
+
+```text
+Run the C0 probe for G1. Change no file except the result file. Do not print secrets. If a step fails, record the error and continue.
+1. uname -a, nproc, free -h; names of CLAUDE*/ANTHROPIC* env vars; claude --version.
+2. curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/di.sh && bash /tmp/di.sh --channel 10.0; export PATH=$HOME/.dotnet:$PATH. Record the time and dotnet --version.
+3. In session-orchestrator/: dotnet build src/Orchestrator.Web; dotnet build src/Orchestrator.Cli (not the tray).
+4. Copy config/policy.test.json to /tmp/orch-store/policy.json. Start ORCH_STORE=/tmp/orch-store ORCH_PORT=7790 ORCH_IMPORT=0 dotnet run --project src/Orchestrator.Web in the background; curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7790/api/sessions; stop it.
+5. ORCH_STORE=/tmp/orch-store dotnet run --project src/Orchestrator.Cli -- doctor.
+6. echo 'Reply with OK only.' | claude -p --output-format json (timeout 120 s): does it run, is it signed in?
+7. CLAUDE_CODE_PLUGIN_DIRS=$PWD/plugin claude -p 'List the skills that start with orch:'; claude -p --plugin-dir $PWD/plugin 'List the skills that start with orch:'. Which form loads the plugin?
+8. curl -sS -o /dev/null -w '%{http_code}' for https://api.github.com, https://www.cloudflare.com, https://example.trycloudflare.com, https://claude.ai.
+Write session-orchestrator/docs/c0-probe.md (table: step, command, result, time; then findings). Commit on a new branch orch/g1-c0-probe and push it. No PR.
+```
+
+3. When the branch `orch/g1-c0-probe` exists, a session adds the results to this section and to the Q6 section of `docs/setup-options.html`.
+
 ### Findings
 
 | # | Finding | State |
