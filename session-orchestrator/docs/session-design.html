@@ -1,0 +1,576 @@
+<title>Session Registry Design</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one topic for each tab, each tab starts with its picture. Same tokens as the other design pages. */
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --fg: #1b2126;
+  --muted: #5b6670;
+  --line: #d9dee3;
+  --accent: #0f6e78;
+  --accent-soft: #e2f1f2;
+  --ok: #2c7a3f;
+  --warn: #9a6200;
+  --bad: #b0322b;
+  --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --ok: #6cc684; --warn: #e0a548; --bad: #ef7d74;
+    --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --ok: #6cc684; --warn: #e0a548; --bad: #ef7d74;
+  --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 72ch; }
+p { margin: 0; }
+ul, ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 5px; }
+.summary { color: var(--muted); max-width: 72ch; }
+nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap;
+}
+nav button {
+  font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 24px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 12px; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+td code { white-space: nowrap; }
+pre.side {
+  margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.65; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg);
+}
+pre.side .c { color: var(--muted); }
+pre.side .a { color: var(--accent); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.grid2 > * { min-width: 0; }
+.verdict { display: flex; gap: 10px; flex-wrap: wrap; }
+.pill { font-family: var(--font-mono); font-size: 12px; border-radius: 12px; padding: 2px 9px; border: 1px solid var(--line); color: var(--muted); }
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+.pill.bad { color: var(--bad); border-color: var(--bad); }
+.pill.rec { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.walk { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); overflow: hidden; }
+.walk .row { display: grid; grid-template-columns: 74px 110px 1fr; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--line); align-items: start; }
+.walk .row:first-child { border-top: 0; }
+.walk .row > * { min-width: 0; }
+.walk .t { font-family: var(--font-mono); font-size: 12px; color: var(--muted); padding-top: 2px; }
+.walk .who { font-family: var(--font-mono); font-size: 12px; color: var(--accent); padding-top: 2px; }
+.walk .row.you .who { color: var(--warn); }
+@media (max-width: 560px) { .walk .row { grid-template-columns: 1fr; gap: 2px; } }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 72ch; }
+.yes { color: var(--ok); font-weight: 600; }
+.no { color: var(--bad); font-weight: 600; }
+.part { color: var(--warn); font-weight: 600; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · S1 design · 2026-11-17</div>
+  <h1>Session Registry Design</h1>
+  <p class="summary">Each session is one entry in a session registry: one engine-neutral id, its tree, its title, owner, tags, work stream, mode and settings. The registry is a storage port with one writer, apart from the run state (lease, turn, heartbeat). Claude Code is one engine behind an engine adapter, so another engine joins with the same messages.</p>
+</header>
+
+<nav role="tablist" aria-label="Topics">
+  <button role="tab" data-tab="summary" aria-selected="true">Summary</button>
+  <button role="tab" data-tab="registry" aria-selected="false">Registry</button>
+  <button role="tab" data-tab="claude-code" aria-selected="false">Claude Code</button>
+  <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
+  <button role="tab" data-tab="loop" aria-selected="false">Loop</button>
+  <button role="tab" data-tab="engines" aria-selected="false">Engines</button>
+</nav>
+
+<!-- SUMMARY -->
+<div class="panel" id="summary" role="tabpanel">
+  <section>
+    <h2>The session is the center of the topology</h2>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  U["User"] -->|asks, answers| P["Parent session"]
+  P -->|spawn_child| R[("Session registry")]
+  R -->|start, import| A["Engine adapter"]
+  A -->|claude -p, app| CC["Claude Code"]
+  CC -->|meta facts| R
+  S["Supervisor"] -->|reads settings| R
+  S -->|writes| RS[("Run state")]
+  S <-->|envelopes| ES[("Event stream")]
+  CC <-->|envelopes| ES
+    </pre></div>
+  </section>
+
+  <section>
+    <h2>Three kinds of session data, three owners</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Kind</th><th>Content</th><th>Port</th><th>Writer</th></tr></thead>
+      <tbody>
+        <tr><td>Registry entry</td><td>Identity, tree, labels, settings, phase</td><td><code>ISessionRegistry</code></td><td>Registry service (C#)</td></tr>
+        <tr><td>Run state</td><td>Lease, heartbeat, status, turn, state machine</td><td><code>IDocStore</code></td><td>Plugin, supervisor</td></tr>
+        <tr><td>Messages</td><td>Brief, question, answer, report, notice</td><td><code>IEventLog</code></td><td>Each party posts</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Design rules</h2>
+    <ul>
+      <li>One id for each session: the registry id. Engine ids are attributes of the entry.</li>
+      <li>One writer for the registry: the registry service. Plugins send a request envelope.</li>
+      <li>Settings are typed fields, not brief text. The brief shows a render of them.</li>
+      <li>The registry tells the engine what to do. The engine tells the registry only facts.</li>
+      <li>All engines use the same envelopes. Only the adapter knows the engine.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Steps from this design</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Code part</th><th>Size</th></tr></thead>
+      <tbody>
+        <tr><td>C1</td><td><code>ISessionRegistry</code>, file implementation, contract tests</td><td>Medium</td></tr>
+        <tr><td>C2</td><td>Store version 3: <code>meta.json</code> and <code>control.json</code> into <code>session.json</code></td><td>Small</td></tr>
+        <tr><td>C3</td><td>Settings resolver and the settings block in the brief render</td><td>Medium</td></tr>
+        <tr><td>C4</td><td>Mode in the question relay, <code>ask_user</code> and the report filter</td><td>Medium</td></tr>
+        <tr><td>C5</td><td><code>IEngineAdapter</code> with the Claude Code adapter (code moves only)</td><td>Medium</td></tr>
+        <tr><td>C6</td><td><code>orch session</code> CLI, <code>/api/sessions</code> fields, tree view with tags</td><td>Small</td></tr>
+        <tr><td>C7</td><td><code>orch session join</code> for other engines, with lease and heartbeat</td><td>Small</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+
+<!-- REGISTRY -->
+<div class="panel off" id="registry" role="tabpanel">
+  <section>
+    <h2>One registry entry for each session</h2>
+    <pre class="side"><span class="c">// sessions/&lt;id&gt;/session.json, written only through ISessionRegistry</span>
+{
+  "id": "6f1c2a90-…",                  <span class="c">// registry id, a UUID</span>
+  "rev": 7,                            <span class="c">// grows on each write</span>
+  "engine": { "kind": "claude-code",
+              "sessionId": "6f1c2a90-…", "appId": "local_6f1c2a90-…",
+              "started": true, "imported": true, "remoteControl": false },
+  "parent": "ca72efff-…",              <span class="c">// null for a root</span>
+  "title": "S1: Session management",
+  "owner": "user:matheus",
+  "tags": ["design", "orch"],
+  "stream": "S1",                      <span class="c">// work stream key (C1 owns the workflow)</span>
+  "work": { "cwd": "…", "repo": "…", "branch": "orch/session-6f1c2a90", "worktree": true },
+  "role": { "agent": "worker", "skills": ["orch:orch-ask"] },
+  "settings": { "mode": "relay", "background": false, "policy": "default",
+                "reportOn": ["done", "blocked", "asked"], "allowDefaults": false },
+  "lifecycle": { "phase": "active", "state": "idle", "since": "…", "by": "supervisor" },
+  "created": { "at": "…", "by": "session:ca72efff-…" },
+  "updated": { "at": "…", "by": "supervisor" }
+}</pre>
+  </section>
+
+  <section>
+    <h2>Each field has one source</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Field</th><th>Set by</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code></td><td>Registry, at create</td><td>Never</td></tr>
+        <tr><td><code>engine.*</code></td><td>Adapter facts</td><td><code>session.update</code> from the plugin</td></tr>
+        <tr><td><code>parent</code></td><td>Creator</td><td>Never</td></tr>
+        <tr><td><code>title</code>, <code>tags</code>, <code>stream</code>, <code>owner</code></td><td>Creator, user</td><td><code>orch session set</code>, API</td></tr>
+        <tr><td><code>work</code>, <code>role</code></td><td>Brief, first turn</td><td>Supervisor at the worktree step</td></tr>
+        <tr><td><code>settings</code></td><td>Brief fields, defaults</td><td>User, parent (Settings tab)</td></tr>
+        <tr><td><code>lifecycle.phase</code></td><td><code>orch stop</code>, <code>resume</code>, <code>archive</code></td><td>Registry service</td></tr>
+        <tr><td><code>lifecycle.state</code></td><td>Supervisor</td><td>Copy of <code>state.json</code> at each transition</td></tr>
+        <tr><td>Children</td><td>None: a query</td><td><code>List(parent = id)</code></td></tr>
+      </tbody>
+    </table></div>
+    <p>The registry keeps only the parent. The list of children is a query, so no write can make the two sides disagree.</p>
+  </section>
+
+  <section>
+    <h2>The registry is one more port</h2>
+    <pre class="side"><span class="c">// Orchestrator.Core/Sessions. The file implementation uses IDocStore keys.</span>
+public interface ISessionRegistry
+{
+    SessionEntry Create(NewSession spec);                 <span class="c">// mints the id, posts session.created</span>
+    SessionEntry? Get(string id);
+    IReadOnlyList&lt;SessionEntry&gt; List(SessionQuery q);   <span class="c">// parent, tag, stream, owner, phase</span>
+    SessionEntry Update(string id, int rev, SessionPatch patch, string by); <span class="c">// refuses an old rev</span>
+    SessionEntry? FindByEngineId(string kind, string engineId);
+}
+
+public static class StoreBackends   <span class="c">// H1 composition root, one more line</span>
+{
+    public static Store Create(string root) =&gt;
+        new(new FileEventLog(root), new FileDocStore(root), new DocSessionRegistry(new FileDocStore(root)));
+}</pre>
+    <ul>
+      <li><strong>Place:</strong> <code>store/sessions/&lt;id&gt;/session.json</code>, beside the run state files. A later implementation can keep the registry in a database and the run state in files.</li>
+      <li><strong>Writer:</strong> the registry service in C#, in the supervisor process or in an <code>orch</code> process. Each write takes the lock <code>session.json.lock</code> and checks <code>rev</code>.</li>
+      <li><strong>Plugin:</strong> never writes. It posts <code>session.update</code> (the <code>meta.update</code> rule of B2), and the supervisor applies it.</li>
+      <li><strong>History:</strong> each write posts <code>session.created</code> or <code>session.changed</code> with the changed fields. The UI subscribes to these.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Run state stays outside the registry</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>File</th><th>Writer</th><th>Life</th></tr></thead>
+      <tbody>
+        <tr><td><code>lease.json</code></td><td>Plugin, supervisor</td><td>Each holder change</td></tr>
+        <tr><td><code>heartbeat.txt</code></td><td>Plugin</td><td>Each 3 s</td></tr>
+        <tr><td><code>status.json</code></td><td>Plugin</td><td>Each turn</td></tr>
+        <tr><td><code>turn.json</code></td><td>Supervisor</td><td>Each supervisor turn</td></tr>
+        <tr><td><code>state.json</code>, <code>forgotten.json</code></td><td>Supervisor</td><td>Each tick</td></tr>
+        <tr><td><code>enabled</code></td><td>Registry service</td><td>Phase not archived</td></tr>
+      </tbody>
+    </table></div>
+    <p>The <code>report.json</code> file does not exist in store version 2: the report is a query of the stream. <code>control.json</code> becomes <code>lifecycle.phase</code>.</p>
+  </section>
+</div>
+
+<!-- CLAUDE CODE -->
+<div class="panel off" id="claude-code" role="tabpanel">
+  <section>
+    <h2>Start of a child: the registry id becomes the Claude Code id</h2>
+    <div class="box"><pre class="mermaid">
+sequenceDiagram
+  participant P as Parent
+  participant R as Registry
+  participant S as Supervisor
+  participant C as claude -p
+  participant A as App
+  P->>R: spawn_child (Create)
+  R-->>S: session.created
+  S->>C: --session-id id, open-in-app
+  C-->>S: READY
+  S->>A: claude --desktop --resume id
+  A->>R: session.update appId
+  A->>A: brief from the inbox
+  A->>R: session.update remoteControl
+    </pre></div>
+    <p>The supervisor gives the registry id to <code>--session-id</code>. So for each session that the supervisor starts, the two ids are equal. The code never relies on this: it reads <code>engine.sessionId</code>.</p>
+  </section>
+
+  <section>
+    <h2>Each Claude Code operation and its registry effect</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Operation</th><th>Claude Code side</th><th>Registry effect</th></tr></thead>
+      <tbody>
+        <tr><td>Start</td><td><code>claude -p --session-id</code>, opening turn</td><td><code>engine.started</code></td></tr>
+        <tr><td>Import</td><td><code>claude --desktop --resume</code></td><td><code>engine.imported</code>, <code>appId</code></td></tr>
+        <tr><td>Join from the app</td><td><code>/orch-enable [title]</code></td><td>Create with the existing id</td></tr>
+        <tr><td>Attached child</td><td>App <code>start_session</code>, then <code>orch enable</code></td><td>Create with the parent from the brief</td></tr>
+        <tr><td>Remote Control</td><td><code>set_remote_control</code>, self or parent</td><td><code>engine.remoteControl</code></td></tr>
+        <tr><td>Archive (F8)</td><td>Remote Control off, <code>archive_session</code></td><td>Phase <code>archived</code> after the signals</td></tr>
+        <tr><td>Archive on screen (F14)</td><td><code>archive-self</code> notice</td><td>Same</td></tr>
+        <tr><td>User archives in the app</td><td>Sidebar action</td><td>Notice <code>child-archived-in-app</code>, phase stays</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>What Claude Code owns and what the registry owns</h2>
+    <div class="grid2">
+      <div class="box">
+        <h3>Claude Code owns</h3>
+        <ul>
+          <li>The transcript and the model context</li>
+          <li>The app sidebar entry and its app parent link</li>
+          <li>The Remote Control connection</li>
+          <li>The app archive</li>
+          <li>The permission mode and the model</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>The registry owns</h3>
+        <ul>
+          <li>The id and the session tree</li>
+          <li>Title, owner, tags and work stream</li>
+          <li>Mode and settings</li>
+          <li>The phase: active, stopped or archived</li>
+          <li>The map from engine ids to the registry id</li>
+        </ul>
+      </div>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr><th>Direction</th><th>Path</th><th>Content</th></tr></thead>
+      <tbody>
+        <tr><td>Registry to Claude Code</td><td>Commands, notices</td><td>Start, resume, import, Remote Control, archive</td></tr>
+        <tr><td>Claude Code to registry</td><td><code>session.update</code> facts</td><td><code>appId</code>, Remote Control state, imported</td></tr>
+        <tr><td>Claude Code to supervisor</td><td>Run state, app probes</td><td>Lease, heartbeat, archived in the app</td></tr>
+      </tbody>
+    </table></div>
+    <p>The registry never reads a transcript file and never writes an app file. The app parent link is not in our control (F3), so the registry tree is the source of the tree.</p>
+  </section>
+</div>
+
+<!-- SETTINGS -->
+<div class="panel off" id="settings" role="tabpanel">
+  <section>
+    <h2>Settings resolve from the session, the parent chain and the policy</h2>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  B["Brief fields"] --> E["settings in session.json"]
+  E --> RS["Settings resolver"]
+  PC["Parent chain"] --> RS
+  PD["policy.json sessionDefaults"] --> RS
+  RS --> SV["Supervisor"]
+  RS --> PL["Plugin"]
+  RS --> BR["Brief render"]
+    </pre></div>
+    <p>A field of the session wins. Else an inherited field of the nearest parent applies. Else the default of <code>policy.json</code> applies. The resolver is one C# function; the plugin gets its result with <code>orch session get --self</code>.</p>
+  </section>
+
+  <section>
+    <h2>Three modes set the route of questions</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Mode</th><th>Questions go to</th><th>User answers</th><th>Policy</th></tr></thead>
+      <tbody>
+        <tr><td><code>chat</code></td><td>The session reply text</td><td>In the session chat, with <code>answer:</code></td><td>Session policy</td></tr>
+        <tr><td><code>relay</code></td><td>The parent, by the question relay</td><td>In the parent chat; the parent calls <code>mcp__orch__answer</code></td><td>Session policy</td></tr>
+        <tr><td><code>auto</code></td><td>The parent, as information</td><td>Only high risk waits</td><td>Low and medium: default at once</td></tr>
+      </tbody>
+    </table></div>
+    <p>In each mode, the user can answer in the session chat with <code>answer:</code>. The sum test 2 modes map to these: "ask" is <code>relay</code>, "chat" is <code>chat</code>, "auto" is <code>auto</code>. "Approve" is a policy level, not a mode.</p>
+  </section>
+
+  <section>
+    <h2>Each setting, where it is stored, who reads it</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Setting</th><th>Default</th><th>Inherits</th><th>Read by</th></tr></thead>
+      <tbody>
+        <tr><td><code>mode</code></td><td>Root <code>chat</code>, child <code>relay</code></td><td>No</td><td>Relay, <code>ask_user</code>, brief render</td></tr>
+        <tr><td><code>background</code></td><td><code>false</code></td><td>No</td><td>Supervisor: Remote Control notices</td></tr>
+        <tr><td><code>policy</code></td><td><code>default</code></td><td>Yes</td><td>Supervisor: docs check, defaults</td></tr>
+        <tr><td><code>allowDefaults</code></td><td><code>false</code></td><td>Yes</td><td><code>orch merge</code></td></tr>
+        <tr><td><code>reportOn</code></td><td>done, blocked, asked</td><td>Yes</td><td>Plugin <code>report</code> tool</td></tr>
+        <tr><td><code>reminders</code></td><td>10 min, then 60 min</td><td>Yes</td><td>Supervisor: question follow, forgotten</td></tr>
+        <tr><td><code>owner</code>, <code>stream</code></td><td>From the parent</td><td>Yes</td><td>UI, filters, C1</td></tr>
+      </tbody>
+    </table></div>
+    <p>All settings are fields of <code>settings</code> in <code>session.json</code>, except <code>owner</code> and <code>stream</code>, which are top-level fields. <code>policy.json</code> gets one block <code>sessionDefaults</code> and named profiles, for example <code>auto</code>.</p>
+  </section>
+
+  <section>
+    <h2>The plugin enforces the report rules</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Call</th><th>Rule <code>reportOn</code></th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td><code>report</code> done or blocked</td><td>Contains the state</td><td>Report, relay to the parent</td></tr>
+        <tr><td><code>report</code> working</td><td>No <code>asked</code> open</td><td>Changed to an <code>update</code>, tool says so</td></tr>
+        <tr><td><code>report</code> working</td><td>A status request is open</td><td>Report, closes the request</td></tr>
+        <tr><td><code>update</code></td><td>None</td><td>To the user only, not delivered</td></tr>
+      </tbody>
+    </table></div>
+    <p>A status request is a <code>message</code> from the user or the parent with <code>needs: report</code>. This stops the extra step report of sum test finding F5.</p>
+  </section>
+
+  <section>
+    <h2>The session sees its settings as a fixed block</h2>
+    <pre class="side"><span class="c">// The brief render adds this block from the resolved settings.</span>
+Session settings
+- Mode: relay. Ask with mcp__orch__ask_user. Your parent shows the question to the user.
+- Report: only when done, blocked, or when the user or the parent asks.
+- Background: no. Remote Control is on.
+- Policy: default. Low and medium questions take the default after the timeout.</pre>
+  </section>
+</div>
+
+<!-- LOOP -->
+<div class="panel off" id="loop" role="tabpanel">
+  <section>
+    <h2>The supervisor sees five run states of a session</h2>
+    <div class="box"><pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  state "lease live, turn" as LT
+  state "lease supervisor, turn" as ST
+  [*] --> idle
+  idle --> LT: plugin submits
+  idle --> ST: claude -p turn
+  LT --> idle: turn ends
+  ST --> idle: turn ends
+  LT --> stale: no heartbeat
+  stale --> idle: process gone
+  idle --> forgotten: no final report
+  forgotten --> ST: nudge
+    </pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Run state</th><th>Signal</th><th>Who delivers</th></tr></thead>
+      <tbody>
+        <tr><td>Lease <code>live</code>, turn</td><td><code>status.json</code> running, fresh heartbeat</td><td>Nobody: input waits</td></tr>
+        <tr><td>Lease <code>supervisor</code>, turn</td><td><code>turn.json</code> with no end</td><td>Nobody: input waits</td></tr>
+        <tr><td>Idle</td><td>No turn</td><td>Plugin if <code>live</code>, else supervisor</td></tr>
+        <tr><td>Stale</td><td>Lease <code>live</code>, heartbeat older than 15 s</td><td>Nobody until the lease is free</td></tr>
+        <tr><td>Forgotten</td><td>Idle 15 min, no done or blocked report</td><td>Supervisor: one <code>report-missing</code> nudge</td></tr>
+      </tbody>
+    </table></div>
+    <p>These are the run views of the B2 states <code>running</code>, <code>idle</code>, <code>stale</code> and <code>forgotten</code>. The B2 machine in <code>docs/lifecycle-design.html</code> stays the source.</p>
+  </section>
+
+  <section>
+    <h2>Who sends what, and when</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>When</th><th>From → to</th><th>Envelope</th><th>Delivery</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>A parent or the user starts a session</td><td>Parent → session</td><td><code>brief</code></td><td>After the opening turn and the import</td></tr>
+        <tr><td>2</td><td>A parent has new work or a reply</td><td>Parent → session</td><td><code>message</code></td><td>At the next idle</td></tr>
+        <tr><td>3</td><td>The session needs a decision</td><td>Session → user</td><td><code>question</code></td><td>Mode <code>relay</code>, <code>auto</code>: forward to the parent at once</td></tr>
+        <tr><td>4</td><td>The user, parent, docs or policy decides</td><td>Party → session</td><td><code>answer</code></td><td>Next idle; first answer wins</td></tr>
+        <tr><td>5</td><td>The question closes</td><td>Supervisor → parent</td><td><code>notice</code> question-closed</td><td>Next idle of the parent</td></tr>
+        <tr><td>6</td><td>The session is done or blocked</td><td>Session → user</td><td><code>report</code></td><td>Forward to the parent at turn end</td></tr>
+        <tr><td>7</td><td>The user or parent asks for status</td><td>Party → session</td><td><code>message</code>, <code>needs: report</code></td><td>Reply: <code>report</code> working</td></tr>
+        <tr><td>8</td><td>A step ends</td><td>Session → user</td><td><code>update</code></td><td>Not delivered; UI only</td></tr>
+        <tr><td>9</td><td>A run state needs help</td><td>Supervisor → session or parent</td><td><code>notice</code></td><td>Lifecycle notices of B2</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>One question in mode relay</h2>
+    <div class="box"><pre class="mermaid">
+sequenceDiagram
+  participant C as Child
+  participant S as Supervisor
+  participant P as Parent
+  participant U as User
+  C->>S: question (ask_user, PENDING)
+  S->>P: forward question
+  P->>U: shows it in the reply
+  U->>P: answer: blue
+  P->>S: mcp__orch__answer
+  S->>C: answer at the next idle
+  S->>P: notice question-closed
+  C->>S: report done
+  S->>P: forward report at turn end
+    </pre></div>
+  </section>
+
+  <section>
+    <h2>A chat line closes a decision only with the prefix <code>answer:</code></h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Chat line in a session with an open decision</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td><code>answer: use 5</code></td><td>Answer "use 5", <code>via: chat</code>, decision closed</td></tr>
+        <tr><td><code>Answer: yes</code></td><td>Same: the prefix ignores the case</td></tr>
+        <tr><td><code>why do you need this?</code></td><td>Plain input, decision stays open</td></tr>
+        <tr><td><code>&lt;system-reminder&gt;</code> block, then text</td><td>The block is removed before the check</td></tr>
+      </tbody>
+    </table></div>
+    <p>Finding F2 of the chat answer: each chat line closed the newest open decision, also a question or a request. PR #27 adds the prefix rule. The same rule applies in the parent chat: the parent calls <code>mcp__orch__answer</code> only for a line with <code>answer:</code>, or when the user names the question.</p>
+  </section>
+</div>
+
+<!-- ENGINES -->
+<div class="panel off" id="engines" role="tabpanel">
+  <section>
+    <h2>Each engine is an adapter behind one port</h2>
+    <pre class="side"><span class="c">// Orchestrator.Core/Engines. The supervisor calls only this port.</span>
+public interface IEngineAdapter
+{
+    string Kind { get; }                         <span class="c">// "claude-code", "codex", "script"</span>
+    EngineCaps Caps { get; }                     <span class="c">// Resume, App, RemoteControl, LiveDelivery</span>
+    Task Open(SessionEntry s);                   <span class="c">// first turn or process start</span>
+    Task&lt;TurnResult&gt; Turn(SessionEntry s, string input);  <span class="c">// delivery when not live</span>
+    Task Archive(SessionEntry s);                <span class="c">// engine side of the archive</span>
+}</pre>
+    <div class="scroll"><table>
+      <thead><tr><th>Capability</th><th>Claude Code</th><th>Other engine</th><th>If absent</th></tr></thead>
+      <tbody>
+        <tr><td><code>Resume</code></td><td>Yes</td><td>Maybe</td><td>Only live delivery</td></tr>
+        <tr><td><code>App</code></td><td>Yes</td><td>No</td><td>No import, no app archive</td></tr>
+        <tr><td><code>RemoteControl</code></td><td>Yes</td><td>No</td><td>No Remote Control notices</td></tr>
+        <tr><td><code>LiveDelivery</code></td><td>Plugin</td><td><code>orch watch</code></td><td>Supervisor turns only</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>A tool joins the registry with three commands</h2>
+    <pre class="side"><span class="c"># 1. Join: the registry makes the entry and gives the id.</span>
+orch session join --engine codex --engine-id 019a-… --parent ca72efff --title "Lint pass"
+<span class="c"># 2. Take the lease and keep the heartbeat while the tool runs.</span>
+orch lease take &lt;id&gt; --holder live --pid $PID
+<span class="c"># 3. Receive and send the same envelopes as a Claude Code session.</span>
+orch watch --to session:&lt;id&gt; --render session
+orch post question --from session:&lt;id&gt; --body q.json
+orch post report   --from session:&lt;id&gt; --body r.json</pre>
+    <ul>
+      <li>The party is <code>session:&lt;registry id&gt;</code> for each engine. The engine id is only in <code>engine</code>.</li>
+      <li>The templates, the relay, the policy and the inbox do not change.</li>
+      <li>A tool with no lease gets no live delivery. If its adapter has <code>Resume</code>, the supervisor runs turns. Else the input waits and the watchdog posts <code>delivery.blocked</code>.</li>
+      <li>A cloud tool calls the supervisor HTTP API through the tunnel (H1, D1), never the store files.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Non-goals</h2>
+    <ul>
+      <li>No storage choice. H1 owns it; the registry is a port on the H1 rules.</li>
+      <li>No work stream workflow. C1 owns it; the registry keeps only the key <code>stream</code>.</li>
+      <li>No write to Claude Code files. Reason: internal formats change without notice.</li>
+      <li>No list of children in the entry. Reason: a query cannot disagree with the parent field.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Open questions</h2>
+    <ul>
+      <li>Push the registry title to the app sidebar: is there a supported way?</li>
+      <li>First engine after Claude Code: Codex CLI, or a plain script?</li>
+      <li>Owner values: one user today. Is a team owner needed?</li>
+    </ul>
+  </section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["summary", "registry", "claude-code", "settings", "loop", "engines"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "summary";
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
+    document.querySelectorAll("nav button").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
+    });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>
