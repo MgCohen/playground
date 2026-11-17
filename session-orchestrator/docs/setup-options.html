@@ -159,13 +159,48 @@ ol.qs { margin: 0; padding-left: 22px; display: flex; flex-direction: column; ga
 
 <section>
   <h2><span class="q">Q6</span>Cloud managed environment</h2>
+  <p>A cloud session runs in a VM that Anthropic manages. These facts from the Claude Code docs limit each option:</p>
   <div class="scroll"><table>
-    <thead><tr><th>Option</th><th>Good</th><th>Bad</th></tr></thead>
+    <thead><tr><th>Fact</th><th>Effect on the orchestrator</th></tr></thead>
     <tbody>
-      <tr class="pick"><td>Not now. Keep the start command portable <span class="pill">pick</span></td><td>No work for an unused case. <code>orch supervisor start</code> runs on Linux too</td><td>No cloud setup yet</td></tr>
-      <tr><td>Setup script now</td><td>Ready for a cloud session</td><td>No tray, no app import. The store goes with the container. The UI needs the tunnel (stream D)</td></tr>
+      <tr><td>Fresh Ubuntu 24.04 VM for each session. An idle VM pauses, then can be reclaimed</td><td>A supervisor or a store in the VM does not last</td></tr>
+      <tr><td>Files that are not pushed are lost</td><td>The store must stay on this PC, or go to git</td></tr>
+      <tr><td>Setup script (bash, root, about 5 min to cache)</td><td>It can install the .NET SDK. .NET 10 is not tested</td></tr>
+      <tr><td>User settings and user plugins do not load. Repository hooks load in a session with one repository</td><td>The orch plugin needs a repository setting or an environment variable. Not tested</td></tr>
+      <tr><td>Only outbound traffic. No inbound port is documented</td><td>The phone cannot reach a supervisor in the VM without a tunnel</td></tr>
+      <tr><td>Network secrets: the proxy adds a key to requests for a listed host</td><td>A cloud session can call the supervisor API with a token that it never sees</td></tr>
+      <tr><td><code>claude -p "text" --cloud &lt;id&gt;</code> sends a message to a cloud session from this PC</td><td>The supervisor on this PC can deliver to a cloud session</td></tr>
     </tbody>
   </table></div>
+  <h3>Two models</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Model</th><th>Good</th><th>Bad</th></tr></thead>
+    <tbody>
+      <tr class="pick"><td>Cloud workers, supervisor on this PC <span class="pill">pick</span></td><td>Store and supervisor stay. Cloud sessions add capacity and run when the PC sleeps</td><td><code>orch</code> needs an HTTP mode. The supervisor needs a public address (stream D)</td></tr>
+      <tr><td>Full orchestrator in the cloud</td><td>Runs with no PC</td><td>Store lost with the VM. No tray, no app import. The supervisor stops when the VM pauses</td></tr>
+    </tbody>
+  </table></div>
+  <div class="flow" aria-label="Cloud worker message path">
+    <div class="step"><b>Cloud session</b><span><code>orch</code> in HTTP mode</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Proxy</b><span>adds the token (network secret)</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Tunnel (stream D)</b><span><code>https://orch.&lt;domain&gt;</code></span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Supervisor on this PC</b><span>store, delivers with <code>--cloud</code></span></div>
+  </div>
+  <h3>Plan</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Step</th><th>Work</th><th>Owner</th><th>Needs</th></tr></thead>
+    <tbody>
+      <tr><td>C0 probe</td><td>One cloud session: install .NET 10, load the plugin, run <code>claude -p</code>, call a Quick Tunnel</td><td>G1</td><td>Your approval for a cloud environment</td></tr>
+      <tr><td>C1 HTTP mode</td><td><code>orch</code> uses <code>ORCH_URL</code> and the API when no store folder exists</td><td>G1</td><td>C0</td></tr>
+      <tr><td>C2 public address</td><td>Tunnel with a token for the API, not only Access sign-in</td><td>Stream D</td><td>D1 decisions</td></tr>
+      <tr><td>C3 cloud children</td><td>Brief field <code>where: cloud</code>. The supervisor starts and delivers with <code>--cloud</code></td><td>G1 + stream B</td><td>C1, C2</td></tr>
+      <tr><td>C4 environment file</td><td>Setup script and environment variables in the repository, with a recipe in <code>know-how.md</code></td><td>G1</td><td>C0</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">Conflict with the tunnel plan: it keeps <code>cloudflared</code> on this PC and signs in with Cloudflare Access in a browser. A cloud worker has no browser, so C2 needs a service token or <code>ORCH_TOKEN</code> on the tunnel port.</p>
 </section>
 
 <section>
@@ -187,7 +222,8 @@ ol.qs { margin: 0; padding-left: 22px; display: flex; flex-direction: column; ga
     <li>Q3: who starts the supervisor: the tray, a scheduled task, or the user?</li>
     <li>Q4: start the tray at login?</li>
     <li>Q5: update with <code>install.ps1</code>, or automatic after a pull?</li>
-    <li>Q6: build the cloud setup now, or later?</li>
+    <li>Q6a: which cloud model: cloud workers with the supervisor on this PC, or the full orchestrator in the cloud?</li>
+    <li>Q6b: may I make a cloud environment for the C0 probe?</li>
   </ol>
 </section>
 </div>
