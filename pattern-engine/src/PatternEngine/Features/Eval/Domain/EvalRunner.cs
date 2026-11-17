@@ -156,7 +156,7 @@ public sealed class EvalRunner(PackRegistry packs, GraderSet graders, IReadOnlyL
                 records.Add(record);
                 done++;
                 var fails = grades.Verdicts.Where(v => !v.Value.Ok).Select(v => $"{v.Key}: {v.Value.Failures.FirstOrDefault()}");
-                log($"[{done}/{jobs.Count}] {(record.Pass ? "PASS" : "FAIL")} {job.Case.Id}#{job.Run} {run.Stats.Ms / 1000}s {run.Stats.Calls} calls{(run.Stats.Error is null ? string.Empty : " error: " + run.Stats.Error)}{string.Concat(fails.Select(f => "\n      " + f))}");
+                log($"[{done}/{jobs.Count}] {(record.Pass ? "PASS" : "FAIL")} {job.Case.Id}#{job.Run} {run.Stats.Ms / 1000}s {run.Stats.Calls} calls{(run.Stats.Error is null ? string.Empty : " error: " + run.Stats.Error)}{string.Concat(fails.Select(f => "\n      " + f))}{string.Concat((run.Trace.Compose?.Scores ?? []).Select(sc => "\n      anchor " + sc))}");
             }
         });
 

@@ -6,12 +6,21 @@ namespace PatternEngine.Features.Engine.Domain;
 public sealed record SolveOutcome(string Output, RunTrace Trace, bool Composed, IReadOnlyList<string> Failures);
 
 /// <summary>
-/// The engine loop. Code owns the order: a work queue of nodes, a decide step for each node (with ask, escalation and author
-/// when they apply), then compose bottom-up, then the trace from the graph state.
+/// The engine loop. Code owns the order: the decide phase (a work queue of nodes with the status decider, or the compose loop
+/// with engine.decider compose), then compose bottom-up (with the author step for a no-fit), then the trace from the graph state.
 /// </summary>
 public static class Solver
 {
     public static async Task<SolveOutcome> RunAsync(SolveContext s, string request, CancellationToken ct)
+    {
+        var root = s.Settings.Decider == EngineSettings.ComposeDecider
+            ? await ComposeDecide.RunAsync(s, request, ct)
+            : await DecideAllAsync(s, request, ct);
+        return await ComposeAsync(s, root, ct);
+    }
+
+    /// <summary>The decide phase of the status decider: a work queue of nodes, one level at a time.</summary>
+    private static async Task<WorkNode> DecideAllAsync(SolveContext s, string request, CancellationToken ct)
     {
         var root = s.Add(request, s.TopIds, 0, null);
         var queue = new List<WorkNode> { root };
@@ -35,6 +44,11 @@ public static class Solver
             queue = s.Nodes.Skip(before).Where(n => n.Status == NodeStatus.Open).ToList();
         }
 
+        return root;
+    }
+
+    private static async Task<SolveOutcome> ComposeAsync(SolveContext s, WorkNode root, CancellationToken ct)
+    {
         // The remainder of each partial fit: compose each item (the author agent fills a gap first), then join all into one solution.
         // With a remainder, the layout gives one slot for each pattern of the solution.
         var gaps = s.Nodes.Where(n => n.FromOpen && n.Status is NodeStatus.Solved or NodeStatus.PartialFit or NodeStatus.None).ToList();
@@ -118,6 +132,13 @@ public static class TraceBuilder
                 Patterns = used.Select(s.Catalog.Get).OfType<Catalog.Domain.Shared.Pattern>().ToDictionary(p => p.Id, p => p.Hash, StringComparer.Ordinal),
             },
             Notes = [.. s.Notes],
+            Compose = s.Compose is not { } c ? null : new ComposeTraceRecord
+            {
+                Spec = c.Spec?.Rubrics.Select(r => $"{r.Id} ({r.Check}{(r.Hidden ? ", eval" : string.Empty)}): {r.Ask}").ToList() ?? [],
+                SpecErrors = [.. c.SpecErrors],
+                Scores = c.Trace?.ScoreLines.ToList() ?? [],
+                Loop = c.Trace,
+            },
             Graph = s.Nodes.Select(n => n.ToState()).ToList(),
         };
     }

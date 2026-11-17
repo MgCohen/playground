@@ -75,6 +75,7 @@ public sealed class PartyRunner(PartyPack pack, Func<IJudge> judge, RunLimits li
                     if (options.Spec == "given")
                     {
                         specs = [Decomposer.Given(c)];
+                        decomposition = new Decomposition(specs[0].Rubrics.Select(r => r.Ask).ToList(), [], "control mode: a copy of the hidden rubrics with visibility run", false, 0, "given");
                     }
                     else
                     {
@@ -209,6 +210,7 @@ public sealed class PartyRunner(PartyPack pack, Func<IJudge> judge, RunLimits li
         var grades = string.Join(", ", r.Verdicts.Where(v => v.Rubric != "valid").Select(v => $"{v.Rubric} {(v.Ok ? "yes" : "no")}"));
         var measures = string.Join(", ", r.Measures.Select(m => $"{m.Key} {m.Value}"));
         var spec = r.Decomposition is null ? string.Empty
+            : r.Decomposition.Mode == "given" ? " [spec: given, control mode]"
             : r.Decomposition.Anchor is { } a ? $" [spec: {Decomposer.Describe(a)}]"
             : $" [spec refused: {string.Join("; ", r.Decomposition.Errors)}]";
         return $"  {r.Case}-{r.Trial}: {(r.Pass ? "PASS" : "FAIL")}{spec} {commits} | {grades} | {measures} | grader {r.GraderAccuracy} | {r.Trace.Turns.Count} turns, {r.Trace.Grades} grades, {r.Trace.Calls} calls, ${r.Trace.Cost:0.000}{(r.Trace.StopReason is null ? string.Empty : " | " + r.Trace.StopReason)}{(r.Pass ? string.Empty : " | " + r.Verdicts.First(v => v.Rubric == "valid").Reason)}";

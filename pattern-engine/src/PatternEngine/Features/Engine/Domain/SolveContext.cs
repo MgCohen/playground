@@ -33,6 +33,9 @@ public sealed class SolveContext(PackContext pack, EngineSettings settings, Agen
 
     public int Attempts { get; set; }
 
+    /// <summary>The spec and the compose trace, when engine.decider is compose. Null for the status decider.</summary>
+    public ComposeRecord? Compose { get; set; }
+
     /// <summary>The nodes of a joined solution: the root first, then each remainder item. Empty when the output has one pattern.</summary>
     public List<WorkNode> Solution { get; } = [];
 

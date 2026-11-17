@@ -1,0 +1,113 @@
+{
+  "run_id": "2026-11-17T02-08-04-engine-decider",
+  "kind": "compose",
+  "mode": "dev",
+  "model": "haiku",
+  "strategy": "greedy",
+  "calls": 3,
+  "cost": 0.00149101,
+  "runs": [
+    {
+      "case": "b1",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": false,
+          "Reason": "cost 9, best 6"
+        }
+      ],
+      "measures": {
+        "cost": "9",
+        "best cost": "6"
+      },
+      "grader_accuracy": "4 of 4",
+      "trace": {
+        "task": "b1",
+        "strategy": "greedy",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "b1",
+            "set": [
+              "paladin"
+            ],
+            "reason": "Paladin alone covers healer, tank and fighter, and costs 9, within the 12 gold budget. The graded remainder is empty.",
+            "remainder": []
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Starting the greedy build for b1 with paladin, the single hero that makes three of the four rubrics true (healer, tank, fighter) at cost 9, so I grade that party first.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "b1",
+                "set": [
+                  "paladin"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The only hero, paladin, has the tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The only hero, paladin, has the tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "The only hero, paladin, has the tag fighter, so the party has a fighter."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "The party is paladin alone with cost 9, and 9 is 12 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false,
+                "key": "e24c5659f1d9|7ae245f6f79c|41c867928c95/haiku|7690e099c44b"
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "The graded set [paladin] has an empty remainder (healer, tank, fighter and budget are all yes, cost 9 of 12), and this is the last turn, so I commit it without another grade.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 1,
+        "cache_hits": 0,
+        "calls": 3,
+        "cost": 0.00149101,
+        "ms": 17991,
+        "scores": [
+          {
+            "anchor": "b1",
+            "ok": 4,
+            "total": 4,
+            "rule": "all",
+            "pass": true,
+            "failed": []
+          }
+        ]
+      }
+    }
+  ],
+  "grader_check": [],
+  "report": "Pass: 1 of 1. best-cost: 0 of 1. 3 agent calls, $0.001."
+}

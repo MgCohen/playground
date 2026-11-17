@@ -30,6 +30,9 @@ public interface IDomainPack
 
     /// <summary>Graders that only this pack has, for example a behavior grader that simulates the output.</summary>
     IReadOnlyList<IGrader> Graders { get; }
+
+    /// <summary>The hooks for the compose loop in the engine. Null if the pack uses the status decider only.</summary>
+    IComposeHooks? Compose => null;
 }
 
 /// <summary>Draws an expected tree as a known-good output, with fixed geometry. Null if a pattern has no drawing.</summary>

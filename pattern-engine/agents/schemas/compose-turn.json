@@ -34,7 +34,16 @@
         "properties": {
           "spec": { "type": "string" },
           "set": { "type": ["array", "null"], "items": { "type": "string" } },
-          "reason": { "type": "string" }
+          "reason": { "type": "string" },
+          "gap": {
+            "type": "object",
+            "description": "only if the input has a Gaps section: a new entry for the remainder of this set",
+            "properties": {
+              "new_id": { "type": "string" },
+              "nearest": { "type": "string" }
+            },
+            "required": ["new_id"]
+          }
         },
         "required": ["spec", "set", "reason"]
       }

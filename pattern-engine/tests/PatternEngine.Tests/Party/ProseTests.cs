@@ -115,6 +115,8 @@ public sealed class ProseTests
         Assert.That(decider, Does.Not.Contain("The run sees only the text"));
         Assert.That(result.Runs.Single().Pass, Is.True);
         Assert.That(result.Runs.Single().Verdicts.Any(v => v.Rubric == "spec"), Is.False);
+        Assert.That(result.Runs.Single().Decomposition!.Mode, Is.EqualTo("given"));
+        Assert.That(Pack.Case("p3").Anchor.Rubrics, Has.All.Property("Hidden").True, "the case file keeps its eval rubrics");
     }
 
     [Test]
@@ -124,7 +126,18 @@ public sealed class ProseTests
     }
 
     private static (Features.Compose.Domain.Shared.Anchor? Anchor, IReadOnlyList<string> Errors) Build(string id, object answer) =>
-        Decomposer.Build(Pack, Ranges, id, Pack.Case(id).Text!, new AgentAnswer(JsonSerializer.SerializeToElement(answer), 0, 0, null));
+        Decomposer.Build(Pack, Ranges, id, Pack.Case(id).Text!, new AgentAnswer(Needs(answer), 0, 0, null));
+
+    /// <summary>Writes a short test answer (tags, stats, budget) in the generic decomposer schema: needs, missing, note.</summary>
+    private static JsonElement Needs(object answer)
+    {
+        var a = JsonSerializer.SerializeToElement(answer);
+        var needs = a.GetProperty("tags").EnumerateArray().Select(t => (object)new { kind = "tag", name = t.GetString(), amount = (int?)null })
+            .Concat(a.GetProperty("stats").EnumerateArray().Select(s => (object)new { kind = "stat", name = s.GetProperty("stat").GetString(), amount = (int?)s.GetProperty("min").GetInt32() }))
+            .Concat(a.GetProperty("budget").ValueKind == JsonValueKind.Number ? [new { kind = "budget", name = "budget", amount = (int?)a.GetProperty("budget").GetInt32() }] : [])
+            .ToArray();
+        return JsonSerializer.SerializeToElement(new { needs, missing = Array.Empty<string>(), note = a.GetProperty("note").GetString() });
+    }
 
     private static async Task<(PartyRunResult, ScriptedJudge)> RunAsync(string id, string spec, bool lore, params object[] answers)
     {
@@ -133,7 +146,7 @@ public sealed class ProseTests
         var judge = new ScriptedJudge(call => call.Agent switch
         {
             ComposeLoop.GraderAgent => PartyScript.OracleGrader(call),
-            Decomposer.Agent => decomposer.Count > 0 ? decomposer.Dequeue() : null,
+            Decomposer.Agent => decomposer.Count > 0 ? Needs(decomposer.Dequeue()) : null,
             _ => decider.Count > 0 ? decider.Dequeue() : null,
         });
         var runner = new PartyRunner(Pack, () => judge, new RunLimits(80, 1.0, 60), Path.Combine(Path.GetTempPath(), "pe-tests"));

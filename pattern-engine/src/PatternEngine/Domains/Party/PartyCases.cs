@@ -14,7 +14,7 @@ public sealed record PartyCase(string Id, string Rung, Anchor Anchor, IReadOnlyL
     /// <summary>The rubrics over the full assignment (the pool rubric). Empty for a one-quest case.</summary>
     public IReadOnlyList<Rubric> CaseRubrics => Many ? Anchor.Rubrics : [];
 
-    public string? Text => Anchor.Field("text");
+    public string? Text => Anchor.Domain.Get("text");
 }
 
 /// <summary>The party domain on disk: settings, heroes, cases and the eval anchor.</summary>
@@ -76,7 +76,9 @@ public sealed class PartyPack
 
         var byId = anchors.ToDictionary(a => a.Id, StringComparer.Ordinal);
         var cases = new List<PartyCase>();
-        foreach (var a in anchors.Where(a => a.Level == "case"))
+        // A quest of a many-quest case is an anchor that a case lists in domain.quests. Each other anchor is a case.
+        var questOf = anchors.SelectMany(a => Node.Strings(a.Domain.Raw("quests"))).ToHashSet(StringComparer.Ordinal);
+        foreach (var a in anchors.Where(a => !questOf.Contains(a.Id)))
         {
             var rung = a.Domain.Get("rung") ?? string.Empty;
             if (!Rungs.Contains(rung))
@@ -88,7 +90,7 @@ public sealed class PartyPack
             var quests = new List<Anchor>();
             foreach (var q in questIds)
             {
-                if (byId.TryGetValue(q, out var quest) && quest.Level == "quest")
+                if (byId.TryGetValue(q, out var quest))
                 {
                     quests.Add(quest);
                 }
@@ -98,9 +100,9 @@ public sealed class PartyPack
                 }
             }
 
-            if (rung == "prose" && string.IsNullOrWhiteSpace(a.Field("text")))
+            if (rung == "prose" && string.IsNullOrWhiteSpace(a.Domain.Get("text")))
             {
-                errors.Add($"case {a.Id}: a prose case needs text");
+                errors.Add($"case {a.Id}: a prose case needs domain.text");
             }
 
             if (rung == "prose" && a.Rubrics.Any(r => !r.Hidden))

@@ -23,6 +23,7 @@ judge:
 
 engine:
   allow_no_fit: true
+  decider: status        # status: one decider call for each node | compose: decomposer, compose loop and grader (a pack sets it)
   concurrency: 4         # agent calls at the same time inside one run
   limits:
     node:
@@ -52,7 +53,6 @@ grading:
   # output: these decide the pass (is the output correct). solution: these grade the solution (which patterns); never the pass.
   output: [selection, built, structure, rules, proposed, questions]
   solution: []
-  information: [consistent]      # measured, but not a pass condition
 
 # Tests of the graders, with no model.
 grader_trust:

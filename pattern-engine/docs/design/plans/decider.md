@@ -1,6 +1,6 @@
 # Decider plan
 
-Status: planning, not final. The owner closed the planning session with open items. This file keeps the decisions and the open items for the next session.
+Status: decided, except the items in "Open". The owner decided A1 to G4 on 2026-11-17, and B1 to B9 in the briefing of the engine work on the same day.
 
 Visual map of the decider today (anatomy, flow, input and output, domains, real run): [Decider Map](https://claude.ai/artifact/QmgUexiTLK3c51eT1EzFE3).
 
@@ -28,24 +28,29 @@ The run `hand-rule-001` failed. The root selected `cqrs_system` with the childre
 | D7 | All limits are configurable. | Owner: "Any limit should always be configurable." |
 | D8 | Decider and grader are two roles. The grader gets one element, the target rubrics, how to evaluate, and minimal context, and returns the result of each rubric and the score. The decider filters the options (mostly code), sends a grade request for each option that needs one, analyzes the graded options and picks. To compose, it takes the best option, makes the failed rubrics the remainder, and repeats. | Owner's model, sent from the main session. The grader has the smallest context, and the same grader grades the solution after the run. |
 | D9 | A new test domain, an RPG party, tests composition without ports. Another session plans it. | Owner, from the main session. |
+| A1 | Anchor field names are final. Front matter: `id`, `kind` (intent, constraints, success, review), `level` (engine, pack, case), `score` (`rule`: all or percent, `pass_at`), the body text, and `domain: {...}` that the pack owns. Rubric: `id`, `ask`, `check` (grader or code), `args`, `visibility`. | Owner, 2026-11-17. Closes O9. |
+| A2 | `visibility` is `run` or `eval`. Eval rubrics never go to the run. | Owner. Closes O10. |
+| R1 | Code checks during the run are a setting of each pack (`compose.code_checks`). Party: off. Topology: on, with `check: code` rubrics for port types and a set check after each pick (the ports connect, each loop has an entry). | Owner. Closes O3 and O7. |
+| R2 | One spec role for all domains: `decomposer`. Each pack adds its own rules file. A missing value goes to the ask step. | Owner. Closes O4 and O12. |
+| R3 | The loop stops when the remainder is empty, when the remainder did not become smaller in one turn, or when the turn count reaches the limit in the settings. | Owner. Closes O5 and O6. |
+| G1 | Verdict cache key: element hash + rubric hash + checker version + context hash. | Owner. Closes O8. |
+| G2 | Each pack keeps grader fixtures with known answers. Run them when the model or a grader file changes. | Owner. |
+| G3 | The report has one line for each anchor: score, failed rubrics, measures. No weighted total. | Owner. |
+| G4 | Remove the setting `grading.information`. | Owner. |
+| B1 | Only a pack with `engine.decider: compose` uses the compose loop in the engine (topology). Shapes and circuits keep the status decider (`agents/decider.md`) until a later change. | Owner, briefing. Closes O14 scope. |
+| B2 | A catalog entry of the engine is one pattern variant, for example `command_pipeline.validated`. A required param goes to the ask step. | Owner, briefing. |
+| B3 | A group pattern (`cqrs_system`) is not an entry. If a committed set fits the parts of a group, code wraps the set in that group. | Owner, briefing. |
+| B4 | The pack setting `compose.gaps` lets a commit keep a remainder with `gap: {new_id, nearest}`. The author step writes the new pattern from the remainder rubrics. Topology: on. Party: off. | Owner, briefing. |
+| B5 | The decider agent picks. When a stop of R3 fires, code gives the decider one last turn, and that turn must commit. | Owner, briefing. Closes O1. |
+| B6 | The party control mode `spec: given` writes a copy of the hidden rubrics with `visibility: run`, and the trace records it. | Owner, briefing. |
+| B7 | The decomposer schema is generic: `needs: [{kind, name, amount}]`, `missing`, `note`. The pack code makes the rubrics. | Owner, briefing. |
+| B8 | A stamp file keeps the model and the grader file hashes of the last fixture run. `pe eval` warns when the stamp is old. `pe grader-check <pack>` runs the fixtures. | Owner, briefing. |
+| B9 | The grade report keeps `consistent` as a measure. | Owner, briefing. |
+| V1 | A verdict is true or false. A rubric with no verdict counts as false, so it is in the remainder. | Composition plan C8. Closes O2. |
 
 ## Open
 
-Each item is a proposal from this session. The owner has not decided it.
-
 | # | Item | Proposal |
 |---|---|---|
-| O1 | Who picks (question 3) | Code ranks and picks. The decider agent judges only a near tie. The margin is a setting. |
-| O2 | Verdict values | `yes`, `no` or `unknown`, each with a short reason. An `unknown` goes to the ask step. The grader does not guess. |
-| O3 | Code rubrics | A rubric with `check: code:<name>` (for example `code:io` against the pattern ports) gets its verdict from code. It never goes to the grader. |
-| O4 | The spec step | A role `analyst` with its own agent file and schema. Input: the request and the anchors of the pack and engine. Output: the request spec, with typed `io` where the pack has types. Code checks that each type is in the catalog and that the requirements connect from input to output. Missing values go to the ask step. |
-| O5 | Status and remainder | Code compares the score with the limits in `pe.settings.yaml`. The remainder is the rubrics with `no` for the picked entry. It becomes the spec of the next round. |
-| O6 | Loop stop | Stop when the remainder does not get smaller, or at a max round count from the settings. |
-| O7 | Set checks | After each pick, code checks the set: the ports connect, and each loop has an entry. A grade of one pattern cannot find the `hand-rule-001` failure. |
-| O8 | Grade cache | Key: pattern id, pattern file hash, rubric hash, context hash. A change of one part makes a new grade. |
-| O9 | Final anchor fields | Draft of the solution-grade session: one file per anchor; front matter `id`, `kind` (intent, constraints, success, review), `level` (engine, pack, case), `score` (all, percent, count, weights); 1–3 lines of context; rubrics with `id`, `ask`, `check`. Proposed additions: typed `args` for a code check; a `pattern` level (covers and excludes); a compiled `node` level with `source`; "yes" is always good; the decider reads Success too. The link from a rubric to the node that covers it goes in the trace, not in the anchor. |
-| O10 | Eval independence | The eval also uses checks that the run never sees: hidden case rubrics, the expected solution, behavior tests. Otherwise the eval only confirms the run. |
-| O11 | Search for cost and budget | "Pick the best, then repeat" is greedy. It does not always find the cheapest set within a budget, or share one pool across many specs. Proposal: the grader gives the verdicts, and code does the search. The greedy loop is the baseline. |
-| O12 | Agent files and schemas | New `grader` agent file and schema (verdicts and reasons). New `decider` agent file and schema for the near-tie pick only. Replace `agents/schemas/decide.json`. |
-| O13 | Trace changes | For each node: the spec, the verdict matrix (entry × rubric), the score, the status with the limits used, the pick and who made it (code or agent), the remainder, the set checks, the cache hits. |
-| O14 | Tests and small runs | Unit tests for the code parts (score, status, remainder, loop stop, set checks, cache). Small runs only, on Haiku with `--k 1`: `pe eval topology --mode dev --only hand-rule-001 --k 1`, then `hand-partialfit-001`, then one RPG case when that domain exists. |
+| O11 | Search for cost and budget | "Pick the best, then repeat" is greedy. Proposal: the grader gives the verdicts, and code does the search. The greedy loop is the baseline. |
+| O13 | Trace changes | For each node: the spec, the verdict matrix (entry × rubric), the score, the pick, the remainder, the set checks, the cache hits. The compose trace has most of these. |

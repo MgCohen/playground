@@ -33,6 +33,8 @@ public sealed class TopologyPack : IDomainPack
     public IReviewRenderer? Review { get; } = new TopologyReview();
 
     public IReadOnlyList<IGrader> Graders { get; } = [new FlowGrader()];
+
+    public IComposeHooks? Compose { get; } = new TopologyCompose();
 }
 
 /// <summary>

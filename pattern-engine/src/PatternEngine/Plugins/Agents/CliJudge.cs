@@ -33,6 +33,13 @@ public sealed class CliJudge(AgentCatalog agents, CliJudgeSettings settings) : I
         return last! with { Ms = ms, Cost = cost };
     }
 
+    public string Version(string agent)
+    {
+        var file = agents.Get(agent);
+        var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(file.Text)))[..12];
+        return $"{hash}/{settings.Model ?? file.Model}";
+    }
+
     private static void Install(AgentFile agent, string workDir)
     {
         var dir = Path.Combine(workDir, ".claude", "agents");

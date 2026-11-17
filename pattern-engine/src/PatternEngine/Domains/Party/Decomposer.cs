@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using PatternEngine.Features.Compose.Domain;
 using PatternEngine.Features.Compose.Domain.Shared;
 using PatternEngine.Plugins.Agents;
 using PatternEngine.Plugins.Settings;
@@ -27,41 +28,28 @@ public sealed record Decomposition(
     [property: JsonPropertyName("errors")] IReadOnlyList<string> Errors,
     [property: JsonPropertyName("note")] string? Note,
     [property: JsonPropertyName("lore")] bool Lore,
-    [property: JsonPropertyName("attempts")] int Attempts)
+    [property: JsonPropertyName("attempts")] int Attempts,
+    [property: JsonPropertyName("mode")] string Mode = "decompose")
 {
     [JsonIgnore]
     public Anchor? Anchor { get; init; }
 }
 
 /// <summary>
-/// The decomposer step of rung 6. The agent turns prose into typed needs. Code checks each need against the known
-/// tags, stats and ranges, and writes the anchor: code makes each rubric id, ask and args.
+/// The decomposer step of rung 6, with the generic decomposer agent and the rules file decomposer.md of the pack.
+/// Code checks each need against the known tags, stats and ranges, and writes the anchor: code makes each rubric id, ask and args.
 /// </summary>
 public static class Decomposer
 {
-    public const string Agent = "decomposer";
+    public const string Agent = Decompose.Agent;
 
-    public static string Input(PartyPack pack, string text, bool lore, IReadOnlyList<string> errors)
-    {
-        var b = new StringBuilder();
-        b.Append("# Text\n\n").Append(text).Append("\n\n# Known tags\n\n").Append(string.Join(", ", pack.Words.Tags))
-            .Append("\n\n# Known stats\n\n").Append(string.Join(", ", pack.Words.Stats)).Append('\n');
-        if (lore)
-        {
-            b.Append("\n# Lore\n\n").Append(File.ReadAllText(Path.Combine(pack.Dir, "lore.md")).Trim()).Append('\n');
-        }
-
-        if (errors.Count > 0)
-        {
-            b.Append("\n# Errors in your last answer\n\n");
-            foreach (var e in errors)
-            {
-                b.Append("- ").Append(e).Append('\n');
-            }
-        }
-
-        return b.ToString();
-    }
+    public static string Input(PartyPack pack, string text, bool lore, IReadOnlyList<string> errors) =>
+        Decompose.Input(
+            File.ReadAllText(Path.Combine(pack.Dir, "decomposer.md")),
+            text,
+            new Dictionary<string, IReadOnlyList<string>> { ["tag"] = pack.Words.Tags, ["stat"] = pack.Words.Stats, ["budget"] = ["budget"] },
+            lore ? ("Lore", File.ReadAllText(Path.Combine(pack.Dir, "lore.md"))) : null,
+            errors);
 
     /// <summary>Checks one answer. With no errors, it gives the anchor of the quest: the id of the case, the text as context, and one rubric for each need.</summary>
     public static (Anchor? Anchor, IReadOnlyList<string> Errors) Build(PartyPack pack, DecomposeRanges ranges, string id, string text, AgentAnswer answer)
@@ -72,7 +60,9 @@ public static class Decomposer
         }
 
         var errors = new List<string>();
-        var tags = answer.Texts("tags").Select(t => t.Trim().ToLowerInvariant()).ToList();
+        var (needs, _) = Decompose.Read(answer);
+        errors.AddRange(needs.Where(n => n.Kind is not ("tag" or "stat" or "budget")).Select(n => $"unknown kind \"{n.Kind}\""));
+        var tags = needs.Where(n => n.Kind == "tag").Select(n => n.Name).ToList();
         errors.AddRange(tags.Where(t => !pack.Words.Tags.Contains(t)).Select(t => $"unknown tag \"{t}\""));
         errors.AddRange(tags.GroupBy(t => t).Where(g => g.Count() > 1).Select(g => $"tag \"{g.Key}\" is in the list more than once"));
         if (tags.Count == 0)
@@ -81,35 +71,36 @@ public static class Decomposer
         }
 
         var stats = new List<(string Stat, int Min)>();
-        if (answer.Field("stats") is { ValueKind: JsonValueKind.Array } list)
+        foreach (var s in needs.Where(n => n.Kind == "stat"))
         {
-            foreach (var s in list.EnumerateArray().Where(s => s.ValueKind == JsonValueKind.Object))
+            var min = s.Amount ?? int.MinValue;
+            if (!pack.Words.Stats.Contains(s.Name))
             {
-                var stat = s.TryGetProperty("stat", out var n) && n.ValueKind == JsonValueKind.String ? n.GetString()!.Trim().ToLowerInvariant() : string.Empty;
-                var min = s.TryGetProperty("min", out var m) && m.ValueKind == JsonValueKind.Number && m.TryGetInt32(out var v) ? v : int.MinValue;
-                if (!pack.Words.Stats.Contains(stat))
-                {
-                    errors.Add($"unknown stat \"{stat}\"");
-                }
-                else if (min < ranges.StatMin || min > ranges.StatMax)
-                {
-                    errors.Add($"stat \"{stat}\": the amount must be from {ranges.StatMin} to {ranges.StatMax}");
-                }
-                else if (stats.Any(x => x.Stat == stat))
-                {
-                    errors.Add($"stat \"{stat}\" is in the list more than once");
-                }
-                else
-                {
-                    stats.Add((stat, min));
-                }
+                errors.Add($"unknown stat \"{s.Name}\"");
+            }
+            else if (min < ranges.StatMin || min > ranges.StatMax)
+            {
+                errors.Add($"stat \"{s.Name}\": the amount must be from {ranges.StatMin} to {ranges.StatMax}");
+            }
+            else if (stats.Any(x => x.Stat == s.Name))
+            {
+                errors.Add($"stat \"{s.Name}\" is in the list more than once");
+            }
+            else
+            {
+                stats.Add((s.Name, min));
             }
         }
 
         int? budget = null;
-        if (answer.Field("budget") is { ValueKind: JsonValueKind.Number } bv)
+        var budgets = needs.Where(n => n.Kind == "budget").ToList();
+        if (budgets.Count > 1)
         {
-            if (!bv.TryGetInt32(out var b) || b < ranges.BudgetMin || b > ranges.BudgetMax)
+            errors.Add("give at most one budget");
+        }
+        else if (budgets.Count == 1)
+        {
+            if (budgets[0].Amount is not { } b || b < ranges.BudgetMin || b > ranges.BudgetMax)
             {
                 errors.Add($"budget: the amount must be from {ranges.BudgetMin} to {ranges.BudgetMax}");
             }
@@ -126,7 +117,7 @@ public static class Decomposer
     public static Anchor Anchor(string id, string text, IReadOnlyList<string> tags, IReadOnlyList<(string Stat, int Min)> stats, int? budget)
     {
         var b = new StringBuilder();
-        b.Append(CultureInfo.InvariantCulture, $"---\nid: {id}\nkind: success\nlevel: quest\nscore: {{ rule: all }}\n---\n{text}\n\n");
+        b.Append(CultureInfo.InvariantCulture, $"---\nid: {id}\nkind: success\nlevel: case\nscore: {{ rule: all }}\n---\n{text}\n\n");
         foreach (var t in tags)
         {
             b.Append(CultureInfo.InvariantCulture, $"- id: {t}\n  ask: Does the party have {("aeiou".Contains(t[0], StringComparison.Ordinal) ? "an" : "a")} {t}?\n  check: grader\n  args: {{ tag: {t} }}\n");
@@ -145,7 +136,10 @@ public static class Decomposer
         return Features.Compose.Domain.Shared.Anchor.Parse(b.ToString(), $"decomposed:{id}");
     }
 
-    /// <summary>The hidden anchor of a prose case, with its rubrics visible to the run: the control mode "given".</summary>
+    /// <summary>
+    /// The hidden anchor of a prose case, with its rubrics visible to the run: the control mode "given" (B6).
+    /// It is a copy with visibility run, so the case file keeps its eval rubrics, and the trace records the mode.
+    /// </summary>
     public static Anchor Given(PartyCase c) =>
         c.Anchor with { Context = c.Text ?? string.Empty, Rubrics = c.Anchor.Rubrics.Select(r => r with { Visibility = "run" }).ToList() };
 

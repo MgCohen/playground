@@ -27,4 +27,10 @@ public interface IComposeTask
 
     /// <summary>The entries of one set, with the fields that the grader sees.</summary>
     string SetText(IReadOnlyList<string> ids);
+
+    /// <summary>
+    /// The verdicts that code gives for one set, when the setting compose.code_checks is on (R1): one for each rubric with check code,
+    /// then one for each set check of the pack (for example "the ports connect"). A pack with no code checks gives none.
+    /// </summary>
+    IReadOnlyList<Domain.RubricVerdict> CodeVerdicts(Anchor spec, IReadOnlyList<string> set) => [];
 }

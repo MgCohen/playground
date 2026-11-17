@@ -31,4 +31,7 @@ public sealed record AgentAnswer(JsonElement? Data, long Ms, double Cost, string
 public interface IJudge
 {
     Task<AgentAnswer> CallAsync(AgentCall call, CancellationToken ct);
+
+    /// <summary>The version of one agent as a checker: a change of the agent file or the model gives another version.</summary>
+    string Version(string agent) => "none";
 }

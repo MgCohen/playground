@@ -1,0 +1,365 @@
+{
+  "runId": "2026-11-17T02-05-15",
+  "domain": "topology",
+  "engine": "csharp-hybrid",
+  "mode": "dev",
+  "label": "engine-decider",
+  "model": "haiku",
+  "k": 1,
+  "ablate": [],
+  "graders": [
+    "structure",
+    "rules",
+    "flow",
+    "questions"
+  ],
+  "solution_graders": [
+    "selection",
+    "built",
+    "proposed"
+  ],
+  "catalog": "a307e7d3ddf7",
+  "cases": 1,
+  "runs": [
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Design a query handler that also saves the changes that the user sends.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "parts": [
+            {
+              "p": "command_pipeline"
+            },
+            {
+              "p": "store"
+            }
+          ]
+        },
+        "io": {
+          "inputs": [
+            "Request"
+          ],
+          "outputs": [
+            "Saved"
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "command_pipeline",
+              "v": "plain"
+            },
+            {
+              "p": "query_handler",
+              "v": "plain"
+            },
+            {
+              "p": "store",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 3,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "a307e7d3ddf7",
+          "patterns": {
+            "cqrs_system": "0e0e31aa5751",
+            "command_pipeline": "41dd60e34d2d",
+            "query_handler": "aa16916c94a5",
+            "store": "d6a75a521c5e"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a query handler that also saves the changes that the user sends.",
+            "status": "solved",
+            "pattern": "cqrs_system",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1,
+              2,
+              3
+            ],
+            "open": [],
+            "reason": null
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "Design a query handler that also saves the changes that the user sends.",
+            "status": "solved",
+            "pattern": "command_pipeline",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": null
+          },
+          {
+            "id": 2,
+            "parent": 0,
+            "depth": 1,
+            "text": "Design a query handler that also saves the changes that the user sends.",
+            "status": "solved",
+            "pattern": "query_handler",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": null
+          },
+          {
+            "id": 3,
+            "parent": 0,
+            "depth": 1,
+            "text": "Design a query handler that also saves the changes that the user sends.",
+            "status": "solved",
+            "pattern": "store",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": null
+          }
+        ],
+        "compose": {
+          "spec": [
+            "io (code): Does the set take only Request from outside, and give View, Saved?",
+            "job-1 (grader): Does a pattern of the set do this job: Handle a query?",
+            "job-2 (grader): Does a pattern of the set do this job: Save the changes that the user sends?"
+          ],
+          "spec_errors": [],
+          "scores": [
+            "request: score 5 of 5 (all, pass); failed: none; 3 turns, 2 grades, 0 cache hits, 6 calls"
+          ],
+          "loop": {
+            "task": "request",
+            "strategy": "cover",
+            "outcome": "committed",
+            "stop_reason": null,
+            "commits": [
+              {
+                "spec": "request",
+                "set": [
+                  "command_pipeline.plain",
+                  "query_handler.plain",
+                  "store.plain"
+                ],
+                "reason": "Graded earlier with all rubrics yes (io, job-1, job-2, set:connect, set:loop-entry) and an empty remainder. The query handler covers the read job and returns View, the command pipeline handles the change, and the store saves the changes, so the request is covered.",
+                "remainder": [],
+                "gap": null
+              }
+            ],
+            "turns": [
+              {
+                "turn": 1,
+                "action": "grade",
+                "note": "I start with command_pipeline.plain, since the request's main job is changing data, and the request does not ask for validation, so the plain variant fits; I will grade it to see what remains.",
+                "refused": [],
+                "grades": [
+                  {
+                    "spec": "request",
+                    "set": [
+                      "command_pipeline.plain"
+                    ],
+                    "verdicts": [
+                      {
+                        "rubric": "io",
+                        "ok": false,
+                        "reason": "gives no View; gives no Saved"
+                      },
+                      {
+                        "rubric": "job-1",
+                        "ok": false,
+                        "reason": "The only pattern, command_pipeline.plain, is for requests that change data. Its use-when text does not name handling a read-only query, and its do-not-use text sends read-only requests to query_handler, which is not in the set."
+                      },
+                      {
+                        "rubric": "job-2",
+                        "ok": false,
+                        "reason": "command_pipeline.plain changes data in steps and outputs an event. Its line never names saving or persisting changes. Its do-not-use text routes event keeping to store, which is not in the set, so the set does not show a pattern that saves the user's changes."
+                      },
+                      {
+                        "rubric": "set:connect",
+                        "ok": true,
+                        "reason": "each input gets a value"
+                      },
+                      {
+                        "rubric": "set:loop-entry",
+                        "ok": true,
+                        "reason": "each loop has an entry"
+                      }
+                    ],
+                    "remainder": [
+                      "io",
+                      "job-1",
+                      "job-2"
+                    ],
+                    "cached": false,
+                    "error": null,
+                    "parts": null,
+                    "key": "983db7441a75|8acf3457943c|41c867928c95/haiku+code|8d355e04b0be"
+                  }
+                ],
+                "error": null
+              },
+              {
+                "turn": 2,
+                "action": "grade",
+                "note": "The remainder lists io, job-1 and job-2, so I add query_handler.plain (handles the query from Request) and store.plain (saves the events), keeping command_pipeline.plain, and grade the new set.",
+                "refused": [],
+                "grades": [
+                  {
+                    "spec": "request",
+                    "set": [
+                      "command_pipeline.plain",
+                      "query_handler.plain",
+                      "store.plain"
+                    ],
+                    "verdicts": [
+                      {
+                        "rubric": "io",
+                        "ok": true,
+                        "reason": "takes Request, gives View, Saved"
+                      },
+                      {
+                        "rubric": "job-1",
+                        "ok": true,
+                        "reason": "query_handler.plain has the use-when 'The request reads data and returns a view of it', takes a Request input and outputs a View. Handling a query is exactly this, and its do-not-use text (the request also changes or saves data) does not apply to a pure query."
+                      },
+                      {
+                        "rubric": "job-2",
+                        "ok": true,
+                        "reason": "No single pattern saves user changes, but together they do. command_pipeline.plain takes a user Request that changes data and outputs an Event. store.plain takes that Event type and its use-when is 'keeps events or changes, so that they are saved'. The port types join (Event to Event), so the user's changes are saved. Neither pattern's do-not-use text matches this request."
+                      },
+                      {
+                        "rubric": "set:connect",
+                        "ok": true,
+                        "reason": "each input gets a value"
+                      },
+                      {
+                        "rubric": "set:loop-entry",
+                        "ok": true,
+                        "reason": "each loop has an entry"
+                      }
+                    ],
+                    "remainder": [],
+                    "cached": false,
+                    "error": null,
+                    "parts": null,
+                    "key": "0a91354face8|8acf3457943c|41c867928c95/haiku+code|8d355e04b0be"
+                  }
+                ],
+                "error": null
+              },
+              {
+                "turn": 3,
+                "action": "commit",
+                "note": "This is the last turn, so I commit the one graded set whose remainder is empty: command_pipeline.plain, query_handler.plain, and store.plain, which passes all rubrics for the request spec.",
+                "refused": [],
+                "grades": [],
+                "error": null
+              }
+            ],
+            "grades": 2,
+            "cache_hits": 0,
+            "calls": 6,
+            "cost": 0.00332533,
+            "ms": 41865,
+            "scores": [
+              {
+                "anchor": "request",
+                "ok": 5,
+                "total": 5,
+                "rule": "all",
+                "pass": true,
+                "failed": []
+              }
+            ]
+          }
+        }
+      },
+      "grades": {
+        "verdicts": {
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": true,
+        "consistent": true,
+        "solution": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "cqrs_system: expected 2 parts [command_pipeline, store], got 3 [command_pipeline, query_handler, store]"
+            ]
+          },
+          "built": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "cqrs_system: expected 2 parts [command_pipeline, store], got 3 [command_pipeline, query_handler, store]"
+            ]
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          }
+        },
+        "solution_score": 0
+      },
+      "pass": true,
+      "agent": {
+        "Ms": 50369,
+        "Cost": 0.00476302,
+        "Calls": 9,
+        "Escalations": 0,
+        "Error": null
+      }
+    }
+  ]
+}
