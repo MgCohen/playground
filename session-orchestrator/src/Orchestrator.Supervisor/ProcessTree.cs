@@ -9,6 +9,7 @@ public interface IProcessHandle : IDisposable
     int Pid { get; }
     int Parent { get; }
     DateTime Start { get; }
+    bool HasExited { get; }
     bool Terminate();
 }
 
@@ -35,6 +36,7 @@ public sealed class WindowsProcessTable : IProcessTable
         public int Pid => handle.Pid;
         public int Parent => handle.Parent;
         public DateTime Start => handle.Start;
+        public bool HasExited => handle.HasExited;
         public bool Terminate() => handle.Terminate();
         public void Dispose() => handle.Dispose();
     }
@@ -58,6 +60,7 @@ public sealed class ProcessTree : IDisposable
     readonly Process? root;
     readonly IProcessTable table;
     readonly Dictionary<int, IProcessHandle> known = [];
+    readonly List<int> recorded = [];
     readonly Lock gate = new();
     readonly Timer? timer;
     bool disposed;
@@ -71,13 +74,24 @@ public sealed class ProcessTree : IDisposable
     public ProcessTree(int rootId, IProcessTable table, TimeSpan? interval = null)
     {
         this.table = table;
-        if (table.Open(rootId) is { } handle) known[rootId] = handle;
+        if (table.Open(rootId) is { } handle)
+        {
+            known[rootId] = handle;
+            recorded.Add(rootId);
+        }
         if (interval is { } every) timer = new Timer(_ => Scan(), null, TimeSpan.Zero, every);
     }
 
+    /// <summary>The processes whose handle the tree holds now.</summary>
     public IReadOnlyList<int> Known
     {
         get { lock (gate) return [.. known.Keys]; }
+    }
+
+    /// <summary>Each process that the tree recorded, also one whose handle it closed.</summary>
+    public IReadOnlyList<int> Recorded
+    {
+        get { lock (gate) return [.. recorded]; }
     }
 
     static bool Unsupported(IProcessTable table) => table is WindowsProcessTable && !OperatingSystem.IsWindows();
@@ -88,6 +102,9 @@ public sealed class ProcessTree : IDisposable
         lock (gate)
         {
             if (disposed) return;
+            // A process that ended before this snapshot can have no child after it: once this scan looked for its children,
+            // its handle can go (review of PR #14, item 6).
+            var ended = known.Where(k => k.Value.HasExited).Select(k => k.Key).ToList();
             var entries = table.Snapshot();
             bool added;
             do
@@ -104,10 +121,16 @@ public sealed class ProcessTree : IDisposable
                         continue;
                     }
                     known[pid] = handle;
+                    recorded.Add(pid);
                     added = true;
                 }
             }
             while (added);
+            foreach (var pid in ended)
+            {
+                known[pid].Dispose();
+                known.Remove(pid);
+            }
         }
     }
 
@@ -119,13 +142,15 @@ public sealed class ProcessTree : IDisposable
             try { root?.Kill(entireProcessTree: true); } catch (InvalidOperationException) { }
             return;
         }
-        for (var round = 0; round < 5; round++)
+        // One lock for the kill and for Dispose, so a kill never uses a handle that Dispose closed (item 6).
+        lock (gate)
         {
-            Scan();
-            List<IProcessHandle> targets;
-            lock (gate) targets = [.. known.Values];
-            var killed = targets.Count(handle => handle.Terminate());
-            if (killed == 0) return;
+            for (var round = 0; round < 5 && !disposed; round++)
+            {
+                Scan();
+                var killed = known.Values.Count(handle => handle.Terminate());
+                if (killed == 0) return;
+            }
         }
     }
 
@@ -136,6 +161,7 @@ public sealed class ProcessTree : IDisposable
         {
             disposed = true;
             foreach (var handle in known.Values) handle.Dispose();
+            known.Clear();
         }
     }
 

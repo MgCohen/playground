@@ -42,8 +42,8 @@ public sealed class ProcessTreeTests
         using var tree = new ProcessTree(root, TimeSpan.FromMilliseconds(100));
         var orphan = WaitForOrphan(folder);
         tree.KillAll();
-        Assert.That(tree.Known, Does.Contain(orphan));
-        Assert.That(tree.Known.Where(IsAlive), Is.Empty);
+        Assert.That(tree.Recorded, Does.Contain(orphan));
+        Assert.That(tree.Recorded.Where(IsAlive), Is.Empty);
     }
 
     [Test]

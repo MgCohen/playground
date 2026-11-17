@@ -60,9 +60,11 @@ public sealed class ProcessTreeRaceTests
             public int Pid => process.Pid;
             public int Parent => process.Parent;
             public DateTime Start => process.Start;
+            public bool HasExited => !process.Alive;
 
             public bool Terminate()
             {
+                if (!open) throw new ObjectDisposedException("handle", "a kill used a handle that Dispose closed");
                 if (!process.Alive) return false;
                 process.Alive = false;
                 process.Killed = true;
@@ -121,12 +123,45 @@ public sealed class ProcessTreeRaceTests
         table.End(middle);
         Assert.That(table.CanReuse(110), Is.False, "the tree holds the ended parent: its id cannot name a new process");
         tree.Scan();
-        Assert.That(tree.Known, Is.EquivalentTo(new[] { 100, 110, 120 }));
+        Assert.That(tree.Recorded, Is.EquivalentTo(new[] { 100, 110, 120 }));
+        Assert.That(tree.Known, Is.EquivalentTo(new[] { 100, 120 }), "review of PR #14, item 6: the scan after its end closed the handle of the parent");
+        Assert.That(table.CanReuse(110), Is.True);
         tree.KillAll();
         Assert.That((orphan.Killed, root.Killed, middle.Killed), Is.EqualTo((true, true, false)));
         tree.Dispose();
-        Assert.That(table.CanReuse(110), Is.True);
         Assert.That(root.Holds + middle.Holds + orphan.Holds, Is.Zero);
+    }
+
+    [Test]
+    public void A_parent_that_ends_after_the_snapshot_keeps_its_handle_until_the_next_scan()
+    {
+        var table = new FakeTable();
+        var root = table.Start(100, 1, T0);
+        using var tree = new ProcessTree(root.Pid, table);
+        var middle = table.Start(110, 100, T0.AddSeconds(1));
+        tree.Scan();
+        var late = table.Start(120, 110, T0.AddSeconds(2));
+        table.End(middle);
+        Assert.That(tree.Known, Does.Contain(110), "it ended after the last snapshot: a child can still be unseen");
+        tree.Scan();
+        Assert.That(tree.Recorded, Does.Contain(late.Pid));
+        Assert.That(tree.Known, Does.Not.Contain(110));
+    }
+
+    [Test]
+    public void Kill_all_and_dispose_at_the_same_time_never_use_a_closed_handle()
+    {
+        for (var i = 0; i < 200; i++)
+        {
+            var table = new FakeTable();
+            var root = table.Start(100, 1, T0);
+            for (var c = 0; c < 20; c++) table.Start(200 + c, 100, T0.AddSeconds(1));
+            var tree = new ProcessTree(root.Pid, table);
+            tree.Scan();
+            var kill = Task.Run(tree.KillAll);
+            var dispose = Task.Run(tree.Dispose);
+            Assert.DoesNotThrowAsync(async () => await Task.WhenAll(kill, dispose));
+        }
     }
 
     [Test]
@@ -156,9 +191,9 @@ public sealed class ProcessTreeRaceTests
         tree.KillAll();
         root.WaitForExit(5000);
         var parent = Processes.ParentOf(self.Id);
-        Assert.That(tree.Known, Does.Contain(root.Id));
-        Assert.That(tree.Known, Does.Not.Contain(self.Id));
-        if (parent is { } p) Assert.That(tree.Known, Does.Not.Contain(p));
+        Assert.That(tree.Recorded, Does.Contain(root.Id));
+        Assert.That(tree.Recorded, Does.Not.Contain(self.Id));
+        if (parent is { } p) Assert.That(tree.Recorded, Does.Not.Contain(p));
         Assert.That(self.HasExited, Is.False);
     }
 
