@@ -487,6 +487,21 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 #desk .fbtn { left: auto; top: auto; width: var(--bs); height: var(--bs); right: calc(var(--wr) + var(--ww) / 2 - var(--bs) / 2); bottom: calc(var(--wb) + var(--pad) + var(--abh) / 2 + var(--lift) - var(--bs) / 2); }
 .saved { margin: -14px 0 22px; }
 
+/* S4: scroll bar */
+.sbx { --sw: 6px; --gap: 2px; --op: 35%; flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }
+.sbx:not([data-s="now"])::-webkit-scrollbar { width: calc(var(--sw) + 2 * var(--gap)); }
+.sbx:not([data-s="now"])::-webkit-scrollbar-track { background: transparent; }
+.sbx:not([data-s="now"])::-webkit-scrollbar-thumb { border-radius: 999px; border: var(--gap) solid transparent; background-clip: padding-box; background-color: color-mix(in srgb, var(--muted) var(--op), transparent); min-height: 32px; }
+.sbx[data-s="a"]:hover::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--muted) calc(var(--op) + 30%), transparent); }
+.sbx[data-s="b"]::-webkit-scrollbar-thumb { background-color: transparent; }
+.sbx[data-s="b"]:hover::-webkit-scrollbar-thumb, .sbx[data-s="b"].moving::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--muted) calc(var(--op) + 20%), transparent); }
+.sbx[data-s="c"]::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--accent) var(--op), transparent); }
+.sbx[data-s="c"]:hover::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--accent) calc(var(--op) + 30%), transparent); }
+.sbx[data-s="d"]::-webkit-scrollbar-track { margin: 6px 0; border-radius: 999px; background: var(--sunken); box-shadow: var(--sh-carve); border: var(--gap) solid var(--canvas); background-clip: padding-box; }
+.sbx[data-s="d"]::-webkit-scrollbar-thumb { background-color: var(--surf); box-shadow: var(--sh-raise-sm); }
+.sbx .kv { padding: 10px 14px; display: grid; gap: 2px; font-size: 13px; flex: none; }
+.sbx .kv b { font-weight: 600; }
+
 /* Answer box */
 .answer { margin-top: 36px; padding: 18px 20px; border-radius: 18px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); display: grid; gap: 8px; }
 .answer code { display: block; padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); overflow-x: auto; white-space: pre; }
@@ -496,12 +511,13 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 
 <main>
   <h1>Inbox Motion</h1>
-  <p class="lede">Round 1 of the visual stream. Four tabs: the motion of the components, the screen transitions, the grow of the tray widget, and the minimized form with the notifications. Each item has a live sample. Pick an option, or change the values, and tell me the result line. The A4 views, the theme and the layout stay as agreed.</p>
+  <p class="lede">Round 1 of the visual stream. Five tabs: the motion of the components, the screen transitions, the grow of the tray widget, the minimized form with the notifications, and the scroll bar. Each item has a live sample. Pick an option, or change the values, and tell me the result line. The A4 views, the theme and the layout stay as agreed.</p>
   <nav class="tabs" role="tablist" aria-label="Topics">
     <button role="tab" id="tab-components" data-tab="components" aria-selected="true">Components</button>
     <button role="tab" id="tab-transitions" data-tab="transitions" aria-selected="false">Screen transitions</button>
     <button role="tab" id="tab-grow" data-tab="grow" aria-selected="false">Tray grow</button>
     <button role="tab" id="tab-notify" data-tab="notify" aria-selected="false">Minimize and notify</button>
+    <button role="tab" id="tab-scroll" data-tab="scroll" aria-selected="false">Scroll bar</button>
   </nav>
   <p class="sub saved" id="saved-st">Your choices are kept in this browser.</p>
   <div class="panel" id="p-components" role="tabpanel" aria-labelledby="tab-components">
@@ -933,6 +949,37 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     <code>N1: ball + ring, above the tray, pulse, size 40; N2: toast + buttons for questions, peek bubble for reports, hide after 5 s</code>
   </div>
   </div>
+  <div class="panel" id="p-scroll" role="tabpanel" aria-labelledby="tab-scroll" hidden>
+  <p class="intro">The scroll bar of each scroll area in the app. The space for it is fixed (S3, accepted), so nothing moves when it comes. This tab is only for its look.</p>
+  <section class="item" id="s4">
+    <div>
+      <div class="phone"><div class="crd hd2"><div class="path"><button class="cr">Cards</button><span class="sep">›</span><span class="cur">Stream</span></div></div>
+        <div class="sbx" id="s4-box" data-s="a"></div></div>
+    </div>
+    <div class="spec tweak">
+      <div class="head"><span class="tag">S4</span><h2>Scroll bar style</h2></div>
+      <p>Scroll the sample, and move the pointer on and off it.</p>
+      <div><div class="sub" style="margin-bottom:4px">Style</div>
+        <div class="sw" id="s4-sw" style="flex-wrap:wrap"><button aria-pressed="true" data-v="a">A quiet</button><button aria-pressed="false" data-v="b">B only on scroll</button><button aria-pressed="false" data-v="c">C accent</button><button aria-pressed="false" data-v="d">D carved track</button><button aria-pressed="false" data-v="now">Now</button></div></div>
+      <label for="s4-w">Width: <b id="s4-w-v">6 px</b><input id="s4-w" type="range" min="3" max="12" step="1" value="6"></label>
+      <label for="s4-gap">Space around the thumb: <b id="s4-gap-v">2 px</b><input id="s4-gap" type="range" min="0" max="4" step="1" value="2"></label>
+      <label for="s4-op">Strength: <b id="s4-op-v">35 %</b><input id="s4-op" type="range" min="10" max="70" step="5" value="35"></label>
+      <div class="opts">
+        <div class="opt rec"><b>A</b><span class="t">Quiet</span><span class="d">A thin round thumb in a muted color, with no track. It gets darker when the pointer is on the area.</span></div>
+        <div class="opt"><b>B</b><span class="t">Only on scroll</span><span class="d">The thumb is invisible until you scroll or point at the area. It goes again 0.8 s after the scroll stops. The cleanest, but you do not see that a list is longer.</span></div>
+        <div class="opt"><b>C</b><span class="t">Accent</span><span class="d">The same thin thumb in a soft orange. It ties to the theme, but it pulls the eye more.</span></div>
+        <div class="opt"><b>D</b><span class="t">Carved track</span><span class="d">A carved track with a raised thumb, the same as the wells and cards of the app. The most visible.</span></div>
+      </div>
+      <p class="cost">Build: CSS in app.css for each scroll area (WebView2 is Chromium, so the scroll bar parts can have a style). B needs a few lines of JavaScript to mark the area while it scrolls. Windows can still show its own scroll bar if the user turns on "Always show scroll bars".</p>
+      <div class="vals" id="s4-vals"></div>
+    </div>
+  </section>
+  <div class="answer">
+    <h2>How to answer</h2>
+    <p>The page saves your values. Say "done", or say the change. For example:</p>
+    <code>S4: A quiet, width 6 px, space 2 px, strength 35 %</code>
+  </div>
+  </div>
 </main>
 
 <script>
@@ -1213,7 +1260,7 @@ var Saved = (function () {
 
 // ===== Tabs =====
 (function () {
-  var names = ["components", "transitions", "grow", "notify"];
+  var names = ["components", "transitions", "grow", "notify", "scroll"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "components";
     names.forEach(function (n) {
@@ -1889,5 +1936,39 @@ var Saved = (function () {
   sw("s1-sw", "mode"); sw("s1-doc", "doc"); sw("s1-bar", "bar");
   render();
   Saved.bind("s1", st, { sw: { "s1-sw": "mode", "s1-doc": "doc", "s1-bar": "bar" } }, render);
+})();
+// ===== S4: scroll bar =====
+(function () {
+  var box = document.getElementById("s4-box"), st = { style: "a", w: 6, gap: 2, op: 35 }, idle = 0;
+  var NAMES = { a: "A quiet", b: "B only on scroll", c: "C accent", d: "D carved track", now: "now (Windows default)" };
+  var rows = [["Report", "Done: 4 sections"], ["Question", "Which sample set do you want?"], ["Review", "Render the Open view"], ["Brief", "Make the know-how page current"], ["Blocked", "The benchmark needs a sample set"],
+    ["Report", "Tests pass: 25 of 25"], ["Question", "Put the filters in a side bar?"], ["Plan", "Render model v2"], ["Report", "The design page is current"], ["Review", "Header path"],
+    ["Question", "Keep the pin on top?"], ["Report", "Self-test screenshots"], ["Blocked", "No token for the store"], ["Brief", "Grow the tray from the ball"], ["Report", "Version 19 published"]];
+  box.innerHTML = rows.map(function (r) { return '<div class="crd kv"><b>' + r[0] + '</b><span class="sub">' + r[1] + "</span></div>"; }).join("");
+  function apply() {
+    box.dataset.s = st.style;
+    box.style.setProperty("--sw", st.w + "px"); box.style.setProperty("--gap", st.gap + "px"); box.style.setProperty("--op", st.op + "%");
+    // Chromium keeps the old scroll bar style until the next layout.
+    box.style.display = "none"; void box.offsetHeight; box.style.display = "";
+    document.getElementById("s4-w-v").textContent = st.w + " px";
+    document.getElementById("s4-gap-v").textContent = st.gap + " px";
+    document.getElementById("s4-op-v").textContent = st.op + " %";
+    document.getElementById("s4-vals").textContent = "S4: " + NAMES[st.style] + (st.style === "now" ? "" : ", width " + st.w + " px, space " + st.gap + " px, strength " + st.op + " %");
+  }
+  box.addEventListener("scroll", function () {
+    if (st.style !== "b") return;
+    if (!box.classList.contains("moving")) { box.classList.add("moving"); }
+    clearTimeout(idle); idle = setTimeout(function () { box.classList.remove("moving"); }, 800);
+  });
+  document.getElementById("s4-sw").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    this.querySelectorAll("button").forEach(function (y) { y.setAttribute("aria-pressed", y === b ? "true" : "false"); });
+    st.style = b.dataset.v; apply();
+  });
+  [["s4-w", "w"], ["s4-gap", "gap"], ["s4-op", "op"]].forEach(function (x) {
+    document.getElementById(x[0]).addEventListener("input", function () { st[x[1]] = +this.value; apply(); });
+  });
+  apply();
+  Saved.bind("scroll", st, { sw: { "s4-sw": "style" }, range: { "s4-w": "w", "s4-gap": "gap", "s4-op": "op" } }, apply);
 })();
 </script>
