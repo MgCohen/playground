@@ -215,15 +215,19 @@ ol.qs { margin: 0; padding-left: 22px; display: flex; flex-direction: column; ga
 </section>
 
 <section>
-  <h2>Open questions</h2>
-  <ol class="qs">
-    <li>Q1: installed copy or run from source?</li>
-    <li>Q2: which store for the installed tray: repository <code>store/</code>, a store in <code>%LOCALAPPDATA%</code>, or mock?</li>
-    <li>Q3: who starts the supervisor: the tray, a scheduled task, or the user?</li>
-    <li>Q4: start the tray at login?</li>
-    <li>Q5: update with <code>install.ps1</code>, or automatic after a pull?</li>
-    <li>Q6a: which cloud model: cloud workers with the supervisor on this PC, or the full orchestrator in the cloud?</li>
-    <li>Q6b: may I make a cloud environment for the C0 probe?</li>
-  </ol>
+  <h2>Decisions</h2>
+  <p class="muted">The user approved the pick of each table. The build is <code>install.ps1</code>, the supervisor start in the tray and <code>orch supervisor</code>. The recipe is in <code>docs/know-how.md</code>, section "Install and start".</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Question</th><th>Decision</th></tr></thead>
+    <tbody>
+      <tr><td>Q1 install mode</td><td>Installed copy in <code>%USERPROFILE%\Apps\Orchestrator</code></td></tr>
+      <tr><td>Q2 store</td><td>Live, the repository <code>store/</code></td></tr>
+      <tr><td>Q3 supervisor start</td><td>The tray, in its own process</td></tr>
+      <tr><td>Q4 login</td><td>Startup folder shortcut, tray hidden</td></tr>
+      <tr><td>Q5 update</td><td><code>install.ps1</code> by hand; <code>orch doctor</code> check <code>app</code></td></tr>
+      <tr><td>Q6a cloud model</td><td>Cloud workers, supervisor and store on this PC</td></tr>
+      <tr><td>Q6b C0 probe</td><td>Approved. The user starts the cloud session</td></tr>
+    </tbody>
+  </table></div>
 </section>
 </div>
