@@ -40,6 +40,92 @@ public static class Processes
         return (start.ToUniversalTime() - recorded.UtcDateTime).Duration() < Tolerance;
     }
 
+    /// <summary>
+    /// Opens a handle to a process and reads its parent id and its start time (UTC) from that handle. While the handle is
+    /// open, Windows does not give the id to another process, also after the process ended. Null: the process is gone or
+    /// not readable.
+    /// </summary>
+    public static ProcessHandle? Open(int pid)
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+        var handle = OpenProcess(QueryLimited | TerminateRight | Synchronize, false, (uint)pid);
+        if (handle == IntPtr.Zero) handle = OpenProcess(QueryLimited | Synchronize, false, (uint)pid);
+        if (handle == IntPtr.Zero) return null;
+        var info = new BasicInformation();
+        if (!GetProcessTimes(handle, out var created, out _, out _, out _)
+            || NtQueryInformationProcess(handle, 0, ref info, Marshal.SizeOf<BasicInformation>(), out _) != 0)
+        {
+            CloseHandle(handle);
+            return null;
+        }
+        return new ProcessHandle(handle, pid, (int)info.InheritedFromUniqueProcessId, DateTime.FromFileTimeUtc(created));
+    }
+
+    /// <summary>An open handle to one process. It keeps the id of the process from reuse until <see cref="Dispose"/>.</summary>
+    public sealed class ProcessHandle : IDisposable
+    {
+        IntPtr handle;
+
+        internal ProcessHandle(IntPtr handle, int pid, int parent, DateTime start)
+        {
+            this.handle = handle;
+            Pid = pid;
+            Parent = parent;
+            Start = start;
+        }
+
+        public int Pid { get; }
+        public int Parent { get; }
+        public DateTime Start { get; }
+
+        public bool HasExited => handle == IntPtr.Zero || WaitForSingleObject(handle, 0) == 0;
+
+        /// <summary>Ends this process (never another one: the handle names it). False when it already ended.</summary>
+        public bool Terminate()
+        {
+            if (HasExited || !TerminateProcess(handle, 1)) return false;
+            WaitForSingleObject(handle, 2000);
+            return true;
+        }
+
+        public void Dispose()
+        {
+            if (handle == IntPtr.Zero) return;
+            CloseHandle(handle);
+            handle = IntPtr.Zero;
+        }
+    }
+
+    const uint QueryLimited = 0x1000;
+    const uint TerminateRight = 0x0001;
+    const uint Synchronize = 0x00100000;
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct BasicInformation
+    {
+        public IntPtr ExitStatus;
+        public IntPtr PebBaseAddress;
+        public IntPtr AffinityMask;
+        public IntPtr BasePriority;
+        public IntPtr UniqueProcessId;
+        public IntPtr InheritedFromUniqueProcessId;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern IntPtr OpenProcess(uint access, bool inherit, uint processId);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool GetProcessTimes(IntPtr process, out long creation, out long exit, out long kernel, out long user);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool TerminateProcess(IntPtr process, uint exitCode);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);
+
+    [DllImport("ntdll.dll")]
+    static extern int NtQueryInformationProcess(IntPtr process, int informationClass, ref BasicInformation information, int length, out int returned);
+
     public static IReadOnlyList<(int Pid, int Parent)> Snapshot()
     {
         var entries = new List<(int, int)>();

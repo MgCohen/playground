@@ -721,3 +721,40 @@ The F4 and F8 code works with both probe results: the self path is the first ste
 | B2-6 | A state that the detect checks find after a supervisor restart sends no notice (no "from" state) | Open. A restart does not repeat old notices, but a new fault found at a restart is not told to the parent |
 | B2-7 | Each fallback is a finding: the supervisor log has a `FINDING:` line | One in the live test, made by hand. No conflict happened |
 | B2-8 | The new session form has no `background` field | Open for A4 (UI). A form session has Remote Control on, the default |
+
+### Process tree: the test abort of the root review (2026-11-17)
+
+The root review saw `dotnet test --solution Orchestrator.slnx` end with no error and no failed test (after test 3, 39, 65 or 107 of 144, on the A2 and A3 branches). The suspect was a kill of a wrong process by `ProcessTree`.
+
+| Check | Result |
+|---|---|
+| Reproduction on B2, old tree code | Not reproduced: 6 runs of the test exe and 5 runs of `dotnet test --solution`, each 174 of 174 |
+| Can the old tree record the test process or its parent? | No. A recorded process must start after a recorded parent, and the test process and its parent are older than each root of a tree. Test `A_real_tree_never_records_the_test_process_or_its_parent` |
+| Can the old tree record a wrong process? | Yes, by two races of pid reuse (below). Each one can end an unrelated new process at a stop, also in production |
+| Can the test teardown end a wrong process? | Yes. `EndLeftovers` ended the pid from the pid file with no identity check, after `KillAll` had ended that process. A new process with that pid was ended |
+
+The two races of the old `Scan`:
+
+1. The snapshot lists a child C of a recorded process. C ends, and a new process takes the id of C before `Scan` reads the start time. The new process was recorded, because its start time is later than the parent.
+2. A recorded process K ends. A short-lived process takes the id of K, starts a child and ends. The child names K as parent and started after K, so it was recorded.
+
+Fix:
+
+| Part | Change |
+|---|---|
+| `Processes.Open` | Opens a handle and reads the parent id and the start time from that handle, not from the snapshot |
+| `ProcessTree` | Keeps the handle of each recorded process until `Dispose`. Windows does not give the id of a process to another process while a handle to it is open, so race 2 cannot happen. A new child is recorded only when its own handle names the parent and its start is not before the parent (race 1). A kill uses the held handle, so it cannot end another process |
+| `IProcessTable` | The tree reads a process table. The tests give a fake table that gives an ended id again, as Windows does, but never while a handle is open |
+| `ProcessTreeTests.EndLeftovers` | Ends the orphan through a handle that the test opened while the orphan was alive |
+
+| Test | Result |
+|---|---|
+| `ProcessTreeRaceTests` (6 tests: stale snapshot, older process with the parent id, orphan and held handle, quick process with a reused id, real tree and the test process, handle values) | Pass |
+| The 4 old `ProcessTreeTests` | Pass |
+| Full suite after the fix, 4 runs of `dotnet test --solution` | 180 of 180 in each run |
+
+Limit: a process that ends before the first scan that sees it is not recorded, and its children are not found. This is the same as before (scan each 1 s). A Windows job object would find each descendant with no scan; it is not built.
+
+Likely cause of the abort (not proved): an external kill of the command. The Windows Application log of the last two days has no crash event of `Orchestrator.Tests.exe`; an unhandled exception writes one, a kill does not. A full `dotnet test --solution` builds first and then runs the tests: here 1 min 12 s to 1 min 33 s for the tests alone. The default timeout of the Bash tool of a session is 120 s, and its kill ends the command with no error. The point of the kill moves with the build time, which fits an end after test 3, 39, 65 or 107. Run the full suite with a timeout of 600 s, or in the background.
+
+Open: the abort is not proved. If it comes again after this fix, run the test exe with `--output Detailed` to see the last test, and look in the Windows event log (Application) for a crash of `Orchestrator.Tests.exe`.
