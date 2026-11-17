@@ -295,11 +295,18 @@ eval:
 
 - **No learning from won or failed quests in this plan.** Reason: it is a separate pass about evals, after rung 6 works.
 - **No random or seeded cases.** Reason: fixed cases give stable results across runs.
-- **No code checks of rubrics during the run.** Reason: the agents must find each rubric failure; the oracle checks them after the run.
+- **No code checks of rubrics during a party run** (`compose.code_checks: off`). Reason: the agents must find each rubric failure; the oracle checks them after the run. Code checks are a setting of each pack (R1 in [decider.md](decider.md)).
+
+## Decided after the plan
+
+| # | Decision |
+|---|---|
+| A1 | The anchor field names are final: see [decider.md](decider.md). A prose case keeps its text in `domain.text`. |
+| R1 | Code checks during the run are a pack setting. Party: off. |
+| R2 | The decomposer is one role for all domains, with a rules file of each pack. |
 
 ## Open questions
 
 | Item | Depends on |
 |---|---|
-| Final anchor field names | The decider and solution-grade plans |
 | Confidence in a verdict | Later; true or false only for now |
