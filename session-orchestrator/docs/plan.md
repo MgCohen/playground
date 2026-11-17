@@ -1102,3 +1102,38 @@ Screenshots (mock mode, desktop corner): `docs/screens/r2-corner-open-question.p
 - R2-2: the mock store now has a report with done, next and links, and a `question-closed` notice. The self-test needs them for the render screenshots.
 - R2-3: the well block of Open is a well in a card. It shows a double frame. Accepted for the later block review.
 - R2-4: `Ui.Look` and the `icon` and `tone` of `view.json` overlap. The ring still uses `Ui.Look`, because it also covers kinds with no template. Open question for the block review.
+
+## G1 result: install and start (2026-11-17)
+
+Options page: https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX (source `docs/setup-options.html`). The recipe is in `docs/know-how.md`, section "Install and start".
+
+| Choice | Decision |
+|---|---|
+| Install mode | Published copies in `%USERPROFILE%\Apps\Orchestrator` (recommendation, the default of Q1) |
+| Store | Live, the repository `store/` (user, Q2) |
+| Supervisor start | The tray, in its own process, if no supervisor answers on the port (recommendation, the default of Q3) |
+| Login | Startup folder shortcut, tray hidden (recommendation, the default of Q4) |
+| Update | `install.ps1` again by hand; `orch doctor` check `app` (recommendation, the default of Q5) |
+| Cloud | Plan on the page, section Q6. Open: Q6a (model) and Q6b (C0 probe) |
+
+### Test (scratchpad store, port 7861, `ORCH_DATA` in the scratchpad, `-NoTool`)
+
+| Check | Result |
+|---|---|
+| Install | ✅ Tray and supervisor published, `install.json`, two shortcuts with `--live <store> --port 7861` (the login one with `--hidden`) |
+| Tray starts the supervisor | ✅ Record `supervisor-7861.json`, `/api/sessions` 200 |
+| Tray exit | ✅ The supervisor still answers |
+| Update while both run | ✅ The script stopped the tray, `cmd` and `dotnet`, swapped the folders, started the tray; a new supervisor answers. `-NoStartup` removed the login shortcut |
+| `orch supervisor status/stop/start` | ✅ status 0 with the record; stop; status 1; start 0; a second start reports the running one |
+| `orch doctor` | ✅ `app: built from 1db5718f, store ..., port 7861` |
+| Unit tests | ✅ `dotnet test --solution Orchestrator.slnx`: 301 passed, 1 skipped (`Seed_a_demo_store`, explicit) |
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| G1-1 | The tray publish failed with NETSDK1151: the tray references the executable `Orchestrator.Web`. The earlier `install.ps1` had the same error | Fixed: `-p:ValidateExecutableReferencesMatchSelfContained=false` |
+| G1-2 | `taskkill /T` on `cmd` also stops its `dotnet` child; a second `taskkill` failed and PowerShell 5.1 stopped the script | Fixed: each stop runs in `cmd /c ... >nul 2>&1` |
+| G1-3 | The supervisor log had one line for each HTTP request | Fixed: the started process gets `Logging__LogLevel__Microsoft.AspNetCore=Warning` |
+| G1-4 | The tray starts the supervisor only at its own start | Accepted. Start it again with `orch supervisor start` |
+| G1-5 | The supervisor that runs today on port 7777 was started by hand. `install.ps1` does not stop it, and the tray uses it | Note for the real install |

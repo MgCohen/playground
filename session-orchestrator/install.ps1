@@ -36,7 +36,8 @@ $running = Get-CimInstance Win32_Process | Where-Object {
 }
 foreach ($process in $running) {
     Write-Host "Stop $($process.Name) (pid $($process.ProcessId))"
-    & taskkill.exe /T /F /PID $process.ProcessId | Out-Null
+    # /T also stops the children (the dotnet of a cmd wrapper, the claude of a turn). A process that is already gone is not an error.
+    & cmd.exe /d /c "taskkill /T /F /PID $($process.ProcessId) >nul 2>&1"
 }
 if ($running) { Start-Sleep -Seconds 1 }
 
@@ -83,3 +84,4 @@ if (-not $NoStart) {
     else { Start-Process -FilePath $exe -ArgumentList $trayArgs -WorkingDirectory (Split-Path $exe) }
 }
 Write-Host "Installed commit $($commit.Substring(0, 8)) in $Root ($label)."
+exit 0
