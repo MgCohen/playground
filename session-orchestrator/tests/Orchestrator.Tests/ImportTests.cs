@@ -45,6 +45,26 @@ public sealed class ImportTests
     }
 
     [Test]
+    public async Task A_stopped_opening_turn_is_followed_by_the_opening_turn_again_and_not_by_the_brief()
+    {
+        using var rig = new Rig(import: true);
+        rig.Runner.Gate = new TaskCompletionSource();
+        var id = rig.Create("Do the work.", "child");
+        rig.Supervisor.Tick();
+        new Lifecycle(rig.Store).Stop(id, Core.Events.Parties.User);
+        await rig.Cycle();
+        rig.Runner.Gate = null;
+        Assert.That(rig.Imports, Is.Empty);
+        new Lifecycle(rig.Store).Resume(id, Core.Events.Parties.User);
+        await rig.Cycle();
+        Assert.That(rig.Turns, Has.Count.EqualTo(2));
+        Assert.That(rig.Turns[1].Prompt, Does.Contain("opens this session in the desktop app").And.Not.Contain("Do the work."), "review of PR #14, item 7");
+        Assert.That(rig.Turns[1].IsNew, Is.False, "the transcript exists: a resume");
+        Assert.That(rig.Imports, Is.EqualTo(new[] { id }));
+        Assert.That(rig.Store.Pending(id).Text, Does.StartWith("Do the work."));
+    }
+
+    [Test]
     public async Task With_no_import_option_the_first_turn_is_the_brief()
     {
         using var rig = new Rig();

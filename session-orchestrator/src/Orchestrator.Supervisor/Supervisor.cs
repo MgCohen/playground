@@ -288,10 +288,13 @@ public sealed partial class Supervisor
     Pending? OpeningTurn(string id)
     {
         var meta = store.Meta(id);
-        if (options.Import is null || meta.Imported == true || meta.CreatedBy is null || meta.Started == true) return null;
+        if (options.Import is null || meta.Imported == true || meta.CreatedBy is null) return null;
         var self = Parties.Session(id);
-        var notice = store.Undelivered(id).FirstOrDefault(e => e.Kind == EventKinds.Notice && store.Events.Fields(e).GetValueOrDefault("kind") as string == "open-in-app")
-            ?? Notify(self, null, store.Texts.Notice("open-in-app"));
+        var waiting = store.Undelivered(id).FirstOrDefault(e => e.Kind == EventKinds.Notice && store.Events.Fields(e).GetValueOrDefault("kind") as string == "open-in-app");
+        // A stopped opening turn keeps Started and leaves its notice with no ack: the next turn is the opening turn again,
+        // as a resume, so the import still comes before the brief (review of PR #14, item 7).
+        if (meta.Started == true && waiting is null) return null;
+        var notice = waiting ?? Notify(self, null, store.Texts.Notice("open-in-app"));
         return new Pending(store.Renderer.Join([notice]), [notice.Id]) { Senders = [Parties.Supervisor] };
     }
 
