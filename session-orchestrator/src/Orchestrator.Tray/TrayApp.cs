@@ -3,41 +3,46 @@ using System.Runtime.InteropServices;
 
 namespace Orchestrator.Tray;
 
-/// <summary>The tray icon and its menu (Open, Exit). A left click opens or hides the window.</summary>
+/// <summary>
+/// The tray icon and the widget. A left click on the icon shows or hides the widget. Right click: the menu
+/// (Show, Pin on top, Exit). Exit closes the widget and the icon.
+/// </summary>
 public sealed partial class TrayApp : ApplicationContext
 {
-    static readonly Color Accent = Color.FromArgb(0x2f, 0x7d, 0x9c);
+    static readonly Color Accent = Color.FromArgb(0xff, 0x6a, 0x1a);
 
     readonly NotifyIcon icon;
     readonly Icon dot;
     bool exiting;
 
-    public TrayApp(IServiceProvider services, bool show)
+    public TrayApp(IServiceProvider services, bool show, bool pinned)
     {
         dot = Dot(Accent);
-        Form = new MainForm(services, dot);
+        Form = new WidgetForm(services, dot, pinned);
+        var pin = new ToolStripMenuItem("Pin on top") { CheckOnClick = true, Checked = pinned };
+        pin.CheckedChanged += (_, _) => Form.TopMost = pin.Checked;
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Open", null, (_, _) => Form.ShowWindow());
+        menu.Items.Add("Show", null, (_, _) => Form.ShowWidget());
+        menu.Items.Add(pin);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Exit", null, (_, _) => Exit());
         icon = new NotifyIcon { Icon = dot, Text = "Orchestrator (mock data)", ContextMenuStrip = menu, Visible = true };
         icon.MouseClick += (_, e) =>
         {
-            if (e.Button != MouseButtons.Left) return;
-            if (Form.Visible) Form.Hide();
-            else Form.ShowWindow();
+            if (e.Button == MouseButtons.Left) Form.Toggle();
         };
-        if (show) Form.ShowWindow();
+        if (show) Form.ShowWidget();
+        // The window handle exists, so a second start can marshal to the UI thread.
         else _ = Form.Handle;
     }
 
-    public MainForm Form { get; }
+    public WidgetForm Form { get; }
 
-    /// <summary>Shows the window from any thread. A second start of the app calls it.</summary>
+    /// <summary>Shows the widget from any thread. A second start of the app calls it.</summary>
     public void ShowFromAnyThread()
     {
         if (exiting || Form.IsDisposed) return;
-        Form.BeginInvoke(Form.ShowWindow);
+        Form.BeginInvoke(Form.ShowWidget);
     }
 
     public void Exit()

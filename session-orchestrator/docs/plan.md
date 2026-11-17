@@ -707,17 +707,18 @@ A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked (
 
 ## T1: Desktop tray app (visual only)
 
-- `src/Orchestrator.Tray`: WinForms tray icon (Open, Exit), a resizable window with a BlazorWebView, one instance at a time.
-- The window shows the A4 views of `Orchestrator.Web` (PR #15, merged into this branch) through a project reference. No change in `Orchestrator.Web`.
-- The tray `index.html` loads the same fonts as `App.razor` (Doto, Inter, JetBrains Mono).
-- Desktop size: no layout change. The A4 layout is a centered column of 560 px, and it shows correctly in a window of 1280 × 800 logical pixels.
+- `src/Orchestrator.Tray`: a WinForms tray icon and a widget with a BlazorWebView, one instance at a time. The design is the same as the runner widget.
+- Widget: 350 × 560 logical pixels scaled to the DPI, no title bar, rounded corners, a 1-pixel border, not in the taskbar. It opens at the home location in the corner above the tray.
+- Tray icon: a left click shows or hides the widget. The menu has Show, Pin on top (TopMost) and Exit. `--pin` starts the widget pinned. `--hidden` starts with the widget hidden.
+- The widget shows the A4 views of `Orchestrator.Web` (PR #15, merged into this branch) through a project reference. No change in `Orchestrator.Web`.
 - Mock data: a new store in a temporary folder (`MockStore`). The real store does not change. No tick service, no claude process (`NoRunner`).
-- Self-test (`.	ray.ps1 -SelfTest`): PASS for 8 views. Home, Cards, answer sheet, Open, Stream, Sessions, Session status, Session stream. Window 1898 × 1144 pixels at 144 DPI.
+- Self-test (`.	ray.ps1 -SelfTest`): PASS for 8 views and the widget check: size 525 × 840 pixels at 144 DPI, at the home location. It also copies the screen corner to `tray-desktop-corner.png`.
 - `dotnet test --solution Orchestrator.slnx`: 159 passed, 0 failed.
-- Screenshots: `docs/screens/tray-*.png`.
-- Finding: on Session status, the sticky Message and Event stream bar covers the Stop and Archive buttons until the user scrolls. The same occurs on the phone. It is an item for A4.
+- Screenshots: `docs/screens/tray-*.png` and `docs/screens/tray-desktop-corner.png`.
+- Finding: in the corner screenshot, the tray icon is in the hidden icons area (^) of Windows. To show it next to the clock, drag it out of that area once.
+- Finding (A4): at the widget height of 560, the Cards page puts the action buttons behind the bottom app bar. The answer sheet still opens with a tap on the card.
+- Finding (A4): on Session status, the sticky Message and Event stream bar covers Stop and Archive until the user scrolls.
 - `install.ps1` is not run yet. It needs the approval of the user.
-
 ## A4 design: inbox UI (2026-11-17)
 
 The user approved the design after four rounds. The design page is `docs/inbox-design.html` (https://claude.ai/artifact/RbSF83MgxWHbWo5V3JsGEE).

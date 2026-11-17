@@ -29,7 +29,7 @@ public static class SelfTest
         new("session-stream", $"{Go}(document.querySelector('.sticky-acts a.pri').getAttribute('href'))", ".lock"),
     ];
 
-    public static async Task<int> Run(MainForm form, string folder)
+    public static async Task<int> Run(WidgetForm form, string folder)
     {
         Directory.CreateDirectory(folder);
         var checks = new List<Check>();
@@ -54,11 +54,34 @@ public static class SelfTest
             var path = JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync("location.pathname + location.search"));
             checks.Add(new Check(step.View, found, $"{path}: expect {step.Expect}{(found ? "" : " (not found)")}{(error is null ? "" : $", error {error}")}", png));
         }
-        var size = form.ClientSize;
-        checks.Add(new Check("size", size.Width >= 1000, $"window client size {size.Width} × {size.Height} pixels at {form.DeviceDpi} DPI", ""));
+        await web.ExecuteScriptAsync($"{Go}('')");
+        await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
+        await Task.Delay(1200);
+        var scale = form.DeviceDpi / 96f;
+        var size = form.Size;
+        var expect = new Size((int)(WidgetForm.LogicalWidth * scale), (int)(WidgetForm.LogicalHeight * scale));
+        var home = form.HomeLocation();
+        checks.Add(new Check("widget", size == expect && form.Location == home && !form.ShowInTaskbar && form.FormBorderStyle == FormBorderStyle.None,
+            $"size {size.Width} × {size.Height} (expect {expect.Width} × {expect.Height}) at {form.DeviceDpi} DPI, location {form.Location.X},{form.Location.Y} (home {home.X},{home.Y}), not in the taskbar, no title bar", ""));
+        var corner = Path.Combine(folder, "tray-desktop-corner.png");
+        checks.Add(new Check("desktop-corner", Corner(form, corner), "screenshot of the screen corner with the widget and the tray", corner));
         foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
         await File.WriteAllTextAsync(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
         return checks.All(c => c.Pass) ? 0 : 1;
+    }
+
+    /// <summary>Copies the bottom right part of the screen: the widget, the margin and the taskbar with the tray.</summary>
+    static bool Corner(WidgetForm form, string png)
+    {
+        var screen = Screen.FromControl(form).Bounds;
+        var margin = (int)(40 * form.DeviceDpi / 96f);
+        var left = Math.Max(screen.Left, form.Left - margin);
+        var top = Math.Max(screen.Top, form.Top - margin);
+        var area = Rectangle.FromLTRB(left, top, screen.Right, screen.Bottom);
+        using var bitmap = new Bitmap(area.Width, area.Height);
+        using (var g = Graphics.FromImage(bitmap)) g.CopyFromScreen(area.Location, Point.Empty, area.Size);
+        bitmap.Save(png, System.Drawing.Imaging.ImageFormat.Png);
+        return File.Exists(png);
     }
 
     /// <summary>A non-null value when the selector matches an element of the page.</summary>

@@ -7,7 +7,7 @@ using Orchestrator.Web;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The start of the tray app. Usage: Orchestrator.Tray.exe [--hidden] [--selftest &lt;folder&gt;].
+/// The start of the tray app. Usage: Orchestrator.Tray.exe [--hidden] [--pin] [--selftest &lt;folder&gt;].
 /// The window shows mock data from a temporary store. The supervisor object only serves the actions of the views: no tick service runs.
 /// </summary>
 public static partial class Program
@@ -39,7 +39,7 @@ public static partial class Program
 
         using var mock = MockStore.Create();
         using var services = Services(mock.Store);
-        tray = new TrayApp(services, show: selfTest is not null || !args.Contains("--hidden"));
+        tray = new TrayApp(services, show: selfTest is not null || !args.Contains("--hidden"), pinned: selfTest is not null || args.Contains("--pin"));
         var code = 0;
         if (selfTest is not null)
         {
