@@ -562,6 +562,9 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
         <div class="taskbar"><span>ENG</span><span class="tdot" title="Tray icon"></span><span>4:00 PM</span></div>
       </div>
       <div class="btns" style="margin-top:10px"><button id="g-show">Show</button><button id="g-hide">Hide</button><button id="g-loop" class="on">Loop</button></div>
+      <div style="margin-top:10px"><div class="sub" style="margin-bottom:4px">Page at open</div>
+        <div class="sw" id="g-page"><button aria-pressed="false" data-v="slow">Not ready (each open)</button><button aria-pressed="false" data-v="ready">Ready (each open)</button><button aria-pressed="true" data-v="first">First open, then ready</button></div>
+        <div class="sub">"First open, then ready" plays the first open with the load, and the next opens with a ready page, as in the app. Click it again to start from the first open.</div></div>
       <div class="tl" id="g-tl"></div>
     </div>
     <div class="spec tweak">
@@ -594,8 +597,6 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <label for="g-blag">App bar lag behind the grow: <b id="g-blag-v">0 %</b><input id="g-blag" type="range" min="0" max="60" step="5" value="0"></label>
       <div class="head" style="margin-top:8px"><span class="tag">G1 · load</span><h2>Open before the page is ready</h2></div>
       <p>If the page is ready, the widget only grows. If not, the home button floats and pulses, then the widget grows behind it. The content fades in when it is ready, but never during the grow.</p>
-      <div><div class="sub" style="margin-bottom:4px">Page at open</div>
-        <div class="sw" id="g-page"><button aria-pressed="true" data-v="slow">Not ready</button><button aria-pressed="false" data-v="ready">Ready</button></div></div>
       <label for="g-load">Load time (sample only): <b id="g-load-v">1200 ms</b><input id="g-load" type="range" min="0" max="3000" step="100" value="1200"></label>
       <label for="g-pms">Ball pulse before the grow (if not ready): <b id="g-pms-v">500 ms</b><input id="g-pms" type="range" min="0" max="1200" step="50" value="500"></label>
       <div><div class="sub" style="margin-bottom:4px">While it loads</div>
@@ -957,10 +958,10 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       ph = document.getElementById("wid-ph"), wsh = document.getElementById("wsh"), fbtn = document.getElementById("fbtn"), tl = document.getElementById("g-tl"),
       ab = wid.querySelector(".ab"), abBtn = ab.querySelector("b");
   var H = 440;
-  var st = { mode: "reveal", curve: "cubic", ms: 280, hms: 200, shadow: "fade", sms: 220, page: "slow", load: 1200, pms: 500, ph: "shadows", fms: 180,
+  var st = { mode: "reveal", curve: "cubic", ms: 280, hms: 200, shadow: "fade", sms: 220, page: "first", load: 1200, pms: 500, ph: "shadows", fms: 180,
              bopen: "slow", bstyle: "pop", bin: 240, bgap: 60, bhide: "yoyo", bhold: 400, bout: 180, bar: "unfold", blag: 0 };
   var SLIDERS = ["ms", "hms", "sms", "load", "pms", "fms", "bin", "bgap", "bhold", "bout", "blag"];
-  var loop = true, onTab = false, tok = 0, timers = [];
+  var loop = true, onTab = false, tok = 0, timers = [], opens = 0;
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   var curves = {
     cubic: function (t) { return 1 - Math.pow(1 - t, 3); },
@@ -1041,7 +1042,8 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   function mark(s) { log.push(Math.round(performance.now() - t0) + " ms " + s); tl.textContent = log.join(" · "); }
   function open(done) {
     stop(); ballOff(); t0 = performance.now(); log = [];
-    var loaded = st.page === "ready", grown = false, f = curves[st.curve];
+    var loaded = st.page === "ready" || (st.page === "first" && opens > 0), grown = false, f = curves[st.curve];
+    opens++; mark(loaded ? "open " + opens + ", page ready" : "open " + opens + ", page not ready");
     var useBall = st.bopen === "always" || (st.bopen === "slow" && !loaded);
     cur.p = 0; cur.s = 0; cur.c = loaded ? 1 : 0; own(useBall); geo(); render();
     ph.dataset.k = st.ph;
@@ -1108,7 +1110,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       st[key] = b.dataset.v; draw(); restart();
     });
   }
-  seg("g-mode", "mode"); seg("g-curve", "curve"); seg("g-shadow", "shadow"); seg("g-page", "page"); seg("g-ph", "ph");
+  seg("g-mode", "mode"); seg("g-curve", "curve"); seg("g-shadow", "shadow"); seg("g-page", "page"); document.getElementById("g-page").addEventListener("click", function () { opens = 0; }, true); seg("g-ph", "ph");
   seg("g-bopen", "bopen"); seg("g-bstyle", "bstyle"); seg("g-bhide", "bhide"); seg("g-bar", "bar");
   SLIDERS.forEach(function (k) {
     document.getElementById("g-" + k).addEventListener("input", function () { st[k] = +this.value; draw(); });
