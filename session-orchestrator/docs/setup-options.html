@@ -1,0 +1,193 @@
+<title>Orchestrator Setup Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column. The recommendation and its flow first, then one table for each choice, then the open questions. Same tokens as the design page. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --ok: #2c7a3f; --warn: #9a6200; --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --ok: #6cc684; --warn: #e0a548; --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --ok: #6cc684; --warn: #e0a548; --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
+section { display: flex; flex-direction: column; gap: 12px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0; text-wrap: balance; display: flex; gap: 10px; align-items: baseline; }
+h2 .q { font-family: var(--font-mono); font-size: 13px; color: var(--accent); font-weight: 500; }
+p, li { max-width: 72ch; margin: 0; }
+ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 5px; }
+.muted { color: var(--muted); }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.rec { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.rec h2 { color: var(--accent); }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-weight: 500; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+tr.pick td { background: var(--accent-soft); }
+tr.pick td:first-child { font-weight: 600; }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--ok); color: var(--ok); margin-left: 6px; white-space: nowrap; }
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.step { flex: 1 1 150px; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.step b { font-family: var(--font-display); font-weight: 600; font-size: 14px; }
+.step span { font-size: 13px; color: var(--muted); }
+.arrow { align-self: center; color: var(--accent); font-family: var(--font-mono); }
+.tree { font-family: var(--font-mono); font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; overflow-x: auto; }
+.tree details { margin-left: 16px; }
+.tree summary { cursor: pointer; white-space: nowrap; }
+.tree summary .d { color: var(--muted); font-family: var(--font-body); margin-left: 8px; }
+.tree p { font-family: var(--font-body); font-size: 13px; color: var(--muted); margin: 2px 0 6px 18px; }
+ol.qs { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; }
+@media (max-width: 520px) { .arrow { display: none; } h1 { font-size: 26px; } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · G1</div>
+  <h1>Orchestrator setup options</h1>
+  <p class="muted">How the orchestrator is installed and started on this PC, for one user. Each choice has a table. The pick of each table has a colored row.</p>
+</header>
+
+<section class="rec">
+  <h2>Recommendation</h2>
+  <p>Install published copies of the tray and the supervisor. The tray starts at login on the real store. If no supervisor answers on the port, the tray starts one in its own process. Update with one script.</p>
+  <div class="flow" aria-label="Start sequence at login">
+    <div class="step"><b>Login</b><span>Startup shortcut</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Tray, hidden</b><span><code>--live store</code></span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>Port 7777 answers?</b><span>yes: use it</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>No: start supervisor</b><span>own process, stays after tray exit</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Today</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Part</th><th>Start</th><th>Runs from</th><th>Data</th></tr></thead>
+    <tbody>
+      <tr><td>Tray</td><td><code>tray.ps1</code></td><td>source build</td><td>mock, or <code>-Live &lt;store&gt;</code></td></tr>
+      <tr><td>Tray (installed)</td><td><code>install.ps1</code>, desktop shortcut</td><td><code>~/Apps/Orchestrator</code></td><td>mock only</td></tr>
+      <tr><td>Supervisor</td><td>by hand</td><td><code>dotnet run</code> or a published copy</td><td><code>store/</code> of the repository</td></tr>
+      <tr><td><code>orch</code></td><td>.NET global tool</td><td><code>dotnet pack</code> + <code>tool update</code></td><td><code>ORCH_STORE</code> or <code>store/</code></td></tr>
+      <tr><td>Plugin</td><td><code>~/.claude/settings.json</code></td><td><code>plugin/</code> of the main checkout</td><td>hot reload</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">The tray prints <code>orch supervisor</code> as the start command when no supervisor answers. That command does not exist.</p>
+</section>
+
+<section>
+  <h2><span class="q">Q1</span>Run from source or install</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Option</th><th>Good</th><th>Bad</th></tr></thead>
+    <tbody>
+      <tr><td>From source (<code>dotnet run</code>)</td><td>Always the checkout code. No update step</td><td>Build at each start. Locks <code>bin/</code>, so the next build fails. A branch switch changes the running app</td></tr>
+      <tr class="pick"><td>Installed copy <span class="pill">pick</span></td><td>Fast start. Stable while you work on branches. No DLL lock</td><td>Needs an update step after a merge</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted"><code>tray.ps1</code> stays for development: mock mode and the self-test.</p>
+</section>
+
+<section>
+  <h2><span class="q">Q2</span>Store of the installed tray</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Option</th><th>Good</th><th>Bad</th></tr></thead>
+    <tbody>
+      <tr><td>Mock</td><td>No effect on real sessions</td><td>Shows no real work. Only a demo</td></tr>
+      <tr class="pick"><td>Live, repository <code>store/</code> <span class="pill">pick</span></td><td>The same store as <code>orch</code> and the supervisor today</td><td>Store is in the main checkout. A <code>git clean -x</code> deletes it</td></tr>
+      <tr><td>Live, <code>%LOCALAPPDATA%\Orchestrator\store</code></td><td>Out of the repository. Safe from git</td><td>Each tool needs <code>ORCH_STORE</code> set as a user variable. The existing store must move</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2><span class="q">Q3</span>Who starts the supervisor</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Option</th><th>Good</th><th>Bad</th></tr></thead>
+    <tbody>
+      <tr class="pick"><td>The tray, if the port is free <span class="pill">pick</span></td><td>One start point. The supervisor keeps its turns when the tray exits</td><td>The tray needs the path of the supervisor copy</td></tr>
+      <tr><td>Scheduled task at logon</td><td>Starts with no tray. Restart on failure</td><td>A second start point. Task Scheduler is hard to examine</td></tr>
+      <tr><td>Manual</td><td>Full control</td><td>The user must remember it. Answers stay unsent until the start</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">A new <code>orch supervisor start|stop|status</code> command gives the same start for manual use and for scripts.</p>
+</section>
+
+<section>
+  <h2><span class="q">Q4</span>Start at login</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Option</th><th>Good</th><th>Bad</th></tr></thead>
+    <tbody>
+      <tr class="pick"><td>Startup folder shortcut, <code>--hidden</code> <span class="pill">pick</span></td><td>Simple. The user can delete it in Explorer</td><td>Starts after the desktop loads</td></tr>
+      <tr><td>Registry <code>Run</code> key</td><td>Same effect</td><td>Harder to see and to remove</td></tr>
+      <tr><td>No start at login</td><td>Nothing runs by surprise</td><td>The queue is empty until a manual start</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2><span class="q">Q5</span>Update path</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Option</th><th>Good</th><th>Bad</th></tr></thead>
+    <tbody>
+      <tr class="pick"><td>Run <code>install.ps1</code> again <span class="pill">pick</span></td><td>One command updates tray, supervisor and <code>orch</code>. <code>orch doctor</code> shows a stale copy</td><td>Manual. It stops the supervisor. Crash recovery (M6) continues the turns</td></tr>
+      <tr><td>Git hook after a pull on <code>main</code></td><td>Automatic</td><td>A pull can stop running turns with no warning</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2><span class="q">Q6</span>Cloud managed environment</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Option</th><th>Good</th><th>Bad</th></tr></thead>
+    <tbody>
+      <tr class="pick"><td>Not now. Keep the start command portable <span class="pill">pick</span></td><td>No work for an unused case. <code>orch supervisor start</code> runs on Linux too</td><td>No cloud setup yet</td></tr>
+      <tr><td>Setup script now</td><td>Ready for a cloud session</td><td>No tray, no app import. The store goes with the container. The UI needs the tunnel (stream D)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Installed layout</h2>
+  <div class="tree">
+    <details open><summary>%USERPROFILE%\Apps\Orchestrator\<span class="d">install root, one folder</span></summary>
+      <details><summary>tray\Orchestrator.Tray.exe<span class="d">one-file tray</span></summary><p>The Startup and desktop shortcuts start it with <code>--live &lt;store&gt; --hidden</code>.</p></details>
+      <details><summary>supervisor\Orchestrator.Web.dll<span class="d">published supervisor and UI</span></summary><p>The tray starts it with <code>ORCH_STORE</code> and <code>ORCH_PORT</code>. It finds <code>templates/</code> and <code>config/</code> through the repository path that the build embeds.</p></details>
+      <details><summary>install.json<span class="d">commit, store, port</span></summary><p><code>orch doctor</code> reads it and compares the commit with the source.</p></details>
+    </details>
+  </div>
+</section>
+
+<section>
+  <h2>Open questions</h2>
+  <ol class="qs">
+    <li>Q1: installed copy or run from source?</li>
+    <li>Q2: which store for the installed tray: repository <code>store/</code>, a store in <code>%LOCALAPPDATA%</code>, or mock?</li>
+    <li>Q3: who starts the supervisor: the tray, a scheduled task, or the user?</li>
+    <li>Q4: start the tray at login?</li>
+    <li>Q5: update with <code>install.ps1</code>, or automatic after a pull?</li>
+    <li>Q6: build the cloud setup now, or later?</li>
+  </ol>
+</section>
+</div>
