@@ -13,5 +13,7 @@ The types:
 - `View`: data that a user reads.
 - `Effect`: an action outside the design, for example an email.
 
+The text can name a pattern, for example "a query handler", and then ask for a different job. A pattern name is not a job and not a type. Take the jobs and the types from what the text asks the design to do with the data.
+
 Give at least one input, one output and one job. Give one job for each thing that the text asks, also small ones (a check, a delay, a count of tries).
 If the text does not say what the design gets or gives, and no type follows from the jobs, put a question in `missing`.

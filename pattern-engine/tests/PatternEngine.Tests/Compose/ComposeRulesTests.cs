@@ -71,6 +71,15 @@ public sealed class ComposeRulesTests
     }
 
     [Test]
+    public async Task A_commit_of_a_set_that_fails_a_set_check_is_refused_and_gets_one_more_turn()
+    {
+        var (trace, _) = await RunAsync(Settings, Grade("a", "c"), Commit(["a", "b", "c"]), Commit(["a", "b"]));
+        Assert.That(trace.Turns[1].Refused.Single(), Does.Contain("fails the set check set:size"));
+        Assert.That(trace.Outcome, Is.EqualTo("committed"));
+        Assert.That(trace.CommitOf("s1"), Is.EqualTo(new[] { "a", "b" }));
+    }
+
+    [Test]
     public async Task An_empty_remainder_stops_the_loop_and_the_next_turn_is_the_last()
     {
         var (trace, judge) = await RunAsync(Settings, Grade("a", "b"), Grade("c"));

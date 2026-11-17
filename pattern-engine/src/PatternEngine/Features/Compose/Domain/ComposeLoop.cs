@@ -152,6 +152,11 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
 
                 turns.Add(new TurnRecord(turn, "commit", note, refused, [], null));
                 notes.AddRange(refused.Select(r => $"Turn {turn}: commit refused: {r}"));
+                if (turn == lastTurn && lastTurn < limits.Turns)
+                {
+                    lastTurn++;
+                }
+
                 continue;
             }
 
@@ -243,6 +248,17 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
             if (commits.Any(c => c.Spec == spec))
             {
                 refused.Add($"spec \"{spec}\" has more than one commit");
+                continue;
+            }
+
+            // A set check is a fact of the set that code knows. A gap cannot fix it, so code refuses the commit.
+            var anchor = task.Specs.First(x => x.Id == spec);
+            var failedChecks = settings.CodeChecks && set is not null
+                ? task.CodeVerdicts(anchor, set).Where(v => v.Ok != true && anchor.Visible.All(r => r.Id != v.Rubric)).ToList()
+                : [];
+            if (failedChecks.Count > 0)
+            {
+                refused.Add($"spec \"{spec}\": [{string.Join(", ", set!)}] fails the set check {string.Join("; ", failedChecks.Select(v => $"{v.Rubric} ({v.Reason})"))}; commit a set that passes each set check");
                 continue;
             }
 
