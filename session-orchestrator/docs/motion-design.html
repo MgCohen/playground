@@ -469,6 +469,16 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 .ac .pbar .abtn.p { background: var(--accent); }
 .ac .pbar .abtn.d { flex: 0 0 auto; background: none; padding: 0 8px; }
 
+/* S1 v4: page bar with the app button style (app.css .btn), subtle scroll bar */
+.ac .pbar { padding: 0; background: none; box-shadow: none; border-radius: 0; }
+.ac .pbar .abtn { height: 46px; padding: 0 8px; flex: 1 1 auto; border-radius: var(--r-sm); background: var(--surf); box-shadow: var(--sh-raise); font: 600 12.5px var(--f-body); color: var(--text); }
+.ac .pbar .abtn.p { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow); }
+.ac .pbar .abtn.ico { flex: 0 0 46px; padding: 0; display: grid; place-items: center; color: var(--failed); }
+.ac .pbar .abtn.ico svg { width: 18px; height: 18px; }
+.ac .pbar .abtn:active, .ac .dial .abtn:active { transform: scale(.96); }
+.phone .scroll, .phone .hbody, .pile { scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--muted) 28%, transparent) transparent; }
+.phone .scroll:hover { scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent; }
+
 /* Answer box */
 .answer { margin-top: 36px; padding: 18px 20px; border-radius: 18px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); display: grid; gap: 8px; }
 .answer code { display: block; padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); overflow-x: auto; white-space: pre; }
@@ -642,10 +652,11 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <div class="head"><span class="tag">S1</span><h2>Page actions</h2></div>
       <p>The Document page is one page for many types: a question, a plan, a report, a review. Change the page in the sample and tap the corner button.</p>
       <ul class="sub" style="margin:0;padding-left:18px">
-        <li><b>Page actions</b> belong to the page, not to its content: Open session and Archive are on each Document page. They are in a bar at the bottom of the screen, always in the same place. The page content scrolls above the bar and never goes under it.</li>
+        <li><b>Page actions</b> belong to the page, not to its content: Open session and Archive are on each Document page. They are in a bar at the bottom of the screen, always in the same place, with the normal app buttons. A danger action (Stop, Archive) is a square icon button in red, like the skip button of a card. The page content scrolls above the bar and never goes under it.</li>
         <li><b>Content actions</b> change with the content: Accept for a question, Approve for a plan. They are in the corner button, which floats above the page bar. A tap opens them as a speed dial. The main action is first. Danger actions are last, in red.</li>
         <li>The corner button shows only when the content has actions. Any page can use it, so it is the one place for content actions. Session status has only page actions, so it has no corner button.</li>
         <li><b>App bar:</b> each page sets if it shows the app bar. A page that needs the full height hides it. The header path is the way back.</li>
+        <li><b>Scroll bar:</b> each scroll area keeps a fixed space on the right for the scroll bar, so nothing moves when it comes. The bar is thin and quiet, and gets darker on hover.</li>
       </ul>
       <div class="opts">
         <div class="opt rec"><b>A</b><span class="t">Page bar + corner button</span><span class="d">Your design: page actions in a fixed bar at the bottom, content actions in a corner speed dial above it. Pick the app bar rule in the sample.</span></div>
@@ -1726,6 +1737,12 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   var PLUS = '<svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round"><path d="M12 5v14M5 12h14"/></svg>';
   var NAV = '<div class="navx"><span>Cards</span><span>Sessions</span><span class="ball"></span><span>Stream</span><span>Settings</span></div>';
   function btn(a, cls) { return '<button class="abtn ' + (a[1] === "p" ? "p " : a[1] === "d" ? "d " : "") + (cls || "") + '">' + a[0] + "</button>"; }
+  var ICO = { Stop: '<path d="M7 7h10v10H7z"/>', Archive: '<path d="M4 5h16v4H4z"/><path d="M6 9v10h12V9"/><path d="M10 13h4"/>' };
+  // Page bar: the app button style. A danger action is a square icon button, like the skip button of a card.
+  function pbtn(a) {
+    if (a[1] === "d") return '<button class="abtn ico" aria-label="' + a[0] + '" title="' + a[0] + '"><svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round">' + (ICO[a[0]] || ICO.Archive) + "</svg></button>";
+    return btn(a);
+  }
   function header() { var d = DOCS[st.doc]; return '<div class="crd hd2"><div class="path"><button class="cr">' + d.path[0] + '</button><span class="sep">›</span><span class="cur">' + d.path[1] + "</span></div></div>"; }
   function rows() { return DOCS[st.doc].rows.map(function (r) { return '<div class="crd kv"><b>' + r[0] + '</b><span class="sub">' + r[1] + "</span></div>"; }).join(""); }
   function order(list) { return list.filter(function (a) { return a[1] === "p"; }).concat(list.filter(function (a) { return a[1] === "o"; }), list.filter(function (a) { return a[1] === "d"; })); }
@@ -1738,7 +1755,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
         '<div class="float">' + fl.map(function (a) { return btn(a); }).join("") + "</div>" + NAV;
     } else {
       h = header() + '<div class="scroll" style="padding-bottom:' + (d.type.length ? 64 : 4) + 'px">' + rows() + "</div>" +
-        '<div class="pbar">' + order(d.defs).map(function (a) { return btn(a); }).join("") + "</div>" + NAV +
+        '<div class="pbar">' + order(d.defs).map(pbtn).join("") + "</div>" + NAV +
         (d.type.length ? '<button class="cfab" data-fab aria-label="Content actions">' + PLUS + '<span class="lb">' + d.type.length + " actions</span></button>" : "");
     }
     ph.innerHTML = h;
