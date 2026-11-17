@@ -45,3 +45,15 @@
     recognition.start();
   });
 })();
+
+// Blazor calls orchSpeech.focus when an answer sheet opens: it puts the cursor in the field, and with voice it starts the mic.
+window.orchSpeech = {
+  focus: function (id, voice) {
+    var field = document.getElementById(id);
+    if (!field) return;
+    field.focus();
+    if (!voice) return;
+    var button = document.querySelector('[data-speech-for="' + id + '"]');
+    if (button && document.documentElement.classList.contains("speech")) button.click();
+  }
+};

@@ -1,0 +1,41 @@
+@using Microsoft.Extensions.DependencyInjection
+@implements IDisposable
+@inject IServiceProvider Services
+
+@* The page header. In the desktop widget, a drag of the header moves the window, and the pin keeps the widget on top. *@
+@if (window is null)
+{
+    <header class="crd hd"><h1 class="title disp">@Title</h1></header>
+}
+else
+{
+    <header class="crd hd win" @onmousedown="Drag">
+        <h1 class="title disp">@Title</h1>
+        <button type="button" class="pin @(window.Pinned ? "on" : "")" aria-pressed="@(window.Pinned ? "true" : "false")" aria-label="Pin on screen" title="Pin on screen"
+                @onclick="() => window.SetPinned(!window.Pinned)" @onmousedown:stopPropagation><Icon Name="pin" /></button>
+    </header>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    IWidgetWindow? window;
+
+    protected override void OnInitialized()
+    {
+        window = Services.GetService<IWidgetWindow>();
+        if (window is not null) window.PinnedChanged += Changed;
+    }
+
+    void Changed() => InvokeAsync(StateHasChanged);
+
+    void Drag(MouseEventArgs e)
+    {
+        if (e.Button == 0) window?.BeginDrag();
+    }
+
+    public void Dispose()
+    {
+        if (window is not null) window.PinnedChanged -= Changed;
+    }
+}

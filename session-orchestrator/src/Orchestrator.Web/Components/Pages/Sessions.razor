@@ -3,38 +3,44 @@
 
 <PageTitle>Sessions · orch</PageTitle>
 
-<section class="view" aria-labelledby="tree-title">
-    <h1 id="tree-title">Sessions <span class="count">@count</span></h1>
+<PageHeader Title="Sessions" />
+
+<div class="stack">
     @if (Message is not null)
     {
-        <p class="toast" role="status">@Message</p>
+        <p class="toast inline" role="status">@Message</p>
     }
-    <NewSessionForm Parents="parents" OnStart="Start" Open="tree.Count == 0" />
+    <label class="well row search">
+        <Icon Name="search" />
+        <span class="sr">Search sessions</span>
+        <input id="session-search" type="search" placeholder="Search sessions" @bind="search" @bind:event="oninput" />
+    </label>
     @if (tree.Count == 0)
     {
-        <p class="empty">No sessions in this store. Start one with the form above or with <code>orch new</code>.</p>
+        <div class="empty"><span class="nm">No sessions</span><span class="sub">Start one with the form below or with <code>orch new</code>.</span></div>
     }
-    <ul class="tree">
-        @foreach (var node in tree)
-        {
-            <SessionCard @key="node.Meta.Id" Node="node" OnStop="Stop" OnResume="Resume" OnArchive="Archive" OnSend="Send" />
-        }
-    </ul>
-</section>
+    @{ var firstFold = Shown.FirstOrDefault(n => n.Children.Count > 0)?.Meta.Id; }
+    @foreach (var node in Shown)
+    {
+        <SessionTree @key="node.Meta.Id" Node="node" Open="@(node.Meta.Id == firstFold || search.Length > 0)" />
+    }
+    <NewSessionForm Parents="parents" OnStart="Start" Open="tree.Count == 0" />
+</div>
 
 @code {
     IReadOnlyList<SessionNode> tree = [];
-    int count;
     IReadOnlyList<ParentOption> parents = [];
+    string search = "";
+
+    IEnumerable<SessionNode> Shown => search.Trim() is { Length: > 0 } text
+        ? tree.Where(r => Ui.Flatten([r]).Any(n => Ui.Name(n).Contains(text, StringComparison.OrdinalIgnoreCase)))
+        : tree.Where(r => r.Control != ControlStates.Archived);
 
     protected override void Load()
     {
         tree = Board.Tree();
-        count = Count(tree);
-        parents = Flatten(tree).Where(n => n.Control != ControlStates.Archived).Select(n => new ParentOption(n.Meta.Id, Name(n), n.Meta.Cwd)).ToList();
+        parents = Ui.Flatten(tree).Where(n => n.Control != ControlStates.Archived).Select(n => new ParentOption(n.Meta.Id, Ui.Name(n), n.Meta.Cwd)).ToList();
     }
-
-    static IEnumerable<SessionNode> Flatten(IEnumerable<SessionNode> nodes) => nodes.SelectMany(n => Flatten(n.Children).Prepend(n));
 
     bool Start(NewSession input)
     {
@@ -42,16 +48,4 @@
         StateHasChanged();
         return started;
     }
-
-    static int Count(IReadOnlyList<SessionNode> nodes) => nodes.Sum(n => 1 + Count(n.Children));
-
-    void Stop(SessionNode n) => Act(() => Board.Stop(n.Meta.Id), $"Stopped {Name(n)}.");
-
-    void Resume(SessionNode n) => Act(() => Board.Resume(n.Meta.Id), $"Resumed {Name(n)}.");
-
-    void Archive((SessionNode Node, bool Force) a) => Act(() => Board.Archive(a.Node.Meta.Id, a.Force), $"Archived {Name(a.Node)}.");
-
-    void Send((SessionNode Node, string Text) s) => Act(() => Board.Send(s.Node.Meta.Id, s.Text), $"Message sent to {Name(s.Node)}.");
-
-    static string Name(SessionNode n) => n.Meta.Title ?? n.Meta.Id[..8];
 }

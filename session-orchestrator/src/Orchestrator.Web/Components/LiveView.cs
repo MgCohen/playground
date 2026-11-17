@@ -55,7 +55,7 @@ public abstract class LiveView : ComponentBase, IDisposable
         return ok;
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         Hub.Changed -= Reload;
         timer?.Dispose();
