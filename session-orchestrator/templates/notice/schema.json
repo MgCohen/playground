@@ -12,7 +12,20 @@
         "question-reminder",
         "question-closed",
         "archive-self",
-        "restart"
+        "restart",
+        "child-not-responding",
+        "child-responding",
+        "report-missing",
+        "child-forgotten",
+        "child-stopped",
+        "child-resumed",
+        "child-archived",
+        "child-archived-in-app",
+        "archive-reminder",
+        "remote-control-self",
+        "remote-control-child",
+        "archive-child",
+        "state-inferred"
       ]
     },
     "decision": {
@@ -40,6 +53,15 @@
       "type": "number"
     },
     "error": {
+      "type": "string"
+    },
+    "fault": {
+      "type": "string"
+    },
+    "appId": {
+      "type": "string"
+    },
+    "state": {
       "type": "string"
     }
   },

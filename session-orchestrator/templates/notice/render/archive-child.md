@@ -1,0 +1,1 @@
+Child "{{title}}" ({{child}}) is archived in the store, but the app still shows it. Call mcp__ccd_session_mgmt__archive_session with session_id "{{appId}}". If the call is refused, tell the user to archive it from the sidebar.

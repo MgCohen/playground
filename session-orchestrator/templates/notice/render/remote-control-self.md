@@ -1,0 +1,1 @@
+Turn on Remote Control for this session, so that the user can see it on the phone. Call mcp__ccd_session_mgmt__set_remote_control with session_id "self" and enabled true. Do nothing else before this call. Then continue your work.

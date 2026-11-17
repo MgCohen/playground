@@ -1,8 +1,29 @@
-import { S, log, now, readJson, writeJson } from './state.ts'
+import { S, log, now, orch, readJson, writeJson } from './state.ts'
+
+// The process that holds the lease: orch process prints the id and the start time of its parent, the claude process
+// of this session. The supervisor releases a stale lease only when this process is gone (two writers, S0).
+export async function findProcess($: any): Promise<void> {
+  if (S.pid !== undefined) return
+  try {
+    const run = await orch($, ['process'], 15000)
+    const value = run.ok ? JSON.parse(run.text) : undefined
+    if (typeof value?.pid === 'number') {
+      S.pid = value.pid
+      S.started = String(value.started ?? '')
+    } else await log($, `orch process failed: ${run.text.slice(0, 200)}`)
+  } catch (error) {
+    await log($, `orch process failed: ${String(error)}`)
+  }
+}
 
 export async function writeLease($: any, holder: string, reason: unknown): Promise<void> {
   if (!S.dir) return
-  await writeJson($, `${S.dir}/lease.json`, { holder, since: await now($), reason })
+  const lease: Record<string, unknown> = { holder, since: await now($), reason }
+  if (holder !== 'none' && S.pid !== undefined) {
+    lease.pid = S.pid
+    lease.started = S.started
+  }
+  await writeJson($, `${S.dir}/lease.json`, lease)
 }
 
 export async function beat($: any): Promise<void> {

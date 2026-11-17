@@ -13,7 +13,7 @@ namespace Orchestrator.Cli
             orch: the command of the session orchestrator. Each command reads or writes the store (ORCH_STORE).
 
             Sessions
-              orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--agent A] [--worktree] [--allow-defaults] [--parent ID]
+              orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--agent A] [--worktree] [--allow-defaults] [--background] [--parent ID]
               orch enable [--title T] [--parent ID] [--id ID]
               orch send <session> <text> [--from P]
               orch tree
@@ -43,6 +43,7 @@ namespace Orchestrator.Cli
               orch nudge <party> [id]
               orch template [<kind>] [--check FILE] [--render FILE] [--name N]
               orch doctor
+              orch process (the id and start time of the process that runs orch: the plugin puts them in lease.json)
             A <session> can be the first characters of its id.
             """;
 
@@ -58,7 +59,7 @@ namespace Orchestrator.Cli
             var command = new CommandContext(store, args, output, cwd);
             try
             {
-                if (args.Positional[0] is not ("doctor" or "template")) Home.CheckVersion(store.Root, store.Clock.GetUtcNow());
+                if (args.Positional[0] is not ("doctor" or "template" or "process")) Home.CheckVersion(store.Root, store.Clock.GetUtcNow());
                 return args.Positional[0] switch
                 {
                     "new" => SessionCommands.New(command),
@@ -86,6 +87,7 @@ namespace Orchestrator.Cli
                     "events" => EventCommands.Events(command),
                     "template" => ToolCommands.Template(command),
                     "doctor" => ToolCommands.Doctor(command),
+                    "process" => ToolCommands.Process(command),
                     _ => throw new UsageException($"unknown command {args.Positional[0]}"),
                 };
             }

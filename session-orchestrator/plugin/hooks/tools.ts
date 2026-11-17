@@ -110,8 +110,15 @@ async function parentId($: any): Promise<string | undefined> {
   return typeof meta?.parent === 'string' ? meta.parent : undefined
 }
 
+export const EARLY_DONE =
+  'orch: the report was not recorded. This session has an open decision, so the work is not done. The end of a step is an update: call mcp__orch__update. Report done after the answer arrives.'
+
 export async function report($: any, e: any): Promise<any> {
   if (!S.dir) return { deny: 'orch: this session is not enabled' }
+  if (e.state === 'done' && S.id) {
+    const open = await orch($, ['decisions', '--session', S.id])
+    if (open.ok && !open.text.startsWith('No open decisions')) return { result: EARLY_DONE }
+  }
   const fields = { state: e.state, summary: e.summary, done: e.done, next: e.next, blockers: e.blockers, links: e.links, details: e.details }
   const needs = e.state === 'done' || e.state === 'blocked' ? 'ack' : undefined
   await post($, 'report', self(), 'user', fields, { needs })
@@ -166,6 +173,7 @@ export async function spawnChild($: any, e: any): Promise<any> {
   if (Array.isArray(e.skills) && e.skills.length > 0) argv.push('--skills', e.skills.join(','))
   if (e.agent) argv.push('--agent', String(e.agent))
   if (e.worktree === true) argv.push('--worktree')
+  if (e.background === true) argv.push('--background')
   const run = await orch($, argv)
   if (!run.ok) {
     await log($, `spawn_child failed: ${run.text.slice(0, 400)}`)

@@ -11,7 +11,7 @@ namespace Orchestrator.Supervisor;
 /// The reactors of the supervisor on the stream: the relays, the question follow, the docs check, the default,
 /// the watchdog and the turn runner. A push of the stream or the timer of the time rules starts a <see cref="Tick"/>.
 /// </summary>
-public sealed class Supervisor
+public sealed partial class Supervisor
 {
     sealed record Failure(int Count, int Rounds, DateTimeOffset? Until, string? Error);
 
@@ -31,6 +31,7 @@ public sealed class Supervisor
     readonly Lifecycle lifecycle;
     readonly Recovery recovery;
     readonly Messages messages;
+    readonly StateReader states;
 
     public Supervisor(FileStore store, ITurnRunner runner, IDocsChecker docs, SupervisorOptions options)
     {
@@ -43,6 +44,7 @@ public sealed class Supervisor
         lifecycle = new Lifecycle(store);
         recovery = new Recovery(store);
         messages = new Messages(store);
+        states = new StateReader(store);
     }
 
     public FileStore Store => store;
@@ -59,12 +61,9 @@ public sealed class Supervisor
             var now = Now;
             StopRunningTurns();
             Relay();
+            StepStates(now);
             var sessions = store.Sessions().Where(id => !lifecycle.IsStopped(id)).ToList();
-            foreach (var id in sessions)
-            {
-                ReleaseStaleLease(id, now);
-                ApplyPolicy(id, now);
-            }
+            foreach (var id in sessions) ApplyPolicy(id, now);
             FollowQuestions(now);
             foreach (var id in sessions)
             {
@@ -76,7 +75,7 @@ public sealed class Supervisor
 
     public async Task Idle()
     {
-        while (!running.IsEmpty || !checks.IsEmpty) await Task.WhenAll([.. running.Values, .. checks.Values]);
+        while (!running.IsEmpty || !checks.IsEmpty || !fallbacks.IsEmpty) await Task.WhenAll([.. running.Values, .. checks.Values, .. fallbacks.Values]);
     }
 
     void StopRunningTurns()
@@ -89,22 +88,14 @@ public sealed class Supervisor
             }
     }
 
-    void ReleaseStaleLease(string id, DateTimeOffset now)
-    {
-        if (store.Lease(id).Holder != Holders.Live || store.IsLive(id, now)) return;
-        store.SaveLease(id, new Lease(Holders.None, Times.Format(now), System.Text.Json.JsonSerializer.SerializeToElement(new { @event = "stale heartbeat" })));
-        store.Log($"{id} lease released: stale heartbeat");
-    }
-
-    // Question relay and report relay: each question, plan and done or blocked report of a child goes to its parent.
+    // Question relay: each question and plan of a child goes to its parent at once. A report goes at the end of the turn (RelayReports).
 
     static bool IsRelayed(Event e) =>
-        !e.IsForward && Parties.SessionId(e.From) is not null
-        && (e.Kind is EventKinds.Decision or EventKinds.Query or EventKinds.Plan || e.Kind == EventKinds.Report && e.Needs is not null);
+        !e.IsForward && Parties.SessionId(e.From) is not null && e.Kind is EventKinds.Decision or EventKinds.Query or EventKinds.Plan;
 
     void Relay()
     {
-        var subscription = store.Events.Subscribe(Parties.Supervisor, RelaySubscription, IsRelayed, "decision, query, plan, report done or blocked from a child");
+        var subscription = store.Events.Subscribe(Parties.Supervisor, RelaySubscription, IsRelayed, "decision, query, plan from a child");
         foreach (var e in subscription.Next())
         {
             var child = Parties.SessionId(e.From)!;
@@ -252,7 +243,8 @@ public sealed class Supervisor
 
     bool CanRun(string id, DateTimeOffset now)
     {
-        if (running.ContainsKey(id) || store.IsLive(id, now)) return false;
+        // A live lease with an old heartbeat is stale: the state machine releases it only when its process is gone (two writers, S0).
+        if (running.ContainsKey(id) || store.IsLive(id, now) || store.Lease(id).Holder == Holders.Live) return false;
         if (imports.TryGetValue(id, out var imported) && now - imported < options.ImportWait) return false;
         if (!failures.TryGetValue(id, out var failure) || failure.Count < options.MaxFailures) return true;
         if (failure.Until is not { } until || now < until) return false;
@@ -354,6 +346,9 @@ public sealed class Supervisor
             import(id);
             imports[id] = Now;
             store.Log($"{id} imported into the desktop app");
+            var meta = store.Meta(id);
+            if (meta.Imported == true && meta.Background != true)
+                Notify(Parties.Session(id), null, store.Texts.Notice("remote-control-self"));
         }
         catch (Exception e) when (e is ShellException or IOException or InvalidOperationException)
         {

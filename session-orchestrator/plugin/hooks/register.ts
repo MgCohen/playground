@@ -1,7 +1,7 @@
 import type { Register } from 'claude-code'
 import { ROW_CHARS, S, TICK_MS, homeRoot, log, now, readJson, sessionDir, storeRoot, writeJson } from './state.ts'
 import { emitRow } from './events.ts'
-import { beat, releaseLease, writeLease } from './lease.ts'
+import { beat, findProcess, releaseLease, writeLease } from './lease.ts'
 import { deliver, tick, watchLoop } from './deliver.ts'
 import { NUDGE } from './stream.ts'
 import {
@@ -26,6 +26,18 @@ import {
   spawnChild,
   update,
 } from './tools.ts'
+
+const REMOTE_CONTROL_TOOL = 'mcp__ccd_session_mgmt__set_remote_control'
+
+function isSelf(id: unknown): boolean {
+  return id === undefined || id === 'self' || id === S.id || id === `local_${S.id}`
+}
+
+async function recordRemoteControl($: any, enabled: boolean): Promise<void> {
+  const meta = await readJson($, `${S.dir}/meta.json`)
+  if (meta) await writeJson($, `${S.dir}/meta.json`, { ...meta, remoteControl: enabled })
+  await log($, `remote control ${enabled ? 'on' : 'off'}`)
+}
 
 const MIRROR_DOORS = ['prompt', 'response', 'tool-result']
 const ASK_IN_TEXT =
@@ -67,6 +79,7 @@ async function activate($: any, dir: string, reason: unknown): Promise<void> {
   const status = await readJson($, `${dir}/status.json`)
   S.idle = status?.state !== 'running'
   await $.fs.write(`${dir}/heartbeat.txt`, await now($))
+  await findProcess($)
   await writeLease($, S.holder, reason)
   const host = await $.env.get('CLAUDE_CODE_HOST_SESSION_ID')
   const meta = await readJson($, `${dir}/meta.json`)
@@ -152,6 +165,13 @@ export const register: Register = on => {
       deliver($).catch((error: unknown) => log($, `deliver failed: ${String(error)}`))
     }
     return { consumed: 'orch nudge: the plugin looks at the stream' }
+  })
+
+  // F4: the session turned its Remote Control on or off. meta.json records it, so the supervisor sends no parent notice.
+  on('tool.call', { tool: REMOTE_CONTROL_TOOL }, async ($: any, e: any, next: any) => {
+    const result = await next(e)
+    if (S.dir && isSelf(e.session_id) && !(result && (result.deny || result.isError))) recordRemoteControl($, e.enabled !== false).catch((error: unknown) => log($, `remote control record failed: ${String(error)}`))
+    return result
   })
 
   on('session.end', async ($, e, next) => {

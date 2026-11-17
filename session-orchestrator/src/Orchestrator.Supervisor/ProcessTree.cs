@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Orchestrator.Store;
 
 namespace Orchestrator.Supervisor;
 
@@ -92,65 +93,7 @@ public sealed class ProcessTree : IDisposable
         }
     }
 
-    public static DateTime? StartTime(int pid)
-    {
-        try
-        {
-            using var process = Process.GetProcessById(pid);
-            return process.StartTime;
-        }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or Win32Exception)
-        {
-            return null;
-        }
-    }
+    public static DateTime? StartTime(int pid) => Processes.StartTime(pid);
 
-    public static IReadOnlyList<(int Pid, int Parent)> Snapshot()
-    {
-        var entries = new List<(int, int)>();
-        var snapshot = CreateToolhelp32Snapshot(SnapProcess, 0);
-        if (snapshot == InvalidHandle) return entries;
-        try
-        {
-            var entry = new ProcessEntry { Size = (uint)Marshal.SizeOf<ProcessEntry>() };
-            for (var ok = Process32FirstW(snapshot, ref entry); ok; ok = Process32NextW(snapshot, ref entry))
-                entries.Add(((int)entry.ProcessId, (int)entry.ParentProcessId));
-        }
-        finally
-        {
-            CloseHandle(snapshot);
-        }
-        return entries;
-    }
-
-    const uint SnapProcess = 0x2;
-    static readonly IntPtr InvalidHandle = new(-1);
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    struct ProcessEntry
-    {
-        public uint Size;
-        public uint Usage;
-        public uint ProcessId;
-        public IntPtr DefaultHeapId;
-        public uint ModuleId;
-        public uint Threads;
-        public uint ParentProcessId;
-        public int PriorityClassBase;
-        public uint Flags;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        public string ExeFile;
-    }
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    static extern IntPtr CreateToolhelp32Snapshot(uint flags, uint processId);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    static extern bool Process32FirstW(IntPtr snapshot, ref ProcessEntry entry);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    static extern bool Process32NextW(IntPtr snapshot, ref ProcessEntry entry);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    static extern bool CloseHandle(IntPtr handle);
+    public static IReadOnlyList<(int Pid, int Parent)> Snapshot() => Processes.Snapshot();
 }
