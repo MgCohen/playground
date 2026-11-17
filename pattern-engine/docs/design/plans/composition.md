@@ -277,7 +277,7 @@ compose:
     turns: 8
     grades_per_turn: 8
     grades: 40
-    party_size: 6
+    set_size: 6
   cache: true                   # same quest + same party = no new grader call
 party:
   fields: [tags]                # tags | cost | stats: what the agents see

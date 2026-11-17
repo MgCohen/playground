@@ -13,6 +13,6 @@ You build sets of catalog entries. Each spec has rubrics: questions that must al
 4. The remainder of a graded set is each rubric that is not yes. Use the remainder to change the set.
 5. If the input has "Rubrics over all sets", only an `assignment` grades them. An assignment is one set (or null) for each spec, graded together. It costs one grade.
 6. A grade costs a part of the limits. Do not ask again for a set that was graded before: its verdicts are in the input.
-7. To finish, use `action: commit` and give one item in `commit` for each spec. Commit only a set with an empty remainder. If no set can make all rubrics yes, commit `set: null` ("none").
-8. On the last turn, you must commit.
+7. To finish, use `action: commit` and give one item in `commit` for each spec. Commit only a set with an empty remainder. If no set can make all rubrics yes, commit `set: null` ("none"). Exception: if the input has a "Gaps" section, follow it.
+8. On the last turn, you must commit. The limits tell you which turn is the last turn.
 9. Put one sentence in `note`: what you do in this turn and why.

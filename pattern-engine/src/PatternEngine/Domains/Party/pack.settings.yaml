@@ -6,8 +6,10 @@ compose:
     turns: 8
     grades_per_turn: 8
     grades: 40
-    party_size: 6
-  cache: true                   # same quest + same party = no new grader call
+    set_size: 6                 # heroes in one party
+  cache: true                   # same element, rubrics, checker and context = no new grader call (G1)
+  code_checks: false            # R1: the agents must find each rubric failure; the oracle checks after the run
+  gaps: false                   # B4: a commit must close the remainder, or be none
 
 party:
   tags: [healer, tank, fighter, scout, tracker, lockpick, mage, lore]

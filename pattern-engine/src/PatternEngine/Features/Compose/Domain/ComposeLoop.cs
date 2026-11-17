@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -29,13 +30,37 @@ public sealed record GradeRecord(
     [property: JsonPropertyName("remainder")] IReadOnlyList<string> Remainder,
     [property: JsonPropertyName("cached")] bool Cached,
     [property: JsonPropertyName("error")] string? Error,
-    [property: JsonPropertyName("parts")] IReadOnlyList<SpecSet>? Parts = null);
+    [property: JsonPropertyName("parts")] IReadOnlyList<SpecSet>? Parts = null,
+    [property: JsonPropertyName("key")] string? Key = null);
 
-/// <summary>The final answer for one spec. A null set means "none".</summary>
+/// <summary>A gap: the new pattern that the author step writes for the remainder of a commit (B4). Nearest is the entry to start from.</summary>
+public sealed record Gap(
+    [property: JsonPropertyName("new_id")] string NewId,
+    [property: JsonPropertyName("nearest")] string? Nearest);
+
+/// <summary>
+/// The final answer for one spec. A null set means "none". Remainder: the rubrics that are not true for the committed set,
+/// from its grade; null if the set has no grade. Gap: only when the setting compose.gaps is on.
+/// </summary>
 public sealed record SetCommit(
     [property: JsonPropertyName("spec")] string Spec,
     [property: JsonPropertyName("set")] IReadOnlyList<string>? Set,
-    [property: JsonPropertyName("reason")] string Reason);
+    [property: JsonPropertyName("reason")] string Reason,
+    [property: JsonPropertyName("remainder")] IReadOnlyList<string>? Remainder = null,
+    [property: JsonPropertyName("gap")] Gap? Gap = null);
+
+/// <summary>The score of one anchor for its committed set (G3): the true rubrics, the score rule, and the failed rubrics. No weighted total.</summary>
+public sealed record AnchorScore(
+    [property: JsonPropertyName("anchor")] string Anchor,
+    [property: JsonPropertyName("ok")] int Ok,
+    [property: JsonPropertyName("total")] int Total,
+    [property: JsonPropertyName("rule")] string Rule,
+    [property: JsonPropertyName("pass")] bool Pass,
+    [property: JsonPropertyName("failed")] IReadOnlyList<string> Failed)
+{
+    public string Line(string measures) =>
+        $"{Anchor}: score {Ok} of {Total} ({Rule}, {(Pass ? "pass" : "fail")}); failed: {(Failed.Count == 0 ? "none" : string.Join(", ", Failed))}; {measures}";
+}
 
 public sealed record TurnRecord(
     [property: JsonPropertyName("turn")] int Turn,
@@ -57,15 +82,26 @@ public sealed record ComposeTrace(
     [property: JsonPropertyName("cache_hits")] int CacheHits,
     [property: JsonPropertyName("calls")] int Calls,
     [property: JsonPropertyName("cost")] double Cost,
-    [property: JsonPropertyName("ms")] long Ms)
+    [property: JsonPropertyName("ms")] long Ms,
+    [property: JsonPropertyName("scores")] IReadOnlyList<AnchorScore>? Scores = null)
 {
     public IReadOnlyList<string>? CommitOf(string spec) => Commits.FirstOrDefault(c => c.Spec == spec)?.Set;
+
+    /// <summary>The measures of the run, beside the scores.</summary>
+    [JsonIgnore]
+    public string Measures => $"{Turns.Count} turns, {Grades} grades, {CacheHits} cache hits, {Calls} calls";
+
+    /// <summary>One line for each anchor (G3).</summary>
+    [JsonIgnore]
+    public IReadOnlyList<string> ScoreLines => (Scores ?? []).Select(s => s.Line(Measures)).ToList();
 }
 
 /// <summary>
 /// The compose loop. The decider agent asks for grades of sets, then commits a set (or none) for each spec.
 /// The grader agent grades each set in parallel. Code counts the limits, checks the ids, keeps the cache and makes the remainder.
-/// Code never decides a rubric: a set over a budget or with an unavailable entry is the work of the agents.
+/// Code decides a rubric only when the pack turns code checks on (R1), and then only the rubrics with check code and the set checks.
+/// The loop stops (R3) when the remainder is empty, when it did not become smaller in one turn, or at the turn limit.
+/// After a stop, the decider gets one last turn, and that turn must commit (B5).
 /// </summary>
 public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, AgentGateway gateway)
 {
@@ -79,11 +115,16 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
     private readonly List<string> notes = [];
     private int grades;
     private int cacheHits;
+    private int lastTurn = settings.Limits.Turns;
+    private string? stopRule;
+    private string checker = "none";
 
     public async Task<ComposeTrace> RunAsync(CancellationToken ct)
     {
         var limits = settings.Limits;
-        for (var turn = 1; turn <= limits.Turns; turn++)
+        checker = gateway.Version(GraderAgent);
+        var best = int.MaxValue;
+        for (var turn = 1; turn <= lastTurn; turn++)
         {
             var answer = await gateway.CallAsync(DeciderAgent, DeciderInput(turn), ct);
             if (gateway.Stopped && !answer.Ok)
@@ -128,9 +169,35 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
             {
                 return Finish("stopped", gateway.StopReason, []);
             }
+
+            var now = Progress();
+            var rule = now == 0 ? "the remainder is empty" : now >= best ? "the remainder did not become smaller in one turn" : null;
+            best = Math.Min(best, now);
+            if (rule is not null && stopRule is null && turn < lastTurn)
+            {
+                stopRule = rule;
+                lastTurn = turn + 1;
+                notes.Add($"Turn {turn}: the loop stops because {rule}. The next turn is the last turn: commit.");
+            }
         }
 
-        return Finish("no-commit", $"turn limit: {limits.Turns} turns with no valid commit", []);
+        return Finish("no-commit", stopRule is null ? $"turn limit: {limits.Turns} turns with no valid commit" : $"stop: {stopRule}, and the last turn gave no valid commit", []);
+    }
+
+    /// <summary>
+    /// The size of the remainder for the loop stop: for each spec (and the whole anchor), the smallest remainder of a graded set.
+    /// A spec with no graded set counts as its rubric count plus one.
+    /// </summary>
+    public int Progress()
+    {
+        int Smallest(Anchor a, Func<GradeRecord, bool> of)
+        {
+            var sizes = graded.Where(g => g.Error is null && of(g)).Select(g => g.Remainder.Count).ToList();
+            return sizes.Count > 0 ? sizes.Min() : a.Visible.Count + 1;
+        }
+
+        var total = task.Specs.Sum(s => Smallest(s, g => g.Parts is null && g.Spec == s.Id));
+        return task.Whole is { } whole ? total + Smallest(whole, g => g.Parts is not null) : total;
     }
 
     /// <summary>The cache key: the spec and the sorted set.</summary>
@@ -139,8 +206,22 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
     private ComposeTrace Finish(string outcome, string? stop, IReadOnlyList<SetCommit> commits)
     {
         var all = task.Specs.Select(s => commits.FirstOrDefault(c => c.Spec == s.Id) ?? new SetCommit(s.Id, null, "no commit")).ToList();
-        return new ComposeTrace(task.Id, settings.Strategy, outcome, stop, all, turns, grades, cacheHits, gateway.Calls, gateway.Cost, gateway.ElapsedMs);
+        var scores = task.Specs.Select(s => Score(s, all.First(c => c.Spec == s.Id))).ToList();
+        return new ComposeTrace(task.Id, settings.Strategy, outcome, stop, all, turns, grades, cacheHits, gateway.Calls, gateway.Cost, gateway.ElapsedMs, scores);
     }
+
+    /// <summary>The score of one spec for its commit, from the grade of the committed set. With no grade, each rubric counts as failed.</summary>
+    private AnchorScore Score(Anchor spec, SetCommit commit)
+    {
+        var grade = commit.Set is null ? null : GradeOf(spec.Id, commit.Set);
+        var failed = grade?.Remainder ?? spec.Visible.Select(r => r.Id).ToList();
+        var total = grade?.Verdicts.Count ?? spec.Visible.Count;
+        var ok = total - failed.Count;
+        return new AnchorScore(spec.Id, ok, total, spec.Score.ToString(), spec.Score.Passes(ok, total), failed);
+    }
+
+    private GradeRecord? GradeOf(string spec, IReadOnlyList<string> set) =>
+        graded.LastOrDefault(g => g.Parts is null && g.Spec == spec && g.Error is null && Key(g.Spec, g.Set) == Key(spec, set));
 
     private (IReadOnlyList<SetCommit> Commits, List<string> Refused) ReadCommits(AgentAnswer answer)
     {
@@ -165,7 +246,25 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
                 continue;
             }
 
-            commits.Add(new SetCommit(spec, set, Text(item, "reason")));
+            Gap? gap = null;
+            if (item.TryGetProperty("gap", out var g) && g.ValueKind == JsonValueKind.Object)
+            {
+                if (!settings.Gaps)
+                {
+                    refused.Add($"spec \"{spec}\": a gap is not allowed in this task");
+                    continue;
+                }
+
+                var nearest = Text(g, "nearest");
+                gap = new Gap(Text(g, "new_id"), nearest.Length > 0 ? nearest : null);
+                if (gap.NewId.Length == 0 || (gap.Nearest is { } n && !task.HasEntry(n)))
+                {
+                    refused.Add($"spec \"{spec}\": a gap needs new_id, and nearest must be an entry of the catalog");
+                    continue;
+                }
+            }
+
+            commits.Add(new SetCommit(spec, set, Text(item, "reason"), set is null ? null : GradeOf(spec, set)?.Remainder, gap));
         }
 
         refused.AddRange(task.Specs.Where(s => !named.Contains(s.Id)).Select(s => $"no commit for spec \"{s.Id}\"; commit a set or null for each spec"));
@@ -217,7 +316,8 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
                 continue;
             }
 
-            Accept(Key(spec, set), task.Specs.First(x => x.Id == spec), set, null, $"[{string.Join(", ", set)}] for \"{spec}\"");
+            var anchor = task.Specs.First(x => x.Id == spec);
+            Accept(CacheKey(anchor, task.SetText(set.Order(StringComparer.Ordinal).ToList())), anchor, set, null, $"[{string.Join(", ", set)}] for \"{spec}\"");
         }
 
         if (answer.Field("assignment") is { ValueKind: JsonValueKind.Array })
@@ -229,7 +329,7 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
             }
             else
             {
-                Accept(AssignmentKey(parts), task.Whole!, parts.SelectMany(p => p.Set ?? []).ToList(), parts, "assignment");
+                Accept(CacheKey(task.Whole!, AssignmentKey(parts)), task.Whole!, parts.SelectMany(p => p.Set ?? []).ToList(), parts, "assignment");
             }
         }
 
@@ -251,7 +351,7 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
             try
             {
                 Interlocked.Increment(ref grades);
-                return await GradeOneAsync(a.Spec, a.Set, a.Parts, ct);
+                return await GradeOneAsync(a.Spec, a.Set, a.Parts, a.Key, ct);
             }
             finally
             {
@@ -270,6 +370,19 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
 
         return (records, refused);
     }
+
+    /// <summary>
+    /// The verdict cache key (G1): the hash of the element, the hash of the rubrics, the checker version and the hash of the context.
+    /// A change of one part gives a new grade.
+    /// </summary>
+    public string CacheKey(Anchor anchor, string element)
+    {
+        var rubrics = string.Join('\n', anchor.Visible.Select(r => $"{r.Id}|{r.Ask}|{r.Check}|{JsonSerializer.Serialize(r.Args)}"));
+        var check = settings.CodeChecks ? $"{checker}+code" : checker;
+        return $"{Hash(element)}|{Hash(rubrics)}|{check}|{Hash(anchor.Context + "\n" + task.GraderRules)}";
+    }
+
+    private static string Hash(string text) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..12];
 
     /// <summary>The cache key of an assignment: each spec with its sorted set, in the order of the specs.</summary>
     public static string AssignmentKey(IEnumerable<SpecSet> parts) =>
@@ -305,16 +418,36 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
             : (task.Specs.Select(s => new SpecSet(s.Id, given[s.Id])).ToList(), null);
     }
 
-    private async Task<GradeRecord> GradeOneAsync(Anchor spec, IReadOnlyList<string> set, IReadOnlyList<SpecSet>? parts, CancellationToken ct)
+    /// <summary>
+    /// Grades one set. With code checks on, code answers the rubrics with check code and adds the set checks, and the grader gets
+    /// only the other rubrics. With no rubric left for the grader, there is no agent call.
+    /// </summary>
+    private async Task<GradeRecord> GradeOneAsync(Anchor spec, IReadOnlyList<string> set, IReadOnlyList<SpecSet>? parts, string key, CancellationToken ct)
     {
-        var input = parts is null ? GraderInput(task, spec, set) : AssignmentInput(task, parts);
-        var answer = await gateway.CallAsync(GraderAgent, input, ct);
-        var verdicts = ReadVerdicts(answer, spec.Visible);
-        return new GradeRecord(spec.Id, set, verdicts, verdicts.Where(v => v.Ok != true).Select(v => v.Rubric).ToList(), false, answer.Ok ? null : answer.Error, parts);
+        var rubrics = spec.Visible;
+        var code = settings.CodeChecks ? task.CodeVerdicts(spec, set) : [];
+        var toGrader = settings.CodeChecks ? rubrics.Where(r => !r.ByCode).ToList() : rubrics;
+        IReadOnlyList<RubricVerdict> given = [];
+        string? error = null;
+        if (toGrader.Count > 0)
+        {
+            var input = parts is null ? GraderInput(task, spec, set, toGrader) : AssignmentInput(task, parts, toGrader);
+            var answer = await gateway.CallAsync(GraderAgent, input, ct);
+            given = ReadVerdicts(answer, toGrader);
+            error = answer.Ok ? null : answer.Error;
+        }
+
+        var verdicts = rubrics
+            .Select(r => settings.CodeChecks && r.ByCode
+                ? code.FirstOrDefault(c => c.Rubric == r.Id) ?? new RubricVerdict(r.Id, null, "no code check for this rubric")
+                : given.First(v => v.Rubric == r.Id))
+            .Concat(code.Where(c => rubrics.All(r => r.Id != c.Rubric)))
+            .ToList();
+        return new GradeRecord(spec.Id, set, verdicts, verdicts.Where(v => v.Ok != true).Select(v => v.Rubric).ToList(), false, error, parts, key);
     }
 
     /// <summary>The input of one assignment grade: the pack rules, the whole anchor, each spec with its set, and the rubrics over all sets.</summary>
-    public static string AssignmentInput(IComposeTask task, IReadOnlyList<SpecSet> parts)
+    public static string AssignmentInput(IComposeTask task, IReadOnlyList<SpecSet> parts, IReadOnlyList<Rubric>? rubrics = null)
     {
         var whole = task.Whole ?? throw new InvalidOperationException("the task has no whole anchor");
         var b = new StringBuilder();
@@ -325,7 +458,7 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
         }
 
         b.Append("\n# Rubrics\n\n");
-        foreach (var r in whole.Visible)
+        foreach (var r in rubrics ?? whole.Visible)
         {
             b.Append("- ").Append(r.Id).Append(": ").Append(r.Ask).Append('\n');
         }
@@ -431,21 +564,28 @@ public sealed class ComposeLoop(IComposeTask task, ComposeSettings settings, Age
             }
         }
 
-        var left = limits.Turns - turn + 1;
+        if (settings.Gaps)
+        {
+            b.Append("\n# Gaps\n\nIf no set of the catalog can make all rubrics yes, commit the set with the smallest remainder and add `gap`: ")
+                .Append("`new_id` (a short id for a new entry that covers the remainder, lowercase, no spaces) and `nearest` (the catalog entry that is most similar to that new entry). ")
+                .Append("If no entry helps at all, commit `set: null` with a gap.\n");
+        }
+
+        var left = lastTurn - turn + 1;
         b.Append("\n# Limits\n\n")
-            .Append($"- Turn {turn} of {limits.Turns}. {(left == 1 ? "This is the last turn: you must commit." : $"{left} turns left, this turn included.")}\n")
+            .Append($"- Turn {turn} of {lastTurn}. {(left == 1 ? "This is the last turn: you must commit." : $"{left} turns left, this turn included.")}\n")
             .Append($"- Grades left in the run: {limits.Grades - grades}. Grades in one turn: {limits.GradesPerTurn}.\n")
             .Append($"- Entries in one set: {limits.SetSize} at most.\n");
         return b.ToString();
     }
 
     /// <summary>The input of one grader call: the pack rules, the spec context, the set and the visible rubrics.</summary>
-    public static string GraderInput(IComposeTask task, Anchor spec, IReadOnlyList<string> set)
+    public static string GraderInput(IComposeTask task, Anchor spec, IReadOnlyList<string> set, IReadOnlyList<Rubric>? rubrics = null)
     {
         var b = new StringBuilder();
         b.Append("# Rules\n\n").Append(task.GraderRules.Trim()).Append("\n\n# Spec\n\n").Append(spec.Context).Append("\n\n# Set\n\n")
             .Append(task.SetText(set).Trim()).Append("\n\n# Rubrics\n\n");
-        foreach (var r in spec.Visible)
+        foreach (var r in rubrics ?? spec.Visible)
         {
             b.Append("- ").Append(r.Id).Append(": ").Append(r.Ask).Append('\n');
         }
