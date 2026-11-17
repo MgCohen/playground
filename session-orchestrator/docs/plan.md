@@ -1136,4 +1136,16 @@ Code parts (proposal):
 | C6 | `orch session` CLI, `/api/sessions` fields, codes and app titles (`set_session_title`) | Small |
 | C7 | `orch session join` for other engines, with lease and heartbeat | Small |
 
+C5 scope: the Claude Code coupling in the code today (review of 2026-11-17).
+
+| Place | Coupling | Move to |
+|---|---|---|
+| `Store/Lifecycle.cs` | `OpenCommand` (`claude.exe --desktop --resume`), `Import` (`local_<id>`), the archive wait | Adapter `Open`, `Archive` |
+| `Store/AppRecords.cs`, `StateReader.cs` | Reads the internal app files (`Claude-Data/*/claude-code-sessions/*.json`, `isArchived`) | Adapter `Read`. It stays a file read: the supervisor process has no app tool |
+| `Core/Contract/Records.cs`, `States.cs`, `Policy.cs` | `Imported`, `RemoteControl`, `AppId`, `Background`, `RemoteControlAsked`, `RemoteControlSeconds` in the core contract | `engine` references and adapter facts; the policy value goes to the adapter options |
+| `Cli` `SessionCommands`, `EventCommands`, `ToolCommands` | `CLAUDE_CODE_SESSION_ID`, the `doctor` checks of `claude` and `~/.claude/settings.json` | An adapter method `CurrentSessionId()`, a doctor check for each adapter |
+| `Supervisor/ClaudeRunner.cs` | `ClaudeRunner`, `ClaudeDocsChecker`, `ClaudeStateChecker` | Already behind ports (`ITurnRunner`, `IDocsChecker`, `IStateChecker`). `ClaudeRunner` becomes adapter `Turn` |
+| `templates/*/render/*.md` | The text names `mcp__orch__*` tools and `orch:` skills | A render for each engine, or tool names from the adapter |
+| `plugin/` | The live side in Claude Code | Stays: it is the Claude Code part of the adapter |
+
 Open: a probe of `set_session_title` from a child and from the parent; the first engine after Claude Code; a team owner.
