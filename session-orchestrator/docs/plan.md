@@ -1102,3 +1102,30 @@ Screenshots (mock mode, desktop corner): `docs/screens/r2-corner-open-question.p
 - R2-2: the mock store now has a report with done, next and links, and a `question-closed` notice. The self-test needs them for the render screenshots.
 - R2-3: the well block of Open is a well in a card. It shows a double frame. Accepted for the later block review.
 - R2-4: `Ui.Look` and the `icon` and `tone` of `view.json` overlap. The ring still uses `Ui.Look`, because it also covers kinds with no template. Open question for the block review.
+
+## H1 plan: storage options (2026-11-17)
+
+Page: `docs/storage-options.html` (https://claude.ai/artifact/Qs363bVsydmVxf7Tm1S6FA). Plan only: no code change, no database, no Notion page.
+
+Recommendation: keep the files as the store. The needs today do not require a database or Notion.
+
+| Option | Result |
+|---|---|
+| A. Files + index | Recommended. Plugin hooks, lease and claims stay as they are |
+| B. SQLite on this PC | Later, only if a trigger fires. Hooks have no SQLite access |
+| C. Hosted database (Postgres, Cloudflare D1) | No. Network in each hook; the store stops when the PC is offline |
+| D. Notion as the store | No. No atomic create, rate limit of 3 requests/s |
+| E. Notion as a mirror | Optional, one way, from a supervisor reactor |
+
+Measured on the main store (2026-11-17): 3,654 envelopes in 2 days; 2,350 on 11-17, of which 88 % are `session.tool`, `session.output` and `session.input`. Size: `events/` 6.0 MB, `bodies/` 9.6 MB, `sessions/` 28 MB.
+
+| Step | Change | When |
+|---|---|---|
+| S1 | Index by session in `EventStream` (fixes B2-9) | Now |
+| S2 | Day cache file for each closed day, so a new `orch` process reads one file for each day | Now |
+| S3 | Store out of the git checkout (default `ORCH_STORE`) | Now |
+| S4 | Copy of closed days to a backup folder | Now |
+| S5 | `IStreamBackend` seam, then SQLite | If a trigger fires: a tick or cold query above 1 s, more than 100,000 envelopes, or two PCs |
+| S6 | Notion mirror reactor | If the user wants it |
+
+Cloud workers (G1 Q6a) and the phone (D1) reach the store only through the supervisor HTTP API and the tunnel.

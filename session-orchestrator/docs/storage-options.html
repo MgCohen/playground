@@ -1,0 +1,294 @@
+<title>Orchestrator Storage Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* Layout: one reading column, tabs at the top, wide tables scroll in their own box. Same family as the tunnel plan page. */
+:root {
+  --bg: #f5f7f6; --panel: #ffffff; --fg: #1a2421; --muted: #59665f; --line: #d5ddd9;
+  --accent: #23645a; --accent-soft: #e0efeb; --warn: #8f5a00; --warn-soft: #f9eedb;
+  --bad: #a3302a; --bad-soft: #f7e2e0; --good: #2d6a3a; --good-soft: #e2f1e5;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111816; --panel: #19221f; --fg: #e2e9e6; --muted: #98a7a0; --line: #2c3833;
+  --accent: #6cc7b6; --accent-soft: #173430; --warn: #e2a64a; --warn-soft: #3a2c14;
+  --bad: #ef8a83; --bad-soft: #3d1f1d; --good: #7fcf8f; --good-soft: #1b3321; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111816; --panel: #19221f; --fg: #e2e9e6; --muted: #98a7a0; --line: #2c3833;
+  --accent: #6cc7b6; --accent-soft: #173430; --warn: #e2a64a; --warn-soft: #3a2c14;
+  --bad: #ef8a83; --bad-soft: #3d1f1d; --good: #7fcf8f; --good-soft: #1b3321; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); }
+.wrap { max-width: 900px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.2; }
+h1 { font-size: 30px; margin: 0 0 6px; }
+h2 { font-size: 21px; margin: 28px 0 10px; }
+h3 { font-size: 16px; margin: 20px 0 6px; }
+p { max-width: 68ch; margin: 8px 0; }
+.eyebrow { font: 600 12px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.summary { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 16px 0; }
+.summary p { margin: 4px 0; }
+nav.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 4px; border-bottom: 1px solid var(--line); }
+nav.tabs button { font: 600 14px var(--body); color: var(--muted); background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 10px; cursor: pointer; }
+nav.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+nav.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scroll { overflow-x: auto; margin: 10px 0; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; background: var(--panel); font-size: 14px; }
+th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; }
+th { font-weight: 600; background: var(--accent-soft); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+code { font-family: var(--mono); font-size: 13px; background: var(--accent-soft); padding: 1px 4px; border-radius: 3px; }
+ol, ul { padding-left: 22px; max-width: 68ch; }
+li { margin: 4px 0; }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.note { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 8px 12px; margin: 12px 0; max-width: 68ch; }
+.bars { display: grid; grid-template-columns: minmax(110px, max-content) 1fr minmax(48px, max-content); gap: 6px 10px; align-items: center; max-width: 640px; font-size: 14px; }
+.bars .bar { height: 14px; background: var(--accent); border-radius: 2px; }
+.bars .bar.muted { background: var(--muted); }
+.bars .n { text-align: right; font-variant-numeric: tabular-nums; }
+.diagram { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+.diagram svg { display: block; min-width: 660px; width: 100%; height: auto; }
+svg text { fill: var(--fg); font: 13px var(--body); }
+svg .small { fill: var(--muted); font-size: 11px; }
+svg .box { fill: var(--panel); stroke: var(--line); }
+svg .boxa { fill: var(--accent-soft); stroke: var(--accent); }
+svg .boxd { fill: var(--panel); stroke: var(--muted); stroke-dasharray: 5 4; }
+svg .edge { stroke: var(--muted); fill: none; stroke-width: 1.5; }
+svg .edged { stroke: var(--muted); fill: none; stroke-width: 1.5; stroke-dasharray: 5 4; }
+svg .zone { fill: none; stroke: var(--line); stroke-dasharray: 5 4; }
+svg .arrow { fill: var(--muted); }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Session orchestrator · H1 storage</div>
+  <h1>Orchestrator Storage Options</h1>
+  <div class="summary">
+    <p><strong>Recommendation:</strong> keep the files as the store. Fix the full stream copy (B2-9) with an index, and move the store out of the git checkout.</p>
+    <p>A database or Notion as the store adds a network, an account or a new write path for the plugin hooks. None of the needs today requires it.</p>
+    <p>Cloud workers and the phone reach the store through the supervisor HTTP API and the tunnel. Notion can be a one-way mirror later.</p>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Plan sections">
+    <button role="tab" id="tab-target" aria-controls="p-target" aria-selected="true">Target</button>
+    <button role="tab" id="tab-needs" aria-controls="p-needs" aria-selected="false">Needs</button>
+    <button role="tab" id="tab-options" aria-controls="p-options" aria-selected="false">Options</button>
+    <button role="tab" id="tab-limits" aria-controls="p-limits" aria-selected="false">Limits</button>
+    <button role="tab" id="tab-plan" aria-controls="p-plan" aria-selected="false">Plan</button>
+    <button role="tab" id="tab-questions" aria-controls="p-questions" aria-selected="false">Questions</button>
+  </nav>
+
+  <!-- TARGET -->
+  <section role="tabpanel" id="p-target" aria-labelledby="tab-target">
+    <h2>All remote parties use the supervisor API; only local processes touch the files</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 780 330" role="img" aria-label="Local writers write the store files. The supervisor serves the HTTP API. The phone and cloud workers use the API through the tunnel. An optional Notion mirror gets reports and decisions from the supervisor.">
+        <defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker></defs>
+        <rect class="zone" x="10" y="14" width="500" height="306" rx="8"/>
+        <text class="small" x="22" y="34">This PC</text>
+        <rect class="zone" x="530" y="14" width="240" height="306" rx="8"/>
+        <text class="small" x="542" y="34">Remote</text>
+
+        <rect class="box" x="28" y="52" width="140" height="44" rx="6"/><text x="40" y="79">Plugin hooks</text>
+        <rect class="box" x="28" y="108" width="140" height="44" rx="6"/><text x="40" y="135">orch CLI</text>
+        <rect class="box" x="28" y="164" width="140" height="44" rx="6"/><text x="40" y="191">Tray (live mode)</text>
+
+        <rect class="boxa" x="214" y="96" width="132" height="84" rx="6"/>
+        <text x="226" y="122">Store files</text>
+        <text class="small" x="226" y="142">events, bodies,</text>
+        <text class="small" x="226" y="158">sessions, policy</text>
+
+        <rect class="boxa" x="214" y="232" width="132" height="56" rx="6"/>
+        <text x="226" y="256">Supervisor</text>
+        <text class="small" x="226" y="274">EventStream, HTTP API</text>
+
+        <rect class="box" x="374" y="232" width="120" height="56" rx="6"/>
+        <text x="386" y="256">Tunnel</text>
+        <text class="small" x="386" y="274">stream D</text>
+
+        <rect class="box" x="560" y="52" width="190" height="44" rx="6"/><text x="572" y="79">Phone browser</text>
+        <rect class="box" x="560" y="140" width="190" height="44" rx="6"/><text x="572" y="167">Cloud workers (G1)</text>
+        <rect class="boxd" x="560" y="232" width="190" height="56" rx="6"/>
+        <text x="572" y="256">Notion mirror</text>
+        <text class="small" x="572" y="274">optional, one way</text>
+
+        <path class="edge" d="M168,74 L212,110" marker-end="url(#m)"/>
+        <path class="edge" d="M168,130 L212,134" marker-end="url(#m)"/>
+        <path class="edge" d="M168,186 L212,160" marker-end="url(#m)"/>
+        <path class="edge" d="M280,182 L280,230" marker-end="url(#m)"/>
+        <text class="small" x="288" y="210">reads, writes</text>
+        <path class="edge" d="M372,260 L348,260" marker-end="url(#m)"/>
+        <path class="edge" d="M558,74 L470,74 L470,230" marker-end="url(#m)"/>
+        <path class="edge" d="M558,162 L486,162 L486,230" marker-end="url(#m)"/>
+        <path class="edged" d="M346,300 L520,300 L520,276 L558,276" marker-end="url(#m)"/>
+        <text class="small" x="380" y="316">posts reports, decisions</text>
+      </svg>
+    </div>
+
+    <h3>The store holds 3,654 envelopes after two days; 88 % of one day are traces</h3>
+    <p class="small">Envelopes of 2026-11-17 by kind, main store. Total that day: 2,350.</p>
+    <div class="bars" role="img" aria-label="Bar chart: session.tool 1271, session.output 553, session.input 233, all other kinds 293.">
+      <span>session.tool</span><span class="bar" style="width:100%"></span><span class="n">1,271</span>
+      <span>session.output</span><span class="bar" style="width:43.5%"></span><span class="n">553</span>
+      <span>session.input</span><span class="bar" style="width:18.3%"></span><span class="n">233</span>
+      <span>All other kinds</span><span class="bar muted" style="width:23.1%"></span><span class="n">293</span>
+    </div>
+    <div class="scroll"><table>
+      <tr><th>Folder</th><th class="num">Size (MB)</th><th>Content</th></tr>
+      <tr><td><code>events/</code></td><td class="num">6.0</td><td>3,654 envelope files, 2 days</td></tr>
+      <tr><td><code>bodies/</code></td><td class="num">9.6</td><td>One body for each message</td></tr>
+      <tr><td><code>sessions/</code></td><td class="num">28</td><td>38 sessions; <code>mirror/</code> is the largest part</td></tr>
+    </table></div>
+  </section>
+
+  <!-- NEEDS -->
+  <section role="tabpanel" id="p-needs" aria-labelledby="tab-needs" hidden>
+    <h2>Four local writers, one lease rule, and a 10 s hook budget set the limits</h2>
+    <div class="scroll"><table>
+      <tr><th>Need</th><th>Today</th><th>Effect on the choice</th></tr>
+      <tr><td>Writers</td><td>Supervisor, <code>orch</code>, plugin hooks, tray</td><td>Each store must accept all four</td></tr>
+      <tr><td>Plugin hook writes</td><td><code>$.fs.write</code>, about 2,000 a day</td><td>Hooks have file and process calls only</td></tr>
+      <tr><td>Hook time budget</td><td><code>tool.call</code> stops after about 10 s</td><td>No slow network call in a hook</td></tr>
+      <tr><td>Readers</td><td><code>StreamQuery</code>, named views, SSE</td><td>Index by id, thread, kind, party</td></tr>
+      <tr><td>Push</td><td><code>StreamWatcher</code> plus a 60 s sweep</td><td>Needs a change signal or a poll</td></tr>
+      <tr><td>First answer wins</td><td>Exclusive create of <code>claims/answer/</code></td><td>Needs an atomic create</td></tr>
+      <tr><td>Cursor lock</td><td><code>&lt;name&gt;.json.lock</code></td><td>Needs a lock or a transaction</td></tr>
+      <tr><td>Lease</td><td><code>lease.json</code>, heartbeat every 3 s</td><td>Many small writes</td></tr>
+      <tr><td>Crash recovery</td><td>Write once files, temp file then move</td><td>Envelope is the commit point</td></tr>
+      <tr><td>Backup</td><td>None</td><td>Copy of write once files is easy</td></tr>
+      <tr><td>Git safety</td><td>Ignored folder in the main checkout</td><td><code>git clean -fdx</code> deletes it</td></tr>
+      <tr><td>Cloud workers</td><td>G1 Q6a: call the supervisor API</td><td>No direct store access</td></tr>
+      <tr><td>Phone</td><td>Supervisor UI through the tunnel</td><td>No direct store access</td></tr>
+    </table></div>
+
+    <h3>The real cost is in the reads, not the storage</h3>
+    <ul>
+      <li>B2-9: <code>FileStore.Report</code> and <code>FileStore.OpenDecisions</code> copy the full stream for each session at each tick.</li>
+      <li>Each new <code>orch</code> process reads all envelope files at its first query. Each session runs <code>orch</code> often, and the stream grows by about 2,000 files a day.</li>
+      <li>A database fixes both, but an index and a day cache in the files fix both too.</li>
+    </ul>
+  </section>
+
+  <!-- OPTIONS -->
+  <section role="tabpanel" id="p-options" aria-labelledby="tab-options" hidden>
+    <h2>Only the file store keeps the plugin hooks, the lease and the claims unchanged</h2>
+    <div class="scroll"><table>
+      <tr><th>Option</th><th>Plugin hooks</th><th>Locks, claims</th><th>Offline PC</th><th>Remote access</th><th>Change cost</th></tr>
+      <tr><td><strong>A. Files + index</strong></td><td><span class="pill good">No change</span></td><td><span class="pill good">No change</span></td><td><span class="pill good">Works</span></td><td>Through the API</td><td><span class="pill good">Small</span></td></tr>
+      <tr><td>B. SQLite on this PC</td><td><span class="pill warn">Through <code>orch</code> or HTTP</span></td><td><span class="pill good">Transactions</span></td><td><span class="pill good">Works</span></td><td>Through the API</td><td><span class="pill warn">Medium</span></td></tr>
+      <tr><td>C. Hosted database</td><td><span class="pill bad">Network in each hook</span></td><td><span class="pill good">Transactions</span></td><td><span class="pill bad">Store gone</span></td><td>Direct, with a secret</td><td><span class="pill bad">Large</span></td></tr>
+      <tr><td>D. Notion as the store</td><td><span class="pill bad">Network, rate limit</span></td><td><span class="pill bad">No atomic create</span></td><td><span class="pill bad">Store gone</span></td><td>Notion app</td><td><span class="pill bad">Large</span></td></tr>
+      <tr><td>E. Notion as a mirror</td><td><span class="pill good">No change</span></td><td><span class="pill good">No change</span></td><td><span class="pill good">Queue, retry</span></td><td>Notion app, read</td><td><span class="pill warn">Small, plus account</span></td></tr>
+    </table></div>
+
+    <h3>A. Files as today, with an index fix</h3>
+    <p>The envelope files stay the source. <code>EventStream</code> gets an index by session. A day cache file holds the envelopes of each closed day, so a new process reads one file for each day. The contract permits a cache that the stream can make again.</p>
+
+    <h3>B. SQLite on this PC</h3>
+    <p>One file in WAL mode gives indexes and transactions. The plugin hooks have no SQLite access, so each hook write must start <code>orch post</code> or call the supervisor. A .NET process start costs about 0.2 s for each of 2,000 writes a day. A call to the supervisor fails while the supervisor is down.</p>
+
+    <h3>C. Hosted database</h3>
+    <p>Postgres (for example Neon or Supabase) or Cloudflare D1. It gives direct access from the cloud, but G1 already sends cloud workers through the supervisor API. D1 has no C# driver: the code calls its HTTP API or a Worker. Each write takes a network trip, and the PC stops when the network stops.</p>
+
+    <h3>D. Notion as the store</h3>
+    <p>Notion has no transaction, no exclusive create and no change push. The first answer rule and the cursor lock cannot work. The trace volume is above the rate limit at peak.</p>
+
+    <h3>E. Notion as a mirror</h3>
+    <p>A supervisor reactor subscribes to <code>report</code>, <code>question</code>, <code>answer</code> and <code>review</code>. It writes one row for each in a Notion database, from a queue with retry. Notion never writes back. The phone already gets the cards through the tunnel, so the mirror gives search and history only.</p>
+  </section>
+
+  <!-- LIMITS -->
+  <section role="tabpanel" id="p-limits" aria-labelledby="tab-limits" hidden>
+    <h2>The network options fail the 10 s hook budget under load or when offline</h2>
+    <div class="scroll"><table>
+      <tr><th>Limit</th><th>Value</th><th>Effect</th></tr>
+      <tr><td>Notion API rate</td><td>Average 3 requests/s per integration</td><td>HTTP 429 with <code>Retry-After</code></td></tr>
+      <tr><td>Notion text</td><td>2,000 characters per rich text item</td><td>Bodies must split</td></tr>
+      <tr><td>Notion request size</td><td>100 blocks per append, 500 KB</td><td>Long bodies take more calls</td></tr>
+      <tr><td>Notion latency</td><td>About 0.3 to 1 s per call</td><td>Too slow for a tick query</td></tr>
+      <tr><td>D1 Free</td><td>100,000 rows written, 5 M read a day</td><td>Fits writes; tick reads fill it</td></tr>
+      <tr><td>D1 access from C#</td><td>HTTP API with a token</td><td>A secret on each writer</td></tr>
+      <tr><td>Hosted Postgres latency</td><td>About 50 to 300 ms per trip</td><td>Slow queries at each tick</td></tr>
+      <tr><td>Plugin hook budget</td><td>About 10 s for <code>tool.call</code></td><td>One retry fills it</td></tr>
+      <tr><td><code>orch</code> process start</td><td>About 0.2 s</td><td>Cost of option B in hooks</td></tr>
+    </table></div>
+    <p>The Notion and D1 values come from their public limits pages. The latency values are typical values, not measurements on this PC.</p>
+  </section>
+
+  <!-- PLAN -->
+  <section role="tabpanel" id="p-plan" aria-labelledby="tab-plan" hidden>
+    <h2>Six steps; the store contract stays the interface at each step</h2>
+    <div class="scroll"><table>
+      <tr><th>Step</th><th>Change</th><th>Contract change</th><th>When</th></tr>
+      <tr><td>S1</td><td>Index by session in <code>EventStream</code> (B2-9)</td><td>None</td><td>Now</td></tr>
+      <tr><td>S2</td><td>Day cache file for each closed day</td><td>A cache row in <code>store.md</code></td><td>Now</td></tr>
+      <tr><td>S3</td><td>Store out of the git checkout</td><td>Default <code>ORCH_STORE</code></td><td>Now</td></tr>
+      <tr><td>S4</td><td>Copy of closed days to a backup folder</td><td>None</td><td>Now</td></tr>
+      <tr><td>S5</td><td><code>IStreamBackend</code> seam under the primitives</td><td>None</td><td>If a trigger fires</td></tr>
+      <tr><td>S6</td><td>Notion mirror reactor</td><td>A reactor row</td><td>If the user wants it</td></tr>
+    </table></div>
+
+    <h3>Triggers for a database (S5)</h3>
+    <ul>
+      <li>A tick or a cold <code>orch</code> query takes more than 1 s after S1 and S2.</li>
+      <li>The stream holds more than 100,000 envelopes in the open days.</li>
+      <li>Two PCs must write one store.</li>
+    </ul>
+    <p>If a trigger fires, SQLite behind <code>IStreamBackend</code> comes first. The plugin hooks keep their file writes into <code>events/</code>, and the supervisor moves them into the database. So the hooks stay fast.</p>
+
+    <h3>Rules for each step</h3>
+    <ol>
+      <li>Change <code>docs/store.md</code> in the same commit as a store file.</li>
+      <li>Keep each cache one that the stream can make again.</li>
+      <li>Test with a scratchpad <code>ORCH_STORE</code>, never with <code>store/</code>.</li>
+    </ol>
+
+    <h2>Non-goals</h2>
+    <ul>
+      <li>No direct store access for cloud workers. Reason: one writer path keeps the lease and claim rules in C#.</li>
+      <li>No Notion writes into the store. Reason: Notion has no atomic create, so the first answer rule breaks.</li>
+      <li>No migration of version 1 stores. Reason: <code>store.md</code> rule 4.</li>
+    </ul>
+  </section>
+
+  <!-- QUESTIONS -->
+  <section role="tabpanel" id="p-questions" aria-labelledby="tab-questions" hidden>
+    <h2>Open questions</h2>
+    <div class="scroll"><table>
+      <tr><th>#</th><th>Question</th><th>Recommendation</th><th>Default</th></tr>
+      <tr><td>1</td><td>Which storage direction?</td><td>A. Files + index</td><td>A</td></tr>
+      <tr><td>2</td><td>Where does the store live?</td><td><code>%LOCALAPPDATA%\orch\store</code></td><td>Out of the checkout</td></tr>
+      <tr><td>3</td><td>Which backup target?</td><td>A OneDrive folder, daily</td><td>No backup</td></tr>
+      <tr><td>4</td><td>A Notion mirror?</td><td>Not now; later if needed</td><td>No mirror</td></tr>
+    </table></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('nav.tabs button'));
+  var names = tabs.map(function (t) { return t.id.slice(4); });
+  function show(id) {
+    tabs.forEach(function (t) {
+      var on = t.id === 'tab-' + id;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      show(t.id.slice(4));
+      try { history.replaceState(null, '', '#' + t.id.slice(4)); } catch (e) {}
+    });
+  });
+  function fromHash() {
+    var h = (location.hash || '').slice(1);
+    show(names.indexOf(h) >= 0 ? h : 'target');
+  }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+})();
+</script>
