@@ -2,6 +2,7 @@ using System.Text.Json;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Stack;
+using Orchestrator.Core.Templates;
 using Orchestrator.Store;
 
 namespace Orchestrator.Web;
@@ -127,7 +128,28 @@ public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
     public DateTimeOffset Now => store.Clock.GetUtcNow();
 
     /// <summary>The cards of the pile, in arrival order, with the actions of their type.</summary>
-    public IReadOnlyList<CardView> Cards() => inbox.Cards().Select(Ui.Classify).OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
+    public IReadOnlyList<CardView> Cards() => inbox.Cards().Select(c => Ui.Classify(c) with { Preview = Preview(c.Kind, c.Fields, c.Envelope.Subject) })
+        .OrderBy(c => c.Id, StringComparer.Ordinal).ToList();
+
+    // ===== Render model (R2): templates/<kind>/view.json =====
+
+    /// <summary>The full document of an envelope, from the view.json of its kind.</summary>
+    public DocumentModel Document(Event e) => Document(e.Kind, Fields(e), e.Subject);
+
+    /// <summary>The preview of an envelope (the card and the stream row), from the view.json of its kind.</summary>
+    public PreviewModel Preview(Event e) => Preview(e.Kind, Fields(e), e.Subject);
+
+    public DocumentModel Document(string kind, IReadOnlyDictionary<string, object?> fields, string subject) =>
+        HasView(kind) ? Views.Document(store.Templates, kind, fields)
+        : new DocumentModel(kind, Ui.KindLabel(kind, fields), Ui.Look(kind).Icon, Ui.Look(kind).Color, subject, null, [],
+            // A kind with no template (for example blocked or pr.open) has no view.json: show each field as text.
+            fields.Where(f => Ui.List(f.Value).Count > 0).Select(f => new Block(f.Key, char.ToUpperInvariant(f.Key[0]) + f.Key[1..], f.Value is string ? Looks.Text : Looks.List, Ui.Text(f.Value), Ui.List(f.Value), null)).ToList());
+
+    public PreviewModel Preview(string kind, IReadOnlyDictionary<string, object?> fields, string subject) =>
+        HasView(kind) ? Views.Preview(store.Templates, kind, fields)
+        : new PreviewModel(kind, Ui.KindLabel(kind, fields), Ui.Look(kind).Icon, Ui.Look(kind).Color, subject, null, null, [], null, [], null, null);
+
+    bool HasView(string kind) => store.Templates.Has(kind) && store.Templates[kind].View is not null;
 
     /// <summary>Accept a card: the default, a fixed text (yes), an approve, or an ack.</summary>
     public void Accept(string id, string? text = null)

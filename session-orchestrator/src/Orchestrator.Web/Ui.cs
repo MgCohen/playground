@@ -28,6 +28,9 @@ public sealed record CardAction(string Label, string Icon, CardDo Do, string? Te
 /// <summary>One card of the pile: an open inbox card, with the actions of its type.</summary>
 public sealed record CardView(Card Card, string Type, CardGroup Group, string Label, string Title, CardAction Right, CardAction Left)
 {
+    /// <summary>The preview of the card, from the view.json of its kind. <see cref="Board.Cards"/> sets it.</summary>
+    public Orchestrator.Core.Templates.PreviewModel? Preview { get; init; }
+
     public string Id => Card.Envelope.Id;
     public string Session => Card.Session;
     public string SessionTitle => Card.Title;
