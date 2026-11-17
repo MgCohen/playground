@@ -1113,7 +1113,7 @@ Options page: https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX (source `docs/se
 | Store | Live, the repository `store/` (user, Q2) |
 | Supervisor start | The tray, in its own process, if no supervisor answers on the port (user, Q3) |
 | Login | Startup folder shortcut, tray hidden (recommendation, the default of Q4) |
-| Update | `install.ps1` again by hand; `orch doctor` check `app` (recommendation, the default of Q5) |
+| Update | `install.ps1` again by hand; `orch doctor` check `app` (user, Q5) |
 | Cloud | Plan on the page, section Q6. Open: Q6a (model) and Q6b (C0 probe) |
 
 ### Test (scratchpad store, port 7861, `ORCH_DATA` in the scratchpad, `-NoTool`)
