@@ -704,8 +704,8 @@ A root and five children. Test policy: forgotten 1 min, stale process 30 s, remi
 
 | Probe | Result |
 |---|---|
-| Can a session call `set_remote_control` on itself, and can the root call it for a child? | Not run. This session runs as `claude -p` with no app tools (`mcp__ccd_session_mgmt__*`). A question to the user is open |
-| Can the root call `archive_session` for a child by its app id? | Not run, same reason |
+| Can a session call `set_remote_control` on itself, and can the root call it for a child? | Run by the root (decision of the user): see "App probes (root, 2026-11-17)" below |
+| Can the root call `archive_session` for a child by its app id? | Yes, after Remote Control off: see below |
 
 The F4 and F8 code works with both probe results: the self path is the first step, and the parent path is only an escalation after a deadline. If a parent call fails, the parent tells the user.
 
@@ -772,3 +772,28 @@ The user cannot follow a child before its first turn ends, because the superviso
 | Tests | `ImportTests`: the opening turn, the import before the brief, the fallback delivery, no opening turn with no import. 182 of 182 pass |
 
 Not tested live: the import opens the session in the main window of the app and takes the focus (F14), so a live test disturbs the user. The root can run it with the app probes.
+
+### App probes (root, 2026-11-17)
+
+Probe session "Probe: archive target" (`6850a633`): started with `spawn_child`, imported after its first turn, Remote Control off after the import.
+
+| # | Probe | Result |
+|---|---|---|
+| 1a | A child, live in the app, calls `set_remote_control` on itself | ✅ `{"remoteControlState":"on"}`, no prompt |
+| 1b | The root calls `set_remote_control` for a child app id | ✅ 6 times today (A1, B1, A2, A3, A4, probe), each "on", no prompt |
+| 2a | The root calls `archive_session` for a child with Remote Control on | ❌ Refused: "it still has live work (an agent run, a Remote Control client, a queued message or a background task)". Confirms F9 |
+| 2b | The root calls `set_remote_control` with `enabled: false` for the child | ✅ "off", at once (auto mode, allow rule) |
+| 2c | The root calls `archive_session` for the child with Remote Control off | ✅ "Archived session local_6850a633-…" |
+| 2d | `orch archive 6850a633` | ✅ Archived the store side |
+
+Changes from the results:
+
+| Part | Change | Probe |
+|---|---|---|
+| `archive-self` | The session turns its Remote Control off, then calls `archive_session` on `self`. Before, it called only `archive_session`, which fails now that Remote Control is on by default | 2a |
+| `archive-child` | The parent turns the Remote Control of the child off, then calls `archive_session` with the app id | 2a to 2c |
+| Parent path of F8 | A session that the app shows but that is not live gets `archive-child` to its parent at once, not at the deadline of 120 s: it cannot archive itself. Test `A_child_that_the_app_shows_but_that_is_not_live_gets_the_parent_archive_path_at_once` | 2c |
+| `remote-control-self` | Says to ignore the notice when the session has no app tools (a `claude -p` supervisor turn): the parent path follows after `remoteControlSeconds` | 1a, 1b |
+| Plugin record | A `set_remote_control` call with a child app id (`local_<id>`) writes `remoteControl` in the `meta.json` of the child | 1b |
+
+Open: the self call `set_remote_control` with `enabled: false` on `self` showed the prompt "A hook requires confirmation for this tool" in F15. Probe 2b ran from the root on a child and had no prompt. The `archive-self` path can still show the prompt in the child. The parent path does not.

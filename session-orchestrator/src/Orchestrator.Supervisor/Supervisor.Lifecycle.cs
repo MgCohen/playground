@@ -111,6 +111,7 @@ public sealed partial class Supervisor
                 store.Log($"{id} auto-archive refused: {e.Message}");
             }
         }
+        file = ParentArchivePath(id, file, s);
         if (file.State == States.Forgotten) Forgotten(id, now);
         if (file.State == States.Done && file.Reminded is null && s.Enabled && s.OpenPrs == 0 && s.ReportAge is { } age && age.TotalMinutes >= s.Timers.ReminderMinutes
             && store.Meta(id).Parent is not null)
@@ -119,6 +120,19 @@ public sealed partial class Supervisor
             file = file with { Reminded = Times.Format(now) };
         }
         return RemoteControlCheck(id, file, s, now);
+    }
+
+    /// <summary>
+    /// F8, path 2: a session that the app still shows but that is not live cannot archive itself. Its parent gets
+    /// archive-child at once (Remote Control off, then archive_session: probe 2a to 2c), not at the deadline.
+    /// </summary>
+    StateFile ParentArchivePath(string id, StateFile file, Snapshot s)
+    {
+        if (file.Requested is not { To: States.Archived, Escalations: 0 } request || s.Enabled || !s.InApp || s.AppArchived || store.IsLive(id, s.Now)) return file;
+        var meta = store.Meta(id);
+        if (!HasLiveParent(meta) || meta.AppId is not { } appId) return file;
+        NotifyParent(id, "archive-child", ("appId", appId));
+        return file with { Requested = request with { Escalations = 1 } };
     }
 
     /// <summary>The nudge of a forgotten session, then one notice to the parent when it is still forgotten after the wait.</summary>

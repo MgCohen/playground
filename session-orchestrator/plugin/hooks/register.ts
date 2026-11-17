@@ -33,10 +33,16 @@ function isSelf(id: unknown): boolean {
   return id === undefined || id === 'self' || id === S.id || id === `local_${S.id}`
 }
 
-async function recordRemoteControl($: any, enabled: boolean): Promise<void> {
-  const meta = await readJson($, `${S.dir}/meta.json`)
-  if (meta) await writeJson($, `${S.dir}/meta.json`, { ...meta, remoteControl: enabled })
-  await log($, `remote control ${enabled ? 'on' : 'off'}`)
+// The store folder of the session that a set_remote_control call names: this session, or a child by its app id local_<id>.
+function remoteControlDir(id: unknown): string | undefined {
+  if (isSelf(id)) return S.dir
+  return typeof id === 'string' && id.startsWith('local_') && S.store ? `${S.store}/sessions/${id.slice('local_'.length)}` : undefined
+}
+
+async function recordRemoteControl($: any, dir: string, enabled: boolean): Promise<void> {
+  const meta = await readJson($, `${dir}/meta.json`)
+  if (meta) await writeJson($, `${dir}/meta.json`, { ...meta, remoteControl: enabled })
+  await log($, `remote control ${enabled ? 'on' : 'off'} for ${dir}`)
 }
 
 const MIRROR_DOORS = ['prompt', 'response', 'tool-result']
@@ -167,10 +173,12 @@ export const register: Register = on => {
     return { consumed: 'orch nudge: the plugin looks at the stream' }
   })
 
-  // F4: the session turned its Remote Control on or off. meta.json records it, so the supervisor sends no parent notice.
+  // F4: this session turned the Remote Control of itself or of a child on or off. meta.json of that session records it,
+  // so the supervisor sends no parent notice, and the archive knows the state.
   on('tool.call', { tool: REMOTE_CONTROL_TOOL }, async ($: any, e: any, next: any) => {
     const result = await next(e)
-    if (S.dir && isSelf(e.session_id) && !(result && (result.deny || result.isError))) recordRemoteControl($, e.enabled !== false).catch((error: unknown) => log($, `remote control record failed: ${String(error)}`))
+    const dir = S.dir ? remoteControlDir(e.session_id) : undefined
+    if (dir && !(result && (result.deny || result.isError))) recordRemoteControl($, dir, e.enabled !== false).catch((error: unknown) => log($, `remote control record failed: ${String(error)}`))
     return result
   })
 
