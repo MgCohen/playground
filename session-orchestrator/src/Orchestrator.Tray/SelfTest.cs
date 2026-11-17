@@ -99,6 +99,7 @@ public static class SelfTest
         checks.Add(await Drag(form, web));
         checks.Add(await Toggle(form));
         checks.Add(await Grow(form, folder));
+        checks.Add(await Video(form, folder));
         foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
         await File.WriteAllTextAsync(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
         return checks.All(c => c.Pass) ? 0 : 1;
@@ -245,6 +246,53 @@ public static class SelfTest
         var small = form.GrowFrames.Count > 0 && form.GrowFrames[0] < form.Height / 4;
         return new Check("grow", grow.Up && full && small && form.GrowFrames.Count >= 5,
             $"{form.GrowFrames.Count} frames in {WidgetForm.GrowMs} ms, {grow.Text}; starts small {small}, ends at the full height {full}", string.Join(";", pngs));
+    }
+
+    /// <summary>
+    /// Records one shrink and one grow as JPEG frames of the screen corner, in grow-video\ with times.json.
+    /// A background thread copies the screen, so the UI thread and the motion run as usual.
+    /// </summary>
+    static async Task<Check> Video(WidgetForm form, string folder)
+    {
+        var dir = Path.Combine(folder, "grow-video");
+        if (Directory.Exists(dir)) Directory.Delete(dir, true);
+        Directory.CreateDirectory(dir);
+        var screen = Screen.FromControl(form).Bounds;
+        var margin = (int)(40 * form.DeviceDpi / 96f);
+        var area = Rectangle.FromLTRB(Math.Max(screen.Left, form.Left - margin), Math.Max(screen.Top, form.Top - margin), Math.Min(screen.Right, form.Right + margin), Math.Min(screen.Bottom, form.Bottom + margin));
+        var frames = new List<(long Ms, Bitmap Image)>();
+        using var stop = new CancellationTokenSource();
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var recorder = Task.Run(() =>
+        {
+            while (!stop.IsCancellationRequested)
+            {
+                var bitmap = new Bitmap(area.Width, area.Height);
+                using (var g = Graphics.FromImage(bitmap)) g.CopyFromScreen(area.Location, Point.Empty, area.Size);
+                frames.Add((clock.ElapsedMilliseconds, bitmap));
+            }
+        });
+        await Task.Delay(400);
+        form.HideWidget();
+        await Settle(form);
+        await Task.Delay(500);
+        form.ShowWidget();
+        await Settle(form);
+        await Task.Delay(600);
+        await stop.CancelAsync();
+        await recorder;
+        var jpeg = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders().First(c => c.FormatID == System.Drawing.Imaging.ImageFormat.Jpeg.Guid);
+        using var quality = new System.Drawing.Imaging.EncoderParameters(1);
+        quality.Param[0] = new System.Drawing.Imaging.EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 80L);
+        for (var i = 0; i < frames.Count; i++)
+        {
+            using var half = new Bitmap(frames[i].Image, area.Width / 2, area.Height / 2);
+            half.Save(Path.Combine(dir, $"f{i:D3}.jpg"), jpeg, quality);
+            frames[i].Image.Dispose();
+        }
+        await File.WriteAllTextAsync(Path.Combine(dir, "times.json"), JsonSerializer.Serialize(frames.Select(f => f.Ms)));
+        var fps = frames.Count / (clock.ElapsedMilliseconds / 1000.0);
+        return new Check("video", frames.Count > 30, $"{frames.Count} frames at {fps:F0} frames a second", dir);
     }
 
     static async Task Settle(WidgetForm form)
