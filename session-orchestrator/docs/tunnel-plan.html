@@ -68,7 +68,7 @@ svg .arrowa { fill: var(--accent); }
   <div class="summary">
     <p><strong>Decision (user, 2026-11-17):</strong> Cloudflare Tunnel + Access, the same as for the runner and the inbox. The build runs on the user's own PC, not on this borrowed PC.</p>
     <p><strong>Plan:</strong> a named Cloudflare Tunnel, run as a Windows service, sends <code>https://orch.&lt;domain&gt;</code> to a second supervisor port. Cloudflare Access signs in one email address before each request.</p>
-    <p>Cost: the domain only, about US$10 to 15 each year. Tunnel and Access Free are US$0 for up to 50 users.</p>
+    <p>Cost: US$0. The plan uses the Cloudflare account, the domain and the Access sign-in of the runner and the inbox again.</p>
     <p>The supervisor checks the Access token on the tunnel port. Local tools keep port 7777 with no change.</p>
   </div>
 
@@ -135,28 +135,25 @@ svg .arrowa { fill: var(--accent); }
     <h3>Facts that set the design</h3>
     <div class="scroll"><table>
       <tr><th>Item</th><th>Fact</th><th>Effect here</th></tr>
-      <tr><td>Domain</td><td>A published route needs a domain on Cloudflare</td><td>The user buys or moves one domain</td></tr>
+      <tr><td>Domain</td><td>A published route needs a domain on Cloudflare</td><td>The domain of the runner and the inbox</td></tr>
       <tr><td>Zero Trust Free</td><td>Up to 50 users, US$0</td><td>One user fits</td></tr>
       <tr><td>Tunnels</td><td>1,000 tunnels in each account, free</td><td>One tunnel</td></tr>
       <tr><td>WebSockets</td><td>Tunnel has full WebSocket support</td><td>Blazor Server circuits work</td></tr>
       <tr><td>Access token</td><td>Header <code>Cf-Access-Jwt-Assertion</code>, RS256</td><td>The supervisor can check it</td></tr>
       <tr><td>Session length</td><td>Immediate to one month, default 24 h</td><td>Plan: 30 days on the phone</td></tr>
-      <tr><td>Sign-in kinds</td><td>Cloudflare account, one-time PIN, GitHub, passkey</td><td>Open question 1</td></tr>
+      <tr><td>Sign-in kinds</td><td>Cloudflare account, one-time PIN, GitHub, passkey</td><td>The sign-in of the runner and the inbox</td></tr>
       <tr><td>Network</td><td>Outbound UDP or TCP 7844, TCP 443</td><td>No router change</td></tr>
     </table></div>
-    <p>The microphone button needs a secure context. The tunnel gives HTTPS, so speech input can work on the real phone. Test it in step 9.</p>
+    <p>The microphone button needs a secure context. The tunnel gives HTTPS, so speech input can work on the real phone. Test it in step 6.</p>
   </section>
 
   <!-- STEPS -->
   <section role="tabpanel" id="p-steps" aria-labelledby="tab-steps" hidden>
-    <h2>Nine steps: five for the user, three for the code, one shared test</h2>
+    <h2>Six steps: three for the user, two for the code, one shared test</h2>
     <p><span class="who user">User</span>The user does it in the Cloudflare dashboard or as administrator. <span class="who code">Code</span>A session does it in this repository.</p>
     <ol>
-      <li><span class="who user">User</span>Make a Cloudflare account. Enable two-factor sign-in for the account.</li>
-      <li><span class="who user">User</span>Buy a domain at Cloudflare Registrar, or add a domain that you own. Set its nameservers to Cloudflare.</li>
-      <li><span class="who user">User</span>Open Zero Trust. Select a team name and the Free plan. The dashboard can ask for a payment card.</li>
-      <li><span class="who user">User</span>Make the Access application <code>orch.&lt;domain&gt;</code> first. Policy: Allow, include your email only. Session: 30 days. Copy the AUD tag.</li>
-      <li><span class="who code">Code</span>Add the tunnel port and the Access token check (tab Code). Merge it before step 6.</li>
+      <li><span class="who user">User</span>In the account of the runner and the inbox, make the Access application <code>orch.&lt;domain&gt;</code> first. Use the same login method. Policy: Allow, include your email only. Session: 30 days. Copy the AUD tag.</li>
+      <li><span class="who code">Code</span>Add the tunnel port and the Access token check (tab Code). Merge it before step 3.</li>
       <li><span class="who user">User</span>Make a remote-managed tunnel. Add the route <code>orch.&lt;domain&gt;</code> → <code>http://127.0.0.1:7778</code>. Enable "Protect with Access".</li>
       <li><span class="who user">User</span>In an administrator prompt, run <code>cloudflared.exe service install &lt;TUNNEL_TOKEN&gt;</code>.</li>
       <li><span class="who code">Code</span>Set <code>ORCH_ACCESS_TEAM</code>, <code>ORCH_ACCESS_AUD</code> and <code>ORCH_TUNNEL_PORT</code> in the supervisor start. Record the setup in <code>know-how.md</code>.</li>
@@ -222,14 +219,9 @@ if (context.Connection.LocalPort == tunnelPort)
       <tr><td>Cloudflare decrypts traffic at its edge</td><td><span class="pill warn">Medium</span></td><td>Accept, or use Tailscale</td></tr>
       <tr><td>Phone lost while signed in</td><td><span class="pill warn">Medium</span></td><td>Revoke the session in Zero Trust; sign-out link</td></tr>
       <tr><td>PC asleep or off</td><td><span class="pill warn">Medium</span></td><td>No access; set sleep rules if necessary</td></tr>
-      <tr><td><code>cloudflared</code> restart drops the circuit</td><td><span class="pill good">Low</span></td><td>Blazor reconnects; test in step 9</td></tr>
+      <tr><td><code>cloudflared</code> restart drops the circuit</td><td><span class="pill good">Low</span></td><td>Blazor reconnects; test in step 6</td></tr>
       <tr><td>Tunnel token leaks</td><td><span class="pill good">Low</span></td><td>Rotate the token; it cannot pass Access</td></tr>
     </table></div>
-    <h2>Open questions</h2>
-    <ol>
-      <li>Which sign-in for Access: Cloudflare account, one-time PIN to email, or GitHub?</li>
-      <li>Which domain: buy one at Cloudflare Registrar, or move one that you own?</li>
-    </ol>
   </section>
 </div>
 

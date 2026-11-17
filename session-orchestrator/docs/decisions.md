@@ -79,3 +79,4 @@ The build session made these decisions while the user was away. The user reviews
 | 2026-11-17 | B2: is a background session imported? | Yes, with Remote Control off | The user wants each child in the app by default. `background` only keeps it off the phone |
 | 2026-11-17 | D1: which tool for phone access? (user) | Cloudflare Tunnel + Cloudflare Access for each tunnel-based access | The user uses it already for the runner and the inbox, and it works |
 | 2026-11-17 | D1: may this PC run the tunnel? (user) | No build on this PC. This PC is borrowed and has antivirus and IT management. The build runs on the user's own PC, next month | The IT management of this PC limited the tunnel before |
+| 2026-11-17 | D1: which account, domain and sign-in? (user) | The Cloudflare account, the domain and the Access sign-in of the runner and the inbox. The address is `orch.<that domain>` | No new cost and no new setup |

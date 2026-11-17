@@ -480,7 +480,7 @@ Rules of the vsa-template work that the M5 stream must obey:
 
 ## D1 plan: tunnel for the phone (2026-11-17)
 
-Plan page: https://claude.ai/artifact/XzLhuzJbLrDuD5rtWya3JD (source `docs/tunnel-plan.html`). Status: waiting for the user. No account, DNS record, tunnel or install exists.
+Plan page: https://claude.ai/artifact/XzLhuzJbLrDuD5rtWya3JD (source `docs/tunnel-plan.html`). Status: approved by the user, to build on the user's own PC. No account, DNS record, tunnel or install exists.
 
 ```mermaid
 flowchart LR
@@ -496,14 +496,14 @@ flowchart LR
 | Address | `https://orch.<domain>` → `http://127.0.0.1:7778` |
 | Sign-in | Cloudflare Access, Allow policy with one email, session 30 days |
 | Supervisor | Second listener on `ORCH_TUNNEL_PORT`. On that port, check `Cf-Access-Jwt-Assertion` (signature, `iss`, `aud`, `exp`) with `ORCH_ACCESS_TEAM` and `ORCH_ACCESS_AUD`. Port 7777 does not change |
-| Cost | Domain only, about US$10 to 15 each year. Tunnel and Zero Trust Free (50 users) are US$0 |
+| Cost | US$0: the account, domain and sign-in of the runner and the inbox |
 | Order | The Access application before the tunnel route. A route with no Access application is public |
 
 Facts from the Cloudflare docs: Tunnel supports WebSockets, so Blazor Server works. `cloudflared` needs only outbound port 7844 and TCP 443. A Quick Tunnel needs no account (`--allowed-mail` adds an email PIN), but its address changes on each start. Tailscale Serve is the private alternative: no domain, but the phone needs the Tailscale app.
 
 User decisions (2026-11-17, `decisions.md`): Cloudflare Tunnel + Access, as for the runner and the inbox. No build on this borrowed PC: it has antivirus and IT management. The build runs on the user's own PC, next month.
 
-Open questions for the user: the Access sign-in, and the domain.
+The plan uses the Cloudflare account, the domain and the Access sign-in of the runner and the inbox again (user, 2026-11-17). The cost is US$0.
 
 ## Session management requirements (user, 2026-11-16)
 
