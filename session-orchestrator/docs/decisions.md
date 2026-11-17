@@ -80,3 +80,5 @@ The build session made these decisions while the user was away. The user reviews
 | 2026-11-17 | H1: are the Notion and D1 limits measured? | No. Values from the public limits pages; latency values are typical values | Plan only: the brief permits no account and no Notion write |
 | 2026-11-17 | H1: do cloud workers write the store directly? | No. They call the supervisor API through the tunnel | G1 Q6a. One writer path keeps the lease and claim rules in C# |
 | 2026-11-17 | H1: how is the storage made swappable? | Two ports, `IEventLog` and `IDocStore`, plus `backend.ts` in the plugin. One composition root selects the implementation in code, with no configuration | User request: change files to a server or Notion with only a new implementation |
+| 2026-11-18 | H1: where do work stream records live? | No own port. The `stream` field rides on `ISessionRegistry` and `IEventLog` | C1 (PR #29) has no store record for a work stream |
+| 2026-11-18 | H1: are envelopes and bodies two ports? | No. One port, `IEventLog` | The body write before the envelope is the commit rule; one adapter keeps the order |

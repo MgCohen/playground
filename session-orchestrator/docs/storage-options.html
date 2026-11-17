@@ -69,7 +69,7 @@ svg .arrow { fill: var(--muted); }
   <div class="summary">
     <p><strong>Recommendation:</strong> keep the files as the store. Fix the full stream copy (B2-9) with an index, and move the store out of the git checkout.</p>
     <p>A database or Notion as the store adds a network, an account or a new write path for the plugin hooks. None of the needs today requires it.</p>
-    <p>All store operations go through two storage ports. A change from files to a server or to Notion is one new implementation and one changed line in the code.</p>
+    <p>All store operations go through storage ports, one for each data kind. A change from files to a server or to Notion is one new implementation and one changed line in the code.</p>
   </div>
 
   <nav class="tabs" role="tablist" aria-label="Plan sections">
@@ -217,6 +217,32 @@ svg .arrow { fill: var(--muted); }
 
   <!-- PORTS -->
   <section role="tabpanel" id="p-ports" aria-labelledby="tab-ports" hidden>
+    <h2>Port map: each data kind has one port, one local adapter today, and named later adapters</h2>
+    <div class="scroll"><table>
+      <tr><th>Data kind</th><th>Port</th><th>Local adapter</th><th>State</th><th>Later adapters</th><th>Part</th></tr>
+      <tr><td>Event stream (envelopes)</td><td><code>IEventLog</code></td><td><code>events/&lt;day&gt;/</code></td><td><span class="pill warn">Planned</span></td><td>Supervisor API, Postgres; Notion behind one writer</td><td>H2; remote: H5</td></tr>
+      <tr><td>Envelope bodies</td><td><code>IEventLog</code> (same port)</td><td><code>bodies/&lt;day&gt;/</code></td><td><span class="pill warn">Planned</span></td><td>With the envelopes; Notion page body</td><td>H2; remote: H5</td></tr>
+      <tr><td>Session registry</td><td><code>ISessionRegistry</code></td><td><code>sessions/&lt;id&gt;/session.json</code></td><td><span class="pill warn">Designed (S1, PR #28)</span></td><td>Supervisor API; Notion database</td><td>S2</td></tr>
+      <tr><td>Run state, subscriptions, claims</td><td><code>IDocStore</code></td><td><code>sessions/</code>, <code>subscriptions/</code>, <code>claims/</code></td><td><span class="pill warn">Planned</span></td><td>Supervisor API only</td><td>H2</td></tr>
+      <tr><td>Templates</td><td><code>ITemplateStore</code></td><td><code>LocalTemplateStore</code></td><td><span class="pill good">Built (F1, PR #30)</span></td><td>Server bucket; Notion database</td><td>F2</td></tr>
+      <tr><td>Policy and settings</td><td><code>IPolicyStore</code></td><td><code>policy.json</code></td><td><span class="pill warn">Planned</span></td><td>Supervisor API; Notion page</td><td>H2</td></tr>
+      <tr><td>Work stream records</td><td>None: a <code>stream</code> field</td><td>On sessions and envelopes</td><td><span class="pill good">Designed (C1, PR #29)</span></td><td>With the registry and the stream</td><td>None</td></tr>
+      <tr><td>Logs</td><td><code>ILogSink</code></td><td><code>supervisor/log.txt</code>, <code>log-*.txt</code>, <code>mirror/</code></td><td><span class="pill warn">Planned</span></td><td>Log service; no Notion (volume)</td><td>H2</td></tr>
+    </table></div>
+    <p>Run state stays on this PC: the lease heartbeat writes every 3 s. A remote adapter for it goes through the supervisor API only. A work stream gets its own port only if C1 adds a store record later.</p>
+
+    <h3>Follow-up parts</h3>
+    <div class="scroll"><table>
+      <tr><th>Part</th><th>Work stream</th><th>Content</th><th>When</th></tr>
+      <tr><td>H2 core ports</td><td>H (storage)</td><td><code>IEventLog</code>, <code>IDocStore</code>, <code>IPolicyStore</code>, <code>ILogSink</code>, file adapters, <code>StoreBackends.Create</code>, architecture and contract tests</td><td>Now</td></tr>
+      <tr><td>H3 plugin backend</td><td>H (storage)</td><td><code>backend.ts</code>; the 5 hooks use only it</td><td>Now</td></tr>
+      <tr><td>H4 store upkeep</td><td>H (storage)</td><td>Index (B2-9), day cache, store location, backup</td><td>After H2</td></tr>
+      <tr><td>S2 registry adapter</td><td>S (sessions)</td><td><code>ISessionRegistry</code> file adapter on H2 (S1 code part C1)</td><td>After H2</td></tr>
+      <tr><td>F2 template adapter</td><td>F (templates)</td><td>A remote <code>ITemplateStore</code></td><td>If a trigger fires</td></tr>
+      <tr><td>H5 remote adapters</td><td>H (storage)</td><td>Supervisor API adapters for cloud workers (G1 HTTP mode)</td><td>With G1</td></tr>
+      <tr><td>H6 Notion</td><td>H (storage)</td><td>Mirror reactor, or Notion adapters</td><td>If the user wants it</td></tr>
+    </table></div>
+
     <h2>Only the implementations touch the storage; all callers use the ports</h2>
     <div class="diagram">
       <svg viewBox="0 0 780 360" role="img" aria-label="Callers use the store core. The store core uses two ports, IEventLog and IDocStore. One implementation of each port is selected in one composition root: files today, later SQLite, the supervisor API or Notion. The plugin hooks use backend.ts, which has its own file implementation.">
@@ -261,7 +287,7 @@ svg .arrow { fill: var(--muted); }
       </svg>
     </div>
 
-    <h3>Two small ports hold all IO; the rules stay above them</h3>
+    <h3>The two core ports of H2 hold the stream and document IO; the rules stay above them</h3>
 <pre style="overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px"><code style="background:none;padding:0">// The envelopes and bodies: append only.
 public interface IEventLog
 {
@@ -328,16 +354,16 @@ public static class StoreBackends
     <h2>The ports come first; each later step is behind them</h2>
     <div class="scroll"><table>
       <tr><th>Step</th><th>Change</th><th>Contract change</th><th>When</th></tr>
-      <tr><td>S1</td><td>Ports <code>IEventLog</code>, <code>IDocStore</code>, file implementations</td><td>Keys and guarantees in <code>store.md</code></td><td>Now</td></tr>
-      <tr><td>S2</td><td>Plugin <code>backend.ts</code>; hooks use only it</td><td>None</td><td>Now</td></tr>
-      <tr><td>S3</td><td>Index by session (B2-9), day cache</td><td>A cache row in <code>store.md</code></td><td>Now</td></tr>
-      <tr><td>S4</td><td>Store out of the git checkout</td><td>Default <code>ORCH_STORE</code></td><td>Now</td></tr>
-      <tr><td>S5</td><td>Copy of closed days to a backup folder</td><td>None</td><td>Now</td></tr>
-      <tr><td>S6</td><td>Other implementation: SQLite, API or Notion</td><td>None</td><td>If a trigger fires</td></tr>
+      <tr><td>H2</td><td>Core ports and file adapters (tab Ports)</td><td>Keys and guarantees in <code>store.md</code></td><td>Now</td></tr>
+      <tr><td>H3</td><td>Plugin <code>backend.ts</code>; hooks use only it</td><td>None</td><td>Now</td></tr>
+      <tr><td>H4</td><td>Index (B2-9), day cache, store location, backup</td><td>A cache row, default <code>ORCH_STORE</code></td><td>After H2</td></tr>
+      <tr><td>S2</td><td>Session registry file adapter</td><td><code>session.json</code> (S1)</td><td>After H2</td></tr>
+      <tr><td>H5</td><td>Supervisor API adapters</td><td>None</td><td>With G1</td></tr>
+      <tr><td>H6</td><td>Notion mirror or adapters</td><td>None</td><td>If the user wants it</td></tr>
     </table></div>
-    <p>S1 has no change of behavior: the file implementations take the code of <code>FileStore</code>, <code>EventStream</code> and <code>StreamWatcher</code>. The existing tests must pass with no change.</p>
+    <p>H2 has no change of behavior: the file implementations take the code of <code>FileStore</code>, <code>EventStream</code> and <code>StreamWatcher</code>. The existing tests must pass with no change.</p>
 
-    <h3>Triggers for another implementation (S6)</h3>
+    <h3>Triggers for another implementation</h3>
     <ul>
       <li>A tick or a cold <code>orch</code> query takes more than 1 s after S1 and S2.</li>
       <li>The stream holds more than 100,000 envelopes in the open days.</li>

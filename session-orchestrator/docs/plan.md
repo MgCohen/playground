@@ -1121,14 +1121,30 @@ A Notion implementation of the ports can work only behind one writer: Notion has
 
 Measured on the main store (2026-11-17): 3,654 envelopes in 2 days; 2,350 on 11-17, of which 88 % are `session.tool`, `session.output` and `session.input`. Size: `events/` 6.0 MB, `bodies/` 9.6 MB, `sessions/` 28 MB.
 
-| Step | Change | When |
-|---|---|---|
-| S1 | Storage ports `IEventLog` and `IDocStore` with file implementations. All C# store IO goes through them | Now |
-| S2 | Plugin `backend.ts`: the only hook module that uses `$.fs` for the store | Now |
-| S3 | Index by session in `EventStream` (fixes B2-9), and a day cache for each closed day | Now |
-| S4 | Store out of the git checkout (default `ORCH_STORE`) | Now |
-| S5 | Copy of closed days to a backup folder | Now |
-| S6 | Other implementation (SQLite, supervisor API, Notion) | If a trigger fires: a tick or cold query above 1 s, more than 100,000 envelopes, two PCs, or a user request |
+Port map (user request, 2026-11-18: H1 owns where all data lives):
+
+| Data kind | Port | Local adapter | State | Later adapters | Part |
+|---|---|---|---|---|---|
+| Event stream (envelopes) | `IEventLog` | `events/<day>/` | Planned | Supervisor API, Postgres; Notion behind one writer | H2; remote H5 |
+| Envelope bodies | `IEventLog` (same port: the body before the envelope) | `bodies/<day>/` | Planned | With the envelopes | H2; remote H5 |
+| Session registry | `ISessionRegistry` | `sessions/<id>/session.json` | Designed (S1, PR #28) | Supervisor API; Notion database | S2 |
+| Run state, subscriptions, claims, nudges | `IDocStore` | `sessions/`, `subscriptions/`, `claims/`, `nudges/` | Planned | Supervisor API only (heartbeat every 3 s) | H2 |
+| Templates | `ITemplateStore` | `LocalTemplateStore` | Built (F1, PR #30) | Server bucket; Notion database | F2 |
+| Policy and settings | `IPolicyStore` | `policy.json` | Planned | Supervisor API; Notion page | H2 |
+| Work stream records | None: a `stream` field on sessions and envelopes | | Designed (C1, PR #29) | With the registry and the stream | None |
+| Logs | `ILogSink` | `supervisor/log.txt`, `log-*.txt`, `mirror/` | Planned | Log service; no Notion (volume) | H2 |
+
+| Part | Work stream | Content | When |
+|---|---|---|---|
+| H2 core ports | H | `IEventLog`, `IDocStore`, `IPolicyStore`, `ILogSink`, file adapters, `StoreBackends.Create`, architecture and contract tests. No change of behavior | Now |
+| H3 plugin backend | H | `backend.ts`: the only hook module with store IO | Now |
+| H4 store upkeep | H | Index by session (B2-9), day cache, store location, backup | After H2 |
+| S2 registry adapter | S | `ISessionRegistry` file adapter on H2 (S1 code part C1) | After H2 |
+| F2 template adapter | F | A remote `ITemplateStore` | If a trigger fires |
+| H5 remote adapters | H | Supervisor API adapters for cloud workers (G1 HTTP mode) | With G1 |
+| H6 Notion | H | Mirror reactor, or Notion adapters | If the user wants it |
+
+Triggers for another adapter: a tick or cold query above 1 s, more than 100,000 envelopes, two PCs, or a user request.
 
 Port rule (user, 2026-11-17): all store operations go through the ports. One composition root (`StoreBackends.Create`, and `backend.ts` in the plugin) selects the implementation in code, with no configuration. An architecture test refuses store IO outside the implementations, and one contract test suite runs against each implementation. Callers that bypass the ports today: `Supervisor.cs`, `Supervisor.Lifecycle.cs`, `EventCommands.cs`, `StateReader.cs`, `Lifecycle.cs`, and the hooks `stream.ts`, `lease.ts`, `state.ts`, `register.ts`, `events.ts`.
 
