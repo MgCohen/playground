@@ -704,3 +704,12 @@ A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked (
 | A3-6 | `dotnet test` stopped two times after 22 and 40 tests with "error: 1" and no failed test. The next 3 runs passed (145). A supervisor of the user listens on port 7777 during the runs | Open: watch it. Not reproduced |
 | A3-4 | The inbox order changed a little: the cards are in the id order of the newest envelope of each thread | Accepted |
 | A3-7 | Decision of the user: one message shape for a question. The kinds `decision` and `query` become one kind `question`. The target (`to`) gives the direction. A decision is a possible answer to a question | Open: a separate task after A3 and B2 merge. Only `question` is required; `risk` is required when `defaultOption` is present. The schema file holds this rule, so a change is easy. The task also removes the `blocked.json` writes (A3-1). `StreamQuery` keeps its name |
+
+## T1: Desktop tray app (visual only)
+
+- `src/Orchestrator.Tray`: WinForms tray icon (Open, Exit), a resizable window with a BlazorWebView, one instance at a time.
+- The window shows the `Routes` of `Orchestrator.Web` through a project reference. No change in `Orchestrator.Web`.
+- Mock data: a new store in a temporary folder (`MockStore`). The real store does not change. No tick service, no claude process (`NoRunner`).
+- Self-test (`.\tray.ps1 -SelfTest`): PASS. Queue 3 open, 1 default to review. Sessions 6. Timeline 20 events. Window 1898 × 1144 pixels at 144 DPI.
+- Screenshots: `docs/screens/tray-queue.png`, `tray-sessions.png`, `tray-timeline.png`.
+- `install.ps1` is not run yet. It needs the approval of the user.
