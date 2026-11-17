@@ -1,7 +1,7 @@
 {
-  "type": "decision",
+  "type": "question",
   "version": 1,
-  "purpose": "The user must choose, with options and a default.",
+  "purpose": "You need an answer: a choice with options and a default, or facts with no default.",
   "from": [
     "session"
   ],
@@ -18,7 +18,8 @@
     "quick": [
       "recommendation",
       "defaultOption",
-      "risk"
+      "risk",
+      "context"
     ],
     "accept": {
       "post": "answer",

@@ -4,8 +4,7 @@ public static class EventKinds
 {
     public const string Brief = "brief";
     public const string Message = "message";
-    public const string Decision = "decision";
-    public const string Query = "query";
+    public const string Question = "question";
     public const string Plan = "plan";
     public const string Answer = "answer";
     public const string Review = "review";
@@ -45,11 +44,17 @@ public static class EventKinds
     public const string MergeBlock = "merge.block";
 
     /// <summary>The message kinds: each has a template, and a receiver acknowledges each delivery.</summary>
-    public static readonly IReadOnlySet<string> Messages = new HashSet<string> { Brief, Message, Decision, Query, Plan, Answer, Review, Report, Update, Notice };
+    public static readonly IReadOnlySet<string> Messages = new HashSet<string> { Brief, Message, Question, Plan, Answer, Review, Report, Update, Notice };
 
     /// <summary>The message kinds that a session gets as a turn. An update to a session is for its tree only.</summary>
-    public static readonly IReadOnlySet<string> Deliverable = new HashSet<string> { Brief, Message, Decision, Query, Plan, Answer, Review, Report, Notice };
+    public static readonly IReadOnlySet<string> Deliverable = new HashSet<string> { Brief, Message, Question, Plan, Answer, Review, Report, Notice };
 
     /// <summary>The kinds that ask a party for an answer.</summary>
-    public static readonly IReadOnlySet<string> Questions = new HashSet<string> { Decision, Query };
+    public static readonly IReadOnlySet<string> Questions = new HashSet<string> { Question };
+
+    /// <summary>The kinds of old stores that are now <see cref="Question"/>: <c>decision</c> and <c>query</c>.</summary>
+    public static readonly IReadOnlySet<string> OldQuestions = new HashSet<string> { "decision", "query" };
+
+    /// <summary>The envelope with its current kind. An old store has the kinds decision and query: the stream reads them as question.</summary>
+    public static Event Current(Event e) => OldQuestions.Contains(e.Kind) ? e with { Kind = Question } : e;
 }

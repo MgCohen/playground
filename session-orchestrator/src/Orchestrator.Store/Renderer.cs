@@ -29,11 +29,11 @@ public sealed class Renderer(FileStore store)
                 if (e.From != Parties.User) data["sender"] = SenderName(e.From);
                 render ??= "session";
                 break;
-            case EventKinds.Decision or EventKinds.Query or EventKinds.Plan when toSession:
+            case EventKinds.Question or EventKinds.Plan when toSession:
                 AddChild(e, data);
                 data["decision"] = e.Thread ?? e.Id;
                 if (data.TryGetValue("options", out var options) && options is List<object?> list) data["options"] = string.Join("; ", list);
-                if (e.Kind == EventKinds.Decision)
+                if (e.Kind == EventKinds.Question)
                     data["defaultText"] = Texts.DefaultText(store.Policy, data.TryGetValue("risk", out var risk) ? risk as string ?? "" : "", data.TryGetValue("defaultOption", out var d) ? d as string : null);
                 render ??= "parent";
                 break;

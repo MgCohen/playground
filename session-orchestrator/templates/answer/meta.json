@@ -1,7 +1,7 @@
 {
   "type": "answer",
   "version": 1,
-  "purpose": "You reply to a decision or a query.",
+  "purpose": "You reply to a question.",
   "from": [
     "user",
     "docs",

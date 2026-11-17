@@ -13,7 +13,7 @@
             var fields = Fields();
             switch (Event.Kind)
             {
-                case EventKinds.Decision or EventKinds.Query: <DecisionFields Fields="fields" /> break;
+                case EventKinds.Question: <DecisionFields Fields="fields" /> break;
                 case EventKinds.Answer: <AnswerFields Fields="fields" /> break;
                 case EventKinds.Review: <ReviewFields Fields="fields" /> break;
                 case EventKinds.Report: <ReportFields Fields="fields" /> break;

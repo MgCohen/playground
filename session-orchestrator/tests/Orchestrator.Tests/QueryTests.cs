@@ -114,7 +114,7 @@ public sealed class QueryTests
         Assert.That(Parse(t.Store, ("view", "inbox")), Is.EqualTo(StreamQueries.Inbox));
         Assert.That(Parse(t.Store, ("view", "inbox"), ("limit", "2")).Limit, Is.EqualTo(2));
         Assert.That(Parse(t.Store, ("view", "thread"), ("thread", "toolu_1")).Thread, Is.EqualTo("toolu_1"));
-        Assert.That(Parse(t.Store, ("kind", "decision, query")).Kinds, Is.EquivalentTo(new[] { "decision", "query" }));
+        Assert.That(Parse(t.Store, ("kind", "question, plan")).Kinds, Is.EquivalentTo(new[] { "question", "plan" }));
         Assert.Throws<FormatException>(() => Parse(t.Store, ("view", "nothing")));
     }
 
@@ -169,7 +169,7 @@ public sealed class QueryTests
         Assert.That(await Ids("/api/stream/decisions"), Is.EqualTo(new[] { asked.Id }));
         Assert.That(await Ids("/api/stream/threads/toolu_7"), Is.EqualTo(new[] { asked.Id }));
         Assert.That(await Ids("/api/stream?view=inbox"), Is.EqualTo(new[] { asked.Id }));
-        Assert.That(await Ids("/api/stream?kind=decision&needs=answer"), Is.EqualTo(new[] { asked.Id }));
+        Assert.That(await Ids("/api/stream?kind=question&needs=answer"), Is.EqualTo(new[] { asked.Id }));
         Assert.That(await Ids("/api/events?needs=true"), Is.EqualTo(new[] { asked.Id }));
         Assert.That(await Ids("/api/stream/timeline?limit=1"), Has.Count.EqualTo(1));
         Assert.That(await Ids("/api/inbox"), Is.EqualTo(new[] { asked.Id }));

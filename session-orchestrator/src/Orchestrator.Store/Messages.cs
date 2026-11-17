@@ -55,7 +55,7 @@ public sealed class Messages(FileStore store)
     }
 
     /// <summary>
-    /// The answer to a decision or a query goes to the session. An answer of the docs or the policy goes to the user too,
+    /// The answer to a question goes to the session. An answer of the docs or the policy goes to the user too,
     /// as a forward that needs a review.
     /// </summary>
     public Event Answer(string session, string decision, string text, string by = Parties.User, string? via = null, AnswerSource? source = null)

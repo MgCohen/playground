@@ -8,7 +8,6 @@ import {
   ANSWER_TOOL,
   ASK_TOOL,
   PLAN_TOOL,
-  QUERY_TOOL,
   QUESTIONS_TOOL,
   REPORT_TOOL,
   SEND_TOOL,
@@ -19,7 +18,6 @@ import {
   askUser,
   listQuestions,
   plan,
-  query,
   registerTools,
   report,
   send,
@@ -198,8 +196,6 @@ export const register: Register = on => {
   on('tool.call', { tool: ANSWER_TOOL }, async ($, e: any) => answerChild($, e)).catch((_$: any, _e: any) => ({ result: 'orch: answer failed. Tell the user to answer with orch answer.' }))
 
   on('tool.call', { tool: SEND_TOOL }, async ($, e: any) => send($, e)).catch((_$: any, _e: any) => ({ result: 'orch: send failed. Tell the user.' }))
-
-  on('tool.call', { tool: QUERY_TOOL }, async ($, e: any) => query($, e)).catch((_$: any, _e: any) => ({ result: 'orch: query failed. Ask the question in your reply text and end your turn.' }))
 
   on('tool.call', { tool: PLAN_TOOL }, async ($, e: any) => plan($, e)).catch((_$: any, _e: any) => ({ result: 'orch: plan failed. Show the plan in your reply text and end your turn.' }))
 

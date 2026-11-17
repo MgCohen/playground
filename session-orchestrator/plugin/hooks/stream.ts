@@ -9,7 +9,7 @@ export type PostOptions = { thread?: string; needs?: string; refs?: Record<strin
 const META: Record<string, any> = {}
 
 // The kinds that the plugin may post. A message kind needs its templates/<kind>/meta.json.
-export const MESSAGE_KINDS = ['brief', 'message', 'decision', 'query', 'plan', 'answer', 'review', 'report', 'update', 'notice', 'ack']
+export const MESSAGE_KINDS = ['brief', 'message', 'question', 'plan', 'answer', 'review', 'report', 'update', 'notice', 'ack']
 export const TRACE_KINDS = ['session.input', 'session.output', 'session.tool', 'blocked', 'meta.update']
 
 export function knownKind(kind: string): boolean {
@@ -35,7 +35,7 @@ async function meta($: any, kind: string): Promise<any> {
   if (META[kind] !== undefined) return META[kind]
   const value = (await readJson($, `${S.home}/templates/${kind}/meta.json`)) ?? null
   const schema = (await readJson($, `${S.home}/templates/${kind}/schema.json`)) ?? null
-  META[kind] = value === null ? null : { ...value, required: schema?.required ?? [] }
+  META[kind] = value === null ? null : { ...value, required: schema?.required ?? [], dependentRequired: schema?.dependentRequired ?? {} }
   return META[kind]
 }
 
@@ -43,7 +43,7 @@ function allows(list: string[], party: string): boolean {
   return list.includes('*') || list.includes(classOf(party))
 }
 
-// Level 2 and 3 of the type check: a known type, the required fields, and the from and to of meta.json.
+// Level 2 and 3 of the type check: a known type, the required and dependentRequired fields of schema.json, and the from and to of meta.json.
 // The engine checks the full schema before the tool call (level 1).
 // The plugin posts no reply and no answer, so the reply-type and the first-answer checks stay in C#: an answer and a
 // review always go through orch (orch answer, orch chat-answer, orch review).
@@ -55,6 +55,11 @@ async function check($: any, kind: string, from: string, to: string, body: Recor
   if (m === null) throw new Error(`${kind}: no templates/${kind}/meta.json`)
   const missing = (m.required as string[]).filter(field => body[field] === undefined || body[field] === null)
   if (missing.length > 0) throw new Error(`${kind}: missing fields ${missing.join(', ')}`)
+  for (const [field, needed] of Object.entries(m.dependentRequired as Record<string, string[]>)) {
+    if (body[field] === undefined) continue
+    const absent = needed.filter(other => body[other] === undefined || body[other] === null)
+    if (absent.length > 0) throw new Error(`${kind}: ${field} needs the fields ${absent.join(', ')}`)
+  }
   if (!allows(m.from, from)) throw new Error(`${kind}: from ${from} is not allowed. Allowed: ${m.from.join(', ')}`)
   if (!allows(m.to, to)) throw new Error(`${kind}: to ${to} is not allowed. Allowed: ${m.to.join(', ')}`)
 }

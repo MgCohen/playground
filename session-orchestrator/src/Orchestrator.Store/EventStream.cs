@@ -305,7 +305,7 @@ public sealed class EventStream
             {
                 var id = Path.GetFileNameWithoutExtension(name);
                 if (byId.ContainsKey(id)) continue;
-                if (Files.ReadJson<Event>(Path.Combine(folder, day, name)) is { } e) added.Add(e);
+                if (Files.ReadJson<Event>(Path.Combine(folder, day, name)) is { } e) added.Add(EventKinds.Current(e));
             }
         }
         // A day closes when two newer days exist: a late writer can still add a file to yesterday.

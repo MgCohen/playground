@@ -1,6 +1,6 @@
 ---
 name: orch-ask
-description: How a session under the orchestrator asks the user a question with mcp__orch__ask_user (the decision template). Use it before each question to the user, and when you must decide if a question is necessary.
+description: How a session under the orchestrator asks the user a question with mcp__orch__ask_user (the question template). Use it before each question to the user, and when you must decide if a question is necessary.
 ---
 
 # Ask the user
@@ -16,19 +16,19 @@ The user answers in free text or by voice, often from the phone. A good question
 | A design, an API, a file layout or a convention | Ask, with a default option |
 | Hard to undo, or an effect outside the repository | Ask, risk at the strictest level, and no default if a wrong default is dangerous |
 
-## Fill the decision template
+## Fill the question template
 
-`orch template decision` shows the fields. Each call asks one question.
+`orch template question` shows the fields. Each call asks one question. Only `question` is required. A `defaultOption` needs a `risk`.
 
 | Field | Content |
 |---|---|
 | `question` | One question, one sentence |
 | `context` | Why the question comes up now, and what the user must know |
 | `snippet` | Optional: the code or text that shows the problem |
-| `options` | Two to four suggestions. The user can answer something else |
-| `recommendation` | Your pick and its reason |
-| `risk` | A policy level. The tool description gives the definition of each level |
-| `defaultOption` | The option that applies if the user does not answer in time |
+| `options` | Optional: two to four suggestions. The user can answer something else |
+| `recommendation` | Optional: your pick and its reason |
+| `risk` | A policy level. Required with a `defaultOption`. The tool description gives the definition of each level |
+| `defaultOption` | Optional: the option that applies if the user does not answer in time. With no default, the session waits for the answer |
 | `waitSeconds` | 0 for most questions: the tool returns PENDING and you end your turn |
 
 ## After the call
