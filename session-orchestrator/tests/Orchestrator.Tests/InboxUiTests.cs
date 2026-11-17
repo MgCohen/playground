@@ -61,16 +61,16 @@ public sealed class InboxUiTests
         Ask(rig, s, "p2", "Second question?", ["A", "B"], "B");
         using var context = Context(rig);
         var page = context.Render<Cards>();
-        Assert.That(page.Find(".card .q").TextContent, Is.EqualTo("First question?"));
+        Assert.That(page.Find(".pcard .q").TextContent, Is.EqualTo("First question?"));
         Assert.That(page.Find("[data-act=right]").TextContent, Is.EqualTo("Accept"));
 
         page.Find("[data-act=skip]").Click();
-        Assert.That(page.Find(".card .q").TextContent, Is.EqualTo("Second question?"));
+        Assert.That(page.Find(".pcard .q").TextContent, Is.EqualTo("Second question?"));
         Assert.That(page.Find(".toast").TextContent, Does.Contain("end of the pile"));
 
         Ask(rig, s, "p3", "Third question?", ["A", "B"], "A");
         page.Find("[data-act=skip]").Click();
-        Assert.That(page.Find(".card .q").TextContent, Is.EqualTo("First question?"), "the skipped card comes before a card that arrived after the skip");
+        Assert.That(page.Find(".pcard .q").TextContent, Is.EqualTo("First question?"), "the skipped card comes before a card that arrived after the skip");
     }
 
     [Test]
@@ -83,10 +83,10 @@ public sealed class InboxUiTests
         var page = context.Render<Cards>();
 
         page.Find("[data-act=right]").Click();
-        Assert.That(page.FindAll(".card"), Is.Empty, "the card leaves the pile at once");
+        Assert.That(page.FindAll(".pcard"), Is.Empty, "the card leaves the pile at once");
         Assert.That(rig.Store.Events.FirstAnswer("u1"), Is.Null, "the answer waits for the undo time");
         page.Find(".toast button").Click();
-        Assert.That(page.Find(".card .q").TextContent, Is.EqualTo("Undo question?"));
+        Assert.That(page.Find(".pcard .q").TextContent, Is.EqualTo("Undo question?"));
 
         page.Find("[data-act=right]").Click();
         context.Dispose();
@@ -119,7 +119,7 @@ public sealed class InboxUiTests
         using var context = Context(rig);
         var page = context.Render<Cards>();
         page.FindAll(".seg button").Single(b => b.TextContent.StartsWith("Reports")).Click();
-        Assert.That(page.Find(".card .q").TextContent, Is.EqualTo("Blocked now"));
+        Assert.That(page.Find(".pcard .q").TextContent, Is.EqualTo("Blocked now"));
         Assert.That(page.Find("[data-act=right]").TextContent, Is.EqualTo("Seen"));
     }
 

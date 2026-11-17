@@ -46,7 +46,7 @@ else
     [SupplyParameterFromQuery] public string? Session { get; set; }
 
     IReadOnlyList<Event> events = [];
-    readonly ViewFilter filter = new() { Order = "Newest" };
+    readonly ViewFilter filter = new() { Order = "Newest", DefaultOrder = "Newest" };
     string view = "Messages";
     bool filterOpen;
     int waits;
@@ -71,7 +71,7 @@ else
 
         var query = view switch
         {
-            "Messages" => new StreamQuery { Kinds = EventKinds.Messages.ToHashSet() },
+            "Messages" => new StreamQuery { Kinds = EventKinds.Messages.ToHashSet(), Forwards = false },
             "Waits" => new StreamQuery { Open = true, Forwards = false },
             _ => new StreamQuery(),
         };

@@ -103,7 +103,7 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .chip.pick { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .bar { display: flex; gap: 8px; align-items: stretch; }
 .seg { display: flex; padding: 4px; gap: 4px; flex: 1; min-width: 0; }
-.seg button { flex: 1; min-width: 0; border: 0; background: none; padding: 7px 4px; border-radius: 9px; color: var(--sunken-mu); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg button { flex: 1 1 auto; min-width: 0; border: 0; background: none; padding: 7px 4px; border-radius: 9px; color: var(--sunken-mu); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .seg button.on { background: var(--accent); color: var(--on-accent); font-weight: 600; box-shadow: var(--sh-glow); }
 .fbtn { width: 44px; border: 0; border-radius: var(--r-sm); background: var(--surf); box-shadow: var(--sh-raise-sm); display: grid; place-items: center; position: relative; flex: none; }
 .fbtn i { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
@@ -118,6 +118,8 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .btn:disabled, .acts.off .btn { opacity: .38; box-shadow: none; cursor: default; }
 .acts.small .btn { min-height: 38px; flex: 0 1 auto; font-size: 13px; }
 .sticky-acts { position: sticky; bottom: 92px; z-index: 3; margin-top: 4px; }
+.with-acts { padding-bottom: 8px; }
+.with-acts + .sticky-acts { margin-top: 12px; }
 
 /* ===== Arc ring ===== */
 .ring { position: relative; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--sunken); box-shadow: var(--sh-carve); }
@@ -165,15 +167,16 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .pile .ghost { position: absolute; height: 40px; border-radius: var(--r); background: var(--surf); box-shadow: var(--sh-raise-sm); }
 .pile .g1 { bottom: 6px; left: 8px; right: 8px; opacity: .8; }
 .pile .g2 { bottom: 0; left: 18px; right: 18px; opacity: .55; }
-.card { position: absolute; inset: 0 0 14px; display: flex; flex-direction: column; touch-action: pan-y; user-select: none; will-change: transform; overflow: hidden; }
-.card.drag { transition: none; }
-.card.back-in { transition: transform .2s ease; }
+.pcard { position: absolute; inset: 0 0 14px; display: flex; flex-direction: column; touch-action: pan-y; user-select: none; will-change: transform; overflow: hidden; }
+.pcard.drag { transition: none; }
+.pcard.back-in { transition: transform .2s ease; }
 .card-link { position: absolute; inset: 0; z-index: 1; border-radius: var(--r); }
-.card .head { border-bottom: 1px solid var(--line-c); padding: 12px 14px; }
-.card .in { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; overflow: hidden; }
+.pcard .head { border-bottom: 1px solid var(--line-c); padding: 12px 14px; }
+.pcard .in { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; overflow: hidden; }
 .rec { padding: 10px 12px; }
 .rec .sub { display: block; margin-bottom: 2px; color: var(--sunken-mu); }
-.foot { margin-top: auto; display: flex; align-items: center; gap: 10px; }
+.foot { margin-top: auto; display: flex; align-items: flex-end; gap: 10px; }
+.foot .chips { flex: 1; min-width: 0; }
 .stamp { position: absolute; top: 18px; z-index: 2; padding: 5px 12px; border: 3px solid; border-radius: 10px; font: 800 18px var(--f-disp); background: var(--surf); pointer-events: none; opacity: 0; }
 .s-r { right: 16px; color: var(--accent); transform: rotate(8deg); opacity: var(--sr, 0); }
 .s-l { left: 16px; color: var(--tx2); transform: rotate(-8deg); opacity: var(--sl, 0); }
@@ -200,7 +203,7 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .tg::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surf); box-shadow: 0 2px 4px rgba(0,0,0,.3); transition: left .15s; }
 .tg:checked { background: var(--accent); box-shadow: inset 2px 2px 4px rgba(0,0,0,.25), var(--sh-glow); }
 .tg:checked::after { left: 17px; }
-.toast { position: fixed; z-index: 15; left: 50%; transform: translateX(-50%); bottom: calc(96px + env(safe-area-inset-bottom, 0px)); width: min(520px, calc(100% - 28px));
+.toast { position: fixed; z-index: 15; left: 50%; transform: translateX(-50%); top: calc(12px + env(safe-area-inset-top, 0px)); width: min(520px, calc(100% - 28px));
   background: var(--text); color: var(--canvas); border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-size: 14px; margin: 0; }
 .toast button { border: 0; background: none; color: var(--accent); font-weight: 700; min-height: 32px; }
 .toast.inline { position: static; transform: none; width: auto; }

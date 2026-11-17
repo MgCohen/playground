@@ -19,9 +19,10 @@
     {
         <div class="empty"><span class="nm">No sessions</span><span class="sub">Start one with the form below or with <code>orch new</code>.</span></div>
     }
-    @foreach (var (node, i) in Shown.Select((n, i) => (n, i)))
+    @{ var firstFold = Shown.FirstOrDefault(n => n.Children.Count > 0)?.Meta.Id; }
+    @foreach (var node in Shown)
     {
-        <SessionTree @key="node.Meta.Id" Node="node" Open="@(i == 0 || search.Length > 0)" />
+        <SessionTree @key="node.Meta.Id" Node="node" Open="@(node.Meta.Id == firstFold || search.Length > 0)" />
     }
     <NewSessionForm Parents="parents" OnStart="Start" Open="tree.Count == 0" />
 </div>

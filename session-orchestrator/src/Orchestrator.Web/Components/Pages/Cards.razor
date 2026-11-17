@@ -16,7 +16,7 @@
         <div class="pile">
             @if (visible.Count > 2) {<span class="ghost g2"></span>}
             @if (visible.Count > 1) {<span class="ghost g1"></span>}
-            <article class="crd card" data-deck-card @key="top.Id">
+            <article class="crd pcard" data-deck-card @key="top.Id">
                 <a class="card-link" href="events/@top.Id" aria-label="Open the full document"></a>
                 <CardPreview Card="top" Now="Board.Now" />
                 <span class="stamp s-r" aria-hidden="true">@top.Right.Label</span>

@@ -9,16 +9,19 @@ public sealed class ViewFilter
     public static readonly string[] Dates = ["Today", "7 days", "All"];
     public static readonly string[] Sources = ["Sessions", "Policy", "Docs", "Supervisor", "User"];
 
+    /// <summary>The order of the screen with no filter: Arrival for Cards, Newest for Stream.</summary>
+    public string DefaultOrder { get; init; } = "Arrival";
+
     public string Order { get; set; } = "Arrival";
     public string Date { get; set; } = "All";
     public HashSet<string> HiddenSessions { get; } = [];
     public HashSet<string> HiddenSources { get; } = [];
 
-    public bool Active => Order != "Arrival" || Date != "All" || HiddenSessions.Count > 0 || HiddenSources.Count > 0;
+    public bool Active => Order != DefaultOrder || Date != "All" || HiddenSessions.Count > 0 || HiddenSources.Count > 0;
 
     public void Reset()
     {
-        Order = "Arrival";
+        Order = DefaultOrder;
         Date = "All";
         HiddenSessions.Clear();
         HiddenSources.Clear();
