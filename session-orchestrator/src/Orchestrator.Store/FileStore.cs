@@ -20,7 +20,7 @@ public sealed class FileStore
     {
         Root = Path.GetFullPath(root);
         Clock = clock ?? TimeProvider.System;
-        Texts = new Texts(templates ?? new TemplateSet(Home.Templates()));
+        Texts = new Texts(templates ?? Home.LoadTemplates(Root));
         Events = new EventStream(Root, Clock, writer, Texts.Templates);
         Renderer = new Renderer(this);
     }

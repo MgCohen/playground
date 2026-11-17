@@ -26,7 +26,7 @@ public sealed class TemplateTests
     public void Each_render_of_the_example_fills_each_place(string kind)
     {
         var fields = Render.Fields(Example(kind));
-        var names = Set[kind].RenderNames().Prepend(null).Where(name => name is not null || File.Exists(Set[kind].RenderPath()));
+        var names = Set[kind].RenderNames().Prepend(null).Where(name => name is not null || Set[kind].HasRender());
         foreach (var name in names)
         {
             var text = Set.Render(kind, fields, name);

@@ -34,14 +34,32 @@ public sealed record Template(string Kind, string Folder, JsonSchema Schema, str
     /// <summary>The view.json of the type: the full document and the preview in the UI. See <see cref="Views"/>.</summary>
     public ViewSpec? View { get; init; }
 
-    public string RenderPath(string? name = null) => name is null ? Path.Combine(Folder, "render.md") : Path.Combine(Folder, "render", $"{name}.md");
+    /// <summary>core or store. See <see cref="TemplateSources"/>.</summary>
+    public string Source { get; init; } = TemplateSources.Core;
 
-    public bool HasRender(string? name = null) => File.Exists(RenderPath(name));
+    /// <summary>True when a store template replaces a core template with the same name.</summary>
+    public bool ReplacesCore { get; init; }
 
-    public IReadOnlyList<string> RenderNames() =>
-        Directory.Exists(Path.Combine(Folder, "render"))
-            ? Directory.GetFiles(Path.Combine(Folder, "render"), "*.md").Select(Path.GetFileNameWithoutExtension).OfType<string>().Order().ToList()
-            : [];
+    /// <summary>The text of example.json, or null.</summary>
+    public string? Example { get; init; }
+
+    /// <summary>The render texts. The key "" is render.md; each other key is render/&lt;key&gt;.md.</summary>
+    public IReadOnlyDictionary<string, string> Renders { get; init; } = new Dictionary<string, string>();
+
+    public bool HasRender(string? name = null) => Renders.ContainsKey(name ?? "");
+
+    public IReadOnlyList<string> RenderNames() => Renders.Keys.Where(k => k.Length > 0).Order(StringComparer.Ordinal).ToList();
+
+    /// <summary>Parses the files of the agreed format into a template.</summary>
+    public static Template From(TemplateFiles files, TemplateInfo info) =>
+        new(files.Kind, info.Location, JsonSchema.FromText(files.Schema), files.Schema, files.Meta is null ? null : StoreJson.Read<TemplateMeta>(files.Meta))
+        {
+            View = files.View is null ? null : StoreJson.Read<ViewSpec>(files.View),
+            Source = info.Source,
+            ReplacesCore = info.ReplacesCore,
+            Example = files.Example,
+            Renders = files.Renders,
+        };
 }
 
 public sealed record Validation(bool IsValid, IReadOnlyList<string> Errors)
@@ -49,24 +67,40 @@ public sealed record Validation(bool IsValid, IReadOnlyList<string> Errors)
     public string Message => string.Join("; ", Errors);
 }
 
+/// <summary>The templates that apply, loaded once from an <see cref="ITemplateStore"/>. A change in the store applies at the next load.</summary>
 public sealed class TemplateSet
 {
     readonly Dictionary<string, Template> templates;
-    readonly Dictionary<string, string> renders = [];
 
-    public TemplateSet(string root)
+    /// <summary>The core templates of <paramref name="root"/> only, with no store.</summary>
+    public TemplateSet(string root) : this(new LocalTemplateStore(root, null), root)
+    {
+    }
+
+    public TemplateSet(ITemplateStore store, string root)
     {
         Root = root;
-        templates = Kinds.All.Where(kind => File.Exists(Path.Combine(root, kind, "schema.json"))).ToDictionary(kind => kind, kind =>
+        Store = store;
+        templates = [];
+        foreach (var info in store.List())
         {
-            var text = File.ReadAllText(Path.Combine(root, kind, "schema.json"));
-            var metaPath = Path.Combine(root, kind, "meta.json");
-            var meta = File.Exists(metaPath) ? StoreJson.Read<TemplateMeta>(File.ReadAllText(metaPath)) : null;
-            var viewPath = Path.Combine(root, kind, "view.json");
-            var view = File.Exists(viewPath) ? StoreJson.Read<ViewSpec>(File.ReadAllText(viewPath)) : null;
-            return new Template(kind, Path.Combine(root, kind), JsonSchema.FromText(text), text, meta) { View = view };
-        });
+            try
+            {
+                templates[info.Kind] = Template.From(store.Get(info.Kind) ?? throw new TemplateException("it is in the list, but it does not load"), info);
+            }
+            catch (Exception e)
+            {
+                errors.Add($"{info.Kind} ({info.Location}): {e.Message}");
+            }
+        }
     }
+
+    readonly List<string> errors = [];
+
+    /// <summary>The templates that did not load. The others still apply; orch template and orch doctor show these errors.</summary>
+    public IReadOnlyList<string> LoadErrors => errors;
+
+    public ITemplateStore Store { get; }
 
     public string Root { get; }
 
@@ -91,12 +125,8 @@ public sealed class TemplateSet
 
     public string Render(string kind, IReadOnlyDictionary<string, object?> data, string? name = null)
     {
-        var path = this[kind].RenderPath(name);
-        string text;
-        lock (renders)
-        {
-            if (!renders.TryGetValue(path, out text!)) renders[path] = text = File.ReadAllText(path).ReplaceLineEndings("\n");
-        }
+        var template = this[kind];
+        if (!template.Renders.TryGetValue(name ?? "", out var text)) throw new KeyNotFoundException($"template {kind} has no render {(name is null ? "render.md" : $"render/{name}.md")}");
         return Templates.Render.Text(text, data);
     }
 }

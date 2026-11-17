@@ -1,0 +1,10 @@
+@* Look "text": plain text. Line breaks stay. *@
+@inherits LookBase
+@if (IsFact)
+{
+    <span class="ell">@Value.Text</span>
+}
+else
+{
+    <p class="pre">@Value.Text</p>
+}

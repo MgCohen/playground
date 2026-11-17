@@ -16,13 +16,6 @@
     "review"
   ],
   "card": {
-    "title": "question",
-    "quick": [
-      "text",
-      "by",
-      "reason",
-      "source"
-    ],
     "accept": {
       "post": "review",
       "verdict": "approve"

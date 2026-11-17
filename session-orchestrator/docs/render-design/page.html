@@ -535,23 +535,21 @@ function previewModel(k, f) {
 
 // Views
 const kindRing = (m, p, size) => ring(p, size, 3, ic(m.icon), tok(m.tone));
-function factValue(x) {
-  if (x.as === 'pill') return pill(x.text, x.tone);
-  if (x.as === 'code') return `<span class="code-inline">${esc(x.text)}</span>`;
-  if (x.as === 'progress') return `<span style="display:flex;gap:10px;align-items:center"><span class="bar"><i style="width:${Math.min(100, percent(x.value))}%"></i></span><span class="mono">${esc(x.text)}</span></span>`;
-  return esc(x.text);
-}
-function blockBody(b) {
-  switch (b.as) {
-    case 'code': return `<div class="well"><pre class="code" style="padding:0">${esc(b.text)}</pre></div>`;
-    case 'well': return `<div class="well">${esc(b.text)}</div>`;
-    case 'chips': return `<div class="chips">${b.items.map(o => `<span class="chip ${o === b.marked ? 'def' : ''}">${esc(o)}</span>`).join('')}</div>`;
-    case 'list': return `<div class="crd doc ${b.tone ? 'tone-' + b.tone : ''}"><ul>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
-    case 'steps': return `<div class="crd doc"><ol>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</ol></div>`;
-    case 'links': return `<div class="crd doc" style="display:grid;gap:6px">${b.items.map(i => `<a class="lnk" href="#">${ic('link')}${esc(i)}</a>`).join('')}</div>`;
-    default: return `<div class="crd doc"><p>${esc(b.text)}</p></div>`;
-  }
-}
+// One entry for each look of templates/_spec/looks.json (CATALOG), the same as Components/Ui/Looks/<Name>Look.razor in the app.
+// fact: the value in the facts table or the pill of a preview. block: the body of a block. A test checks the names.
+const LOOKS = {
+  text: { fact: x => esc(x.text), block: b => `<div class="crd doc"><p>${esc(b.text)}</p></div>` },
+  code: { fact: x => `<span class="code-inline">${esc(x.text)}</span>`, block: b => `<div class="well"><pre class="code" style="padding:0">${esc(b.text)}</pre></div>` },
+  well: { block: b => `<div class="well">${esc(b.text)}</div>` },
+  list: { block: b => `<div class="crd doc ${b.tone ? 'tone-' + b.tone : ''}"><ul>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>` },
+  steps: { block: b => `<div class="crd doc"><ol>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</ol></div>` },
+  chips: { block: b => `<div class="chips">${b.items.map(o => `<span class="chip ${o === b.marked ? 'def' : ''}">${esc(o)}</span>`).join('')}</div>` },
+  links: { block: b => `<div class="crd doc" style="display:grid;gap:6px">${b.items.map(i => `<a class="lnk" href="#">${ic('link')}${esc(i)}</a>`).join('')}</div>` },
+  pill: { fact: x => pill(x.text, x.tone) },
+  progress: { fact: x => `<span style="display:flex;gap:10px;align-items:center"><span class="bar"><i style="width:${Math.min(100, percent(x.value))}%"></i></span><span class="mono">${esc(x.text)}</span></span>` },
+};
+const factValue = x => ((LOOKS[x.as] || {}).fact || LOOKS.text.fact)(x);
+const blockBody = b => ((LOOKS[b.as] || {}).block || LOOKS.text.block)(b);
 function docView(k, m) {
   const acts = ACTS[k];
   return `<div class="scr">

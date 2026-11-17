@@ -1,0 +1,10 @@
+@* Look "code": monospace text. *@
+@inherits LookBase
+@if (IsFact)
+{
+    <span class="mono ell">@Value.Text</span>
+}
+else
+{
+    <pre class="mono pre">@Value.Text</pre>
+}

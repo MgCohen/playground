@@ -1,0 +1,3 @@
+@* Look "links": a list of links. A value that is not an http URL shows as code. *@
+@inherits LookBase
+<ul>@foreach (var item in Value.Items) {<li>@if (Uri.TryCreate(item, UriKind.Absolute, out var u) && u.Scheme.StartsWith("http")) {<a href="@item" target="_blank" rel="noopener">@item</a>} else {<span class="mono">@item</span>}</li>}</ul>

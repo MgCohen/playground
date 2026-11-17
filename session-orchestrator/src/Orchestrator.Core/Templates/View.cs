@@ -126,6 +126,9 @@ public static partial class Views
 
     static ViewSpec Spec(TemplateSet set, string kind) => set[kind].View ?? throw new InvalidOperationException($"template {kind} has no view.json");
 
+    /// <summary>The tone and the icon of a message of this kind: the view, changed by toneBy.</summary>
+    public static (string Tone, string Icon) Look(TemplateSet set, string kind, IReadOnlyDictionary<string, object?> fields) => Look(Spec(set, kind), fields);
+
     static (string Tone, string Icon) Look(ViewSpec view, IReadOnlyDictionary<string, object?> fields)
     {
         if (view.ToneBy is not { } by) return (view.Tone, view.Icon);

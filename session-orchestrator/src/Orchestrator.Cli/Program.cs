@@ -41,7 +41,11 @@ namespace Orchestrator.Cli
               orch read <id> [--for P] [--render NAME]
               orch watch --to P [--kind a,b] [--thread T] [--render NAME] [--once] [--timeout S] [--list]
               orch nudge <party> [id]
-              orch template [<kind>] [--check FILE] [--render FILE] [--name N]
+              orch template [list]                      the templates: core, or store (a store template can replace a core one)
+              orch template <kind> [--check FILE] [--render FILE] [--name N]
+              orch template check [<kind>] [--folder DIR]   check against templates/_spec
+              orch template add <folder> [--replace]    check, then copy to <store>/templates/<folder name>
+              orch template remove <kind>               move a store template to <store>/templates/.removed
               orch doctor
               orch process (the id and start time of the process that runs orch: the plugin puts them in lease.json)
             A <session> can be the first characters of its id.
@@ -97,7 +101,7 @@ namespace Orchestrator.Cli
                 error.WriteLine("Run orch --help for the commands.");
                 return 2;
             }
-            catch (Exception e) when (e is MessageException or ShellException or FormatException or IOException or InvalidDataException)
+            catch (Exception e) when (e is MessageException or ShellException or FormatException or IOException or InvalidDataException or Core.Templates.TemplateException)
             {
                 error.WriteLine($"orch: {e.Message}");
                 return 1;
