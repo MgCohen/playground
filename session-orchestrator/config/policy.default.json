@@ -21,5 +21,7 @@
   ],
   "docs": ["AGENTS.md", "CLAUDE.md", "README.md", "docs/"],
   "onDefault": "stacked-pr",
-  "delivery": { "nudgeSeconds": 15, "peerSeconds": 60, "sweepSeconds": 60 }
+  "delivery": { "nudgeSeconds": 15, "peerSeconds": 60, "sweepSeconds": 60 },
+  "lifecycle": { "staleSeconds": 15, "staleProcessSeconds": 120, "forgottenMinutes": 15, "inputSeconds": 120, "hungMinutes": 30, "stopSeconds": 30, "archiveSeconds": 120, "archiveUserMinutes": 10, "reminderMinutes": 60, "remoteControlSeconds": 120, "loopCount": 3, "loopMinutes": 60 },
+  "autoArchive": { "enabled": false, "afterMinutes": 60 }
 }

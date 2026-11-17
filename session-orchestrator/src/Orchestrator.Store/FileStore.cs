@@ -245,7 +245,7 @@ public sealed class FileStore
 
     /// <summary>The newest <c>blocked</c> envelope about the session. Its reason is None when the session is not blocked.</summary>
     public Blocked? Blocked(string id) =>
-        Events.OfKind(EventKinds.Blocked).LastOrDefault(e => e.Session == id) is { } e ? new Blocked(Events.Fields(e).GetValueOrDefault("reason") as string, e.At) { Event = e.Id } : null;
+        Events.OfKind(EventKinds.Blocked).LastOrDefault(e => e.Session == id) is { } e ? new Blocked(Events.Fields(e).GetValueOrDefault("reason") as string, e.At) { Event = e.Id, By = e.From == Parties.Supervisor ? Parties.Supervisor : null } : null;
 
     /// <summary>Posts a <c>blocked</c> envelope from the supervisor to the user when the reason changes.</summary>
     public void SaveBlocked(string id, string? reason)

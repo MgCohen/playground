@@ -117,10 +117,29 @@ Each message type has a folder `templates/<type>/` with `schema.json`, `meta.jso
 | `update` | session | user | | | Not delivered |
 | `answer` | user, docs, policy | session; forward to the user | review (docs, policy) | review | `render/session.md` + `render/note-*.md`; `render/tool.md` for `ask_user` |
 | `review` | user | session | | | `render/<verdict>.md`, `render/plan.md` |
-| `notice` | supervisor | session | | | `render/<kind>.md`: `question-reminder`, `question-closed`, `archive-self`, `restart` |
+| `notice` | supervisor | session | | | `render/<kind>.md`: `question-reminder`, `question-closed`, `archive-self`, `restart`, and the lifecycle notices (below) |
 | `ack` | session, user, supervisor | the sender | | | Not delivered |
 
-Other kinds have no template: traces (`session.input`, `session.output`, `session.tool`, `turn.start`, `turn.end`, `turn.fail`), lifecycle names of stream B (`session.start`, `session.stop`, `session.resume`, `session.archive`, `session.import`, `session.end`, `lease.take`, `lease.release`, `blocked`, `delivery.blocked`) and git (`branch.*`, `pr.*`, `merge.block`).
+Other kinds have no template: traces (`session.input`, `session.output`, `session.tool`, `turn.start`, `turn.end`, `turn.fail`), lifecycle names of stream B (`session.start`, `session.stop`, `session.resume`, `session.archive`, `session.import`, `session.end`, `session.state`, `state.conflict`, `meta.update`, `lease.take`, `lease.release`, `blocked`, `delivery.blocked`) and git (`branch.*`, `pr.*`, `merge.block`).
+
+The lifecycle notices of the supervisor:
+
+| Notice kind | To | Sent on |
+|---|---|---|
+| `child-not-responding`, `child-responding` | Parent | Enter and leave not responding. Fields `fault`, `text` |
+| `report-missing` | Session | Enter forgotten: the nudge, one time for each last report |
+| `child-forgotten` | Parent | Still forgotten `forgottenMinutes` after the nudge |
+| `child-stopped`, `child-resumed` | Parent | Enter and leave stopped |
+| `child-archived` | Parent | The archive committed |
+| `child-archived-in-app` | Parent | The user archived the session in the app sidebar, and the store side is not archived |
+| `archive-reminder` | Parent | Done for `reminderMinutes`, no open PR, not archived. One time |
+| `open-in-app` | Session | The only input of the first turn of a new session when the supervisor imports sessions (`ORCH_IMPORT`). The turn makes the transcript, the import follows, and the brief waits for the live app session |
+| `remote-control-self` | Session | After the import into the app, unless `meta.background` (F4) |
+| `remote-control-child` | Parent | `remoteControlSeconds` after `remote-control-self`, and `meta.remoteControl` is not set. Field `appId` |
+| `archive-child` | Parent | F8, path 2: the app still shows a session that is archived in the store. At once when the session is not live (it cannot archive itself), else at the deadline of the request. The parent turns Remote Control off, then calls `archive_session` (probes 2a to 2c). Field `appId` |
+| `state-inferred` | Parent | The fallback agent inferred the state. Fields `state`, `text` |
+
+A root session has no parent: each notice to the parent goes to the user as a `message` from `supervisor` with `needs: ack`. Its text is the render of the notice.
 
 ## Subscriptions and delivery
 
@@ -161,7 +180,10 @@ The watchdog does not count the time while the live session runs a turn. A sessi
 | Session deliverer | Plugin, holder `live` | Submits a turn | ack |
 | Turn runner | Supervisor | `claude -p` with the renders | `turn.*`, ack |
 | Ask wait | Plugin, `ask_user` with a wait | Returns the tool result | ack |
-| Question and report relay | Supervisor | Forwards each decision, query, plan and done or blocked report of a child to its parent | forward |
+| Question relay | Supervisor | Forwards each decision, query and plan of a child to its parent at once | forward |
+| Report relay | Supervisor (subscription `reports-<id>` for each session) | At the end of a turn, forwards the newest done or blocked report of a child to its parent. A turn is open while the supervisor turn runs, or while `status.json` says running and the lease is `live` (an old heartbeat does not end it). An older report of the same turn gets an ack `{ state: read, by: superseded }` from the supervisor (F5). An ack of the user does not stop the forward | forward, ack |
+| Lifecycle | Supervisor | One step of the state machine for each session at each tick (below) | `session.state`, `state.conflict`, `lease.release`, notices |
+| Meta writer | Supervisor (subscription `meta`) | Applies each `meta.update { session, field, value }` from a plugin: `appId` of the sender itself, `remoteControl` of the sender or of its child. Other updates are refused and logged | `meta.json` |
 | Question follow | Supervisor | A closed notice when the question of a child closes; reminders while it waits with no default (10 min, then each hour) | notice |
 | Docs check, default | Supervisor (`docs`, `policy`) | An answer to the session, and a forward to the user with `needs: review` | answer, forward |
 | User inbox | UI, `orch inbox`, `GET /api/inbox` | Shows a card | answer, review, ack, message |
@@ -189,18 +211,60 @@ The plugin and the supervisor share one folder for each session: `store/sessions
 | Path | Writer | Content |
 |---|---|---|
 | `enabled` | Supervisor, `orch enable`, `/orch-enable` | Empty file. The plugin does nothing in a session without it |
-| `lease.json` | Plugin | `{ holder, since, reason }`. `holder` is `live`, `supervisor` (from `ORCH_HOLDER`) or `none` |
+| `lease.json` | Plugin, supervisor | `{ holder, since, reason, pid, started }`. `holder` is `live`, `supervisor` (from `ORCH_HOLDER`) or `none`. `pid` and `started` are the id and the start time of the claude process of the session: the plugin gets them from `orch process` (the parent of the `orch` process). The supervisor writes only `none`, when it releases a stale lease |
 | `heartbeat.txt` | Plugin | ISO time, at activation and every 3 s while the process is alive |
 | `status.json` | Plugin | `{ state: running \| idle, turnId, at }` for the main loop |
 | `mirror/<ms>-<uuid>.json` | Plugin | `{ door, origin, uuid, message }` for the doors `prompt`, `response` and `tool-result`. `message` is JSON, cut to 4000 characters |
 | `log-<holder>.txt` | Plugin | Log lines of one holder (`live` or `supervisor`), cut to the last 100 000 characters |
-| `meta.json` | Supervisor, `spawn_child`, `orch new`, `orch enable`, `/orch-enable` | `{ id, parent, title, cwd, createdBy, createdAt, started, worktree, agent, skills, repo, branch, allowDefaults, imported, appId }`. `imported: true` after the app confirmed an import. `appId` is the id of the session in the app. `allowDefaults: true` (only from the user) lets `orch merge` carry unapproved defaults. With `worktree: true`, the first turn makes a git worktree: `cwd` becomes the worktree folder, `repo` the repository and `branch` its branch. A session with `createdBy` and no `started` gets a new `claude -p` session with this id |
-| `blocked.json` | Plugin | `{ reason, since }`. No reader. The truth is the newest `blocked` envelope about the session: the plugin posts it when a submit drops and when it goes through again; the supervisor (`SaveBlocked`) posts it when the reason of a failed turn changes. `reason` is absent when the session is not blocked |
+| `meta.json` | Supervisor, `spawn_child`, `orch new`, `orch enable`, `/orch-enable` (creation only). A plugin never changes it: it posts `meta.update`, and the supervisor writes the field | `{ id, parent, title, cwd, createdBy, createdAt, started, worktree, agent, skills, repo, branch, allowDefaults, imported, appId, background, remoteControl }`. `imported: true` after the app confirmed an import. `appId` is the id of the session in the app. `background: true` (from the brief) keeps Remote Control off. `remoteControl` is `true` or `false` after a `set_remote_control` call on the session: by the session itself, or by its parent with the app id `local_<id>`. The plugin of the caller posts `meta.update`. `allowDefaults: true` (only from the user) lets `orch merge` carry unapproved defaults. With `worktree: true`, the first turn makes a git worktree: `cwd` becomes the worktree folder, `repo` the repository and `branch` its branch. A session with `createdBy` and no `started` gets a new `claude -p` session with this id |
+| `blocked.json` | Plugin | `{ reason, since }`. No reader. The truth is the newest `blocked` envelope about the session: the plugin posts it when a submit drops and when it goes through again; the supervisor (`SaveBlocked`) posts it when the reason of a failed turn changes. `reason` is absent when the session is not blocked. The lifecycle reads the sender: a `blocked` envelope from `supervisor` is a failed supervisor turn; one from the session is the stop latch of the plugin |
+| `state.json` | Supervisor | The lifecycle state: `{ state, since, requested, inferred, guard, fault, waitReason, reminded, remoteControlAsked, history }` (below) |
+| `state-check.json` | Supervisor | `{ state, reason, at, error }`: the last answer of the fallback agent `orch:state-checker` |
+| `forgotten.json` | Supervisor | `{ report, nudged, notified }`: one forgotten episode. `report` is `<last report id>|<last input id>` (an input from another party than the supervisor). A new report or a new input starts a new episode: one nudge, then one notice to the parent. The file is deleted when the session goes from forgotten to done, stopped or archived |
 | `docs-checks/<id>.json` | Supervisor | `{ answered, answer, source, at }`: the cache of the docs check of one decision |
 | `turn.json` | Supervisor | `{ event, from, at, ended }`: the `turn.start` of the last supervisor turn, its senders, and the end time. The plugin uses `from` as the sender of `session.input` |
 | `last-output.json` | Plugin | `{ event, at }`: the last `session.output`. `turn.end` links it in `refs.output` |
 | `stack/<decision>.json` | `orch decision`, `orch stack` | The versions of one decision on the stack (below) |
-| `control.json` | `orch stop`, `orch resume`, `orch archive`, the API | `{ state: active \| stopped \| archived, at, by, reason }`. The supervisor runs no turn of a stopped or archived session, and ends its running turn |
+| `control.json` | `orch stop`, `orch resume`, `orch archive`, the API, the supervisor (auto-archive) | `{ state: active \| stopped \| archived, at, by, reason }`. The supervisor runs no turn of a stopped or archived session, and ends its running turn. The plugin delivers no envelope while the state is not `active` |
+
+## Lifecycle state machine
+
+The code is in `Orchestrator.Core/Lifecycle` (no IO) and `Supervisor.Lifecycle.cs`. The design is `docs/lifecycle-design.html`. At each tick, the supervisor reads a snapshot of each session and runs one step. It writes `state.json`, and posts `session.state` when the state, the request or the escalation changes.
+
+| State | Detect check (no `state.json`) |
+|---|---|
+| `archived` | `control.json` archived, or no `enabled` |
+| `stopped` | `control.json` stopped |
+| `stale` | Lease `live`, heartbeat and lease older than `staleSeconds` |
+| `not-responding` | One fault: failed turns, stop latch, input not taken, hung turn, hung process |
+| `start` | `meta.started` is not true, and no turn runs |
+| `running` | A supervisor turn, or `status.json` running with a fresh heartbeat |
+| `done` | The last report is done, and no input arrived after it |
+| `forgotten` | Idle for `forgottenMinutes`, last report not done or blocked, no wait reason, no input after the turn |
+| `idle` | No turn |
+
+The checks run in this order, and the first yes wins. With a `state.json`, only the transitions that leave the current state are checked. The four global transitions come first: archive, stop, stale, fault, each only from a state with a higher rank. Then the local transitions, by priority. Two local guards with the same priority are a conflict: the state stays, `state.conflict` is posted, and the fallback agent runs. A `state.json` that is not valid also goes to the fallback agent. An inferred state has `inferred: true` and starts no action.
+
+`state.json`:
+
+```json
+{ "state": "idle", "since": "<time>", "guard": "turn-end", "waitReason": "none",
+  "requested": { "to": "archived", "transition": "archive", "since": "<time>", "deadline": "<time>", "waitsFor": ["no supervisor turn", "enabled gone", "app archived"], "escalations": 0 },
+  "history": [ { "transition": "forgotten", "at": "<time>" } ] }
+```
+
+| Field | Meaning |
+|---|---|
+| `requested` | An open requested transition: stop, archive or auto-archive. The state stays until the signals in `waitsFor` arrive. At `deadline` the request escalates. A stop tells the parent. An archive asks the parent to archive the app session (`archive-child`), then after `archiveUserMinutes` the user |
+| `waitReason` | `decision`, `child`, `blocked` or `none` |
+| `history` | The transitions of the last `loopMinutes` that count for the loop rule. The main path (start, running, idle, done) does not count. A transition that ran `loopCount` times in the window gives `not-responding` with fault `loop` |
+
+| Action | When |
+|---|---|
+| Release the lease (`lease.release`) | `stale` to `idle` because the process in `lease.json` is gone. A lease with no `pid` counts as gone, as before B2 |
+| No supervisor turn | While the lease holder is `live`, also with an old heartbeat |
+| Notice to the parent | See the lifecycle notices above |
+| Store side of the archive | An `auto-archive` request, when the app archived the session or the session is not in the app |
 
 ## Decision, answer and review
 
@@ -254,9 +318,9 @@ A version id is the decision id for version 1 and `<decision>-v<n>` after it. A 
 | `GET /api/inbox` | | The open cards: `{ id, kind, needs, session, title, envelope, fields, defaultAt }`. `defaultAt` is the ISO time when the policy answers an open decision with its `defaultOption` (the time of the decision + `timeoutSeconds` of its level). It is `null` for a query, a decision with no default, a level with no timeout, and each card that is not a decision |
 | `POST /api/inbox/<id>/accept` | `{ text? }` | The posted envelope |
 | `POST /api/inbox/<id>/refuse` | `{ text }` | The posted envelope |
-| `GET /api/sessions` | | Each enabled session: title, parent, holder, live, running, status, report, blocked, open decisions |
+| `GET /api/sessions` | | Each enabled session: title, parent, holder, live, running, status, report, blocked, open decisions, and from `state.json`: `state`, `waitReason`, `requested`, `fault`, `inferred` |
 | `GET /api/decisions` | | All open decisions |
-| `POST /api/sessions` | `{ title, cwd, brief, parent? }` | `{ id }`. A brief to the new session |
+| `POST /api/sessions` | `{ title, cwd, brief, parent?, background? }` | `{ id }`. A brief to the new session |
 | `POST /api/sessions/<id>/send` | `{ text }` | `{ event }`. A message from the user |
 | `POST /api/decisions/<session>/<id>` | `{ answer }` | `{ answered }`. An answer from the user |
 | `POST /api/decisions/<session>/<id>/review` | `{ verdict: approve \| change \| refuse, text }` | `{ event }`. A review to the session |
@@ -285,7 +349,11 @@ The user answers in free text, never with a click. The `options` of a decision a
   ],
   "docs": ["AGENTS.md", "CLAUDE.md", "README.md", "docs/"],
   "onDefault": "stacked-pr",
-  "delivery": { "nudgeSeconds": 15, "peerSeconds": 60, "sweepSeconds": 60 }
+  "delivery": { "nudgeSeconds": 15, "peerSeconds": 60, "sweepSeconds": 60 },
+  "lifecycle": { "staleSeconds": 15, "staleProcessSeconds": 120, "forgottenMinutes": 15, "inputSeconds": 120, "hungMinutes": 30,
+                 "stopSeconds": 30, "archiveSeconds": 120, "archiveUserMinutes": 10, "reminderMinutes": 60, "remoteControlSeconds": 120,
+                 "loopCount": 3, "loopMinutes": 60 },
+  "autoArchive": { "enabled": false, "afterMinutes": 60 }
 }
 ```
 
@@ -296,6 +364,8 @@ The user answers in free text, never with a click. The `options` of a decision a
 | `checkDocs` | A read-only check first looks if the `docs` paths in the session folder answer the question. If yes, that answer applies at once, with `by: docs` and the source |
 | `onDefault` | What a default answer tells the session to do (`answer/render/note-default-<onDefault>.md`): `stacked-pr`, `commit` or `none` |
 | `delivery` | The wait times of the watchdog and the sweep of each subscriber |
+| `lifecycle` | The timers of the state machine. An absent field takes the default above |
+| `autoArchive` | Off by default. On: the supervisor requests the archive of a done session with no open PR, no open decision and no input for `afterMinutes` |
 
 A review of a default decision (`templates/review/render/<verdict>.md`):
 
@@ -318,7 +388,7 @@ A review of a default decision (`templates/review/render/<verdict>.md`):
 
 1. Write each file in one write: a temporary file, then a move.
 2. Only one writer has the lease. The plugin delivers only with holder `live`. With any other holder, the supervisor delivers with `claude -p`.
-3. A lease `live` counts as live while the heartbeat or the lease is less than 15 s old. After that, the supervisor releases it (`none`). The plugin takes a released lease back at its next beat.
+3. A lease `live` counts as live while the heartbeat or the lease is less than 15 s old. After that, the session is `stale`. The supervisor releases the lease (`none`) only when the process in `lease.json` is gone. It never runs a turn while the holder is `live`. If the process is alive with no beat for `staleProcessSeconds`, the session is `not-responding`. The plugin takes a released lease back at its next beat.
 4. The supervisor and each `orch` command (except `doctor` and `template`) refuse a store with another version. The plugin stays inactive in a store whose `version.json` is not version 2. There is no migration from version 1: move the old store to another folder and start with a new store.
 
 ## Recovery

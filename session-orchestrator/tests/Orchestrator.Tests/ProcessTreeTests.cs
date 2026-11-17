@@ -9,13 +9,17 @@ namespace Orchestrator.Tests;
 [Platform("Win")]
 public sealed class ProcessTreeTests
 {
-    readonly List<int> leftovers = [];
+    // A handle, not a pid: a kill by pid after the end of the orphan could end another process that took its id.
+    readonly List<Processes.ProcessHandle> leftovers = [];
 
     [TearDown]
     public void EndLeftovers()
     {
-        foreach (var pid in leftovers)
-            try { Process.GetProcessById(pid).Kill(); } catch (Exception) { }
+        foreach (var handle in leftovers)
+        {
+            handle.Terminate();
+            handle.Dispose();
+        }
         leftovers.Clear();
     }
 
@@ -38,8 +42,8 @@ public sealed class ProcessTreeTests
         using var tree = new ProcessTree(root, TimeSpan.FromMilliseconds(100));
         var orphan = WaitForOrphan(folder);
         tree.KillAll();
-        Assert.That(tree.Known, Does.Contain(orphan));
-        Assert.That(tree.Known.Where(IsAlive), Is.Empty);
+        Assert.That(tree.Recorded, Does.Contain(orphan));
+        Assert.That(tree.Recorded.Where(IsAlive), Is.Empty);
     }
 
     [Test]
@@ -120,7 +124,7 @@ public sealed class ProcessTreeTests
         {
             if (File.Exists(pidFile) && int.TryParse(ReadShared(pidFile).Trim(), out var pid))
             {
-                leftovers.Add(pid);
+                if (Processes.Open(pid) is { } handle) leftovers.Add(handle);
                 var parent = ProcessTree.Snapshot().FirstOrDefault(e => e.Pid == pid).Parent;
                 while (parent != 0 && IsAlive(parent) && watch.Elapsed < TimeSpan.FromSeconds(30)) Thread.Sleep(100);
                 Assert.That(IsAlive(pid), Is.True);

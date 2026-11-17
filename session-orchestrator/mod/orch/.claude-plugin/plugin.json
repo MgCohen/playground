@@ -1,1 +1,0 @@
-{ "name": "orch", "version": "0.1.0", "description": "Orchestrator mod: session inbox, mirror, heartbeat, lease, and the ask_user and report tools" }

@@ -22,6 +22,9 @@ public static class StoreFiles
     public const string LastOutput = "last-output.json";
     public const string Control = "control.json";
     public const string Version = "version.json";
+    public const string State = "state.json";
+    public const string StateCheck = "state-check.json";
+    public const string Forgotten = "forgotten.json";
 
     public static string Json(string id) => $"{id}.json";
 }

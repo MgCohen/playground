@@ -32,6 +32,9 @@ public static class EventKinds
     public const string LeaseRelease = "lease.release";
     public const string Blocked = "blocked";
     public const string DeliveryBlocked = "delivery.blocked";
+    public const string SessionState = "session.state";
+    public const string StateConflict = "state.conflict";
+    public const string MetaUpdate = "meta.update";
 
     public const string BranchCreate = "branch.create";
     public const string BranchRebase = "branch.rebase";

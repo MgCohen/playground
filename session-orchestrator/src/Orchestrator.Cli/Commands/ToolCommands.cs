@@ -93,4 +93,17 @@ public static class ToolCommands
         });
         return failures == 0 ? 0 : 1;
     }
+
+    /// <summary>
+    /// Prints the id and the start time of the parent process: the process that ran orch. In a session, that is the claude
+    /// process, so the plugin writes them in lease.json and the supervisor can check if the holder of a live lease is alive.
+    /// </summary>
+    public static int Process(CommandContext c)
+    {
+        var self = Environment.ProcessId;
+        if (Processes.ParentOf(self) is not { } parent || Processes.StartTime(parent) is not { } start)
+            throw new MessageException("the parent process is not known");
+        c.Output.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { pid = parent, started = Core.Leases.Times.Format(start.ToUniversalTime()) }));
+        return 0;
+    }
 }

@@ -127,7 +127,10 @@ public sealed class QueryTests
         t.Store.SaveBlocked(id, "turn failed");
         t.Store.SaveBlocked(id, "turn failed");
         Assert.That(t.Store.Blocked(id)?.Reason, Is.EqualTo("turn failed"));
+        Assert.That(t.Store.Blocked(id)?.By, Is.EqualTo(Parties.Supervisor));
         Assert.That(t.Store.Events.OfKind(EventKinds.Blocked), Has.Count.EqualTo(1));
+        t.Store.Events.Append(EventKinds.Blocked, Parties.Session(id), Parties.User, new Dictionary<string, object?> { ["text"] = "delivery blocked: latch", ["reason"] = "latch" }, session: id);
+        Assert.That(t.Store.Blocked(id) is { Reason: "latch", By: null }, Is.True, "a plugin envelope is the stop latch");
         t.Store.Events.Append(EventKinds.Blocked, Parties.Session(id), Parties.User, new Dictionary<string, object?> { ["text"] = "delivery unblocked", ["reason"] = null }, session: id);
         Assert.That(t.Store.Blocked(id)?.Reason, Is.Null);
         Assert.That(File.Exists(t.Store.PathOf(id, "blocked.json")), Is.False);
