@@ -1102,3 +1102,33 @@ Screenshots (mock mode, desktop corner): `docs/screens/r2-corner-open-question.p
 - R2-2: the mock store now has a report with done, next and links, and a `question-closed` notice. The self-test needs them for the render screenshots.
 - R2-3: the well block of Open is a well in a card. It shows a double frame. Accepted for the later block review.
 - R2-4: `Ui.Look` and the `icon` and `tone` of `view.json` overlap. The ring still uses `Ui.Look`, because it also covers kinds with no template. Open question for the block review.
+
+## C1 design: streams (2026-11-17)
+
+Design page: `docs/stream-design.html` (https://claude.ai/artifact/JErtGVNeiAxtUqxVvvMxA7). Vocabulary: `docs/vocabulary.html` (https://claude.ai/artifact/R22wQC78trvXokgDcp7Fvk). The user answered all questions in chat. The rows are in `docs/decisions.md`.
+
+### Result
+
+- A **stream** is a group of work: a `stream` id on sessions and events. There is no store record.
+- A **task** is one unit of work in a stream, done by one session.
+- Each session decides if it starts children, and how deep. There is no top root.
+- The creator sets the **kind** of a session: `general` (default) or `orchestrator`. Its effect is open.
+- Scope: orchestration only (create, communicate, control, split). The kinds of work, the review workflow and the PR workflow are on the roadmap.
+
+### Next tasks
+
+| Task | Content |
+|---|---|
+| C2 (code) | Add `stream` and `kind` to the brief template, the session record and the envelope. A child gets the `stream` of its parent by default. Add `orch events --stream` and `orch sessions --stream`. Update `orch:orch-brief` for the split steps. Change `docs/store.md` in the same commit |
+| C3 (real use) | Run one full stream with the new fields. Record which behaviors repeat, as input for the kind decision. Needs a new store or a migration (the live store is version 1) |
+
+### Roadmap
+
+- Review workflow: reviewers, verdicts, approval events, gates.
+- PR workflow: integration branches, merge order, merge rules.
+- Kinds of work: design, code, probe, review, integration.
+- Watcher: a session that finds stuck or broken sessions and supervisors, and alerts the phone.
+
+### Findings
+
+- F2 again: chat text closed two `ask_user` questions of this design (Q7, Q8). The work moved to chat only.

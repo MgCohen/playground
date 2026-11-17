@@ -1,4 +1,4 @@
-<title>Work Streams</title>
+<title>Streams</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
@@ -119,367 +119,237 @@ dl.facts dd { margin: 0; min-width: 0; max-width: 70ch; }
 <div class="wrap">
 <header>
   <div class="eyebrow">Session orchestrator · design C1</div>
-  <h1>Work streams</h1>
-  <p class="summary">A work stream is one area of work with one goal, one owner session and one integration branch. Its parts run in a fixed workflow: design, approve, code, review, integration, merge. The user approves the design, the plan and each merge. The framework starts, tracks and reports the rest. Status: proposal. The tab "Open questions" lists the items that wait for the user.</p>
+  <h1>Streams</h1>
+  <p class="summary">A stream is a group of work. It is a <code>stream</code> id on sessions and events, not a store record. Each session decides if it works alone or starts children, and how deep. The creator of a session sets its kind. This design covers orchestration only: create sessions, communicate, control and split work. Status: all questions have answers. The design waits for the approval of the user.</p>
 </header>
 
 <nav role="tablist" aria-label="Sections">
   <button data-tab="overview" role="tab">Overview</button>
-  <button data-tab="workflow" role="tab">Workflow</button>
-  <button data-tab="kinds" role="tab">Session kinds</button>
-  <button data-tab="branches" role="tab">Review and merge</button>
-  <button data-tab="progress" role="tab">Progress</button>
+  <button data-tab="sessions" role="tab">Sessions</button>
+  <button data-tab="split" role="tab">Split work</button>
+  <button data-tab="talk" role="tab">Communicate and control</button>
   <button data-tab="limits" role="tab">Limits</button>
-  <button data-tab="questions" role="tab">Open questions</button>
+  <button data-tab="roadmap" role="tab">Roadmap</button>
+  <button data-tab="decisions" role="tab">Decisions</button>
 </nav>
 
 <!-- OVERVIEW -->
 <div class="panel" id="overview">
   <section>
-    <h2>A work stream owns its parts</h2>
+    <h2>A stream id groups a tree of sessions</h2>
     <div class="box"><pre class="mermaid">
 flowchart TD
-  U([User]) -->|brief| R[Top root]
-  R -->|brief| S[Stream root C]
-  S -->|brief| C1[C1 design]
-  S -->|brief| C2[C2 code]
-  S -->|brief| C3[C3 integration]
-  C2 -.->|message| S
-  S -.->|probe brief| P[C2a probe]
+  U([User]) -->|starts, kind orchestrator| A["Session A<br/>stream = C"]
+  A -->|brief| B["Task C1<br/>general · stream = C"]
+  A -->|brief| D["Task C2<br/>orchestrator · stream = C"]
+  D -->|brief| E["Task C2a<br/>general · stream = C"]
+  D -->|brief| F["Task C2b<br/>general · stream = C"]
+  U -->|starts| G["Session G<br/>general · no stream"]
     </pre></div>
+    <p>Session A starts children because its creator asked for an orchestrator. Task C2 also starts children: that is its own decision. Session G works alone.</p>
   </section>
 
   <section>
     <h2>Terms</h2>
     <div class="scroll"><table>
       <tr><th>Term</th><th>Meaning</th><th>Example</th></tr>
-      <tr><td>Work stream</td><td>One goal, one owner, one integration branch</td><td>C: work streams and workflows</td></tr>
-      <tr><td>Stream root</td><td>The session that owns one work stream</td><td>Agent <code>stream</code></td></tr>
-      <tr><td>Part</td><td>One child session with one task</td><td>C1, C2, C3</td></tr>
-      <tr><td>Session kind</td><td>The role of a part, with its skills</td><td>design, code, integration, probe, review</td></tr>
-      <tr><td>Integration branch</td><td>The branch that collects the parts</td><td><code>orch/integration-c</code></td></tr>
-      <tr><td>Stack</td><td>Branches on top of other branches, one PR each</td><td>PR #22 → C1 PR</td></tr>
+      <tr><td>Stream</td><td>A group of work. Full name: work stream. Always say "event stream" in full</td><td><code>"stream": "C"</code></td></tr>
+      <tr><td>Task</td><td>One unit of work in a stream, done by one session</td><td>C1, C2, C2a</td></tr>
+      <tr><td>Session kind</td><td>A label that the creator sets: <code>general</code> or <code>orchestrator</code></td><td><code>"kind": "orchestrator"</code></td></tr>
+      <tr><td>Root</td><td>A session with no parent</td><td>Session A, session G</td></tr>
+      <tr><td>Child</td><td>A session that another session started</td><td>Task C1</td></tr>
+      <tr><td>Question</td><td>A message that needs an answer. Old name: decision</td><td><code>ask_user</code></td></tr>
     </table></div>
-    <p>A part id is the letter of its work stream and a number: C1, C2. A probe of a part adds a letter: C2a. One part has one decision group, one branch and one PR.</p>
+    <p>The vocabulary page holds all terms: <a href="https://claude.ai/artifact/R22wQC78trvXokgDcp7Fvk">Vocabulary</a>.</p>
   </section>
 
   <section>
-    <h2>Rules of a work stream</h2>
+    <h2>Rules</h2>
     <ul>
-      <li>The user starts a work stream. A session never starts a work stream by itself.</li>
-      <li>The stream root starts each part. A part never starts a session.</li>
-      <li>Each part gets a short brief and a session kind. The kind skill holds the steps.</li>
-      <li>The user approves the design and the plan before the first code part starts.</li>
-      <li>Only the user word merges a PR. <code>orch merge</code> does the merge.</li>
+      <li>Any session can start children. Nothing forces it to.</li>
+      <li>The session decides the depth of its tree.</li>
+      <li>The creator of a session sets its kind. Nothing enforces the kind for now.</li>
+      <li>A child gets the <code>stream</code> id of its parent, unless the brief gives another id.</li>
+      <li>The parent decides how it reviews and merges the work of its children. For now the user reviews all PRs.</li>
     </ul>
   </section>
 
   <section>
-    <h2>Next parts</h2>
+    <h2>Next tasks</h2>
     <div class="scroll"><table>
-      <tr><th>Part</th><th>Kind</th><th>Content</th></tr>
-      <tr><td>C2</td><td>code</td><td>Kind skills, agents, brief templates, stream record</td></tr>
-      <tr><td>C3</td><td>integration</td><td>One full work stream, real use</td></tr>
+      <tr><th>Task</th><th>Content</th></tr>
+      <tr><td>C2 (code)</td><td><code>stream</code> and <code>kind</code> fields in the brief, the session record and the envelope. Inheritance from the parent. A filter by stream in <code>orch</code>. An update of the orchestrator skill</td></tr>
+      <tr><td>C3 (real use)</td><td>One full stream with the new fields. Record which behaviors repeat, as input for the kind decision</td></tr>
     </table></div>
-    <p>The plan section "C1 design: work streams" in <code>docs/plan.md</code> gives the scope of C2 and C3.</p>
+    <p>The section "C1 design: streams" in <code>docs/plan.md</code> gives the scope of C2 and C3.</p>
   </section>
 </div>
 
-<!-- WORKFLOW -->
-<div class="panel" id="workflow">
-  <section>
-    <h2>The workflow has three gates of the user</h2>
-    <div class="box"><pre class="mermaid">
-flowchart TD
-  B[Brief of the work stream] --> D[Design part]
-  D --> G1{User approves the design?}
-  G1 -->|change| D
-  G1 -->|yes| P[Plan of the code parts]
-  P --> G2{User approves the plan?}
-  G2 -->|change| P
-  G2 -->|yes| C[Code parts]
-  C --> R[Review]
-  R -->|change| C
-  R -->|pass| I[Integration part]
-  I --> G3{User says merge?}
-  G3 -->|yes| M[orch merge]
-    </pre></div>
-  </section>
-
-  <section>
-    <h2>Phases</h2>
-    <div class="scroll"><table>
-      <tr><th>Phase</th><th>Done by</th><th>Output</th><th>Gate</th></tr>
-      <tr><td>Design</td><td>Design part</td><td>Design page, plan section, decision rows</td><td>User approves the page</td></tr>
-      <tr><td>Plan</td><td>Stream root</td><td><code>plan</code> message: the code parts</td><td>User approves the plan</td></tr>
-      <tr><td>Code</td><td>Code parts</td><td>One branch and one PR each</td><td>Tests that the change affects</td></tr>
-      <tr><td>Review</td><td>Review part</td><td>Verdict for each PR</td><td>Stream root accepts the verdict</td></tr>
-      <tr><td>Integration</td><td>Integration part</td><td>Integration PR, full suite, live test</td><td>All tests pass</td></tr>
-      <tr><td>Merge</td><td>Stream root</td><td><code>orch merge</code> of the integration PR</td><td>User word</td></tr>
-    </table></div>
-    <p>A probe can run in each phase. It answers one question by a test in the scratchpad, and it makes no PR.</p>
-  </section>
-
+<!-- SESSIONS -->
+<div class="panel" id="sessions">
   <section>
     <h2>Who starts sessions</h2>
     <div class="scroll"><table>
-      <tr><th>Session</th><th>Starts</th><th>With</th></tr>
-      <tr><td>User</td><td>Top root, or a stream root</td><td>New session form, <code>orch new</code></td></tr>
-      <tr><td>Top root</td><td>Stream roots</td><td><code>spawn_child</code>, agent <code>stream</code></td></tr>
-      <tr><td>Stream root</td><td>Parts of all kinds</td><td><code>spawn_child</code>, agent of the kind</td></tr>
-      <tr><td>Part</td><td>No session</td><td>Asks the stream root with <code>send</code></td></tr>
+      <tr><th>Starter</th><th>Starts</th><th>With</th></tr>
+      <tr><td>User</td><td>A root of any kind</td><td>The app, the new session form, <code>orch new</code></td></tr>
+      <tr><td>Any session</td><td>Children of any kind, at any depth</td><td><code>spawn_child</code></td></tr>
     </table></div>
-    <p>A part that needs a probe sends a <code>message</code> to the stream root. The stream root starts the probe and sends the result back.</p>
   </section>
 
   <section>
-    <h2>Where the workflow is defined</h2>
+    <h2>Two base kinds</h2>
     <div class="scroll"><table>
-      <tr><th>Item</th><th>Place</th></tr>
-      <tr><td>Steps of each phase</td><td>Skill <code>orch:orch-stream</code></td></tr>
-      <tr><td>Steps of each kind</td><td>Skill <code>orch:orch-kind-&lt;kind&gt;</code></td></tr>
-      <tr><td>Role and skill list</td><td>Agent file of the kind</td></tr>
-      <tr><td>Parts and phase of a work stream</td><td>Store record <code>streams/&lt;letter&gt;.json</code></td></tr>
-      <tr><td>Merge rule</td><td>C# code of <code>orch merge</code></td></tr>
+      <tr><th>Kind</th><th>When</th><th>Effect today</th></tr>
+      <tr><td><code>general</code></td><td>The default for each new conversation</td><td>None</td></tr>
+      <tr><td><code>orchestrator</code></td><td>The user or a parent asks for it</td><td>Metadata only. The session can load the skill <code>orch:orch-brief</code></td></tr>
     </table></div>
+    <div class="note">Open point: what a kind does. The options are metadata only, a skill with the expected behavior, or a custom agent. C2 makes the kind metadata only. C3 shows which behaviors repeat. Then the user decides.</div>
+  </section>
+
+  <section>
+    <h2>New fields of a session</h2>
+<pre class="cmd">{
+  <span class="k">"title"</span>: "C2a: Does the app import a background child?",
+  <span class="k">"goal"</span>: "Answer the question with a test in the scratchpad.",
+  <span class="k">"doneWhen"</span>: "The report gives the answer and the evidence.",
+  <span class="k">"stream"</span>: "C",            <span class="c">// new, optional. Default: the stream of the parent</span>
+  <span class="k">"kind"</span>: "general"           <span class="c">// new, optional. Default: general</span>
+}</pre>
+    <p>C2 adds the two fields to the brief template, the session record and each envelope. The other brief fields do not change.</p>
   </section>
 </div>
 
-<!-- KINDS -->
-<div class="panel" id="kinds">
+<!-- SPLIT -->
+<div class="panel" id="split">
   <section>
-    <h2>Five session kinds</h2>
-    <div class="scroll"><table>
-      <tr><th>Kind</th><th>Agent</th><th>Output</th><th>Done when</th></tr>
-      <tr><td>design</td><td><code>designer</code></td><td>Design page, plan section</td><td>User approves the page</td></tr>
-      <tr><td>code</td><td><code>coder</code></td><td>Branch and PR</td><td>Affected tests pass, PR open</td></tr>
-      <tr><td>integration</td><td><code>integrator</code></td><td>Integration branch and PR</td><td>Full suite and live test pass</td></tr>
-      <tr><td>probe</td><td><code>prober</code></td><td>Report with the result</td><td>The question has an answer</td></tr>
-      <tr><td>review</td><td><code>reviewer</code></td><td>Verdict for each item</td><td>Each PR has a verdict</td></tr>
-    </table></div>
-    <p>Each agent file names its kind skill. A brief gives only the title, goal, scope, done check and the branch base. This keeps the start of each transcript short (finding F6).</p>
-  </section>
-
-  <section>
-    <h2>Skills of each kind</h2>
-    <div class="scroll"><table>
-      <tr><th>Kind</th><th>Skills</th><th>Changes code</th></tr>
-      <tr><td>design</td><td>kind skill, <code>orch-ask</code>, <code>orch-report</code>, <code>writing</code>, <code>artifact-design</code></td><td>No. Docs only</td></tr>
-      <tr><td>code</td><td>kind skill, <code>orch-ask</code>, <code>orch-report</code>, <code>orch-stack</code>, <code>writing</code></td><td>Yes</td></tr>
-      <tr><td>integration</td><td>kind skill, <code>orch-report</code>, <code>orch-stack</code></td><td>Merge fixes only</td></tr>
-      <tr><td>probe</td><td>kind skill, <code>orch-report</code></td><td>No. Scratchpad only</td></tr>
-      <tr><td>review</td><td>kind skill, <code>orch-report</code></td><td>No. Read-only</td></tr>
-    </table></div>
-  </section>
-
-  <section>
-    <h2>Brief template of each kind</h2>
-    <div class="tools"><button id="open-all" type="button">Open all</button><button id="close-all" type="button">Close all</button></div>
-
-    <details class="example"><summary>design <span class="d">· the page and the plan section</span></summary><div class="body">
-<pre class="cmd">{
-  "title": "C1: Work streams and workflows (design)",
-  "agent": "designer",
-  "goal": "Design how a work stream makes and runs a workflow.",
-  "scope": "In: design page, plan section, decision rows. Out: code.",
-  "doneWhen": "The user approves the design on the page.",
-  "base": "orch/session-662a3f1d"
-}</pre>
-      <p>Steps in the kind skill: read the docs, write the page, publish it, ask each open question, iterate, propose the next parts.</p>
-    </div></details>
-
-    <details class="example"><summary>code <span class="d">· one branch, one PR</span></summary><div class="body">
-<pre class="cmd">{
-  "title": "C2: Stream skills and agents (code)",
-  "agent": "coder",
-  "goal": "Build the kind skills, the agents and the stream record of the design C1.",
-  "scope": "In: plugin/, templates/brief, Core stream record. Out: UI.",
-  "doneWhen": "Unit tests pass and the PR is open.",
-  "base": "orch/integration-c"
-}</pre>
-      <p>Steps in the kind skill: read the design, build, test the affected parts, commit each step, open the PR, report done.</p>
-    </div></details>
-
-    <details class="example"><summary>integration <span class="d">· collect the parts</span></summary><div class="body">
-<pre class="cmd">{
-  "title": "C3: Integration of work stream C",
-  "agent": "integrator",
-  "goal": "Merge the part branches into orch/integration-c and run all tests.",
-  "doneWhen": "Full suite and live test pass. The integration PR is open.",
-  "base": "main"
-}</pre>
-      <p>Steps in the kind skill: merge each part branch in order, fix conflicts, run the full suite, run the live test in the scratchpad, open the PR.</p>
-    </div></details>
-
-    <details class="example"><summary>probe <span class="d">· one question, one test</span></summary><div class="body">
-<pre class="cmd">{
-  "title": "C2a: Does the app import a background child?",
-  "agent": "prober",
-  "goal": "Answer the question with a test in the scratchpad.",
-  "doneWhen": "The report gives the answer and the evidence.",
-  "background": true
-}</pre>
-      <p>Steps in the kind skill: use its own <code>ORCH_STORE</code> and <code>ORCH_PORT</code>, run the test, report the result. The stream root writes the finding in <code>docs/plan.md</code>.</p>
-    </div></details>
-
-    <details class="example"><summary>review <span class="d">· read-only verdict</span></summary><div class="body">
-<pre class="cmd">{
-  "title": "C2 review",
-  "agent": "reviewer",
-  "goal": "Review PR #24 against the brief of C2, the design C1 and AGENTS.md.",
-  "doneWhen": "Each item has a verdict: pass or change.",
-  "background": true
-}</pre>
-      <p>Steps in the kind skill: read the diff, check it against the brief and the design, run the affected tests, report each item with a file and a line.</p>
-    </div></details>
-  </section>
-</div>
-
-<!-- BRANCHES -->
-<div class="panel" id="branches">
-  <section>
-    <h2>Each part PR goes to the integration branch</h2>
+    <h2>How an orchestrator splits work</h2>
     <div class="box"><pre class="mermaid">
-flowchart BT
-  C1[orch/session-c1 · design PR] --> IC[orch/integration-c]
-  C2[orch/session-c2 · code PR] --> IC
-  D2[orch/decision-x · default PR] --> C2
-  IC -->|integration PR| B[Base of the work stream]
-  B --> M[main]
-    </pre></div>
-    <p>The base of the work stream is the top of the stack when the work stream starts. For work stream C, the base is <code>orch/session-662a3f1d</code> (PR #22).</p>
-  </section>
-
-  <section>
-    <h2>Review and merge sequence</h2>
-    <div class="box"><pre class="mermaid">
-sequenceDiagram
-  participant P as Code part
-  participant S as Stream root
-  participant V as Review part
-  participant U as User
-  P->>S: report done, PR link
-  S->>V: brief, PR link
-  V->>S: report, verdicts
-  S->>P: send changes
-  P->>S: report done
-  S->>U: report working, PR ready
-  U->>S: review approve, merge
-  S->>S: orch merge
+flowchart TD
+  G[Goal in the brief] --> S[Split into tasks]
+  S --> Q{Question for the user?}
+  Q -->|yes| A[Ask in chat or with ask_user]
+  A --> S
+  Q -->|no| B[One brief for each task, same stream id]
+  B --> C[spawn_child for each task]
+  C --> W[Relay questions, collect reports]
+  W --> R[Report to the parent or the user]
     </pre></div>
   </section>
 
   <section>
-    <h2>Merge rules</h2>
+    <h2>Steps</h2>
     <ol>
-      <li>Merge only when the user says so. The brief of the work stream can allow merges of part PRs into the integration branch.</li>
-      <li>Merge only with <code>orch merge &lt;pr&gt;</code>. A hook blocks <code>gh pr merge</code>.</li>
-      <li>If a PR carries a default decision with no approve review, <code>orch merge</code> refuses it.</li>
-      <li>Merge the integration PR into the base only on the user word, never by a brief.</li>
-      <li>Archive a part after its PR is merged or closed.</li>
+      <li>Read the goal and the scope in the brief.</li>
+      <li>Split the goal into tasks. One task is the work of one session.</li>
+      <li>Give each task an id: the stream letter and a number, such as C1.</li>
+      <li>Write one short brief for each task.</li>
+      <li>Start each task with <code>spawn_child</code>.</li>
+      <li>Relay the questions of the children to the user.</li>
+      <li>Collect the reports, then report to the parent or the user.</li>
     </ol>
+    <p>A task can split again with the same steps. The skill <code>orch:orch-brief</code> holds the brief rules.</p>
+  </section>
+
+  <section>
+    <h2>Find all work of a stream</h2>
+<pre class="cmd"><span class="c"># each event of stream C, from any session at any depth</span>
+orch events --stream C
+<span class="c"># the sessions of stream C, with their state</span>
+orch sessions --stream C</pre>
+    <p>Both commands are C2 proposals. The event stream can group and count by <code>stream</code> later, so a central record is not necessary.</p>
   </section>
 </div>
 
-<!-- PROGRESS -->
-<div class="panel" id="progress">
+<!-- TALK -->
+<div class="panel" id="talk">
   <section>
-    <h2>The stream root reports each phase</h2>
+    <h2>Messages between sessions</h2>
     <div class="scroll"><table>
-      <tr><th>Event</th><th>Message</th><th>User must</th></tr>
-      <tr><td>A phase starts</td><td><code>update</code>: step = phase, progress</td><td>Nothing</td></tr>
-      <tr><td>Design ready</td><td><code>report</code> working, page link</td><td>Review the page</td></tr>
-      <tr><td>Plan ready</td><td><code>plan</code>: the code parts</td><td>Approve, change or refuse</td></tr>
-      <tr><td>Question of a part</td><td>Question relay of the parent</td><td>Answer</td></tr>
-      <tr><td>Integration PR ready</td><td><code>report</code> working, PR link</td><td>Say merge</td></tr>
-      <tr><td>Work stream done</td><td><code>report</code> done</td><td>Ack</td></tr>
+      <tr><th>Message</th><th>From → to</th><th>Use</th></tr>
+      <tr><td><code>brief</code></td><td>parent → child</td><td>Start a task</td></tr>
+      <tr><td><code>question</code></td><td>child → user, through the parent</td><td>Ask for an answer</td></tr>
+      <tr><td><code>answer</code></td><td>user → child</td><td>Close a question</td></tr>
+      <tr><td><code>report</code></td><td>child → parent</td><td>Done, blocked or working</td></tr>
+      <tr><td><code>update</code></td><td>child → parent</td><td>Progress. Nobody must act</td></tr>
+      <tr><td><code>message</code></td><td>any → any</td><td>Free text</td></tr>
+      <tr><td><code>notice</code></td><td>supervisor → session</td><td>A fixed text, such as a reminder</td></tr>
+    </table></div>
+    <p>All these messages exist today. In C2, each envelope gets the <code>stream</code> id.</p>
+  </section>
+
+  <section>
+    <h2>Control of sessions</h2>
+    <div class="scroll"><table>
+      <tr><th>Control</th><th>Today</th></tr>
+      <tr><td>Start</td><td>✅ <code>spawn_child</code>, <code>orch new</code></td></tr>
+      <tr><td>Stop</td><td>✅ <code>orch stop</code>, with a deadline</td></tr>
+      <tr><td>Archive</td><td>✅ After the work is done</td></tr>
+      <tr><td>One writer for each session</td><td>✅ The lease. The user and the parent take turns</td></tr>
+      <tr><td>Status of a stream</td><td>❌ Only by hand. C2 adds the filter</td></tr>
     </table></div>
   </section>
 
   <section>
-    <h2>Progress of a work stream</h2>
-    <p>The <code>update</code> progress is the phase share. Each phase counts the same.</p>
-    <div class="scroll"><table>
-      <tr><th>Phase</th><th>Progress (%)</th></tr>
-      <tr><td>Design</td><td>0 to 20</td></tr>
-      <tr><td>Plan</td><td>20 to 30</td></tr>
-      <tr><td>Code and review</td><td>30 to 80, by parts done</td></tr>
-      <tr><td>Integration</td><td>80 to 95</td></tr>
-      <tr><td>Merge</td><td>100</td></tr>
-    </table></div>
-  </section>
-
-  <section>
-    <h2>Status line in the top root</h2>
-<pre class="cmd">C · Work streams · code · 1 of 2 parts done · ⏳ 1 waits for you · PR #24</pre>
-    <p>The top root shows one line for each work stream in its status block (<code>orch:orch-reply</code>). The inbox UI can show the same line later. Stream F owns that view.</p>
+    <h2>How the user approves</h2>
+    <p>The user discusses and approves in the chat of the session that asks. A formal approval event belongs to the review workflow on the roadmap.</p>
   </section>
 </div>
 
 <!-- LIMITS -->
 <div class="panel" id="limits">
   <section>
-    <h2>What the framework does today</h2>
-    <div class="scroll"><table>
-      <tr><th>Need</th><th>Today</th><th>Fix in</th></tr>
-      <tr><td>Start a child with a brief</td><td>✅ <code>spawn_child</code></td><td>None</td></tr>
-      <tr><td>Question relay to the parent</td><td>✅ forward, close, reminder</td><td>None</td></tr>
-      <tr><td>Default on its own branch</td><td>✅ <code>orch decision</code>, <code>orch stack</code></td><td>None</td></tr>
-      <tr><td>Merge only after approve</td><td>✅ <code>orch merge</code>, hook</td><td>None</td></tr>
-      <tr><td>Plan for approval</td><td>✅ <code>plan</code> message</td><td>None</td></tr>
-      <tr><td>Session kinds and kind skills</td><td>❌ Two agents: worker, orchestrator</td><td>C2</td></tr>
-      <tr><td>Work stream record</td><td>❌ Only in brief text and <code>plan.md</code></td><td>C2</td></tr>
-      <tr><td>Integration branch</td><td>❌ Made by hand</td><td>C2</td></tr>
-    </table></div>
-  </section>
-
-  <section>
     <h2>Known limits</h2>
     <div class="scroll"><table>
-      <tr><th>#</th><th>Limit</th><th>Effect on a work stream</th></tr>
-      <tr><td>F6</td><td>Long briefs and skill texts</td><td>Long transcript start. Kind skills fix it</td></tr>
-      <tr><td>B2-8</td><td>Form has no <code>background</code> field</td><td>A form session always has Remote Control</td></tr>
-      <tr><td>F14</td><td>Import takes the app focus</td><td>Each new part opens on screen</td></tr>
-      <tr><td>F15</td><td>Remote Control off asks a prompt</td><td>Archive of a part can stop</td></tr>
-      <tr><td>R5</td><td>App starts attached sessions only from a user turn</td><td>Parts show as imported, not attached</td></tr>
-      <tr><td>Lease</td><td>One writer for each session</td><td>User and stream root take turns</td></tr>
+      <tr><th>#</th><th>Limit</th><th>Effect on a stream</th></tr>
+      <tr><td>F2</td><td>A chat text answers the newest open question</td><td>Chat text closed Q7 and Q8 of this design by mistake. Discuss in chat, or answer each question by its id</td></tr>
+      <tr><td>F6</td><td>Long briefs and skill texts</td><td>Long transcript start. Keep briefs short</td></tr>
+      <tr><td>B2-8</td><td>The form has no <code>background</code> field</td><td>A form session always has Remote Control</td></tr>
+      <tr><td>F14</td><td>The import takes the app focus</td><td>Each new task opens on screen</td></tr>
+      <tr><td>F15</td><td>Remote Control off asks a prompt</td><td>The archive of a task can stop</td></tr>
+      <tr><td>R5</td><td>The app starts attached sessions only from a user turn</td><td>Tasks show as imported, not attached</td></tr>
+      <tr><td>Lease</td><td>One writer for each session</td><td>The user and the parent take turns</td></tr>
       <tr><td>Author</td><td>PRs show the user as author</td><td>The <code>[orch]</code> tag marks them</td></tr>
+      <tr><td>Store</td><td>The live store is version 1. The code needs version 2</td><td>Real use (C3) needs a new store or a migration</td></tr>
     </table></div>
-  </section>
-
-  <section>
-    <h2>Expectations</h2>
-    <ul>
-      <li>A work stream does not run unattended to the end. It stops at each gate of the user.</li>
-      <li>A default decision does not stop a work stream. It stacks a branch for a later review.</li>
-      <li>The review part finds problems. It does not prove that the code is correct.</li>
-      <li>The live test runs only in the scratchpad, with its own store and port.</li>
-    </ul>
   </section>
 </div>
 
-<!-- QUESTIONS -->
-<div class="panel" id="questions">
+<!-- ROADMAP -->
+<div class="panel" id="roadmap">
   <section>
-    <h2>Open questions</h2>
-    <p>Each question goes to the user as one card. The page body shows the recommendation until the user answers.</p>
+    <h2>Out of scope for C1</h2>
     <div class="scroll"><table>
-      <tr><th>#</th><th>Question</th><th>Recommendation</th></tr>
-      <tr><td>Q1</td><td>Name: "work stream" or another term? The event stream also uses "stream"</td><td>"Work stream", always in full</td></tr>
-      <tr><td>Q2</td><td>Does each work stream get its own stream root session?</td><td>Yes: top root, stream root, parts</td></tr>
-      <tr><td>Q3</td><td>May a part start a session?</td><td>No. It asks the stream root</td></tr>
-      <tr><td>Q4</td><td>One agent for each kind, or a <code>kind</code> brief field?</td><td>One agent for each kind</td></tr>
-      <tr><td>Q5</td><td>Who reviews a part PR?</td><td>A review part, then the stream root</td></tr>
-      <tr><td>Q6</td><td>Where do part PRs merge?</td><td>Into the integration branch of the work stream</td></tr>
-      <tr><td>Q7</td><td>Where is a work stream recorded?</td><td>Store record, <code>streams/&lt;letter&gt;.json</code></td></tr>
-      <tr><td>Q8</td><td>Where does the user approve a design?</td><td>A <code>plan</code> card that links the page</td></tr>
+      <tr><th>Item</th><th>Content</th><th>Input from C1</th></tr>
+      <tr><td>Review workflow</td><td>Who reviews, review sessions, verdicts, approval events, gates</td><td>For now the user reviews all PRs</td></tr>
+      <tr><td>PR workflow</td><td>Integration branches, merge order, merge rules</td><td><code>orch merge</code> and the stack exist today</td></tr>
+      <tr><td>Kinds of work</td><td>Design, code, probe, review and integration, with their steps</td><td>The kind is a label. Its effect is open</td></tr>
+      <tr><td>Watcher</td><td>A session that finds stuck or broken sessions and supervisors, and alerts the phone</td><td>Not a root. First test how useful it is</td></tr>
+    </table></div>
+  </section>
+</div>
+
+<!-- DECISIONS -->
+<div class="panel" id="decisions">
+  <section>
+    <h2>Answers of the user</h2>
+    <p>The user answered each question in chat on 2026-11-17. <code>docs/decisions.md</code> has the same rows.</p>
+    <div class="scroll"><table>
+      <tr><th>#</th><th>Question</th><th>Answer</th></tr>
+      <tr><td>Q1</td><td>Names</td><td>"stream" (work stream), "task" (not "part"), "question" (not "decision")</td></tr>
+      <tr><td>Q2</td><td>Fixed session levels?</td><td>No. Each session decides if it starts children, and how deep. No top root</td></tr>
+      <tr><td>Q3</td><td>May a task start a session?</td><td>Yes. The answer to Q2 covers it</td></tr>
+      <tr><td>Q4</td><td>How does a session know its kind?</td><td>The creator sets it. Base kinds: general and orchestrator. The effect is open</td></tr>
+      <tr><td>Q5</td><td>Who reviews a task PR?</td><td>The parent decides. For now the user reviews all PRs. Roadmap</td></tr>
+      <tr><td>Q6</td><td>Where do task PRs merge?</td><td>The parent decides. Roadmap: PR workflow</td></tr>
+      <tr><td>Q7</td><td>Where is a stream recorded?</td><td>Nowhere. A <code>stream</code> id on sessions and events</td></tr>
+      <tr><td>Q8</td><td>How does the user approve?</td><td>In the chat of the session that asks</td></tr>
     </table></div>
   </section>
 </div>
 </div>
 <script>
 (function () {
-  var names = ["overview", "workflow", "kinds", "branches", "progress", "limits", "questions"];
+  var names = ["overview", "sessions", "split", "talk", "limits", "roadmap", "decisions"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "overview";
     names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
@@ -489,9 +359,6 @@ sequenceDiagram
     b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
   });
   window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
-  function all(open) { document.querySelectorAll("#kinds details.example").forEach(function (d) { d.open = open; }); }
-  document.getElementById("open-all").addEventListener("click", function () { all(true); });
-  document.getElementById("close-all").addEventListener("click", function () { all(false); });
   show(location.hash.slice(1));
 })();
 </script>
