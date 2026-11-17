@@ -755,9 +755,9 @@ Fix:
 
 Limit: a process that ends before the first scan that sees it is not recorded, and its children are not found. This is the same as before (scan each 1 s). A Windows job object would find each descendant with no scan; it is not built.
 
-Likely cause of the abort (not proved): an external kill of the command. The Windows Application log of the last two days has no crash event of `Orchestrator.Tests.exe`; an unhandled exception writes one, a kill does not. A full `dotnet test --solution` builds first and then runs the tests: here 1 min 12 s to 1 min 33 s for the tests alone. The default timeout of the Bash tool of a session is 120 s, and its kill ends the command with no error. The point of the kill moves with the build time, which fits an end after test 3, 39, 65 or 107. Run the full suite with a timeout of 600 s, or in the background.
+Probable cause of the abort: the old kill code of the tree, now fixed. The Windows Application log has no crash event of `Orchestrator.Tests.exe`, so the test process ended by a kill, not by an unhandled exception. The races above could end a wrong process, and the test teardown ended a pid with no identity check. After the handle fix, the root saw 2 full runs with no abort (184 of 184). An earlier guess, a timeout kill of the Bash tool after 120 s, does not fit: the root runs used a timeout of 600 s.
 
-Open: the abort is not proved. If it comes again after this fix, run the test exe with `--output Detailed` to see the last test, and look in the Windows event log (Application) for a crash of `Orchestrator.Tests.exe`.
+Open: the cause is not proved by a reproduction. If the abort comes again, run the test exe with `--output Detailed` to see the last test, and look in the Windows event log (Application) for a crash of `Orchestrator.Tests.exe`.
 
 ### Child sessions in the app from their start (user decision, 2026-11-17)
 
@@ -797,3 +797,24 @@ Changes from the results:
 | Plugin record | A `set_remote_control` call with a child app id (`local_<id>`) writes `remoteControl` in the `meta.json` of the child | 1b |
 
 Open: the self call `set_remote_control` with `enabled: false` on `self` showed the prompt "A hook requires confirmation for this tool" in F15. Probe 2b ran from the root on a child and had no prompt. The `archive-self` path can still show the prompt in the child. The parent path does not.
+
+### Review of PR #14 (root, 2026-11-17)
+
+| # | Item | Fix | Test |
+|---|---|---|---|
+| 1 | High: the brief went two times, with two writers, when the user opened the app session while a `claude -p` turn ran with the brief | The plugin does not take the lease and does not deliver while `turn.json` has no end and the lease is `supervisor` (or the turn is less than 120 s old) | `PluginLeaseTests` (node, fake engine): the scenario of the review, then the normal path after the end |
+| 2 | High: the parent plugin wrote the `meta.json` of a child, and the child plugin wrote its own `appId` | The plugin posts `meta.update`; only the supervisor writes `meta.json` (`appId` of the sender, `remoteControl` of the sender or its child) | `Only_the_supervisor_writes_meta_and_it_applies_the_allowed_meta_updates`, `The_plugin_writes_no_meta_of_another_session…` |
+| 3 | Medium: forgotten went back to idle before the nudge turn | `remembered` waits while an input has no ack | `A_forgotten_session_waits_for_the_turn_of_its_nudge…`, `The_nudge_turn_goes_forgotten_to_running…` |
+| 4 | Medium: `forgotten.json` was never cleared | A new report or a new input from another party starts a new episode; the file goes when the session leaves forgotten for done, stopped or archived | `…a_new_input_starts_a_new_forgotten_episode` |
+| 5 | Medium: a user ack hid a report from the parent | The relay uses one subscription for each session and ignores the user ack | `A_user_ack_of_a_report_before_the_turn_ends_does_not_hide_it_from_the_parent` |
+| 6 | Medium: the tree kept each handle until `Dispose`; `KillAll` and `Dispose` could run at the same time | The handle of a process that ended before a scan snapshot goes after that scan; one lock for the kill and `Dispose` | `An_orphan_is_killed…`, `A_parent_that_ends_after_the_snapshot…`, `Kill_all_and_dispose_at_the_same_time…` |
+| 7 | Low: a stopped opening turn kept `Started`, so the import waited for the brief turn | The `open-in-app` notice with no ack gives the opening turn again, as a resume | `A_stopped_opening_turn_is_followed_by_the_opening_turn_again…` |
+| 8 | Low: F5 forwarded a report in the middle of a live turn with an old heartbeat | The turn stays open while `status.json` says running and the lease is `live` | `A_report_of_a_live_turn_waits_while_the_heartbeat_is_old…` |
+| 9 | Low: the lifecycle code read all events for each session at each tick | Reports by subscription, the Remote Control check by thread, the snapshot by `Since` windows (24 h maximum). A turn with no own event yet is not hung | `The_remote_control_notice_has_its_own_thread…`, `A_supervisor_turn_with_no_event_yet_is_not_hung…` |
+| 10 | Docs: the design page said "first turn with the brief, then import" | The state `start` describes the opening turn. Page published again | |
+| 11 | Docs: the guess of a 120 s tool timeout | Changed: probable cause is the old kill code, now fixed | |
+
+Regression found in the fix of item 9, and fixed: the snapshot used the hung time as the default when the hung window had no event of the session. A supervisor turn that counted as running before its `turn.start` was posted looked hung (`not-responding`), in about 2 of 7 runs of one test. Now an empty hung window falls back to the 24 h window, and no event at all gives no hung fault. Test `A_supervisor_turn_with_no_event_yet_is_not_hung_and_a_turn_with_old_events_is`.
+
+Finding B2-9 (open, A2): `FileStore.Report` and `FileStore.OpenDecisions` still copy the full stream (`Events.All()`) at each call, and the snapshot calls them for each session at each tick. An index by session in `EventStream` would fix it. This is the transport of A2, so B2 does not change it.
+Unit tests after the review fixes: 197 of 197 pass (`dotnet test --solution Orchestrator.slnx`).

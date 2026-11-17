@@ -44,8 +44,11 @@ public sealed class StateReader(FileStore store)
         var self = Parties.Session(id);
         // Bounded queries (review of PR #14, item 9): the own events of the hung window, the inputs after the report or the turn.
         var hung = TimeSpan.FromMinutes(policy.Lifecycle.HungMinutes + 1);
-        var lastOwn = store.Events.Since(now - hung).Where(e => e.From == self || e.Kind == EventKinds.TurnStart && e.Session == id).Select(e => Times.Parse(e.At)).Max();
         var floor = now - Window;
+        bool Own(Event e) => e.From == self || e.Kind == EventKinds.TurnStart && e.Session == id;
+        // The hung window first; only when it is empty, the 24 h window. No event at all: null, not hung (a new turn).
+        var lastOwn = store.Events.Since(now - hung).Where(Own).Select(e => Times.Parse(e.At)).Max()
+            ?? store.Events.Since(floor).Where(Own).Select(e => Times.Parse(e.At)).Max();
         bool InputAfter(DateTimeOffset? at) => at is { } t && store.Events.Since(t > floor ? t : floor).Any(e => e.To == self && FileStore.IsDeliverable(e) && Times.Parse(e.At) > t);
         var undelivered = store.Undelivered(id);
         var openDecisions = store.OpenDecisions(id).Count;
@@ -68,7 +71,7 @@ public sealed class StateReader(FileStore store)
             FailedTurns = failedTurns,
             StopLatch = blocked is { Reason: { } reason, By: null } ? reason : null,
             InputAge = undelivered.Count > 0 && Times.Parse(undelivered[0].At) is { } first ? now - first : null,
-            SinceEvent = lastOwn is { } own ? now - own : hung,
+            SinceEvent = lastOwn is { } own ? now - own : null,
             IdleFor = !running && idleSince is { } idle ? now - idle : null,
             Report = report?.State,
             ReportAge = reportAt is { } r ? now - r : null,

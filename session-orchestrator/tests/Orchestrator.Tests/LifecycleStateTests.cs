@@ -48,6 +48,20 @@ public sealed class LifecycleStateTests
     }
 
     [Test]
+    public void A_supervisor_turn_with_no_event_yet_is_not_hung_and_a_turn_with_old_events_is()
+    {
+        using var t = new Rig();
+        var id = t.Create("work");
+        var reader = new StateReader(t.Store);
+        Assert.That(reader.Read(id, t.Clock.Now, supervisorTurn: true, failedTurns: false).SinceEvent, Is.Null, "no turn.start yet: not hung");
+        t.Store.Events.Append(EventKinds.TurnStart, Parties.Supervisor, Parties.Session(id), new Dictionary<string, object?> { ["text"] = "start" }, null, id);
+        var later = t.Clock.Now + TimeSpan.FromMinutes(45);
+        var snapshot = reader.Read(id, later, supervisorTurn: true, failedTurns: false);
+        Assert.That(snapshot.SinceEvent, Is.GreaterThanOrEqualTo(TimeSpan.FromMinutes(44)));
+        Assert.That(Core.Lifecycle.Machine.Fault(snapshot), Is.EqualTo(Core.Lifecycle.Faults.HungTurn));
+    }
+
+    [Test]
     public async Task Two_reports_in_one_turn_give_one_forward_to_the_parent_at_the_end_of_the_turn()
     {
         using var t = new Rig();

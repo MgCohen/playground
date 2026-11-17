@@ -264,7 +264,7 @@ flowchart LR
     <details class="example"><summary>start <span class="d">· new session, no good first turn</span></summary><div class="body"><dl class="facts">
       <dt>Enter</dt><dd><code>spawn_child</code>, <code>orch new</code> or <code>POST /api/sessions</code> writes <code>meta.json</code> and <code>enabled</code>.</dd>
       <dt>Detect</dt><dd><code>createdBy</code> is set and <code>started</code> is not <code>true</code>.</dd>
-      <dt>Action</dt><dd>The supervisor makes the worktree and runs <code>claude -p --session-id</code> with the brief. After the first good turn, it imports the session into the app and turns Remote Control on, unless the brief says <code>background: true</code> (F4).</dd>
+      <dt>Action</dt><dd>The supervisor makes the worktree. With the import on, the first turn (<code>claude -p --session-id</code>) has only the notice <code>open-in-app</code>: the session replies READY. The app imports only a session with a transcript, so the import comes right after this short turn. The plugin of the live app session then delivers the brief, and the user follows the work from its start. Remote Control is on (notice <code>remote-control-self</code>), unless the brief says <code>background: true</code> (F4). If the app does not take the lease in 30 s, the supervisor delivers the brief with <code>claude -p --resume</code>. With the import off, the first turn has the brief.</dd>
       <dt>Exit</dt><dd>A good turn goes to <span class="st">running</span>, then <span class="st">idle</span>. Three failed turns go to <span class="st fault">not responding</span>.</dd>
       <dt>In the app</dt><dd><code>orch enable</code> in an app session skips this state. It writes <code>started: true</code>, so the session is <span class="st">running</span> at once.</dd>
     </dl></div></details>
@@ -515,9 +515,9 @@ stateDiagram-v2
     <table>
       <thead><tr><th>Item</th><th>Problem</th><th>Design</th><th>State after B2</th></tr></thead>
       <tbody>
-        <tr><td>F4</td><td>An imported session has no Remote Control</td><td>On by default; off only for a background session</td><td>Needs a probe</td></tr>
+        <tr><td>F4</td><td>An imported session has no Remote Control</td><td>On by default; off only for a background session</td><td>Closed. Probes 1a and 1b pass: the self call works in a live app turn, and the parent can call it for a child</td></tr>
         <tr><td>F5</td><td>A child reports a step as <code>done</code></td><td>Forward at turn end; skill and tool rule</td><td>Closed</td></tr>
-        <tr><td>F8</td><td><code>orch archive</code> keeps the sidebar entry</td><td>Three archive paths, in order</td><td>Partly closed</td></tr>
+        <tr><td>F8</td><td><code>orch archive</code> keeps the sidebar entry</td><td>Three archive paths, in order</td><td>Closed. Probes 2a to 2c: Remote Control off, then <code>archive_session</code>, also by the parent with the child app id</td></tr>
         <tr><td><code>mod/orch/</code></td><td>Old mod folder in the repository</td><td>Deleted on the B1 branch</td><td>Closed</td></tr>
         <tr><td>W1</td><td><code>enabled</code> with no active plugin</td><td>Stale state with a process check</td><td>Closed</td></tr>
       </tbody>
@@ -531,7 +531,7 @@ stateDiagram-v2
     <div class="box">
 <pre class="mermaid">
 flowchart TD
-  A[First good turn] --> B[Import into the app]
+  A[Opening turn: READY] --> B[Import into the app]
   B --> C{background: true?}
   C -->|yes| D[Remote Control stays off]
   C -->|no| E[remote-control-self notice]
@@ -569,7 +569,7 @@ flowchart TD
   E --> F
 </pre>
     </div>
-    <p>Path 2 needs a probe: can an app session archive another session by its app id? Remote Control must be off before each path (F9). The store side always runs, so the supervisor never runs the session again.</p>
+    <p>Each path turns Remote Control off first, then calls <code>archive_session</code>: the app refuses an archive while Remote Control is on (F9, probe 2a). Path 2 works with the child app id (probes 2b, 2c). A session that the app shows but that is not live goes to path 2 at once. The store side always runs, so the supervisor never runs the session again.</p>
   </section>
 
   <section>
