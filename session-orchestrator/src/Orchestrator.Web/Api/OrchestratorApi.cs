@@ -14,11 +14,12 @@ public sealed record NewSession(string? Title, string? Cwd, string? Brief, strin
     public string? Agent { get; init; }
     public bool? Worktree { get; init; }
     public bool? AllowDefaults { get; init; }
+    public bool? Background { get; init; }
 
     public BriefFields ToBrief() => new()
     {
         Title = Title, Goal = Goal ?? Brief, Scope = Scope, DoneWhen = DoneWhen, Skills = Skills,
-        Agent = Agent, Cwd = Cwd, Worktree = Worktree, Parent = Parent, AllowDefaults = AllowDefaults,
+        Agent = Agent, Cwd = Cwd, Worktree = Worktree, Parent = Parent, AllowDefaults = AllowDefaults, Background = Background,
     };
 }
 
@@ -35,7 +36,21 @@ public sealed record CardText(string? Text);
 public sealed record AnswerText(string? Answer);
 public sealed record ReviewInput(string? Verdict, string? Text);
 
-public sealed record SessionView(string Id, string? Title, string? Parent, string Holder, bool Live, bool Running, string? Status, Report? Report, string? Blocked, int OpenDecisions);
+public sealed record SessionView(string Id, string? Title, string? Parent, string Holder, bool Live, bool Running, string? Status, Report? Report, string? Blocked, int OpenDecisions)
+{
+    /// <summary>The lifecycle state of state.json, or unknown.</summary>
+    public string State { get; init; } = Core.Lifecycle.States.Unknown;
+
+    /// <summary>Why an idle session waits: decision, child, blocked or none.</summary>
+    public string? WaitReason { get; init; }
+
+    /// <summary>The state of an open requested transition, for example archived while the archive waits.</summary>
+    public string? Requested { get; init; }
+
+    public string? Fault { get; init; }
+
+    public bool Inferred { get; init; }
+}
 
 public static class OrchestratorApi
 {
@@ -43,8 +58,16 @@ public static class OrchestratorApi
     {
         var store = supervisor.Store;
         var meta = store.Meta(id);
+        var state = new StateReader(store).State(id).File;
         return new SessionView(id, meta.Title, meta.Parent, store.Lease(id).Holder, store.IsLive(id, now), supervisor.IsRunning(id),
-            store.Status(id)?.State, store.Report(id), store.Blocked(id)?.Reason, store.OpenDecisions(id).Count);
+            store.Status(id)?.State, store.Report(id), store.Blocked(id)?.Reason, store.OpenDecisions(id).Count)
+        {
+            State = state?.State ?? Core.Lifecycle.States.Unknown,
+            WaitReason = state?.WaitReason,
+            Requested = state?.Requested?.To,
+            Fault = state?.Fault,
+            Inferred = state?.Inferred ?? false,
+        };
     }
 
     public static void MapOrchestratorApi(this IEndpointRouteBuilder app)

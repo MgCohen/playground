@@ -9,7 +9,14 @@ public static class Holders
     public const string None = "none";
 }
 
-public sealed record Lease(string Holder, string Since, JsonElement? Reason = null);
+public sealed record Lease(string Holder, string Since, JsonElement? Reason = null)
+{
+    /// <summary>The id of the process that holds the lease (the claude process of the session). Null: unknown.</summary>
+    public int? Pid { get; init; }
+
+    /// <summary>The start time of that process, so that a reused process id does not count as alive.</summary>
+    public string? Started { get; init; }
+}
 
 public sealed record Meta(string Id)
 {
@@ -27,6 +34,12 @@ public sealed record Meta(string Id)
     public bool? AllowDefaults { get; init; }
     public bool? Imported { get; init; }
     public string? AppId { get; init; }
+
+    /// <summary>True: the brief asked for a background session, so Remote Control stays off.</summary>
+    public bool? Background { get; init; }
+
+    /// <summary>True after the session turned Remote Control on for itself; false after it turned it off.</summary>
+    public bool? RemoteControl { get; init; }
 }
 
 public sealed record Decision(string Id, string Session)
@@ -95,7 +108,17 @@ public static class Verdicts
     public static readonly string[] All = [Approve, Change, Refuse];
 }
 
-public sealed record Blocked(string? Reason, string Since);
+public sealed record Blocked(string? Reason, string Since)
+{
+    /// <summary>supervisor: failed supervisor turns. Absent: the stop latch that the plugin found.</summary>
+    public string? By { get; init; }
+}
+
+/// <summary>forgotten.json: the nudge of a forgotten session and the notice to its parent.</summary>
+public sealed record ForgottenMarker(string Report, string Nudged)
+{
+    public string? Notified { get; init; }
+}
 
 public sealed record Status(string State, string? TurnId, string At);
 

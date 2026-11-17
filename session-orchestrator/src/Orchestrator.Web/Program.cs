@@ -13,7 +13,11 @@ var pluginDir = Environment.GetEnvironmentVariable("ORCH_PLUGIN_DIR") is { Lengt
 builder.Services.AddSingleton<ITurnRunner>(new ClaudeRunner(root, pluginDir));
 builder.Services.AddSingleton<IDocsChecker, ClaudeDocsChecker>();
 var import = Environment.GetEnvironmentVariable("ORCH_IMPORT") is { Length: > 0 } flag ? flag == "1" : root == Path.Combine(Home.Root(), "store");
-builder.Services.AddSingleton(services => new SupervisorOptions(4, 3, 2, Home.LoadPolicy(root)) { Import = import ? id => new Lifecycle(services.GetRequiredService<FileStore>()).Import(id) : null });
+builder.Services.AddSingleton(services => new SupervisorOptions(4, 3, 2, Home.LoadPolicy(root))
+{
+    Import = import ? id => new Lifecycle(services.GetRequiredService<FileStore>()).Import(id) : null,
+    StateChecker = new ClaudeStateChecker(pluginDir),
+});
 builder.Services.AddSingleton<Supervisor>();
 builder.Services.AddSingleton<Board>();
 builder.Services.AddSingleton<StreamHub>();

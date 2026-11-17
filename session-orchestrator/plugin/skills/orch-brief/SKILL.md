@@ -21,6 +21,7 @@ A child knows only its brief. A short brief that names skills works better than 
 | `agent` | `worker` for one task, `orchestrator` for a child that splits work again |
 | `cwd` | The working folder. Default: your folder |
 | `worktree` | `true` if two children change one repository at the same time |
+| `background` | `true` only for a session that the user does not need to see on the phone. Default: Remote Control is on |
 
 ## Rules
 
