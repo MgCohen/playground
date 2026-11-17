@@ -1119,6 +1119,7 @@ Findings:
 |---|---|---|
 | E1-1 | The system frame (rounded corners, border, shadow) has the full window size, also with a window region. During the grow it showed a full-height border around an empty area | Fixed: the grow turns the frame off (no rounding, no border color, no non-client rendering) and turns it on again at the end |
 | E1-2 | Transparent parts of the widget: a window region or a color key gives any shape with hard edges, and the cut parts let clicks through. Soft edges and part transparency (alpha) need WebView2 composition hosting, which BlazorWebView for WinForms does not give | Open: spike E1-S1, last item of the stream |
+| E1-4 | The user asked if the outline is necessary. It is not: the widget had a 1-pixel form padding and a system border color | Done: no outline. The rounded corners and the shadow of the system mark the edge. Self-test 25 of 25 PASS; `docs/screens/tray-grow-1.png`, `tray-grow-3.png` |
 | E1-3 | The proposal page has three tabs: Components (M1 to M3, M5 to M7, S1, S2), Screen transitions (T1 tab change, T2 open a document) and Tray grow (G1, with live controls for mode, curve and times). The user tweaks the grow there | Open: user review |
 
 Next steps of E1, in order:

@@ -7,7 +7,7 @@ using Orchestrator.Web.Components;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The widget: 350 × 720 logical pixels (lower on a small work area), no title bar, rounded corners, a thin border, not in the taskbar.
+/// The widget: 350 × 720 logical pixels (lower on a small work area), no title bar, rounded corners, no outline, not in the taskbar.
 /// It holds the BlazorWebView with the A4 views of Orchestrator.Web. A drag of the page header moves it. The saved place
 /// (place.json) keeps its position for the next show and the next start; without a saved place it opens in the corner above the tray.
 /// Close hides the widget. Only Exit in the tray menu stops the app. The widget grows from its bottom edge when it shows,
@@ -18,7 +18,8 @@ public sealed partial class WidgetForm : Form
     public const int LogicalWidth = 350;
     public const int LogicalHeight = 720;
 
-    static readonly Color Border = Color.FromArgb(0x5a, 0x58, 0x54);
+    // The canvas color of the page. It shows only before the web view paints.
+    static readonly Color Canvas = Color.FromArgb(0xe6, 0xe3, 0xde);
 
     readonly BlazorWebView view;
     readonly string? placeFile;
@@ -39,9 +40,8 @@ public sealed partial class WidgetForm : Form
         TopMost = pinned;
         Text = "Orchestrator";
         Icon = icon;
-        // The 1-pixel padding shows the back color as the thin border around the web view.
-        BackColor = Border;
-        Padding = new Padding(1);
+        // No outline: the web view fills the window. The rounded corners and the shadow of the system mark the edge.
+        BackColor = Canvas;
         view = new BlazorWebView { Dock = DockStyle.Fill, HostPage = "wwwroot/index.html", Services = services };
         view.RootComponents.Add<Routes>("#app");
         view.RootComponents.Add<HeadOutlet>("head::after");
@@ -251,14 +251,14 @@ public sealed partial class WidgetForm : Form
     }
 
     /// <summary>
-    /// The frame of the system: rounded corners, the border color and the shadow. The frame always has the full window size,
+    /// The frame of the system: rounded corners and the shadow, with no border line. The frame always has the full window size,
     /// so the grow turns it off and shows the rounded window region only.
     /// </summary>
     void Frame(bool on)
     {
         var round = on ? DwmwcpRound : DwmwcpDoNotRound;
         _ = DwmSetWindowAttribute(Handle, DwmwaWindowCornerPreference, ref round, sizeof(int));
-        var color = on ? Border.R | (Border.G << 8) | (Border.B << 16) : DwmwaColorNone;
+        var color = DwmwaColorNone;
         _ = DwmSetWindowAttribute(Handle, DwmwaBorderColor, ref color, sizeof(int));
         var policy = on ? DwmncrpUseWindowStyle : DwmncrpDisabled;
         _ = DwmSetWindowAttribute(Handle, DwmwaNcRenderingPolicy, ref policy, sizeof(int));
