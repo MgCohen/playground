@@ -16,6 +16,30 @@ export async function findProcess($: any): Promise<void> {
   }
 }
 
+// A supervisor turn of this session runs: turn.json has no end, and the lease is supervisor or the turn started less
+// than TURN_GRACE_MS ago (the claude -p process may not hold the lease yet). Then a live process must not take the lease
+// and must not deliver: the supervisor turn has the same envelopes, and two writers split the transcript (S0).
+export const TURN_GRACE_MS = 120000
+
+export function supervisorTurnRuns(turn: any, lease: any, nowMs: number): boolean {
+  if (!turn || typeof turn !== 'object' || turn.ended) return false
+  if (lease?.holder === 'supervisor') return true
+  const at = Date.parse(String(turn.at ?? ''))
+  return Number.isFinite(at) && nowMs - at < TURN_GRACE_MS
+}
+
+export function mayTakeLease(holder: string, turn: any, lease: any, nowMs: number): boolean {
+  return holder !== 'live' || !supervisorTurnRuns(turn, lease, nowMs)
+}
+
+export function mayDeliver(holder: string, turn: any, lease: any, nowMs: number): boolean {
+  return lease?.holder === holder && mayTakeLease(holder, turn, lease, nowMs)
+}
+
+export async function turnOpen($: any): Promise<{ turn: any; lease: any; now: number }> {
+  return { turn: await readJson($, `${S.dir}/turn.json`), lease: await readJson($, `${S.dir}/lease.json`), now: await $.clock.now() }
+}
+
 export async function writeLease($: any, holder: string, reason: unknown): Promise<void> {
   if (!S.dir) return
   const lease: Record<string, unknown> = { holder, since: await now($), reason }
@@ -38,6 +62,7 @@ export async function beat($: any): Promise<void> {
   const lease = await readJson($, `${S.dir}/lease.json`)
   if (lease?.holder === S.holder) return
   if (lease?.holder === 'none') {
+    if (!mayTakeLease(S.holder, await readJson($, `${S.dir}/turn.json`), lease, await $.clock.now())) return
     await writeLease($, S.holder, { event: 'lease taken back', was: lease })
     await log($, 'lease taken back')
     return

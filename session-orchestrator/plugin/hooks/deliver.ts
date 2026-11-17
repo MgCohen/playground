@@ -3,6 +3,7 @@
 // the deliverer lists the envelopes with no ack (with their texts), submits them as one turn, and posts an ack for each.
 import { S, controlState, log, now, orch, writeJson } from './state.ts'
 import { ack, post, type Envelope } from './stream.ts'
+import { mayDeliver, turnOpen } from './lease.ts'
 
 export const SEPARATOR = '\n\n---\n\n'
 
@@ -69,6 +70,9 @@ export async function deliver($: any): Promise<void> {
   try {
     // A stopped session keeps its inbox: no delivery until orch resume.
     if ((await controlState($)) !== 'active') return
+    // A supervisor turn has these envelopes until its end: no second delivery, no second writer.
+    const open = await turnOpen($)
+    if (!mayDeliver(S.holder, open.turn, open.lease, open.now)) return
     const run = await orch($, ['watch', '--to', `session:${S.id}`, '--list'])
     if (!run.ok) {
       await log($, `list failed: ${run.text.slice(0, 200)}`)

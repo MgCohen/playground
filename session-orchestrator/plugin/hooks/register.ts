@@ -1,7 +1,7 @@
 import type { Register } from 'claude-code'
 import { ROW_CHARS, S, TICK_MS, homeRoot, log, now, readJson, sessionDir, storeRoot, writeJson } from './state.ts'
 import { emitRow } from './events.ts'
-import { beat, findProcess, releaseLease, writeLease } from './lease.ts'
+import { beat, findProcess, mayTakeLease, releaseLease, turnOpen, writeLease } from './lease.ts'
 import { deliver, tick, watchLoop } from './deliver.ts'
 import { NUDGE } from './stream.ts'
 import {
@@ -86,7 +86,9 @@ async function activate($: any, dir: string, reason: unknown): Promise<void> {
   S.idle = status?.state !== 'running'
   await $.fs.write(`${dir}/heartbeat.txt`, await now($))
   await findProcess($)
-  await writeLease($, S.holder, reason)
+  const open = await turnOpen($)
+  if (mayTakeLease(S.holder, open.turn, open.lease, open.now)) await writeLease($, S.holder, reason)
+  else await log($, 'a supervisor turn runs: the lease waits for its end')
   const host = await $.env.get('CLAUDE_CODE_HOST_SESSION_ID')
   const meta = await readJson($, `${dir}/meta.json`)
   if (host && meta && meta.appId !== host) await writeJson($, `${dir}/meta.json`, { ...meta, appId: host })
