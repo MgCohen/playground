@@ -708,11 +708,16 @@ A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked (
 ## T1: Desktop tray app (visual only)
 
 - `src/Orchestrator.Tray`: WinForms tray icon (Open, Exit), a resizable window with a BlazorWebView, one instance at a time.
-- The window shows the `Routes` of `Orchestrator.Web` through a project reference. No change in `Orchestrator.Web`.
+- The window shows the A4 views of `Orchestrator.Web` (PR #15, merged into this branch) through a project reference. No change in `Orchestrator.Web`.
+- The tray `index.html` loads the same fonts as `App.razor` (Doto, Inter, JetBrains Mono).
+- Desktop size: no layout change. The A4 layout is a centered column of 560 px, and it shows correctly in a window of 1280 × 800 logical pixels.
 - Mock data: a new store in a temporary folder (`MockStore`). The real store does not change. No tick service, no claude process (`NoRunner`).
-- Self-test (`.\tray.ps1 -SelfTest`): PASS. Queue 3 open, 1 default to review. Sessions 6. Timeline 20 events. Window 1898 × 1144 pixels at 144 DPI.
-- Screenshots: `docs/screens/tray-queue.png`, `tray-sessions.png`, `tray-timeline.png`.
+- Self-test (`.	ray.ps1 -SelfTest`): PASS for 8 views. Home, Cards, answer sheet, Open, Stream, Sessions, Session status, Session stream. Window 1898 × 1144 pixels at 144 DPI.
+- `dotnet test --solution Orchestrator.slnx`: 159 passed, 0 failed.
+- Screenshots: `docs/screens/tray-*.png`.
+- Finding: on Session status, the sticky Message and Event stream bar covers the Stop and Archive buttons until the user scrolls. The same occurs on the phone. It is an item for A4.
 - `install.ps1` is not run yet. It needs the approval of the user.
+
 ## A4 design: inbox UI (2026-11-17)
 
 The user approved the design after four rounds. The design page is `docs/inbox-design.html` (https://claude.ai/artifact/RbSF83MgxWHbWo5V3JsGEE).

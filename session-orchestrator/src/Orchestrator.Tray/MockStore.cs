@@ -60,7 +60,8 @@ public sealed class MockStore : IDisposable
             ["One record for each query", "One generic record"], "One generic record", "low");
         messages.Answer(queries, shape, "One generic record", Parties.Policy,
             source: new AnswerSource(Parties.Policy) { Reason = "The level low has a timeout of 60 seconds, and no answer came.", OnDefault = OnDefault.None });
-        Report(queries, ReportStates.Done, "The queries have one typed shape. PR #12 is open.");
+        Report(queries, ReportStates.Done, "The queries have one typed shape. PR #12 is open: https://github.com/MgCohen/playground/pull/12");
+        Decision(queries, "Delete the old query helpers now?", "No code uses them after the change.", ["yes", "no"], "no", "low");
 
         var engine = Session("Pattern engine spike", cwd, null, "Test the composition rules of the pattern engine.");
         Store.Events.Post(new PostInput(EventKinds.Query, Parties.Session(engine), Parties.User,
