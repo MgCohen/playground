@@ -479,6 +479,14 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 .phone .scroll, .phone .hbody, .pile { scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--muted) 28%, transparent) transparent; }
 .phone .scroll:hover { scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent; }
 
+/* G1 v3: the desk variables place the widget, the app bar and the button. No measure, no sync. */
+#desk { --wr: 12px; --wb: 52px; --ww: 230px; --pad: 8px; --abh: 36px; --bs: 40px; --lift: 18px; }
+#desk .wid, #desk .wsh { right: var(--wr); bottom: var(--wb); width: var(--ww); }
+#desk .wid { padding: var(--pad); }
+#desk .wid .ab { height: var(--abh); }
+#desk .fbtn { left: auto; top: auto; width: var(--bs); height: var(--bs); right: calc(var(--wr) + var(--ww) / 2 - var(--bs) / 2); bottom: calc(var(--wb) + var(--pad) + var(--abh) / 2 + var(--lift) - var(--bs) / 2); }
+.saved { margin: -14px 0 22px; }
+
 /* Answer box */
 .answer { margin-top: 36px; padding: 18px 20px; border-radius: 18px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); display: grid; gap: 8px; }
 .answer code { display: block; padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); overflow-x: auto; white-space: pre; }
@@ -495,6 +503,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     <button role="tab" id="tab-grow" data-tab="grow" aria-selected="false">Tray grow</button>
     <button role="tab" id="tab-notify" data-tab="notify" aria-selected="false">Minimize and notify</button>
   </nav>
+  <p class="sub saved" id="saved-st">Your choices are kept in this browser.</p>
   <div class="panel" id="p-components" role="tabpanel" aria-labelledby="tab-components">
   <h2 style="margin-bottom:12px">Gaps from the self-test</h2>
   <div class="tbl-wrap"><table>
@@ -793,7 +802,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
           <div class="crd ringc"><i></i><span class="sub">8 wait</span></div>
           <div class="crd rw"></div><div class="crd rw"></div><div class="crd rw"></div>
           <div class="sp"></div>
-          <div class="ab"><b></b></div>
+          <div class="ab"></div>
         </div>
         <div class="ph" id="wid-ph" data-k="shadows"><i style="height:34px"></i><i style="height:96px"></i><i style="height:40px"></i><i style="height:40px"></i><i style="height:40px"></i></div>
         </div>
@@ -927,6 +936,64 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 </main>
 
 <script>
+// ===== Saved choices: the db of the page; this browser when the db is not there =====
+var Saved = (function () {
+  var dbp = new Promise(function (res) {
+    var t0 = Date.now();
+    (function look() {
+      if (window.claude && typeof window.claude.use === "function") window.claude.use("db").then(res, function () { res(null); });
+      else if (Date.now() - t0 > 3000) res(null);
+      else setTimeout(look, 100);
+    })();
+  }).then(function (db) { return db; }, function () { return null; });
+  var timers = {};
+  function status(t) { var el = document.getElementById("saved-st"); if (el) el.textContent = t; }
+  function lsGet(k) { try { return JSON.parse(localStorage.getItem("motion-" + k) || "null"); } catch (_) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem("motion-" + k, JSON.stringify(v)); } catch (_) { } }
+  function timeout(p, ms) { return Promise.race([p, new Promise(function (r) { setTimeout(function () { r(null); }, ms); })]); }
+  dbp.then(function (db) { status(db ? "Your choices are saved with the page. Claude can read them." : "Your choices are kept in this browser only."); });
+  function load(k) {
+    return timeout(dbp, 10000).then(function (db) {
+      if (!db) return lsGet(k);
+      return timeout(db.doc("choices/" + k).get(), 10000).then(function (snap) { return snap && snap.exists ? snap.data() : lsGet(k); }, function () { return lsGet(k); });
+    });
+  }
+  function save(k, v) {
+    lsSet(k, v);
+    clearTimeout(timers[k]);
+    timers[k] = setTimeout(function () {
+      dbp.then(function (db) {
+        if (!db) return;
+        db.doc("choices/" + k).set(JSON.parse(JSON.stringify(v))).catch(function (e) { status("Your choices are kept in this browser only (" + ((e && e.code) || "save error") + ")."); });
+      });
+    }, 700);
+  }
+  // Restore st from the store, set the controls to it, then save st after each change.
+  function bind(k, st, ctl, after) {
+    var keys = Object.keys(st);
+    function pick() { var o = {}; keys.forEach(function (x) { o[x] = st[x]; }); return o; }
+    function sync() {
+      Object.keys(ctl.sw || {}).forEach(function (id) {
+        var el = document.getElementById(id), v = String(st[ctl.sw[id]]); if (!el) return;
+        el.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.v === v ? "true" : "false"); });
+      });
+      Object.keys(ctl.range || {}).forEach(function (id) { var el = document.getElementById(id); if (el) el.value = st[ctl.range[id]]; });
+    }
+    Object.keys(ctl.sw || {}).concat(Object.keys(ctl.range || {})).forEach(function (id) {
+      var el = document.getElementById(id); if (!el) return;
+      el.addEventListener("click", function () { save(k, pick()); });
+      el.addEventListener("input", function () { save(k, pick()); });
+    });
+    load(k).then(function (d) {
+      if (!d) return;
+      keys.forEach(function (x) { if (d[x] !== undefined && typeof d[x] === typeof st[x]) st[x] = d[x]; });
+      sync(); if (after) after();
+    });
+    return { save: function () { save(k, pick()); } };
+  }
+  return { load: load, save: save, bind: bind };
+})();
+
 (function () {
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   var deck = [
@@ -1201,7 +1268,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 (function () {
   var KEY = "motion-picks-v1", saved = {};
   try { saved = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (_) { saved = {}; }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (_) { } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (_) { } Saved.save("picks", saved); }
   var groups = [];
   ["p-components", "p-transitions"].forEach(function (pid) {
     document.querySelectorAll("#" + pid + " section.item").forEach(function (sec) {
@@ -1257,13 +1324,14 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     });
   });
   groups.forEach(function (g) { pick(g, saved[g.key] || g.rec, false); });
+  Saved.load("picks").then(function (d) { if (d && typeof d === "object") { saved = d; groups.forEach(function (g) { pick(g, saved[g.key] || g.rec, false); }); } });
 })();
 
 // ===== G1: tray grow =====
 (function () {
   var desk = document.getElementById("desk"), wid = document.getElementById("wid"), inner = document.getElementById("wid-in"),
       ph = document.getElementById("wid-ph"), wsh = document.getElementById("wsh"), fbtn = document.getElementById("fbtn"), tl = document.getElementById("g-tl"),
-      ab = wid.querySelector(".ab"), abBtn = ab.querySelector("b");
+      ab = wid.querySelector(".ab");
   var H = 440;
   var st = { mode: "reveal", curve: "cubic", ms: 280, hms: 200, shadow: "fade", sms: 220, page: "first", load: 1200, pms: 500, ph: "shadows", fms: 180,
              bopen: "slow", bstyle: "pop", bin: 240, bgap: 60, bhide: "yoyo", bhold: 400, bout: 180, bar: "unfold", blag: 0 };
@@ -1285,18 +1353,12 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     drop: [{ transform: "translateY(-40px) scale(.8)", opacity: 0 }, { transform: "translateY(4px)", opacity: 1, offset: .7 }, { transform: "none", opacity: 1 }],
     fade: [{ opacity: 0 }, { opacity: 1 }]
   };
-  // Geometry of the app bar and its button, measured with the widget at full size.
-  var g = { abW: 214, by: 0 };
-  function geo() {
-    var keep = [wid.style.transform, wid.style.height, inner.style.transform];
-    wid.style.transform = ""; wid.style.height = H + "px"; inner.style.transform = "";
-    var a = ab.getBoundingClientRect(), b = abBtn.getBoundingClientRect(), d = desk.getBoundingClientRect();
-    g.abW = a.width; g.bs = b.height; g.by = b.top + b.height / 2 - a.top;
-    fbtn.style.left = (b.left - d.left) + "px"; fbtn.style.top = (b.top - d.top) + "px";
-    wid.style.transform = keep[0]; wid.style.height = keep[1]; inner.style.transform = keep[2];
-  }
+  // One source of truth: the CSS variables on the desk place the widget, the app bar and the button.
+  var g = { abW: 214, abh: 36 };
+  function cssPx(n) { return parseFloat(getComputedStyle(desk).getPropertyValue(n)) || 0; }
+  function geo() { g.abW = cssPx("--ww") - 2 * cssPx("--pad"); g.abh = cssPx("--abh") || 36; }
   // p: grow level. c: content level (0 = placeholder, 1 = content). s: shadow level.
-  var cur = { p: 1, c: 1, s: 1 };
+  var cur = { p: 1, c: 1, s: 1, free: false };
   function render() {
     var p = cur.p, cl = Math.max(0, Math.min(1, p)), mo = 1, ty = 0;
     wid.style.clipPath = ""; wid.style.height = H + "px"; wid.style.transform = "";
@@ -1308,14 +1370,20 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       if (st.mode === "rise") ty = (1 - p) * 40;
       if (st.mode === "fade") mo = cl;
     }
-    [inner, ph].forEach(function (el) { el.style.transform = ty ? "translateY(" + ty + "px)" : ""; });
-    inner.style.opacity = "";
-    Array.prototype.forEach.call(inner.children, function (el) { el.style.opacity = String(el === ab ? mo : mo * cur.c); });
+    ph.style.transform = ty ? "translateY(" + ty + "px)" : "";
+    inner.style.transform = ""; inner.style.opacity = "";
+    // The app bar never moves up or down; only the content rises.
+    Array.prototype.forEach.call(inner.children, function (el) {
+      el.style.transform = ty && el !== ab ? "translateY(" + ty + "px)" : "";
+      el.style.opacity = String(el === ab ? mo : mo * cur.c);
+    });
     ph.style.opacity = String(mo * (1 - cur.c));
     // App bar: a pill that starts as a circle behind the ball and unfolds sideways.
     var L = st.blag / 100, q = st.bar === "unfold" ? Math.max(0, Math.min(1, (cl - L) / (1 - L))) : 1;
-    var bs = g.bs || 34, w = bs + (g.abW - bs) * q, h = bs + (36 - bs) * q, cy = g.by + (18 - g.by) * q;
-    ab.style.setProperty("--w", w + "px"); ab.style.setProperty("--h", h + "px"); ab.style.setProperty("--y", (cy - h / 2) + "px");
+    // Only the width changes: the height and the place of the bar stay fixed.
+    ab.style.setProperty("--w", (g.abW * q) + "px"); ab.style.setProperty("--h", g.abh + "px"); ab.style.setProperty("--y", "0px");
+    // With no ball phase, the button comes in with the first part of the grow.
+    if (cur.free) fbtn.style.opacity = String(Math.max(0, Math.min(1, cl / 0.25)));
     var sh = st.mode === "resize" || st.mode === "stretch" ? Math.max(0, p) : cl;
     if (st.shadow === "with") { wsh.style.height = H * sh + "px"; wsh.style.opacity = p > 0.001 ? "1" : "0"; }
     else { wsh.style.height = H + "px"; wsh.style.opacity = String(cur.s); }
@@ -1332,7 +1400,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     })(start);
   }
   // The ball: a copy of the home button on top of the widget.
-  function own(on) { ab.classList.toggle("own", on); }
+  // The button is one element: the ball before the grow and the app bar button after it.
   function ballOff() { fbtn.getAnimations().forEach(function (a) { a.cancel(); }); fbtn.classList.remove("pulse"); fbtn.style.opacity = "0"; }
   function ballShow() { fbtn.getAnimations().forEach(function (a) { a.cancel(); }); fbtn.style.opacity = "1"; }
   function ballAnim(out, ms, done) {
@@ -1352,9 +1420,9 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     var loaded = st.page === "ready" || (st.page === "first" && opens > 0), grown = false, f = curves[st.curve];
     opens++; mark(loaded ? "open " + opens + ", page ready" : "open " + opens + ", page not ready");
     var useBall = st.bopen === "always" || (st.bopen === "slow" && !loaded);
-    cur.p = 0; cur.s = 0; cur.c = loaded ? 1 : 0; own(useBall); geo(); render();
+    cur.p = 0; cur.s = 0; cur.c = loaded ? 1 : 0; cur.free = !useBall; geo(); render();
     ph.dataset.k = st.ph;
-    function release() { ballOff(); own(false); }
+    function release() { fbtn.classList.remove("pulse"); cur.free = false; fbtn.style.opacity = "1"; }
     function contentIn() { mark("content in"); release(); tween("c", 1, st.fms, curves.cubic, done); }
     function grow() {
       mark("grow");
@@ -1374,7 +1442,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     });
   }
   function close(done) {
-    stop(); ballOff(); t0 = performance.now(); log = []; mark("hide");
+    stop(); fbtn.classList.remove("pulse"); t0 = performance.now(); log = []; mark("hide");
     var f = curves[st.curve], ease = st.curve === "back" || st.curve === "spring" ? curves.cubic : f;
     function shrink(cb) {
       if (st.shadow === "fade") tween("s", 0, Math.min(120, st.hms), curves.linear); else cur.s = 0;
@@ -1387,9 +1455,9 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
         if (t < 1) requestAnimationFrame(step); else cb();
       })(start);
     }
-    function fin() { mark("gone"); ballOff(); own(false); if (done) done(); }
-    if (st.bhide === "none") { own(false); shrink(fin); return; }
-    geo(); ballShow(); own(true);
+    function fin() { mark("gone"); ballOff(); cur.free = false; if (done) done(); }
+    if (st.bhide === "none") { fbtn.getAnimations().forEach(function (a) { a.cancel(); }); cur.free = true; shrink(fin); return; }
+    cur.free = false; ballShow();
     if (st.bhide === "first") { mark("ball out"); ballAnim(true, st.bout, function () { shrink(fin); }); }
     else shrink(function () { mark("shrink end"); later(st.bhold, function () { mark("ball out"); ballAnim(true, st.bout, fin); }); });
   }
@@ -1425,11 +1493,15 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   document.getElementById("g-show").addEventListener("click", function () { open(); });
   document.getElementById("g-hide").addEventListener("click", function () { close(); });
   document.getElementById("g-loop").addEventListener("click", function () { loop = !loop; this.classList.toggle("on", loop); if (loop) cycle(); else stop(); });
-  draw(); render();
+  geo(); fbtn.style.opacity = "1"; draw(); render();
+  Saved.bind("g1", st, {
+    sw: { "g-mode": "mode", "g-curve": "curve", "g-shadow": "shadow", "g-page": "page", "g-ph": "ph", "g-bopen": "bopen", "g-bstyle": "bstyle", "g-bhide": "bhide", "g-bar": "bar" },
+    range: { "g-ms": "ms", "g-hms": "hms", "g-sms": "sms", "g-load": "load", "g-pms": "pms", "g-fms": "fms", "g-bin": "bin", "g-bgap": "bgap", "g-bhold": "bhold", "g-bout": "bout", "g-blag": "blag" }
+  }, function () { draw(); render(); });
   document.addEventListener("tabshown", function (e) {
     onTab = e.detail === "grow";
     if (onTab) geo();
-    if (onTab && loop) cycle(); else { stop(); ballOff(); own(false); cur.p = 1; cur.c = 1; cur.s = 1; render(); }
+    if (onTab && loop) cycle(); else { stop(); ballShow(); cur.free = false; cur.p = 1; cur.c = 1; cur.s = 1; render(); }
   });
   if (location.hash === "#grow") { onTab = true; geo(); if (loop) cycle(); }
 })();
@@ -1587,6 +1659,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   document.getElementById("n2-send").addEventListener("click", send);
   document.getElementById("n2-clear").addEventListener("click", clear);
   renderMini();
+  Saved.bind("notify", ns, { sw: { "n-form": "form", "n-place": "place", "n-att": "att", "n-kind": "kind", "n-evt": "evt" }, range: { "n-size": "size", "n-hide": "hide" } }, renderMini);
   document.addEventListener("tabshown", function (e) { if (e.detail === "notify" && !minimized) setTimeout(function () { minimize(); }, 400); });
 })();
 // ===== T3, T4: header path and window buttons =====
@@ -1712,6 +1785,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     });
   }
   sw("h3-sw", "path"); sw("h4-sw", "btn");
+  Saved.bind("header", hs, { sw: { "h3-sw": "path", "h4-sw": "btn" } }, function () { closeMenu(); body.innerHTML = ""; show(0); });
   stack = ["sessions", "s1", "sstream"]; show(0);
 })();
 // ===== S1: page actions, S2: skip button =====
@@ -1795,5 +1869,6 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   }
   sw("s1-sw", "mode"); sw("s1-doc", "doc"); sw("s1-bar", "bar");
   render();
+  Saved.bind("s1", st, { sw: { "s1-sw": "mode", "s1-doc": "doc", "s1-bar": "bar" } }, render);
 })();
 </script>
