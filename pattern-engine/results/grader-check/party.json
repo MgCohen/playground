@@ -1,0 +1,11 @@
+{
+  "pack": "party",
+  "model": "haiku",
+  "files": {
+    "agents/grader.md": "41c867928c95",
+    "src/PatternEngine/Domains/Party/grading.md": "d4ecae6be1fa"
+  },
+  "right": 73,
+  "total": 73,
+  "at": "2026-11-17T02:16:27"
+}
