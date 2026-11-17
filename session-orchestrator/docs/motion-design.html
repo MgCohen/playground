@@ -350,7 +350,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 .hd2 .cr:hover { color: var(--text); text-decoration: underline; }
 .hd2 .cr.bk { display: inline-flex; align-items: center; gap: 2px; flex: none; }
 .hd2 .sep { color: var(--muted); font-size: 12px; flex: none; }
-.hd2 .cur { font: 800 19px/1.1 var(--f-disp); flex: 0 0 auto; max-width: 62%; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.hd2 .cur { font: 700 15px/1.2 var(--f-body); color: var(--text); flex: 0 0 auto; max-width: 62%; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .hd2 .app { font: 500 12px var(--f-body); color: var(--muted); }
 .wb { display: flex; align-items: center; flex: none; }
 .wb button { width: 30px; height: 30px; border: 0; border-radius: 9px; background: none; color: var(--muted); display: grid; place-items: center; cursor: pointer; padding: 0; transition: opacity .15s, width .15s, background-color .15s; overflow: hidden; }
@@ -625,7 +625,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       <div class="head"><span class="tag">T3</span><h2>Header path</h2></div>
       <p>The header keeps the path of the sub-pages: Sessions › orch-bad3 › Stream › Question. Tap a row to go deeper. Tap a part of the path to go back to it. A tab in the app bar starts a new path, because tabs are on the same level.</p>
       <div class="opts">
-        <div class="opt rec"><b>A</b><span class="t">Full path</span><span class="d">The parents are small links with "›" between them. The current page is the Doto title. If the path has more than 3 parts, the first parts become "…", so the last two parents always show in full. A tap on "…" goes to the hidden part.</span></div>
+        <div class="opt rec"><b>A</b><span class="t">Full path</span><span class="d">The parents are small links with "›" between them. The current page is the last part, in the same font, bold and darker. If the path has more than 3 parts, the first parts become "…", so the last two parents always show in full. A tap on "…" goes to the hidden part.</span></div>
         <div class="opt"><b>B</b><span class="t">Back + title</span><span class="d">Only the parent shows, as "‹ Parent", then the title. Short, but you see only one level.</span></div>
         <div class="opt"><b>C</b><span class="t">Two lines</span><span class="d">The path is a small line above the title. The full path has more space, but the header is taller.</span></div>
       </div>
