@@ -80,3 +80,5 @@ The build session made these decisions while the user was away. The user reviews
 | 2026-11-17 | C1: the name of a unit of work, such as A or C | **stream** (full name: work stream). The event stream always keeps its full name | User decision in chat |
 | 2026-11-17 | C1: the name of one unit of work inside a stream | **task**. The term "part" is removed | User decision in chat. A task is the work of one session |
 | 2026-11-17 | C1: is "decision" a separate term? | No. It is a **question**. "decision" stays only in old names, such as `mcp__orch__ask_user` ids | User decision in chat |
+| 2026-11-17 | C1 Q2 and Q3: fixed session levels? May a task start sessions? | No fixed levels. Each session decides: it works alone, or it starts children and becomes an orchestrator. The session also decides the depth. There is no top root | User decision in chat. The brief can ask a session to start children, but nothing forces it |
+| 2026-11-17 | C1: a session that checks the whole system | Deferred. Later idea: a **watcher** that finds stuck or broken sessions and supervisors, and alerts the phone | User wants to discuss it later and test how useful it is |
