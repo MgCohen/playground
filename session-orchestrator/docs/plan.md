@@ -699,10 +699,11 @@ A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked (
 |---|---|---|
 | A3-1 | The plugin still writes `blocked.json` in `deliver.ts`. No reader uses it | Open: stream B can remove the two writes. The plugin is out of the A3 scope |
 | A3-2 | `status.json`, `lease.json`, `heartbeat.txt`, `control.json` and `stack/` are lifecycle or git state, not messages | Kept as files. Stream B owns them |
-| A3-3 | The global `orch` tool on this computer is older than A2 (no `orch init`). A live test must put its own `orch` first in `PATH` | Recorded. The live test used `dotnet tool install --tool-path` in the scratchpad |
+| A3-3 | The global `orch` tool on this computer is older than A2 (no `orch init`). A live test must put its own `orch` first in `PATH` | Recorded. The live test used `dotnet tool install --tool-path` in the scratchpad. Install the global tool again after the merge |
 | A3-5 | Request of A4: a card must show when its default applies | Done: `defaultAt` on each card of `GET /api/inbox` and on `Card.DefaultAt`. `DefaultRule.At` is the one rule; `IsDue` uses it. A docs check can still answer before that time |
 | A3-6 | `dotnet test` stopped two times after 22 and 40 tests with "error: 1" and no failed test. The next 3 runs passed (145). A supervisor of the user listens on port 7777 during the runs | Open: watch it. Not reproduced |
 | A3-4 | The inbox order changed a little: the cards are in the id order of the newest envelope of each thread | Accepted |
+| A3-7 | Decision of the user: one message shape for a question. The kinds `decision` and `query` become one kind `question`. The target (`to`) gives the direction. A decision is a possible answer to a question | Open: a separate task after A3 and B2 merge. Only `question` is required; `risk` is required when `defaultOption` is present. The schema file holds this rule, so a change is easy. The task also removes the `blocked.json` writes (A3-1). `StreamQuery` keeps its name |
 
 ## A4 design: inbox UI (2026-11-17)
 
