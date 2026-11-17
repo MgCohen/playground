@@ -164,16 +164,188 @@ table.t td:first-child { white-space: nowrap; font-weight: 600; }
 .rv { font-size: 12.5px; display: grid; gap: 4px; margin-top: 6px; padding: 10px 12px; border: 1px dashed var(--page-line); border-radius: var(--r-sm); }
 .rv b { font-weight: 600; }
 .rv ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+/* ===== Tabs and the How it works tab ===== */
+nav.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 8px; border-bottom: 1px solid var(--page-line); }
+nav.tabs a { font: 600 13px var(--f-body); color: var(--page-mu); text-decoration: none; padding: 9px 12px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+nav.tabs a:hover { color: var(--page-tx); }
+nav.tabs a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+nav.tabs a[aria-current="page"] { color: var(--page-tx); border-bottom-color: var(--accent); }
+section.tab { padding-block: 18px; }
+section.tab#renders > .lede { margin-top: 0; }
+.lanes { display: grid; gap: 6px; }
+.lane { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.3fr) minmax(0, 1.1fr); gap: 22px; position: relative; }
+.lane.hd span { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--page-mu); padding: 0 10px; }
+.nd { position: relative; border-radius: var(--r-sm); padding: 8px 10px; font-size: 12.5px; border: 1px solid var(--page-line); min-width: 0; overflow-wrap: anywhere; }
+.lane:not(.hd) .nd + .nd::before { content: "→"; position: absolute; left: -17px; top: 50%; transform: translateY(-50%); color: var(--page-mu); font-size: 13px; }
+.nd.data, .sw.data { background: color-mix(in srgb, var(--done) 10%, var(--page)); border-color: color-mix(in srgb, var(--done) 35%, transparent); }
+.nd.code, .sw.code { background: color-mix(in srgb, var(--new) 10%, var(--page)); border-color: color-mix(in srgb, var(--new) 35%, transparent); }
+.nd.out, .sw.out { background: color-mix(in srgb, var(--accent) 10%, var(--page)); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1px solid; vertical-align: -1px; margin-left: 8px; }
+.sw:first-child { margin-left: 0; }
+.note { font-size: 12.5px; color: var(--page-mu); }
+@media (max-width: 640px) { .lane { grid-template-columns: minmax(0, 1fr); gap: 4px; } .lane.hd { display: none; } .lane:not(.hd) .nd + .nd::before { content: "↓"; left: 10px; top: -13px; transform: none; } .lane:not(.hd) .nd + .nd { margin-top: 10px; } .lane { padding-bottom: 8px; border-bottom: 1px solid var(--page-line); } }
+pre.src { margin: 0; padding: 12px 14px; font: 12px/1.55 var(--f-mono); background: var(--canvas); color: var(--text); border-radius: var(--r-sm); white-space: pre; }
+pre.src .c { color: var(--page-mu); }
+.flow li b { font-weight: 600; }
 footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 80ch; display: grid; gap: 6px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
 <main>
-  <h1>MESSAGE RENDERS</h1>
-  <p class="lede">The full document and the preview of each template kind, with the data of <code>templates/&lt;kind&gt;/example.json</code>. The page reads <code>templates/&lt;kind&gt;/view.json</code>: the same render spec that the C# model <code>Views</code> uses. A change to a spec changes this page and the UI together.</p>
-  <nav class="kinds" aria-label="Parts"><a href="#review">Review</a><a href="#registry">Registry</a><a href="#questions">Open questions</a></nav>
+  <h1>MESSAGE TEMPLATES</h1>
+  <p class="lede">How the message templates of the orchestrator work, how each kind renders, the F1 review, and the design of a template registry.</p>
+  <nav class="tabs" id="tabs" aria-label="Tabs">
+    <a href="#how" data-tab="how">How it works</a>
+    <a href="#renders" data-tab="renders">Renders</a>
+    <a href="#findings" data-tab="findings">Review</a>
+    <a href="#registry" data-tab="registry">Registry</a>
+    <a href="#questions" data-tab="questions">Open questions</a>
+  </nav>
 
-  <section class="doc-part" id="review">
+  <section class="doc-part tab" id="how">
+    <h2>HOW IT WORKS</h2>
+    <p>Result first: the message fields have a real schema (JSON Schema). The views and the components have no schema file. Their shape exists only in C# records and Razor code. No parser finds templates in a folder: the code opens a fixed list of 10 names.</p>
+
+    <h3>Topology: from the files to the screen</h3>
+    <div class="lanes" role="table" aria-label="Topology">
+      <div class="lane hd" role="row"><span role="columnheader">File (data)</span><span role="columnheader">Read by (code)</span><span role="columnheader">Result</span></div>
+      <div class="lane" role="row"><span class="nd data" role="cell"><code>schema.json</code></span><span class="nd code" role="cell"><code>TemplateSet</code> (Core) → <code>EventStream.Check</code> (Store)</span><span class="nd out" role="cell">A post with a bad body is rejected</span></div>
+      <div class="lane" role="row"><span class="nd data" role="cell"><code>meta.json</code></span><span class="nd code" role="cell"><code>EventStream.Check</code> (Store)</span><span class="nd out" role="cell">Only the allowed from, to and reply kinds pass</span></div>
+      <div class="lane" role="row"><span class="nd data" role="cell"><code>schema.json</code> + <code>meta.json</code></span><span class="nd code" role="cell"><code>plugin/hooks/tools.ts</code> (TypeScript)</span><span class="nd out" role="cell">The input schema and the text of each MCP tool</span></div>
+      <div class="lane" role="row"><span class="nd data" role="cell"><code>view.json</code></span><span class="nd code" role="cell"><code>Views.Document</code>, <code>Views.Preview</code> (Core)</span><span class="nd out" role="cell"><code>DocumentModel</code>, <code>PreviewModel</code>: plain data, no HTML</span></div>
+      <div class="lane" role="row"><span class="nd data" role="cell">The two models</span><span class="nd code" role="cell"><code>DocBody</code>, <code>CardPreview</code>, <code>EventRow</code>, <code>FactValue</code> (Web, Razor)</span><span class="nd out" role="cell">The Open view, the card in the pile, the stream row</span></div>
+      <div class="lane" role="row"><span class="nd data" role="cell"><code>render/*.md</code></span><span class="nd code" role="cell"><code>Renderer</code> (Store): one switch case for each kind</span><span class="nd out" role="cell">The text that a session gets as a turn</span></div>
+      <div class="lane" role="row"><span class="nd data" role="cell"><code>example.json</code></span><span class="nd code" role="cell"><code>ViewTests</code>, <code>DesignPageTests</code></span><span class="nd out" role="cell">Unit tests and this page</span></div>
+    </div>
+    <p class="note"><span class="sw data"></span> data file, no build · <span class="sw code"></span> code, needs a build · <span class="sw out"></span> what the user or a session sees</p>
+
+    <h3>The layers</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>Layer</th><th>Where</th><th>Format defined by</th><th>Checked by</th><th>Something new needs</th></tr></thead>
+      <tbody>
+        <tr><td>1. Message fields</td><td><code>schema.json</code></td><td>JSON Schema 2020-12, a standard</td><td>Each post, at runtime</td><td>Files, plus the name in <code>Kinds.All</code></td></tr>
+        <tr><td>2. Routing</td><td><code>meta.json</code></td><td>The C# record <code>TemplateMeta</code> only</td><td>Each post, at runtime</td><td>A file change</td></tr>
+        <tr><td>3. Views</td><td><code>view.json</code></td><td>The C# records <code>ViewSpec</code>, <code>DocumentSpec</code>, <code>PreviewSpec</code>, <code>FieldSpec</code> only</td><td>Unit tests only: each field exists, a title exists</td><td>A file change</td></tr>
+        <tr><td>4. Components</td><td>No file</td><td>The <code>Looks</code> constants, a switch in <code>DocBody.razor</code> and <code>FactValue.razor</code>, and a JavaScript copy in this page</td><td>Nothing. An unknown <code>as</code> shows as plain text</td><td>C#, Razor and JavaScript</td></tr>
+        <tr><td>5. Surfaces</td><td>No file</td><td>Razor components: Open, card, stream row</td><td>bUnit tests</td><td>A C# record, a model and a Razor component</td></tr>
+        <tr><td>6. Session text</td><td><code>render/*.md</code></td><td>A small mustache subset in <code>Render.cs</code></td><td>Nothing checks the placeholders</td><td>A file, but <code>Renderer.cs</code> picks the file by kind</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Inside a view.json</h3>
+    <p>One file for each kind. <code>document</code> is the Open view. <code>preview</code> drives the card and the stream row together.</p>
+    <div class="tw"><pre class="src"><span class="c">// templates/question/view.json</span>
+{
+  "label": "Question", "icon": "q", "tone": "new",      <span class="c">// head of each surface; tone = a color token</span>
+  "document": {                                        <span class="c">// the Open view</span>
+    "title": ["{{question}}"],                         <span class="c">// title templates: the first one with all its fields wins</span>
+    "facts": [                                         <span class="c">// short values in one table</span>
+      { "field": "risk", "label": "Risk", "as": "pill",
+        "tones": { "low": "done", "medium": "pending", "high": "failed" } },
+      { "field": "defaultOption", "label": "Default" }
+    ],
+    "blocks": [                                        <span class="c">// one block for each field, in this order</span>
+      { "field": "context", "label": "Context" },
+      { "field": "snippet", "label": "Snippet", "as": "code" },
+      { "field": "options", "label": "Options", "as": "chips", "mark": "defaultOption" },
+      { "field": "recommendation", "label": "Recommendation", "as": "well" }
+    ]
+  },
+  "preview": {                                         <span class="c">// the card and the stream row</span>
+    "title": ["{{question}}"],
+    "line":  ["{{recommendation}}", "{{context}}"],    <span class="c">// line 3 of the stream row</span>
+    "well":  [{ "field": "recommendation", "label": "Recommendation" },
+              { "field": "context", "label": "Context" }],   <span class="c">// the first field with a value</span>
+    "chips": { "field": "options", "mark": "defaultOption" },
+    "pill":  { "field": "risk", "as": "pill", "tones": { ... } }
+  }
+}</pre></div>
+
+    <h3>The parts of a field spec</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>Key</th><th>Meaning</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><code>field</code></td><td>The schema field to show</td><td><code>"context"</code></td></tr>
+        <tr><td><code>label</code></td><td>The label above the block or left of the fact</td><td><code>"Context"</code></td></tr>
+        <tr><td><code>as</code></td><td>The component. Default: <code>text</code></td><td><code>"chips"</code></td></tr>
+        <tr><td><code>mark</code></td><td>A field whose value is marked in the chips</td><td><code>"defaultOption"</code></td></tr>
+        <tr><td><code>tones</code></td><td>A color token for each value of a pill</td><td><code>{"high": "failed"}</code></td></tr>
+        <tr><td><code>tone</code></td><td>A color token for the whole block</td><td><code>"failed"</code></td></tr>
+        <tr><td><code>render</code></td><td>A field whose value names a render file. The block shows that render</td><td><code>"kind"</code> (notice)</td></tr>
+        <tr><td><code>max</code></td><td>The maximum count of items in a preview list</td><td><code>4</code></td></tr>
+      </tbody>
+    </table></div>
+    <p>A title or a line is a list of templates. <code>{{field}}</code> puts in a value. <code>{{#field}}…{{/field}}</code> shows its content only when the field has a value. <code>{{render:field}}</code> puts in the first line of the render that the field names.</p>
+
+    <h3>The components (looks)</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th><code>as</code></th><th>Shows</th><th>Fits a field of type</th><th>Used by</th></tr></thead>
+      <tbody>
+        <tr><td><code>text</code></td><td>Plain text that keeps line breaks</td><td>string, number, boolean</td><td>most blocks</td></tr>
+        <tr><td><code>code</code></td><td>Mono text in a well</td><td>string</td><td>snippet, branch, folder</td></tr>
+        <tr><td><code>well</code></td><td>Text in a sunken well</td><td>string</td><td>recommendation, direction</td></tr>
+        <tr><td><code>list</code></td><td>A bulleted list</td><td>array of strings</td><td>done, next, blockers</td></tr>
+        <tr><td><code>steps</code></td><td>A numbered list</td><td>array of strings</td><td>plan steps</td></tr>
+        <tr><td><code>chips</code></td><td>Round chips, one marked</td><td>array of strings</td><td>options, skills</td></tr>
+        <tr><td><code>links</code></td><td>Links that open in a new tab</td><td>array of strings</td><td>report links</td></tr>
+        <tr><td><code>pill</code></td><td>A colored state pill</td><td>enum string</td><td>risk, state, verdict</td></tr>
+        <tr><td><code>progress</code></td><td>A bar and a percent</td><td>number 0 to 100</td><td>update progress</td></tr>
+      </tbody>
+    </table></div>
+    <p>The column "Fits a field of type" is a rule in this page only. No code checks it today.</p>
+
+    <h3>What is guaranteed, and when</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>Rule</th><th>When</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>A message body matches its <code>schema.json</code></td><td>Each post</td><td><code>EventStream.Check</code></td></tr>
+        <tr><td>From, to and reply kind match <code>meta.json</code></td><td>Each post</td><td><code>EventStream.Check</code></td></tr>
+        <tr><td>A view names only fields of its schema, and has a title</td><td>Unit tests</td><td><code>ViewTests</code></td></tr>
+        <tr><td>Each <code>example.json</code> renders a title in both views</td><td>Unit tests</td><td><code>ViewTests</code></td></tr>
+        <tr><td>Each component fits its field type</td><td>Never</td><td>Gap</td></tr>
+        <tr><td><code>view.json</code> and <code>meta.json</code> have no unknown keys</td><td>Never: the reader ignores unknown keys</td><td>Gap</td></tr>
+        <tr><td>Each placeholder of a render is a schema field</td><td>Never</td><td>Gap</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>How easy is it to add something?</h3>
+    <div class="tw"><table class="t">
+      <thead><tr><th>New</th><th>Today</th><th>With the target below</th></tr></thead>
+      <tbody>
+        <tr><td>Template</td><td>4 files plus about 7 code places: <code>Kinds.All</code>, <code>EventKinds</code>, <code>Renderer</code>, <code>Ui.Look</code>, <code>Ui.Classify</code>, <code>tools.ts</code>, the order of this page</td><td>4 files, then <code>orch template add</code></td></tr>
+        <tr><td>Component</td><td>A constant, two Razor switch cases and a JavaScript copy</td><td>One Razor file and one line in <code>looks.json</code></td></tr>
+        <tr><td>Surface</td><td>A C# record, a model and a Razor component</td><td>The same. Surfaces change rarely</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Where each layer lives</h3>
+    <div class="tree">
+      <details open><summary>session-orchestrator/ <span>the project</span></summary>
+        <details open><summary>templates/ <span>data: one folder for each core kind</span></summary>
+          <details><summary>&lt;kind&gt;/schema.json, meta.json, view.json, example.json, render/ <span>the files of one kind</span></summary><span class="d">Only the 10 names of <code>Kinds.All</code> are read.</span></details>
+          <details><summary>_spec/ <span>target: meta.schema.json, view.schema.json, looks.json</span></summary><span class="d">Does not exist yet (Q6).</span></details>
+        </details>
+        <details><summary>src/Orchestrator.Core/Templates/ <span>code: TemplateSet, View.cs (Views, specs, models), Render.cs</span></summary><span class="d">Reads the files and makes the models. No HTML.</span></details>
+        <details><summary>src/Orchestrator.Store/ <span>code: EventStream (checks each post), Renderer (session text)</span></summary></details>
+        <details><summary>src/Orchestrator.Web/Components/Ui/ <span>code: DocBody, CardPreview, EventRow, FactValue (the components and surfaces)</span></summary><span class="d">Target: one file for each component in <code>Ui/Looks/</code>.</span></details>
+        <details><summary>src/Orchestrator.Web/Ui.cs <span>code: card actions, kind icons and labels, by kind</span></summary></details>
+        <details><summary>plugin/hooks/tools.ts <span>code: one MCP tool for each kind, coded by hand</span></summary></details>
+        <details><summary>docs/render-design/page.html <span>this page: a JavaScript copy of the model and the components</span></summary></details>
+      </details>
+      <details><summary>&lt;store&gt;/templates/ <span>target: added templates (Q1)</span></summary></details>
+    </div>
+
+    <h3>Target: one format, one check and one place for each layer</h3>
+    <ol class="flow">
+      <li><b>Spec files.</b> <code>templates/_spec/meta.schema.json</code> and <code>view.schema.json</code>. Each file points to them with <code>$schema</code>, so the editor checks it as you type.</li>
+      <li><b>Component catalog.</b> <code>templates/_spec/looks.json</code> lists each component and the field types that it accepts. The view schema takes its <code>as</code> values from it.</li>
+      <li><b>One Razor file for each component</b> in <code>Ui/Looks/</code>. This page renders the real components with bUnit, so the JavaScript copy goes away.</li>
+      <li><b>Registry.</b> A folder scan of the core and the added templates (tab Registry).</li>
+      <li><b>One check.</b> <code>orch template check</code> and the unit tests use the same spec files.</li>
+    </ol>
+  </section>
+
+  <section class="doc-part tab" id="findings">
     <h2>TEMPLATE REVIEW (F1)</h2>
     <p>Result: the 10 templates are complete for the protocol. The main problems are in the looks, not in the data. Each kind band below has its own review notes. This table has the findings that apply to more than one kind.</p>
     <p><span class="tag gap">gap</span> a field or a look is missing · <span class="tag dup">dup</span> the same data is in two places · <span class="tag look">look</span> a change to the look, for discussion</p>
@@ -195,7 +367,7 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
     </table></div>
   </section>
 
-  <section class="doc-part" id="registry">
+  <section class="doc-part tab" id="registry">
     <h2>TEMPLATE REGISTRY</h2>
     <p>Goal: a new template needs only files: <code>schema.json</code>, <code>meta.json</code>, <code>view.json</code> and <code>example.json</code>. No C# change. Today <code>TemplateSet</code> reads only the 10 names in <code>Kinds.All</code>, so a new folder has no effect.</p>
 
@@ -224,13 +396,13 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
     </div>
 
     <h3>Add a template</h3>
-    <ol class="flow">
+    <ul class="oq">
       <li>Write the folder, for example in the scratchpad. <code>orch template new test-result</code> writes a skeleton.</li>
       <li><code>orch template check &lt;folder&gt;</code> runs the checks below.</li>
       <li><code>orch template add &lt;folder&gt;</code> checks again and copies the folder to <code>&lt;store&gt;/templates/test-result/</code>.</li>
       <li>The supervisor sees the change and loads the template set again. The UI shows the kind at once.</li>
       <li>Sessions get the tool <code>mcp__orch__&lt;tool.name&gt;</code> at the next plugin load (hot reload).</li>
-    </ol>
+    </ul>
 
     <h3>Surfaces</h3>
     <div class="tw"><table class="t">
@@ -272,24 +444,28 @@ footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 
     </table></div>
   </section>
 
-  <section class="doc-part" id="questions">
+  <section class="doc-part tab" id="questions">
     <h2>OPEN QUESTIONS</h2>
-    <p>Each question goes to the user queue. The recommendation is in bold.</p>
+    <p>Answer in the chat of the F1 session. The recommendation is in bold. The answers go into <code>docs/decisions.md</code> and on this page.</p>
     <ol class="oq">
       <li><b>Q1. Where do added templates live?</b> <b>In <code>&lt;store&gt;/templates/</code></b>, the store folder <code>~/.orch/templates</code>, or <code>&lt;home&gt;/templates/</code> in the repository.</li>
       <li><b>Q2. Can an added template replace a core template?</b> <b>Only its <code>view.json</code></b>, all files, or no.</li>
       <li><b>Q3. Which surfaces add and remove?</b> <b>CLI to add and remove, API and plugin tool to list</b>, or also API add and remove for a later UI page.</li>
       <li><b>Q4. The look changes X1 to X10 and the notes of each kind.</b> <b>Do all</b>, or name the ones to skip or change.</li>
       <li><b>Q5. A markdown look?</b> <b>Yes, with the Markdig package</b>, or no: keep plain text.</li>
+      <li><b>Q6. Spec files, component catalog and one Razor file for each component (tab How it works, target).</b> <b>Yes, all three</b>, only the spec files, or no.</li>
     </ol>
   </section>
 
+  <section class="tab" id="renders">
+  <p class="lede">The full document and the preview of each kind, with the data of <code>templates/&lt;kind&gt;/example.json</code>. The page reads each <code>view.json</code>: the same spec that the C# model <code>Views</code> uses.</p>
   <nav class="kinds" id="nav" aria-label="Kinds"></nav>
   <div id="kinds"></div>
   <footer>
     <div><b>Not shown.</b> The actions (Accept, Other, Approve, Change, Got it, Reply) come from <code>meta.json</code> card and stay as they are in the A4 views. The forms to make a message are a later part.</div>
     <div><b>Review.</b> The F1 notes under each kind are proposals. They are not built yet.</div>
   </footer>
+  </section>
 </main>
 
 <script type="application/json" id="data">/*DATA*/</script>
@@ -444,4 +620,18 @@ document.getElementById('kinds').innerHTML = order.map(k => {
         <span class="cap" style="margin-top:8px">Preview · row in the stream</span><div class="scr">${rowView(pm)}</div>${specLine(v)}${reviewNotes(k)}</div>
     </div></section>`;
 }).join('');
+// Tabs: the hash names a tab, or a kind band in the Renders tab.
+const TABS = [...document.querySelectorAll('section.tab')];
+function route() {
+  const id = decodeURIComponent(location.hash.slice(1));
+  const target = id ? document.getElementById(id) : null;
+  const tab = target ? (target.classList.contains('tab') ? target : target.closest('section.tab')) : null;
+  const show = tab || TABS[0];
+  TABS.forEach(t => { t.hidden = t !== show; });
+  document.querySelectorAll('#tabs a').forEach(a => { if (a.dataset.tab === show.id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  if (target && target !== show) target.scrollIntoView();
+  else if (tab) window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+route();
 </script>
