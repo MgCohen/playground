@@ -97,7 +97,8 @@ public static class SelfTest
         checks.Add(new Check("desktop-corner", Corner(form, corner), "screenshot of the screen corner with the widget and the tray", corner));
         checks.Add(await Pin(form, web, folder));
         checks.Add(await Drag(form, web));
-        checks.Add(Toggle(form));
+        checks.Add(await Toggle(form));
+        checks.Add(await Grow(form, folder));
         foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
         await File.WriteAllTextAsync(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
         return checks.All(c => c.Pass) ? 0 : 1;
@@ -202,14 +203,61 @@ public static class SelfTest
             $"from {before.X},{before.Y} to {form.Location.X},{form.Location.Y} (expect {before.X + by.Width},{before.Y + by.Height}), saved place {form.Place}, place file {saved}", "");
     }
 
-    /// <summary>The tray icon click: hide, then show again at the saved place.</summary>
-    static Check Toggle(WidgetForm form)
+    /// <summary>The tray icon click: hide, then show again at the saved place. Each change waits for the shrink or the grow.</summary>
+    static async Task<Check> Toggle(WidgetForm form)
     {
         var place = form.Location;
         form.Toggle();
+        var shrinking = form.Visible && form.Growing;
+        await Settle(form);
         var hidden = !form.Visible;
+        var shrink = Frames(form.GrowFrames);
+        var shrinkCount = form.GrowFrames.Count;
         form.Toggle();
-        return new Check("toggle", hidden && form.Visible && form.Location == place, $"hidden {hidden}, visible again {form.Visible} at {form.Location.X},{form.Location.Y}", "");
+        await Settle(form);
+        return new Check("toggle", shrinking && hidden && form.Visible && form.Location == place && shrink.Down,
+            $"shrinks first {shrinking}, hidden {hidden} after {shrinkCount} frames ({shrink.Text}), visible again {form.Visible} at {form.Location.X},{form.Location.Y}", "");
+    }
+
+    /// <summary>
+    /// The widget grows from height 0 at its bottom edge to its full height. The check hides the widget, shows it again,
+    /// and copies the screen corner at three times of the grow. The shown height must go up on each frame and end at the full height.
+    /// </summary>
+    static async Task<Check> Grow(WidgetForm form, string folder)
+    {
+        form.HideWidget();
+        await Settle(form);
+        form.ShowWidget();
+        var pngs = new List<string>();
+        foreach (var at in new[] { 60, 140 })
+        {
+            await Task.Delay(at - (pngs.Count == 0 ? 0 : 60));
+            var png = Path.Combine(folder, $"tray-grow-{pngs.Count + 1}.png");
+            Corner(form, png);
+            pngs.Add(png);
+        }
+        await Settle(form);
+        var last = Path.Combine(folder, "tray-grow-3.png");
+        Corner(form, last);
+        pngs.Add(last);
+        var grow = Frames(form.GrowFrames);
+        var full = form.GrowFrames.Count > 0 && form.GrowFrames[^1] == form.Height;
+        var small = form.GrowFrames.Count > 0 && form.GrowFrames[0] < form.Height / 4;
+        return new Check("grow", grow.Up && full && small && form.GrowFrames.Count >= 5,
+            $"{form.GrowFrames.Count} frames in {WidgetForm.GrowMs} ms, {grow.Text}; starts small {small}, ends at the full height {full}", string.Join(";", pngs));
+    }
+
+    static async Task Settle(WidgetForm form)
+    {
+        for (var i = 0; i < 100 && form.Growing; i++) await Task.Delay(20);
+    }
+
+    static (bool Up, bool Down, string Text) Frames(IReadOnlyList<int> frames)
+    {
+        var up = frames.Count > 1 && frames.Zip(frames.Skip(1)).All(p => p.Second >= p.First);
+        var down = frames.Count > 1 && frames.Zip(frames.Skip(1)).All(p => p.Second <= p.First);
+        var text = frames.Count == 0 ? "no frames" : $"heights {string.Join(" ", frames)}";
+        return (up, down, text);
     }
 
     /// <summary>Copies the bottom right part of the screen: the widget, the margin and the taskbar with the tray.</summary>
