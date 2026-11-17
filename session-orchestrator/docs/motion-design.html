@@ -1,0 +1,636 @@
+<title>Orch Inbox Motion</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a list of motion items. Each item has a live phone-size sample, an option switch and a short spec.
+   Theme: Porcelain Orange of Runner Studio, the same tokens as docs/inbox-design.html. Doto only in headers. */
+:root {
+  --page: #f5f4f1; --page-tx: #1b1a18; --page-mu: #5f5b55; --page-line: #dedbd6;
+  --canvas: #e6e3de; --canvas-tx: #45423d;
+  --surf: #fdfdfc; --text: #1b1a18; --tx2: #3a3834; --muted: #5f5b55; --line-c: rgba(27,26,24,.10);
+  --sunken: #dedbd6; --sunken-tx: #1b1a18; --sunken-mu: #66625c;
+  --accent: #ff6a1a; --on-accent: #1b1a18; --dim: rgba(27,26,24,.10);
+  --done: #23733a; --pending: #8a5a0b; --failed: #b3261e; --new: #1f5fbf;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.63), inset 0 -3px 7px rgba(60,50,40,.05), 0 2px 3px rgba(60,50,40,.06), 0 10px 21px -8px rgba(60,50,40,.24);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.63), 0 2px 6px rgba(60,50,40,.12);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(60,50,40,.18), inset -2px -2px 4px rgba(255,255,255,.57);
+  --sh-glow: 0 0 6px rgba(255,106,26,.25);
+  --scrim: rgba(27,26,24,.38);
+  --shine: rgba(255,255,255,.55);
+  --b-q: #ff6a1a; --b-rev: #6f9cff; --b-rep: #8fd94f; --b-blk: #ff5c5c;
+  --r: 22px; --r-sm: 12px;
+  --ease-out: cubic-bezier(.2,.8,.2,1); --ease-spring: cubic-bezier(.3,1.45,.5,1);
+  --f-disp: Doto, "Cascadia Mono", monospace; --f-body: Inter, system-ui, "Segoe UI", sans-serif; --f-mono: "JetBrains Mono", "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #111113; --page-tx: #f4f3f1; --page-mu: #a8a49d; --page-line: #2b2b2f;
+  --canvas: #161618; --canvas-tx: #cfccc6;
+  --surf: #28282d; --text: #f4f3f1; --tx2: #dcd9d4; --muted: #a8a49d; --line-c: rgba(244,243,241,.10);
+  --sunken: #111113; --sunken-tx: #f4f3f1; --sunken-mu: #9a968f;
+  --accent: #ff6a1a; --on-accent: #111111; --dim: rgba(244,243,241,.10);
+  --done: #7fd18f; --pending: #f0a640; --failed: #f59a9a; --new: #8ab4ff;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 7px rgba(0,0,0,.35), 0 2px 3px rgba(0,0,0,.2), 0 10px 21px -8px rgba(0,0,0,.45);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 6px rgba(0,0,0,.4);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.05);
+  --sh-glow: 0 0 6px rgba(255,106,26,.35); --scrim: rgba(0,0,0,.55); --shine: rgba(255,255,255,.08);
+  --b-q: #ff7a2e; --b-rev: #8ab4ff; --b-rep: #a6e86a; --b-blk: #ff6b6b;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --page: #111113; --page-tx: #f4f3f1; --page-mu: #a8a49d; --page-line: #2b2b2f;
+  --canvas: #161618; --canvas-tx: #cfccc6;
+  --surf: #28282d; --text: #f4f3f1; --tx2: #dcd9d4; --muted: #a8a49d; --line-c: rgba(244,243,241,.10);
+  --sunken: #111113; --sunken-tx: #f4f3f1; --sunken-mu: #9a968f;
+  --accent: #ff6a1a; --on-accent: #111111; --dim: rgba(244,243,241,.10);
+  --done: #7fd18f; --pending: #f0a640; --failed: #f59a9a; --new: #8ab4ff;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 7px rgba(0,0,0,.35), 0 2px 3px rgba(0,0,0,.2), 0 10px 21px -8px rgba(0,0,0,.45);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 6px rgba(0,0,0,.4);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.05);
+  --sh-glow: 0 0 6px rgba(255,106,26,.35); --scrim: rgba(0,0,0,.55); --shine: rgba(255,255,255,.08);
+  --b-q: #ff7a2e; --b-rev: #8ab4ff; --b-rep: #a6e86a; --b-blk: #ff6b6b;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--page-tx); font: 14px/1.5 var(--f-body); }
+main { padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 1120px; margin: 0 auto; }
+h1 { font: 800 34px/1 var(--f-disp); letter-spacing: .02em; margin: 0 0 10px; }
+h2 { font: 800 22px/1.1 var(--f-disp); letter-spacing: .02em; margin: 0; text-wrap: balance; }
+.lede { margin: 0 0 28px; color: var(--page-mu); max-width: 68ch; }
+.tag { font: 500 12px var(--f-mono); color: var(--accent); }
+p { margin: 0; }
+code { font: 12.5px var(--f-mono); }
+
+/* Gap table */
+.tbl-wrap { overflow-x: auto; margin: 0 0 40px; border: 1px solid var(--page-line); border-radius: 14px; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 13px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--page-line); vertical-align: top; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--page-mu); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space: nowrap; }
+
+/* Motion items */
+.item { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 20px 32px; padding: 32px 0; border-top: 1px solid var(--page-line); align-items: start; }
+@media (max-width: 760px) { .item { grid-template-columns: minmax(0, 1fr); } }
+.spec { display: grid; gap: 12px; min-width: 0; }
+.spec .head { display: grid; gap: 4px; }
+.opts { display: grid; gap: 8px; }
+.opt { display: grid; grid-template-columns: 28px 1fr; gap: 2px 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--page-line); }
+.opt b { font: 800 16px/1.2 var(--f-disp); color: var(--accent); grid-row: span 2; }
+.opt .t { font-weight: 600; }
+.opt .d { color: var(--page-mu); font-size: 13px; }
+.opt.rec { border-color: var(--accent); }
+.opt.rec .t::after { content: "recommended"; margin-left: 8px; font: 600 10px var(--f-body); text-transform: uppercase; letter-spacing: .06em; color: var(--accent); }
+.cost { font-size: 12.5px; color: var(--page-mu); }
+
+/* Option switch above each sample */
+.sw { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--sunken); box-shadow: var(--sh-carve); margin-bottom: 10px; }
+.sw button { flex: 1; border: 0; background: none; padding: 7px 4px; border-radius: 9px; font: 600 12px var(--f-body); color: var(--sunken-mu); cursor: pointer; }
+.sw button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-glow); }
+.sw button:focus-visible, .ctl button:focus-visible, .phone button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Phone sample */
+.phone { position: relative; height: 470px; border-radius: 28px; background: var(--canvas); color: var(--text); padding: 14px 12px; overflow: hidden; display: flex; flex-direction: column; gap: 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 20px 40px -20px rgba(0,0,0,.4); font: 13px/1.38 var(--f-body); }
+.phone svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.crd { background: var(--surf); box-shadow: var(--sh-raise); border-radius: var(--r); }
+.well { background: var(--sunken); box-shadow: var(--sh-carve); border-radius: var(--r-sm); color: var(--sunken-tx); }
+.ctl { display: flex; gap: 8px; flex: none; }
+.btn { flex: 1; height: 44px; border: 0; border-radius: var(--r-sm); background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); font: 600 13px var(--f-body); display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+.btn.pri { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow); }
+.btn.sk { flex: 0 0 56px; background: var(--sunken); box-shadow: var(--sh-carve); color: var(--sunken-mu); }
+.sub { font-size: 11.5px; color: var(--muted); }
+.nm { font-weight: 600; }
+.replay { position: absolute; right: 12px; bottom: 12px; z-index: 30; border: 0; border-radius: 999px; padding: 6px 12px; font: 600 11px var(--f-body); background: var(--text); color: var(--canvas); cursor: pointer; }
+
+/* ===== M1-M3: the card pile ===== */
+.pile { position: relative; flex: 1; min-height: 0; }
+.pc { position: absolute; inset: 0 0 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; touch-action: none; user-select: none; cursor: grab;
+  transform: translateY(calc(var(--i) * 8px)) scale(calc(1 - var(--i) * .045)); transform-origin: 50% 100%;
+  z-index: calc(10 - var(--i)); opacity: calc(1 - var(--i) * .22);
+  transition: transform .32s var(--ease-out), opacity .32s var(--ease-out); }
+.pc[style*="--i: 3"], .pc[style*="--i:3"] { opacity: 0; }
+.pc .ring { width: 30px; height: 30px; border-radius: 50%; border: 4px solid var(--c, var(--b-q)); flex: none; }
+.pc .top { display: flex; gap: 10px; align-items: center; }
+.pc h3 { margin: 4px 0 0; font: 600 19px/1.25 var(--f-body); text-wrap: balance; }
+.pc .rec { padding: 10px 12px; font-size: 12.5px; }
+.pc.drag { transition: none; cursor: grabbing; }
+.pc.spring { transition: transform .45s var(--ease-spring); }
+.stamp { position: absolute; top: 16px; padding: 4px 10px; border: 3px solid; border-radius: 10px; font: 800 17px var(--f-disp); background: var(--surf); pointer-events: none; opacity: 0; }
+.stamp.r { right: 14px; color: var(--accent); transform: rotate(8deg); opacity: var(--sr, 0); }
+.stamp.l { left: 14px; color: var(--tx2); transform: rotate(-8deg); opacity: var(--sl, 0); }
+.stamp.d { left: 50%; top: auto; bottom: 36px; transform: translateX(-50%); color: var(--muted); opacity: var(--sd, 0); }
+/* M1 A: fly out in the throw direction */
+.pc.out-r { animation: fly-r .3s var(--ease-out) forwards; }
+.pc.out-l { animation: fly-l .3s var(--ease-out) forwards; }
+@keyframes fly-r { to { transform: translate(var(--fx, 120%), var(--fy, 30px)) rotate(18deg); opacity: 0; } }
+@keyframes fly-l { to { transform: translate(var(--fx, -120%), var(--fy, 30px)) rotate(-18deg); opacity: 0; } }
+/* M1 B: press flat and fade, the stamp stays */
+.pc.press { animation: press .26s ease-in forwards; }
+@keyframes press { 40% { transform: scale(.97); } to { transform: scale(.88) translateY(20px); opacity: 0; } }
+/* M2 A: tuck under. Phase 1 drops the card; JS then puts it at the back, and the transition lifts it into the back slot. */
+.pc.tuck { transition: transform .18s ease-in; transform: translateY(68%) scale(.9) !important; z-index: 0 !important; }
+/* M2 B: drop and fade */
+.pc.sink { animation: sink .24s ease-in forwards; }
+@keyframes sink { to { transform: translateY(40%); opacity: 0; } }
+/* M3 A: the next card rises from the pile; a new card drops in from the top */
+.pc.arrive { animation: arrive .42s var(--ease-spring) both; }
+@keyframes arrive { from { transform: translateY(-40px) scale(.96); opacity: 0; } }
+.pile.fade .pc { transition: opacity .2s; transform: translateY(calc(var(--i) * 8px)) scale(calc(1 - var(--i) * .045)); }
+.pile.now .pc { transition: none; }
+.pile.now .pc.spring { transition: transform .2s ease; }
+
+/* ===== M4: view change ===== */
+.view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.view .t { font: 800 22px/1 var(--f-disp); padding: 4px 6px; }
+.blk { height: 64px; flex: none; }
+.blk.tall { height: 120px; }
+.view.rise { animation: rise .24s var(--ease-out) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+.view.slide-l { animation: slide-l .28s var(--ease-out) both; }
+.view.slide-r { animation: slide-r .28s var(--ease-out) both; }
+@keyframes slide-l { from { opacity: 0; transform: translateX(28px); } }
+@keyframes slide-r { from { opacity: 0; transform: translateX(-28px); } }
+.view.stagger > * { animation: rise .3s var(--ease-out) both; animation-delay: calc(var(--n, 0) * 40ms); }
+.nav { position: relative; display: flex; align-items: center; justify-content: space-around; height: 54px; border-radius: 999px; background: var(--surf); box-shadow: var(--sh-raise); flex: none; }
+.nav button { width: 42px; height: 42px; border: 0; background: none; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.nav button.on { color: var(--text); }
+.nav .home { width: 54px; height: 54px; margin-top: -26px; border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow); }
+.nav .dot { position: absolute; bottom: 4px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--accent); left: var(--dx, 50%); transition: left .3s var(--ease-spring), opacity .2s; }
+.nav.jump .dot { transition: none; }
+
+/* ===== M5: sheet and toast ===== */
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 20; }
+.sheet { position: absolute; left: 6px; right: 6px; bottom: 6px; z-index: 21; padding: 12px 14px 14px; border-radius: 24px; display: grid; gap: 10px; }
+.grab { width: 40px; height: 5px; border-radius: 3px; background: var(--dim); justify-self: center; }
+.ta { height: 70px; padding: 10px; color: var(--sunken-mu); }
+.anim .scrim { animation: fade .22s ease both; }
+.anim .sheet { animation: up .34s var(--ease-out) both; }
+.anim .closing .scrim { animation: fade .2s ease reverse both; }
+.anim .closing .sheet { animation: down .22s ease-in both; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes up { from { transform: translateY(105%); } }
+@keyframes down { to { transform: translateY(105%); } }
+.toast { position: absolute; z-index: 15; left: 12px; right: 12px; top: 12px; border-radius: 14px; background: var(--text); color: var(--canvas); padding: 11px 14px 13px; display: flex; gap: 10px; align-items: center; overflow: hidden; }
+.toast button { border: 0; background: none; color: var(--accent); font: 700 13px var(--f-body); cursor: pointer; }
+.toast .bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--accent); transform-origin: left; }
+.anim .toast { animation: drop .32s var(--ease-spring) both; }
+.anim .toast .bar { animation: count 5s linear both; }
+.anim .toast.closing { animation: lift .2s ease-in both; }
+@keyframes drop { from { transform: translateY(-140%); } }
+@keyframes lift { to { transform: translateY(-140%); opacity: 0; } }
+@keyframes count { to { transform: scaleX(0); } }
+
+/* ===== M6: loading ===== */
+.sk { position: relative; overflow: hidden; }
+.sk::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, var(--shine), transparent); animation: shine 1.3s ease-in-out infinite; }
+@keyframes shine { to { transform: translateX(100%); } }
+.sk-line { height: 10px; border-radius: 5px; background: var(--sunken); box-shadow: var(--sh-carve); }
+.loader { flex: 1; display: grid; place-items: center; }
+.pulse { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); box-shadow: var(--sh-raise), var(--sh-glow); display: grid; place-items: center; color: var(--on-accent); animation: breathe 1.2s ease-in-out infinite; }
+@keyframes breathe { 50% { transform: scale(.9); box-shadow: var(--sh-raise), 0 0 0 12px color-mix(in srgb, var(--accent) 15%, transparent); } }
+.blank { flex: 1; }
+
+/* ===== M7: small motion ===== */
+.press { transition: transform .08s, box-shadow .08s; }
+.press:active { transform: translateY(1px) scale(.98); box-shadow: var(--sh-carve); }
+.ringcard { display: flex; gap: 14px; align-items: center; padding: 14px; }
+.ringcard svg.dial { width: 120px; height: 120px; flex: none; }
+.dial circle { fill: none; stroke-width: 14; }
+.dial .seg { stroke-dasharray: var(--len) 400; stroke-dashoffset: var(--off); }
+.go .dial .seg { animation: draw .9s var(--ease-out) both; animation-delay: var(--dl, 0s); }
+@keyframes draw { from { stroke-dasharray: 0 400; } }
+.big { font: 800 30px/1 var(--f-disp); }
+.legend { display: grid; gap: 4px; font-size: 12.5px; }
+.legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.fold { overflow: hidden; }
+.fold summary { list-style: none; padding: 12px 14px; display: flex; justify-content: space-between; cursor: pointer; font-weight: 600; }
+.fold summary::-webkit-details-marker { display: none; }
+.fold .chev { transition: transform .2s var(--ease-out); }
+.fold[open] .chev { transform: rotate(90deg); }
+.fold .rows { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .26s var(--ease-out); }
+.fold[open] .rows { grid-template-rows: 1fr; }
+.fold .rows > div { overflow: hidden; }
+.fold .r { padding: 9px 14px; border-top: 1px solid var(--line-c); }
+
+.still .press, .still .fold .rows, .still .fold .chev { transition: none; }
+.still .press:active { transform: none; box-shadow: var(--sh-raise); }
+
+/* Static fixes */
+.fix { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
+.mini { border-radius: 18px; background: var(--canvas); padding: 10px; display: grid; gap: 8px; color: var(--text); position: relative; height: 210px; overflow: hidden; }
+.mini .cap { font: 600 11px var(--f-body); text-transform: uppercase; letter-spacing: .07em; color: var(--canvas-tx); }
+.mini .row { height: 40px; }
+.mini .stick { position: absolute; left: 10px; right: 10px; bottom: 14px; display: flex; gap: 6px; }
+.mini .stick .btn { height: 38px; }
+.mini .two { display: flex; gap: 6px; }
+.mini .two .btn { height: 34px; font-size: 12px; }
+
+/* Answer box */
+.answer { margin-top: 36px; padding: 18px 20px; border-radius: 18px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); display: grid; gap: 8px; }
+.answer code { display: block; padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); overflow-x: auto; white-space: pre; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; } }
+</style>
+
+<main>
+  <h1>Inbox Motion</h1>
+  <p class="lede">Round 1 of the visual stream. Each item has a live sample with an option switch. Drag the top card in the pile samples. The views, the theme and the layout stay as agreed in A4. CSS does the motion; JavaScript only sets a class or waits for the end of an animation.</p>
+
+  <h2 style="margin-bottom:12px">Gaps from the self-test</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>#</th><th>Gap</th><th>Where</th><th>Item</th></tr></thead>
+    <tbody>
+      <tr><td>G1</td><td>A swipe goes back to the center, then the card is gone. There is no exit.</td><td><code>swipe.js</code> <code>reset()</code></td><td>M1</td></tr>
+      <tr><td>G2</td><td>Skip changes the top card at once. Nothing shows that the card went to the back.</td><td>Cards</td><td>M2</td></tr>
+      <tr><td>G3</td><td>The pile has two fixed ghosts. The next card does not rise, and a new card does not arrive.</td><td>Cards <code>.ghost</code></td><td>M3</td></tr>
+      <tr><td>G4</td><td>A view change replaces the page at once. The nav dot jumps.</td><td><code>MainLayout</code>, <code>AppBar</code></td><td>M4</td></tr>
+      <tr><td>G5</td><td>Sheets, scrim and toast show and hide with no motion. The toast has no sign of the 5 s undo time.</td><td><code>AnswerSheet</code>, <code>FilterSheet</code>, toast</td><td>M5</td></tr>
+      <tr><td>G6</td><td>No loading state. The widget is blank until Blazor starts.</td><td><code>index.html</code>, <code>App.razor</code></td><td>M6</td></tr>
+      <tr><td>G7</td><td>Buttons have no press state. Rings and folds do not animate.</td><td>All views</td><td>M7</td></tr>
+      <tr><td>G8</td><td>On Session status, the sticky Message and Event stream bar covers Stop and Archive.</td><td><code>SessionStatus</code></td><td>S1</td></tr>
+      <tr><td>G9</td><td>The carved skip button looks like a disabled button.</td><td>Cards</td><td>S2</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- M1 -->
+  <section class="item" id="m1">
+    <div>
+      <div class="sw" data-for="p1"><button aria-pressed="true" data-v="a">A fly out</button><button aria-pressed="false" data-v="b">B press</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="phone"><div class="pile" id="p1"></div>
+        <div class="ctl"><button class="btn" data-p="p1" data-a="left">Other</button><button class="btn sk" data-p="p1" data-a="skip" aria-label="Skip"><svg viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button><button class="btn pri" data-p="p1" data-a="right">Accept</button></div></div>
+    </div>
+    <div class="spec">
+      <div class="head"><span class="tag">M1 · G1</span><h2>Swipe release</h2></div>
+      <p>The card must leave in the direction of the act. A short drag goes back with a small spring.</p>
+      <div class="opts">
+        <div class="opt rec"><b>A</b><span class="t">Fly out</span><span class="d">The card keeps the drag speed, turns 18° and fades in 300 ms. A button act throws it the same way.</span></div>
+        <div class="opt"><b>B</b><span class="t">Press</span><span class="d">The stamp stays. The card presses flat and fades in place in 260 ms.</span></div>
+      </div>
+      <p class="cost">Build: <code>swipe.js</code> adds a class and clicks the action button on <code>animationend</code>. About 15 lines more.</p>
+    </div>
+  </section>
+
+  <!-- M2 -->
+  <section class="item" id="m2">
+    <div>
+      <div class="sw" data-for="p2"><button aria-pressed="true" data-v="a">A tuck under</button><button aria-pressed="false" data-v="b">B sink</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="phone"><div class="pile" id="p2"></div>
+        <div class="ctl"><button class="btn" data-p="p2" data-a="left">Other</button><button class="btn sk" data-p="p2" data-a="skip" aria-label="Skip"><svg viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button><button class="btn pri" data-p="p2" data-a="right">Accept</button></div></div>
+    </div>
+    <div class="spec">
+      <div class="head"><span class="tag">M2 · G2</span><h2>Skip to the back</h2></div>
+      <p>Press the down button or drag down. The user must see that the card is still in the pile.</p>
+      <div class="opts">
+        <div class="opt rec"><b>A</b><span class="t">Tuck under</span><span class="d">The card drops 180 ms, goes behind the pile, then rises into the last slot. The next card lifts to the top.</span></div>
+        <div class="opt"><b>B</b><span class="t">Sink</span><span class="d">The card drops and fades in 240 ms. It shows again at the back.</span></div>
+      </div>
+      <p class="cost">Build: two classes and one <code>transitionend</code> in <code>swipe.js</code>. Blazor moves the card in the order after the animation.</p>
+    </div>
+  </section>
+
+  <!-- M3 -->
+  <section class="item" id="m3">
+    <div>
+      <div class="sw" data-for="p3"><button aria-pressed="true" data-v="a">A real pile</button><button aria-pressed="false" data-v="b">B fade</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="phone"><div class="pile" id="p3"></div>
+        <div class="ctl"><button class="btn" data-p="p3" data-a="new">New card arrives</button><button class="btn pri" data-p="p3" data-a="right">Accept</button></div></div>
+    </div>
+    <div class="spec">
+      <div class="head"><span class="tag">M3 · G3</span><h2>Card enter and leave</h2></div>
+      <p>The pile shows up to three real cards. Each card behind is 8 px lower and 4.5 % smaller.</p>
+      <div class="opts">
+        <div class="opt rec"><b>A</b><span class="t">Real pile</span><span class="d">When the top card leaves, each card moves up one slot in 320 ms. A new first card drops in from the top with a small spring.</span></div>
+        <div class="opt"><b>B</b><span class="t">Fade</span><span class="d">The cards change with a 200 ms fade. No position motion.</span></div>
+      </div>
+      <p class="cost">Build: <code>Cards.razor</code> renders the top three cards with <code>@key</code> and <code>--i</code>. CSS only.</p>
+    </div>
+  </section>
+
+  <!-- M4 -->
+  <section class="item" id="m4">
+    <div>
+      <div class="sw" data-for="v4"><button aria-pressed="true" data-v="a">A rise</button><button aria-pressed="false" data-v="b">B slide</button><button aria-pressed="false" data-v="c">C rise + stagger</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="phone"><div class="view" id="v4"></div>
+        <div class="nav" id="n4">
+          <button data-i="0" aria-label="Cards"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="3"/></svg></button>
+          <button data-i="1" aria-label="Stream"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+          <button data-i="2" class="home on" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg></button>
+          <button data-i="3" aria-label="Sessions"><svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v10a2 2 0 0 0 2 2h8M6 12h10"/></svg></button>
+          <button data-i="4" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></button>
+          <span class="dot"></span>
+        </div></div>
+    </div>
+    <div class="spec">
+      <div class="head"><span class="tag">M4 · G4</span><h2>View change</h2></div>
+      <p>Tap the app bar. The header and the app bar stay. Only the page body moves. The nav dot moves to the new item.</p>
+      <div class="opts">
+        <div class="opt rec"><b>A</b><span class="t">Rise</span><span class="d">The new page fades in and rises 10 px in 240 ms. Calm, and the same for each view.</span></div>
+        <div class="opt"><b>B</b><span class="t">Slide</span><span class="d">The page slides 28 px from the side of the tapped item. It shows the place in the app bar.</span></div>
+        <div class="opt"><b>C</b><span class="t">Rise and stagger</span><span class="d">Rise, but each block starts 40 ms after the block above it. More motion.</span></div>
+      </div>
+      <p class="cost">Build: a <code>@key</code> on the page in <code>MainLayout</code> and one CSS animation. B needs the old and new index (small C#).</p>
+    </div>
+  </section>
+
+  <!-- M5 -->
+  <section class="item" id="m5">
+    <div>
+      <div class="sw" data-for="s5"><button aria-pressed="true" data-v="a">A motion</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="phone anim" id="s5">
+        <div class="crd" style="padding:14px;flex:none"><div class="nm">Put the filters in a side bar or in a top bar?</div><div class="sub">A4 Inbox views · now</div></div>
+        <div class="crd blk"></div><div class="crd blk"></div>
+        <div style="flex:1"></div>
+        <div class="ctl"><button class="btn" id="s5-sheet">Open answer sheet</button><button class="btn pri" id="s5-act">Accept</button></div>
+        <div id="s5-layer"></div>
+      </div>
+    </div>
+    <div class="spec">
+      <div class="head"><span class="tag">M5 · G5</span><h2>Sheets and toast</h2></div>
+      <p>The answer sheet and the filter sheet slide up over a fading scrim and slide down when they close. The undo toast drops from the top. A bar under it counts down the 5 s undo time.</p>
+      <div class="opts">
+        <div class="opt rec"><b>A</b><span class="t">Motion</span><span class="d">Sheet up in 340 ms, down in 220 ms. Toast drop with a small spring. Undo bar 5 s, linear.</span></div>
+      </div>
+      <p class="cost">Build: CSS for enter. The close waits for <code>animationend</code> (small JavaScript), then Blazor removes the sheet.</p>
+    </div>
+  </section>
+
+  <!-- M6 -->
+  <section class="item" id="m6">
+    <div>
+      <div class="sw" data-for="l6"><button aria-pressed="true" data-v="a">A skeleton</button><button aria-pressed="false" data-v="b">B home pulse</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="phone" id="l6"></div>
+    </div>
+    <div class="spec">
+      <div class="head"><span class="tag">M6 · G6</span><h2>Loading states</h2></div>
+      <p>The sample loads for 1.6 s, then shows the Home view. Press Replay to see it again.</p>
+      <div class="opts">
+        <div class="opt rec"><b>A</b><span class="t">Skeleton</span><span class="d">Raised blocks in the place of the real cards, with carved lines and a slow shine. The content then fades in.</span></div>
+        <div class="opt"><b>B</b><span class="t">Home pulse</span><span class="d">The orange home circle in the center breathes until the app is ready.</span></div>
+      </div>
+      <p class="cost">Build: static HTML in <code>index.html</code> and <code>App.razor</code> before Blazor starts. Blazor replaces it. CSS only.</p>
+    </div>
+  </section>
+
+  <!-- M7 -->
+  <section class="item" id="m7">
+    <div>
+      <div class="sw" data-for="k7"><button aria-pressed="true" data-v="a">A all</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="phone go" id="k7">
+        <div class="crd ringcard">
+          <svg class="dial" viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="60" cy="60" r="46" stroke="var(--sunken)"/>
+            <g transform="rotate(-90 60 60)">
+              <circle class="seg" cx="60" cy="60" r="46" stroke="var(--b-q)" style="--len:144;--off:0;--dl:0s"/>
+              <circle class="seg" cx="60" cy="60" r="46" stroke="var(--b-rev)" style="--len:36;--off:-144;--dl:.12s"/>
+              <circle class="seg" cx="60" cy="60" r="46" stroke="var(--b-rep)" style="--len:72;--off:-180;--dl:.2s"/>
+              <circle class="seg" cx="60" cy="60" r="46" stroke="var(--b-blk)" style="--len:37;--off:-252;--dl:.28s"/>
+            </g>
+            <text x="60" y="68" text-anchor="middle" class="big" fill="var(--text)" id="k7-n">8</text>
+          </svg>
+          <div class="legend"><span><i style="background:var(--b-q)"></i>Questions 4</span><span><i style="background:var(--b-rev)"></i>Reviews 1</span><span><i style="background:var(--b-rep)"></i>Reports 2</span><span><i style="background:var(--b-blk)"></i>Blocked 1</span></div>
+        </div>
+        <details class="crd fold"><summary>Active sessions · 4 <svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="rows"><div><div class="r">Pattern engine spike</div><div class="r">A4 Inbox views</div><div class="r">T1 Desktop tray app</div></div></div></details>
+        <div class="ctl"><button class="btn press">Other</button><button class="btn pri press">Accept</button></div>
+        <button class="replay" id="k7-r">Replay</button>
+      </div>
+    </div>
+    <div class="spec">
+      <div class="head"><span class="tag">M7 · G7</span><h2>Small motion</h2></div>
+      <ul style="margin:0;padding-left:18px;display:grid;gap:6px">
+        <li><b>Press:</b> a raised button goes into the surface on press (80 ms).</li>
+        <li><b>Ring draw:</b> the Home ring and the session rings draw their arcs on first show (900 ms, each type 80 ms later).</li>
+        <li><b>Fold:</b> a fold opens its height and turns the chevron (260 ms).</li>
+      </ul>
+      <div class="opts"><div class="opt rec"><b>A</b><span class="t">All three</span><span class="d">You can also pick one or two of them.</span></div></div>
+      <p class="cost">Build: CSS only. The fold uses <code>grid-template-rows</code>.</p>
+    </div>
+  </section>
+
+  <!-- Static fixes -->
+  <section class="item" id="s">
+    <div class="fix">
+      <div><div class="mini"><span class="cap">S1 now</span><div class="crd row"></div><div class="crd row"></div><div class="two"><span class="btn">Stop</span><span class="btn">Archive</span></div>
+        <div class="stick"><span class="btn">Message</span><span class="btn pri">Event stream</span></div></div></div>
+      <div><div class="mini"><span class="cap">S1 proposal</span><div class="crd row"></div><div class="crd row"></div>
+        <div class="two" style="margin-top:auto"><span class="btn">Message</span><span class="btn pri">Event stream</span></div><div class="two"><span class="btn">Stop</span><span class="btn">Archive</span></div></div></div>
+      <div><div class="mini"><span class="cap">S2 now · proposal</span><div style="flex:1"></div>
+        <div class="two"><span class="btn">Other</span><span class="btn sk" style="flex:0 0 56px">↓</span><span class="btn pri">Accept</span></div>
+        <div class="two"><span class="btn">Other</span><span class="btn" style="flex:0 0 56px;color:var(--muted)">↓</span><span class="btn pri">Accept</span></div></div></div>
+    </div>
+    <div class="spec">
+      <div class="head"><span class="tag">S1 · S2</span><h2>Two static fixes</h2></div>
+      <p><b>S1:</b> on Session status, put Message and Event stream in the page flow, above Stop and Archive. Nothing covers the buttons.</p>
+      <p><b>S2:</b> give the skip button the raised look of the other buttons, with a muted icon. It must not look disabled.</p>
+    </div>
+  </section>
+
+  <div class="answer">
+    <h2>How to answer</h2>
+    <p>Name an option for each item, or "no". For example:</p>
+    <code>M1 A, M2 A, M3 A, M4 A, M5 A, M6 A, M7 all, S1 yes, S2 yes</code>
+    <p class="sub">My recommendation is the line above. I build each item as one commit, with a self-test screenshot.</p>
+  </div>
+</main>
+
+<script>
+(function () {
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var deck = [
+    { t: "Put the filters in a side bar or in a top bar?", s: "A4 Inbox views", c: "var(--b-q)", r: "Side bar on the desktop" },
+    { t: "Review: render the Open view from view.json", s: "R2 Render model", c: "var(--b-rev)", r: "3 files, 140 lines" },
+    { t: "The know-how page is current.", s: "Docs cleanup", c: "var(--b-rep)", r: "Done: 4 sections" },
+    { t: "The benchmark needs a sample set.", s: "Pattern engine spike", c: "var(--b-blk)", r: "Blocked since 14:53" },
+    { t: "Which sample set do you want?", s: "Pattern engine spike", c: "var(--b-q)", r: "The 2 000 real patterns" }
+  ];
+  var extra = 0;
+  function cardHtml(d) {
+    return '<div class="top"><span class="ring" style="--c:' + d.c + '"></span><div><div class="nm">' + d.s + '</div><div class="sub">now</div></div></div>' +
+      '<h3>' + d.t + '</h3><div class="well rec">' + d.r + '</div>' +
+      '<span class="stamp r">Accept</span><span class="stamp l">Other</span><span class="stamp d">Skip</span>';
+  }
+  var piles = {};
+  function Pile(el, size) {
+    this.el = el; this.mode = "a"; this.items = deck.slice(0, size); this.busy = false; this.render();
+  }
+  Pile.prototype.render = function (arrive) {
+    var el = this.el, keep = {};
+    el.querySelectorAll(".pc").forEach(function (n) { keep[n.dataset.k] = n; });
+    this.items.forEach(function (d, i) {
+      var n = keep[d.t];
+      if (i > 3) { if (n) n.remove(); return; }
+      if (!n) { n = document.createElement("article"); n.className = "crd pc"; n.dataset.k = d.t; n.innerHTML = cardHtml(d); el.appendChild(n); bindDrag(n, this); if (arrive === d.t) n.classList.add("arrive"); }
+      delete keep[d.t];
+      n.style.setProperty("--i", i);
+    }, this);
+    Object.keys(keep).forEach(function (k) { keep[k].remove(); });
+  };
+  Pile.prototype.top = function () { return this.el.querySelector('.pc[style*="--i: 0"]'); };
+  Pile.prototype.act = function (dir, fx, fy) {
+    if (this.busy) return;
+    var p = this, n = this.top(); if (!n) return;
+    var done = function () { var d = p.items.shift(); p.items.push(d); n.remove(); p.busy = false; p.render(); };
+    if (dir === "skip") return this.skip(n);
+    if (this.mode === "now" || reduce) { done(); return; }
+    this.busy = true;
+    n.classList.remove("drag", "spring");
+    if (this.mode === "b") { n.classList.add("press"); }
+    else {
+      if (fx !== undefined) { n.style.setProperty("--fx", fx + "px"); n.style.setProperty("--fy", fy + "px"); }
+      n.classList.add(dir === "right" ? "out-r" : "out-l");
+    }
+    n.addEventListener("animationend", done, { once: true });
+  };
+  Pile.prototype.skip = function (n) {
+    var p = this;
+    var move = function () { p.items.push(p.items.shift()); p.render(); };
+    if (this.mode === "now" || reduce) { move(); return; }
+    this.busy = true;
+    if (this.mode === "b") {
+      n.classList.add("sink");
+      n.addEventListener("animationend", function () { n.classList.remove("sink"); n.style.opacity = "0"; move(); requestAnimationFrame(function () { n.style.opacity = ""; }); p.busy = false; }, { once: true });
+      return;
+    }
+    n.classList.remove("drag", "spring"); n.style.transform = "";
+    n.classList.add("tuck");
+    setTimeout(function () { move(); n.classList.remove("tuck"); p.busy = false; }, 190);
+  };
+  Pile.prototype.add = function () {
+    extra++;
+    var d = { t: "New question " + extra + ": ship the motion?", s: "E1 App visuals", c: "var(--b-q)", r: "Yes, in small commits" };
+    this.items.unshift(d);
+    this.render(this.mode === "a" ? d.t : null);
+  };
+  function bindDrag(n, p) {
+    var s = null;
+    n.addEventListener("pointerdown", function (e) { if (n.style.getPropertyValue("--i").trim() !== "0" || p.busy) return; s = { x: e.clientX, y: e.clientY, t: Date.now(), id: e.pointerId }; n.setPointerCapture(e.pointerId); n.classList.remove("spring"); n.classList.add("drag"); });
+    n.addEventListener("pointermove", function (e) {
+      if (!s || e.pointerId !== s.id) return;
+      var dx = e.clientX - s.x, dy = Math.max(0, e.clientY - s.y);
+      n.style.transform = "translate(" + dx + "px," + dy + "px) rotate(" + dx / 20 + "deg)";
+      n.style.setProperty("--sr", Math.max(0, Math.min(1, dx / 90)));
+      n.style.setProperty("--sl", Math.max(0, Math.min(1, -dx / 90)));
+      n.style.setProperty("--sd", Math.max(0, Math.min(1, (dy - Math.abs(dx)) / 110)));
+    });
+    function end(e) {
+      if (!s || e.pointerId !== s.id) return;
+      var dx = e.clientX - s.x, dy = e.clientY - s.y; s = null;
+      ["--sr", "--sl", "--sd"].forEach(function (v) { n.style.setProperty(v, 0); });
+      n.classList.remove("drag");
+      // The animation starts from the inline drag transform, so the card leaves from where the finger let go.
+      if (dx > 90 || dx < -90) { p.act(dx > 0 ? "right" : "left", dx + (dx > 0 ? 360 : -360), Math.max(dy, 0) + 60); return; }
+      if (dy > 110 && dy > Math.abs(dx)) { p.act("skip"); return; }
+      if (p.mode !== "now") { n.classList.add("spring"); n.addEventListener("transitionend", function () { n.classList.remove("spring"); }, { once: true }); }
+      n.style.transform = "";
+    }
+    n.addEventListener("pointerup", end); n.addEventListener("pointercancel", end);
+  }
+
+  ["p1", "p2", "p3"].forEach(function (id) { piles[id] = new Pile(document.getElementById(id), id === "p2" ? 3 : 5); });
+  document.querySelectorAll("[data-p]").forEach(function (b) {
+    b.addEventListener("click", function () { var p = piles[b.dataset.p]; if (b.dataset.a === "new") p.add(); else p.act(b.dataset.a); });
+  });
+
+  // Option switches
+  var setters = {
+    p1: function (v) { piles.p1.mode = v; piles.p1.el.className = "pile " + (v === "now" ? "now" : ""); },
+    p2: function (v) { piles.p2.mode = v; piles.p2.el.className = "pile " + (v === "now" ? "now" : ""); },
+    p3: function (v) { piles.p3.mode = v; piles.p3.el.className = "pile " + (v === "b" ? "fade" : v === "now" ? "now" : ""); },
+    v4: function (v) { view.mode = v; document.getElementById("n4").classList.toggle("jump", v === "now"); },
+    s5: function (v) { document.getElementById("s5").classList.toggle("anim", v === "a"); },
+    l6: function (v) { load.mode = v; load.run(); },
+    k7: function (v) { var k = document.getElementById("k7"); k.dataset.mode = v; k.classList.toggle("still", v === "now"); ring(v === "a"); }
+  };
+  document.querySelectorAll(".sw").forEach(function (sw) {
+    sw.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      sw.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      setters[sw.dataset.for](b.dataset.v);
+    });
+  });
+
+  // M4 view change
+  var views = [
+    { t: "Cards", b: ["tall", "tall"] }, { t: "Stream", b: ["", "", "", ""] }, { t: "Home", b: ["tall", "", ""] },
+    { t: "Sessions", b: ["", "", "", "tall"] }, { t: "Settings", b: ["", "", ""] }
+  ];
+  var view = { mode: "a", at: 2, el: document.getElementById("v4") };
+  function showView(i) {
+    var from = view.at; view.at = i;
+    var el = view.el, v = views[i];
+    el.innerHTML = '<div class="t">' + v.t + '</div>' + v.b.map(function (c, n) { return '<div class="crd blk ' + c + '" style="--n:' + (n + 1) + '"></div>'; }).join("");
+    el.className = "view";
+    void el.offsetWidth;
+    if (view.mode === "a") el.classList.add("rise");
+    if (view.mode === "b" && i !== from) el.classList.add(i > from ? "slide-l" : "slide-r");
+    if (view.mode === "c") el.classList.add("rise", "stagger");
+    var nav = document.getElementById("n4");
+    nav.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", +b.dataset.i === i); });
+    var btn = nav.querySelector('[data-i="' + i + '"]'), dot = nav.querySelector(".dot");
+    dot.style.opacity = i === 2 ? 0 : 1;
+    dot.style.setProperty("--dx", (btn.offsetLeft + btn.offsetWidth / 2) + "px");
+  }
+  document.getElementById("n4").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) showView(+b.dataset.i); });
+  showView(2);
+
+  // M5 sheet and toast
+  var layer = document.getElementById("s5-layer"), s5 = document.getElementById("s5"), timer = 0;
+  function closeLayer(node) {
+    if (!s5.classList.contains("anim")) { node.remove(); return; }
+    node.classList.add("closing");
+    node.addEventListener("animationend", function () { node.remove(); }, { once: true });
+  }
+  document.getElementById("s5-sheet").addEventListener("click", function () {
+    var w = document.createElement("div");
+    w.innerHTML = '<div class="scrim"></div><div class="sheet crd"><span class="grab"></span><div class="sub">Your answer</div><div class="nm">Put the filters in a side bar or in a top bar?</div><div class="well ta">Say or type</div><div class="ctl"><button class="btn">Cancel</button><button class="btn pri">Send answer</button></div></div>';
+    layer.appendChild(w);
+    w.addEventListener("click", function (e) { if (e.target.closest(".scrim") || e.target.closest(".btn")) closeLayer(w); });
+  });
+  document.getElementById("s5-act").addEventListener("click", function () {
+    var old = layer.querySelector(".toast"); if (old) old.remove();
+    clearTimeout(timer);
+    var t = document.createElement("div");
+    t.className = "toast"; t.setAttribute("role", "status");
+    t.innerHTML = '<span style="flex:1">Accepted. Sends in 5 s.</span><button>Undo</button><span class="bar"></span>';
+    layer.appendChild(t);
+    t.querySelector("button").addEventListener("click", function () { clearTimeout(timer); closeLayer(t); });
+    timer = setTimeout(function () { closeLayer(t); }, 5000);
+  });
+
+  // M6 loading
+  var load = { mode: "a", el: document.getElementById("l6"), t: 0 };
+  function homeHtml(stagger) {
+    var blocks = ['<div class="crd" style="height:150px;padding:14px;display:flex;gap:14px;align-items:center"><div style="width:110px;height:110px;border-radius:50%;border:16px solid var(--b-q);border-right-color:var(--b-rep);border-bottom-color:var(--b-rev)"></div><div class="legend"><span>Questions 4</span><span>Reviews 1</span><span>Reports 2</span></div></div>',
+      '<div class="crd" style="height:72px;padding:14px"><div class="nm">Pattern engine spike</div><div class="sub">Active sessions · 4 of 6</div></div>',
+      '<div class="crd" style="height:110px;padding:14px"><div class="sub">Events · last 24 h</div></div>'];
+    return '<div class="view' + (stagger ? ' rise stagger' : '') + '"><div class="t" style="--n:0">Home</div>' + blocks.map(function (b, n) { return b.replace('class="crd"', 'class="crd" style="--n:' + (n + 1) + '"'); }).join("") + "</div>";
+  }
+  load.run = function () {
+    clearTimeout(load.t);
+    var el = load.el;
+    if (load.mode === "a") el.innerHTML = '<div class="view"><div class="t">Home</div><div class="crd sk" style="height:150px;padding:18px;display:grid;gap:10px;align-content:center"><div class="sk-line" style="width:60%"></div><div class="sk-line" style="width:40%"></div><div class="sk-line" style="width:50%"></div></div><div class="crd sk" style="height:72px;padding:18px;display:grid;gap:10px"><div class="sk-line" style="width:70%"></div><div class="sk-line" style="width:35%"></div></div><div class="crd sk" style="height:110px"></div></div>';
+    else if (load.mode === "b") el.innerHTML = '<div class="loader"><div class="pulse"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg></div></div>';
+    else el.innerHTML = '<div class="blank"></div>';
+    el.insertAdjacentHTML("beforeend", '<button class="replay">Replay</button>');
+    el.querySelector(".replay").onclick = load.run;
+    load.t = setTimeout(function () {
+      el.innerHTML = homeHtml(load.mode !== "now") + '<button class="replay">Replay</button>';
+      el.querySelector(".replay").onclick = load.run;
+    }, 1600);
+  };
+  load.run();
+
+  // M7 ring draw and count
+  var k7 = document.getElementById("k7");
+  function ring(anim) {
+    k7.classList.remove("go"); void k7.offsetWidth;
+    if (anim) k7.classList.add("go");
+    var n = document.getElementById("k7-n"), i = 0;
+    if (!anim || reduce) { n.textContent = "8"; return; }
+    var id = setInterval(function () { n.textContent = String(++i); if (i >= 8) clearInterval(id); }, 90);
+    n.textContent = "0";
+  }
+  document.getElementById("k7-r").addEventListener("click", function () { ring(k7.dataset.mode !== "now"); });
+  ring(true);
+})();
+</script>
