@@ -66,7 +66,8 @@ svg .arrowa { fill: var(--accent); }
   <div class="eyebrow">Session orchestrator · M4 tunnel</div>
   <h1>Orchestrator Tunnel Plan</h1>
   <div class="summary">
-    <p><strong>Recommendation:</strong> a named Cloudflare Tunnel, run as a Windows service, sends <code>https://orch.&lt;domain&gt;</code> to a second supervisor port. Cloudflare Access signs in one email address before each request.</p>
+    <p><strong>Decision (user, 2026-11-17):</strong> Cloudflare Tunnel + Access, the same as for the runner and the inbox. The build runs on the user's own PC, not on this borrowed PC.</p>
+    <p><strong>Plan:</strong> a named Cloudflare Tunnel, run as a Windows service, sends <code>https://orch.&lt;domain&gt;</code> to a second supervisor port. Cloudflare Access signs in one email address before each request.</p>
     <p>Cost: the domain only, about US$10 to 15 each year. Tunnel and Access Free are US$0 for up to 50 users.</p>
     <p>The supervisor checks the Access token on the tunnel port. Local tools keep port 7777 with no change.</p>
   </div>
@@ -140,7 +141,7 @@ svg .arrowa { fill: var(--accent); }
       <tr><td>WebSockets</td><td>Tunnel has full WebSocket support</td><td>Blazor Server circuits work</td></tr>
       <tr><td>Access token</td><td>Header <code>Cf-Access-Jwt-Assertion</code>, RS256</td><td>The supervisor can check it</td></tr>
       <tr><td>Session length</td><td>Immediate to one month, default 24 h</td><td>Plan: 30 days on the phone</td></tr>
-      <tr><td>Sign-in kinds</td><td>Cloudflare account, one-time PIN, GitHub, passkey</td><td>Open question 2</td></tr>
+      <tr><td>Sign-in kinds</td><td>Cloudflare account, one-time PIN, GitHub, passkey</td><td>Open question 1</td></tr>
       <tr><td>Network</td><td>Outbound UDP or TCP 7844, TCP 443</td><td>No router change</td></tr>
     </table></div>
     <p>The microphone button needs a secure context. The tunnel gives HTTPS, so speech input can work on the real phone. Test it in step 9.</p>
@@ -217,7 +218,7 @@ if (context.Connection.LocalPort == tunnelPort)
       <tr><th>Risk</th><th>Level</th><th>Control</th></tr>
       <tr><td>Access application missing or wrong</td><td><span class="pill bad">High</span></td><td>Access app before the route; JWT check in the supervisor; "Protect with Access" in <code>cloudflared</code></td></tr>
       <tr><td>Stolen email or Cloudflare account</td><td><span class="pill bad">High</span></td><td>MFA on email and Cloudflare; one allowed email</td></tr>
-      <tr><td>Company rules for this PC</td><td><span class="pill bad">High</span></td><td>Open question 4: confirm before the install</td></tr>
+      <tr><td>IT management of this PC</td><td><span class="pill good">Low</span></td><td>No build on this PC; build on the own PC</td></tr>
       <tr><td>Cloudflare decrypts traffic at its edge</td><td><span class="pill warn">Medium</span></td><td>Accept, or use Tailscale</td></tr>
       <tr><td>Phone lost while signed in</td><td><span class="pill warn">Medium</span></td><td>Revoke the session in Zero Trust; sign-out link</td></tr>
       <tr><td>PC asleep or off</td><td><span class="pill warn">Medium</span></td><td>No access; set sleep rules if necessary</td></tr>
@@ -226,10 +227,8 @@ if (context.Connection.LocalPort == tunnelPort)
     </table></div>
     <h2>Open questions</h2>
     <ol>
-      <li>Which option to build: Cloudflare, Tailscale or a Quick Tunnel?</li>
       <li>Which sign-in for Access: Cloudflare account, one-time PIN to email, or GitHub?</li>
       <li>Which domain: buy one at Cloudflare Registrar, or move one that you own?</li>
-      <li>Do the rules for this PC permit a tunnel service?</li>
     </ol>
   </section>
 </div>
