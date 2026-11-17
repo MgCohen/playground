@@ -698,13 +698,13 @@ A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked (
 
 | # | Finding | State |
 |---|---|---|
-| A3-1 | The plugin still writes `blocked.json` in `deliver.ts`. No reader uses it | Open: stream B can remove the two writes. The plugin is out of the A3 scope |
+| A3-1 | The plugin still writes `blocked.json` in `deliver.ts`. No reader uses it | Done in Q1: the two writes are removed |
 | A3-2 | `status.json`, `lease.json`, `heartbeat.txt`, `control.json` and `stack/` are lifecycle or git state, not messages | Kept as files. Stream B owns them |
 | A3-3 | The global `orch` tool on this computer is older than A2 (no `orch init`). A live test must put its own `orch` first in `PATH` | Recorded. The live test used `dotnet tool install --tool-path` in the scratchpad. Install the global tool again after the merge |
 | A3-5 | Request of A4: a card must show when its default applies | Done: `defaultAt` on each card of `GET /api/inbox` and on `Card.DefaultAt`. `DefaultRule.At` is the one rule; `IsDue` uses it. A docs check can still answer before that time |
 | A3-6 | `dotnet test` stopped two times after 22 and 40 tests with "error: 1" and no failed test. The next 3 runs passed (145). A supervisor of the user listens on port 7777 during the runs | Open: watch it. Not reproduced |
 | A3-4 | The inbox order changed a little: the cards are in the id order of the newest envelope of each thread | Accepted |
-| A3-7 | Decision of the user: one message shape for a question. The kinds `decision` and `query` become one kind `question`. The target (`to`) gives the direction. A decision is a possible answer to a question | Open: a separate task after A3 and B2 merge. Only `question` is required; `risk` is required when `defaultOption` is present. The schema file holds this rule, so a change is easy. The task also removes the `blocked.json` writes (A3-1). `StreamQuery` keeps its name |
+| A3-7 | Decision of the user: one message shape for a question. The kinds `decision` and `query` become one kind `question`. The target (`to`) gives the direction. A decision is a possible answer to a question | Done in Q1 (below) |
 
 ## B2 result: lifecycle code (2026-11-17)
 
@@ -862,3 +862,34 @@ Regression found in the fix of item 9, and fixed: the snapshot used the hung tim
 
 Finding B2-9 (open, A2): `FileStore.Report` and `FileStore.OpenDecisions` still copy the full stream (`Events.All()`) at each call, and the snapshot calls them for each session at each tick. An index by session in `EventStream` would fix it. This is the transport of A2, so B2 does not change it.
 Unit tests after the review fixes: 197 of 197 pass (`dotnet test --solution Orchestrator.slnx`).
+
+## Q1 result: one question kind (2026-11-17)
+
+Branch `orch/session-913e5c4c` on top of `orch/integration-a3-b2` (PR #17: A3 + B2, 206 tests pass).
+
+| Part | Result |
+|---|---|
+| Template | `templates/question` replaces `templates/decision` and `templates/query`. The PR renders moved to `question/render/` |
+| Field rule | Only `question` is required. `dependentRequired: { defaultOption: [risk] }` in `schema.json`: the C# post check and the plugin check read it there |
+| Kinds | `EventKinds.Question`; `EventKinds.Questions` = { question }. The stream reads the old kinds `decision` and `query` as `question` (`EventKinds.Current`), so the store version stays 2 |
+| Policy form | `Decision.Kind` is `ask_user` for a question with a risk or a default, else `query`. Only `ask_user` gets a docs check and a default. No risk reads as `high` |
+| Tools | `mcp__orch__ask_user` takes both forms. `mcp__orch__query` is removed. A refused post returns the error text as the tool result |
+| A3-1 | The plugin writes no `blocked.json`. The blocked state is the newest `blocked` envelope; `Blocked.By` comes from its sender |
+| Inbox fields for A4 | No field removed: `id, kind, needs, session, title, envelope, fields, defaultAt`. The value of `kind` is now `question` (was `decision` or `query`). `meta.json` quick fields add `context` |
+| Unit tests | 205 of 205 pass. Two per-kind template cases fewer (one kind fewer), one new test for the field rule |
+
+### Live sum test (scratchpad store, port 7795, plugin of the worktree)
+
+A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked with only `question` and `context` (no risk, no default); the test sent "My answer for Sum child 2 is: 9" to the root, and the root called `mcp__orch__answer`. Child 3 first called `ask_user` with `defaultOption` and no risk, then again with risk `medium`; the policy applied the default 8 after 30 s. The root reported "Total: 44 (27 + 9 + 8)".
+
+| Check | Result |
+|---|---|
+| Only the kind `question` in the stream | ✅ 4 `question` envelopes (2 posts, 2 forwards), no `decision` or `query` |
+| A default with no risk is refused | ✅ tool result "orch: the question was not recorded: question: defaultOption needs the fields risk." No envelope was posted |
+| A question with no default | ✅ no docs check and no default; open until the answer through the root (`via: session:<root>`) |
+| A question with a default | ✅ `answer` from `policy` to the child and to the user; `defaultAt` on the inbox card |
+| Relay and closed notices | ✅ two forwards to the root, two `question-closed` notices |
+| Each envelope to a session got an ack | ✅ 14 of 15; the one with no ack was the `archive-reminder` notice of the last second |
+| Inbox accept | ✅ a `review approve` to child 3, an `ack` for the root report; the inbox is empty after |
+| `blocked.json` | ✅ no file in any session folder |
+
