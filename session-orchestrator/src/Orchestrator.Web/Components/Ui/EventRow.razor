@@ -1,7 +1,7 @@
 @* One row of the stream: the preview of the envelope, from the view.json of its kind. *@
 @inject Board Board
 @{ var f = Board.Fields(Event); var state = Ui.Text(f.GetValueOrDefault("state")); var open = Board.IsOpen(Event); var p = Board.Preview(Event); }
-<div class="tli">
+<div class="tli" data-kind="@Event.Kind">
     <span class="node"><KindRing Kind="@Event.Kind" State="@state" P="@(open ? .5 : 1)" Size="30" /></span>
     <a class="crd row ev" href="events/@Event.Id">
         <span class="grow">

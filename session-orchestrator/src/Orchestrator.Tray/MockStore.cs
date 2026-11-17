@@ -60,7 +60,13 @@ public sealed class MockStore : IDisposable
             ["One record for each query", "One generic record"], "One generic record", "low");
         messages.Answer(queries, shape, "One generic record", Parties.Policy,
             source: new AnswerSource(Parties.Policy) { Reason = "The level low has a timeout of 60 seconds, and no answer came.", OnDefault = OnDefault.None });
-        Report(queries, ReportStates.Done, "The queries have one typed shape. PR #12 is open: https://github.com/MgCohen/playground/pull/12");
+        Report(queries, ReportStates.Done, "The queries have one typed shape. PR #12 is open.",
+            ("done", new[] { "One record for each named query", "The stream page reads the typed shape", "12 new tests" }),
+            ("next", new[] { "Review PR #12" }),
+            ("links", new[] { "https://github.com/MgCohen/playground/pull/12" }));
+        Store.Events.Post(new PostInput(EventKinds.Notice, Parties.Supervisor, Parties.Session(plan), Messages.Fields(
+            ("kind", "question-closed"), ("decision", shape), ("question", "Keep one record for each query, or one generic record?"),
+            ("text", "One generic record"), ("title", "A3 Stream queries"), ("child", queries), ("by", Parties.Policy))) { Session = plan });
         Decision(queries, "Delete the old query helpers now?", "No code uses them after the change.", ["yes", "no"], "no", "low");
 
         var engine = Session("Pattern engine spike", cwd, null, "Test the composition rules of the pattern engine.");
@@ -96,8 +102,8 @@ public sealed class MockStore : IDisposable
     void Update(string id, string step, double progress, string summary) =>
         Store.Events.Post(new PostInput(EventKinds.Update, Parties.Session(id), Parties.User, Messages.Fields(("step", step), ("progress", progress), ("summary", summary))) { Session = id });
 
-    void Report(string id, string state, string summary) =>
-        Store.Events.Post(new PostInput(EventKinds.Report, Parties.Session(id), Parties.User, Messages.Fields(("state", state), ("summary", summary)))
+    void Report(string id, string state, string summary, params (string Key, object? Value)[] more) =>
+        Store.Events.Post(new PostInput(EventKinds.Report, Parties.Session(id), Parties.User, Messages.Fields([("state", state), ("summary", summary), .. more]))
         {
             Session = id,
             Needs = state is ReportStates.Done or ReportStates.Blocked ? Needs.Ack : null,
