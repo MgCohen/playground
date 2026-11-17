@@ -904,8 +904,8 @@ Branch `orch/session-d7cf20ac` on top of Q1 (`orch/session-913e5c4c`). This is a
 | Render model | `Orchestrator.Core.Templates.Views`: `Document(set, kind, fields)` gives a `DocumentModel`, `Preview(set, kind, fields)` gives a `PreviewModel`. `TemplateSet` reads `view.json` into `Template.View` |
 | Looks | A field spec has `as`: `text`, `code`, `well`, `list`, `steps`, `chips`, `links`, `pill` or `progress`. A pill maps each value to a color token (`tones`) |
 | Titles | A title is a list of templates in the `render.md` syntax. The model uses the first one that has all its fields. `{{render:kind}}` is the first line of the render file that the field names (for a notice) |
-| Unit tests | `ViewTests`: one test for each kind with its `example.json`, plus checks that each view names only schema fields and gives a title. 249 of 249 pass |
-| Design page | `docs/render-design/page.html` is the source and `docs/render-design/build.py` builds the page. The build embeds each `view.json`, `example.json` and the inbox tokens of `docs/inbox-design.html` (branch `orch/session-06ade234`) |
+| Unit tests | `ViewTests`: one test for each kind with its `example.json`, plus checks that each view names only schema fields and gives a title. 250 of 250 pass |
+| Design page | `docs/render-design/page.html` is the source, with the inbox tokens of `docs/inbox-design.html` (branch `orch/session-06ade234`). `DesignPageTests` builds `docs/render-design.html` from it and each `view.json`, `example.json` and purpose, and fails if the page is not current. To write the page again: `ORCH_WRITE_DOCS=1 dotnet test --solution Orchestrator.slnx` |
 
 ### Render of each kind
 
@@ -929,6 +929,7 @@ A report with state `blocked` uses the tone `failed` and the icon `alert` (`tone
 - The A4 views do not use the model yet. The integration child replaces `Open.razor` `Rows`, `CardPreview.razor` `Well()` and the kind part of `Ui.Look` with `Views`.
 - `meta.json` `card.quick` and the preview spec overlap. Keep `card` for the actions (accept, refuse) only, and remove `quick` after the views use `Views`.
 - The first sentence of a notice render is not a good title: the question text has a `?`. The model uses the first line.
+- Review of PR #20 (root): no Python build script; the stack allows no new script language. The build step is the C# test `DesignPageTests`.
 - Forms (later part): a form can use the same `view.json` field order and labels, with the input type from `schema.json`.
 
 ### Open questions
