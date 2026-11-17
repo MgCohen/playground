@@ -501,7 +501,7 @@ flowchart LR
 
 Facts from the Cloudflare docs: Tunnel supports WebSockets, so Blazor Server works. `cloudflared` needs only outbound port 7844 and TCP 443. A Quick Tunnel needs no account (`--allowed-mail` adds an email PIN), but its address changes on each start. Tailscale Serve is the private alternative: no domain, but the phone needs the Tailscale app.
 
-User decisions (2026-11-17, `decisions.md`): Cloudflare Tunnel + Access, as for the runner and the inbox. No build on this borrowed PC: it has antivirus and IT management. The build runs on the user's own PC, next month.
+User decisions (2026-11-17, `decisions.md`): Cloudflare Tunnel + Access, as for the runner and the inbox. No build on this borrowed PC: it has antivirus and IT management. The build runs on the user's own PC, next month. The phone can do the same as the tray app (full control). Each client (tray, web, Android) uses the same interfaces for data, so a local store or a remote server is only a swap of the implementation.
 
 The plan uses the Cloudflare account, the domain and the Access sign-in of the runner and the inbox again (user, 2026-11-17). The cost is US$0.
 
