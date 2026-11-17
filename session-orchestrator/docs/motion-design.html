@@ -446,6 +446,23 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 .tweak2 label { display: grid; gap: 4px; font-size: 13px; }
 .tweak2 input[type=range] { width: 100%; accent-color: var(--accent); }
 
+/* S1 v2: corner button + page defaults */
+.ac .defs { display: flex; flex-wrap: wrap; gap: 8px; flex: none; margin-top: 4px; }
+.ac .defs .abtn { flex: 1 1 40%; }
+.ac .defs .abtn.d { flex: 0 1 auto; background: none; box-shadow: none; }
+.ac .defs .gh { width: 100%; font: 600 10.5px var(--f-body); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.ac .cfab { position: absolute; right: 18px; z-index: 7; width: 52px; height: 52px; border: 0; border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow), 0 10px 20px -8px rgba(0,0,0,.45); cursor: pointer; display: grid; place-items: center; transition: transform .25s cubic-bezier(.3,1.4,.5,1), bottom .25s ease; }
+.ac .cfab svg { width: 22px; height: 22px; transition: transform .25s cubic-bezier(.3,1.4,.5,1); }
+.ac .cfab.open svg { transform: rotate(45deg); }
+.ac .cfab .lb { position: absolute; right: 60px; white-space: nowrap; font: 600 11px var(--f-body); color: var(--canvas-tx); background: var(--surf); padding: 3px 8px; border-radius: 999px; box-shadow: var(--sh-raise-sm); pointer-events: none; }
+.ac .cfab.open .lb { display: none; }
+.ac .dial { position: absolute; right: 18px; z-index: 7; display: grid; justify-items: end; gap: 8px; }
+.ac .dial .abtn { flex: none; height: 40px; border-radius: 999px; padding: 0 16px; box-shadow: var(--sh-raise), 0 8px 16px -8px rgba(0,0,0,.4); }
+.ac .dial .abtn.d { background: var(--surf); }
+.ac .asheet .ttl { font: 600 11px var(--f-body); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: 2px 4px 4px; }
+.ac .amenu.corner { top: auto; transform-origin: 100% 100%; }
+.ac.nobar .navx { display: none; }
+
 /* Answer box */
 .answer { margin-top: 36px; padding: 18px 20px; border-radius: 18px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); display: grid; gap: 8px; }
 .answer code { display: block; padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); overflow-x: auto; white-space: pre; }
@@ -605,29 +622,31 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   <!-- Static fixes -->
   <section class="item" id="s1">
     <div>
-      <div class="sw" id="s1-sw"><button aria-pressed="false" data-v="a">A dock</button><button aria-pressed="true" data-v="b">B app bar</button><button aria-pressed="false" data-v="c">C header + main</button><button aria-pressed="false" data-v="d">D in the page</button><button aria-pressed="false" data-v="now">Now</button></div>
+      <div class="sw" id="s1-sw"><button aria-pressed="true" data-v="a">A corner button</button><button aria-pressed="false" data-v="now">Now</button></div>
       <div class="phone ac" id="s1-ph"></div>
       <div class="tweak2">
-        <div class="sw" id="s1-doc" style="margin:0"><button aria-pressed="true" data-v="session">Session status</button><button aria-pressed="false" data-v="card">Card document</button></div>
-        <label for="s1-n">Actions on the page: <b id="s1-n-v">4</b><input id="s1-n" type="range" min="1" max="6" value="4"></label>
+        <div><div class="sub" style="margin-bottom:4px">Page</div>
+          <div class="sw" id="s1-doc" style="margin:0;flex-wrap:wrap"><button aria-pressed="true" data-v="question">Question</button><button aria-pressed="false" data-v="plan">Plan</button><button aria-pressed="false" data-v="report">Report</button><button aria-pressed="false" data-v="review">Review</button><button aria-pressed="false" data-v="session">Session status</button></div></div>
+        <div><div class="sub" style="margin-bottom:4px">Corner button opens as</div>
+          <div class="sw" id="s1-open" style="margin:0"><button aria-pressed="true" data-v="dial">Speed dial</button><button aria-pressed="false" data-v="sheet">Sheet</button><button aria-pressed="false" data-v="menu">Menu</button></div></div>
+        <div><div class="sub" style="margin-bottom:4px">App bar on this page</div>
+          <div class="sw" id="s1-bar" style="margin:0"><button aria-pressed="false" data-v="show">Shown</button><button aria-pressed="true" data-v="hide">Hidden</button></div></div>
+        <div class="vals" id="s1-vals"></div>
       </div>
     </div>
     <div class="spec">
       <div class="head"><span class="tag">S1</span><h2>Page actions</h2></div>
-      <p>A sub-page can have 1 to 6 actions, for example Event stream, Message, Stop and Archive on a session. Today two of them float at the bottom and cover the others. This item is one rule for all pages. Change the number of actions and the page in the sample. Tap "⋯" to see the rest.</p>
-      <p>Each action has a role. The role sets the place, so a new page gets the same layout with no extra work:</p>
+      <p>The Document page is one page for many types: a question, a plan, a report, a review. Each type has its own acts. The Session status page has only fixed acts. Change the page in the sample and tap the corner button.</p>
       <ul class="sub" style="margin:0;padding-left:18px">
-        <li><b>Main:</b> one per page, the most used act (Event stream, Accept). Always visible, in the accent color.</li>
-        <li><b>Other:</b> the normal acts (Message, Other, Skip). Visible while there is space, then in "⋯".</li>
-        <li><b>Danger:</b> acts that stop or remove (Stop, Archive). Never in the first row. They are last, in red, and ask to confirm.</li>
+        <li><b>Type acts</b> (Accept, Approve, Acknowledge…) are in the corner button. A tap opens them as a speed dial, a sheet or a menu. The main act is first. Danger acts (Refuse) are last, in red.</li>
+        <li><b>Page defaults</b> (Open session, Archive) are the same for all types of the page. They are at the end of the page, in the page flow. Danger defaults are quiet red text.</li>
+        <li>A page with no type acts (Session status) has no corner button. Its acts are all page defaults.</li>
+        <li><b>App bar:</b> each page sets if it shows the app bar. A page that needs the full height hides it. The header path is the way back. The corner button moves down when the app bar is hidden.</li>
       </ul>
       <div class="opts">
-        <div class="opt"><b>A</b><span class="t">Dock</span><span class="d">One bar at the bottom of the page, above the app bar: the main act, one other act and "⋯". The page ends above it, so it covers nothing.</span></div>
-        <div class="opt rec"><b>B</b><span class="t">App bar becomes the actions</span><span class="d">On a sub-page, the header path is the way back, so the app bar shows the page acts around the home ball: up to 3 acts and "⋯". The home ball stays. Compact, and the same place on each page.</span></div>
-        <div class="opt"><b>C</b><span class="t">Header menu + main button</span><span class="d">The main act is a floating button. All other acts are in a "⋯" menu in the header. Clean, but the other acts are always one tap away.</span></div>
-        <div class="opt"><b>D</b><span class="t">In the page</span><span class="d">Nothing floats. The acts are chips under the header, and the danger acts are a group at the end of the page. Simple, but the acts scroll away.</span></div>
+        <div class="opt rec"><b>A</b><span class="t">Corner button + page defaults</span><span class="d">Your design. Pick the open style and the app bar rule in the sample. The value line under the sample has your choice.</span></div>
       </div>
-      <p class="cost">Build: a page gives its acts as a list with a role (main, other, danger). One shared Blazor component places them by the picked option. The roles can later come from the document type.</p>
+      <p class="cost">Build: a page gives two lists: the type acts and the page defaults, each act with a role. A shared corner button component shows the type acts. A layout flag on the page hides the app bar. The type acts can later come from the document type.</p>
     </div>
   </section>
   <section class="item" id="s2">
@@ -649,7 +668,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
   <div class="answer">
     <h2>How to answer</h2>
     <p>Name an option for each item, or "no". For example:</p>
-    <code>M1 A, M2 A, M3 A, M5 A, M6 A, M7 all, S1 B, S2 A</code>
+    <code>M1 A, M2 A, M3 A, M5 A, M6 A, M7 all, S1 A, S2 A</code>
     <p class="sub">Click an option card to pick it. The bar at the bottom shows your picks. Copy it into the chat. My recommendation is the line above.</p>
   </div>
   <div class="picks" data-scope="p-components"><b>Your picks</b><div class="vals"></div><button type="button" class="cp">Copy</button><button type="button" class="ghost rs">Reset</button></div>
@@ -1688,76 +1707,77 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     document.getElementById("s2-ph").dataset.m = b.dataset.v;
   });
   var DOCS = {
-    session: { path: ["Sessions", "orch-bad3"], rows: [["State", "Working · step 4 of 6"], ["Brief", "Improve the look and the motion of the app."], ["Branch", "orch/session-bad3999b"], ["Last event", "Report · 4 min ago"], ["Started", "Today, 14:02"], ["Pull request", "#25 · draft"]],
-      acts: [["Event stream", "p"], ["Stop", "d"], ["Message", "o"], ["Archive", "d"], ["Open folder", "o"], ["Copy branch", "o"]] },
-    card: { path: ["Cards", "Question"], rows: [["Question", "Which sample set do you want?"], ["Session", "Pattern engine spike"], ["Recommended", "The 2 000 real patterns"], ["Context", "The benchmark needs a sample set before the run."], ["Asked", "12 min ago"]],
-      acts: [["Accept", "p"], ["Other", "o"], ["Skip", "o"], ["Dismiss", "d"], ["Open session", "o"], ["Copy text", "o"]] }
+    question: { path: ["Cards", "Question"], rows: [["Question", "Which sample set do you want?"], ["Session", "Pattern engine spike"], ["Recommended", "The 2 000 real patterns"], ["Context", "The benchmark needs a sample set before the run."]],
+      type: [["Accept", "p"], ["Other answer", "o"], ["Skip for now", "o"]], defs: [["Open session", "o"], ["Archive", "d"]] },
+    plan: { path: ["Cards", "Plan"], rows: [["Plan", "Render the Open view from view.json"], ["Session", "R2 Render model"], ["Steps", "4 steps, 3 files"], ["Risk", "Medium: changes the view contract"]],
+      type: [["Approve", "p"], ["Ask for a change", "o"], ["Refuse", "d"]], defs: [["Open session", "o"], ["Archive", "d"]] },
+    report: { path: ["Stream", "Report"], rows: [["Report", "Done: 4 sections"], ["Session", "Docs cleanup"], ["Result", "The know-how page is current."]],
+      type: [["Acknowledge", "p"], ["Reply", "o"]], defs: [["Open session", "o"], ["Archive", "d"]] },
+    review: { path: ["Cards", "Review"], rows: [["Review", "R2 Render model"], ["Pull request", "#31 · 3 files, 140 lines"], ["Checks", "All pass"]],
+      type: [["Approve", "p"], ["Request a change", "o"], ["Open the diff", "o"], ["Refuse", "d"]], defs: [["Open session", "o"], ["Archive", "d"]] },
+    session: { path: ["Sessions", "orch-bad3"], rows: [["State", "Working · step 4 of 6"], ["Brief", "Improve the look and the motion of the app."], ["Branch", "orch/session-bad3999b"], ["Last event", "Report · 4 min ago"], ["Pull request", "#25 · draft"]],
+      type: [], defs: [["Event stream", "p"], ["Message", "o"], ["Stop", "d"], ["Archive", "d"]] }
   };
-  var st = { mode: "b", doc: "session", n: 4 }, ph = document.getElementById("s1-ph");
-  function esc(t) { return t; }
-  function btn(a, cls) { return '<button class="abtn ' + (a[1] === "p" ? "p " : a[1] === "d" ? "d " : "") + (cls || "") + '">' + esc(a[0]) + "</button>"; }
-  function header(menu) {
-    var d = DOCS[st.doc];
-    return '<div class="crd hd2"><div class="path"><button class="cr">' + d.path[0] + '</button><span class="sep">›</span><span class="cur">' + d.path[1] + "</span></div>" +
-      (menu ? '<div class="wb"><button data-more="menu" aria-label="More acts" title="More acts">⋯</button></div>' : "") + "</div>";
-  }
-  function rows() { return DOCS[st.doc].rows.map(function (r) { return '<div class="crd kv"><b>' + r[0] + '</b><span class="sub">' + r[1] + "</span></div>"; }).join(""); }
-  function list(items) {
-    var o = items.filter(function (a) { return a[1] !== "d"; }), d = items.filter(function (a) { return a[1] === "d"; });
-    return o.map(function (a) { return btn(a); }).join("") + (o.length && d.length ? "<hr>" : "") + d.map(function (a) { return btn(a); }).join("");
-  }
+  var st = { mode: "a", doc: "question", open: "dial", bar: "hide" }, ph = document.getElementById("s1-ph");
+  var PLUS = '<svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round"><path d="M12 5v14M5 12h14"/></svg>';
   var NAV = '<div class="navx"><span>Cards</span><span>Sessions</span><span class="ball"></span><span>Stream</span><span>Settings</span></div>';
+  function btn(a, cls) { return '<button class="abtn ' + (a[1] === "p" ? "p " : a[1] === "d" ? "d " : "") + (cls || "") + '">' + a[0] + "</button>"; }
+  function header() { var d = DOCS[st.doc]; return '<div class="crd hd2"><div class="path"><button class="cr">' + d.path[0] + '</button><span class="sep">›</span><span class="cur">' + d.path[1] + "</span></div></div>"; }
+  function rows() { return DOCS[st.doc].rows.map(function (r) { return '<div class="crd kv"><b>' + r[0] + '</b><span class="sub">' + r[1] + "</span></div>"; }).join(""); }
+  function order(list) { return list.filter(function (a) { return a[1] === "p"; }).concat(list.filter(function (a) { return a[1] === "o"; }), list.filter(function (a) { return a[1] === "d"; })); }
+  function fabBottom() { return st.bar === "show" && st.mode !== "now" ? 74 : 18; }
   function render() {
-    var all = DOCS[st.doc].acts.slice(0, st.n);
-    var main = all.filter(function (a) { return a[1] === "p"; }), oth = all.filter(function (a) { return a[1] === "o"; }), dng = all.filter(function (a) { return a[1] === "d"; });
-    var h = "", more = [];
+    var d = DOCS[st.doc], h;
+    ph.classList.toggle("nobar", st.bar === "hide" && st.mode !== "now");
     if (st.mode === "now") {
-      var fl = main.concat(oth).slice(0, 2), rest = all.filter(function (a) { return fl.indexOf(a) < 0; });
-      h = header(false) + '<div class="scroll">' + rows() + (rest.length ? '<div class="row2" style="flex-wrap:wrap">' + rest.map(function (a) { return btn(a, ""); }).join("") + "</div>" : "") + "</div>" +
-        (fl.length ? '<div class="float">' + fl.map(function (a) { return btn(a); }).join("") + "</div>" : "");
-    } else if (st.mode === "a") {
-      var vis = main.concat(oth).slice(0, 2); more = all.filter(function (a) { return vis.indexOf(a) < 0; });
-      h = header(false) + '<div class="scroll">' + rows() + '</div><div class="dock">' + vis.map(function (a) { return btn(a); }).join("") +
-        (more.length ? '<button class="abtn more" data-more="sheet" aria-label="More acts">⋯</button>' : "") + "</div>" + NAV;
-    } else if (st.mode === "b") {
-      var v = main.concat(oth), slots = [], needMore = v.length > 3 || dng.length > 0;
-      var shown = v.slice(0, needMore ? 3 : 4); more = all.filter(function (a) { return shown.indexOf(a) < 0; });
-      var cell = function (a) { return a ? '<button class="' + (a[1] === "p" ? "p" : "") + '"><i></i><span>' + a[0] + "</span></button>" : "<span></span>"; };
-      var left = [shown[0], shown[1]], right = [shown[2], needMore ? null : shown[3]];
-      h = header(false) + '<div class="scroll">' + rows() + '</div><div class="nav3">' + cell(left[0]) + cell(left[1]) + '<span class="ball"></span>' + cell(right[0]) +
-        (needMore ? '<button data-more="sheet"><i></i><span>More</span></button>' : cell(right[1])) + "</div>";
-    } else if (st.mode === "c") {
-      more = oth.concat(dng);
-      h = header(more.length > 0) + '<div class="scroll" style="padding-bottom:60px">' + rows() + "</div>" + (main.length ? '<button class="fab">' + main[0][0] + "</button>" : "") + NAV;
+      var all = order(d.type.concat(d.defs)), fl = all.slice(0, 2), rest = all.slice(2);
+      h = header() + '<div class="scroll">' + rows() + (rest.length ? '<div class="defs">' + rest.map(function (a) { return btn(a); }).join("") + "</div>" : "") + "</div>" +
+        '<div class="float">' + fl.map(function (a) { return btn(a); }).join("") + "</div>" + NAV;
     } else {
-      var chips = main.concat(oth);
-      h = header(false) + '<div class="scroll"><div class="chips">' + chips.map(function (a) { return btn(a); }).join("") + "</div>" + rows() +
-        (dng.length ? '<div class="grp"><div class="gh">Danger</div>' + dng.map(function (a) { return "<button>" + a[0] + "</button>"; }).join("") + "</div>" : "") + "</div>" + NAV;
+      var defs = d.defs, od = defs.filter(function (a) { return a[1] !== "d"; }), dd = defs.filter(function (a) { return a[1] === "d"; });
+      h = header() + '<div class="scroll" style="padding-bottom:' + (d.type.length ? 70 : 8) + 'px">' + rows() +
+        '<div class="defs">' + od.map(function (a) { return btn(a); }).join("") + dd.map(function (a) { return btn(a); }).join("") + "</div></div>" + NAV +
+        (d.type.length ? '<button class="cfab" data-fab aria-label="Acts" style="bottom:' + fabBottom() + 'px">' + PLUS + '<span class="lb">' + d.type.length + " acts</span></button>" : "");
     }
-    ph.innerHTML = h; ph._more = more;
-    var sc = ph.querySelector(".scroll"); if (st.mode === "now") sc.scrollTop = sc.scrollHeight;
-    document.getElementById("s1-n-v").textContent = st.n;
+    ph.innerHTML = h;
+    if (st.mode === "now") { var sc = ph.querySelector(".scroll"); sc.scrollTop = sc.scrollHeight; }
+    document.getElementById("s1-vals").textContent = "S1: corner button opens as " + ({ dial: "speed dial", sheet: "sheet", menu: "menu" })[st.open] + "; app bar " + (st.bar === "hide" ? "hidden" : "shown") + " on document pages";
   }
-  function closeAll() { ph.querySelectorAll(".ascrim, .asheet, .amenu").forEach(function (x) { x.remove(); }); }
-  ph.addEventListener("click", function (e) {
-    if (e.target.closest(".ascrim")) { closeAll(); return; }
-    var m = e.target.closest("[data-more]");
-    if (m) {
-      if (ph.querySelector(".asheet, .amenu")) { closeAll(); return; }
-      if (m.dataset.more === "menu") {
-        var mm = document.createElement("div"); mm.className = "amenu";
-        var o = ph._more.filter(function (a) { return a[1] !== "d"; }), d = ph._more.filter(function (a) { return a[1] === "d"; });
-        mm.innerHTML = o.map(function (a) { return "<button>" + a[0] + "</button>"; }).join("") + (o.length && d.length ? "<hr>" : "") + d.map(function (a) { return '<button class="d">' + a[0] + "</button>"; }).join("");
-        ph.appendChild(mm); return;
-      }
-      var sc = document.createElement("div"); sc.className = "ascrim";
-      var sh = document.createElement("div"); sh.className = "asheet"; sh.innerHTML = list(ph._more);
-      ph.appendChild(sc); ph.appendChild(sh);
-      sh.animate([{ transform: "translateY(100%)" }, { transform: "none" }], { duration: 280, easing: "cubic-bezier(.2,.8,.2,1)" });
-      sc.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
-      return;
+  function closeAll() {
+    ph.querySelectorAll(".ascrim, .asheet, .amenu, .dial").forEach(function (x) { x.remove(); });
+    var f = ph.querySelector(".cfab"); if (f) f.classList.remove("open");
+  }
+  function openActs(f) {
+    var list = order(DOCS[st.doc].type), fb = fabBottom(), ease = "cubic-bezier(.2,.8,.2,1)";
+    f.classList.add("open");
+    if (st.open === "dial") {
+      var sc = document.createElement("div"); sc.className = "ascrim"; sc.style.background = "rgba(0,0,0,.18)";
+      var dl = document.createElement("div"); dl.className = "dial"; dl.style.bottom = (fb + 62) + "px";
+      dl.innerHTML = list.slice().reverse().map(function (a) { return btn(a); }).join("");
+      ph.appendChild(sc); ph.appendChild(dl);
+      Array.prototype.slice.call(dl.children).reverse().forEach(function (el, i) {
+        el.animate([{ transform: "translateY(14px) scale(.85)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 220, delay: i * 40, easing: ease, fill: "backwards" });
+      });
+    } else if (st.open === "sheet") {
+      var sc2 = document.createElement("div"); sc2.className = "ascrim";
+      var sh = document.createElement("div"); sh.className = "asheet";
+      var o = list.filter(function (a) { return a[1] !== "d"; }), dd = list.filter(function (a) { return a[1] === "d"; });
+      sh.innerHTML = '<div class="ttl">' + DOCS[st.doc].path[1] + " acts</div>" + o.map(function (a) { return btn(a); }).join("") + (o.length && dd.length ? "<hr>" : "") + dd.map(function (a) { return btn(a); }).join("");
+      ph.appendChild(sc2); ph.appendChild(sh);
+      sh.animate([{ transform: "translateY(100%)" }, { transform: "none" }], { duration: 280, easing: ease });
+      sc2.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+    } else {
+      var mm = document.createElement("div"); mm.className = "amenu corner"; mm.style.bottom = (fb + 60) + "px";
+      var o2 = list.filter(function (a) { return a[1] !== "d"; }), d2 = list.filter(function (a) { return a[1] === "d"; });
+      mm.innerHTML = o2.map(function (a) { return "<button" + (a[1] === "p" ? ' style="font-weight:700"' : "") + ">" + a[0] + "</button>"; }).join("") + (o2.length && d2.length ? "<hr>" : "") + d2.map(function (a) { return '<button class="d">' + a[0] + "</button>"; }).join("");
+      ph.appendChild(mm);
+      mm.animate([{ transform: "scale(.6)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 200, easing: ease });
     }
-    if (e.target.closest(".asheet button, .amenu button")) closeAll();
+  }
+  ph.addEventListener("click", function (e) {
+    var f = e.target.closest("[data-fab]");
+    if (f) { if (f.classList.contains("open")) closeAll(); else openActs(f); return; }
+    if (e.target.closest(".ascrim") || e.target.closest(".asheet button, .amenu button, .dial button")) closeAll();
   });
   function sw(id, key) {
     document.getElementById(id).addEventListener("click", function (e) {
@@ -1766,8 +1786,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
       st[key] = b.dataset.v; render();
     });
   }
-  sw("s1-sw", "mode"); sw("s1-doc", "doc");
-  document.getElementById("s1-n").addEventListener("input", function () { st.n = +this.value; render(); });
+  sw("s1-sw", "mode"); sw("s1-doc", "doc"); sw("s1-open", "open"); sw("s1-bar", "bar");
   render();
 })();
 </script>
