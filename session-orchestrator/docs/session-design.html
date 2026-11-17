@@ -391,7 +391,7 @@ flowchart LR
     <div class="scroll"><table>
       <thead><tr><th>Axis</th><th>Question</th><th>Values</th></tr></thead>
       <tbody>
-        <tr><td><code>interaction</code></td><td>When does the session end?</td><td><code>task</code>, <code>conversation</code>, <code>one-shot</code></td></tr>
+        <tr><td><code>interaction</code></td><td>When does it report and end?</td><td><code>task</code>, <code>stepwise</code>, <code>conversation</code></td></tr>
         <tr><td><code>autonomy</code></td><td>When does it wait for a person?</td><td><code>auto</code>, <code>ask</code>, <code>approve</code></td></tr>
         <tr><td><code>route</code></td><td>Who gets its questions?</td><td><code>parent</code>, <code>user</code></td></tr>
         <tr><td><code>visibility</code></td><td>Does the user see it in the app?</td><td><code>public</code>, <code>private</code></td></tr>
@@ -400,9 +400,9 @@ flowchart LR
     <div class="scroll"><table>
       <thead><tr><th>Value</th><th>Behavior</th></tr></thead>
       <tbody>
-        <tr><td><code>task</code></td><td>Works to the goal. Reports done when the check passes</td></tr>
+        <tr><td><code>task</code></td><td>Works to the goal. Reports once: done when the check passes</td></tr>
         <tr><td><code>conversation</code></td><td>Talks and waits for the next message. Done only when the user or parent says done</td></tr>
-        <tr><td><code>one-shot</code></td><td>One exchange. Reports done after the answer, with no confirmation</td></tr>
+        <tr><td><code>stepwise</code></td><td>Reports the result of each step at once, with no confirmation. Can take follow-up requests. Done after the last step</td></tr>
         <tr><td><code>auto</code></td><td>Continues alone. Asks only for a high-risk decision</td></tr>
         <tr><td><code>ask</code></td><td>Asks each decision that the policy does not answer</td></tr>
         <tr><td><code>approve</code></td><td>Works alone, then waits for an approval before each step and before done</td></tr>
@@ -421,7 +421,7 @@ flowchart LR
       <tbody>
         <tr><td><code>auto</code></td><td><code>task</code></td><td><code>auto</code></td><td><code>parent</code></td><td><code>public</code></td></tr>
         <tr><td><code>chat</code></td><td><code>conversation</code></td><td><code>ask</code></td><td><code>user</code></td><td><code>public</code></td></tr>
-        <tr><td><code>ask</code></td><td><code>one-shot</code></td><td><code>ask</code></td><td><code>parent</code></td><td><code>public</code></td></tr>
+        <tr><td><code>ask</code></td><td><code>stepwise</code></td><td><code>ask</code></td><td><code>parent</code></td><td><code>public</code></td></tr>
         <tr><td><code>approve</code></td><td><code>task</code></td><td><code>approve</code></td><td><code>parent</code></td><td><code>public</code></td></tr>
       </tbody>
     </table></div>
@@ -468,7 +468,8 @@ flowchart LR
       <thead><tr><th>Call</th><th>Rule <code>reportOn</code></th><th>Result</th></tr></thead>
       <tbody>
         <tr><td><code>report</code> done or blocked</td><td>Contains the state</td><td>Report, relay to the parent</td></tr>
-        <tr><td><code>report</code> working</td><td>No <code>asked</code> open</td><td>Changed to an <code>update</code>, tool says so</td></tr>
+        <tr><td><code>report</code> working</td><td>Interaction <code>stepwise</code></td><td>Report of the step, relay to the parent</td></tr>
+        <tr><td><code>report</code> working</td><td>No <code>asked</code> open, not <code>stepwise</code></td><td>Changed to an <code>update</code>, tool says so</td></tr>
         <tr><td><code>report</code> working</td><td>A status request is open</td><td>Report, closes the request</td></tr>
         <tr><td><code>update</code></td><td>None</td><td>To the user only, not delivered</td></tr>
       </tbody>
