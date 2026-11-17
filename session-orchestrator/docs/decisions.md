@@ -77,3 +77,6 @@ The build session made these decisions while the user was away. The user reviews
 | 2026-11-17 | B2: the stop deadline | The state stays, and the parent gets `child-not-responding` with fault `stop` | The design page has two rules ("30 s, then not responding" and "a deadline changes nothing"). The general rule wins |
 | 2026-11-17 | B2: the earliest point of the import of a new child | A short opening turn (notice `open-in-app`), then the import, then the brief in the app | The app imports only a session with a transcript, and a model turn makes the transcript. A transcript file written by the supervisor would depend on an internal format |
 | 2026-11-17 | B2: is a background session imported? | Yes, with Remote Control off | The user wants each child in the app by default. `background` only keeps it off the phone |
+| 2026-11-17 | C1: the name of a unit of work, such as A or C | **stream** (full name: work stream). The event stream always keeps its full name | User decision in chat |
+| 2026-11-17 | C1: the name of one unit of work inside a stream | **task**. The term "part" is removed | User decision in chat. A task is the work of one session |
+| 2026-11-17 | C1: is "decision" a separate term? | No. It is a **question**. "decision" stays only in old names, such as `mcp__orch__ask_user` ids | User decision in chat |
