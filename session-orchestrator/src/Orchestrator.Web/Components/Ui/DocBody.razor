@@ -1,0 +1,45 @@
+@* The facts and the blocks of a full document, in the order of the view.json of its kind. *@
+@using Orchestrator.Core.Templates
+@if (Doc.Facts.Count > 0)
+{
+    <div class="crd facts">
+        @foreach (var fact in Doc.Facts)
+        {
+            <div class="kv" data-field="@fact.Field"><span class="k">@fact.Label</span><FactValue Fact="fact" /></div>
+        }
+    </div>
+}
+@foreach (var block in Doc.Blocks)
+{
+    <h2 class="gt">@block.Label</h2>
+    <div class="crd pad doc blk @block.As" data-field="@block.Field" style="@(block.Tone is { } t ? $"--st:var(--{t})" : null)">
+        @switch (block.As)
+        {
+            case Looks.Code:
+                <pre class="mono pre">@block.Text</pre>
+                break;
+            case Looks.Well:
+                <div class="well rec pre">@block.Text</div>
+                break;
+            case Looks.List:
+                <ul>@foreach (var item in block.Items) {<li>@item</li>}</ul>
+                break;
+            case Looks.Steps:
+                <ol>@foreach (var item in block.Items) {<li>@item</li>}</ol>
+                break;
+            case Looks.Chips:
+                <div class="chips">@foreach (var item in block.Items) {<span class="chip @(item == block.Marked ? "def" : "")">@item</span>}</div>
+                break;
+            case Looks.Links:
+                <ul>@foreach (var item in block.Items) {<li>@if (Uri.TryCreate(item, UriKind.Absolute, out var u) && u.Scheme.StartsWith("http")) {<a href="@item" target="_blank" rel="noopener">@item</a>} else {<span class="mono">@item</span>}</li>}</ul>
+                break;
+            default:
+                <p class="pre">@block.Text</p>
+                break;
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public DocumentModel Doc { get; set; } = default!;
+}

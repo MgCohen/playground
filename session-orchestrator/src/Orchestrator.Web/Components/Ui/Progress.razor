@@ -1,0 +1,6 @@
+@* A thin progress bar for the percent of an update. *@
+<span class="pbar" role="progressbar" aria-valuenow="@Ui.Num(Value)" aria-valuemin="0" aria-valuemax="100"><i style="width:@(Ui.Num(Math.Clamp(Value, 0, 100)))%"></i></span>
+
+@code {
+    [Parameter] public double Value { get; set; }
+}

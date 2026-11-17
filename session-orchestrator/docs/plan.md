@@ -1010,3 +1010,95 @@ Findings:
 | A4-8 | The supervisor runs a turn in the `Cwd` of the session. A demo store needs a folder that exists | Test note: the seed uses the temp folder |
 | A4-9 | A child report card closes when the root gets its forward (A2-4). With a working root, the user sees few report cards | Open: confirm with the user that a child report needs no card when the root got it |
 | A4-10 | The pile order, the skip order and the filter stay in the UI circuit. A reload goes back to arrival order | Accepted (A4-2) |
+
+## R1 result: document render and preview, first setup (2026-11-17)
+
+Branch `orch/session-d7cf20ac` on top of Q1 (`orch/session-913e5c4c`). This is a first setup for review with the user, not a final design. Design page: `docs/render-design.html` (https://claude.ai/artifact/VvGbvARDGC1gxmfUqT99af).
+
+| Part | Result |
+|---|---|
+| Render spec | `templates/<kind>/view.json` for each of the 10 kinds: `label`, `icon`, `tone`, optional `toneBy`, `document` (title, subtitle, facts, blocks) and `preview` (title, line, well, chips, list, pill, progress) |
+| Render model | `Orchestrator.Core.Templates.Views`: `Document(set, kind, fields)` gives a `DocumentModel`, `Preview(set, kind, fields)` gives a `PreviewModel`. `TemplateSet` reads `view.json` into `Template.View` |
+| Looks | A field spec has `as`: `text`, `code`, `well`, `list`, `steps`, `chips`, `links`, `pill` or `progress`. A pill maps each value to a color token (`tones`) |
+| Titles | A title is a list of templates in the `render.md` syntax. The model uses the first one that has all its fields. `{{render:kind}}` is the first line of the render file that the field names (for a notice) |
+| Unit tests | `ViewTests`: one test for each kind with its `example.json`, plus checks that each view names only schema fields and gives a title. 250 of 250 pass |
+| Design page | `docs/render-design/page.html` is the source, with the inbox tokens of `docs/inbox-design.html` (branch `orch/session-06ade234`). `DesignPageTests` builds `docs/render-design.html` from it and each `view.json`, `example.json` and purpose, and fails if the page is not current. To write the page again: `ORCH_WRITE_DOCS=1 dotnet test --solution Orchestrator.slnx` |
+
+### Render of each kind
+
+| Kind | Document: title · facts · blocks | Preview: title · well or list · pill |
+|---|---|---|
+| question | question · Risk, Default · Context, Snippet, Options (default marked), Recommendation | question · Recommendation, else Context · options chips, Risk |
+| answer | text, subtitle question · By, Then · Reason, Source | text · Reason, else Source · By |
+| review | question, else "Review of <decision>" · Verdict, About · Direction, Branch, Base, Next branch | question · Direction · Verdict |
+| report | summary · State · Blockers (failed tone), Done, Next, Links, Details | summary · Blockers, else Done, else Next · State |
+| update | summary, subtitle step · Progress | summary · progress bar |
+| brief | title · Agent, Folder, Worktree, Background, Allow defaults · Goal, Scope, Done when, Skills | title · Done when |
+| notice | first line of `render/<kind>.md` · Kind, Session, Child · full render text | first line · Kind |
+| plan | title · none · Context, Steps | title · first 4 steps |
+| message | text · none · none | text |
+| ack | "<state> · <by>" · State, By | "<state> · <by>" |
+
+A report with state `blocked` uses the tone `failed` and the icon `alert` (`toneBy`). The stream row uses the preview title and `line`.
+
+### Findings and notes
+
+- The A4 views do not use the model yet. The integration child replaces `Open.razor` `Rows`, `CardPreview.razor` `Well()` and the kind part of `Ui.Look` with `Views`.
+- `meta.json` `card.quick` and the preview spec overlap. Keep `card` for the actions (accept, refuse) only, and remove `quick` after the views use `Views`.
+- The first sentence of a notice render is not a good title: the question text has a `?`. The model uses the first line.
+- Review of PR #20 (root): no Python build script; the stack allows no new script language. The build step is the C# test `DesignPageTests`.
+- Forms (later part): a form can use the same `view.json` field order and labels, with the input type from `schema.json`.
+
+### Review decision (user, 2026-11-17)
+
+Decision `toolu_01N98MJeeSqHZoy8YUVVZEN5`: the user approves the system. Each kind defines its full document and its preview in `view.json`, and the app shows both through `Views`. The look of the blocks is not final. Change it later in `view.json` and in the views, with no change to the system.
+
+### Open questions
+
+- The detailed design review of the blocks (labels, order, wells, notice and ack titles) comes later. It does not stop the integration child.
+
+## R2 result: views on the render model (2026-11-17)
+
+Branch `orch/session-662a3f1d`: I1 (`orch/integration-t1-q1`) with a merge of R1 (`orch/session-d7cf20ac`). The PR base is `orch/integration-t1-q1`.
+
+### What renders from `view.json`
+
+| View | Component | Model | Parts |
+|---|---|---|---|
+| Open | `Pages/Open.razor` with `Ui/DocBody.razor` | `Board.Document(e)` → `Views.Document` | title, subtitle, facts table, blocks in the order of the view |
+| Card in the pile | `Ui/CardPreview.razor` | `CardView.Preview` → `Views.Preview` | title, pill, well (else line), list, progress, chips with the marked default |
+| Stream row | `Ui/EventRow.razor` | `Board.Preview(e)` → `Views.Preview` | title, line, pill, progress |
+
+- The hand-made lists are gone: `Open.razor` `Rows` and `CardPreview.razor` `Well()` and its plan steps.
+- Each look of a block has one case in `DocBody.razor`: text, code, well, list, steps, chips, links. `FactValue.razor` shows a fact or a pill.
+- A kind with no template (for example `blocked`, `pr.open`) has no `view.json`. `Board` makes a model with each field as a text or list block.
+- These parts stay as they were: the card actions and labels by sub-type (`Ui.Classify`), the head label "Decision" (`Ui.KindLabel`), the ring icon and color (`Ui.Look`), the status pill of the row (waits, answered, sent), the default timer ring and the Result list of Open.
+
+### Test results
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 297 pass, 1 skip, 0 fail |
+| `RenderViewTests` (bUnit) | 31 pass: Open, card and row for each of the 10 kinds with `templates/<kind>/example.json`, and the fallback for a kind with no view |
+| Tray self-test (`tray.ps1 -SelfTest`) | 23 of 23 PASS. New: `open-question`, `open-report`, `open-notice`, `row-notice`, `card-question`, `card-report` |
+
+Screenshots (mock mode, desktop corner): `docs/screens/r2-corner-open-question.png`, `r2-corner-open-report.png`, `r2-corner-open-notice.png`, `r2-corner-card-question.png`, `r2-corner-card-report.png`, `r2-corner-row-notice.png`.
+
+### Blocks that look different (accepted, the user tweaks them later)
+
+| Kind | Before | Now |
+|---|---|---|
+| question | Rows: Question, Context, Snippet, Recommendation, Options, Default, Risk, each in its own card | Facts table: Risk (pill), Default. Blocks: Context, Snippet (code), Options (chips, default marked), Recommendation (well in a card) |
+| question (no risk) | Well "Why" on the card | Well "Context" |
+| answer to review (card) | Title: the question. Well "Applied": text and reason | Title: the answer text. Well: Reason, else Source |
+| report | State not shown on Open | State pill in the facts table and on the card |
+| notice | Rows of each field | Title: first line of the render. Facts: Kind, Session, Child. Block: full render text. The title repeats the first line of the block |
+| stream row | Line 2: the envelope subject | Line 2: preview title. Line 3: preview `line`. Pill of the view next to the status pill. Progress bar for an update |
+| links | Plain list | Links open in a new tab and break at any character |
+
+### Findings and notes
+
+- R2-1: a notice goes to a session, never to the user inbox. So a notice has no card in the pile. The screenshot shows its stream row (`r2-corner-row-notice.png`).
+- R2-2: the mock store now has a report with done, next and links, and a `question-closed` notice. The self-test needs them for the render screenshots.
+- R2-3: the well block of Open is a well in a card. It shows a double frame. Accepted for the later block review.
+- R2-4: `Ui.Look` and the `icon` and `tone` of `view.json` overlap. The ring still uses `Ui.Look`, because it also covers kinds with no template. Open question for the block review.

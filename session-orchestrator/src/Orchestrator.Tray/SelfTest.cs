@@ -89,6 +89,10 @@ public static class SelfTest
         await web.ExecuteScriptAsync($"{Go}('')");
         await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
         await Task.Delay(800);
+        checks.AddRange(await RenderShots(form, web, folder));
+        await web.ExecuteScriptAsync($"{Go}('')");
+        await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
+        await Task.Delay(800);
         var corner = Path.Combine(folder, "tray-desktop-corner.png");
         checks.Add(new Check("desktop-corner", Corner(form, corner), "screenshot of the screen corner with the widget and the tray", corner));
         checks.Add(await Pin(form, web, folder));
@@ -124,6 +128,40 @@ public static class SelfTest
             lines.Add($"/{view} last {m[0]:0}{(ok ? "" : " (under the bar)")}");
         }
         return new Check("scroll-end", pass, $"{string.Join(", ", lines)}; each must end above the backdrop and the home button", "");
+    }
+
+    /// <summary>
+    /// R2: the full document (Open) and the preview (the card, or the stream row for a notice) of the question,
+    /// report and notice kinds, from their view.json. Each check takes a screenshot of the desktop corner.
+    /// </summary>
+    static async Task<IEnumerable<Check>> RenderShots(WidgetForm form, CoreWebView2 web, string folder)
+    {
+        var checks = new List<Check>();
+        async Task Shot(string view, string open, string expect)
+        {
+            await web.ExecuteScriptAsync(open);
+            var found = await Until(() => Found(web, expect), TimeSpan.FromSeconds(20)) is not null;
+            await Task.Delay(1200);
+            var png = Path.Combine(folder, $"tray-corner-{view}.png");
+            checks.Add(new Check(view, found && Corner(form, png), $"expect {expect}{(found ? "" : " (not found)")}", png));
+        }
+        // The stream row of the first envelope of a kind; for a report, the one with links.
+        static string Row(string kind, string has = "") => $"[...document.querySelectorAll('.tli[data-kind=\"{kind}\"]')].find(r => r.textContent.includes('{has}'))";
+        foreach (var (kind, has, expect) in new[] { ("question", "filters", ".blk.chips"), ("report", "typed shape", ".blk.links"), ("notice", "", ".facts [data-field=kind]") })
+        {
+            await web.ExecuteScriptAsync($"{Go}('stream')");
+            await Until(() => Found(web, $".tli[data-kind={kind}]"), TimeSpan.FromSeconds(20));
+            if (kind == "notice")
+            {
+                await Shot("row-notice", $"({Row(kind)}).scrollIntoView({{block: 'center'}})", ".tli[data-kind=notice] .t2");
+            }
+            await Shot($"open-{kind}", $"{Go}(({Row(kind, has)}).querySelector('a.ev').getAttribute('href'))", $".doc-page {expect}");
+        }
+        await web.ExecuteScriptAsync($"{Go}('cards')");
+        await Until(() => Found(web, ".pcard"), TimeSpan.FromSeconds(20));
+        await Shot("card-question", "window.scrollTo(0, 0)", ".pcard .chips .chip");
+        await Shot("card-report", "[...document.querySelectorAll('.seg button')].find(b => b.textContent.startsWith('Reports')).click()", ".pcard .pill");
+        return checks;
     }
 
     /// <summary>The pin in the page header: a click removes the pin (TopMost off), a second click sets it again.</summary>

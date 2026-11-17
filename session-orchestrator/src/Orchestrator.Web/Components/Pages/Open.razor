@@ -1,6 +1,7 @@
 @page "/events/{Id}"
 @inherits LiveView
 @inject NavigationManager Nav
+@using Orchestrator.Core.Templates
 
 <PageTitle>@(e?.Subject ?? "Event") · orch</PageTitle>
 
@@ -24,27 +25,13 @@ else
                 <span class="grow"><span class="nm">@Ui.KindLabel(e.Kind, fields)</span><span class="sub ell">@Board.Party(e.From) → @Board.Party(e.To) · @Ui.Clock(Ui.Time(e))</span></span>
                 <Pill Label="@(open ? "waits" : Closed)" State="@(open ? "pending" : "done")" />
             </div>
-            <div class="pad"><p class="q">@(card?.Title ?? e.Subject)</p></div>
+            <div class="pad"><p class="q">@doc.Title</p>@if (doc.Subtitle is { Length: > 0 } sub)
+            {
+                <p class="sub pre subtitle">@sub</p>
+            }</div>
         </div>
 
-        @foreach (var (key, label) in Rows)
-        {
-            var value = fields.GetValueOrDefault(key);
-            if (key is "question" or "summary" or "title" && (card?.Title ?? e.Subject) == Ui.Text(value)) continue;
-            var items = Ui.List(value);
-            if (items.Count == 0) continue;
-            <h2 class="gt">@label</h2>
-            <div class="crd pad doc">
-                @if (value is string text)
-                {
-                    <p class="pre">@text</p>
-                }
-                else
-                {
-                    <ul>@foreach (var item in items) {<li>@item</li>}</ul>
-                }
-            </div>
-        }
+        <DocBody Doc="doc" />
 
         @if (results.Count > 0)
         {
@@ -83,23 +70,10 @@ else
     bool open;
     IReadOnlyDictionary<string, object?> fields = new Dictionary<string, object?>();
     IReadOnlyList<Event> results = [];
+    DocumentModel doc = default!;
     bool? sheet;
 
     string Closed => results.LastOrDefault() is { } r ? r.Kind == EventKinds.Ack ? "seen" : r.Kind == EventKinds.Review ? "reviewed" : "answered" : "closed";
-
-    /// <summary>The field rows of the full render, in the order of the templates.</summary>
-    IEnumerable<(string Key, string Label)> Rows => e?.Kind switch
-    {
-        EventKinds.Question when DecisionKinds.Of(fields) == DecisionKinds.AskUser => [("question", "Question"), ("context", "Context"), ("snippet", "Snippet"), ("recommendation", "Recommendation"), ("options", "Options"), ("defaultOption", "Default"), ("risk", "Risk")],
-        EventKinds.Question => [("question", "Question"), ("context", "Why")],
-        EventKinds.Plan => [("title", "Plan"), ("context", "Context"), ("steps", "Steps")],
-        EventKinds.Report => [("summary", "Summary"), ("done", "Done"), ("next", "Next"), ("blockers", "Blockers"), ("links", "Links"), ("details", "Details")],
-        EventKinds.Answer => [("question", "Question"), ("text", "Answer"), ("reason", "Reason"), ("source", "Source")],
-        EventKinds.Review => [("question", "Question"), ("verdict", "Verdict"), ("text", "Direction"), ("branch", "Branch")],
-        EventKinds.Update => [("step", "Step"), ("summary", "Summary"), ("progress", "Progress")],
-        EventKinds.Brief => [("title", "Title"), ("goal", "Goal"), ("scope", "Scope"), ("doneWhen", "Done when"), ("skills", "Skills"), ("agent", "Agent"), ("cwd", "Folder")],
-        _ => fields.Keys.Select(k => (k, char.ToUpperInvariant(k[0]) + k[1..])),
-    };
 
     static (CardAction, CardAction) Closed2(string kind) => kind switch
     {
@@ -115,6 +89,7 @@ else
         e = Board.Find(Id);
         if (e is null) return;
         fields = Board.Fields(e);
+        doc = Board.Document(e);
         open = Board.IsOpen(e);
         card = Board.Cards().FirstOrDefault(c => c.Id == e.Id);
         results = Board.Results(e);

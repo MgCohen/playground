@@ -1,0 +1,18 @@
+@* One short fact of a document, or the pill of a preview, in the look that its view.json names. *@
+@using Orchestrator.Core.Templates
+@switch (Fact.As)
+{
+    case Looks.Pill:
+        <Pill Label="@Fact.Text" State="@(Fact.Tone ?? "muted")" />
+        break;
+    case Looks.Code:
+        <span class="mono ell">@Fact.Text</span>
+        break;
+    default:
+        <span class="ell">@Fact.Text</span>
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired] public Fact Fact { get; set; } = default!;
+}
