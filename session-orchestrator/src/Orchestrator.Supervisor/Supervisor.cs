@@ -92,11 +92,11 @@ public sealed partial class Supervisor
     // Question relay: each question and plan of a child goes to its parent at once. A report goes at the end of the turn (RelayReports).
 
     static bool IsRelayed(Event e) =>
-        !e.IsForward && Parties.SessionId(e.From) is not null && e.Kind is EventKinds.Decision or EventKinds.Query or EventKinds.Plan;
+        !e.IsForward && Parties.SessionId(e.From) is not null && e.Kind is EventKinds.Question or EventKinds.Plan;
 
     void Relay()
     {
-        var subscription = store.Events.Subscribe(Parties.Supervisor, RelaySubscription, IsRelayed, "decision, query, plan from a child");
+        var subscription = store.Events.Subscribe(Parties.Supervisor, RelaySubscription, IsRelayed, "question, plan from a child");
         foreach (var e in subscription.Next())
         {
             var child = Parties.SessionId(e.From)!;
@@ -152,7 +152,7 @@ public sealed partial class Supervisor
     {
         foreach (var decision in store.OpenDecisions(id))
         {
-            if (decision.Kind != "ask_user") continue;
+            if (decision.Kind != DecisionKinds.AskUser) continue;
             var level = options.Policy.LevelOf(decision.Risk);
             if (level.CheckDocs) StartDocsCheck(id, decision);
             if (!DefaultRule.IsDue(decision, level, now) || store.IsAnswered(id, decision.Id)) continue;

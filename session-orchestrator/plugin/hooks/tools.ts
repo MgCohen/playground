@@ -9,7 +9,6 @@ export const SPAWN_TOOL = 'mcp__orch__spawn_child'
 export const ANSWER_TOOL = 'mcp__orch__answer'
 export const QUESTIONS_TOOL = 'mcp__orch__questions'
 export const SEND_TOOL = 'mcp__orch__send'
-export const QUERY_TOOL = 'mcp__orch__query'
 export const PLAN_TOOL = 'mcp__orch__plan'
 
 async function templateSchema($: any, kind: string): Promise<any> {
@@ -32,18 +31,12 @@ async function riskLevels($: any): Promise<{ names: string[]; text: string }> {
 
 export async function registerTools($: any): Promise<void> {
   const risk = await riskLevels($)
-  const decision = await templateSchema($, 'decision')
-  decision.properties.risk = { ...decision.properties.risk, enum: risk.names, description: `Pick the level that fits. ${risk.text}` }
+  const question = await templateSchema($, 'question')
+  question.properties.risk = { ...question.properties.risk, enum: risk.names, description: `Pick the level that fits. Required with a defaultOption. ${risk.text}` }
   await $.tool.register({
     name: 'ask_user',
-    description: `${await purpose($, 'decision')} Put one decision in the user queue (the decision template). The skill orch:orch-ask tells how to fill it. If no answer comes in time, the orchestrator can apply your default option, by the risk level. The user answers in free text. With waitSeconds 0 it returns PENDING at once: end your turn, and the answer arrives later as a new message that starts with "Answer to decision". With waitSeconds more than 0 it blocks up to that time (580 maximum) and returns ANSWER: <text>, or PENDING when no answer came.`,
-    inputSchema: decision,
-    isDeferred: false,
-  })
-  await $.tool.register({
-    name: 'query',
-    description: `${await purpose($, 'query')} The user answers in free text. It returns at once: end your turn, and the answer arrives later as a new message that starts with "Answer to decision".`,
-    inputSchema: await templateSchema($, 'query'),
+    description: `${await purpose($, 'question')} Put one question in the user queue (the question template). The skill orch:orch-ask tells how to fill it. Only question is required. For a choice, give options, a recommendation, a risk and a defaultOption: if no answer comes in time, the orchestrator can apply the default, by the risk level. For facts, give only the question and the context: there is no default. The user answers in free text. With waitSeconds 0 it returns PENDING at once: end your turn, and the answer arrives later as a new message that starts with "Answer to decision". With waitSeconds more than 0 it blocks up to that time (580 maximum) and returns ANSWER: <text>, or PENDING when no answer came.`,
+    inputSchema: question,
     isDeferred: false,
   })
   await $.tool.register({
@@ -76,7 +69,7 @@ export async function registerTools($: any): Promise<void> {
   await $.tool.register({
     name: 'answer',
     description:
-      'Answer an open question of a child for the user (a decision or query that arrived as "Question from child"). Use only the words of the user, never your own choice. The child gets the answer as a new message.',
+      'Answer an open question of a child for the user (a question that arrived as "Question from child"). Use only the words of the user, never your own choice. The child gets the answer as a new message.',
     inputSchema: {
       type: 'object',
       properties: { decision: { type: 'string', description: 'The decision id of the question.' }, text: { type: 'string', description: 'The answer of the user, in the words of the user.' } },
@@ -149,14 +142,6 @@ export async function send($: any, e: any): Promise<any> {
   return { result: `Sent to ${to}.` }
 }
 
-export async function query($: any, e: any): Promise<any> {
-  if (!S.dir) return { deny: 'orch: this session is not enabled' }
-  const id = String(e.tool_use_id)
-  await post($, 'query', self(), 'user', { question: e.question, context: e.context }, { thread: id, needs: 'answer' })
-  await log($, `query ${id} posted`)
-  return { result: `PENDING: Query ${id} is in the user queue. Write the question in your reply text, then end your turn. The answer arrives as a new message that starts with "Answer to decision ${id}".` }
-}
-
 export async function plan($: any, e: any): Promise<any> {
   if (!S.dir) return { deny: 'orch: this session is not enabled' }
   const id = String(e.tool_use_id)
@@ -218,9 +203,13 @@ export async function askUser($: any, e: any): Promise<any> {
   if (!S.dir) return { deny: 'orch: this session is not enabled' }
   const id = String(e.tool_use_id)
   const wait = Math.max(0, Math.min(MAX_WAIT_SECONDS, Number(e.waitSeconds ?? 0)))
-  const fields = { question: e.question, context: e.context, snippet: e.snippet, options: e.options, recommendation: e.recommendation, risk: e.risk ?? 'medium', defaultOption: e.defaultOption, waitSeconds: wait }
-  await post($, 'decision', self(), 'user', fields, { thread: id, needs: 'answer' })
-  const later = `Decision ${id} is in the user queue. If you have a parent session, it sees the question too. Write the question in your reply text with the "Question" template of the skill orch:orch-reply, so that the user can read it here. The user can answer in this chat or in the parent session. End your turn now. An answer in this chat is your answer. An answer from elsewhere arrives as a new message that starts with "Answer to decision ${id}".`
+  const fields = { question: e.question, context: e.context, snippet: e.snippet, options: e.options, recommendation: e.recommendation, risk: e.risk, defaultOption: e.defaultOption, waitSeconds: wait }
+  try {
+    await post($, 'question', self(), 'user', fields, { thread: id, needs: 'answer' })
+  } catch (error) {
+    return { result: `orch: the question was not recorded: ${error instanceof Error ? error.message : String(error)}. Fix the fields and call the tool again.` }
+  }
+  const later = `Question ${id} is in the user queue. If you have a parent session, it sees the question too. Write the question in your reply text with the "Question" template of the skill orch:orch-reply, so that the user can read it here. The user can answer in this chat or in the parent session. End your turn now. An answer in this chat is your answer. An answer from elsewhere arrives as a new message that starts with "Answer to decision ${id}".`
   if (wait === 0) {
     await log($, `ask_user ${id} pending`)
     return { result: `PENDING: ${later}` }

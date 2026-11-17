@@ -20,7 +20,7 @@ public static class StoreHelpers
 
     /// <summary>A decision of a session, as the ask_user tool posts it.</summary>
     public static Event SaveDecision(this FileStore store, Decision d) =>
-        store.Events.Post(new PostInput(EventKinds.Decision, Parties.Session(d.Session), Parties.User, new Dictionary<string, object?>
+        store.Events.Post(new PostInput(EventKinds.Question, Parties.Session(d.Session), Parties.User, new Dictionary<string, object?>
         {
             ["question"] = d.Question ?? "Q",
             ["context"] = d.Context ?? "context",

@@ -14,7 +14,7 @@ public sealed class ContractTests
     /// <summary>One set of cases for the subject rule. Both bindings must give the same subject.</summary>
     static readonly (string Kind, string Data, string Subject)[] Subjects =
     [
-        ("decision", """{"question":"Which  color\ndo we use?","context":"c"}""", "Which color do we use?"),
+        ("question", """{"question":"Which  color\ndo we use?","context":"c"}""", "Which color do we use?"),
         ("answer", """{"decision":"d","text":"GREEN","by":"user","question":"Q"}""", "GREEN"),
         ("review", """{"decision":"d","verdict":"change","text":"Use SMALL."}""", "change: Use SMALL."),
         ("review", """{"decision":"d","verdict":"approve"}""", "approve"),
@@ -48,9 +48,9 @@ public sealed class ContractTests
     public void The_plugin_refuses_an_unknown_kind()
     {
         var module = new Uri(Path.Combine(Hooks, "stream.ts")).AbsoluteUri;
-        var output = Node($"import {{ knownKind }} from '{module}'; console.log([knownKind('decision'), knownKind('ack'), knownKind('session.input'), knownKind('decisoin'), knownKind('question.forward')].join(','))");
+        var output = Node($"import {{ knownKind }} from '{module}'; console.log([knownKind('question'), knownKind('ack'), knownKind('session.input'), knownKind('decisoin'), knownKind('question.forward'), knownKind('decision'), knownKind('query')].join(','))");
         if (output is null) Assert.Ignore("node is not on the PATH");
-        Assert.That(output, Is.EqualTo("true,true,true,false,false"));
+        Assert.That(output, Is.EqualTo("true,true,true,false,false,false,false"));
     }
 
     [Test]
@@ -80,6 +80,7 @@ public sealed class ContractTests
         Assert.That((d.Context, d.Snippet, d.Recommendation, d.DefaultOption, d.Event), Is.EqualTo(("C", "x = 1", "A: simple", "A", envelope)));
         Assert.That(t.Store.OpenDecisions(id).Single().Options, Is.EqualTo(new[] { "A", "B" }));
         Assert.That(t.Store.Events.Find(envelope)!.Needs, Is.EqualTo(Needs.Answer));
+        Assert.That(t.Store.Events.Find(envelope)!.Kind, Is.EqualTo(EventKinds.Question), "an old store: the kind decision reads as question");
     }
 
     [Test]
@@ -96,7 +97,7 @@ public sealed class ContractTests
     public void Each_plugin_tool_reads_its_input_schema_from_a_template()
     {
         var tools = File.ReadAllText(Path.Combine(Hooks, "tools.ts"));
-        foreach (var kind in new[] { "decision", "query", "plan", "report", "update", "message", "brief" })
+        foreach (var kind in new[] { "question", "plan", "report", "update", "message", "brief" })
             Assert.That(tools, Does.Contain($"templateSchema($, '{kind}')"), kind);
     }
 
@@ -106,7 +107,7 @@ public sealed class ContractTests
         foreach (var file in Directory.GetFiles(Hooks, "*.ts"))
         {
             var text = File.ReadAllText(file);
-            foreach (var old in new[] { "/inbox", "/answers/", "/delivered/", "cursor.txt", "report.json", "update.json", "/decisions/" })
+            foreach (var old in new[] { "/inbox", "/answers/", "/delivered/", "cursor.txt", "report.json", "update.json", "/decisions/", "blocked.json" })
                 Assert.That(text, Does.Not.Contain(old), $"{Path.GetFileName(file)} uses {old}");
         }
     }

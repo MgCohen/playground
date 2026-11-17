@@ -37,9 +37,19 @@ public sealed class TemplateTests
     [Test]
     public void A_missing_required_field_is_refused()
     {
-        var check = Set.Validate(Kinds.Decision, JsonSerializer.Deserialize<JsonElement>("""{"question":"Q","risk":"low"}"""));
+        var check = Set.Validate(Kinds.Question, JsonSerializer.Deserialize<JsonElement>("""{"context":"C","risk":"low"}"""));
         Assert.That(check.IsValid, Is.False);
         Assert.That(check.Message, Does.Contain("required").IgnoreCase);
+    }
+
+    [Test]
+    public void A_question_needs_only_its_text_and_a_risk_with_a_default()
+    {
+        bool Valid(string json) => Set.Validate(Kinds.Question, JsonSerializer.Deserialize<JsonElement>(json)).IsValid;
+        Assert.That(Valid("""{"question":"Which port?"}"""), Is.True, "a question with no default");
+        Assert.That(Valid("""{"question":"Which color?","options":["RED","BLUE"],"risk":"low","defaultOption":"BLUE"}"""), Is.True, "a question with a default");
+        Assert.That(Valid("""{"question":"Which color?","defaultOption":"BLUE"}"""), Is.False, "a default with no risk");
+        Assert.That(Valid("""{"question":"Which color?","risk":"low"}"""), Is.True, "a risk with no default");
     }
 
     [Test]

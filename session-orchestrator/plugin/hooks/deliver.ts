@@ -1,7 +1,7 @@
 // The session deliverer: a reactor of the live session on the stream.
 // A child `orch watch --to session:<id>` pushes one JSON line for each new envelope. When the session is idle,
 // the deliverer lists the envelopes with no ack (with their texts), submits them as one turn, and posts an ack for each.
-import { S, controlState, log, now, orch, writeJson } from './state.ts'
+import { S, controlState, log, orch } from './state.ts'
 import { ack, post, type Envelope } from './stream.ts'
 import { mayDeliver, turnOpen } from './lease.ts'
 
@@ -48,14 +48,12 @@ async function submit($: any, text: string): Promise<boolean> {
   if (result && typeof result.drop === 'string') {
     if (S.dropped !== result.drop) {
       await log($, `submit dropped, will try again: ${result.drop}`)
-      await writeJson($, `${S.dir}/blocked.json`, { reason: result.drop, since: await now($) })
       await post($, 'blocked', `session:${S.id}`, 'user', { text: `delivery blocked: ${result.drop}`, reason: result.drop })
     }
     S.dropped = result.drop
     return false
   }
   if (S.dropped !== '') {
-    await writeJson($, `${S.dir}/blocked.json`, { reason: null, since: await now($) })
     await post($, 'blocked', `session:${S.id}`, 'user', { text: 'delivery unblocked', reason: null })
   }
   S.dropped = ''

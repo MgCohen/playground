@@ -37,8 +37,8 @@ public sealed class StreamTests
     {
         using var t = new Rig();
         var id = t.Create("start");
-        var refused = Assert.Throws<MessageException>(() => t.Store.Events.Post(new PostInput(EventKinds.Decision, Parties.Session(id), Parties.User, Body(("question", "Q?")))))!;
-        Assert.That(refused.Message, Does.Contain("decision").And.Contain("required").IgnoreCase.And.Contain("context"));
+        var refused = Assert.Throws<MessageException>(() => t.Store.Events.Post(new PostInput(EventKinds.Question, Parties.Session(id), Parties.User, Body(("question", "Q?"), ("defaultOption", "A")))))!;
+        Assert.That(refused.Message, Does.Contain("question").And.Contain("risk"));
     }
 
     [Test]

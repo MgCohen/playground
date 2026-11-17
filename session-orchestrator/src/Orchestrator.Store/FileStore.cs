@@ -79,7 +79,7 @@ public sealed class FileStore
         return id;
     }
 
-    // Decisions and queries: envelopes of kind decision or query from a session. The thread is the decision id.
+    // Questions: envelopes of kind question from a session. The thread is the decision id.
 
     public Event? DecisionEvent(string thread) =>
         Events.Thread(thread).FirstOrDefault(e => EventKinds.Questions.Contains(e.Kind) && !e.IsForward);
@@ -97,21 +97,23 @@ public sealed class FileStore
 
     public IReadOnlyList<Decision> OpenDecisions(string id) => Decisions(id).Where(d => !IsAnswered(id, d.Id)).ToList();
 
-    /// <summary>The open decisions and queries of all sessions, oldest first: the named query <see cref="StreamQueries.OpenDecisions"/>.</summary>
+    /// <summary>The open questions of all sessions, oldest first: the named query <see cref="StreamQueries.OpenDecisions"/>.</summary>
     public IReadOnlyList<Decision> OpenDecisions() => this.Query(StreamQueries.OpenDecisions()).Where(e => e.Thread is not null).Select(ToDecision).ToList();
 
     public Decision ToDecision(Event e)
     {
         var f = Events.Fields(e);
+        var risk = f.GetValueOrDefault("risk") as string;
         return new Decision(e.Thread ?? e.Id, Parties.SessionId(e.From) ?? e.Session ?? "")
         {
-            Kind = e.Kind == EventKinds.Query ? "query" : "ask_user",
+            // A question with no risk and no default takes no policy: the old kind query.
+            Kind = risk is null && f.GetValueOrDefault("defaultOption") is null ? DecisionKinds.Query : DecisionKinds.AskUser,
             Question = f.GetValueOrDefault("question") as string,
             Context = f.GetValueOrDefault("context") as string,
             Snippet = f.GetValueOrDefault("snippet") as string,
             Recommendation = f.GetValueOrDefault("recommendation") as string,
             Options = f.GetValueOrDefault("options") is List<object?> list ? list.Select(o => o?.ToString() ?? "").ToArray() : null,
-            Risk = f.GetValueOrDefault("risk") as string ?? (e.Kind == EventKinds.Query ? "high" : "medium"),
+            Risk = risk ?? "high",
             DefaultOption = f.GetValueOrDefault("defaultOption") as string,
             Mode = f.GetValueOrDefault("waitSeconds") is double wait && wait > 0 ? DecisionModes.Wait : DecisionModes.Pending,
             WaitSeconds = f.GetValueOrDefault("waitSeconds") as double? ?? 0,
@@ -121,12 +123,12 @@ public sealed class FileStore
     }
 
     /// <summary>
-    /// The time when the policy answers this open decision with its default, by the rule of the supervisor: only a
-    /// decision (not a query), with a defaultOption, at a level with a timeout. None for any other envelope.
+    /// The time when the policy answers this open question with its default, by the rule of the supervisor: only a
+    /// question with a defaultOption, at a level with a timeout. None for any other envelope.
     /// </summary>
     public DateTimeOffset? DefaultAt(Event e)
     {
-        if (e.Kind != EventKinds.Decision || e.IsForward || e.Thread is null || Events.FirstAnswer(e.Thread) is not null) return null;
+        if (!EventKinds.Questions.Contains(e.Kind) || e.IsForward || e.Thread is null || Events.FirstAnswer(e.Thread) is not null) return null;
         var decision = ToDecision(e);
         return DefaultRule.At(decision, Policy.LevelOf(decision.Risk));
     }

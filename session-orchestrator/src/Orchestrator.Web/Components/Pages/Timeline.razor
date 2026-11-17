@@ -40,8 +40,8 @@
 @code {
     static readonly Dictionary<string, string[]> Groups = new()
     {
-        ["messages"] = [EventKinds.Decision, EventKinds.Answer, EventKinds.Review, EventKinds.Report, EventKinds.Update, EventKinds.Brief, EventKinds.Notice, EventKinds.Message, EventKinds.Query, EventKinds.Plan, EventKinds.Ack],
-        ["needs"] = [EventKinds.Decision, EventKinds.Query, EventKinds.Plan, EventKinds.Report, EventKinds.Blocked, EventKinds.DeliveryBlocked],
+        ["messages"] = [EventKinds.Question, EventKinds.Answer, EventKinds.Review, EventKinds.Report, EventKinds.Update, EventKinds.Brief, EventKinds.Notice, EventKinds.Message, EventKinds.Plan, EventKinds.Ack],
+        ["needs"] = [EventKinds.Question, EventKinds.Plan, EventKinds.Report, EventKinds.Blocked, EventKinds.DeliveryBlocked],
         ["git"] = [EventKinds.BranchCreate, EventKinds.BranchRebase, EventKinds.PrOpen, EventKinds.PrReady, EventKinds.PrClose],
     };
 

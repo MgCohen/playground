@@ -8,8 +8,7 @@ public static class Kinds
 {
     public const string Brief = "brief";
     public const string Message = "message";
-    public const string Decision = "decision";
-    public const string Query = "query";
+    public const string Question = "question";
     public const string Plan = "plan";
     public const string Answer = "answer";
     public const string Review = "review";
@@ -17,7 +16,7 @@ public static class Kinds
     public const string Update = "update";
     public const string Notice = "notice";
     public const string Ack = "ack";
-    public static readonly string[] All = [Brief, Message, Decision, Query, Plan, Answer, Review, Report, Update, Notice, Ack];
+    public static readonly string[] All = [Brief, Message, Question, Plan, Answer, Review, Report, Update, Notice, Ack];
 }
 
 /// <summary>The meta.json of a type: its purpose, who may send it to whom, and the types of its replies.</summary>

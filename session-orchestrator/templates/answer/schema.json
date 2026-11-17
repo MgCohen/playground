@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "answer",
-  "description": "The answer to one decision or query, from the user, the docs or the policy.",
+  "description": "The answer to one question, from the user, the docs or the policy.",
   "type": "object",
   "required": [
     "decision",
@@ -11,7 +11,7 @@
   "properties": {
     "decision": {
       "type": "string",
-      "description": "The id of the decision or query: the thread of the answer.",
+      "description": "The id of the question: the thread of the answer.",
       "minLength": 1
     },
     "text": {
@@ -27,7 +27,7 @@
     },
     "question": {
       "type": "string",
-      "description": "The question of the decision, for the render."
+      "description": "The text of the question, for the render."
     },
     "source": {
       "type": "string",

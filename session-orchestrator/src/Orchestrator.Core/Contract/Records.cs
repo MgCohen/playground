@@ -42,9 +42,20 @@ public sealed record Meta(string Id)
     public bool? RemoteControl { get; init; }
 }
 
+/// <summary>The policy form of a question. The envelope kind is always question.</summary>
+public static class DecisionKinds
+{
+    /// <summary>A question that the policy can answer: it has a risk.</summary>
+    public const string AskUser = "ask_user";
+
+    /// <summary>A question with no risk and no default: only a party answers it.</summary>
+    public const string Query = "query";
+}
+
 public sealed record Decision(string Id, string Session)
 {
-    public string Kind { get; init; } = "ask_user";
+    /// <summary><see cref="DecisionKinds.AskUser"/> for a question with a risk or a default, else <see cref="DecisionKinds.Query"/>.</summary>
+    public string Kind { get; init; } = DecisionKinds.AskUser;
     public string? Question { get; init; }
     public string? Context { get; init; }
     public string? Snippet { get; init; }
