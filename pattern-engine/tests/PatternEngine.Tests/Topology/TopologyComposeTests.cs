@@ -70,12 +70,15 @@ public sealed class TopologyComposeTests
     }
 
     [Test]
-    public void A_pattern_with_no_shared_port_type_fails_the_connect_check()
+    public void The_connect_check_needs_a_value_for_each_input_and_a_link_outside_a_group()
     {
-        Assert.That(TopologyCompose.ConnectVerdict(Set("command_pipeline.plain", "observer.plain")).Ok, Is.True);
-        var lone = TopologyCompose.ConnectVerdict(Set("command_pipeline.plain", "query_handler.plain"));
-        Assert.That(lone.Ok, Is.False);
-        Assert.That(lone.Reason, Does.Contain("query_handler.plain"));
+        Assert.That(TopologyCompose.ConnectVerdict(Set("command_pipeline.plain", "observer.plain"), ["Request"], Catalog).Ok, Is.True);
+        Assert.That(TopologyCompose.ConnectVerdict(Set("command_pipeline.plain", "query_handler.plain", "store.plain"), ["Request"], Catalog).Ok, Is.True, "a system keeps its read side apart");
+        var noValue = TopologyCompose.ConnectVerdict(Set("store.plain"), ["Request"], Catalog);
+        Assert.That(noValue.Reason, Does.Contain("the input event (Event) of store.plain gets no value"));
+        var island = TopologyCompose.ConnectVerdict(Set("query_handler.plain", "query_handler.plain"), ["Request"], Catalog);
+        Assert.That(island.Ok, Is.False, "no group takes two query handlers, so the join needs a link");
+        Assert.That(island.Reason, Does.Contain("no group takes the set"));
     }
 
     [Test]

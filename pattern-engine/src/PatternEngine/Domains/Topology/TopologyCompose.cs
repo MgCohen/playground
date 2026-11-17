@@ -11,6 +11,7 @@ namespace PatternEngine.Domains.Topology;
 /// The compose hooks of topology. The decomposer gives the input types, the output types and the jobs of a request.
 /// Code writes the spec: one io rubric with check code, and one job rubric for the grader for each job.
 /// Code answers the io rubric from the port types of the set, and checks each set: the ports connect, and each loop has an entry (R1).
+/// A spec with no io rubric gives no outside types, so each input must come from another entry.
 /// </summary>
 public sealed class TopologyCompose : IComposeHooks
 {
@@ -97,7 +98,7 @@ public sealed class TopologyCompose : IComposeHooks
             verdicts.Add(IoVerdict(set, given, Plugins.Yaml.Node.Strings(r.Args.GetValueOrDefault("outputs")).ToList()));
         }
 
-        verdicts.Add(ConnectVerdict(set));
+        verdicts.Add(ConnectVerdict(set, given, catalog));
         verdicts.Add(LoopVerdict(set, given));
         return verdicts;
     }
@@ -117,16 +118,28 @@ public sealed class TopologyCompose : IComposeHooks
         return new RubricVerdict(Io, problems.Count == 0, problems.Count == 0 ? $"takes {string.Join(", ", inputs)}, gives {string.Join(", ", outputs)}" : string.Join("; ", problems));
     }
 
-    /// <summary>The ports connect: with two entries or more, each entry gives a type that another entry takes, or takes a type that another entry gives.</summary>
-    public static RubricVerdict ConnectVerdict(IReadOnlyList<CatalogEntry> set)
+    /// <summary>
+    /// The ports connect: each input of each entry gets its type from the request (the given inputs) or from another entry.
+    /// When no group pattern takes the set, the join step makes a flat solution, and there each entry must also link to another entry.
+    /// A group keeps its parts apart by design, for example the read side of a system.
+    /// </summary>
+    public static RubricVerdict ConnectVerdict(IReadOnlyList<CatalogEntry> set, IReadOnlyList<string> given, PatternCatalog catalog)
     {
-        if (set.Count < 2)
+        var problems = new List<string>();
+        foreach (var e in set)
         {
-            return new RubricVerdict(Connect, true, "one pattern");
+            var others = set.Where(o => o != e).SelectMany(o => o.Pattern.Outputs).Select(p => p.Type).ToHashSet(StringComparer.Ordinal);
+            problems.AddRange(e.Pattern.Inputs.Where(i => !given.Contains(i.Type) && !others.Contains(i.Type))
+                .Select(i => $"the input {i.Name} ({i.Type}) of {e.Id} gets no value"));
         }
 
-        var lone = set.Where(e => !set.Any(o => o != e && (Links(e, o) || Links(o, e)))).Select(e => e.Id).ToList();
-        return new RubricVerdict(Connect, lone.Count == 0, lone.Count == 0 ? "each pattern has a port type in common with another pattern" : $"no port of {string.Join(", ", lone)} connects to another pattern of the set");
+        if (set.Count > 1 && Features.Engine.Domain.ComposeDecide.Group(catalog, set) is null)
+        {
+            problems.AddRange(set.Where(e => !set.Any(o => o != e && (Links(e, o) || Links(o, e))))
+                .Select(e => $"{e.Id} has no port type in common with another pattern, and no group takes the set"));
+        }
+
+        return new RubricVerdict(Connect, problems.Count == 0, problems.Count == 0 ? "each input gets a value" : string.Join("; ", problems));
     }
 
     /// <summary>Each loop has an entry: in each cycle of the type links, one pattern takes a type from outside the cycle (a given input or another pattern).</summary>
