@@ -186,7 +186,7 @@ The plugin and the supervisor share one folder for each session: `store/sessions
 | `blocked.json` | Plugin, supervisor | `{ reason, since, by }`. `reason` is `null` when the session is not blocked. `by: supervisor` for failed supervisor turns; no `by` for the stop latch that the plugin found. The plugin also posts `blocked` at the stop latch |
 | `state.json` | Supervisor | The lifecycle state: `{ state, since, requested, inferred, guard, fault, waitReason, reminded, remoteControlAsked, history }` (below) |
 | `state-check.json` | Supervisor | `{ state, reason, at, error }`: the last answer of the fallback agent `orch:state-checker` |
-| `forgotten.json` | Supervisor | `{ report, nudged, notified }`: the nudge of a forgotten session for its last report id, and the notice to the parent |
+| `forgotten.json` | Supervisor | `{ report, nudged, notified }`: one forgotten episode. `report` is `<last report id>|<last input id>` (an input from another party than the supervisor). A new report or a new input starts a new episode: one nudge, then one notice to the parent. The file is deleted when the session goes from forgotten to done, stopped or archived |
 | `docs-checks/<id>.json` | Supervisor | `{ answered, answer, source, at }`: the cache of the docs check of one decision |
 | `turn.json` | Supervisor | `{ event, from, at, ended }`: the `turn.start` of the last supervisor turn, its senders, and the end time. The plugin uses `from` as the sender of `session.input` |
 | `last-output.json` | Plugin | `{ event, at }`: the last `session.output`. `turn.end` links it in `refs.output` |

@@ -101,6 +101,34 @@ public sealed class LifecycleStateTests
     }
 
     [Test]
+    public async Task The_nudge_turn_goes_forgotten_to_running_and_a_new_input_starts_a_new_forgotten_episode()
+    {
+        using var t = new Rig();
+        var parent = await t.Started();
+        var child = t.Create("work", "child", parent);
+        await Cycles(t, 3);
+        t.Clock.Advance(TimeSpan.FromMinutes(16));
+        t.Runner.Gate = new TaskCompletionSource();
+        t.Supervisor.Tick();
+        t.Supervisor.Tick();
+        t.Runner.Gate.SetResult();
+        t.Runner.Gate = null;
+        await t.Supervisor.Idle();
+        await Cycles(t, 2);
+        var guards = t.Store.Events.All().Where(e => e.Kind == EventKinds.SessionState && e.Session == child).Select(e => t.Store.Events.Fields(e).GetValueOrDefault("guard") as string).ToList();
+        Assert.That(guards, Does.Contain("nudge-turn"), "review of PR #14, item 3");
+        Assert.That(guards, Does.Not.Contain("remembered"));
+        t.Clock.Advance(TimeSpan.FromMinutes(16));
+        await Cycles(t, 2);
+        Assert.That(NoticesTo(t, parent).Count(k => k == "child-forgotten"), Is.EqualTo(1));
+        t.Store.Send(child, "one more task", Parties.Session(parent));
+        await Cycles(t, 3);
+        t.Clock.Advance(TimeSpan.FromMinutes(16));
+        await Cycles(t, 2);
+        Assert.That(NoticesTo(t, child).Count(k => k == "report-missing"), Is.EqualTo(2), "review of PR #14, item 4: a new input gives a new nudge");
+    }
+
+    [Test]
     public async Task A_done_session_is_not_forgotten()
     {
         using var t = new Rig();

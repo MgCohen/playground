@@ -70,6 +70,7 @@ public sealed partial class Supervisor
             if (r.From == States.Stopped && to != States.Archived) NotifyParent(id, "child-resumed");
             if (to == States.Archived) NotifyParent(id, "child-archived");
             if (to == States.Forgotten) Forgotten(id, s.Now);
+            if (r.From == States.Forgotten && to is States.Done or States.Stopped or States.Archived) File.Delete(store.PathOf(id, StoreFiles.Forgotten));
         }
         if (r.Requested && r.Taken is { To: States.Archived } taken)
         {
@@ -136,9 +137,15 @@ public sealed partial class Supervisor
     }
 
     /// <summary>The nudge of a forgotten session, then one notice to the parent when it is still forgotten after the wait.</summary>
+    /// <remarks>
+    /// One forgotten episode lasts while the last report and the last input from another party than the supervisor stay
+    /// the same. A new report or a new input starts a new episode with a new nudge (review of PR #14, item 4).
+    /// </remarks>
     void Forgotten(string id, DateTimeOffset now)
     {
-        var report = store.Report(id)?.Event ?? "none";
+        var self = Parties.Session(id);
+        var input = store.Events.All().LastOrDefault(e => e.To == self && e.From != Parties.Supervisor && FileStore.IsDeliverable(e))?.Id ?? "none";
+        var report = $"{store.Report(id)?.Event ?? "none"}|{input}";
         var marker = store.ReadJson<ForgottenMarker>(id, StoreFiles.Forgotten);
         if (marker is null || marker.Report != report)
         {

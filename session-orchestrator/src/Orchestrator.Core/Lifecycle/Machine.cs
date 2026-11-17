@@ -95,7 +95,8 @@ public static class Machine
 
         new("nudge-turn", States.Forgotten, States.Running, 1, TransitionKind.Immediate, s => s.Running),
         new("report-done", States.Forgotten, States.Done, 2, TransitionKind.Immediate, s => !s.Running && IsDone(s)),
-        new("remembered", States.Forgotten, States.Idle, 3, TransitionKind.Immediate, s => !s.Running && !IsDone(s) && !IsForgotten(s)),
+        // The nudge is an input with no ack until its turn: while it waits, the session stays forgotten (review of PR #14, item 3).
+        new("remembered", States.Forgotten, States.Idle, 3, TransitionKind.Immediate, s => !s.Running && !IsDone(s) && s.InputAge is null && !IsForgotten(s)),
 
         new("beat-running", States.Stale, States.Running, 1, TransitionKind.Immediate, s => s.BeatFresh && s.Running),
         new("beat", States.Stale, States.Idle, 2, TransitionKind.Immediate, s => s.BeatFresh && !s.Running),

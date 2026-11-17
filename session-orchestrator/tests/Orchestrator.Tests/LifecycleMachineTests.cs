@@ -140,6 +140,17 @@ public sealed class LifecycleMachineTests
     }
 
     [Test]
+    public void A_forgotten_session_waits_for_the_turn_of_its_nudge_and_does_not_go_back_to_idle_before()
+    {
+        // Review of PR #14, item 3: the nudge is an input with no ack, so "remembered" fired before the turn.
+        var nudged = S() with { IdleFor = TimeSpan.FromMinutes(16), Report = ReportStates.Working, InputAge = TimeSpan.FromSeconds(2), InputAfterTurn = true };
+        Assert.That(Step(States.Forgotten, nudged).Changed, Is.False);
+        var turn = Step(States.Forgotten, nudged with { Running = true, IdleFor = null });
+        Assert.That((turn.File.State, turn.Taken?.Name), Is.EqualTo((States.Running, "nudge-turn")));
+        Assert.That(Step(States.Forgotten, S() with { WaitReason = WaitReasons.Decision }).File.State, Is.EqualTo(States.Idle), "no input waits: remembered");
+    }
+
+    [Test]
     public void The_forgotten_timer_comes_from_the_policy()
     {
         var idle = S() with { IdleFor = TimeSpan.FromMinutes(2), Timers = new LifecycleTimers(ForgottenMinutes: 1) };
