@@ -23,6 +23,7 @@ judge:
 
 engine:
   allow_no_fit: true
+  decider: status        # status: one decider call for each node | compose: decomposer, compose loop and grader (a pack sets it)
   concurrency: 4         # agent calls at the same time inside one run
   limits:
     node:
