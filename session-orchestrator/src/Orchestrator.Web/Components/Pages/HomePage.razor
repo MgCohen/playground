@@ -1,0 +1,121 @@
+@page "/"
+@inherits LiveView
+
+<PageTitle>Home · orch</PageTitle>
+
+<PageHeader Title="Home" />
+
+<div class="stack">
+    @if (cards.Count > 0)
+    {
+        <a class="crd row wait-block" href="cards" aria-label="@cards.Count cards wait for you. Open the cards.">
+            <DeepRing Segments="Segments"><span><span class="disp ring-n">@cards.Count</span><br /><span class="sub">wait</span></span></DeepRing>
+            <span class="grow lg">
+                @foreach (var (name, count, color) in Groups)
+                {
+                    <span class="lgr"><span class="lgd" style="background:@color"></span><span class="grow t2">@name</span><b>@count</b></span>
+                }
+            </span>
+            <span class="chev"><Icon Name="chevR" /></span>
+        </a>
+    }
+    else
+    {
+        <div class="crd row wait-block">
+            <DeepRing><span><span class="disp ring-n">0</span><br /><span class="sub">wait</span></span></DeepRing>
+            <span class="grow"><span class="nm">Nothing waits for you</span><span class="sub">@LastClosed</span></span>
+        </div>
+    }
+
+    @if (active.Count > 0)
+    {
+        var first = active[0];
+        var (label, color, p) = Ui.Look(first);
+        <details class="crd fold">
+            <summary class="foldh">
+                <Ring P="p" Size="40" Th="6"><span class="mono small">@Percent(p)</span></Ring>
+                <span class="grow"><span class="sub">Active sessions · @active.Count of @total</span><span class="nm ell">@Ui.Name(first)</span><span class="sub ell">@Ui.Line(first)</span></span>
+                <span class="chev"><Icon Name="chevR" /></span>
+            </summary>
+            <SessionRow Node="first" />
+            @foreach (var n in active.Skip(1).Take(4))
+            {
+                <SessionRow @key="n.Meta.Id" Node="n" />
+            }
+            <a class="seeall" href="sessions">See all @total sessions <Icon Name="chevR" /></a>
+        </details>
+    }
+    else
+    {
+        <a class="crd row" href="sessions"><span class="grow"><span class="nm">No active sessions</span><span class="sub">@total sessions in the store</span></span><span class="chev"><Icon Name="chevR" /></span></a>
+    }
+
+    <a class="crd pad events-block" href="stream">
+        <span class="row flat"><span class="sub grow">Events · last 24 h</span><span class="mono sub">@activity.Sum() in 24 h</span></span>
+        <span class="dotc" aria-hidden="true">
+            @for (var r = 5; r >= 0; r--)
+            {
+                foreach (var level in levels)
+                {
+                    <i class="@(level > r ? "lit" : "")"></i>
+                }
+            }
+        </span>
+    </a>
+
+    <h2 class="gt">Waiting · newest first</h2>
+    @if (cards.Count == 0)
+    {
+        <div class="empty"><span class="nm">Nothing waiting</span><span class="sub">New cards show here when they arrive.</span></div>
+    }
+    else
+    {
+        <div class="crd">
+            @foreach (var c in cards.AsEnumerable().Reverse())
+            {
+                <a class="row sep" href="events/@c.Id" @key="c.Id">
+                    <KindRing Kind="@c.Kind" State="@Ui.Text(c.Fields.GetValueOrDefault("state"))" P="0.5" Size="28" />
+                    <span class="grow"><span class="ell">@c.Title</span><span class="sub">@c.SessionTitle · @Ui.Ago(c.At, now)</span></span>
+                    <span class="chev"><Icon Name="chevR" /></span>
+                </a>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    IReadOnlyList<CardView> cards = [];
+    IReadOnlyList<SessionNode> active = [];
+    int total;
+    int[] activity = [];
+    int[] levels = [];
+    DateTimeOffset now;
+
+    IReadOnlyList<(string Name, int Count, string Color)> Groups =>
+    [
+        ("Questions", cards.Count(c => c.Group == CardGroup.Questions), "var(--b-q)"),
+        ("Reviews", cards.Count(c => c.Group == CardGroup.Reviews), "var(--b-rev)"),
+        ("Reports", cards.Count(c => c.Group == CardGroup.Reports), "var(--b-rep)"),
+        ("Blocked", cards.Count(c => c.Group == CardGroup.Blocked), "var(--b-blk)"),
+    ];
+
+    IReadOnlyList<(int, string)> Segments => Groups.Select(g => (g.Count, g.Color)).ToList();
+
+    string LastClosed => "New cards show here when they arrive.";
+
+    static string Percent(double p) => $"{(int)Math.Round(p * 100)}%";
+
+    protected override void Load()
+    {
+        now = Board.Now;
+        cards = Board.Cards();
+        var all = Ui.Flatten(Board.Tree()).ToList();
+        total = all.Count;
+        active = all.Where(n => n.Control == ControlStates.Active && n.Report?.State != ReportStates.Done)
+            .Select(n => (Node: n, At: Board.LastActive(n.Meta.Id) ?? DateTimeOffset.MinValue))
+            .OrderByDescending(x => x.At).Select(x => x.Node).ToList();
+        activity = Board.Activity();
+        var max = Math.Max(1, activity.Max());
+        levels = activity.Select(c => c == 0 ? 0 : Math.Max(1, (int)Math.Ceiling(c * 6.0 / max))).ToArray();
+    }
+}

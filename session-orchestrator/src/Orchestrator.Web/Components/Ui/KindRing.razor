@@ -1,0 +1,9 @@
+@{ var (icon, color) = Ui.Look(Kind, State); }
+<Ring P="P" Size="Size" Th="@Math.Max(3, Size / 7)" Color="@($"var(--{color})")"><Icon Name="@icon" /></Ring>
+
+@code {
+    [Parameter, EditorRequired] public string Kind { get; set; } = "";
+    [Parameter] public string? State { get; set; }
+    [Parameter] public double P { get; set; } = 1;
+    [Parameter] public int Size { get; set; } = 32;
+}

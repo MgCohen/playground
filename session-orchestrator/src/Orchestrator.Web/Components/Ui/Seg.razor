@@ -1,0 +1,13 @@
+<div class="well seg" role="group">
+    @foreach (var item in Items)
+    {
+        <button type="button" class="@(item == Value ? "on" : "")" aria-pressed="@(item == Value ? "true" : "false")" @onclick="() => OnPick.InvokeAsync(item)">@(Labels?.GetValueOrDefault(item) ?? item)</button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Items { get; set; } = [];
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public IReadOnlyDictionary<string, string>? Labels { get; set; }
+    [Parameter] public EventCallback<string> OnPick { get; set; }
+}

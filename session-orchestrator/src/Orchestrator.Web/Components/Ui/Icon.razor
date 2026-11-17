@@ -1,0 +1,5 @@
+<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">@((MarkupString)Ui.Icons.GetValueOrDefault(Name, ""))</svg>
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+}

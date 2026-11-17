@@ -1,0 +1,58 @@
+@* The preview of a card in the pile: the card fields of its template. Open shows the full render. *@
+@{ var f = Card.Fields; var state = Ui.Text(f.GetValueOrDefault("state")); }
+<div class="row head">
+    <KindRing Kind="@Card.Kind" State="@state" P="0.5" />
+    <span class="grow"><span class="nm">@Card.Label</span><span class="sub ell">@Card.SessionTitle</span></span>
+    <span class="mono sub">@Ui.Clock(Card.At)</span>
+</div>
+<div class="in">
+    <p class="q">@Card.Title</p>
+    @if (Well() is { } well)
+    {
+        <div class="well rec"><span class="sub">@well.Label</span>@well.Text</div>
+    }
+    @if (Card.Type == "plan")
+    {
+        <ul class="doc">
+            @foreach (var step in Ui.List(f.GetValueOrDefault("steps")).Take(4))
+            {
+                <li>@step</li>
+            }
+        </ul>
+    }
+    <div class="foot">
+        <div class="chips">
+            @foreach (var o in Card.Options)
+            {
+                <span class="chip @(o == Card.DefaultOption ? "def" : "")">@o</span>
+            }
+        </div>
+        @if (Card.DefaultAt is { } at)
+        {
+            var total = Card.At is { } asked ? (at - asked).TotalSeconds : 0;
+            var left = at - Now;
+            <Ring P="@(total > 0 ? left.TotalSeconds / total : 0)" Size="50" Th="6"><span class="disp timer">@Ui.Left(left)</span></Ring>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CardView Card { get; set; } = default!;
+    [Parameter] public DateTimeOffset Now { get; set; }
+
+    (string Label, string Text)? Well()
+    {
+        var f = Card.Fields;
+        string T(string key) => Ui.Text(f.GetValueOrDefault(key));
+        return Card.Type switch
+        {
+            "yesno" or "default" or "opinion" when T("recommendation") is { Length: > 0 } rec => ("Recommendation", rec),
+            "yesno" or "default" or "opinion" when T("context") is { Length: > 0 } ctx => ("Context", ctx),
+            "question" when T("context") is { Length: > 0 } why => ("Why", why),
+            "review" => ("Applied", T("text") + (T("reason") is { Length: > 0 } r ? $" · {r}" : "")),
+            "blocked" when Ui.List(f.GetValueOrDefault("blockers")) is { Count: > 0 } b => ("Blockers", string.Join(" · ", b.Take(3))),
+            "report" when Ui.List(f.GetValueOrDefault("done")) is { Count: > 0 } d => ("Done", string.Join(" · ", d.Take(3))),
+            _ => null,
+        };
+    }
+}

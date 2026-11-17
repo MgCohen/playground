@@ -1,0 +1,8 @@
+/* The widget header of the tray app: a drag of the header moves the window, and the pin keeps it on top. */
+.hd.win { display: flex; align-items: center; gap: 8px; user-select: none; cursor: default; }
+.hd.win .title { flex: 1; min-width: 0; }
+.pin { width: 32px; height: 32px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--muted);
+  display: grid; place-items: center; flex: none; cursor: pointer; }
+.pin .ic { width: 18px; height: 18px; }
+.pin:hover { background: var(--sunken); color: var(--text); }
+.pin.on { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-glow); }
