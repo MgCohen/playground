@@ -932,6 +932,10 @@ A report with state `blocked` uses the tone `failed` and the icon `alert` (`tone
 - Review of PR #20 (root): no Python build script; the stack allows no new script language. The build step is the C# test `DesignPageTests`.
 - Forms (later part): a form can use the same `view.json` field order and labels, with the input type from `schema.json`.
 
+### Review decision (user, 2026-11-17)
+
+Decision `toolu_01N98MJeeSqHZoy8YUVVZEN5`: the user approves the system. Each kind defines its full document and its preview in `view.json`, and the app shows both through `Views`. The look of the blocks is not final. Change it later in `view.json` and in the views, with no change to the system.
+
 ### Open questions
 
-- The user reviews the design page: the labels, the order, the well of each card, and the titles of a notice and an ack (decision sent with risk high, no default).
+- The detailed design review of the blocks (labels, order, wells, notice and ack titles) comes later. It does not stop the integration child.
