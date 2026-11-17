@@ -1,0 +1,292 @@
+<title>Orch Message Renders</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one band for each template kind. Each band shows the full document (Open view),
+   the card preview (pile) and the stream row, side by side; they stack at phone width.
+   Theme: the tokens of docs/inbox-design.html (Porcelain Orange), copied as they are. */
+:root {
+  --page: #f5f4f1; --page-tx: #1b1a18; --page-mu: #5f5b55; --page-line: #dedbd6;
+  --canvas: #e6e3de; --canvas-tx: #45423d;
+  --surf: #fdfdfc; --text: #1b1a18; --tx2: #3a3834; --muted: #5f5b55; --line-c: rgba(27,26,24,.10);
+  --sunken: #dedbd6; --sunken-tx: #1b1a18; --sunken-mu: #66625c;
+  --accent: #ff6a1a; --on-accent: #1b1a18; --dim: rgba(27,26,24,.10);
+  --done: #23733a; --pending: #8a5a0b; --failed: #b3261e; --new: #1f5fbf;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.63), inset 0 -3px 7px rgba(60,50,40,.05), 0 2px 3px rgba(60,50,40,.06), 0 10px 21px -8px rgba(60,50,40,.24);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.63), 0 2px 6px rgba(60,50,40,.12);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(60,50,40,.18), inset -2px -2px 4px rgba(255,255,255,.57);
+  --sh-glow: 0 0 6px rgba(255,106,26,.25);
+  --scrim: rgba(27,26,24,.38);
+  --sh-dial: inset 7px 7px 14px rgba(60,50,40,.34), inset -4px -4px 9px rgba(255,255,255,.95), 0 1px 0 rgba(255,255,255,.7);
+  --sh-ring: inset 4px 4px 7px rgba(60,40,20,.35), inset -2px -2px 4px rgba(255,255,255,.45);
+  --sh-hole: 0 9px 18px rgba(60,50,40,.30), 0 2px 4px rgba(60,50,40,.18), inset 0 1px 0 rgba(255,255,255,.95), inset 0 -4px 8px rgba(60,50,40,.08);
+  --hole-bg: radial-gradient(circle at 35% 28%, #ffffff, #f3f2ef 72%);
+  --b-q: #ff6a1a; --b-rev: #6f9cff; --b-rep: #8fd94f; --b-blk: #ff5c5c;
+  --r: 22px; --r-sm: 12px;
+  --f-disp: Doto, "Cascadia Mono", monospace; --f-body: Inter, system-ui, "Segoe UI", sans-serif; --f-mono: "JetBrains Mono", "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #111113; --page-tx: #f4f3f1; --page-mu: #a8a49d; --page-line: #2b2b2f;
+  --canvas: #161618; --canvas-tx: #cfccc6;
+  --surf: #28282d; --text: #f4f3f1; --tx2: #dcd9d4; --muted: #a8a49d; --line-c: rgba(244,243,241,.10);
+  --sunken: #111113; --sunken-tx: #f4f3f1; --sunken-mu: #9a968f;
+  --accent: #ff6a1a; --on-accent: #111111; --dim: rgba(244,243,241,.10);
+  --done: #7fd18f; --pending: #f0a640; --failed: #f59a9a; --new: #8ab4ff;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 7px rgba(0,0,0,.35), 0 2px 3px rgba(0,0,0,.2), 0 10px 21px -8px rgba(0,0,0,.45);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 6px rgba(0,0,0,.4);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.05);
+  --sh-glow: 0 0 6px rgba(255,106,26,.35); --scrim: rgba(0,0,0,.55);
+  --sh-dial: inset 7px 7px 14px rgba(0,0,0,.85), inset -3px -3px 8px rgba(255,255,255,.07), 0 1px 0 rgba(255,255,255,.05);
+  --sh-ring: inset 4px 4px 7px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.12);
+  --sh-hole: 0 10px 20px rgba(0,0,0,.75), 0 2px 4px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12), inset 0 -4px 8px rgba(0,0,0,.35);
+  --hole-bg: radial-gradient(circle at 35% 28%, #3a3a40, #26262a 72%);
+  --b-q: #ff7a2e; --b-rev: #8ab4ff; --b-rep: #a6e86a; --b-blk: #ff6b6b;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --page: #111113; --page-tx: #f4f3f1; --page-mu: #a8a49d; --page-line: #2b2b2f;
+  --canvas: #161618; --canvas-tx: #cfccc6;
+  --surf: #28282d; --text: #f4f3f1; --tx2: #dcd9d4; --muted: #a8a49d; --line-c: rgba(244,243,241,.10);
+  --sunken: #111113; --sunken-tx: #f4f3f1; --sunken-mu: #9a968f;
+  --accent: #ff6a1a; --on-accent: #111111; --dim: rgba(244,243,241,.10);
+  --done: #7fd18f; --pending: #f0a640; --failed: #f59a9a; --new: #8ab4ff;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 7px rgba(0,0,0,.35), 0 2px 3px rgba(0,0,0,.2), 0 10px 21px -8px rgba(0,0,0,.45);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 6px rgba(0,0,0,.4);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.05);
+  --sh-glow: 0 0 6px rgba(255,106,26,.35); --scrim: rgba(0,0,0,.55);
+  --sh-dial: inset 7px 7px 14px rgba(0,0,0,.85), inset -3px -3px 8px rgba(255,255,255,.07), 0 1px 0 rgba(255,255,255,.05);
+  --sh-ring: inset 4px 4px 7px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.12);
+  --sh-hole: 0 10px 20px rgba(0,0,0,.75), 0 2px 4px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12), inset 0 -4px 8px rgba(0,0,0,.35);
+  --hole-bg: radial-gradient(circle at 35% 28%, #3a3a40, #26262a 72%);
+  --b-q: #ff7a2e; --b-rev: #8ab4ff; --b-rep: #a6e86a; --b-blk: #ff6b6b;
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--page-tx); font: 14px/1.45 var(--f-body); }
+main { padding-block: 24px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 1320px; margin: 0 auto; }
+h1 { font: 800 30px/1 var(--f-disp); letter-spacing: .02em; margin: 0 0 8px; }
+.lede { margin: 0 0 18px; color: var(--page-mu); max-width: 72ch; }
+.lede code, .spec code { font: 12px var(--f-mono); }
+nav.kinds { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 28px; }
+nav.kinds a { font: 600 12.5px var(--f-body); color: var(--page-tx); text-decoration: none; border: 1px solid var(--page-line); border-radius: 999px; padding: 6px 12px; }
+nav.kinds a:hover, nav.kinds a:focus-visible { border-color: var(--accent); outline: none; }
+section.kind { display: grid; gap: 12px; padding-block: 22px; border-top: 1px solid var(--page-line); scroll-margin-top: 12px; }
+.kh { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.kh h2 { font: 800 22px/1 var(--f-disp); letter-spacing: .03em; margin: 0; }
+.kh p { margin: 0; color: var(--page-mu); font-size: 13px; }
+.trio { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .trio { grid-template-columns: minmax(0, 1fr); } }
+.col { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.cap { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--page-mu); }
+.spec { font-size: 12.5px; color: var(--page-mu); margin: 4px 0 0; display: grid; gap: 3px; }
+.spec b { color: var(--page-tx); font-weight: 600; }
+
+/* ===== Screen surface (the canvas of the app) ===== */
+.scr { background: var(--canvas); color: var(--text); font: 13px/1.4 var(--f-body); border-radius: 26px; padding: 12px; display: grid; gap: 10px; min-width: 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 20px 40px -24px rgba(0,0,0,.4); }
+.scr svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.crd { background: var(--surf); box-shadow: var(--sh-raise); border-radius: var(--r); min-width: 0; }
+.well { background: var(--sunken); box-shadow: var(--sh-carve); color: var(--sunken-tx); border-radius: var(--r-sm); padding: 10px 12px; min-width: 0; }
+.well .sub { display: block; margin-bottom: 2px; }
+.gt { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--canvas-tx); margin: 2px 6px -4px; }
+.row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-width: 0; }
+.grow { flex: 1; min-width: 0; }
+.ell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.nm { font-weight: 600; display: block; }
+.sub { font-size: 11.5px; color: var(--muted); }
+.mono { font-family: var(--f-mono); font-size: 11.5px; }
+.pad { padding: 12px 14px; }
+.q { font-size: 19px; line-height: 1.25; font-weight: 600; letter-spacing: -.01em; text-wrap: balance; margin: 0; overflow-wrap: anywhere; }
+.subq { margin: 6px 0 0; color: var(--tx2); }
+.back { display: flex; align-items: center; gap: 4px; color: var(--canvas-tx); font-weight: 600; padding: 2px 4px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: var(--st); background: color-mix(in srgb, var(--st) 14%, transparent); border: 1px solid color-mix(in srgb, var(--st) 40%, transparent); white-space: nowrap; flex: none; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--st); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.chip { padding: 6px 11px; border-radius: 999px; background: var(--surf); box-shadow: var(--sh-raise-sm); font-weight: 500; }
+.well .chip { background: var(--surf); }
+.chip.def { outline: 2px solid var(--accent); outline-offset: -2px; font-weight: 600; }
+.facts { display: grid; }
+.kv { display: flex; align-items: center; gap: 10px; padding: 8px 14px; min-width: 0; }
+.kv + .kv { border-top: 1px solid var(--line-c); }
+.kv .k { flex: none; width: 104px; color: var(--muted); font-size: 12px; }
+.kv .v { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.bar { height: 8px; border-radius: 999px; background: var(--sunken); box-shadow: var(--sh-carve); overflow: hidden; flex: 1; min-width: 60px; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.doc { padding: 12px 14px; overflow-wrap: anywhere; }
+.doc p { margin: 0; white-space: pre-wrap; }
+.doc ul, .doc ol { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+.doc.tone-failed { box-shadow: var(--sh-raise), inset 3px 0 0 var(--failed); }
+pre.code { margin: 0; padding: 10px 12px; font: 12px/1.5 var(--f-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.code-inline { font: 12px var(--f-mono); }
+a.lnk { color: var(--new); text-decoration: none; font: 12px var(--f-mono); display: inline-flex; gap: 5px; align-items: center; }
+.acts { display: flex; gap: 8px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 42px; padding: 0 14px; border-radius: var(--r-sm); background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); font-weight: 600; flex: 1; }
+.btn.pri { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow); }
+.acts.off .btn { opacity: .38; box-shadow: none; }
+.ring { position: relative; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--sunken); box-shadow: var(--sh-carve); }
+.ring .fill { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(var(--rc, var(--accent)) calc(var(--p) * 1turn), transparent 0);
+  -webkit-mask: radial-gradient(circle, transparent calc(50% - var(--th) - 1px), #000 calc(50% - var(--th))); mask: radial-gradient(circle, transparent calc(50% - var(--th) - 1px), #000 calc(50% - var(--th))); }
+.ring .hole { position: absolute; inset: calc(var(--th) + 1px); border-radius: 50%; background: var(--surf); box-shadow: var(--sh-raise-sm); }
+.ring .rc { position: relative; z-index: 2; display: grid; place-items: center; color: var(--tx2); line-height: 1; }
+.ring .rc svg { width: 15px; height: 15px; }
+.card .in { padding: 4px 16px 16px; display: grid; gap: 12px; }
+.card .head { padding: 12px 14px 6px; }
+.tli { display: flex; gap: 10px; align-items: flex-start; }
+.tli .node { padding-top: 10px; }
+.ev { display: block; flex: 1; min-width: 0; padding: 10px 12px; text-decoration: none; color: inherit; }
+.ev .l1 { display: flex; gap: 8px; align-items: baseline; }
+.ev .l1 b { font-weight: 600; }
+.ev .t2 { color: var(--tx2); display: block; margin-top: 1px; }
+.ev .l2 { color: var(--muted); font-size: 12px; display: block; margin-top: 1px; }
+.ev .l3 { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.miniprog { width: 80px; height: 6px; }
+footer { margin-top: 28px; color: var(--page-mu); font-size: 12.5px; max-width: 80ch; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <h1>MESSAGE RENDERS</h1>
+  <p class="lede">The full document and the preview of each template kind, with the data of <code>templates/&lt;kind&gt;/example.json</code>. The page reads <code>templates/&lt;kind&gt;/view.json</code>: the same render spec that the C# model <code>Views</code> uses. A change to a spec changes this page and the UI together.</p>
+  <nav class="kinds" id="nav" aria-label="Kinds"></nav>
+  <div id="kinds"></div>
+  <footer>
+    <div><b>Not shown.</b> The actions (Accept, Other, Approve, Change, Got it, Reply) come from <code>meta.json</code> card and stay as they are in the A4 views. The forms to make a message are a later part.</div>
+    <div><b>Open points for review.</b> The labels, the order of the facts and blocks, which field goes in the well of the card, and the title of a notice and an ack.</div>
+  </footer>
+</main>
+
+<script type="application/json" id="data">{"brief":{"view":{"label":"Brief","icon":"brief","tone":"muted","document":{"title":["{{title}}"],"facts":[{"field":"agent","label":"Agent"},{"field":"cwd","label":"Folder","as":"code"},{"field":"worktree","label":"Worktree"},{"field":"background","label":"Background"},{"field":"allowDefaults","label":"Allow defaults"}],"blocks":[{"field":"goal","label":"Goal"},{"field":"scope","label":"Scope"},{"field":"doneWhen","label":"Done when","as":"well"},{"field":"skills","label":"Skills","as":"chips"}]},"preview":{"title":["{{title}}"],"line":["{{goal}}"],"well":[{"field":"doneWhen","label":"Done when"}]}},"example":{"title":"Color child","goal":"Ask the user which color goes in color.txt, then write it.","doneWhen":"color.txt has the color, and a done report names it.","skills":["orch-ask","orch-report"],"agent":"worker"},"purpose":"You start a session. The session knows only its brief."},"message":{"view":{"label":"Message","icon":"chat","tone":"accent","document":{"title":["{{text}}"],"facts":[],"blocks":[]},"preview":{"title":["{{text}}"]}},"example":{"text":"Use the new color list in colors.md."},"purpose":"None of the other types fits. Free text to a session or to the user."},"question":{"view":{"label":"Question","icon":"q","tone":"new","document":{"title":["{{question}}"],"facts":[{"field":"risk","label":"Risk","as":"pill","tones":{"low":"done","medium":"pending","high":"failed"}},{"field":"defaultOption","label":"Default"}],"blocks":[{"field":"context","label":"Context"},{"field":"snippet","label":"Snippet","as":"code"},{"field":"options","label":"Options","as":"chips","mark":"defaultOption"},{"field":"recommendation","label":"Recommendation","as":"well"}]},"preview":{"title":["{{question}}"],"line":["{{recommendation}}","{{context}}"],"well":[{"field":"recommendation","label":"Recommendation"},{"field":"context","label":"Context"}],"chips":{"field":"options","mark":"defaultOption"},"pill":{"field":"risk","label":"Risk","as":"pill","tones":{"low":"done","medium":"pending","high":"failed"}}}},"example":{"question":"Which color do we use in color.txt?","context":"Step 3 of the brief writes one color file.","options":["RED","BLUE"],"recommendation":"BLUE: the other files use cool colors.","risk":"medium","defaultOption":"BLUE","waitSeconds":0},"purpose":"You need an answer: a choice with options and a default, or facts with no default."},"plan":{"view":{"label":"Plan","icon":"review","tone":"new","document":{"title":["{{title}}"],"facts":[],"blocks":[{"field":"context","label":"Context"},{"field":"steps","label":"Steps","as":"steps"}]},"preview":{"title":["{{title}}"],"line":["{{context}}"],"list":{"field":"steps","max":4}}},"example":{"title":"Split the store module","steps":["Move the event code to Stream.cs","Change the callers","Run the tests"],"context":"FileStore.cs has 400 lines."},"purpose":"You propose steps before you do them."},"answer":{"view":{"label":"Answer","icon":"pen","tone":"accent","document":{"title":["{{text}}"],"subtitle":["{{question}}"],"facts":[{"field":"by","label":"By","as":"pill","tones":{"user":"accent","docs":"new","policy":"pending"}},{"field":"onDefault","label":"Then","as":"code"}],"blocks":[{"field":"reason","label":"Reason"},{"field":"source","label":"Source","as":"well"}]},"preview":{"title":["{{text}}"],"line":["{{question}}"],"well":[{"field":"reason","label":"Reason"},{"field":"source","label":"Source"}],"pill":{"field":"by","label":"By","as":"pill","tones":{"user":"accent","docs":"new","policy":"pending"}}}},"example":{"decision":"toolu_01RAQ","text":"GREEN","by":"policy","question":"Which color do we use in color.txt?","reason":"level low, no answer in 1800 s","source":"AGENTS.md, section Colors","onDefault":"stacked-pr"},"purpose":"You reply to a question."},"review":{"view":{"label":"Review","icon":"review","tone":"new","document":{"title":["{{question}}","Review of {{decision}}"],"facts":[{"field":"verdict","label":"Verdict","as":"pill","tones":{"approve":"done","change":"pending","refuse":"failed"}},{"field":"target","label":"About"}],"blocks":[{"field":"text","label":"Direction","as":"well"},{"field":"branch","label":"Branch","as":"code"},{"field":"base","label":"Base","as":"code"},{"field":"nextBranch","label":"Next branch","as":"code"}]},"preview":{"title":["{{question}}","Review of {{decision}}"],"line":["{{verdict}}{{#text}}: {{text}}{{/text}}"],"well":[{"field":"text","label":"Direction"}],"pill":{"field":"verdict","label":"Verdict","as":"pill","tones":{"approve":"done","change":"pending","refuse":"failed"}}}},"example":{"decision":"toolu_01RAQ","verdict":"change","text":"Use SMALL.","question":"Which size do we use in size.txt?","version":"toolu_01RAQ","branch":"orch/decision-toolu_01RAQ","base":"main","nextBranch":"orch/decision-toolu_01RAQ-v2"},"purpose":"You approve, change or refuse a plan or a default."},"report":{"view":{"label":"Report","icon":"doc","tone":"done","toneBy":{"field":"state","values":{"blocked":"failed","working":"pending"},"icons":{"blocked":"alert"}},"document":{"title":["{{summary}}"],"facts":[{"field":"state","label":"State","as":"pill","tones":{"done":"done","working":"pending","blocked":"failed"}}],"blocks":[{"field":"blockers","label":"Blockers","as":"list","tone":"failed"},{"field":"done","label":"Done","as":"list"},{"field":"next","label":"Next","as":"list"},{"field":"links","label":"Links","as":"links"},{"field":"details","label":"Details"}]},"preview":{"title":["{{summary}}"],"well":[{"field":"blockers","label":"Blockers"},{"field":"done","label":"Done"},{"field":"next","label":"Next"}],"pill":{"field":"state","label":"State","as":"pill","tones":{"done":"done","working":"pending","blocked":"failed"}}}},"example":{"state":"done","summary":"I wrote GREEN into color.txt, because the user chose GREEN.","done":["color.txt"],"links":["orch/decision-toolu_01RAQ"]},"purpose":"Your work is done, blocked, or ready for review."},"update":{"view":{"label":"Update","icon":"stream","tone":"muted","document":{"title":["{{summary}}"],"subtitle":["{{step}}"],"facts":[{"field":"progress","label":"Progress","as":"progress"}],"blocks":[]},"preview":{"title":["{{summary}}"],"line":["{{step}}"],"progress":"progress"}},"example":{"step":"Step 2 of 3","progress":60,"summary":"The size file is written. The color question is next."},"purpose":"A step starts or ends. Nobody must act: the UI shows it in the session tree."},"notice":{"view":{"label":"Notice","icon":"dot","tone":"muted","document":{"title":["{{render:kind}}"],"facts":[{"field":"kind","label":"Kind","as":"code"},{"field":"title","label":"Session"},{"field":"child","label":"Child","as":"code"}],"blocks":[{"render":"kind","label":"Text"}]},"preview":{"title":["{{render:kind}}"],"pill":{"field":"kind","label":"Kind","as":"pill"}}},"example":{"kind":"question-closed","decision":"toolu_01RAQ","question":"Which size do we use in size.txt?","text":"SMALL","title":"Size child","child":"3f2a9c1e-0000-4000-8000-000000000000","by":"user","waited":"11 min","count":3,"error":"exit 1"},"purpose":"The supervisor tells a session a fixed fact.","renders":{"question-closed":"Question closed: child \"{{title}}\" ({{child}}), decision {{decision}}: {{question}} Answer: {{text}} (from {{by}}).\n\nMove it from \"Waits for you\" to \"Done\" in your status block (skill orch:orch-reply). Do not answer it again.\n"}},"ack":{"view":{"label":"Ack","icon":"check","tone":"muted","document":{"title":["{{state}} · {{by}}"],"facts":[{"field":"state","label":"State","as":"pill","tones":{"delivered":"done","read":"done"}},{"field":"by","label":"By"}],"blocks":[]},"preview":{"title":["{{state}} · {{by}}"]}},"example":{"state":"delivered","by":"live"},"purpose":"You got an envelope, or you read a card. Automatic."}}</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const ICON = {
+  q: '<path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.7V15M12 18h.01"/>',
+  check: '<path d="M5 12l5 5 9-11"/>', x: '<path d="M18 6L6 18M6 6l12 12"/>',
+  pen: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/>', mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>', doc: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
+  review: '<path d="M4 12l4 4 12-12"/><path d="M4 20h16"/>', chevL: '<path d="M15 6l-6 6l6 6"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  brief: '<path d="M4 7h16v12H4z"/><path d="M9 7V5h6v2"/>', chat: '<path d="M4 5h16v11H9l-5 4z"/>',
+  dot: '<circle cx="12" cy="12" r="2"/>', stream: '<path d="M4 7h16M4 12h10M4 17h13"/>',
+};
+const ACTS = { question: ['Other', 'pen', 'Accept', 'check'], answer: ['Change', 'pen', 'Approve', 'check'], plan: ['Change', 'pen', 'Approve', 'check'], report: ['Reply', 'pen', 'Got it', 'check'] };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ic = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[n] || ICON.dot}</svg>`;
+const tok = t => `var(--${t === 'muted' ? 'muted' : t})`;
+const ring = (p, size, th, center, color) => `<span class="ring" style="width:${size}px;height:${size}px;--p:${p};--th:${th}px;--rc:${color}"><span class="fill"></span><span class="hole"></span><span class="rc">${center}</span></span>`;
+const pill = (text, tone) => `<span class="pill" style="--st:${tok(tone || 'muted')}">${esc(text)}</span>`;
+
+// The same rules as src/Orchestrator.Core/Templates/View.cs.
+const present = v => v != null && v !== '' && !(Array.isArray(v) && v.length === 0);
+const text = v => v == null ? '' : typeof v === 'boolean' ? (v ? 'yes' : 'no') : Array.isArray(v) ? v.map(text).join(', ') : String(v);
+const items = v => v == null ? [] : Array.isArray(v) ? v.map(text).filter(Boolean) : text(v) ? [text(v)] : [];
+const percent = v => typeof v === 'number' ? (v > 0 && v <= 1 ? v * 100 : v) : null;
+function mustache(t, f) {
+  t = t.replace(/\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, k, body) => present(f[k]) && f[k] !== false ? mustache(body, f) : '');
+  return t.replace(/\{\{(\w+)\}\}/g, (_, k) => typeof f[k] === 'boolean' ? (f[k] ? 'True' : 'False') : text(f[k])).replace(/[\r\n]+$/, '');
+}
+const renderOf = (k, field, f) => { const r = (DATA[k].renders || {})[text(f[field])]; return r ? mustache(r, f) : null; };
+const firstLine = s => s.split('\n')[0].trim();
+function first(k, list, f) {
+  for (const t of list || []) {
+    const outside = t.replace(/\{\{#(\w+)\}\}[\s\S]*?\{\{\/\1\}\}/g, '');
+    if ([...outside.matchAll(/\{\{(\w+)\}\}/g)].some(m => !present(f[m[1]]))) continue;
+    const s = mustache(t.replace(/\{\{render:(\w+)\}\}/g, (_, fld) => firstLine(renderOf(k, fld, f) || '')), f).trim();
+    if (s) return s;
+  }
+  return null;
+}
+function look(v, f) { if (!v.toneBy) return [v.tone, v.icon]; const val = text(f[v.toneBy.field]); return [v.toneBy.values[val] || v.tone, (v.toneBy.icons || {})[val] || v.icon]; }
+function fact(s, f) {
+  const v = f[s.field]; if (!present(v)) return null;
+  const t = s.as === 'progress' && percent(v) != null ? `${+percent(v).toFixed(1)} %` : text(v);
+  return { field: s.field, label: s.label || s.field, text: t, as: s.as || 'text', tone: (s.tones || {})[t], value: v };
+}
+function block(k, s, f) {
+  if (s.render) { const t = renderOf(k, s.render, f); return t ? { label: s.label, as: s.as || 'text', text: t, items: [], tone: s.tone } : null; }
+  const v = f[s.field]; if (!present(v)) return null;
+  return { field: s.field, label: s.label || s.field, as: s.as || 'text', text: typeof v === 'string' ? v : text(v), items: items(v), tone: s.tone, marked: s.mark ? text(f[s.mark]) || null : null };
+}
+function documentModel(k, f) {
+  const v = DATA[k].view, d = v.document, [tone, icon] = look(v, f);
+  return { label: v.label, tone, icon, title: first(k, d.title, f) || v.label, subtitle: d.subtitle ? first(k, d.subtitle, f) : null,
+    facts: d.facts.map(s => fact(s, f)).filter(Boolean), blocks: d.blocks.map(s => block(k, s, f)).filter(Boolean) };
+}
+function previewModel(k, f) {
+  const v = DATA[k].view, p = v.preview, [tone, icon] = look(v, f);
+  const well = (p.well || []).map(w => items(f[w.field]).length ? { label: w.label, text: items(f[w.field]).slice(0, 3).join(' · ') } : null).find(Boolean) || null;
+  return { label: v.label, tone, icon, title: first(k, p.title, f) || v.label, line: p.line ? first(k, p.line, f) : null, well,
+    chips: p.chips ? items(f[p.chips.field]) : [], marked: p.chips && p.chips.mark ? text(f[p.chips.mark]) || null : null,
+    list: p.list ? items(f[p.list.field]).slice(0, p.list.max || 99) : [], pill: p.pill ? fact(p.pill, f) : null,
+    progress: p.progress ? percent(f[p.progress]) : null };
+}
+
+// Views
+const kindRing = (m, p, size) => ring(p, size, 3, ic(m.icon), tok(m.tone));
+function factValue(x) {
+  if (x.as === 'pill') return pill(x.text, x.tone);
+  if (x.as === 'code') return `<span class="code-inline">${esc(x.text)}</span>`;
+  if (x.as === 'progress') return `<span style="display:flex;gap:10px;align-items:center"><span class="bar"><i style="width:${Math.min(100, percent(x.value))}%"></i></span><span class="mono">${esc(x.text)}</span></span>`;
+  return esc(x.text);
+}
+function blockBody(b) {
+  switch (b.as) {
+    case 'code': return `<div class="well"><pre class="code" style="padding:0">${esc(b.text)}</pre></div>`;
+    case 'well': return `<div class="well">${esc(b.text)}</div>`;
+    case 'chips': return `<div class="chips">${b.items.map(o => `<span class="chip ${o === b.marked ? 'def' : ''}">${esc(o)}</span>`).join('')}</div>`;
+    case 'list': return `<div class="crd doc ${b.tone ? 'tone-' + b.tone : ''}"><ul>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
+    case 'steps': return `<div class="crd doc"><ol>${b.items.map(i => `<li>${esc(i)}</li>`).join('')}</ol></div>`;
+    case 'links': return `<div class="crd doc" style="display:grid;gap:6px">${b.items.map(i => `<a class="lnk" href="#">${ic('link')}${esc(i)}</a>`).join('')}</div>`;
+    default: return `<div class="crd doc"><p>${esc(b.text)}</p></div>`;
+  }
+}
+function docView(k, m) {
+  const acts = ACTS[k];
+  return `<div class="scr">
+    <span class="back">${ic('chevL')}Cards</span>
+    <div class="crd">
+      <div class="row">${kindRing(m, .5, 36)}<span class="grow"><span class="nm">${esc(m.label)}</span><span class="sub ell">Color child → you · 14:02</span></span>${pill(acts ? 'waits' : 'closed', acts ? 'pending' : 'done')}</div>
+      <div class="pad" style="padding-top:2px"><p class="q">${esc(m.title)}</p>${m.subtitle ? `<p class="subq">${esc(m.subtitle)}</p>` : ''}</div>
+      ${m.facts.length ? `<div class="facts" style="border-top:1px solid var(--line-c)">${m.facts.map(x => `<div class="kv"><span class="k">${esc(x.label)}</span><span class="v">${factValue(x)}</span></div>`).join('')}</div>` : ''}
+    </div>
+    ${m.blocks.map(b => `<h3 class="gt">${esc(b.label)}</h3>${blockBody(b)}`).join('')}
+    ${acts ? `<div class="acts"><span class="btn">${ic(acts[1])}${acts[0]}</span><span class="btn pri">${ic(acts[3])}${acts[2]}</span></div>` : ''}
+  </div>`;
+}
+function cardView(m) {
+  return `<div class="crd card">
+    <div class="row head">${kindRing(m, .5, 34)}<span class="grow"><span class="nm">${esc(m.label)}</span><span class="sub ell">Color child</span></span><span class="mono sub">14:02</span></div>
+    <div class="in">
+      <p class="q" style="font-size:18px">${esc(m.title)}</p>
+      ${m.well ? `<div class="well"><span class="sub">${esc(m.well.label)}</span>${esc(m.well.text)}</div>` : ''}
+      ${m.list.length ? `<div class="doc" style="padding:0"><ol>${m.list.map(i => `<li>${esc(i)}</li>`).join('')}</ol></div>` : ''}
+      ${m.chips.length || m.pill || m.progress != null ? `<div class="chips">${m.chips.map(o => `<span class="chip ${o === m.marked ? 'def' : ''}">${esc(o)}</span>`).join('')}${m.pill ? pill(m.pill.text, m.pill.tone) : ''}${m.progress != null ? `<span class="bar miniprog"><i style="width:${m.progress}%"></i></span><span class="mono sub">${m.progress} %</span>` : ''}</div>` : ''}
+    </div></div>`;
+}
+function rowView(m) {
+  return `<div class="tli"><span class="node">${kindRing(m, 1, 30)}</span><span class="crd ev">
+    <span class="l1"><b class="grow ell">${esc(m.label)} · Color child</b><span class="mono sub">14:02</span></span>
+    <span class="t2 ell">${esc(m.title)}</span>${m.line ? `<span class="l2 ell">${esc(m.line)}</span>` : ''}
+    ${m.pill || m.progress != null ? `<span class="l3">${m.pill ? pill(m.pill.text, m.pill.tone) : ''}${m.progress != null ? `<span class="bar miniprog"><i style="width:${m.progress}%"></i></span>` : ''}</span>` : ''}
+  </span></div>`;
+}
+function specLine(v) {
+  const d = v.document, p = v.preview;
+  const names = l => l.map(s => s.label).join(', ') || 'none';
+  return `<div class="spec">
+    <div><b>Document:</b> title, ${d.subtitle ? 'subtitle, ' : ''}facts (${names(d.facts)}), blocks (${names(d.blocks)})</div>
+    <div><b>Preview:</b> title${p.line ? ', stream line' : ''}${p.well ? `, well (first of ${names(p.well)})` : ''}${p.list ? ', steps' : ''}${p.chips ? ', chips' : ''}${p.pill ? `, pill (${p.pill.label})` : ''}${p.progress ? ', progress' : ''}</div>
+  </div>`;
+}
+
+const order = ['question', 'answer', 'review', 'report', 'update', 'brief', 'notice', 'plan', 'message', 'ack'];
+document.getElementById('nav').innerHTML = order.map(k => `<a href="#${k}">${DATA[k].view.label}</a>`).join('');
+document.getElementById('kinds').innerHTML = order.map(k => {
+  const f = DATA[k].example, v = DATA[k].view, dm = documentModel(k, f), pm = previewModel(k, f);
+  return `<section class="kind" id="${k}">
+    <div class="kh"><h2>${v.label.toUpperCase()}</h2><p>${esc(DATA[k].purpose)}</p></div>
+    <div class="trio">
+      <div class="col"><span class="cap">Full document · Open view</span>${docView(k, dm)}</div>
+      <div class="col"><span class="cap">Preview · card in the pile</span><div class="scr">${cardView(pm)}</div>
+        <span class="cap" style="margin-top:8px">Preview · row in the stream</span><div class="scr">${rowView(pm)}</div>${specLine(v)}</div>
+    </div></section>`;
+}).join('');
+</script>
