@@ -355,7 +355,7 @@ Findings:
 | Sessions view | ✅ The tree with state, lease, report, update, worktree, a message field, stop, resume and archive | Phone test |
 | Timeline view | ✅ The stream, newest first, with filters for time, kind group, session and tool calls. Each template event opens its fields | Phone test |
 | Sign-in | ✅ `ORCH_TOKEN`: a token in the link once (then a cookie), or the header `X-Orch-Token` for the API | `WebTests` |
-| Tunnel | ❌ Blocked: Cloudflare Tunnel and Access need an account of the user | `decisions.md` |
+| Tunnel | ❌ Blocked: Cloudflare Tunnel and Access need an account of the user. Plan: section "D1 plan" | `decisions.md`, `docs/tunnel-plan.html` |
 | Unit tests | ✅ 56 tests | `dotnet test --solution Orchestrator.slnx` |
 
 The phone test used the browser pane of the desktop app at 375 × 812, not a real phone.
@@ -477,6 +477,33 @@ Rules of the vsa-template work that the M5 stream must obey:
 
 - PR comments show the user (`MgCohen`) as author. Each orchestrator PR title, body and comment starts with `[orch]`, so a reader can tell them apart.
 - Supervisor sessions are not in the app sidebar. Open them with the app import (`docs/know-how.md`).
+
+## D1 plan: tunnel for the phone (2026-11-17)
+
+Plan page: https://claude.ai/artifact/XzLhuzJbLrDuD5rtWya3JD (source `docs/tunnel-plan.html`). Status: approved by the user, to build on the user's own PC. No account, DNS record, tunnel or install exists.
+
+```mermaid
+flowchart LR
+    P[Phone browser] -->|HTTPS| A[Cloudflare Access]
+    A -->|JWT| C[cloudflared service]
+    C --> T[Supervisor 127.0.0.1:7778]
+    L[Mod, orch, tray] --> S[Supervisor 127.0.0.1:7777]
+```
+
+| Item | Plan |
+|---|---|
+| Tunnel | Named, remote-managed Cloudflare Tunnel. `cloudflared` runs as a Windows service with the tunnel token |
+| Address | `https://orch.<domain>` → `http://127.0.0.1:7778` |
+| Sign-in | Cloudflare Access, Allow policy with one email, session 30 days |
+| Supervisor | Second listener on `ORCH_TUNNEL_PORT`. On that port, check `Cf-Access-Jwt-Assertion` (signature, `iss`, `aud`, `exp`) with `ORCH_ACCESS_TEAM` and `ORCH_ACCESS_AUD`. Port 7777 does not change |
+| Cost | US$0: the account, domain and sign-in of the runner and the inbox |
+| Order | The Access application before the tunnel route. A route with no Access application is public |
+
+Facts from the Cloudflare docs: Tunnel supports WebSockets, so Blazor Server works. `cloudflared` needs only outbound port 7844 and TCP 443. A Quick Tunnel needs no account (`--allowed-mail` adds an email PIN), but its address changes on each start. Tailscale Serve is the private alternative: no domain, but the phone needs the Tailscale app.
+
+User decisions (2026-11-17, `decisions.md`): Cloudflare Tunnel + Access, as for the runner and the inbox. No build on this borrowed PC: it has antivirus and IT management. The build runs on the user's own PC, next month. The phone can do the same as the tray app (full control). Each client (tray, web, Android) uses the same interfaces for data, so a local store or a remote server is only a swap of the implementation. One user only, no app accounts: Cloudflare Access is the only gate, with the maximum session length (1 month). Roadmap: the Android app through Access, then a cloud host for more users with their own sessions. Order of the clients: (1) tunnel + web UI in a computer browser, (2) tunnel + installable web app on Android, (3) native Android app, (4) cloud host. Now: plan only. The code is a later task.
+
+The plan uses the Cloudflare account, the domain and the Access sign-in of the runner and the inbox again (user, 2026-11-17). The cost is US$0.
 
 ## Session management requirements (user, 2026-11-16)
 
