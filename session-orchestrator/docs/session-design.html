@@ -152,7 +152,7 @@ flowchart LR
       <li>Three names for each session: the id finds it, the code places it in the plan, the title tells what it does.</li>
       <li>The app title starts with the full code, for example <code>[O2 P1 S1]</code>, so the user finds the root of each session.</li>
       <li>One writer for the registry: the registry service. Plugins send a request envelope.</li>
-      <li>Settings are typed fields, not brief text. A mode is a preset of three axes. The brief shows a render of them.</li>
+      <li>Settings are typed fields, not brief text. A mode is a preset of four axes. The brief shows a render of them.</li>
       <li>The registry tells the engine what to do. The engine tells the registry only facts.</li>
       <li>All engines use the same envelopes. Only the adapter knows the engine.</li>
     </ul>
@@ -166,7 +166,7 @@ flowchart LR
         <tr><td>C1</td><td><code>ISessionRegistry</code>, file implementation, contract tests</td><td>Medium</td></tr>
         <tr><td>C2</td><td>Store version 3: <code>meta.json</code> and <code>control.json</code> into <code>session.json</code></td><td>Small</td></tr>
         <tr><td>C3</td><td>Settings schema, copy at create, <code>mcp__orch__configure</code>, the settings block in the brief</td><td>Medium</td></tr>
-        <tr><td>C4</td><td><code>templates/modes/</code> and the readers of the three axes</td><td>Medium</td></tr>
+        <tr><td>C4</td><td><code>templates/modes/</code> and the readers of the four axes</td><td>Medium</td></tr>
         <tr><td>C5</td><td><code>IEngineAdapter</code> with the Claude Code adapter (code moves only)</td><td>Medium</td></tr>
         <tr><td>C6</td><td><code>orch session</code> CLI, <code>/api/sessions</code> fields, tree view with tags</td><td>Small</td></tr>
         <tr><td>C7</td><td><code>orch session join</code> for other engines, with lease and heartbeat</td><td>Small</td></tr>
@@ -194,7 +194,7 @@ flowchart LR
   "stream": "S1",                      <span class="c">// work stream key (C1 owns the workflow)</span>
   "work": { "cwd": "…", "repo": "…", "branch": "orch/session-6f1c2a90", "worktree": true },
   "role": { "agent": "worker", "skills": ["orch:orch-ask"] },
-  "settings": { "mode": "auto", "background": false, "policy": "default",
+  "settings": { "mode": "auto", "visibility": "public", "policy": "default",
                 "reportOn": ["done", "blocked", "asked"], "allowDefaults": false },
   "lifecycle": { "phase": "active", "state": "idle", "since": "…", "by": "supervisor" },
   "created": { "at": "…", "by": "session:ca72efff-…" },
@@ -306,6 +306,7 @@ sequenceDiagram
   A->>R: session.update remoteControl
     </pre></div>
     <p>The registry uses the id that Claude Code uses. The id stays modular: the code reads the engine id only from <code>engine.sessionId</code>, and the adapter gives the registry id. So a registry-made id can come later with one change in the adapter.</p>
+    <p>Visibility <code>public</code> does the import and Remote Control at the earliest point. The app imports only a session with a transcript, so the earliest point is right after the short opening turn (<code>open-in-app</code>), before the brief. Visibility <code>private</code> skips the opening turn, the import and Remote Control: the brief is the first turn.</p>
   </section>
 
   <section>
@@ -386,13 +387,14 @@ flowchart LR
   </section>
 
   <section>
-    <h2>A mode is a named preset of three axes</h2>
+    <h2>A mode is a named preset of four axes</h2>
     <div class="scroll"><table>
       <thead><tr><th>Axis</th><th>Question</th><th>Values</th></tr></thead>
       <tbody>
         <tr><td><code>interaction</code></td><td>When does the session end?</td><td><code>task</code>, <code>conversation</code>, <code>one-shot</code></td></tr>
         <tr><td><code>autonomy</code></td><td>When does it wait for a person?</td><td><code>auto</code>, <code>ask</code>, <code>approve</code></td></tr>
         <tr><td><code>route</code></td><td>Who gets its questions?</td><td><code>parent</code>, <code>user</code></td></tr>
+        <tr><td><code>visibility</code></td><td>Does the user see it in the app?</td><td><code>public</code>, <code>private</code></td></tr>
       </tbody>
     </table></div>
     <div class="scroll"><table>
@@ -406,6 +408,8 @@ flowchart LR
         <tr><td><code>approve</code></td><td>Works alone, then waits for an approval before each step and before done</td></tr>
         <tr><td><code>parent</code></td><td>Questions go to the parent, which handles them or asks the user</td></tr>
         <tr><td><code>user</code></td><td>Questions go to the session chat; the user answers with <code>answer:</code></td></tr>
+        <tr><td><code>public</code></td><td>Import into the app and Remote Control on, at the earliest point</td></tr>
+        <tr><td><code>private</code></td><td>No import, no Remote Control. Only the orch UIs show it</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -413,20 +417,21 @@ flowchart LR
   <section>
     <h2>The four modes of the sum test are presets</h2>
     <div class="scroll"><table>
-      <thead><tr><th>Mode</th><th>Interaction</th><th>Autonomy</th><th>Route</th></tr></thead>
+      <thead><tr><th>Mode</th><th>Interaction</th><th>Autonomy</th><th>Route</th><th>Visibility</th></tr></thead>
       <tbody>
-        <tr><td><code>auto</code></td><td><code>task</code></td><td><code>auto</code></td><td><code>parent</code></td></tr>
-        <tr><td><code>chat</code></td><td><code>conversation</code></td><td><code>ask</code></td><td><code>user</code></td></tr>
-        <tr><td><code>ask</code></td><td><code>one-shot</code></td><td><code>ask</code></td><td><code>parent</code></td></tr>
-        <tr><td><code>approve</code></td><td><code>task</code></td><td><code>approve</code></td><td><code>parent</code></td></tr>
+        <tr><td><code>auto</code></td><td><code>task</code></td><td><code>auto</code></td><td><code>parent</code></td><td><code>public</code></td></tr>
+        <tr><td><code>chat</code></td><td><code>conversation</code></td><td><code>ask</code></td><td><code>user</code></td><td><code>public</code></td></tr>
+        <tr><td><code>ask</code></td><td><code>one-shot</code></td><td><code>ask</code></td><td><code>parent</code></td><td><code>public</code></td></tr>
+        <tr><td><code>approve</code></td><td><code>task</code></td><td><code>approve</code></td><td><code>parent</code></td><td><code>public</code></td></tr>
       </tbody>
     </table></div>
     <pre class="side"><span class="c">// templates/modes/chat/mode.json. A new mode is a new folder; no code change.</span>
 { "name": "chat", "interaction": "conversation", "autonomy": "ask", "route": "user",
+  "visibility": "public",
   "describe": "Talk with the user until the user or the parent says done." }
 <span class="c">// templates/modes/chat/render/session.md: the mode text of the settings block.</span></pre>
     <ul>
-      <li>A session stores the mode name and the three axis values. A spec can set an axis to change one value of a preset.</li>
+      <li>A session stores the mode name and the four axis values. A spec can set an axis to change one value of a preset.</li>
       <li>A new mode is a folder in <code>templates/modes/</code>. A new axis value needs code in the reader of that axis.</li>
       <li>The settings have one schema, <code>templates/settings/schema.json</code>. A new setting is one property with its default.</li>
     </ul>
@@ -438,7 +443,6 @@ flowchart LR
       <thead><tr><th>Setting</th><th>Root default</th><th>Read by</th></tr></thead>
       <tbody>
         <tr><td><code>mode</code> and axes</td><td><code>chat</code></td><td>Plugin, relay, brief render</td></tr>
-        <tr><td><code>background</code></td><td><code>false</code></td><td>Supervisor: Remote Control notices</td></tr>
         <tr><td><code>policy</code></td><td><code>default</code></td><td>Supervisor: docs check, defaults</td></tr>
         <tr><td><code>allowDefaults</code></td><td><code>false</code></td><td><code>orch merge</code></td></tr>
         <tr><td><code>reportOn</code></td><td>done, blocked, asked</td><td>Plugin <code>report</code> tool</td></tr>
@@ -452,6 +456,7 @@ flowchart LR
         <tr><td><code>interaction</code></td><td>Plugin <code>report</code>, lifecycle</td><td>Refuses done before the end rule; no forgotten while a conversation waits</td></tr>
         <tr><td><code>autonomy</code></td><td>Policy, <code>ask_user</code></td><td>Profile of timeouts; approval gates</td></tr>
         <tr><td><code>route</code></td><td>Question relay, <code>ask_user</code> text</td><td>Forward to the parent, or ask in the chat</td></tr>
+        <tr><td><code>visibility</code></td><td>Supervisor, engine adapter</td><td>Import and Remote Control notices, or none</td></tr>
       </tbody>
     </table></div>
     <p>The identity fields <code>id</code>, <code>code</code>, <code>parent</code> and <code>title</code> are never copied. With each route, the user can answer in the session chat with <code>answer:</code>.</p>
@@ -477,7 +482,7 @@ flowchart LR
 Session settings
 - Mode: auto (task, auto, parent). Work alone. Send a high-risk question with mcp__orch__ask_user; your parent handles it.
 - Report: only when done, blocked, or when the user or the parent asks.
-- Background: no. Remote Control is on.
+- Visibility: public. You are in the app with Remote Control on.
 - Policy: default. Low and medium questions take the default after the timeout.</pre>
   </section>
 </div>

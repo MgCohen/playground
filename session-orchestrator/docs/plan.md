@@ -1116,7 +1116,7 @@ Each session is one entry in a session registry, `store/sessions/<id>/session.js
 | Replaces | `meta.json` and `control.json` (store version 3) |
 | Claude Code | The registry sends commands (start, import, Remote Control, title, archive). Claude Code sends only facts (`appId`, Remote Control state, imported). The registry never reads or writes Claude Code files |
 | Settings | Each setting can be set at create and updated by the parent or the user. A setting not set at create is a copy of the parent value; a root copies `policy.json` `sessionDefaults` |
-| Modes | A mode is a preset of three axes: `interaction` (task, conversation, one-shot), `autonomy` (auto, ask, approve), `route` (parent, user). Presets in `templates/modes/`: `auto`, `chat`, `ask`, `approve` (the sum test modes) |
+| Modes | A mode is a preset of four axes: `interaction` (task, conversation, one-shot), `autonomy` (auto, ask, approve), `route` (parent, user), `visibility` (public: import and Remote Control at the earliest point; private: neither). `visibility` replaces `background`. Presets in `templates/modes/`: `auto`, `chat`, `ask`, `approve` (the sum test modes) |
 | Report rules | `reportOn` (done, blocked, asked). The plugin changes a `working` report with no status request into an `update` (sum test F5) |
 | Loop | The table of who sends what is on the Loop tab. A chat line closes a decision only with `answer:` (F2, PR #27) |
 | Other engines | `IEngineAdapter` with capabilities. A tool joins with `orch session join`, takes the lease, and uses `orch watch` and `orch post` with the same envelopes |
@@ -1128,7 +1128,7 @@ Code parts (proposal):
 | C1 | `ISessionRegistry`, file implementation, contract tests | Medium |
 | C2 | Store version 3: `meta.json` and `control.json` into `session.json` | Small |
 | C3 | Settings schema, copy at create, `mcp__orch__configure`, the settings block in the brief | Medium |
-| C4 | `templates/modes/` and the readers of the three axes | Medium |
+| C4 | `templates/modes/` and the readers of the four axes | Medium |
 | C5 | `IEngineAdapter` with the Claude Code adapter (code moves only) | Medium |
 | C6 | `orch session` CLI, `/api/sessions` fields, codes and app titles (`set_session_title`) | Small |
 | C7 | `orch session join` for other engines, with lease and heartbeat | Small |
