@@ -1114,7 +1114,7 @@ Options page: https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX (source `docs/se
 | Supervisor start | The tray, in its own process, if no supervisor answers on the port (user, Q3) |
 | Login | Startup folder shortcut, tray hidden (user, Q4) |
 | Update | `install.ps1` again by hand; `orch doctor` check `app` (user, Q5) |
-| Cloud | Plan on the page, section Q6. Q6a: cloud workers, supervisor and store on this PC (user). Q6b (C0 probe): approved by the user, the user starts the cloud session |
+| Cloud | Plan on the page, section Q6. Q6a: cloud workers, supervisor and store on this PC (user). Q6b (C0 probe): approved by the user; run, see below |
 
 ### Test (scratchpad store, port 7861, `ORCH_DATA` in the scratchpad, `-NoTool`)
 
@@ -1128,29 +1128,31 @@ Options page: https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX (source `docs/se
 | `orch doctor` | ✅ `app: built from 1db5718f, store ..., port 7861` |
 | Unit tests | ✅ `dotnet test --solution Orchestrator.slnx`: 301 passed, 1 skipped (`Seed_a_demo_store`, explicit) |
 
-### C0 probe: not run (2026-11-17)
+### C0 probe: run (2026-11-17)
 
-The user approved the probe (Q6b). The session could not start it: `start_session` with `target: cloud` refused twice with "The user is working over Remote Control, and this turn can't start that session". Each turn of this session comes from an orch plugin message, so the app treats it as a Remote Control turn. No other tool makes a cloud environment or a cloud session.
+Full result: `docs/c0-probe.md` (cloud session `session_01Y7UMGXQGcsekzz7bDemKjq`, source commit `0e83e17`).
 
-Steps for the user:
+Start method: `start_session` with `target: cloud` refuses in a Remote Control turn. `claude --cloud "<brief>"` in a terminal tab works. It is interactive only (no `--print`), and the first run asks the user to trust the folder. The script is in `docs/know-how.md`.
 
-1. In the desktop app, start a new session: target **Cloud**, repository `MgCohen/playground`, branch `orch/session-c46c4a77`, the default cloud environment.
-2. Paste this brief:
+| Check | Result | Expected? |
+|---|---|---|
+| .NET 10 install, no root | ✅ 16 s, SDK 10.0.404 | Yes |
+| Build Web and Cli | ✅ 0 errors | Yes |
+| Supervisor `/api/sessions` | ✅ 200 after about 3 s | Yes |
+| `claude -p` signed in | ✅ through the host, no API key; $0.32 for one small call | Yes. The cost is high |
+| Plugin load, both forms | ✅ 6 `orch:` skills | Yes |
+| Plugin hooks module in a child `claude -p` | ❌ not loaded (rollout switch) | No. See C0-2 |
+| `orch doctor` | 3 FAIL: `gh`, `settings.json`, supervisor on 7777 | Yes: a fresh VM has none of them |
+| GitHub, Cloudflare | ✅ 200 | Yes |
+| Quick Tunnel host `*.trycloudflare.com` | ❌ proxy 502 | No. See C0-1 |
+| `claude.ai` with `curl` | 403 | Yes |
+| Tool prompts | The user approved each command in the cloud session | Yes: default permission mode |
 
-```text
-Run the C0 probe for G1. Change no file except the result file. Do not print secrets. If a step fails, record the error and continue.
-1. uname -a, nproc, free -h; names of CLAUDE*/ANTHROPIC* env vars; claude --version.
-2. curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/di.sh && bash /tmp/di.sh --channel 10.0; export PATH=$HOME/.dotnet:$PATH. Record the time and dotnet --version.
-3. In session-orchestrator/: dotnet build src/Orchestrator.Web; dotnet build src/Orchestrator.Cli (not the tray).
-4. Copy config/policy.test.json to /tmp/orch-store/policy.json. Start ORCH_STORE=/tmp/orch-store ORCH_PORT=7790 ORCH_IMPORT=0 dotnet run --project src/Orchestrator.Web in the background; curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7790/api/sessions; stop it.
-5. ORCH_STORE=/tmp/orch-store dotnet run --project src/Orchestrator.Cli -- doctor.
-6. echo 'Reply with OK only.' | claude -p --output-format json (timeout 120 s): does it run, is it signed in?
-7. CLAUDE_CODE_PLUGIN_DIRS=$PWD/plugin claude -p 'List the skills that start with orch:'; claude -p --plugin-dir $PWD/plugin 'List the skills that start with orch:'. Which form loads the plugin?
-8. curl -sS -o /dev/null -w '%{http_code}' for https://api.github.com, https://www.cloudflare.com, https://example.trycloudflare.com, https://claude.ai.
-Write session-orchestrator/docs/c0-probe.md (table: step, command, result, time; then findings). Commit on a new branch orch/g1-c0-probe and push it. No PR.
-```
-
-3. When the branch `orch/g1-c0-probe` exists, a session adds the results to this section and to the Q6 section of `docs/setup-options.html`.
+| # | Finding | Owner |
+|---|---|---|
+| C0-1 | The cloud proxy refuses `*.trycloudflare.com`. A cloud worker cannot reach a Quick Tunnel. Use a named tunnel on an own domain, and add that host to the environment network list | Stream D |
+| C0-2 | The plugin hooks module does not load in a child `claude -p` in the VM. The skills load. A cloud worker must not depend on the hooks until the rollout reaches it | Stream B |
+| C0-3 | Each command asked the user for approval. A cloud worker needs a permission mode or an allow list in its brief or environment | Stream B |
 
 ### Findings
 

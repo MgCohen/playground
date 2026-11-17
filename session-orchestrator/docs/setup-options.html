@@ -193,7 +193,7 @@ ol.qs { margin: 0; padding-left: 22px; display: flex; flex-direction: column; ga
   <div class="scroll"><table>
     <thead><tr><th>Step</th><th>Work</th><th>Owner</th><th>Needs</th></tr></thead>
     <tbody>
-      <tr><td>C0 probe</td><td>One cloud session: install .NET 10, load the plugin, run <code>claude -p</code>, call a Quick Tunnel</td><td>G1</td><td>Your approval for a cloud environment</td></tr>
+      <tr><td>C0 probe</td><td>One cloud session: install .NET 10, load the plugin, run <code>claude -p</code>, call a Quick Tunnel</td><td>G1</td><td>Done 2026-11-17. Build, supervisor, <code>claude -p</code> and plugin load pass. The proxy refuses <code>*.trycloudflare.com</code> (C0-1). The hooks module does not load in a child <code>claude -p</code> (C0-2). Each command needs approval (C0-3). Details: <code>docs/c0-probe.md</code></td></tr>
       <tr><td>C1 HTTP mode</td><td><code>orch</code> uses <code>ORCH_URL</code> and the API when no store folder exists</td><td>G1</td><td>C0</td></tr>
       <tr><td>C2 public address</td><td>Tunnel with a token for the API, not only Access sign-in</td><td>Stream D</td><td>D1 decisions</td></tr>
       <tr><td>C3 cloud children</td><td>Brief field <code>where: cloud</code>. The supervisor starts and delivers with <code>--cloud</code></td><td>G1 + stream B</td><td>C1, C2</td></tr>
@@ -226,7 +226,7 @@ ol.qs { margin: 0; padding-left: 22px; display: flex; flex-direction: column; ga
       <tr><td>Q4 login</td><td>Startup folder shortcut, tray hidden</td></tr>
       <tr><td>Q5 update</td><td><code>install.ps1</code> by hand; <code>orch doctor</code> check <code>app</code></td></tr>
       <tr><td>Q6a cloud model</td><td>Cloud workers, supervisor and store on this PC</td></tr>
-      <tr><td>Q6b C0 probe</td><td>Approved. The user starts the cloud session</td></tr>
+      <tr><td>Q6b C0 probe</td><td>Approved and run. C2 must use a named tunnel on an own domain, not a Quick Tunnel</td></tr>
     </tbody>
   </table></div>
 </section>

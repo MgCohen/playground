@@ -94,6 +94,15 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - `tray.ps1` stays for development: mock mode, the self-test and `-Live` from the source.
 - Test install: `install.ps1 -Root <scratch>pp -Store <scratch>\store -Port <port> -Shortcuts <scratch>\links -NoTool`, with `ORCH_DATA=<scratch>\data`. It does not change the real profile, except the WebView2 data and the place file of the tray in `%LOCALAPPDATA%\Orchestrator.Tray`.
 
+### Start a cloud session from a session
+
+- `start_session` with `target: cloud` refuses in a Remote Control turn. A turn that comes from an orch plugin message is such a turn.
+- `claude -p --cloud` refuses: "--cloud cannot be combined with --print".
+- Use `claude --cloud "<brief>"` in a terminal tab (`run_in_terminal`). Run it from a trusted folder; the brief names the branch. It prints the session id and the view URL, then exits.
+- The first run in a folder asks the user to trust the folder. A session cannot answer this prompt and must not change the trust flag in `~/.claude.json`. After the first answer, it does not ask again.
+- The cloud session runs in the default permission mode, so the user approves each command. Put the permission rules in the brief or the environment.
+- Results of the first run: `docs/c0-probe.md`, and the findings C0-1 to C0-3 in `docs/plan.md`.
+
 ## The orch tool
 
 - Install or update it after a change of `src/Orchestrator.Cli`: `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` (`install` the first time).
