@@ -660,3 +660,47 @@ Low items (recorded, accepted):
 | The watchdog copied the full stream for each open envelope | Fixed: one set of blocked envelopes for each run |
 
 Unit tests: 136 pass.
+
+## A3 result: event stream code shape (2026-11-17)
+
+Each reader asks the stream with one typed query, `StreamQuery`. No C# reader reads a session file for a message. `docs/store.md` has the contract (section Query).
+
+| Part | Result |
+|---|---|
+| Typed query | `StreamQuery` (Core): since, until, after, kind, session, party, from, to, thread, needs, open, ledger, forwards, heads, newest, limit |
+| Named queries | `StreamQueries.Inbox`, `OpenDecisions(session?)`, `Timeline(filter, limit)`, `Thread(thread)`, `Ledger` |
+| Text form | `StreamQueryText.Parse`: one set of keys for the HTTP query string and for `orch events`. `view=<name>` starts from a named query |
+| Routes | `GET /api/stream`, `GET /api/stream/inbox`, `/decisions`, `/timeline`, `/ledger`, `GET /api/stream/threads/<thread>`. `GET /api/stream/live` takes all keys |
+| Kept routes | `/api/inbox`, `/api/events`, `/api/events/<id>`, `/api/stream/live`, `/api/decisions`, `/api/ledger` do not change their result |
+| Readers moved | Inbox cards, open decisions (UI, API, `orch decisions`), timeline, tree, `orch status`, `GET /api/sessions` |
+| Blocked | The newest `blocked` envelope about the session. `SaveBlocked` posts it when the reason changes and writes no `blocked.json` |
+| Indexes | By kind and by sender. The watchdog, the question follow, `Report`, `Update` and `Decisions` do not copy the full stream |
+| Cursor lock | `Done` reads, merges and writes the cursor under `<name>.json.lock` |
+| Unit tests | 145 pass (`dotnet test --solution Orchestrator.slnx`) |
+
+### Live sum test (scratchpad store, port 7793)
+
+A root started 3 children with `spawn_child`. Child 1 picked 27. Child 2 asked (`high`, no default); the test sent "My answer for Sum child 2 is: 9" to the root, and the root called `mcp__orch__answer`. Child 3 got the default 8 after 30 s (`config/policy.test.json`). The root reported "Total: 44 (27 + 9 + 8)". Then `POST /api/inbox/<id>/accept` approved the default and acknowledged the root report.
+
+| Check | Result |
+|---|---|
+| Each envelope to a session got an ack | ✅ 16 deliveries, 0 with no ack, no double ack |
+| `GET /api/decisions` and `GET /api/stream/inbox` | ✅ the two open decisions, then the two cards `answer [review]` and `report [ack]` |
+| `GET /api/stream?kind=report&from=session:<root>` | ✅ the root report |
+| Answer through the root | ✅ answer from `user` with `via: session:<root>` |
+| Inbox after the accepts | ✅ empty; a `review approve` went to child 3 |
+| `GET /api/stream/live?kind=answer,report&needs=any` | ✅ the report envelopes |
+| `orch tree`, `orch events --view ledger`, `--view timeline --limit 3`, `orch decisions` | ✅ |
+| Cursor lock files | ✅ `<name>.json.lock` next to each subscription; no `blocked`, `delivery.blocked` or `turn.fail` |
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| A3-1 | The plugin still writes `blocked.json` in `deliver.ts`. No reader uses it | Open: stream B can remove the two writes. The plugin is out of the A3 scope |
+| A3-2 | `status.json`, `lease.json`, `heartbeat.txt`, `control.json` and `stack/` are lifecycle or git state, not messages | Kept as files. Stream B owns them |
+| A3-3 | The global `orch` tool on this computer is older than A2 (no `orch init`). A live test must put its own `orch` first in `PATH` | Recorded. The live test used `dotnet tool install --tool-path` in the scratchpad. Install the global tool again after the merge |
+| A3-5 | Request of A4: a card must show when its default applies | Done: `defaultAt` on each card of `GET /api/inbox` and on `Card.DefaultAt`. `DefaultRule.At` is the one rule; `IsDue` uses it. A docs check can still answer before that time |
+| A3-6 | `dotnet test` stopped two times after 22 and 40 tests with "error: 1" and no failed test. The next 3 runs passed (145). A supervisor of the user listens on port 7777 during the runs | Open: watch it. Not reproduced |
+| A3-4 | The inbox order changed a little: the cards are in the id order of the newest envelope of each thread | Accepted |
+| A3-7 | Decision of the user: one message shape for a question. The kinds `decision` and `query` become one kind `question`. The target (`to`) gives the direction. A decision is a possible answer to a question | Open: a separate task after A3 and B2 merge. Only `question` is required; `risk` is required when `defaultOption` is present. The schema file holds this rule, so a change is easy. The task also removes the `blocked.json` writes (A3-1). `StreamQuery` keeps its name |

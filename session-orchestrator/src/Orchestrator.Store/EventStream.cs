@@ -32,6 +32,8 @@ public sealed class EventStream
     readonly Dictionary<string, List<Event>> byOf = [];
     readonly Dictionary<string, List<Event>> byReply = [];
     readonly Dictionary<string, List<Event>> byThread = [];
+    readonly Dictionary<string, List<Event>> byKind = [];
+    readonly Dictionary<string, List<Event>> byFrom = [];
     readonly Dictionary<string, JsonElement> bodies = [];
     readonly HashSet<string> closedDays = [];
     long lastMs;
@@ -215,6 +217,25 @@ public sealed class EventStream
 
     public IReadOnlyList<Event> RepliesTo(string id) => Index(byReply, id);
 
+    /// <summary>The envelopes of one kind, in id order.</summary>
+    public IReadOnlyList<Event> OfKind(string kind) => Index(byKind, kind);
+
+    /// <summary>The envelopes of one sender (the full party), in id order.</summary>
+    public IReadOnlyList<Event> FromParty(string party) => Index(byFrom, party);
+
+    /// <summary>The newest envelope of one sender and one kind that is not a forward.</summary>
+    public Event? LastFrom(string party, string kind)
+    {
+        lock (gate)
+        {
+            Refresh();
+            if (!byFrom.TryGetValue(party, out var list)) return null;
+            for (var i = list.Count - 1; i >= 0; i--)
+                if (list[i].Kind == kind && !list[i].IsForward) return list[i];
+            return null;
+        }
+    }
+
     /// <summary>The acks and the forwards of one envelope.</summary>
     public IReadOnlyList<Event> OfEnvelope(string id) => Index(byOf, id);
 
@@ -300,6 +321,8 @@ public sealed class EventStream
         if (e.Of is { } of) Insert(Bucket(byOf, of), e);
         if (e.Reply is { } reply) Insert(Bucket(byReply, reply), e);
         if (e.Thread is { } thread) Insert(Bucket(byThread, thread), e);
+        Insert(Bucket(byKind, e.Kind), e);
+        Insert(Bucket(byFrom, e.From), e);
         if (long.TryParse(e.Id.Split('-')[0], out var ms) && e.Id.EndsWith($"-{writer}") && ms > lastMs) lastMs = ms;
     }
 
@@ -389,6 +412,7 @@ public sealed class StreamSubscription
     {
         var list = ids.ToList();
         if (list.Count == 0) return;
+        using var held = Hold();
         var state = Load();
         var cursor = state.Cursor;
         var recent = state.Recent.ToHashSet();
@@ -403,6 +427,31 @@ public sealed class StreamSubscription
     }
 
     State Load() => Files.ReadJson<State>(path) ?? new State(Party, Name, null, [], "");
+
+    /// <summary>
+    /// The lock of the read, merge and write in <see cref="Done(IEnumerable{string})"/>. The supervisor and orch watch
+    /// write the same cursor. Without the lock, the last write loses the done ids of the other writer.
+    /// </summary>
+    FileStream Hold()
+    {
+        var file = path + ".lock";
+        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(file)!);
+        var end = DateTime.UtcNow + LockWait;
+        while (true)
+        {
+            try
+            {
+                return new FileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 1, FileOptions.None);
+            }
+            catch (IOException) when (DateTime.UtcNow < end)
+            {
+                System.Threading.Thread.Sleep(10);
+            }
+        }
+    }
+
+    /// <summary>The longest wait for the lock of the cursor file. After it, the write fails with an IOException.</summary>
+    public static readonly TimeSpan LockWait = TimeSpan.FromSeconds(5);
 
     static string Minus(string id, TimeSpan by) =>
         long.TryParse(id.Split('-')[0], out var ms) ? Math.Max(0, ms - (long)by.TotalMilliseconds).ToString() : id;

@@ -53,7 +53,7 @@
 
     protected override void Load()
     {
-        var filter = new EventFilter
+        var filter = new StreamQuery
         {
             Since = since.Length > 0 ? Durations.Since(since, DateTimeOffset.UtcNow) : null,
             Kinds = Groups.TryGetValue(group, out var kinds) ? kinds.ToHashSet() : null,

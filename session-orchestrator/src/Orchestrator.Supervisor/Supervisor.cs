@@ -125,7 +125,7 @@ public sealed class Supervisor
 
     void FollowQuestions(DateTimeOffset now)
     {
-        foreach (var forward in store.Events.All().Where(e => e.IsForward && EventKinds.Questions.Contains(e.Kind) && e.Thread is not null && Parties.SessionId(e.To) is not null))
+        foreach (var forward in EventKinds.Questions.SelectMany(store.Events.OfKind).Where(e => e.IsForward && e.Thread is not null && Parties.SessionId(e.To) is not null))
         {
             var thread = forward.Thread!;
             var notices = store.Events.Thread(thread).Where(n => n.Kind == EventKinds.Notice && n.To == forward.To).Select(n => (Event: n, Kind: store.Events.Fields(n).GetValueOrDefault("kind") as string)).ToList();
@@ -214,7 +214,7 @@ public sealed class Supervisor
         var delivery = options.Policy.Delivery;
         var live = store.IsLive(id, now);
         var status = store.Status(id);
-        var blocked = store.Events.All().Where(b => b.Kind == EventKinds.DeliveryBlocked).Select(b => b.Ref("envelope")).OfType<string>().ToHashSet();
+        var blocked = store.Events.OfKind(EventKinds.DeliveryBlocked).Select(b => b.Ref("envelope")).OfType<string>().ToHashSet();
         foreach (var e in open)
         {
             if (blocked.Contains(e.Id)) continue;

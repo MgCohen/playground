@@ -57,7 +57,11 @@ public static class OrchestratorApi
             return store.Sessions().Select(id => View(s, id, now));
         });
 
-        api.MapGet("/decisions", (FileStore store) => store.Sessions().SelectMany(store.OpenDecisions));
+        api.MapGet("/decisions", (FileStore store) =>
+        {
+            var enabled = store.Sessions().ToHashSet();
+            return store.OpenDecisions().Where(d => enabled.Contains(d.Session));
+        });
 
         api.MapPost("/sessions", (NewSession input, Board board) => Guard(() =>
         {
@@ -93,14 +97,14 @@ public static class OrchestratorApi
             return Results.Accepted(value: new { archived = id, lines });
         }));
 
-        api.MapGet("/events", (FileStore store, string? since, string? after, string? kind, string? session, string? from, string? to, string? thread, bool? needs, bool? open, bool? ledger) => Guard(() =>
-            Results.Ok(store.Query(new EventFilter
-            {
-                Since = since is null ? null : Durations.Since(since, store.Clock.GetUtcNow()),
-                After = after,
-                Kinds = Kinds(kind),
-                Session = session, From = from, To = to, Thread = thread, Needs = needs ?? false, Open = open ?? false, Ledger = ledger ?? false,
-            }).ToList())));
+        // The typed query of the stream: GET /api/stream and GET /api/events take the keys of StreamQueryText.Keys.
+        api.MapGet("/stream", (HttpRequest request, FileStore store) => Guard(() => Results.Ok(store.Query(Query(request, store)))));
+        api.MapGet("/events", (HttpRequest request, FileStore store) => Guard(() => Results.Ok(store.Query(Query(request, store)))));
+
+        // The named queries: the envelopes of one view. The other query keys add filters.
+        foreach (var view in new[] { "inbox", "decisions", "timeline", "ledger" })
+            api.MapGet($"/stream/{view}", (HttpRequest request, FileStore store) => Guard(() => Results.Ok(store.Query(Query(request, store, view)))));
+        api.MapGet("/stream/threads/{thread}", (string thread, HttpRequest request, FileStore store) => Guard(() => Results.Ok(store.Query(Query(request, store, "thread", thread)))));
 
         api.MapGet("/events/{id}", (string id, string? @for, string? render, FileStore store) =>
             store.Events.Find(id) is { } e
@@ -121,12 +125,12 @@ public static class OrchestratorApi
             return Results.Created($"/api/events/{e.Id}", e);
         }));
 
-        api.MapGet("/stream/live", async (HttpContext http, FileStore store, StreamHub hub, string? after, string? to, string? kind, CancellationToken cancel) =>
+        api.MapGet("/stream/live", async (HttpContext http, FileStore store, StreamHub hub, string? after, CancellationToken cancel) =>
         {
             http.Response.Headers.ContentType = "text/event-stream";
             http.Response.Headers.CacheControl = "no-cache";
             var cursor = after ?? (store.Clock.GetUtcNow() - TimeSpan.FromSeconds(2)).ToUnixTimeMilliseconds().ToString();
-            var filter = new EventFilter { To = to, Kinds = Kinds(kind) };
+            var filter = Query(http.Request, store) with { Newest = false, Limit = null, ThreadHeads = false };
             var seen = new HashSet<string>();
             while (!cancel.IsCancellationRequested)
             {
@@ -148,7 +152,7 @@ public static class OrchestratorApi
             return Results.Accepted(value: new { nudged = input.To });
         }));
 
-        api.MapGet("/inbox", (FileStore store) => new Inbox(store).Cards().Select(c => new { id = c.Envelope.Id, c.Kind, c.Needs, c.Session, c.Title, envelope = c.Envelope, fields = c.Fields }));
+        api.MapGet("/inbox", (FileStore store) => new Inbox(store).Cards().Select(c => new { id = c.Envelope.Id, c.Kind, c.Needs, c.Session, c.Title, envelope = c.Envelope, fields = c.Fields, defaultAt = c.DefaultAt }));
 
         api.MapPost("/inbox/{id}/accept", (string id, CardText? input, Supervisor.Supervisor s, FileStore store) => Guard(() =>
         {
@@ -182,7 +186,10 @@ public static class OrchestratorApi
         }));
     }
 
-    static HashSet<string>? Kinds(string? kind) => kind?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet();
+    /// <summary>The typed query of the query string. <paramref name="view"/> names a named query; the query string adds to it.</summary>
+    public static StreamQuery Query(HttpRequest request, FileStore store, string? view = null, string? argument = null) =>
+        StreamQueryText.Parse(key => key == "view" && view is not null ? (true, view)
+            : request.Query.TryGetValue(key, out var value) ? (true, value.ToString()) : (false, null), store.Clock.GetUtcNow(), argument);
 
     static IResult Guard(Func<IResult> work)
     {

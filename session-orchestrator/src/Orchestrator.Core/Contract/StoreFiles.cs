@@ -9,7 +9,6 @@ public static class StoreFiles
     public const string Status = "status.json";
     public const string Mirror = "mirror";
     public const string Meta = "meta.json";
-    public const string Blocked = "blocked.json";
     public const string DocsChecks = "docs-checks";
     public const string Policy = "policy.json";
     public const string SupervisorLog = "supervisor/log.txt";

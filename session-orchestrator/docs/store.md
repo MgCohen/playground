@@ -11,6 +11,7 @@ store/
   events/<day>/<id>.json             envelopes, append only, one file each
   bodies/<day>/<id>.json             bodies, write once
   subscriptions/<party>/<name>.json  { party, name, cursor, recent, at, filter } of one subscriber
+  subscriptions/<party>/<name>.json.lock  the lock of the read, merge and write of the cursor
   nudges/<party>                     a nudge: the write time is the signal, the text is an envelope id or empty
   claims/answer/<thread>             the claim of the first answer in a thread: an exclusive create, the text is the sender
   sessions/<id>/                     the lifecycle files of one session (below)
@@ -54,9 +55,41 @@ There is no other communication file. The inbox, the answers, the reviews, the r
 | 0 | Setup | `Open()` | `orch init` | None | Folders on the first write |
 | 1 | Post | `Post`, `Forward`, `Ack` | `orch post <kind> --to P`, `orch send`, `orch answer`, `orch review` | `POST /api/stream` | `post`, `ack` |
 | 2 | Subscribe | `Subscribe(party, name, filter)`, `StreamWatcher` | `orch watch --to P`, `orch events --follow` | `GET /api/stream/live` (SSE) | A child `orch watch` |
-| 3 | Query | `All`, `After`, `Thread`, `RepliesTo`, `AcksOf`, `ForwardsOf` | `orch events` | `GET /api/events` | `orch watch --list` |
+| 3 | Query | `store.Query(StreamQuery)`; indexes `After`, `Thread`, `OfKind`, `FromParty`, `RepliesTo`, `AcksOf`, `ForwardsOf` | `orch events` | `GET /api/stream`, `GET /api/stream/<view>` | `orch watch --list` |
 | 4 | Read | `Body`, `Fields`; `Renderer.Text(e, name)` for the receiver | `orch read <id> [--for P] [--render N]` | `GET /api/events/<id>?for=P` | The `text` of each `orch watch` line |
 | 5 | Nudge | `Nudge(to, id)` | `orch nudge <party> [id]` | `POST /api/nudge` | `session.send` peer nudge, `session.receive` |
+
+## Query
+
+Each reader asks the stream with one typed record: `StreamQuery` (`Orchestrator.Core/Events/StreamQuery.cs`). All filters must match. A reader never reads a session file for a message.
+
+| Field | Text key | Match |
+|---|---|---|
+| `Since`, `Until` | `since`, `until` | The id time. A duration (`3h`) or an ISO time |
+| `After` | `after` | The ids after this id |
+| `Kinds` | `kind` | A comma list |
+| `Session` | `session` | The `session` field, `from` or `to`. A prefix of the id is enough |
+| `Party` | `party` | `from` or `to`. A prefix is enough |
+| `From`, `To` | `from`, `to` | A prefix of the party |
+| `Thread` | `thread` | The exact thread |
+| `Needs` | `needs` | `answer`, `review`, `ack`, or `any` (`needs`, `needs=true`) |
+| `Open` | `open` | The envelope waits for an act (the inbox rule below) |
+| `Ledger` | `ledger` | The answers by docs or policy, and the reviews |
+| `Forwards` | `forwards` | `false`: no forwards |
+| `ThreadHeads` | `heads` | Only the newest envelope of each thread |
+| `Newest`, `Limit` | `newest`, `limit` | The order and the maximum count |
+
+A flag key is true when it is present with no value, or with `true` or `1`. The key `view` starts from a named query; the other keys add filters.
+
+| Named query (`StreamQueries`) | View | Filters |
+|---|---|---|
+| `Inbox` | `inbox` | `to = user`, open, the newest of each thread |
+| `OpenDecisions(session?)` | `decisions` | decision and query from a session, no forwards, open |
+| `Timeline(filter, limit)` | `timeline` | The filter, newest first, 300 maximum |
+| `Thread(thread)` | `thread` | One conversation in order |
+| `Ledger` | `ledger` | The ledger |
+
+The views of a session are queries too: `Report` and `Update` are the newest post of the session, `Blocked` is the newest `blocked` envelope about the session, and `OpenDecisions` is the named query.
 
 ## Post rules
 
@@ -99,6 +132,7 @@ Other kinds have no template: traces (`session.input`, `session.output`, `sessio
 - A subscriber waits for a push of `StreamWatcher` (a file watcher on `events/` and `nudges/`). It also queries from its cursor after `delivery.sweepSeconds` with no push, because a file watcher can drop events.
 - `Next()` gives the matching envelopes after the cursor that the subscriber did not mark done. Envelopes of other writers can arrive a little late, so the scan starts 120 s before the cursor, and the file keeps the done ids of these 120 s in `recent`. Limit: an envelope that appears more than 120 s after its id time can be missed by a subscription.
 - The delivery cursor moves only over acknowledged envelopes before the first open one. It never passes an envelope that waits for its ack.
+- `Done` reads, merges and writes the file under the lock `<name>.json.lock`. So two writers of one cursor (the supervisor and `orch watch`) lose no done id.
 - The deliverable kinds are brief, message, decision, query, plan, answer, review, report and notice. A report is deliverable only with `needs` or as a forward.
 - Each delivered envelope gets an ack: `{ kind: ack, from: <receiver>, to: <sender>, refs.of, body: { state: delivered | read, by } }`. `by` is `live`, `supervisor`, `tool-result`, `chat` or `user`.
 - The envelopes to a session with no ack are its pending deliveries. The ack is the truth; the cursor only marks where the scan starts.
@@ -161,7 +195,7 @@ The plugin and the supervisor share one folder for each session: `store/sessions
 | `mirror/<ms>-<uuid>.json` | Plugin | `{ door, origin, uuid, message }` for the doors `prompt`, `response` and `tool-result`. `message` is JSON, cut to 4000 characters |
 | `log-<holder>.txt` | Plugin | Log lines of one holder (`live` or `supervisor`), cut to the last 100 000 characters |
 | `meta.json` | Supervisor, `spawn_child`, `orch new`, `orch enable`, `/orch-enable` | `{ id, parent, title, cwd, createdBy, createdAt, started, worktree, agent, skills, repo, branch, allowDefaults, imported, appId }`. `imported: true` after the app confirmed an import. `appId` is the id of the session in the app. `allowDefaults: true` (only from the user) lets `orch merge` carry unapproved defaults. With `worktree: true`, the first turn makes a git worktree: `cwd` becomes the worktree folder, `repo` the repository and `branch` its branch. A session with `createdBy` and no `started` gets a new `claude -p` session with this id |
-| `blocked.json` | Plugin, supervisor | `{ reason, since }`. `reason` is `null` when the session is not blocked. The plugin also posts `blocked` at the stop latch |
+| `blocked.json` | Plugin | `{ reason, since }`. No reader. The truth is the newest `blocked` envelope about the session: the plugin posts it when a submit drops and when it goes through again; the supervisor (`SaveBlocked`) posts it when the reason of a failed turn changes. `reason` is absent when the session is not blocked |
 | `docs-checks/<id>.json` | Supervisor | `{ answered, answer, source, at }`: the cache of the docs check of one decision |
 | `turn.json` | Supervisor | `{ event, from, at, ended }`: the `turn.start` of the last supervisor turn, its senders, and the end time. The plugin uses `from` as the sender of `session.input` |
 | `last-output.json` | Plugin | `{ event, at }`: the last `session.output`. `turn.end` links it in `refs.output` |
@@ -210,11 +244,14 @@ A version id is the decision id for version 1 and `<decision>-v<n>` after it. A 
 | Call | Body | Result |
 |---|---|---|
 | `POST /api/stream` | `{ kind, from?, to, body, thread?, needs?, reply?, via? }` | The envelope (201). 400 with the field errors |
-| `GET /api/stream/live` | Query: `after`, `to`, `kind` | Server-sent events: one `data:` line with the envelope for each new envelope |
-| `GET /api/events` | Query: `since` (`3h` or an ISO time), `after` (an id), `kind` (comma list), `session`, `from`, `to`, `thread`, `needs`, `open`, `ledger` | The matching envelopes in order |
+| `GET /api/stream` | Query: the text keys of `StreamQuery` (see Query) | The matching envelopes |
+| `GET /api/stream/inbox`, `/decisions`, `/timeline`, `/ledger` | Query: more text keys | The envelopes of the named query |
+| `GET /api/stream/threads/<thread>` | Query: more text keys | The envelopes of one thread |
+| `GET /api/stream/live` | Query: `after` and the text keys | Server-sent events: one `data:` line with the envelope for each new envelope that matches |
+| `GET /api/events` | Query: the text keys | The same as `GET /api/stream` |
 | `GET /api/events/<id>` | Query: `for`, `render` | `{ envelope, body, text }`. `text` is the render for the receiver |
 | `POST /api/nudge` | `{ to, id? }` | `{ nudged }` |
-| `GET /api/inbox` | | The open cards: `{ id, kind, needs, session, title, envelope, fields }` |
+| `GET /api/inbox` | | The open cards: `{ id, kind, needs, session, title, envelope, fields, defaultAt }`. `defaultAt` is the ISO time when the policy answers an open decision with its `defaultOption` (the time of the decision + `timeoutSeconds` of its level). It is `null` for a query, a decision with no default, a level with no timeout, and each card that is not a decision |
 | `POST /api/inbox/<id>/accept` | `{ text? }` | The posted envelope |
 | `POST /api/inbox/<id>/refuse` | `{ text }` | The posted envelope |
 | `GET /api/sessions` | | Each enabled session: title, parent, holder, live, running, status, report, blocked, open decisions |

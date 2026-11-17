@@ -29,7 +29,7 @@ public sealed class NewSessionFormTests
     }
 
     static JsonElement BriefEvent(Rig rig, string session) =>
-        rig.Store.Events.Body(rig.Store.Query(new EventFilter { Kinds = new HashSet<string> { EventKinds.Brief }, Session = session }).Single())!.Value;
+        rig.Store.Events.Body(rig.Store.Query(new StreamQuery { Kinds = new HashSet<string> { EventKinds.Brief }, Session = session }).Single())!.Value;
 
     [Test]
     public void The_form_has_each_brief_field_except_allowDefaults()
