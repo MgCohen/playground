@@ -1,0 +1,212 @@
+@page "/cards"
+@inherits LiveView
+
+<PageTitle>Cards · orch</PageTitle>
+
+<header class="crd hd"><h1 class="title disp">Cards</h1></header>
+
+<div class="deck-screen">
+    <div class="bar">
+        <Seg Items="Chips" Value="@group" Labels="ChipLabels" OnPick="v => group = v" />
+        <button type="button" class="fbtn" aria-label="Filter and order" @onclick="() => filterOpen = true"><Icon Name="filter" />@if (filter.Active) {<i></i>}</button>
+    </div>
+
+    @if (Top is { } top)
+    {
+        <div class="pile">
+            @if (visible.Count > 2) {<span class="ghost g2"></span>}
+            @if (visible.Count > 1) {<span class="ghost g1"></span>}
+            <article class="crd card" data-deck-card @key="top.Id">
+                <a class="card-link" href="events/@top.Id" aria-label="Open the full document"></a>
+                <CardPreview Card="top" Now="Board.Now" />
+                <span class="stamp s-r" aria-hidden="true">@top.Right.Label</span>
+                <span class="stamp s-l" aria-hidden="true">@top.Left.Label</span>
+                <span class="stamp s-d" aria-hidden="true">Skip</span>
+            </article>
+        </div>
+        <div class="acts">
+            <button type="button" class="btn" data-act="left" @onclick="() => Do(top, top.Left)"><Icon Name="@top.Left.Icon" />@top.Left.Label</button>
+            <button type="button" class="btn wl" data-act="skip" aria-label="Skip: move the card to the end" @onclick="() => Skip(top)"><Icon Name="down" /></button>
+            <button type="button" class="btn pri" data-act="right" @onclick="() => Do(top, top.Right)"><Icon Name="@top.Right.Icon" />@top.Right.Label</button>
+        </div>
+    }
+    else
+    {
+        <div class="empty grow-empty">
+            <span class="nm">No cards</span>
+            <span class="sub">@(cards.Count > 0 ? "The filter hides each card." : "A new card shows here when it arrives.")</span>
+        </div>
+    }
+</div>
+
+@if (toast is { } t)
+{
+    <div class="toast" role="status"><span class="grow">@t.Text</span>@if (t.Undo is not null) {<button type="button" @onclick="Undo">Undo</button>}</div>
+}
+@if (sheet is { } s)
+{
+    <AnswerSheet Card="s.Card" Voice="s.Voice" OnSend="text => SendSheet(s.Card, text)" OnClose="() => sheet = null" />
+}
+@if (filterOpen)
+{
+    <FilterSheet Filter="filter" Sessions="FilterSessions" Show="@($"Show {Visible().Count} cards")" OnClose="() => filterOpen = false" />
+}
+
+@code {
+    public static readonly TimeSpan UndoTime = TimeSpan.FromSeconds(5);
+
+    static readonly string[] Chips = ["All", "Questions", "Reviews", "Reports"];
+
+    sealed record Toast(string Text, Action? Undo);
+    sealed record Pending(string Id, Action Work, string Done, CancellationTokenSource Cancel);
+
+    IReadOnlyList<CardView> cards = [];
+    IReadOnlyList<CardView> visible => Visible();
+    readonly List<string> order = [];
+    readonly ViewFilter filter = new();
+    Dictionary<string, string> roots = [];
+    IReadOnlyList<(string Id, string Name, string Sub)> FilterSessions = [];
+    string group = "All";
+    bool filterOpen;
+    (CardView Card, bool Voice)? sheet;
+    Toast? toast;
+    Pending? pending;
+
+    CardView? Top => visible.Count > 0 ? visible[0] : null;
+
+    IReadOnlyDictionary<string, string> ChipLabels => new Dictionary<string, string>
+    {
+        ["All"] = "All",
+        ["Questions"] = Label("Questions", cards.Count(c => c.Group == CardGroup.Questions)),
+        ["Reviews"] = Label("Reviews", cards.Count(c => c.Group == CardGroup.Reviews)),
+        ["Reports"] = Label("Reports", cards.Count(c => c.Group is CardGroup.Reports or CardGroup.Blocked)),
+    };
+
+    static string Label(string name, int count) => count > 0 ? $"{name} {count}" : name;
+
+    protected override void Load()
+    {
+        cards = Board.Cards();
+        var ids = cards.Select(c => c.Id).ToHashSet();
+        order.RemoveAll(id => !ids.Contains(id));
+        foreach (var c in cards.Where(c => !order.Contains(c.Id))) order.Add(c.Id);
+        var tree = Board.Tree();
+        roots = [];
+        foreach (var root in tree)
+            foreach (var n in Ui.Flatten([root])) roots[n.Meta.Id] = root.Meta.Id;
+        var used = cards.Select(c => roots.GetValueOrDefault(c.Session, c.Session)).ToHashSet();
+        FilterSessions = tree.Where(r => used.Contains(r.Meta.Id)).Select(r => (r.Meta.Id, Ui.Name(r), Ui.Flatten(r.Children).Count() is var k && k > 0 ? $"and {k} children" : "no children")).ToList();
+    }
+
+    IReadOnlyList<CardView> Visible()
+    {
+        var now = Board.Now;
+        var byId = cards.ToDictionary(c => c.Id);
+        var list = order.Where(byId.ContainsKey).Select(id => byId[id])
+            .Where(c => pending?.Id != c.Id)
+            .Where(c => group switch
+            {
+                "Questions" => c.Group == CardGroup.Questions,
+                "Reviews" => c.Group == CardGroup.Reviews,
+                "Reports" => c.Group is CardGroup.Reports or CardGroup.Blocked,
+                _ => true,
+            })
+            .Where(c => filter.Keeps(c.Card.Envelope, roots.GetValueOrDefault(c.Session, c.Session), now));
+        return (filter.Order switch
+        {
+            "Newest" => list.OrderByDescending(c => c.Id, StringComparer.Ordinal),
+            "Session" => list.OrderBy(c => c.SessionTitle, StringComparer.OrdinalIgnoreCase),
+            "Default time" => list.OrderBy(c => c.DefaultAt ?? DateTimeOffset.MaxValue),
+            _ => list,
+        }).ToList();
+    }
+
+    void Do(CardView card, CardAction action)
+    {
+        switch (action.Do)
+        {
+            case CardDo.Type: sheet = (card, false); break;
+            case CardDo.Speak: sheet = (card, true); break;
+            case CardDo.AcceptText: Commit(card, () => Board.Accept(card.Id, action.Text), $"{action.Label} · {card.SessionTitle}"); break;
+            case CardDo.RefuseText: Commit(card, () => Board.Refuse(card.Id, action.Text ?? ""), $"{action.Label} · {card.SessionTitle}"); break;
+            default: Commit(card, () => Board.Accept(card.Id), $"{action.Label} · {card.SessionTitle}"); break;
+        }
+    }
+
+    void SendSheet(CardView card, string text)
+    {
+        sheet = null;
+        if (text.Length == 0) return;
+        Commit(card, () => Board.SendSheet(card, text), $"Sent to {card.SessionTitle}: {text}");
+    }
+
+    /// <summary>The act waits for the undo time, then it goes to the stream. A second act sends the first one at once.</summary>
+    void Commit(CardView card, Action work, string done)
+    {
+        Flush();
+        var cancel = new CancellationTokenSource();
+        var p = new Pending(card.Id, work, done, cancel);
+        pending = p;
+        toast = new Toast(done, Undo);
+        _ = Task.Delay(UndoTime, cancel.Token).ContinueWith(task =>
+        {
+            if (task.IsCanceled) return;
+            InvokeAsync(() =>
+            {
+                if (pending != p) return;
+                Run(p);
+                StateHasChanged();
+            });
+        }, TaskScheduler.Default);
+    }
+
+    void Run(Pending p)
+    {
+        pending = null;
+        if (!Act(p.Work, p.Done)) toast = new Toast(Message ?? "The act failed.", null);
+        else toast = null;
+    }
+
+    void Flush()
+    {
+        if (pending is { } p)
+        {
+            p.Cancel.Cancel();
+            Run(p);
+        }
+    }
+
+    void Undo()
+    {
+        if (pending is { } p)
+        {
+            p.Cancel.Cancel();
+            pending = null;
+        }
+        else if (skipUndo is { } restore)
+        {
+            order.Clear();
+            order.AddRange(restore);
+            skipUndo = null;
+        }
+        toast = null;
+    }
+
+    List<string>? skipUndo;
+
+    /// <summary>Skip moves the card to the end of the pile. A card that arrives later goes after it.</summary>
+    void Skip(CardView card)
+    {
+        Flush();
+        skipUndo = [.. order];
+        order.Remove(card.Id);
+        order.Add(card.Id);
+        toast = new Toast("Skipped: the card is at the end of the pile.", Undo);
+    }
+
+    public override void Dispose()
+    {
+        Flush();
+        base.Dispose();
+    }
+}

@@ -1,0 +1,157 @@
+@page "/sessions/{Id}"
+@inherits LiveView
+
+<PageTitle>@(node is null ? "Session" : Ui.Name(node)) · orch</PageTitle>
+
+<a class="back" href="sessions"><Icon Name="chevL" />Sessions</a>
+
+@if (node is null)
+{
+    <div class="empty"><span class="nm">No session @Id</span><span class="sub">The store has no session with this id.</span></div>
+}
+else
+{
+    var (label, color, p) = Ui.Look(node);
+    <div class="stack">
+        @if (Message is not null)
+        {
+            <p class="toast inline" role="status">@Message</p>
+        }
+        <div class="crd row hero">
+            <Ring P="p" Size="86" Th="10" Color="@($"var(--{color})")"><span class="disp ring-m">@((int)Math.Round(p * 100))%</span><span class="sub">@(node.Update?.Step ?? "progress")</span></Ring>
+            <span class="grow">
+                <span class="nm big-q">@Ui.Name(node)</span>
+                <span class="sub">@(parent is null ? "root session" : $"child of {Ui.Name(parent)}")</span>
+                <span class="t2">@Ui.Line(node)</span>
+                <Pill Label="@label" State="@color" />
+            </span>
+        </div>
+
+        <div class="grid3">
+            <a class="well met" href="cards"><span class="sub">Cards</span><span class="disp met-n">@cardCount</span></a>
+            <a class="well met" href="stream?session=@node.Meta.Id"><span class="sub">Events</span><span class="disp met-n">@eventCount</span></a>
+            <span class="well met"><span class="sub">Age</span><span class="disp met-n">@Ui.Ago(Orchestrator.Core.Leases.Times.Parse(node.Meta.CreatedAt ?? ""), Board.Now)</span></span>
+        </div>
+
+        @if (node.Children.Count > 0)
+        {
+            var kids = Ui.Flatten(node.Children).ToList();
+            <h2 class="gt">Children · @kids.Count</h2>
+            <div class="crd">
+                @foreach (var (child, i) in kids.Select((c, i) => (c, i)))
+                {
+                    <SessionRow @key="child.Meta.Id" Node="child" First="@(i == 0)" />
+                }
+            </div>
+        }
+
+        @if (links.Count > 0)
+        {
+            <h2 class="gt">Related artifacts</h2>
+            <div class="crd">
+                @foreach (var (link, i) in links.Select((l, i) => (l, i)))
+                {
+                    <a class="row @(i > 0 ? "sep" : "")" href="@Href(link)" target="_blank" rel="noopener">
+                        <span class="well ib"><Icon Name="@(link.Contains("/pull/") ? "git" : "link")" /></span>
+                        <span class="grow"><span class="ell nm">@Name(link)</span><span class="sub ell">@link</span></span>
+                    </a>
+                }
+            </div>
+        }
+
+        <h2 class="gt">Details</h2>
+        <div class="crd">
+            <div class="kv"><span class="k">Id</span><span class="mono ell">@node.Meta.Id</span></div>
+            @if (node.Meta.Branch is { } branch)
+            {
+                <div class="kv"><span class="k">Branch</span><span class="mono ell">@branch</span></div>
+            }
+            <div class="kv"><span class="k">Folder</span><span class="mono ell">@node.Meta.Cwd</span></div>
+            <div class="kv"><span class="k">Holder</span><span class="mono">@node.Holder@(node.Live ? " · live" : "")</span></div>
+        </div>
+
+        <div class="acts small">
+            @if (node.Control == ControlStates.Active)
+            {
+                <button type="button" class="btn" @onclick="Stop"><Icon Name="stop" />Stop</button>
+            }
+            else if (node.Control == ControlStates.Stopped)
+            {
+                <button type="button" class="btn" @onclick="Resume"><Icon Name="play" />Resume</button>
+            }
+            @if (node.Control != ControlStates.Archived)
+            {
+                <button type="button" class="btn" @onclick="Archive"><Icon Name="archive" />Archive</button>
+            }
+        </div>
+    </div>
+
+    <div class="acts sticky-acts">
+        <button type="button" class="btn" @onclick="() => sending = true"><Icon Name="pen" />Message</button>
+        <a class="btn pri" href="stream?session=@node.Meta.Id"><Icon Name="stream" />Event stream</a>
+    </div>
+
+    @if (sending)
+    {
+        <div class="scrim" @onclick="() => sending = false"></div>
+        <div class="crd sheet" role="dialog" aria-label="Message to the session">
+            <span class="grab"></span>
+            <div><div class="sub">Message to</div><div class="nm big-q">@Ui.Name(node)</div></div>
+            <label class="sr" for="send-text">Message to the session</label>
+            <textarea id="send-text" class="well ta" rows="3" placeholder="Say or type" @bind="text" @bind:event="oninput"></textarea>
+            <div class="acts">
+                <Mic For="send-text" />
+                <button type="button" class="btn" @onclick="() => sending = false">Cancel</button>
+                <button type="button" class="btn pri" disabled="@string.IsNullOrWhiteSpace(text)" @onclick="Send"><Icon Name="check" />Send</button>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    SessionNode? node;
+    SessionNode? parent;
+    int cardCount, eventCount;
+    IReadOnlyList<string> links = [];
+    bool sending;
+    string text = "";
+
+    protected override void OnParametersSet() => Load();
+
+    protected override void Load()
+    {
+        var all = Ui.Flatten(Board.Tree()).ToList();
+        node = all.FirstOrDefault(n => n.Meta.Id == Id) ?? all.FirstOrDefault(n => n.Meta.Id.StartsWith(Id, StringComparison.OrdinalIgnoreCase));
+        if (node is null) return;
+        parent = node.Meta.Parent is { } p ? all.FirstOrDefault(n => n.Meta.Id == p) : null;
+        cardCount = Board.Cards().Count(c => c.Session == node.Meta.Id);
+        eventCount = Board.EventCount(node.Meta.Id);
+        links = Board.Links(node.Meta.Id);
+    }
+
+    /// <summary>A link of a report is a URL, or a text with a URL in it.</summary>
+    static string Href(string link) => System.Text.RegularExpressions.Regex.Match(link, @"https?://\S+") is { Success: true } m ? m.Value : "#";
+
+    static string Name(string link)
+    {
+        var url = Href(link);
+        var text = url == "#" ? link : link.Replace(url, "").Trim(' ', '-', ':', '·');
+        if (text.Length > 0) return text;
+        return System.Text.RegularExpressions.Regex.Match(url, @"/pull/(\d+)") is { Success: true } pr ? $"PR #{pr.Groups[1].Value}" : url;
+    }
+
+    void Send()
+    {
+        sending = false;
+        if (node is { } n) Act(() => Board.Send(n.Meta.Id, text.Trim()), $"Message sent to {Ui.Name(n)}.");
+        text = "";
+    }
+
+    void Stop() { if (node is { } n) Act(() => Board.Stop(n.Meta.Id), $"Stopped {Ui.Name(n)}."); }
+
+    void Resume() { if (node is { } n) Act(() => Board.Resume(n.Meta.Id), $"Resumed {Ui.Name(n)}."); }
+
+    void Archive() { if (node is { } n) Act(() => Board.Archive(n.Meta.Id, false), $"Archived {Ui.Name(n)}."); }
+}
