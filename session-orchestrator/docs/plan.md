@@ -1112,9 +1112,12 @@ Each session is one entry in a session registry, `store/sessions/<id>/session.js
 | Part | Design |
 |---|---|
 | Names | Id (today the Claude Code id, behind the engine adapter), code (`S1`), title. The full code is the codes from the root down; the app title is `[O2 P1 S1] <title>` |
-| Entry | `id`, `code`, `engine` (ids, started, imported, Remote Control), `parent`, `title`, `owner`, `tags`, `stream`, `work`, `role`, `settings`, `lifecycle` (phase and a copy of the B2 state), `created`, `updated`. Children are a query |
+| Entry | `id`, `code`, `engine` (kind, `sessionId`, `appId`: references only), `parent`, `title`, `owner`, `tags`, `stream`, `work`, `role`, `settings`, `lifecycle` (phase and a copy of the B2 state), `created`, `updated`. Children are a query |
 | Replaces | `meta.json` and `control.json` (store version 3) |
-| Claude Code | The registry sends commands (start, import, Remote Control, title, archive). Claude Code sends only facts (`appId`, Remote Control state, imported). The registry never reads or writes Claude Code files |
+| Engine first | If the engine gives a function (attach, title, Remote Control, archive, transcript), the adapter uses it. The registry keeps no copy of an engine fact; `adapter.Read` gets it on demand |
+| Adapter | Each engine call goes through `IEngineAdapter`: `Create`, `Attach`, `Open`, `Turn`, `Read`, `Set`, `Archive`. Today only the Claude Code adapter |
+| Attach | Each adapter has its own attach. Claude Code: the official attach (`start_session`, app parent link and parent control) when the turn permits it (F1), else create and import. Codex later: its own attach, not in the Claude app. The registry records the parent for all engines |
+| Store root | The registry, the run state and the event stream stay under one store root (`ORCH_STORE`, else `<orch home>/store`). `StoreBackends.Create(root)` makes the three ports. Engine data stays in the engine |
 | Settings | Each setting can be set at create and updated by the parent or the user. A setting not set at create is a copy of the parent value; a root copies `policy.json` `sessionDefaults` |
 | Modes | A mode is a preset of four axes: `interaction` (task: one report at the end; stepwise: a report after each step, no confirmation; conversation: ends when somebody says done), `autonomy` (auto, ask, approve), `route` (parent, user), `visibility` (public: import and Remote Control at the earliest point; private: neither). `visibility` replaces `background`. Presets in `templates/modes/`: `auto`, `chat`, `ask`, `approve` (the sum test modes) |
 | Report rules | `reportOn` (done, blocked, asked). The plugin changes a `working` report with no status request into an `update` (sum test F5) |
@@ -1129,7 +1132,7 @@ Code parts (proposal):
 | C2 | Store version 3: `meta.json` and `control.json` into `session.json` | Small |
 | C3 | Settings schema, copy at create, `mcp__orch__configure`, the settings block in the brief | Medium |
 | C4 | `templates/modes/` and the readers of the four axes | Medium |
-| C5 | `IEngineAdapter` with the Claude Code adapter (code moves only) | Medium |
+| C5 | `IEngineAdapter` (create, attach, open, turn, read, set, archive) with the Claude Code adapter. No other code calls an engine | Medium |
 | C6 | `orch session` CLI, `/api/sessions` fields, codes and app titles (`set_session_title`) | Small |
 | C7 | `orch session join` for other engines, with lease and heartbeat | Small |
 
