@@ -42,7 +42,7 @@ public static partial class SelfTest
 
     /// <summary>
     /// Runs all checks, or with <paramref name="only"/> a list of groups: "notify" (the notice motion, V1 and V2) and "overlap"
-    /// (one form at a time, V4) and "ball" (one look of the home ball, V5). The groups run with the test places of the widget and the edge tab.
+    /// (one form at a time, V4) and "ball" (one look of the home ball, V5), "drag" and "edge" (N1 and N2). The groups run with the test places of the widget and the edge tab.
     /// </summary>
     public static async Task<int> Run(TrayApp tray, string folder, string? only = null)
     {
@@ -63,6 +63,8 @@ public static partial class SelfTest
             if (groups.Contains("notify")) checks.AddRange(await NoticeMotion(tray, web, folder));
             if (groups.Contains("overlap")) checks.AddRange(await Overlap(tray, folder));
             if (groups.Contains("ball")) checks.AddRange(await HomeBall(form, folder));
+            if (groups.Contains("drag")) checks.Add(await Drag(form, web));
+            if (groups.Contains("edge")) checks.AddRange(await Edge(tray, web, folder));
             return Write(checks, folder);
         }
         foreach (var step in Steps)
@@ -99,6 +101,12 @@ public static partial class SelfTest
         var fit = form.Fit(new Point(form.Left, area.Bottom - form.Height));
         checks.Add(new Check("taskbar-gap", gap == margin && area.Bottom - (fit.Y + form.Height) == margin,
             $"gap {gap} px above the work area bottom (expect {margin}); a drop on the taskbar edge moves up to a gap of {area.Bottom - (fit.Y + form.Height)} px", ""));
+        // The test places (top left, and high on the right edge): the other checks do not meet the trays of other sessions there.
+        TestPlaces(tray);
+        form.HideWidget();
+        await Settle(form);
+        form.ShowWidget();
+        await Settle(form);
         // The scroll bar gutter of the page: the window width less the width of the content box.
         var bar = JsonSerializer.Deserialize<double>(await web.ExecuteScriptAsync("window.innerWidth - document.documentElement.clientWidth"));
         var scrolls = JsonSerializer.Deserialize<bool>(await web.ExecuteScriptAsync("document.documentElement.scrollHeight > window.innerHeight"));
@@ -130,7 +138,6 @@ public static partial class SelfTest
         checks.AddRange(await Ball(form, web, folder));
         checks.Add(await Video(form, folder));
         checks.AddRange(await Edge(tray, web, folder));
-        TestPlaces(tray);
         checks.AddRange(await NoticeMotion(tray, web, folder));
         checks.AddRange(await Overlap(tray, folder));
         checks.AddRange(await HomeBall(form, folder));
@@ -223,14 +230,14 @@ public static partial class SelfTest
     }
 
     /// <summary>
-    /// Two real mouse drags of the header title (up left, then back): the widget lands exactly on each target, and the new place is saved.
+    /// Two real mouse drags of the header title (down right, then back): the widget lands exactly on each target, and the new place is saved.
     /// </summary>
     static async Task<Check> Drag(WidgetForm form, CoreWebView2 web)
     {
         var rect = JsonSerializer.Deserialize<double[]>(JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync(
             "JSON.stringify((r => [r.left + 20, r.top + r.height / 2])(document.querySelector('.hd.win .title').getBoundingClientRect()))"))!)!;
         var scale = form.DeviceDpi / 96f;
-        var by = new Size(-(int)(160 * scale), -(int)(120 * scale));
+        var by = new Size((int)(160 * scale), (int)(120 * scale));
         var back = Cursor.Position;
         var lines = new List<string>();
         var pass = true;
