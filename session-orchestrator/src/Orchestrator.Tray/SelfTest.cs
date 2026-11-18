@@ -26,7 +26,7 @@ public static partial class SelfTest
         new("stream", $"{Go}('stream')", ".tl"),
         new("sessions", $"{Go}('sessions')", "a.srow"),
         new("session-status", $"{Go}(([...document.querySelectorAll('a.srow')].find(a => a.textContent.includes('Plan the inbox')) ?? document.querySelector('a.srow')).getAttribute('href'))", ".hero"),
-        new("session-stream", $"{Go}(document.querySelector('.sticky-acts a.pri').getAttribute('href'))", ".lock"),
+        new("session-stream", $"{Go}(document.querySelector('.pagebar a.pri').getAttribute('href'))", ".lock"),
     ];
 
     /// <summary>The place file of the self-test: a new file in the self-test folder, so the widget starts at its home location.</summary>
@@ -94,6 +94,7 @@ public static partial class SelfTest
         checks.AddRange(await Motion(web, folder));
         checks.AddRange(await Header(form, web, folder));
         checks.AddRange(await Transitions(web, folder));
+        checks.AddRange(await Actions(web, folder));
         await web.ExecuteScriptAsync($"{Go}('')");
         await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
         await Task.Delay(800);

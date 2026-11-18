@@ -1,0 +1,56 @@
+@* E-1: the page bar and the corner button. Page actions (the same on each page of a type, such as Open session) are in a bar
+   at the bottom, always in the same place. Content actions (they change with the content, such as Approve) are in the corner
+   button above the bar, which opens them as a speed dial: the main action next to the button, danger actions last, in red.
+   The corner button shows only when the content has actions. A page that needs the full height hides the app bar. *@
+<div class="pagebar @(HideAppBar ? "no-app-bar" : "")" role="toolbar" aria-label="Page actions">
+    @foreach (var a in PageAct.Ordered(Page))
+    {
+        var css = a.Role == PageAct.Main ? "btn pri" : a.Role == PageAct.Danger ? "btn dg" : "btn";
+        var danger = a.Role == PageAct.Danger;
+        if (a.Href is { } href)
+        {
+            <a class="@css" href="@href" data-act="@a.Id" aria-label="@(danger ? a.Label : null)" title="@(danger ? a.Label : null)">@if (a.Icon is { } i) {<Icon Name="@i" />}@if (!danger) {@a.Label}</a>
+        }
+        else
+        {
+            <button type="button" class="@css" data-act="@a.Id" aria-label="@(danger ? a.Label : null)" title="@(danger ? a.Label : null)" @onclick="() => Run(a)">@if (a.Icon is { } i) {<Icon Name="@i" />}@if (!danger) {@a.Label}</button>
+        }
+    }
+    @if (Content.Count > 0)
+    {
+        if (open)
+        {
+            <div class="dscrim" @onclick="() => open = false"></div>
+            <div class="dial" role="menu" aria-label="Content actions">
+                @foreach (var (a, n) in PageAct.Ordered(Content).Select((a, n) => (a, n)))
+                {
+                    var css = a.Role == PageAct.Main ? "btn pri" : a.Role == PageAct.Danger ? "btn dg" : "btn";
+                    if (a.Href is { } href)
+                    {
+                        <a class="@css" role="menuitem" style="--n:@n" href="@href" target="_blank" rel="noopener" data-act="@a.Id" @onclick="() => open = false">@a.Label</a>
+                    }
+                    else
+                    {
+                        <button type="button" class="@css" role="menuitem" style="--n:@n" data-act="@a.Id" @onclick="() => Run(a)">@a.Label</button>
+                    }
+                }
+            </div>
+        }
+        <button type="button" class="cfab @(open ? "open" : "")" aria-label="Content actions" aria-expanded="@(open ? "true" : "false")" @onclick="() => open = !open"><Icon Name="plus" /></button>
+    }
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<PageAct> Page { get; set; } = [];
+    [Parameter] public IReadOnlyList<PageAct> Content { get; set; } = [];
+    [Parameter] public EventCallback<string> OnAct { get; set; }
+    [Parameter] public bool HideAppBar { get; set; }
+
+    bool open;
+
+    Task Run(PageAct a)
+    {
+        open = false;
+        return OnAct.InvokeAsync(a.Id);
+    }
+}

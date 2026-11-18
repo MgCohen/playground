@@ -328,6 +328,32 @@ code { font-family: var(--f-mono); font-size: .92em; }
 @keyframes m-pop-old { to { transform: translateX(100%); } }
 @keyframes m-pop-new { from { transform: translateX(-30%); filter: brightness(.8); } }
 
+/* ===== E-1: the page bar and the corner button ===== */
+/* margin-top: auto puts the bar at the bottom of a short page too, so it is always in the same place. */
+.pagebar { position: sticky; bottom: 92px; z-index: 11; display: flex; gap: 8px; align-items: center; padding: 8px; margin-top: auto; border-radius: 20px; background: var(--surf); box-shadow: var(--sh-raise); }
+.pagebar .btn { min-height: 42px; box-shadow: none; background: var(--sunken); flex: 1 1 0; min-width: 0; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Labels only in the page bar, so four acts fit the widget; a danger act is an icon only. The main act gets more space. */
+.pagebar .btn:not(.dg) .ic { display: none; }
+.pagebar .btn.pri { flex-grow: 1.5; }
+.pagebar .btn.pri { background: var(--accent); box-shadow: var(--sh-glow); }
+/* A danger action is a square red icon button, like the skip button of a card. */
+.btn.dg, .pagebar .btn.dg { flex: 0 0 46px; padding: 0; color: var(--failed); }
+/* A page that needs the full height hides the app bar; its page bar takes the place of the app bar. */
+body:has(.pagebar.no-app-bar) .nav2 { display: none; }
+.pagebar.no-app-bar { bottom: max(10px, env(safe-area-inset-bottom, 0px)); margin-bottom: 10px; }
+body:has(.pagebar.no-app-bar)::after { height: 84px; }
+/* The corner button floats 10 px above the page bar, at the right. A tap opens the content actions as a speed dial. */
+.cfab { position: absolute; right: 6px; bottom: calc(100% + 10px); z-index: 2; width: 52px; height: 52px; border: 0; border-radius: 50%; display: grid; place-items: center; padding: 0;
+  background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow), 0 10px 20px -8px rgba(0,0,0,.45); }
+.cfab .ic { width: 22px; height: 22px; transition: transform .25s var(--ease-spring); }
+.cfab.open .ic { transform: rotate(45deg); }
+.dscrim { position: fixed; inset: 0; z-index: 1; background: color-mix(in srgb, var(--scrim) 45%, transparent); animation: m-fade .2s ease backwards; }
+.dial { position: absolute; right: 6px; bottom: calc(100% + 72px); z-index: 2; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 8px; }
+.dial .btn { flex: none; min-height: 40px; border-radius: 999px; padding: 0 16px; box-shadow: var(--sh-raise), 0 8px 16px -8px rgba(0,0,0,.4); white-space: nowrap;
+  animation: m-dial .22s var(--ease-out) backwards; animation-delay: calc(var(--n, 0) * 40ms); }
+.dial .btn.dg { flex: none; padding: 0 16px; background: var(--surf); }
+@keyframes m-dial { from { transform: translateY(14px) scale(.85); opacity: 0; } }
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
 /* R2: blocks of the render model (view.json) */
