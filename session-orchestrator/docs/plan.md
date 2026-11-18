@@ -595,3 +595,57 @@ The session "Orchestrator watch" (`dc99fc00`) gets the framework problems of the
 | W5 | In child `72f859bc` (C1, design), the user typed a new question in the chat ("Before we even start - i realized something, Where is the event stream and event store stored?"). `answerFromChat` recorded it as the answer to decision `toolu_018eLJKjbcGZJXyLnwMCvEFn` (Q8, three options) and closed Q8 | `answerFromChat` treats each composer prompt as the answer to the latest open decision, with no check of the content. The child had 6 open decisions at that time, so the rule "latest open decision" is weak too: an answer to Q5 would close Q8. W2 is the same code path. Possible fixes: (a) the hook closes nothing; it adds a line "Open decisions: ... If this message answers one, call `mcp__orch__answer_own`" and the session decides; (b) close only when the text names the decision, for example "Q8: A"; (c) keep the automatic close only when exactly one decision is open and the text matches an option. Recommendation: (a), because the session reads the meaning. Also give a way to open a decision again. Second case, same child: "What do you mean by plan card? We don't have a card anywhere, do we?" closed Q7 (`toolu_01FSByYF8yD5WguzGvkVbTmz`). After each wrong close, the child asked the same question again as a new decision (Q7 and Q8 exist two times each), so the queue fills with copies. Third case, same child, 10 min later: `toolu_01PsXdiS7H18ckQ6x77FoLBq` (Q7 copy). Workaround of the root: C1 discusses in the chat with no open decision. Fourth case, a second child: `09462c4b`, `toolu_01Ps9xPV6krGuL1qsbUQHnS8`, a long request of the user. Fifth case, `09462c4b`, `toolu_016c5Af2XN5D3PSTkjLEgeQ9`: W5 and W2 together (a request with the app `<system-reminder>` text). Sixth case, a third child: `ff65da95`, `toolu_01KqH1usb51VG2XrkBCzR4oZ`, W5 and W2 together. Seventh case, a fourth child: `1c713ac8`, `toolu_012Rwg3B4mQsm5N4f9JcDww2`, risk **high**, closed by "Let's go one by one through the questions". The root suggests: turn the automatic chat answer off until it can tell an answer from a question. A high-risk decision must never close from this path. Eighth case: `09462c4b`, `toolu_01MfN2AyTr6UxkjyhZ4vMUEk` and 13 s later `toolu_013dpm9tK8rDE6LVCzxiAygY`. The root then relayed a request of the user: note the bug, and turn the automatic chat answer off or fix it | Fixed in PR #27, waits for the merge: `answerFromChat` closes a decision only for a chat message that starts with `answer:` (any case). It removes the prefix and the `<system-reminder>` blocks. Any other chat message leaves the decision open, so questions and requests never close a decision, at any risk level. The `ask_user` result and the skills `orch-ask` and `orch-reply` tell the user: "In the chat, start the answer with `answer:`". Tests: `plugin/hooks/test/chat-answer.test.ts` (node, fake engine; `PluginHookTests` runs it in `dotnet test`) and `SupervisorTests.An_answer_from_the_chat_of_the_session_is_not_sent_back_to_it`. Option (a) of the analysis (the session decides) stays possible later. The rule "newest open decision" stays for a prefixed answer |
 | W6 | Request of the user through the root: no hourly `question.remind` notices in the root. There is no setting for `FirstReminder` and `NextReminder` (`Runners.cs`, fixed 10 min and 1 h) | Workaround of the root: it wrote `remindedAt` in 2027 in the open `forwarded-questions` records. The records stay valid JSON, but a question that comes later still gets reminders, and a session that edits store files by hand is outside the store contract. Possible fix: a `reminders` block in `store/policy.json` (`firstSeconds`, `nextSeconds`, `null` = off), read by the supervisor on each tick, with a row in `docs/store.md`. Default: off in the root, because the root shows each question once when it arrives | Open: wait for the user |
 | W7 | The user sees chat text come back in the child as "The orch plugin sent a message" (reported as an echo, `09462c4b`) | It is not an echo of the chat answer. The child inbox has three `orch send` messages from the root (16:15 to 16:17), each one starts "Root: your ... question closed with a chat message of the user" and quotes the user text. These are the root's W5 repairs. The plugin submits each inbox file as a prompt, and the app shows all such prompts with the same header, "The orch plugin sent a message". So the user cannot see who sent it, and the quote looks like an echo. The inbox file has `from: user`, because `orch send` from a session does not set the sender. Possible fixes: `orch send` sets `from` to the sender session; the plugin starts the prompt with the sender, for example "From root (ab9acae5):". W5 removes the cause of these repairs | Analysis confirmed in PR #27: the plugin writes `delivered/<id>.json` (`by: chat`) before `orch answer`, so neither the inbox tick nor the supervisor sends a chat answer back to its session. A test covers it. With W5 fixed, the root has no wrong closes to repair, so these quotes stop. The sender header of plugin messages is not changed |
+
+## M plan: voice dictation (draft, 2026-11-18, waits for the user's approval)
+
+Discovery page: `docs/voice-dictation.html` (https://claude.ai/artifact/1SeKtR99MvW6c6fko6rL65).
+
+Goal: the user clicks the mic on any card of the tray widget, speaks for 30 s to 5 min, and the text goes into the field. The Android app gets the same function later. The user is the only user.
+
+### Decisions
+
+| Question | Decision | Source |
+|---|---|---|
+| Which apps | The tray widget on Windows now. The Android app next | User |
+| Languages | English first. Portuguese is good to have | User |
+| Length | 30 s to 5 min, sometimes a short answer | User |
+| Text while you speak | Not necessary. Text after stop, for better quality and less work | User |
+| Tray engine | A local model in the supervisor on the GPU. First candidate: Parakeet TDT v3. Second candidate: Whisper Large v3 Turbo. Step M-1 picks one | Recommendation, the user left the choice open |
+| Android engine | The engine of the phone (Android on-device recognizer or ML Kit GenAI). The audio stays on the phone | Recommendation, the user left the choice open |
+
+### Design
+
+```
+Tray widget (WebView2)
+└─ Mic button ─ MediaRecorder (audio) ─ POST /api/transcribe
+   └─ Supervisor
+      └─ ITranscriber
+         ├─ LocalTranscriber (sherpa-onnx, CUDA)   default
+         └─ CloudTranscriber (OpenAI-compatible)   later, optional
+Android app (later)
+└─ Mic button ─ engine of the phone ─ text into the field
+```
+
+### Steps
+
+| Step | Work | Done when |
+|---|---|---|
+| M-1 | Spike in `spikes/` (not in the solution): run Parakeet TDT v3 and Whisper Large v3 Turbo through the C# NuGet package of `sherpa-onnx` on the GPU. Use 5 of the user's recordings: 30 s, 2 min and 5 min in English, and one in Portuguese | A table in this file: time after stop, load time, GPU memory, and the user's grade of the text. The user picks the model |
+| M-2 | Transcription service in the supervisor: `ITranscriber`, `POST /api/transcribe`, model download to `%LOCALAPPDATA%\orch\models`, load at the first use, unload after 10 min idle. Settings: model and language (auto, en, pt) | Unit tests with a fake transcriber. One explicit test with the real model. `docs/store.md` has the new endpoint |
+| M-3 | Recorder in the UI: `speech.js` records with `MediaRecorder` and sends the audio. The mic shows recording (timer), transcribing and error states, and has Cancel. A limit of 10 min for each recording. The tray host allows the mic for its own page with no prompt | bUnit tests for the states. The text goes into the field of each card type |
+| M-4 | Live test in the tray on a store copy with a fake provider, ports 7830-7839 | The user dictates into a decision card, a session card and the new session form. Results in this file |
+| M-5 | Android: the plan of the Android app uses the engine of the phone. If a phone engine is too weak, Moonshine or Parakeet through `sherpa-onnx` on the phone is the fallback | Part of the Android app plan |
+| M-6 | Later and optional: text phrase by phrase (a voice detector cuts at pauses), and a cloud engine with the user's own key | Only if the user asks |
+
+### Non-goals
+
+- The Anthropic dictation service: it has no public API, and only Anthropic apps can use it.
+- The browser speech engine (Web Speech API): it fails in WebView2.
+- Voice commands such as "approve" or "skip".
+- Dictation in the phone browser before the HTTPS tunnel. Until then, the mic key of the phone keyboard covers it.
+
+### Risks
+
+- The model download is about 0.5 to 1.5 GB. The first use waits for it.
+- The GPU is also used by other work. M-1 measures the memory.
+- The CUDA build of `sherpa-onnx` for .NET can need extra runtime files. M-1 finds this. The CPU build is the fallback.

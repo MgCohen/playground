@@ -297,6 +297,38 @@ flowchart LR
 </details>
 
 <details class="fold" open>
+  <summary><h2>What people recommend in 2026</h2><span class="hint">web research, 2026-11-18</span></summary>
+  <div class="body">
+    <div class="scroll"><table>
+      <tr><th>Where</th><th>Pick</th><th>Why</th><th>Cost</th></tr>
+      <tr><td>PC with an NVIDIA GPU</td><td><span class="pill rec">Parakeet TDT v3</span></td><td>The most cited pick for dictation. As accurate as Whisper Large v3 in English, and much faster. 25 European languages, Portuguese included</td><td>free, local</td></tr>
+      <tr><td>PC, more languages</td><td>Whisper Large v3 Turbo</td><td>The default for many languages and for weaker PCs. One test found it a little better than Parakeet on European languages</td><td>free, local</td></tr>
+      <tr><td>PC or phone, small</td><td>Whisper Tiny</td><td>Very small and fast, but the least accurate: about 9 % word errors, compared with about 5.5 % for Parakeet</td><td>free, local</td></tr>
+      <tr><td>Phone, built in</td><td>Gboard voice typing, Android on-device recognizer, ML Kit GenAI</td><td>Already on the phone, and the offline mode is good. The Gemini Nano mode of ML Kit is alpha and only on new Pixel phones. Other Android 12+ phones get the basic mode</td><td>free</td></tr>
+      <tr><td>Phone, own model</td><td>Moonshine (fastest), Parakeet with <code>sherpa-onnx</code> (most accurate, 478 MB)</td><td>The app ships the model. The runtime must be <code>sherpa-onnx</code>, not <code>whisper.cpp</code></td><td>free, local</td></tr>
+    </table></div>
+    <details class="fold">
+      <summary><h2>Apps that people use</h2><span class="hint">ideas for our design</span></summary>
+      <div class="body">
+        <ul>
+          <li><b>Handy</b>: Windows, free, open source, offline.</li>
+          <li><b>Chirp</b>: Windows, open source, Parakeet TDT v3 on the CPU.</li>
+          <li><b>OpenWhispr</b>: PC, local models or cloud models.</li>
+          <li><b>FUTO Voice Input</b>: Android keyboard, open source, Whisper, fully offline. The most cited offline Android pick.</li>
+          <li><b>Wispr Flow</b>: cloud, about 15 USD a month. Other apps cannot use it.</li>
+        </ul>
+      </div>
+    </details>
+    <details class="fold">
+      <summary><h2>Your class recordings in Claude</h2><span class="hint">why they cost nothing</span></summary>
+      <div class="body">
+        <p>Claude cannot hear audio. In a local session, Claude probably installs Whisper in its own sandbox and runs it on the CPU. That is a free local model, the same idea as option E. It is not a speech service of your account.</p>
+      </div>
+    </details>
+  </div>
+</details>
+
+<details class="fold" open>
   <summary><h2>This PC</h2><span class="hint">important for option E</span></summary>
   <div class="body">
     <div class="scroll"><table>
@@ -343,6 +375,12 @@ flowchart LR
       <li><a href="https://costbench.com/software/ai-transcription-apis/openai-whisper/">Transcription price list (Groq, OpenAI, Deepgram)</a></li>
       <li><a href="https://github.com/stablyai/orca">Orca source code</a>: <code>src/main/speech/model-catalog.ts</code>, <code>src/main/speech/stt-transcribe-cpp-recognizer.ts</code>, <code>mobile/src/hooks/mobile-dictation-device-engine.ts</code>, <code>MlKitSpeechEngine.kt</code>, <code>docs/site/content/docs/settings.mdx</code></li>
       <li><a href="https://voiceping-landingpage-prod.pages.dev/en/blog/research-offline-speech-transcription-benchmark/">Offline speech benchmark on Android (sherpa-onnx compared with whisper.cpp)</a></li>
+      <li><a href="https://amical.ai/blog/parakeet-vs-whisper">Parakeet v3 compared with Whisper Large v3 Turbo for dictation</a></li>
+      <li><a href="https://openvoxai.com/blog/best-local-stt-transcription-models-2026">Best local speech models 2026</a></li>
+      <li><a href="https://localaimaster.com/blog/best-local-speech-to-text-models">Whisper, Parakeet, Moonshine and Voxtral on the same audio</a></li>
+      <li><a href="https://github.com/whamp/chirp">Chirp</a>, <a href="https://betterstack.com/community/guides/ai/handy-offline.md">Handy</a></li>
+      <li><a href="https://picovoice.ai/blog/android-speech-recognition/">Android speech recognition in 2026</a>, <a href="https://www.yaps.ai/blog/private-voice-keyboard-android">offline voice keyboards for Android</a></li>
+      <li><a href="https://www.getvoibe.com/resources/wispr-flow-pricing/">Wispr Flow prices 2026</a></li>
     </ul>
   </div>
 </details>
