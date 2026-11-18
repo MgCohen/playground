@@ -133,7 +133,20 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     public bool CallerInApp() => Environment.GetEnvironmentVariable(EntrypointVariable) == DesktopEntrypoint;
 
     /// <summary>
-    /// The call of <see cref="StartTool"/> for the parent. The permission mode is explicit: an app session started with
+    /// The app sets its own id of the session in this variable. A <c>claude -p</c> child of an app session inherits the
+    /// id of the parent, so the value counts only in the app (R-18).
+    /// </summary>
+    public const string HostSessionVariable = "CLAUDE_CODE_HOST_SESSION_ID";
+
+    public string? CallerAppId() =>
+        CallerInApp() && Environment.GetEnvironmentVariable(HostSessionVariable) is { } id && id.StartsWith("local_", StringComparison.Ordinal) ? id : null;
+
+    /// <summary>The JSON of the app call keeps quotes and backslashes readable for the model: no ".</summary>
+    static readonly JsonSerializerOptions Readable = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
+    /// <summary>
+    /// The call of <see cref="StartTool"/> for the parent. The folder is in the form of the system: the app refuses
+    /// <c>C:/…</c> on Windows as "another spelling" of <c>C:\…</c> (R-17). The permission mode is explicit: an app session started with
     /// no mode showed <c>auto</c> at the start and <c>default</c> after its first turn (R-16).
     /// </summary>
     public string? AppStartInstruction(AppStartRequest request)
@@ -144,13 +157,13 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
             ["initiation"] = "user_asked",
             ["context"] = "fresh",
             ["title"] = request.Title,
-            ["cwd"] = request.Cwd,
+            ["cwd"] = Path.GetFullPath(request.Cwd),
             ["use_worktree"] = request.Worktree,
             ["permission_mode"] = "auto",
             ["prompt"] = prompt,
             ["background"] = $"A child session of the orchestrator for the task \"{request.Title}\". The command in the prompt joins it to the orchestrator store; the brief with the goal, the scope and the done check then arrives as a message.",
         };
-        return $"Start the child in the desktop app now: call {StartTool} with these inputs: {JsonSerializer.Serialize(call)}. "
+        return $"Start the child in the desktop app now: call {StartTool} with these inputs: {JsonSerializer.Serialize(call, Readable)}. "
             + "Do not change the prompt. If you do not have that tool, or the call is refused, call spawn_child again with the same fields and inApp false: then the supervisor starts the child.";
     }
 

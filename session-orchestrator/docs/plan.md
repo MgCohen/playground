@@ -2121,6 +2121,9 @@ Test setup: scratchpad folder `spike/s1`, test store `spike/store`, port 7840. T
 | R-14 | `claude --remote-control <name> --resume <id> "/desktop"` | The CLI exits and the app imports the session. App state: `remoteControlState: off` |
 | R-15 | R-12 again ("R spike M"), then a look at the app sidebar by the user | Not in the sidebar, not in `list_sessions`, no app record. Only the imported tests (G, I, K) show |
 | R-16 | App tool `start_session` from an app session ("R spike N", `beaa0468`) | In the sidebar at once, linked to its parent. `remoteControlState: connecting` 2 s after the start. No headless turn |
+| R-17 | `start_session` with `cwd` as `C:/…` | Refused: "reached through a symbolic link (or another spelling)". With `C:\…` it starts |
+| R-18 | Live test of `orch new --app-start`, `start_session`, `orch join` on a test store ("R live child") | Joined. Remote Control `on`. The CLI id (`2ec9d858`) is not the app id (`local_1d15b9da`). `CLAUDE_CODE_HOST_SESSION_ID` holds the app id |
+| R-19 | R-18 with `permission_mode: "auto"` | The app reports `permissionMode: default` after the turn |
 
 Findings:
 
@@ -2131,6 +2134,9 @@ Findings:
 - R-F6: `--bg --remote-control --resume <id>` keeps the id. So a known session can run a turn with Remote Control on, but as a background job, not as an app session.
 - R-F7: an interactive `claude --remote-control` keeps the id and has Remote Control from turn 1, but needs a console and stays open. Each move to the app (`/desktop` or `--desktop --resume`) gives Remote Control off in the app.
 - R-F8: the app tool `start_session` gives both at once: the sidebar and Remote Control from the start (the app default `ccRemoteControlDefaultEnabled`). Only an app session has this tool, so the parent must start the child, not the supervisor.
+- R-F9: `orch join` must not resolve the store from the environment: an app child has no `ORCH_STORE`, and the HTTP fallback calls port 7777. The start file names the store.
+- R-F10: the app id of a session that the app made comes from `CLAUDE_CODE_HOST_SESSION_ID`, only in the app (a `-p` child inherits the id of its parent).
+- R-F11 (open): the permission mode of an app child shows `default` after its first turn, also with `permission_mode: auto`. Not solved.
 - R-F4: so a session started by the supervisor needs `set_remote_control`. Only a live app session has that tool.
 
 ## Next tasks

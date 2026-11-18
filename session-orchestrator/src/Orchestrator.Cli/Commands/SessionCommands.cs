@@ -69,14 +69,15 @@ public static class SessionCommands
     {
         var path = c.Args.Required(1, "start file");
         var start = AppStartFile.Read(path);
-        var store = string.Equals(Path.GetFullPath(start.Store), Path.GetFullPath(c.Store.Root), StringComparison.OrdinalIgnoreCase)
-            ? c.Store : new FileStore(start.Store, writer: "cli");
+        var store = c.Store;
         var id = c.Args.Option("id") ?? c.Provider.CallerSessionId()
             ?? throw new UsageException($"no session id: run this inside a {c.Provider.Name} session, or give --id");
         if (store.Registry.Exists(id)) throw new UsageException($"{Short(id)} is in the store already: it joined before");
         var cwd = Path.GetFullPath(c.Cwd).Replace('\\', '/');
         var brief = start.Brief with { Cwd = cwd, Worktree = null };
-        new Messages(store).NewSession(brief, start.CreatedBy, start.From, join: new SessionJoin(id, c.Provider.AppId(id), cwd));
+        // R-18: a session that the app made has its own app id, not the app id of its engine session id.
+        var appId = c.Args.Option("app-id") ?? c.Provider.CallerAppId() ?? c.Provider.AppId(id);
+        new Messages(store).NewSession(brief, start.CreatedBy, start.From, join: new SessionJoin(id, appId, cwd));
         var meta = store.Session(id);
         store.Events.Append(EventKinds.SessionStart, start.From, Parties.Session(id), Messages.Fields(("text", $"{meta.Title} started in the app"), ("title", meta.Title)),
             meta.Parent is { } parent ? Messages.Fields(("parent", parent)) : null, id);

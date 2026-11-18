@@ -92,6 +92,38 @@ public sealed class AppStartTests
     }
 
     [Test]
+    public void Join_in_the_app_records_the_app_id_of_the_app_not_the_one_of_the_engine_id()
+    {
+        using var rig = new Rig();
+        var parent = Parent(rig);
+        var (_, output) = Run(rig, true, "new", "--title", "Child F", "--goal", "Do F.", "--parent", parent, "--app-start");
+        Environment.SetEnvironmentVariable(ClaudeCodeProvider.HostSessionVariable, "local_1d15b9da-0000-0000-0000-000000000000");
+        try
+        {
+            Run(rig, true, "join", StartFile(output), "--id", Child);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(ClaudeCodeProvider.HostSessionVariable, null);
+        }
+        Assert.That(rig.Store.Session(Child).Engine.AppId, Is.EqualTo("local_1d15b9da-0000-0000-0000-000000000000"), "R-18");
+    }
+
+    [Test]
+    public void The_host_id_counts_only_in_the_app()
+    {
+        Environment.SetEnvironmentVariable(ClaudeCodeProvider.HostSessionVariable, "local_parent");
+        try
+        {
+            Assert.That(new ClaudeCodeProvider(new()).CallerAppId(), Is.Null, "a -p child of an app session inherits the id of its parent");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(ClaudeCodeProvider.HostSessionVariable, null);
+        }
+    }
+
+    [Test]
     public void A_second_join_with_the_same_file_or_id_is_refused()
     {
         using var rig = new Rig();
@@ -121,8 +153,10 @@ public sealed class AppStartTests
     public void The_app_call_names_the_folder_the_title_and_the_first_command()
     {
         var text = new ClaudeCodeProvider(new()).AppStartInstruction(new("T 1", "C:/repo", false, "orch join \"C:/t/s.json\""))!;
-        Assert.That(text, Does.Contain("\"title\":\"T 1\"").And.Contain("\"cwd\":\"C:/repo\"").And.Contain("\"use_worktree\":false"));
-        Assert.That(text, Does.Contain("orch join \\u0022C:/t/s.json\\u0022").Or.Contain("orch join \\\"C:/t/s.json\\\""));
+        var cwd = System.Text.Json.JsonSerializer.Serialize(Path.GetFullPath("C:/repo"))[1..^1];
+        Assert.That(text, Does.Contain("\"title\":\"T 1\"").And.Contain($"\"cwd\":\"{cwd}\"").And.Contain("\"use_worktree\":false"));
+        Assert.That(text, Does.Contain("orch join \\\"C:/t/s.json\\\"").And.Not.Contain("\\u0022"), "readable quotes for the model");
+        if (OperatingSystem.IsWindows()) Assert.That(cwd, Is.EqualTo("C:\\\\repo"), "the app refuses C:/ as another spelling of C:\\ (R-17)");
         Assert.That(text, Does.Contain("inApp false"), "the fallback when the app tool is missing or refused");
     }
 }

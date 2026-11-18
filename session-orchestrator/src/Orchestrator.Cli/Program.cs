@@ -16,7 +16,7 @@ namespace Orchestrator.Cli
               orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--type A] [--stream S] [--workflow W] [--worktree] [--allow-defaults] [--background] [--where local|cloud] [--parent ID] [--app-start]
                                                         --app-start: a caller in the desktop app gets a start file and the app call that starts the child there
               orch enable [--title T] [--parent ID] [--id ID]
-              orch join <start file> [--id ID]         the first command of a child that the app started: the store entry, the brief, the parent link
+              orch join <start file> [--id ID] [--app-id A]       the first command of a child that the app started: the store entry, the brief, the parent link
               orch send <session> <text> [--from P]
               orch tree [--stream S]
               orch status <session> | --stream S
@@ -76,7 +76,10 @@ namespace Orchestrator.Cli
             var word = args.Positional[0];
             try
             {
-                var store = new FileStore(Home.CliStoreRoot(local: word is "supervisor" or "process" or "store", fallback: word is not ("init" or "doctor" or "template")), writer: "cli");
+                // A child that the app started has no ORCH_STORE: the start file names the store of its parent (R-17).
+                var store = word == "join" && args.Positional.Count > 1
+                    ? new FileStore(AppStartFile.Read(args.Positional[1]).Store, writer: "cli")
+                    : new FileStore(Home.CliStoreRoot(local: word is "supervisor" or "process" or "store", fallback: word is not ("init" or "doctor" or "template")), writer: "cli");
                 var command = new CommandContext(store, args, output, cwd);
                 if (args.Positional[0] is not ("doctor" or "template" or "process" or "supervisor" or "store")) Home.CheckVersion(store.Repositories, store.Clock.GetUtcNow());
                 return args.Positional[0] switch

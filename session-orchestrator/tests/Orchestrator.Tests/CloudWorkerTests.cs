@@ -32,6 +32,7 @@ public sealed class FakeProvider(bool giveId = true) : IProvider
 
     public string? CallerSessionId() => null;
     public bool CallerInApp() => false;
+    public string? CallerAppId() => null;
     public string? AppStartInstruction(AppStartRequest request) => null;
 
     public IReadOnlyList<(string Key, object? Value)> AppTools { get; } = [("remoteControlTool", "fake_rc"), ("archiveTool", "fake_archive")];

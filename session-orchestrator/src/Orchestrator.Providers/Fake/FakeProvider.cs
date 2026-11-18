@@ -60,6 +60,8 @@ public sealed class FakeProvider(ProviderOptions options) : IProvider
     /// <summary>True when the behavior file has <c>"app": { "caller": true }</c>.</summary>
     public bool CallerInApp() => Load().App?.Caller ?? false;
 
+    public string? CallerAppId() => null;
+
     public string? AppStartInstruction(AppStartRequest request) => $"fake_start_session title={request.Title} cwd={request.Cwd} worktree={request.Worktree} command={request.Command}";
 
     public IReadOnlyList<DoctorCheck> Doctor(CommandRun run) =>

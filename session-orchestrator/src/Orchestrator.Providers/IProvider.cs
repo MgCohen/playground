@@ -34,6 +34,12 @@ public interface IProvider
     bool CallerInApp();
 
     /// <summary>
+    /// The app id of the session that runs this process, when it runs in the app. Null: not in the app. A session that
+    /// the app made has an app id that is not <see cref="AppId"/> of its engine session id (R-18).
+    /// </summary>
+    string? CallerAppId();
+
+    /// <summary>
     /// The instruction for a parent in the app: start the child with the app tool, with this first command. Null: the
     /// engine cannot start a session from the app, and the supervisor starts the child.
     /// </summary>
