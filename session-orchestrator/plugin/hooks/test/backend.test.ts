@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { S } from '../state.ts'
-import { StoreConflict, createEnvelope, log, readSession, readSessionVersioned, readTemplate, versionOf, writeSession } from '../backend.ts'
+import { StoreConflict, createEnvelope, log, readSession, readSessionVersioned, readTemplate, storeRoot, versionOf, writeSession } from '../backend.ts'
 import { post } from '../stream.ts'
 
 // Known versions of three texts. VersionRuleTests (C#) checks the same values.
@@ -102,4 +102,14 @@ test('a template reads from the store templates root first, else from the core t
   })
   assert.equal((await readTemplate($, 'plan', 'meta')).from, 'store', 'a store folder with a core name replaces the core template')
   assert.equal((await readTemplate($, 'note', 'meta')).from, 'core')
+})
+
+test('storeRoot: ORCH_STORE, else %LOCALAPPDATA%/orch/store, the same default as C# and install.ps1', async () => {
+  reset()
+  const env = (vars: Record<string, string>) => ({ env: { get: async (k: string) => vars[k] } })
+  const local = String.raw`C:\Users\u\AppData\Local`
+  assert.equal(await storeRoot(env({ ORCH_STORE: 'C:/test/store', LOCALAPPDATA: local })), 'C:/test/store')
+  assert.equal(await storeRoot(env({ LOCALAPPDATA: local })), 'C:/Users/u/AppData/Local/orch/store')
+  assert.equal(await storeRoot(env({ ORCH_STORE: '', LOCALAPPDATA: local })), 'C:/Users/u/AppData/Local/orch/store', 'an empty ORCH_STORE is not set, as in C#')
+  assert.equal(await storeRoot(env({ HOME: '/home/u' })), '/home/u/.local/share/orch/store')
 })

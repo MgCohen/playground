@@ -47,6 +47,8 @@ namespace Orchestrator.Cli
               orch template add <folder> [--replace]    check, then copy to <store>/templates/<folder name>
               orch template remove <kind>               move a store template to <store>/templates/.removed
               orch doctor
+              orch store [root]                          the store root: ORCH_STORE, else %LOCALAPPDATA%\orch\store
+              orch store migrate [--from DIR] [--to DIR] [--dry-run] [--force]   copy the old store (<home>/store) to the store root and check the copy. Deletes nothing
               orch supervisor start|stop|status [--port P] (the supervisor of ORCH_STORE: a published copy in ORCH_APP, else dotnet run of the source)
               orch process (the id and start time of the process that runs orch: the plugin puts them in lease.json)
             A <session> can be the first characters of its id.
@@ -64,7 +66,7 @@ namespace Orchestrator.Cli
             var command = new CommandContext(store, args, output, cwd);
             try
             {
-                if (args.Positional[0] is not ("doctor" or "template" or "process" or "supervisor")) Home.CheckVersion(store.Repositories, store.Clock.GetUtcNow());
+                if (args.Positional[0] is not ("doctor" or "template" or "process" or "supervisor" or "store")) Home.CheckVersion(store.Repositories, store.Clock.GetUtcNow());
                 return args.Positional[0] switch
                 {
                     "new" => SessionCommands.New(command),
@@ -92,6 +94,7 @@ namespace Orchestrator.Cli
                     "events" => EventCommands.Events(command),
                     "template" => ToolCommands.Template(command),
                     "doctor" => ToolCommands.Doctor(command),
+                    "store" => StoreCommands.Store(command),
                     "supervisor" => ToolCommands.Supervisor(command),
                     "process" => ToolCommands.Process(command),
                     _ => throw new UsageException($"unknown command {args.Positional[0]}"),

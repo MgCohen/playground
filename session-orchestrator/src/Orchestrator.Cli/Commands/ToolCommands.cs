@@ -2,6 +2,7 @@ using System.Text.Json;
 using Orchestrator.Cli.Git;
 using Orchestrator.Core.Templates;
 using Orchestrator.Store;
+using Orchestrator.Store.Local;
 
 namespace Orchestrator.Cli;
 
@@ -110,7 +111,7 @@ public static class ToolCommands
         Check("home", () => (File.Exists(Path.Combine(Home.Root(), Home.Solution)), Home.Root()));
         Check("install", () => Install.Check(new Shell(Home.Root()), Install.Commit));
         Check("app", () => Install.CheckApp(new Shell(Home.Root()), SupervisorHost.AppRoot()));
-        Check("store", () => (c.Store.Repositories.Exists(), c.Store.Root));
+        Check("store", () => (c.Store.Repositories.Exists(), c.Store.Repositories.Exists() || !StoreMigration.IsStore(Home.OldStoreRoot()) ? c.Store.Root : $"{c.Store.Root} does not exist. The old store {Home.OldStoreRoot()} exists: run orch store migrate"));
         Check("policy", () =>
         {
             var policy = Home.LoadPolicy(c.Store.Repositories);

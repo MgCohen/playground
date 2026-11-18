@@ -144,7 +144,7 @@ public sealed partial class Supervisor
     void Forgotten(string id, DateTimeOffset now)
     {
         var self = Parties.Session(id);
-        var input = store.Events.Since(now - StateReader.Window).LastOrDefault(e => e.To == self && e.From != Parties.Supervisor && store.IsDeliverable(e))?.Id ?? "none";
+        var input = store.Events.OfSession(id, now - StateReader.Window).LastOrDefault(e => e.To == self && e.From != Parties.Supervisor && store.IsDeliverable(e))?.Id ?? "none";
         var report = $"{store.Report(id)?.Event ?? "none"}|{input}";
         var marker = store.ReadJson<ForgottenMarker>(id, StoreFiles.Forgotten);
         if (marker is null || marker.Report != report)

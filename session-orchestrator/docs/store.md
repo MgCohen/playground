@@ -1,11 +1,32 @@
 # Store contract
 
-All communication goes through one event stream in the store. A sender posts a body file and an envelope. Each party gets a push for each envelope to its address, then queries and reads what it needs. The environment variable `ORCH_STORE` changes the store root.
+All communication goes through one event stream in the store. A sender posts a body file and an envelope. Each party gets a push for each envelope to its address, then queries and reads what it needs.
+
+## Store root
+
+| Order | Store root |
+|---|---|
+| 1 | `ORCH_STORE`, when it is set and not empty |
+| 2 | The default store root: `%LOCALAPPDATA%\orch\store` (on Windows). With no `LOCALAPPDATA`: `$HOME/.local/share/orch/store` |
+
+Each part uses this one rule: `Home.StoreRoot` (C#: `orch`, the supervisor, the tray), `storeRoot` in `plugin/hooks/backend.ts`, and the default of `install.ps1 -Store`. `StoreBackends.Create` takes the root that `Home.StoreRoot` gives. The test `StoreMoveTests` checks each place.
+
+The default store root is out of the checkout, so a `git clean -fdx` cannot delete it (H1). The old default was `<home>/store` in the checkout. `orch store root` prints the store root. `tray.ps1 -LiveDefault` and `Orchestrator.Tray.exe --live` with no folder show the default store root.
+
+### Migration of the old store
+
+`orch store migrate [--from DIR] [--to DIR] [--dry-run] [--force]` copies the old store to the store root. The default source is `<home>/store`. The default target is the store root.
+
+1. The command refuses the copy in these cases: the source has no `version.json`; the target has data (a file other than `version.json` and `policy.json`); `<target>.migrating` exists; a session of the source has a heartbeat in the last 30 s (`--force` skips only this check).
+2. It copies each file to `<target>.migrating`. It skips `*.tmp` files of writes in progress.
+3. It compares each file of the source with its copy: the size and the SHA-256 hash. A missing, an extra or a changed file is a difference.
+4. With no difference, it renames `<target>.migrating` to the target. Each `orch` command makes a fresh store (only `version.json` and `policy.json`) at its first run. The migration renames such a target to `<target>.fresh-<time>` first; it deletes no file. With a difference, it lists the differences, keeps `<target>.migrating` for examination, and does not make the target.
+5. It never changes or deletes the source. It prints the next steps: remove an old `ORCH_STORE`, run `install.ps1` again, start the supervisor, then move the old folder out of the checkout as a backup.
 
 ## Layout
 
 ```
-store/
+<store root>/
   version.json                       { version: 2, at }
   policy.json                        the policy in use
   events/<day>/<id>.json             envelopes, append only, one file each
@@ -46,6 +67,19 @@ Rules of each implementation. The contract tests (`RepositoryContractTests`) run
 
 1. A save of an `Add` with an id that exists fails with `StoreConflictException` (`Exists`). The local folder writes a temp file and moves it with no overwrite. The claims and the envelopes use this rule.
 2. Each entity has a version. A save of a change or a remove fails when the stored version is newer (`Stale`). A put of a whole file (lease, meta, status) reads again and writes again: the last writer wins.
+
+### Reads of the envelopes
+
+The envelopes are append only. Two parts keep the reads of each tick small:
+
+| Part | Where | Rule |
+|---|---|---|
+| Append feed | `IAppendFeed<T>` (`Core/Storage`), on `LocalEventRepository` | `ReadFrom(position)` gives only the envelopes after the position. `EventStream` keeps its position, so a call does not scan the envelopes that it has |
+| Day cache | `LocalEventRepository` | A day folder with two newer day folders is closed and never listed again. An open day folder is listed again only when its write time changed, or when its write time is newer than 2 s (`Settle`). The list of day folders (`events/`) has the same cache |
+| Index by session | `EventStream.OfSession(id, since)` | The envelopes from a session, to a session, or with the session in the `session` field, in id order |
+| Index by sender and kind | `EventStream.LastFrom`, `PostsFrom` | The posts (no forwards) of one sender and one kind. `FileStore.Report` and `FileStore.Decisions` use it |
+
+The day cache needs this rule of the file system: a create, a rename or a delete of a file in a folder changes the write time of the folder. NTFS and the Linux file systems follow it. A writer must create each envelope file in its day folder; a write to a file that exists does not change the folder write time.
 
 ### Version rule
 

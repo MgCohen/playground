@@ -1,13 +1,14 @@
 # Installs or updates the orchestrator for this user: the tray and the supervisor as published copies, the orch tool and the shortcuts.
 # Run it again after a merge to update. Do not run it on the real profile without the approval of the user.
 #
-# Usage: .\install.ps1                      Live tray on the store of this repository, port 7777, desktop and Startup shortcuts.
+# Usage: .\install.ps1                      Live tray on the default store root, port 7777, desktop and Startup shortcuts.
+#                                           The default store root: ORCH_STORE, else %LOCALAPPDATA%\orch\store (the same default as orch and the plugin).
 #        .\install.ps1 -Mock                The tray shows mock data. No supervisor.
 #        .\install.ps1 -Root <dir> -Store <dir> -Port <port> -Shortcuts <dir> -NoTool    A test install (scratchpad).
 #        -NoStartup: no Startup shortcut. -NoStart: do not start the tray at the end.
 param(
     [string] $Root = (Join-Path $env:USERPROFILE 'Apps\Orchestrator'),
-    [string] $Store = (Join-Path $PSScriptRoot 'store'),
+    [string] $Store = $(if ($env:ORCH_STORE) { $env:ORCH_STORE } else { Join-Path $env:LOCALAPPDATA 'orch\store' }),
     [int] $Port = 7777,
     [string] $Shortcuts,
     [switch] $Mock,
@@ -18,6 +19,10 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = [IO.Path]::GetFullPath($Root)
 $Store = [IO.Path]::GetFullPath($Store)
+$oldStore = Join-Path $PSScriptRoot 'store'
+if (-not $Mock -and -not (Test-Path $Store) -and (Test-Path (Join-Path $oldStore 'version.json'))) {
+    Write-Warning "The store $Store does not exist, but the old store $oldStore does. Stop the supervisor and the tray, then run: orch store migrate"
+}
 $staging = "$Root.new"
 $commit = (git -C $PSScriptRoot rev-parse HEAD).Trim()
 if (git -C $PSScriptRoot status --porcelain -- src) { Write-Warning 'src/ has changes that are not committed. The install record names the last commit only.' }
