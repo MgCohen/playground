@@ -57,7 +57,9 @@ public sealed class StateReader(FileStore store, IProvider? provider = null)
         var openDecisions = store.OpenDecisions(id).Count;
         var blocked = store.Blocked(id);
         var appId = meta.Engine.AppId;
-        var app = appId is not null ? provider.Read(appId) : new AppFacts(false, false);
+        // C3-F6: the app path (archive, Remote Control) is only for a session that is in the app: imported by the
+        // supervisor, or enabled from an app session. An app record of a session with no import does not count.
+        var app = appId is not null && meta.Engine.Imported == true ? provider.Read(appId) : new AppFacts(false, false);
         var inApp = app.InApp;
         return new Snapshot(now)
         {

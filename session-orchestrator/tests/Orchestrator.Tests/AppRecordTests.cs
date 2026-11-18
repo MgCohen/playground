@@ -66,6 +66,41 @@ public sealed class AppRecordTests
     }
 
     [Test]
+    public async Task A_child_with_no_import_gets_no_app_archive_notice_and_no_escalation()
+    {
+        var root = Directory.CreateTempSubdirectory("orch-app-").FullName;
+        var old = AppRecords.Root;
+        try
+        {
+            AppRecords.Root = root;
+            using var rig = new Rig();
+            var parent = await rig.Started();
+            var child = rig.Create("work", "child", parent);
+            await rig.Cycle();
+            await rig.Cycle();
+            // C3-F6: an app id and an app record, but no import (ORCH_IMPORT=0): the app does not show the session.
+            var appId = $"local_{child}";
+            rig.Store.Change(child, e => e with { Engine = e.Engine with { AppId = appId } });
+            var folder = Path.Combine(root, "claude_x", "claude-code-sessions", "account", "org");
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, $"{appId}.json"), "{ \"isArchived\": false }");
+            new Lifecycle(rig.Store).Archive(child, "user", force: false);
+            await rig.Cycle();
+            rig.Clock.Advance(TimeSpan.FromMinutes(15));
+            await rig.Cycle();
+            await rig.Cycle();
+            var texts = rig.Store.Events.All().Where(e => e.Kind is Core.Events.EventKinds.Notice or Core.Events.EventKinds.Message).Select(e => rig.Store.Renderer.Text(e)).ToList();
+            Assert.That(texts, Has.None.Contain(appId), "no archive-child notice");
+            Assert.That(texts, Has.None.Contain("from the app sidebar"), "no escalation to the user");
+            Assert.That(new StateReader(rig.Store).State(child).File?.State, Is.EqualTo(Core.Lifecycle.States.Archived), "the archive does not wait for the app");
+        }
+        finally
+        {
+            AppRecords.Root = old;
+        }
+    }
+
+    [Test]
     public void The_archive_notices_turn_remote_control_off_before_the_archive()
     {
         using var rig = new Rig();
