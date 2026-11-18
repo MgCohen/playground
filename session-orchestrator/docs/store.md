@@ -120,7 +120,7 @@ Both tests check the same three known values. The files have no `version` field.
 | `session` | The session that the envelope is about |
 | `stream` | The work stream (C1) of the session of the envelope. Rules below the table |
 | `from`, `to` | `user`, `supervisor`, `docs`, `policy` or `session:<full id>`. One receiver for each envelope |
-| `subject` | One line of 80 characters maximum. One rule in `Subjects.Of` (C#) and `subject` (`stream.ts`); the contract tests check both |
+| `subject` | One line: the first sentence (it ends with `.`, `!` or `?` and a space), cut at 80 characters. One rule in `Subjects.Of` (C#) and `subject` (`stream.ts`); the contract tests check both |
 | `body` | The path of the body. A forward points to the body of the original |
 | `thread` | Groups one conversation. For a question or a plan it is the tool call id; the answer, the review and the notices use the same thread |
 | `needs` | `answer`, `review` or `ack`: the receiver must act. Absent: nothing to do |
