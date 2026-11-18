@@ -78,6 +78,19 @@ public sealed class SupervisorTests
     }
 
     [Test]
+    public async Task An_answer_from_the_chat_of_the_session_is_not_sent_back_to_it()
+    {
+        using var t = new Rig();
+        var id = await t.Started();
+        t.Store.SaveDecision(new Decision("d1", id) { Question = "Pick", Risk = "high" });
+        t.Store.WriteJson(id, new Delivered("chat", "2026-11-17T12:00:00Z"), StoreFiles.Delivered, StoreFiles.Json("d1"));
+        t.Store.SaveAnswer(id, "d1", new Answer { Value = "LIME" });
+        await t.Cycle();
+        await t.Cycle();
+        Assert.That(t.Turns.Select(turn => turn.Prompt), Has.None.Contains("LIME"));
+    }
+
+    [Test]
     public async Task A_done_report_of_a_child_goes_to_the_parent_inbox_once()
     {
         using var t = new Rig();
