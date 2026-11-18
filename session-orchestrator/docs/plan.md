@@ -1582,3 +1582,9 @@ Rules for these tasks:
 - One role model (C1): `role` (orchestrator, worker, free), `type` (optional custom agent), `workflow`.
 - Only `Providers/` names a provider: the `claude` CLI, its flags (also `--cloud`) and the app files.
 - Task codes are only for tasks. Steps and items use a dash: G-0, E-1.
+
+Later (not in the graph):
+
+| Item | Owner | Content | Start |
+|---|---|---|---|
+| Workflow page | E (UI), with C | A UI page for one workflow run: progress, the graph, the history, the current step on the graph and the possible next steps | Plan and design after C2 |
