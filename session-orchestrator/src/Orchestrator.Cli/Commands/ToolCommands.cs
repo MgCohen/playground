@@ -109,6 +109,7 @@ public static class ToolCommands
         var shell = new Shell(c.Cwd);
         Check("home", () => (File.Exists(Path.Combine(Home.Root(), Home.Solution)), Home.Root()));
         Check("install", () => Install.Check(new Shell(Home.Root()), Install.Commit));
+        Check("app", () => Install.CheckApp(new Shell(Home.Root()), SupervisorHost.AppRoot()));
         Check("store", () => (c.Store.Repositories.Exists(), c.Store.Root));
         Check("policy", () =>
         {
@@ -140,6 +141,37 @@ public static class ToolCommands
             return (response.IsSuccessStatusCode, $"http://127.0.0.1:{port}");
         });
         return failures == 0 ? 0 : 1;
+    }
+
+    /// <summary>Starts, stops or shows the supervisor of the store. The process runs on its own, out of the session that starts it.</summary>
+    public static int Supervisor(CommandContext c)
+    {
+        var port = int.TryParse(c.Args.Option("port") ?? Environment.GetEnvironmentVariable("ORCH_PORT"), out var p) ? p : 7777;
+        switch (c.Args.Required(1, "start|stop|status"))
+        {
+            case "start":
+                var (started, record) = SupervisorHost.Start(c.Store.Root, port, TimeSpan.FromSeconds(120));
+                c.Output.WriteLine(started
+                    ? $"Started the supervisor: http://127.0.0.1:{port}/, store {c.Store.Root}, pid {record!.Pid}, log {record.Log}"
+                    : $"A supervisor already answers on http://127.0.0.1:{port}/.");
+                return 0;
+            case "stop":
+                var stopped = SupervisorHost.Stop(port);
+                c.Output.WriteLine(stopped is not null
+                    ? $"Stopped the supervisor of port {port} (pid {stopped.Pid}). Its turns continue after the next start."
+                    : SupervisorHost.Answers(port)
+                        ? $"The supervisor on port {port} was not started by orch or the tray. Stop it where it runs."
+                        : $"No supervisor runs on port {port}.");
+                return stopped is not null || !SupervisorHost.Answers(port) ? 0 : 1;
+            case "status":
+                var answers = SupervisorHost.Answers(port);
+                var known = SupervisorHost.Record(port);
+                c.Output.WriteLine($"port {port}: {(answers ? "answers" : "no answer")}");
+                if (known is not null) c.Output.WriteLine($"pid {known.Pid}, store {known.Store}, started {known.Started}, log {known.Log}, command {known.Command}");
+                return answers ? 0 : 1;
+            default:
+                throw new UsageException("orch supervisor start|stop|status [--port P]");
+        }
     }
 
     /// <summary>

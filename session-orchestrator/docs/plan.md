@@ -1424,3 +1424,92 @@ Next steps of E1, in order:
 
 1. User review of the three tabs. Build the chosen items, one commit each, with self-test proof.
 2. Spike E1-S1, last: composition hosting for the tray widget. Find what it gives (soft-edge shapes such as a ring with a transparent hole, part transparency, blur behind), what it costs (WebView2 `CoreWebView2CompositionController` and DirectComposition in place of the BlazorWebView HWND control), and if it is worth it. Discuss with the user before the build.
+
+## G1 result: install and start (2026-11-17)
+
+Options page: https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX (source `docs/setup-options.html`). The recipe is in `docs/know-how.md`, section "Install and start".
+
+| Choice | Decision |
+|---|---|
+| Install mode | Published copies in `%USERPROFILE%\Apps\Orchestrator` (user, Q1) |
+| Store | Live, the repository `store/` (user, Q2) |
+| Supervisor start | The tray, in its own process, if no supervisor answers on the port (user, Q3) |
+| Login | Startup folder shortcut, tray hidden (user, Q4) |
+| Update | `install.ps1` again by hand; `orch doctor` check `app` (user, Q5) |
+| Cloud | Plan on the page, section Q6. Q6a: cloud workers, supervisor and store on this PC (user). Q6b (C0 probe): approved by the user; run, see below |
+
+### Test (scratchpad store, port 7861, `ORCH_DATA` in the scratchpad, `-NoTool`)
+
+| Check | Result |
+|---|---|
+| Install | ✅ Tray and supervisor published, `install.json`, two shortcuts with `--live <store> --port 7861` (the login one with `--hidden`) |
+| Tray starts the supervisor | ✅ Record `supervisor-7861.json`, `/api/sessions` 200 |
+| Tray exit | ✅ The supervisor still answers |
+| Update while both run | ✅ The script stopped the tray, `cmd` and `dotnet`, swapped the folders, started the tray; a new supervisor answers. `-NoStartup` removed the login shortcut |
+| `orch supervisor status/stop/start` | ✅ status 0 with the record; stop; status 1; start 0; a second start reports the running one |
+| `orch doctor` | ✅ `app: built from 1db5718f, store ..., port 7861` |
+| Unit tests | ✅ `dotnet test --solution Orchestrator.slnx`: 301 passed, 1 skipped (`Seed_a_demo_store`, explicit) |
+
+### C0 probe: run (2026-11-17)
+
+Full result: `docs/c0-probe.md` (cloud session `session_01Y7UMGXQGcsekzz7bDemKjq`, source commit `0e83e17`).
+
+Start method: `start_session` with `target: cloud` refuses in a Remote Control turn. `claude --cloud "<brief>"` in a terminal tab works. It is interactive only (no `--print`), and the first run asks the user to trust the folder. The script is in `docs/know-how.md`.
+
+| Check | Result | Expected? |
+|---|---|---|
+| .NET 10 install, no root | ✅ 16 s, SDK 10.0.404 | Yes |
+| Build Web and Cli | ✅ 0 errors | Yes |
+| Supervisor `/api/sessions` | ✅ 200 after about 3 s | Yes |
+| `claude -p` signed in | ✅ through the host, no API key; $0.32 for one small call | Yes. The cost is high |
+| Plugin load, both forms | ✅ 6 `orch:` skills | Yes |
+| Plugin hooks module in a child `claude -p` | ❌ not loaded (rollout switch) | No. See C0-2 |
+| `orch doctor` | 3 FAIL: `gh`, `settings.json`, supervisor on 7777 | Yes: a fresh VM has none of them |
+| GitHub, Cloudflare | ✅ 200 | Yes |
+| Quick Tunnel host `*.trycloudflare.com` | ❌ proxy 502 | No. See C0-1 |
+| `claude.ai` with `curl` | 403 | Yes |
+| Tool prompts | The user approved each command in the cloud session | Yes: default permission mode |
+
+| # | Finding | Owner |
+|---|---|---|
+| C0-1 | The cloud proxy refuses `*.trycloudflare.com`. A cloud worker cannot reach a Quick Tunnel. Use a named tunnel on an own domain, and add that host to the environment network list | Stream D |
+| C0-2 | The plugin hooks module does not load in a child `claude -p` in the VM. The skills load. A cloud worker must not depend on the hooks until the rollout reaches it | Stream B |
+| C0-3 | Each command asked the user for approval. A cloud worker needs a permission mode or an allow list in its brief or environment | Stream B |
+
+### C5 probe: a team in one VM (2026-11-18)
+
+Full result: `docs/c5-probe.md`. Answer: yes, if `orch` is on `PATH`. One root and three children used the orch tools and reached `done` in 31 s.
+
+| # | Finding | Owner |
+|---|---|---|
+| C5-1 | The VM setup must install `orch` on `PATH`. Without it, each orch tool fails (ENOENT) | Stream D |
+| C5-2 | The hooks module loads in a child `claude -p` in the VM (compare C0-2) | Stream B |
+| C5-3 | `orch process` works only on Windows. On Linux the lease has no `pid` | Stream B |
+| C5-4 | A failed orch tool is silent: the root became `idle`, not `blocked` | Stream B |
+| C5-6 | Child sessions get the host `CLAUDE_CODE_*` environment and its commit trailers | Stream B |
+| C5-7 | The supervisor does not record the cost of a turn | Stream B |
+
+### C5 probe: a team in one VM (2026-11-18)
+
+Answer: **yes**. Supervisor, web interface, one root and three children ran in one cloud VM. All four sessions used the orch tools and reached `done` in 31 s. Condition: `orch` must be on `PATH`. Full result: `docs/c5-probe.md` and `docs/c5-probe/`.
+
+| # | Finding | Owner |
+|---|---|---|
+| C5-1 | The plugin hooks start `orch` from `PATH`. The VM setup must install `orch` and put `~/.dotnet/tools` on `PATH`, with `DOTNET_ROOT` | G1 C4 (environment file) |
+| C5-2 | The hooks module loaded in each child. C0-2 was a temporary rollout state | Closes C0-2 |
+| C5-3 | `orch process` fails on Linux: process snapshot is Windows only. The lease gets no `pid` | Stream B |
+| C5-4 | A failed orch tool leaves the session `idle`, not `blocked`, and the report is lost | Stream B |
+| C5-6 | Children get the `CLAUDE_CODE_*` environment of the host session | Stream B |
+| C5-7 | The supervisor does not record `total_cost_usd` of each turn | Stream B |
+
+Start lesson: the first C5 brief had double quotes. PowerShell cut the argument at the first quote, so the cloud session got only one line. Send a brief from bash with `"$(cat brief.txt)"`, or remove the double quotes.
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| G1-1 | The tray publish failed with NETSDK1151: the tray references the executable `Orchestrator.Web`. The earlier `install.ps1` had the same error | Fixed: `-p:ValidateExecutableReferencesMatchSelfContained=false` |
+| G1-2 | `taskkill /T` on `cmd` also stops its `dotnet` child; a second `taskkill` failed and PowerShell 5.1 stopped the script | Fixed: each stop runs in `cmd /c ... >nul 2>&1` |
+| G1-3 | The supervisor log had one line for each HTTP request | Fixed: the started process gets `Logging__LogLevel__Microsoft.AspNetCore=Warning` |
+| G1-4 | The tray starts the supervisor only at its own start | Accepted. Start it again with `orch supervisor start` |
+| G1-5 | The supervisor that runs today on port 7777 was started by hand. `install.ps1` does not stop it, and the tray uses it | Note for the real install |

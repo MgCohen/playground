@@ -10,6 +10,7 @@ Read these files before you change this project:
 | `docs/orchestrator-design.html` | The design page (https://claude.ai/artifact/EggEYH4ivUuPGG9Pw4k1y1) |
 | `docs/how-it-works.html` | How it works today: processes, folders, store files, call stack, sequences (https://claude.ai/artifact/CP2ozBgysFuJSwhrgoHugt) |
 | `docs/session-management.html` | The options for session management, with a worked example each (https://claude.ai/artifact/SRBob5ix2xQ2ArpwDXTJaW) |
+| `docs/setup-options.html` | Install and start options, and the cloud plan (https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX) |
 
 ## Rules
 
@@ -43,6 +44,8 @@ Follow these rules for each change. The design is on the Engines tab of `docs/se
 | Test store and port | Set `ORCH_STORE` and `ORCH_PORT` before the start |
 | Install or update `orch` | `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` |
 | Check the setup | `orch doctor` |
+| Install or update the tray, the supervisor and `orch` | `.\install.ps1` (needs the approval of the user on the real profile; see `docs/know-how.md`) |
+| Start or stop the supervisor | `orch supervisor start\|stop\|status [--port P]` |
 
 ## Work with the user
 
