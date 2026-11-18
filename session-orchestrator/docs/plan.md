@@ -1140,6 +1140,8 @@ Code parts (proposal):
 
 C5 scope: the Claude Code coupling in the code today (review of 2026-11-17).
 
+C5 moves code behind the adapter and keeps the logic of today. No behavior changes: for example `Read` reads the app record files as `AppRecords.cs` does today (risk: an internal format).
+
 | Place | Coupling | Move to |
 |---|---|---|
 | `Store/Lifecycle.cs` | `OpenCommand` (`claude.exe --desktop --resume`), `Import` (`local_<id>`), the archive wait | Adapter `Open`, `Archive` |
