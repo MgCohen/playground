@@ -1154,6 +1154,19 @@ Start method: `start_session` with `target: cloud` refuses in a Remote Control t
 | C0-2 | The plugin hooks module does not load in a child `claude -p` in the VM. The skills load. A cloud worker must not depend on the hooks until the rollout reaches it | Stream B |
 | C0-3 | Each command asked the user for approval. A cloud worker needs a permission mode or an allow list in its brief or environment | Stream B |
 
+### C5 probe: a team in one VM (2026-11-18)
+
+Full result: `docs/c5-probe.md`. Answer: yes, if `orch` is on `PATH`. One root and three children used the orch tools and reached `done` in 31 s.
+
+| # | Finding | Owner |
+|---|---|---|
+| C5-1 | The VM setup must install `orch` on `PATH`. Without it, each orch tool fails (ENOENT) | Stream D |
+| C5-2 | The hooks module loads in a child `claude -p` in the VM (compare C0-2) | Stream B |
+| C5-3 | `orch process` works only on Windows. On Linux the lease has no `pid` | Stream B |
+| C5-4 | A failed orch tool is silent: the root became `idle`, not `blocked` | Stream B |
+| C5-6 | Child sessions get the host `CLAUDE_CODE_*` environment and its commit trailers | Stream B |
+| C5-7 | The supervisor does not record the cost of a turn | Stream B |
+
 ### Findings
 
 | # | Finding | State |
