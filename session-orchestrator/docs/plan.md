@@ -1339,6 +1339,25 @@ Findings and notes:
 - F2-3: no plugin tool reads a mode or a workflow yet. `readDefinition` is ready for S4 and C2.
 - F2-4: a running supervisor reads the templates at its start, as before (F1-3).
 
+## I3 result: integration of H4, P0 and F2 (2026-11-18)
+
+Branch `orch/integration-i3`, base `orch/integration-stack` (I2, PR #34). Merge order: H4, then P0, then F2.
+
+| Merge | Branch | Conflicts | Resolution |
+|---|---|---|---|
+| H4 (PR #37) | `orch/h4-store-move` | None | - |
+| P0 (PR #35) | `orch/p0-providers` | `Web/Program.cs`, `docs/plan.md`, `docs/decisions.md` | `Program.cs`: the P0 provider wiring, and the H4 import rule (`root` equals `Home.DefaultStoreRoot()`). Docs: keep the rows of both |
+| F2 (PR #36) | `orch/f2-templates` | `plugin/hooks/test/backend.test.ts`, `docs/plan.md`, `docs/decisions.md` | Test: import `storeRoot` and `readDefinition`, keep both new tests. Docs: keep the rows and the results of both |
+
+`Lifecycle.cs`, `StoreBackends.cs`, `Home.cs` and `docs/store.md` merged with no conflict. `StoreBackends.Create(root)` takes the H4 store root, and `Core` and `Store` give the F2 definition sources.
+
+Tests:
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | ✅ 501 tests: 494 pass, 7 skip. `ProviderBoundaryTests` and `ArchitectureTests` pass |
+| `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | ✅ 15 of 15 |
+
 ## C1 design: streams (2026-11-17)
 
 Design page: `docs/stream-design.html` (https://claude.ai/artifact/JErtGVNeiAxtUqxVvvMxA7). Vocabulary: `docs/vocabulary.html` (https://claude.ai/artifact/R22wQC78trvXokgDcp7Fvk). The user answered all questions in chat. The rows are in `docs/decisions.md`.
