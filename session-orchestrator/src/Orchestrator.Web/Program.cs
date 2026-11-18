@@ -10,7 +10,7 @@ var bind = Environment.GetEnvironmentVariable("ORCH_BIND") is { Length: > 0 } ho
 builder.WebHost.UseUrls($"http://{bind}:{port}");
 builder.Services.AddSingleton(new FileStore(root));
 var pluginDir = Environment.GetEnvironmentVariable("ORCH_PLUGIN_DIR") is { Length: > 0 } dir ? Path.GetFullPath(dir) : null;
-var provider = ProviderFactory.Create(new ProviderOptions(root, Home.Root(), pluginDir));
+var provider = ProviderFactory.Create(new ProviderOptions(root, Home.Root(), pluginDir) { OrchDir = Home.OrchDir() });
 builder.Services.AddSingleton(provider);
 builder.Services.AddSingleton<ITurnRunner>(new ProviderTurns(provider));
 builder.Services.AddSingleton<IDocsChecker>(new DocsChecker(provider));

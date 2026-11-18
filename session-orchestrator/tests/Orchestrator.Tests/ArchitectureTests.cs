@@ -27,7 +27,7 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Tray/EdgeTab.cs", [], "the place of the edge tab on the screen"),
         ("src/Orchestrator.Tray/Program.cs", ["\"templates\"", "selftest-error.txt"], "the check of the home folder, and the error file of the self test"),
         ("src/Orchestrator.Tray/MockStore.cs", ["CreateTempSubdirectory", "Directory.CreateDirectory(cwd)", "Directory.Delete(Folder"], "the mock store makes and deletes its own temp folder and the cwd of its sessions"),
-        ("src/Orchestrator.Store/Home.cs", ["Solution", "File.ReadAllText(source)", "Directory.Exists(DefaultStoreRoot())"], "the home folder, config/policy.default.json of the repository, and the choice of the orch store (H5)"),
+        ("src/Orchestrator.Store/Home.cs", ["Solution", "File.ReadAllText(source)", "Directory.Exists(DefaultStoreRoot())", "File.Exists(Path.Combine(folder, \"orch"], "the home folder, config/policy.default.json of the repository, the choice of the orch store (H5), and the orch tool of the supervisor (C3-F5)"),
         ("src/Orchestrator.Store/Lifecycle.cs", ["worktree", "Directory.Exists(path)", "Path.GetDirectoryName(path)"], "the git worktree of a session"),
         ("src/Orchestrator.Store/FileStore.cs", ["(Local.LocalRepositories)Repositories).PathOf"], "the path helper for tests, which delegates to the implementation"),
         ("src/Orchestrator.Cli/Commands/EventCommands.cs", ["File.ReadAllText(json)"], "a JSON file of the user"),
