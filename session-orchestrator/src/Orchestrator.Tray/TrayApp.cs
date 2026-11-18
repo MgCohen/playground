@@ -34,10 +34,12 @@ public sealed partial class TrayApp : ApplicationContext
         {
             if (e.Button == MouseButtons.Left) Form.Toggle();
         };
-        Tab = new EdgeTab(placeFile is null ? null : Path.Combine(Path.GetDirectoryName(placeFile)!, "edge-tab.txt"));
-        Tab.OpenRequested += () => Tab.SlideOut(Form.ShowWidget);
+        Tab = EdgeTab.Start(placeFile is null ? null : Path.Combine(Path.GetDirectoryName(placeFile)!, "edge-tab.txt"));
+        // The tab runs on its own thread: its events come back to the thread of the widget.
+        Tab.OpenRequested += () => Tab.SlideOut(() => Form.BeginInvoke(Form.ShowWidget));
         Form.Minimized += Tab.SlideIn;
         Form.Showing += () => { if (Tab.OnScreen) Tab.SlideOut(); };
+        Store = services.GetRequiredService<Orchestrator.Store.FileStore>();
         board = services.GetRequiredService<Orchestrator.Web.Board>();
         hub = services.GetRequiredService<Orchestrator.Web.StreamHub>();
         hub.Changed += Changed;
@@ -52,13 +54,25 @@ public sealed partial class TrayApp : ApplicationContext
     /// <summary>N1: the minimized form of the widget at the right edge of the screen.</summary>
     public EdgeTab Tab { get; }
 
+    /// <summary>The store that the tray shows. The self-test writes to it.</summary>
+    public Orchestrator.Store.FileStore Store { get; }
+
     readonly Orchestrator.Web.Board board;
     readonly Orchestrator.Web.StreamHub hub;
 
+    int changing;
+
+    // A burst of store changes gives one count: the first change waits a short time, the others in that time do nothing.
     void Changed()
     {
         if (exiting || Form.IsDisposed || !Form.IsHandleCreated) return;
-        Form.BeginInvoke(() => Notify(Counts()));
+        if (Interlocked.Exchange(ref changing, 1) == 1) return;
+        _ = Task.Delay(250).ContinueWith(_ =>
+        {
+            Interlocked.Exchange(ref changing, 0);
+            if (exiting || Form.IsDisposed) return;
+            Form.BeginInvoke(() => Notify(Counts()));
+        }, TaskScheduler.Default);
     }
 
     /// <summary>
@@ -101,7 +115,7 @@ public sealed partial class TrayApp : ApplicationContext
         if (exiting) return;
         exiting = true;
         Form.Exiting = true;
-        Tab.Hide();
+        Tab.Stop();
         Form.Close();
         icon.Visible = false;
         ExitThread();
@@ -112,7 +126,7 @@ public sealed partial class TrayApp : ApplicationContext
         if (disposing)
         {
             hub.Changed -= Changed;
-            Tab.Dispose();
+            Tab.Stop();
             icon.Dispose();
             Form.Dispose();
             dot.Dispose();

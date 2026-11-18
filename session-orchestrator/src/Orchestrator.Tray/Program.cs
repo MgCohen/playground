@@ -7,7 +7,7 @@ using Orchestrator.Web;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The start of the tray app. Usage: Orchestrator.Tray.exe [--hidden] [--pin] [--selftest &lt;folder&gt;] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
+/// The start of the tray app. Usage: Orchestrator.Tray.exe [--hidden] [--pin] [--selftest &lt;folder&gt; [--only notify]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
 /// Mock mode (the default): the window shows mock data from a temporary store.
 /// Live mode: the window shows a real store. With no store after --live, the tray uses the default store root (<see cref="Home.StoreRoot"/>). The supervisor process of that store (on the port) does the ticks; the tray only reads and posts.
 /// If no supervisor answers on the port, the tray starts one in its own process, unless --no-supervisor.
@@ -56,7 +56,7 @@ public static partial class Program
             {
                 try
                 {
-                    code = await SelfTest.Run(tray, selfTest);
+                    code = await SelfTest.Run(tray, selfTest, Value(args, "--only"));
                 }
                 catch (Exception e)
                 {

@@ -40,13 +40,20 @@ public static partial class SelfTest
         return file;
     }
 
-    public static async Task<int> Run(TrayApp tray, string folder)
+    /// <summary>Runs all checks, or with <paramref name="only"/> "notify" only the checks of the notice motion (V1, V2).</summary>
+    public static async Task<int> Run(TrayApp tray, string folder, string? only = null)
     {
         var form = tray.Form;
         Directory.CreateDirectory(folder);
         var checks = new List<Check>();
         var web = await Until(() => Task.FromResult(form.Web), TimeSpan.FromSeconds(60)) ?? throw new TimeoutException("WebView2 did not start in 60 seconds.");
         await Until(() => Found(web, "main.page"), TimeSpan.FromSeconds(30));
+        if (only == "notify")
+        {
+            await Task.Delay(1200);
+            checks.AddRange(await NoticeMotion(tray, web, folder));
+            return Write(checks, folder);
+        }
         foreach (var step in Steps)
         {
             string? error = null;
@@ -112,8 +119,14 @@ public static partial class SelfTest
         checks.AddRange(await Ball(form, web, folder));
         checks.Add(await Video(form, folder));
         checks.AddRange(await Edge(tray, web, folder));
+        checks.AddRange(await NoticeMotion(tray, web, folder));
+        return Write(checks, folder);
+    }
+
+    static int Write(List<Check> checks, string folder)
+    {
         foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
-        await File.WriteAllTextAsync(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
         return checks.All(c => c.Pass) ? 0 : 1;
     }
 
