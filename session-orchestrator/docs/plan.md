@@ -1112,7 +1112,8 @@ Design page: `docs/stream-design.html` (https://claude.ai/artifact/JErtGVNeiAxtU
 - A **stream** is a group of work: a `stream` id on sessions and events. There is no store record.
 - A **task** is one unit of work in a stream, done by one session.
 - Each session decides if it starts children, and how deep. There is no top root.
-- The creator sets the **kind** of a session: `general` (default) or `orchestrator`. Its effect is open.
+- Each session has a **role** and an optional **type**. The role is its relation to workflows: `orchestrator` (owns a run), `worker` (does steps of a run that another session owns) or `free` (no workflow). It is one value and it can change. The type is a custom agent, such as `decider`, set at creation.
+- A step can ask for a type. The runner uses an existing session of that type in the work tree, or starts one.
 - Scope: orchestration only (create, communicate, control, split). The kinds of work, the review workflow and the PR workflow are on the roadmap.
 - A **workflow** is a graph of steps. It has one entry step and a definition of done, but no fixed exit step. Loops are allowed. The work ends when a step finds that the definition of done is true.
 - Each **step** is a node with its own configuration: entry and exit conditions, instructions, input, output, templates, actor (agent or human), messages, approval (who, and the strategy: required, skippable, ignored) and the next steps with their conditions. Workflows are made by configuration.
@@ -1126,8 +1127,8 @@ Design page: `docs/stream-design.html` (https://claude.ai/artifact/JErtGVNeiAxtU
 
 | Task | Content |
 |---|---|
-| C2 (code) | Add `stream` and `kind` to the brief template, the session record and the envelope. A child gets the `stream` of its parent by default. Add `orch events --stream` and `orch sessions --stream`. Update `orch:orch-brief` for the split steps. Write the planning workflow as the first configuration, and add a `workflow` brief field. Change `docs/store.md` in the same commit |
-| C3 (real use) | Run one full stream that uses the planning workflow and the new fields. Record which behaviors repeat, as input for the kind decision. Needs a new store or a migration (the live store is version 1) |
+| C2 (code) | Add `stream`, `type`, `role` and `workflow` to the brief template, the session record and the envelope. A child gets the `stream` of its parent by default. Add `orch events --stream` and `orch sessions --stream`. Update `orch:orch-brief` for the split steps. Write the planning workflow as the first configuration, and add a `workflow` brief field. Change `docs/store.md` in the same commit |
+| C3 (real use) | Run one full stream that uses the planning workflow and the new fields. Record which behaviors repeat, as input for the first types. Needs a new store or a migration (the live store is version 1) |
 
 ### Roadmap
 
