@@ -2120,6 +2120,7 @@ Test setup: scratchpad folder `spike/s1`, test store `spike/store`, port 7840. T
 | R-13 | `--desktop --resume <id>` while R-12 runs | Exit 1: "Session ... is open in another terminal. Run /desktop there instead." |
 | R-14 | `claude --remote-control <name> --resume <id> "/desktop"` | The CLI exits and the app imports the session. App state: `remoteControlState: off` |
 | R-15 | R-12 again ("R spike M"), then a look at the app sidebar by the user | Not in the sidebar, not in `list_sessions`, no app record. Only the imported tests (G, I, K) show |
+| R-16 | App tool `start_session` from an app session ("R spike N", `beaa0468`) | In the sidebar at once, linked to its parent. `remoteControlState: connecting` 2 s after the start. No headless turn |
 
 Findings:
 
@@ -2129,6 +2130,7 @@ Findings:
 - R-F5: `-p` ignores `--remote-control` in 2.1.312 and 2.1.325. The help text says the flag starts an interactive session.
 - R-F6: `--bg --remote-control --resume <id>` keeps the id. So a known session can run a turn with Remote Control on, but as a background job, not as an app session.
 - R-F7: an interactive `claude --remote-control` keeps the id and has Remote Control from turn 1, but needs a console and stays open. Each move to the app (`/desktop` or `--desktop --resume`) gives Remote Control off in the app.
+- R-F8: the app tool `start_session` gives both at once: the sidebar and Remote Control from the start (the app default `ccRemoteControlDefaultEnabled`). Only an app session has this tool, so the parent must start the child, not the supervisor.
 - R-F4: so a session started by the supervisor needs `set_remote_control`. Only a live app session has that tool.
 
 ## Next tasks
