@@ -81,6 +81,12 @@ public sealed record EngineRef
 
     /// <summary>True or false after a remote control call on the session, by the session itself or by its parent.</summary>
     public bool? RemoteControl { get; init; }
+
+    /// <summary>
+    /// True after the supervisor started the session as a live process in a console with Remote Control. The archive
+    /// stops that process: no app owns it.
+    /// </summary>
+    public bool? Console { get; init; }
 }
 
 public sealed record SessionWork

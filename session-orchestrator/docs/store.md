@@ -449,7 +449,7 @@ Store version 3 keeps the data of each session in one registry entry, `sessions/
 |---|---|---|
 | `id` | The registry id. Today it is the engine session id | Create |
 | `code` | The own code, unique among the siblings. The registry gives `O<n>` to a root and `C<n>` to a child when the creator gives none | Create; the supervisor tick for an entry of `/orch-enable` |
-| `engine` | References to the engine only: `kind` (`IProvider.Name`), `sessionId`, `appId`. Two records of our own actions: `imported` (the import is confirmed) and `remoteControl` (a session reported a change) | Create, the import, `meta.update` |
+| `engine` | References to the engine only: `kind` (`IProvider.Name`), `sessionId`, `appId`. Records of our own actions: `imported` (the import is confirmed), `remoteControl` (a session reported a change, or the supervisor started it with Remote Control) and `console` (the supervisor started the session as a console process; the archive stops that process) | Create, the import, `meta.update` |
 | `parent` | The parent id. Null for a root. The children are a query (`SessionRegistry.Children`), not a field | Create |
 | `title`, `owner`, `tags`, `stream` | Labels. `owner` and `stream` are copies of the parent when the creator gives none | Create, `orch enable` |
 | `role` | `orchestrator`, `worker` or `free` (C1). At create: `orchestrator` for the orchestrator agent, `worker` for a child, else `free`. The workflow runner (C2) changes it | Create |
@@ -471,6 +471,8 @@ A parent that runs in the desktop app starts each child that is not a background
 | `orch join <file>` as the first action | Child | The entry with the id of the child: `engine.imported: true`, `engine.appId`, `lifecycle.started: true`, `work.cwd` only (the worktree of the app is the app's), the enabled file, the brief envelope, `session.start`. The start file is deleted |
 
 The supervisor runs no first turn for a joined entry: it is started. A background child, a cloud child and a parent outside the app get the entry at once, as before.
+
+A child of a parent outside the app (the parent has no `engine.imported`) starts as a console session when the supervisor has `ConsoleStart` (`ORCH_CONSOLE`, default: the same as the import). Its first turn is only the notice `console-start`, as the prompt of `claude --remote-control` in a hidden console. The plugin of that process takes the lease `live` and delivers the brief. The registry gets `engine.console: true` and `engine.remoteControl: true`.
 
 The full code is the codes from the root down, with a space between them: `O1 C2 C1`. The app title is `[<full code>] <title>` (`SessionRegistry.AppTitle`). The registry does not store the full code, so a changed code of a parent cannot make it old. A code has no space.
 

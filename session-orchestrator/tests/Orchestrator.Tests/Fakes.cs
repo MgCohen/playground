@@ -62,7 +62,7 @@ public sealed class Rig : IDisposable
 
     public List<string> Imports { get; } = [];
 
-    public Rig(bool ok = true, DocsResult? docs = null, bool import = false, Policy? policy = null, IStateChecker? checker = null)
+    public Rig(bool ok = true, DocsResult? docs = null, bool import = false, Policy? policy = null, IStateChecker? checker = null, bool console = false)
     {
         Folder = Directory.CreateTempSubdirectory("orch-").FullName;
         Clock = new ManualClock(DateTimeOffset.UtcNow);
@@ -73,6 +73,7 @@ public sealed class Rig : IDisposable
         {
             Import = import ? id => { Imports.Add(id); Store.Change(id, e => e with { Engine = e.Engine with { Imported = true } }); } : null,
             StateChecker = checker,
+            ConsoleStart = console,
         });
     }
 

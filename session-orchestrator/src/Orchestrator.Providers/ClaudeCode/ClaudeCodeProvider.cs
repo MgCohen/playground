@@ -32,6 +32,7 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     public async Task<TurnResult> Turn(TurnRequest request, CancellationToken cancel)
     {
         if (request.Where == Places.Cloud) return await CloudTurn(request, cancel);
+        if (request.RemoteControl) return await ConsoleTurn(request, cancel);
         var watch = Stopwatch.StartNew();
         var session = request.IsNew ? "--session-id" : "--resume";
         List<string> arguments = [.. SettingArguments(options.PluginDir), session, request.Id];
@@ -60,6 +61,45 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
             environment["PATH"] = path.Length == 0 ? dir : dir + Path.PathSeparator + path;
         }
         return environment;
+    }
+
+    /// <summary>
+    /// The arguments of a console start: an interactive session with Remote Control on from the first turn (R-12). It
+    /// keeps the session id, so the store entry stays valid. The prompt is short: the brief comes from the plugin.
+    /// </summary>
+    public static IReadOnlyList<string> ConsoleArguments(TurnRequest request, string? pluginDir)
+    {
+        var name = request.Title is { Length: > 0 } title ? title : request.Id;
+        List<string> arguments = [.. SettingArguments(pluginDir), "--remote-control", name, request.IsNew ? "--session-id" : "--resume", request.Id];
+        if (request.IsNew) arguments.AddRange(["-n", name]);
+        if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", Agent(agent)]);
+        arguments.Add(request.Prompt);
+        return arguments;
+    }
+
+    /// <summary>
+    /// The environment of a console session: the store, the home, and the holder <c>live</c>. The process is live, so
+    /// its plugin takes the lease <c>live</c>, as in an app session.
+    /// </summary>
+    public static Dictionary<string, string> ConsoleEnvironment(ProviderOptions options)
+    {
+        var environment = TurnEnvironment(options);
+        environment["ORCH_HOLDER"] = Holders.Live;
+        return environment;
+    }
+
+    async Task<TurnResult> ConsoleTurn(TurnRequest request, CancellationToken cancel)
+    {
+        var watch = Stopwatch.StartNew();
+        try
+        {
+            var pid = await Claude.Console(request.Cwd, ConsoleArguments(request, options.PluginDir), ConsoleEnvironment(options), cancel);
+            return new TurnResult(true, $"console session {pid} with Remote Control", null, Math.Round(watch.Elapsed.TotalSeconds)) { Pid = pid };
+        }
+        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception or IOException)
+        {
+            return new TurnResult(false, null, e.Message, Math.Round(watch.Elapsed.TotalSeconds));
+        }
     }
 
     /// <summary>The longest wait for a cloud start or a cloud message. A folder that is not trusted yet waits for a person.</summary>

@@ -77,12 +77,21 @@ public sealed record TurnRequest(string Id, string Cwd, string Prompt, bool IsNe
 
     /// <summary>The id that the engine gave to the session at its start, for a session that the engine names (cloud).</summary>
     public string? AppId { get; init; }
+
+    /// <summary>
+    /// True: start the session as a live process with Remote Control, not as one print turn (a child of a parent outside
+    /// the app). The turn ends when the process runs; the plugin of the process takes the lease and delivers the next messages.
+    /// </summary>
+    public bool RemoteControl { get; init; }
 }
 
 /// <summary>The result of a turn. <c>AppId</c>: the id that the engine gave to a new session that it names (cloud).</summary>
 public sealed record TurnResult(bool Ok, string? Text, string? Error, double Seconds)
 {
     public string? AppId { get; init; }
+
+    /// <summary>The process id of a session that a <see cref="TurnRequest.RemoteControl"/> turn started.</summary>
+    public int? Pid { get; init; }
 }
 
 /// <summary>A one-shot model call. <c>Agent</c>: an agent of the orch plugin. <c>Plugin</c>: load the orch plugin as the turns do.</summary>

@@ -15,9 +15,12 @@ builder.Services.AddSingleton(provider);
 builder.Services.AddSingleton<ITurnRunner>(new ProviderTurns(provider));
 builder.Services.AddSingleton<IDocsChecker>(new DocsChecker(provider));
 var import = Environment.GetEnvironmentVariable("ORCH_IMPORT") is { Length: > 0 } flag ? flag == "1" : string.Equals(root, Home.DefaultStoreRoot(), StringComparison.OrdinalIgnoreCase);
+// R-F8: a child of a parent outside the app starts in a console with Remote Control. Same default as the import.
+var console = Environment.GetEnvironmentVariable("ORCH_CONSOLE") is { Length: > 0 } consoleFlag ? consoleFlag == "1" : import;
 builder.Services.AddSingleton(services => new SupervisorOptions(4, 3, 2, Home.LoadPolicy(root))
 {
     Import = import ? id => new Lifecycle(services.GetRequiredService<FileStore>(), provider).Import(id) : null,
+    ConsoleStart = console,
     StateChecker = new StateChecker(provider),
     Provider = provider,
 });

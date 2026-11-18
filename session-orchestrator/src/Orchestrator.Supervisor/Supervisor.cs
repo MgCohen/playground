@@ -272,7 +272,8 @@ public sealed partial class Supervisor
         CloudNotice(id);
         var pending = store.Pending(id);
         if (pending.IsEmpty) return;
-        if (OpeningTurn(id) is { } opening) pending = opening;
+        var console = UsesConsole(id);
+        if ((console ? ConsoleOpening(id) : OpeningTurn(id)) is { } opening) pending = opening;
         if (store.Cwd(id) is not { } cwd)
         {
             store.Log($"{id} skipped: no cwd");
@@ -284,6 +285,7 @@ public sealed partial class Supervisor
         var request = new TurnRequest(id, cwd, pending.Text, cloud ? meta.Engine.AppId is null : meta.IsNew())
         {
             Agent = Roles.AgentOf(meta), Title = meta.Title, Where = cloud ? Places.Cloud : null, AppId = cloud ? meta.Engine.AppId : null,
+            RemoteControl = console,
         };
         var stop = new CancellationTokenSource();
         stops[id] = stop;
@@ -305,6 +307,30 @@ public sealed partial class Supervisor
         // as a resume, so the import still comes before the brief (review of PR #14, item 7).
         if (meta.Lifecycle.Started == true && waiting is null) return null;
         var notice = waiting ?? Notify(self, null, store.Texts.Notice("open-in-app"));
+        return new Pending(store.Renderer.Join([notice]), [notice.Id]) { Senders = [Parties.Supervisor] };
+    }
+
+    /// <summary>
+    /// A new local child that is not a background child, whose parent is not in the app, starts as a console session with
+    /// Remote Control (the switch of R-F8): the user is not in the app, but sees the child on the web and the phone
+    /// from its first turn. A parent in the app starts its children in the app itself; a root keeps the import.
+    /// </summary>
+    bool UsesConsole(string id)
+    {
+        var meta = store.Session(id);
+        if (!options.ConsoleStart || !meta.IsNew() || Places.IsCloud(meta.Work.Where) || meta.IsPrivate() || meta.Parent is not { } parent) return false;
+        return store.Registry.Exists(parent) && store.Session(parent).Engine.Imported != true;
+    }
+
+    /// <summary>
+    /// The first turn of a console session: only the notice console-start, as the prompt of the process. The brief stays
+    /// undelivered: the plugin of the live process delivers it, as in the app.
+    /// </summary>
+    Pending ConsoleOpening(string id)
+    {
+        var self = Parties.Session(id);
+        var waiting = store.Undelivered(id).FirstOrDefault(e => e.Kind == EventKinds.Notice && store.Events.Fields(e).GetValueOrDefault("kind") as string == "console-start");
+        var notice = waiting ?? Notify(self, null, store.Texts.Notice("console-start"));
         return new Pending(store.Renderer.Join([notice]), [notice.Id]) { Senders = [Parties.Supervisor] };
     }
 
@@ -378,12 +404,24 @@ public sealed partial class Supervisor
                 Data.Of(("turnStart", start.Id), ("output", output is { } o && string.CompareOrdinal(o.Event, start.Id) > 0 ? o.Event : null)), id);
             store.Log($"{id} turn done {result.Seconds}s: {Cut(result.Text ?? "", 200)}");
             EndMarker(id, start);
-            ImportOnce(id);
+            if (request.RemoteControl) ConsoleStarted(id, result);
+            else ImportOnce(id);
             return;
         }
         if (request.IsNew) store.SetStarted(id, false);
         Fail(request, result.Error ?? "unknown", start.Id);
         EndMarker(id, start);
+    }
+
+    /// <summary>
+    /// The console process runs: the registry records it, and the supervisor waits <see cref="SupervisorOptions.ImportWait"/>
+    /// for its plugin to take the lease, as after an import. Then the supervisor delivers with a print turn again.
+    /// </summary>
+    void ConsoleStarted(string id, TurnResult result)
+    {
+        store.Registry.Update(id, e => e with { Engine = e.Engine with { Console = true, RemoteControl = true } }, Parties.Supervisor);
+        imports[id] = Now;
+        store.Log($"{id} started in a console with Remote Control (pid {result.Pid})");
     }
 
     void ImportOnce(string id)

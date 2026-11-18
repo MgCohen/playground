@@ -91,4 +91,49 @@ public static class Claude
     }
 
     static string Last(string text, int length) => text.Length > length ? text[^length..] : text;
+
+    /// <summary>
+    /// The variables of a parent session that a console session must not get: with <c>CLAUDE_CODE_CHILD_SESSION</c> the CLI
+    /// saves no transcript, and the others name the parent or its app (R-F12).
+    /// </summary>
+    public static readonly string[] ParentVariables =
+        ["CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_SESSION_ID", "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_HOST_SESSION_ID", "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CODE_SESSION_ATTENDED"];
+
+    /// <summary>
+    /// Starts the claude CLI as an interactive session in a hidden console and gives its process id. The CLI needs a
+    /// console for <c>--remote-control</c>: <c>-p</c> ignores the flag (R-9, R-10). PowerShell <c>Start-Process</c> starts it
+    /// through the shell, so the session inherits no handle of this process and stays when this process ends.
+    /// </summary>
+    public static async Task<int> Console(string cwd, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string> environment, CancellationToken cancel)
+    {
+        var line = string.Join(' ', arguments.Select(Quote));
+        var script = $"$p = Start-Process -FilePath '{Executable.Replace("'", "''")}' -ArgumentList '{line.Replace("'", "''")}' -WorkingDirectory '{cwd.Replace('/', '\\').Replace("'", "''")}' -WindowStyle Hidden -PassThru; $p.Id";
+        var info = new ProcessStartInfo("powershell") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
+        foreach (var argument in new[] { "-NoProfile", "-NonInteractive", "-Command", script }) info.ArgumentList.Add(argument);
+        foreach (var key in ParentVariables) info.Environment.Remove(key);
+        foreach (var (key, value) in environment) info.Environment[key] = value;
+        using var process = Process.Start(info) ?? throw new InvalidOperationException("cannot start powershell");
+        var output = await process.StandardOutput.ReadToEndAsync(cancel);
+        var errors = await process.StandardError.ReadToEndAsync(cancel);
+        await process.WaitForExitAsync(cancel);
+        return int.TryParse(output.Trim().Split('\n').LastOrDefault()?.Trim(), out var pid) && process.ExitCode == 0
+            ? pid
+            : throw new InvalidOperationException($"the console start failed (exit {process.ExitCode}): {Last(errors.Length > 0 ? errors : output, 400)}");
+    }
+
+    /// <summary>One argument in the quoting of a Windows command line: quotes, and backslashes before a quote, doubled as the C runtime reads them.</summary>
+    public static string Quote(string argument)
+    {
+        if (argument.Length > 0 && argument.IndexOfAny([' ', '\t', '"']) < 0) return argument;
+        var text = new System.Text.StringBuilder("\"");
+        var slashes = 0;
+        foreach (var c in argument)
+        {
+            if (c == '\\') { slashes++; continue; }
+            if (c == '"') { text.Append('\\', slashes * 2 + 1).Append('"'); slashes = 0; continue; }
+            text.Append('\\', slashes).Append(c);
+            slashes = 0;
+        }
+        return text.Append('\\', slashes * 2).Append('"').ToString();
+    }
 }
