@@ -1235,3 +1235,46 @@ Branch `orch/integration-h2-h3`, base `orch/session-ff65da95` (H1). It merges H2
 | Cursor merge | `StreamSubscription.Done` holds a lock on the repository. Without it, `Two_writers_of_one_cursor_lose_no_done_id` failed on H2 |
 
 Tests: `dotnet test --solution Orchestrator.slnx` passes 410, skips 7. `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` passes 8 of 8.
+
+## C1 design: streams (2026-11-17)
+
+Design page: `docs/stream-design.html` (https://claude.ai/artifact/JErtGVNeiAxtUqxVvvMxA7). Vocabulary: `docs/vocabulary.html` (https://claude.ai/artifact/R22wQC78trvXokgDcp7Fvk). The user answered all questions in chat. The rows are in `docs/decisions.md`.
+
+### Result
+
+- A **stream** is a group of work: a `stream` id on sessions and events. There is no store record.
+- A **task** is one unit of work in a stream, done by one session.
+- Each session decides if it starts children, and how deep. There is no top root.
+- Each session has a **role** and an optional **type**. The role is its relation to workflows: `orchestrator` (owns a run), `worker` (does steps of a run that another session owns) or `free` (no workflow). It is one value and it can change. The type is a custom agent, such as `decider`, set at creation.
+- A step can ask for a type. The runner uses an existing session of that type in the work tree, or starts one.
+- Scope: orchestration only (create, communicate, control, split). The kinds of work, the review workflow and the PR workflow are on the roadmap.
+- A **workflow** is a graph of steps. It has one entry step and a definition of done, but no fixed exit step. Loops are allowed. The work ends when a step finds that the definition of done is true.
+- Each **step** is a node with its own configuration: entry and exit conditions, instructions, input, output, templates, actor (agent or human), messages, approval (who, and the strategy: required, skippable, ignored) and the next steps with their conditions. Workflows are made by configuration.
+- A deterministic **runner** moves the work. Each next step checks its own entry requirements. If one step is valid, the runner goes there. If many are valid, the agent picks. If none is valid, the run stops and asks.
+- Each step has an **executor**: `tool` (deterministic), `ask` (a human) or `agent` (one turn of a session). An agent step runs in the owner session, in an existing session, or in a new session. So a workflow can run across sessions.
+- For now a workflow is a Markdown file or a skill. Later the template store holds it, and a session gets it on demand.
+- The brief names the workflow, or the session finds it in the catalog in the middle of a chat.
+- The first workflow is **planning**.
+
+### Next tasks
+
+| Task | Content |
+|---|---|
+| C2 (code) | Add `stream`, `type`, `role` and `workflow` to the brief template, the session record and the envelope. A child gets the `stream` of its parent by default. Add `orch events --stream` and `orch sessions --stream`. Update `orch:orch-brief` for the split steps. Write the planning workflow as the first configuration, and add a `workflow` brief field. Change `docs/store.md` in the same commit |
+| C3 (real use) | Run one full stream that uses the planning workflow and the new fields. Record which behaviors repeat, as input for the first types. Needs a new store or a migration (the live store is version 1) |
+
+### Roadmap
+
+- Review workflow: reviewers, verdicts, approval events, gates.
+- PR workflow: integration branches, merge order, merge rules.
+- More workflows: review, code change, probe, orchestration.
+- Template store: workflows and their related templates, got on demand.
+- Watcher: a session that finds stuck or broken sessions and supervisors, and alerts the phone.
+
+### Findings
+
+- F2 again: chat text closed two `ask_user` questions of this design (Q7, Q8). The work moved to chat only.
+
+### Approval
+
+The user approved the C1 design in chat on 2026-11-18.

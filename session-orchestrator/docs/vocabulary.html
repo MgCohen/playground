@@ -1,0 +1,223 @@
+<title>Orchestrator Vocabulary</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one column, a header with the Add button, a sticky filter bar, one editable table, an add row at the end. Same tokens as the design pages. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --on-accent: #ffffff; --warn: #9a6200; --warn-soft: #f6ecd9; --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --on-accent: #0d1417; --warn: #e0a548; --warn-soft: #33281a; --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --on-accent: #0d1417; --warn: #e0a548; --warn-soft: #33281a; --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+header > div { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0; }
+.summary { color: var(--muted); max-width: 70ch; margin: 0; }
+.btn {
+  font: 500 14px var(--font-body); border-radius: 6px; padding: 7px 14px; cursor: pointer;
+  background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); white-space: nowrap;
+}
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.ghost { background: transparent; color: var(--muted); border-color: var(--line); padding: 3px 8px; font-size: 13px; }
+.btn.ghost:hover { color: var(--warn); border-color: var(--warn); }
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 10px; border-bottom: 1px solid var(--line); display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+input, select {
+  font: 400 14px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 6px 8px; min-width: 0;
+}
+.bar input[type="search"] { flex: 1 1 220px; max-width: 360px; }
+.bar label { display: flex; gap: 6px; align-items: center; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.count { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-left: auto; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 720px; }
+th, td { text-align: left; vertical-align: top; padding: 6px 6px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding-block: 8px; }
+td input, td select, td textarea { width: 100%; border-color: transparent; background: transparent; }
+td input:hover, td select:hover, td textarea:hover { border-color: var(--line); }
+td input:focus, td select:focus, td textarea:focus { border-color: var(--accent); background: var(--panel); }
+td textarea { font: 400 14px var(--font-body); color: var(--fg); border: 1px solid transparent; border-radius: 6px; padding: 6px 8px; resize: vertical; min-height: 34px; field-sizing: content; }
+td.name input { font-family: var(--font-mono); font-size: 13px; }
+td.act { width: 1%; white-space: nowrap; }
+select.st { font-family: var(--font-mono); font-size: 12px; border-radius: 12px; }
+select.st.Defined { color: var(--accent); border-color: var(--accent); }
+select.st.Proposed { color: var(--fg); border-color: var(--muted); border-style: dashed; }
+select.st.Uncertain { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+tr.saving td { opacity: .7; }
+tfoot td { border-bottom: none; padding-top: 12px; }
+tfoot input, tfoot select, tfoot textarea { border-color: var(--line); background: var(--panel); }
+.note { color: var(--muted); padding: 14px 8px; }
+.err { color: var(--warn); font-size: 13px; min-height: 1em; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Session orchestrator</div>
+      <h1>Vocabulary</h1>
+      <p class="summary">Each term of the orchestrator, with its category and its status. Defined terms are in code or docs. Proposed terms come from the work stream design (C1). Uncertain terms are in use but have no clear definition. Edit a cell to save it.</p>
+    </div>
+    <button class="btn" id="add-top" type="button">Add term</button>
+  </header>
+
+  <div class="bar">
+    <input type="search" id="q" placeholder="Search a term or a meaning" aria-label="Search">
+    <label for="f-cat">Category <select id="f-cat"><option value="">All</option></select></label>
+    <label for="f-st">Status <select id="f-st"><option value="">All</option></select></label>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Name</th><th>Category</th><th>What it is</th><th>Status</th><th></th></tr></thead>
+      <tbody id="rows"><tr><td class="note" colspan="5">Loading the terms.</td></tr></tbody>
+      <tfoot>
+        <tr id="add-row">
+          <td class="name"><input id="n-name" placeholder="New term" aria-label="New term name"></td>
+          <td><select id="n-cat" aria-label="New term category"></select></td>
+          <td><textarea id="n-meaning" rows="1" placeholder="What it is, 15 words maximum" aria-label="New term meaning"></textarea></td>
+          <td><select id="n-st" class="st" aria-label="New term status"></select></td>
+          <td class="act"><button class="btn" id="n-add" type="button">Add</button></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div class="err" id="err" role="status"></div>
+</div>
+
+<script>
+(function () {
+  var CATS = ["Storage", "Runtime", "Sessions", "Messages", "Git", "UI", "Work streams"];
+  var STATS = ["Defined", "Proposed", "Uncertain"];
+  var terms = [], db = null, col = null;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function options(sel, list, value) {
+    sel.innerHTML = "";
+    list.forEach(function (v) { var o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o); });
+    if (value && list.indexOf(value) < 0) { var o = document.createElement("option"); o.value = value; o.textContent = value; sel.appendChild(o); }
+    sel.value = value || list[0];
+  }
+  CATS.forEach(function (v) { var o = document.createElement("option"); o.value = v; o.textContent = v; $("f-cat").appendChild(o); });
+  STATS.forEach(function (v) { var o = document.createElement("option"); o.value = v; o.textContent = v; $("f-st").appendChild(o); });
+  options($("n-cat"), CATS, "Work streams");
+  options($("n-st"), STATS, "Proposed");
+  $("n-st").className = "st Proposed";
+  $("n-st").addEventListener("change", function () { this.className = "st " + this.value; });
+
+  function say(msg) { $("err").textContent = msg || ""; }
+  function editable(on) {
+    document.querySelectorAll("#rows input, #rows select, #rows textarea, #rows button, tfoot input, tfoot select, tfoot textarea, tfoot button, #add-top")
+      .forEach(function (el) { el.disabled = !on; });
+  }
+
+  function save(id, patch, tr) {
+    if (!col) return;
+    tr && tr.classList.add("saving");
+    col.doc(id).update(patch).then(function () { say(""); }, function (e) {
+      say(e && e.code === "invalid_argument" ? "You cannot edit this page. Ask the owner for edit access." : "The change was not saved. Try again.");
+    }).then(function () { tr && tr.classList.remove("saving"); });
+  }
+
+  function row(t) {
+    var tr = document.createElement("tr");
+    tr.dataset.id = t.id;
+    var name = document.createElement("input"); name.value = t.name || ""; name.setAttribute("aria-label", "Name");
+    var cat = document.createElement("select"); options(cat, CATS, t.category); cat.setAttribute("aria-label", "Category");
+    var meaning = document.createElement("textarea"); meaning.rows = 1; meaning.value = t.meaning || ""; meaning.setAttribute("aria-label", "What it is");
+    var st = document.createElement("select"); options(st, STATS, t.status); st.className = "st " + st.value; st.setAttribute("aria-label", "Status");
+    var del = document.createElement("button"); del.type = "button"; del.className = "btn ghost"; del.textContent = "Delete";
+    del.setAttribute("aria-label", "Delete " + (t.name || "term"));
+
+    name.addEventListener("change", function () { save(t.id, { name: name.value.trim() }, tr); });
+    meaning.addEventListener("change", function () { save(t.id, { meaning: meaning.value.trim() }, tr); });
+    cat.addEventListener("change", function () { save(t.id, { category: cat.value }, tr); });
+    st.addEventListener("change", function () { st.className = "st " + st.value; save(t.id, { status: st.value }, tr); });
+    del.addEventListener("click", function () {
+      if (del.dataset.armed) { col.doc(t.id).delete().catch(function () { say("The term was not deleted. Try again."); }); return; }
+      del.dataset.armed = "1"; del.textContent = "Confirm";
+      setTimeout(function () { delete del.dataset.armed; del.textContent = "Delete"; }, 3000);
+    });
+
+    [["name", name], ["", cat], ["", meaning], ["", st], ["act", del]].forEach(function (p) {
+      var td = document.createElement("td"); if (p[0]) td.className = p[0]; td.appendChild(p[1]); tr.appendChild(td);
+    });
+    return tr;
+  }
+
+  function draw() {
+    var text = $("q").value.trim().toLowerCase(), fc = $("f-cat").value, fs = $("f-st").value;
+    var shown = terms.filter(function (t) {
+      if (fc && t.category !== fc) return false;
+      if (fs && t.status !== fs) return false;
+      return !text || ((t.name || "") + " " + (t.meaning || "")).toLowerCase().indexOf(text) >= 0;
+    });
+    var focus = document.activeElement && document.activeElement.closest && document.activeElement.closest("#rows tr");
+    if (focus) return; // Do not replace a row while someone types in it.
+    var body = $("rows"); body.innerHTML = "";
+    if (!terms.length) { body.innerHTML = "<tr><td class=\"note\" colspan=\"5\">No terms yet. Use the add row below to add the first term.</td></tr>"; }
+    else if (!shown.length) { body.innerHTML = "<tr><td class=\"note\" colspan=\"5\">No term matches the filter.</td></tr>"; }
+    else shown.forEach(function (t) { body.appendChild(row(t)); });
+    $("count").textContent = shown.length + " of " + terms.length + " terms";
+  }
+  ["q", "f-cat", "f-st"].forEach(function (id) { $(id).addEventListener(id === "q" ? "input" : "change", draw); });
+  document.addEventListener("focusout", function () { setTimeout(function () { if (!document.activeElement || !document.activeElement.closest("#rows tr")) draw(); }, 0); });
+
+  function add(name, category, meaning, status) {
+    if (!col) return Promise.resolve();
+    var max = terms.reduce(function (m, t) { return Math.max(m, t.order || 0); }, 0);
+    return col.add({ name: name, category: category, meaning: meaning, status: status, order: max + 1 })
+      .catch(function (e) { say(e && e.code === "quota_exceeded" ? "The store is full. Delete some terms first." : "The term was not added. Try again."); });
+  }
+  $("n-add").addEventListener("click", function () {
+    var name = $("n-name").value.trim();
+    if (!name) { $("n-name").focus(); say("Give the term a name."); return; }
+    add(name, $("n-cat").value, $("n-meaning").value.trim(), $("n-st").value).then(function () {
+      $("n-name").value = ""; $("n-meaning").value = ""; say("");
+      $("q").value = ""; $("f-cat").value = ""; $("f-st").value = "";
+      $("n-name").focus();
+    });
+  });
+  $("n-name").addEventListener("keydown", function (e) { if (e.key === "Enter") $("n-add").click(); });
+  $("add-top").addEventListener("click", function () {
+    $("add-row").scrollIntoView({ behavior: "smooth", block: "center" });
+    $("n-name").focus({ preventScroll: true });
+  });
+
+  editable(false);
+  var timer = setTimeout(function () { say("The terms cannot be reached yet."); }, 10000);
+  (window.claude && window.claude.use ? window.claude.use("db") : Promise.resolve(null)).then(function (d) {
+    db = d;
+    if (!db) { clearTimeout(timer); $("rows").innerHTML = "<tr><td class=\"note\" colspan=\"5\">The term store is not available in this view. Open the page signed in to claude.ai.</td></tr>"; return; }
+    col = db.collection("terms");
+    col.orderBy("order").onSnapshot(function (snap) {
+      if (!snap.metadata.fromCache) { clearTimeout(timer); say(""); }
+      terms = snap.docs.map(function (d) { var v = d.data(); return { id: d.id, name: v.name, category: v.category, meaning: v.meaning, status: v.status, order: v.order }; });
+      editable(true); draw();
+    }, function () { clearTimeout(timer); say("The terms cannot be loaded. Reload the page later."); });
+  });
+})();
+</script>

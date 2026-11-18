@@ -1,0 +1,483 @@
+<title>Streams</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one topic for each tab, the visual first. Same tokens as the design pages. */
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --fg: #1b2126;
+  --muted: #5b6670;
+  --line: #d9dee3;
+  --accent: #0f6e78;
+  --accent-soft: #e2f1f2;
+  --warn: #9a6200;
+  --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 70ch; }
+nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap;
+}
+nav button {
+  font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 24px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 12px; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+td code { white-space: nowrap; }
+pre.stack, pre.cmd {
+  margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; background: var(--code-bg);
+  border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg); white-space: pre;
+}
+pre .c { color: var(--muted); }
+pre .k { color: var(--accent); }
+.tree { font-family: var(--font-mono); font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+.tree details { margin-left: 16px; }
+.tree > details { margin-left: 0; }
+.tree summary { cursor: pointer; padding: 2px 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
+.tree summary::-webkit-details-marker { display: none; }
+.tree summary::before { content: "▸"; color: var(--muted); width: 10px; flex: none; }
+.tree details[open] > summary::before { content: "▾"; }
+.tree details.leaf > summary::before { content: "·"; }
+.tree .n { color: var(--fg); font-weight: 500; }
+.tree .d { color: var(--muted); font-family: var(--font-body); font-size: 13px; }
+.tree .more { margin: 2px 0 6px 20px; font-family: var(--font-body); font-size: 13px; color: var(--muted); max-width: 70ch; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.grid2 > * { min-width: 0; }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 70ch; }
+.tag { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.code { color: var(--accent); border-color: var(--accent); }
+.tag.prompt { color: var(--warn); border-color: var(--warn); }
+details.example { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+details.example > summary {
+  cursor: pointer; padding: 12px 14px; font-family: var(--font-display); font-weight: 500; font-size: 17px;
+  display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+}
+details.example > summary .d { font-family: var(--font-body); font-size: 14px; font-weight: 400; color: var(--muted); }
+details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+.step > * { min-width: 0; }
+.num {
+  font-family: var(--font-mono); font-size: 12px; width: 24px; height: 24px; border-radius: 50%;
+  border: 1px solid var(--accent); color: var(--accent); display: grid; place-items: center; margin-top: 1px;
+}
+.step .what { display: flex; flex-direction: column; gap: 6px; }
+.where { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.st { font-family: var(--font-mono); font-size: 12px; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--accent); color: var(--accent); white-space: nowrap; }
+.st.fault { border-color: var(--warn); color: var(--warn); }
+.st.end { border-color: var(--muted); color: var(--muted); }
+.tools { display: flex; gap: 8px; }
+.tools button { font: 500 13px var(--font-body); color: var(--accent); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; }
+dl.facts dt { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding-top: 2px; }
+dl.facts dd { margin: 0; min-width: 0; max-width: 70ch; }
+@media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; } dl.facts dd { margin-bottom: 6px; } }
+</style>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Session orchestrator · design C1</div>
+  <h1>Streams</h1>
+  <p class="summary">A stream is a group of work. It is a <code>stream</code> id on sessions and events, not a store record. Each session decides if it works alone or starts children, and how deep. Each session has a role (orchestrator, worker or free) and an optional type (a custom agent). A workflow is a graph of steps with one entry step and a definition of done. Each step is a node with its own configuration. Loops are allowed. The first workflow is planning. Status: approved by the user on 2026-11-18.</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button data-tab="overview" role="tab">Overview</button>
+  <button data-tab="workflows" role="tab">Workflows</button>
+  <button data-tab="sessions" role="tab">Sessions</button>
+  <button data-tab="split" role="tab">Split work</button>
+  <button data-tab="talk" role="tab">Communicate and control</button>
+  <button data-tab="limits" role="tab">Limits</button>
+  <button data-tab="roadmap" role="tab">Roadmap</button>
+  <button data-tab="decisions" role="tab">Decisions</button>
+</nav>
+
+<!-- OVERVIEW -->
+<div class="panel" id="overview">
+  <section>
+    <h2>A stream id groups a tree of sessions</h2>
+    <div class="box"><pre class="mermaid">
+flowchart TD
+  U([User]) -->|starts, role orchestrator| A["Session A<br/>stream = C"]
+  A -->|brief| B["Task C1<br/>general · stream = C"]
+  A -->|brief| D["Task C2<br/>orchestrator · stream = C"]
+  D -->|brief| E["Task C2a<br/>general · stream = C"]
+  D -->|brief| F["Task C2b<br/>general · stream = C"]
+  U -->|starts| G["Session G<br/>general · no stream"]
+    </pre></div>
+    <p>Session A starts children because its creator asked for an orchestrator. Task C2 also starts children: that is its own decision. Session G works alone.</p>
+  </section>
+
+  <section>
+    <h2>Terms</h2>
+    <div class="scroll"><table>
+      <tr><th>Term</th><th>Meaning</th><th>Example</th></tr>
+      <tr><td>Stream</td><td>A group of work. Full name: work stream. Always say "event stream" in full</td><td><code>"stream": "C"</code></td></tr>
+      <tr><td>Task</td><td>One unit of work in a stream, done by one session</td><td>C1, C2, C2a</td></tr>
+      <tr><td>Role</td><td>The relation of a session to workflows: <code>orchestrator</code>, <code>worker</code> or <code>free</code></td><td><code>"role": "orchestrator"</code></td></tr>
+      <tr><td>Type</td><td>An optional custom agent of a session</td><td><code>"type": "decider"</code></td></tr>
+      <tr><td>Root</td><td>A session with no parent</td><td>Session A, session G</td></tr>
+      <tr><td>Child</td><td>A session that another session started</td><td>Task C1</td></tr>
+      <tr><td>Question</td><td>A message that needs an answer. Old name: decision</td><td><code>ask_user</code></td></tr>
+    </table></div>
+    <p>The vocabulary page holds all terms: <a href="https://claude.ai/artifact/R22wQC78trvXokgDcp7Fvk">Vocabulary</a>.</p>
+  </section>
+
+  <section>
+    <h2>Rules</h2>
+    <ul>
+      <li>Any session can start children. Nothing forces it to.</li>
+      <li>The session decides the depth of its tree.</li>
+      <li>The run gives the role of a session. The creator gives the type.</li>
+      <li>A child gets the <code>stream</code> id of its parent, unless the brief gives another id.</li>
+      <li>The parent decides how it reviews and merges the work of its children. For now the user reviews all PRs.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Next tasks</h2>
+    <div class="scroll"><table>
+      <tr><th>Task</th><th>Content</th></tr>
+      <tr><td>C2 (code)</td><td><code>stream</code>, <code>type</code> and <code>role</code> fields in the brief, the session record and the envelope. Inheritance from the parent. A filter by stream in <code>orch</code>. An update of the orchestrator skill. The planning workflow as the first configuration, with a <code>workflow</code> brief field</td></tr>
+      <tr><td>C3 (real use)</td><td>One full stream that uses the planning workflow and the new fields. Record which behaviors repeat, as input for the first types</td></tr>
+    </table></div>
+    <p>The section "C1 design: streams" in <code>docs/plan.md</code> gives the scope of C2 and C3.</p>
+  </section>
+</div>
+
+<!-- WORKFLOWS -->
+<div class="panel" id="workflows">
+  <section>
+    <h2>A workflow is a graph of steps</h2>
+    <div class="box"><pre class="mermaid">
+flowchart TD
+  S1[1 Read the goal and the docs] --> S2[2 Ask one question]
+  S2 --> S3[3 Answer · human]
+  S3 --> S4[4 Record the answer]
+  S4 -->|questions open| S2
+  S4 -->|no open questions| S5[5 Write the spec]
+  S5 --> S6{6 Approve the spec · human}
+  S6 -->|change| S2
+  S6 -->|approve| S7[7 Propose the next tasks]
+    </pre></div>
+    <p>The work enters at the entry step. Each step moves the work to a next step, by a condition. The graph can loop. The work ends when a step finds that the definition of done is true. There is no fixed exit step.</p>
+    <p>The graph above is the draft of the planning workflow, the first workflow. It follows the work of this C1 session.</p>
+  </section>
+
+  <section>
+    <h2>Each step is a node with its own configuration</h2>
+    <div class="scroll"><table>
+      <tr><th>Field</th><th>Meaning</th><th>Example</th></tr>
+      <tr><td><code>instructions</code></td><td>What to do in the step</td><td>"Ask one question in the full format"</td></tr>
+      <tr><td><code>entry</code></td><td>The condition to start the step</td><td>An open question exists</td></tr>
+      <tr><td><code>input</code></td><td>What the step needs</td><td>The brief, an open question</td></tr>
+      <tr><td><code>output</code></td><td>What the step makes</td><td>A decision row, a spec</td></tr>
+      <tr><td><code>exit</code></td><td>The condition to leave the step</td><td>The answer is recorded</td></tr>
+      <tr><td><code>templates</code></td><td>The templates that the step uses</td><td><code>question</code>, <code>report</code></td></tr>
+      <tr><td><code>actor</code></td><td>Who does the step: an agent or a human</td><td><code>human</code></td></tr>
+      <tr><td><code>approval</code></td><td>If the step needs an approval, and who gives it</td><td>The user, the orchestrator</td></tr>
+      <tr><td><code>strategy</code></td><td>How the approval works</td><td><code>required</code>, <code>skippable</code>, <code>ignored</code></td></tr>
+      <tr><td><code>messages</code></td><td>When the step sends a message, and to whom</td><td>A report to the orchestrator</td></tr>
+      <tr><td><code>next</code></td><td>The next steps, each with a condition. A loop goes back to an earlier step</td><td>change → step 2</td></tr>
+      <tr><td><code>done</code></td><td>If this step can end the work: it checks the definition of done of the workflow</td><td>Step 7: the spec is approved</td></tr>
+    </table></div>
+    <p>A step can start a child session that runs its own workflow. So a workflow can run in one session or across a tree of sessions.</p>
+  </section>
+
+  <section>
+    <h2>Draft of the planning workflow</h2>
+<pre class="cmd">workflow: planning
+steps:
+  - id: read      actor: agent   in: brief             out: open questions
+  - id: ask       actor: agent   in: open question     out: question       message: user or orchestrator
+  - id: answer    actor: human   in: question          out: answer
+  - id: record    actor: agent   in: answer            out: decision row   next: ask, while questions are open
+  - id: spec      actor: agent   in: answers           out: spec           message: report, ready for review
+  - id: approve   actor: human   in: spec              out: verdict        approval: user  strategy: required
+                                                                           next: ask, if change
+  - id: propose   actor: agent   in: approved spec     out: task list      message: report done</pre>
+    <p>The form is a draft. C2 sets the real format.</p>
+  </section>
+
+  <section>
+    <h2>How the work moves through the graph</h2>
+<pre class="cmd">owner session
+   │ starts the run
+   ▼
+runner (deterministic: CLI and store)       run state in the store, one event for each step
+   │ 1. the current step is done
+   │ 2. each next step checks its own entry requirements
+   │ 3. one valid step  → go there
+   │    many valid steps → the agent picks one
+   │    no valid step    → the run stops and asks
+   │ 4. call the executor of the step, with the context that the step names
+   │ 5. if the definition of done is true → end, report to the owner
+   ▼
+executor of the step
+   ├─ tool    deterministic: call an API, write a file, send a report
+   ├─ ask     ask a human with the question template
+   └─ agent   one turn of a session</pre>
+    <div class="scroll"><table>
+      <tr><th>Session of an agent step</th><th>Meaning</th><th>Example</th></tr>
+      <tr><td><code>owner</code></td><td>The session that started the run</td><td>The orchestrator does the step itself</td></tr>
+      <tr><td><code>existing</code></td><td>A fixed session that already exists</td><td>Stream sessions A and B take turns</td></tr>
+      <tr><td><code>new</code></td><td>The run starts a new session for the step. A hidden background helper is a session too</td><td>A review helper for one step</td></tr>
+      <tr><td><code>{ type }</code></td><td>The runner looks for an existing session of that type in the work tree. If there is none, it starts one</td><td><code>{ "type": "decider" }</code></td></tr>
+    </table></div>
+    <p>All four are valid. Each agent step names its session in its configuration.</p>
+  </section>
+
+  <section>
+    <h2>Where a workflow lives, and how a session finds it</h2>
+    <div class="scroll"><table>
+      <tr><th>Point</th><th>Now</th><th>Later</th></tr>
+      <tr><td>Definition</td><td>A Markdown file or a skill</td><td>A configuration in the template store, with its related templates</td></tr>
+      <tr><td>Start of a session</td><td>The brief or the session details name the workflow</td><td>Same</td></tr>
+      <tr><td>In the middle of a chat</td><td>The session finds the workflow in the catalog</td><td>The session gets it from the store on demand</td></tr>
+      <tr><td>Catalog</td><td>Proposal: one skill for each workflow, prefix <code>orch:orch-wf-</code></td><td>The template store</td></tr>
+    </table></div>
+  </section>
+</div>
+
+<!-- SESSIONS -->
+<div class="panel" id="sessions">
+  <section>
+    <h2>Who starts sessions</h2>
+    <div class="scroll"><table>
+      <tr><th>Starter</th><th>Starts</th><th>With</th></tr>
+      <tr><td>User</td><td>A root of any type</td><td>The app, the new session form, <code>orch new</code></td></tr>
+      <tr><td>Any session</td><td>Children of any type, at any depth</td><td><code>spawn_child</code></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Each session has a role and an optional type</h2>
+    <div class="scroll"><table>
+      <tr><th>Field</th><th>Values</th><th>Meaning</th><th>Set by</th></tr>
+      <tr><td><code>role</code></td><td><code>orchestrator</code>, <code>worker</code>, <code>free</code></td><td>The relation of the session to workflows. One value, and it can change</td><td>The run: owner, step or none</td></tr>
+      <tr><td><code>type</code></td><td><code>decider</code>, <code>reviewer</code>, … or none</td><td>A custom agent: its context and instructions</td><td>The creator, when it creates the session</td></tr>
+    </table></div>
+    <div class="scroll"><table>
+      <tr><th>Role</th><th>Meaning</th></tr>
+      <tr><td><code>orchestrator</code></td><td>Owns a workflow run. It is the central point</td></tr>
+      <tr><td><code>worker</code></td><td>Does steps of a run that another session owns</td></tr>
+      <tr><td><code>free</code></td><td>Has no workflow</td></tr>
+    </table></div>
+    <ul>
+      <li>The role does not come from the tree. An orchestrator can have a parent. A worker can send messages to any session.</li>
+      <li>A session can own one run and do a step in another run. Nested workflows need this. While it owns a run, its role is <code>orchestrator</code>.</li>
+      <li>The agents <code>orchestrator</code> and <code>worker</code> of the plugin become the default agents of those roles. A type replaces the default agent.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>New fields of a session</h2>
+<pre class="cmd">{
+  <span class="k">"title"</span>: "C2a: Decide the merge order",
+  <span class="k">"goal"</span>: "Pick the merge order of the stream PRs.",
+  <span class="k">"doneWhen"</span>: "The report gives the order and the reason.",
+  <span class="k">"stream"</span>: "C",            <span class="c">// new, optional. Default: the stream of the parent</span>
+  <span class="k">"type"</span>: "decider",         <span class="c">// new, optional. The custom agent</span>
+  <span class="k">"workflow"</span>: "planning"     <span class="c">// new, optional. The run gives the role</span>
+}</pre>
+    <p>C2 adds these fields to the brief template, the session record and each envelope. The other brief fields do not change.</p>
+  </section>
+</div>
+
+<!-- SPLIT -->
+<div class="panel" id="split">
+  <section>
+    <h2>How an orchestrator splits work</h2>
+    <div class="box"><pre class="mermaid">
+flowchart TD
+  G[Goal in the brief] --> S[Split into tasks]
+  S --> Q{Question for the user?}
+  Q -->|yes| A[Ask in chat or with ask_user]
+  A --> S
+  Q -->|no| B[One brief for each task, same stream id]
+  B --> C[spawn_child for each task]
+  C --> W[Relay questions, collect reports]
+  W --> R[Report to the parent or the user]
+    </pre></div>
+  </section>
+
+  <section>
+    <h2>Steps</h2>
+    <ol>
+      <li>Read the goal and the scope in the brief.</li>
+      <li>Split the goal into tasks. One task is the work of one session.</li>
+      <li>Give each task an id: the stream letter and a number, such as C1.</li>
+      <li>Write one short brief for each task.</li>
+      <li>Start each task with <code>spawn_child</code>.</li>
+      <li>Relay the questions of the children to the user.</li>
+      <li>Collect the reports, then report to the parent or the user.</li>
+    </ol>
+    <p>A task can split again with the same steps. The skill <code>orch:orch-brief</code> holds the brief rules.</p>
+  </section>
+
+  <section>
+    <h2>Find all work of a stream</h2>
+<pre class="cmd"><span class="c"># each event of stream C, from any session at any depth</span>
+orch events --stream C
+<span class="c"># the sessions of stream C, with their state</span>
+orch sessions --stream C</pre>
+    <p>Both commands are C2 proposals. The event stream can group and count by <code>stream</code> later, so a central record is not necessary.</p>
+  </section>
+</div>
+
+<!-- TALK -->
+<div class="panel" id="talk">
+  <section>
+    <h2>Messages between sessions</h2>
+    <div class="scroll"><table>
+      <tr><th>Message</th><th>From → to</th><th>Use</th></tr>
+      <tr><td><code>brief</code></td><td>parent → child</td><td>Start a task</td></tr>
+      <tr><td><code>question</code></td><td>child → user, through the parent</td><td>Ask for an answer</td></tr>
+      <tr><td><code>answer</code></td><td>user → child</td><td>Close a question</td></tr>
+      <tr><td><code>report</code></td><td>child → parent</td><td>Done, blocked or working</td></tr>
+      <tr><td><code>update</code></td><td>child → parent</td><td>Progress. Nobody must act</td></tr>
+      <tr><td><code>message</code></td><td>any → any</td><td>Free text</td></tr>
+      <tr><td><code>notice</code></td><td>supervisor → session</td><td>A fixed text, such as a reminder</td></tr>
+    </table></div>
+    <p>All these messages exist today. In C2, each envelope gets the <code>stream</code> id.</p>
+  </section>
+
+  <section>
+    <h2>Control of sessions</h2>
+    <div class="scroll"><table>
+      <tr><th>Control</th><th>Today</th></tr>
+      <tr><td>Start</td><td>✅ <code>spawn_child</code>, <code>orch new</code></td></tr>
+      <tr><td>Stop</td><td>✅ <code>orch stop</code>, with a deadline</td></tr>
+      <tr><td>Archive</td><td>✅ After the work is done</td></tr>
+      <tr><td>One writer for each session</td><td>✅ The lease. The user and the parent take turns</td></tr>
+      <tr><td>Status of a stream</td><td>❌ Only by hand. C2 adds the filter</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>How the user approves</h2>
+    <p>The place of an approval depends on the type of work. The user can approve in the orchestrator or in the session that does the work. The approval rules belong to the review workflow on the roadmap.</p>
+  </section>
+</div>
+
+<!-- LIMITS -->
+<div class="panel" id="limits">
+  <section>
+    <h2>Known limits</h2>
+    <div class="scroll"><table>
+      <tr><th>#</th><th>Limit</th><th>Effect on a stream</th></tr>
+      <tr><td>F2</td><td>A chat text answers the newest open question</td><td>Chat text closed Q7 and Q8 of this design by mistake. Discuss in chat, or answer each question by its id</td></tr>
+      <tr><td>F6</td><td>Long briefs and skill texts</td><td>Long transcript start. Keep briefs short</td></tr>
+      <tr><td>B2-8</td><td>The form has no <code>background</code> field</td><td>A form session always has Remote Control</td></tr>
+      <tr><td>F14</td><td>The import takes the app focus</td><td>Each new task opens on screen</td></tr>
+      <tr><td>F15</td><td>Remote Control off asks a prompt</td><td>The archive of a task can stop</td></tr>
+      <tr><td>R5</td><td>The app starts attached sessions only from a user turn</td><td>Tasks show as imported, not attached</td></tr>
+      <tr><td>Lease</td><td>One writer for each session</td><td>The user and the parent take turns</td></tr>
+      <tr><td>Author</td><td>PRs show the user as author</td><td>The <code>[orch]</code> tag marks them</td></tr>
+      <tr><td>Store</td><td>The live store is version 1. The code needs version 2</td><td>Real use (C3) needs a new store or a migration</td></tr>
+    </table></div>
+  </section>
+</div>
+
+<!-- ROADMAP -->
+<div class="panel" id="roadmap">
+  <section>
+    <h2>Out of scope for C1</h2>
+    <div class="scroll"><table>
+      <tr><th>Item</th><th>Content</th><th>Input from C1</th></tr>
+      <tr><td>Review workflow</td><td>Who reviews, review sessions, verdicts, approval events, gates</td><td>For now the user reviews all PRs</td></tr>
+      <tr><td>PR workflow</td><td>Integration branches, merge order, merge rules</td><td><code>orch merge</code> and the stack exist today</td></tr>
+      <tr><td>More workflows</td><td>Review, code change, probe and orchestration</td><td>Planning comes first. The step format is the same</td></tr>
+      <tr><td>Template store</td><td>Workflows and their related templates, got on demand</td><td>Markdown files or skills until then</td></tr>
+      <tr><td>Watcher</td><td>A session that finds stuck or broken sessions and supervisors, and alerts the phone</td><td>Not a root. First test how useful it is</td></tr>
+    </table></div>
+  </section>
+</div>
+
+<!-- DECISIONS -->
+<div class="panel" id="decisions">
+  <section>
+    <h2>Answers of the user</h2>
+    <p>The user answered each question in chat on 2026-11-17. <code>docs/decisions.md</code> has the same rows.</p>
+    <div class="scroll"><table>
+      <tr><th>#</th><th>Question</th><th>Answer</th></tr>
+      <tr><td>Q1</td><td>Names</td><td>"stream" (work stream), "task" (not "part"), "question" (not "decision")</td></tr>
+      <tr><td>Q2</td><td>Fixed session levels?</td><td>No. Each session decides if it starts children, and how deep. No top root</td></tr>
+      <tr><td>Q3</td><td>May a task start a session?</td><td>Yes. The answer to Q2 covers it</td></tr>
+      <tr><td>Q4</td><td>How does a session know its kind?</td><td>Changed by T3: see the rows T3a to T3d</td></tr>
+      <tr><td>Q5</td><td>Who reviews a task PR?</td><td>The parent decides. For now the user reviews all PRs. Roadmap</td></tr>
+      <tr><td>Q6</td><td>Where do task PRs merge?</td><td>The parent decides. Roadmap: PR workflow</td></tr>
+      <tr><td>Q7</td><td>Where is a stream recorded?</td><td>Nowhere. A <code>stream</code> id on sessions and events</td></tr>
+      <tr><td>Q8</td><td>How does the user approve?</td><td>It depends on the type of work: in the orchestrator or in the session that does the work</td></tr>
+      <tr><td>W1</td><td>What is a workflow?</td><td>A graph of steps: one entry step, a definition of done, loops allowed. Each step is a node with its own configuration</td></tr>
+      <tr><td>W2</td><td>Where is a workflow defined?</td><td>Now: Markdown or a skill. Later: the template store, on demand</td></tr>
+      <tr><td>W3</td><td>How does a session find its workflow?</td><td>The brief names it, or the session finds it in the catalog in the middle of a chat</td></tr>
+      <tr><td>W4</td><td>Which workflow comes first?</td><td>Planning</td></tr>
+      <tr><td>W5</td><td>How does a workflow define approvals?</td><td>Each step: if it needs an approval, who approves, and the strategy (required, skippable, ignored). Workflows are made by configuration</td></tr>
+      <tr><td>T1</td><td>Can a workflow run across sessions?</td><td>Yes. An agent step runs in the owner, in an existing session, or in a new session. All are valid</td></tr>
+      <tr><td>T3a</td><td>Role of a session</td><td>One value that can change: orchestrator (owns a run), worker (reacts to a run), free (no workflow)</td></tr>
+      <tr><td>T3b</td><td>Can a step ask for a type?</td><td>Yes. The runner uses an existing session of that type in the work tree, or starts one</td></tr>
+      <tr><td>T3c</td><td>Names</td><td>Role: orchestrator, worker, free. Type: the custom agent, such as decider. "Child" keeps its tree meaning</td></tr>
+      <tr><td>T3d</td><td>Own one run and do a step in another?</td><td>Yes. Nested workflows need it</td></tr>
+      <tr><td>T2</td><td>How does the work move to the next step?</td><td>Valid, then pick: each next step checks its entry requirements. One valid: go. Many valid: the agent picks. None: stop and ask</td></tr>
+    </table></div>
+  </section>
+</div>
+</div>
+<script>
+(function () {
+  var names = ["overview", "workflows", "sessions", "split", "talk", "limits", "roadmap", "decisions"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "overview";
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
+    document.querySelectorAll("nav button").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false"); });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>
