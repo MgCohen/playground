@@ -140,9 +140,9 @@ flowchart LR
     <div class="scroll"><table>
       <thead><tr><th>Kind</th><th>Content</th><th>Port</th><th>Writer</th></tr></thead>
       <tbody>
-        <tr><td>Registry entry</td><td>Identity, tree, labels, settings, phase</td><td><code>ISessionRegistry</code></td><td>Registry service (C#)</td></tr>
-        <tr><td>Run state</td><td>Lease, heartbeat, status, turn, state machine</td><td><code>IDocStore</code></td><td>Plugin, supervisor</td></tr>
-        <tr><td>Messages</td><td>Brief, question, answer, report, notice</td><td><code>IEventLog</code></td><td>Each party posts</td></tr>
+        <tr><td>Registry entry</td><td>Identity, tree, labels, settings, phase</td><td><code>IRepository&lt;SessionEntry&gt;</code></td><td>Slice Sessions (<code>SessionRegistry</code>)</td></tr>
+        <tr><td>Run state</td><td>Lease, heartbeat, status, turn, state machine</td><td><code>IRepository&lt;T&gt;</code> for each type</td><td>Plugin, supervisor</td></tr>
+        <tr><td>Messages</td><td>Brief, question, answer, report, notice</td><td>The event stream (H1 decides its shape)</td><td>Each party posts</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -154,7 +154,7 @@ flowchart LR
       <li>The app title starts with the full code, for example <code>[O2 P1 S1]</code>, so the user finds the root of each session.</li>
       <li>One writer for the registry: the registry service. Plugins send a request envelope.</li>
       <li>Settings are typed fields, not brief text. A mode is a preset of four axes. The brief shows a render of them.</li>
-      <li><strong>One start path.</strong> The chat (<code>spawn_child</code>), our app (UI, tray) and <code>orch new</code> all call <code>ISessionRegistry.Create</code>, which calls adapter <code>Create</code> and <code>Open</code>.</li>
+      <li><strong>One start path.</strong> The chat (<code>spawn_child</code>), our app (UI, tray) and <code>orch new</code> all call <code>SessionRegistry.Create</code>, which calls adapter <code>Create</code> and <code>Open</code>.</li>
       <li><strong>Engine first.</strong> If the engine gives a function (title, Remote Control, archive, transcript), the adapter uses it. The registry keeps only a reference and adds only what no engine gives.</li>
       <li><strong>The direction decides.</strong> Code that touches a model or a model session (create, talk, change it on the engine side) goes through the adapter. A call into our system (start the tray, write a record, post an envelope) needs no adapter, whoever makes it.</li>
       <li><strong>One store root.</strong> The registry, the run state and the event stream stay together under one root. If the root moves, all of it moves.</li>
@@ -167,7 +167,7 @@ flowchart LR
     <div class="scroll"><table>
       <thead><tr><th>#</th><th>Code part</th><th>Size</th></tr></thead>
       <tbody>
-        <tr><td>C1</td><td><code>ISessionRegistry</code>, file implementation, contract tests</td><td>Medium</td></tr>
+        <tr><td>C1</td><td><code>IRepository&lt;T&gt;</code> with a file implementation, the slice <code>SessionRegistry</code>, contract tests</td><td>Medium</td></tr>
         <tr><td>C2</td><td>Store version 3: <code>meta.json</code> and <code>control.json</code> into <code>session.json</code></td><td>Small</td></tr>
         <tr><td>C3</td><td>Settings schema, copy at create, <code>mcp__orch__configure</code>, the settings block in the brief</td><td>Medium</td></tr>
         <tr><td>C4</td><td><code>templates/modes/</code> and the readers of the four axes</td><td>Medium</td></tr>
@@ -183,7 +183,7 @@ flowchart LR
 <div class="panel off" id="registry" role="tabpanel">
   <section>
     <h2>One registry entry for each session</h2>
-    <pre class="side"><span class="c">// sessions/&lt;id&gt;/session.json, written only through ISessionRegistry</span>
+    <pre class="side"><span class="c">// sessions/&lt;id&gt;/session.json, written only by the slice SessionRegistry</span>
 {
   "id": "73cc50ac-…",                  <span class="c">// today: the Claude Code session id</span>
   "code": "S1",                        <span class="c">// own code, unique among the siblings</span>
@@ -248,23 +248,34 @@ flowchart LR
   </section>
 
   <section>
-    <h2>The registry is one more port</h2>
-    <pre class="side"><span class="c">// Orchestrator.Core/Sessions. The file implementation uses IDocStore keys.</span>
-public interface ISessionRegistry
+    <h2>The registry is a slice on a generic repository</h2>
+    <pre class="side"><span class="c">// Infrastructure: one generic repository. Files, a database or an API is a choice of the implementation (H1).</span>
+public interface IRepository&lt;T&gt; where T : IEntity
 {
-    SessionEntry Create(NewSession spec);                 <span class="c">// id from the engine, posts session.created</span>
-    string FullCode(string id);                           <span class="c">// "O2 P1 S1": codes from the root down</span>
-    SessionEntry? Get(string id);
-    IReadOnlyList&lt;SessionEntry&gt; List(SessionQuery q);   <span class="c">// parent, tag, stream, owner, phase</span>
-    SessionEntry Update(string id, int rev, SessionPatch patch, string by); <span class="c">// refuses an old rev</span>
-    SessionEntry? FindByEngineId(string kind, string engineId);
+    T? Get(string id);
+    IReadOnlyList&lt;T&gt; Query(Spec&lt;T&gt; spec);
+    T Add(T item);
+    T Update(T item, int expectedRev);                    <span class="c">// refuses an old rev</span>
 }
 
-public static class StoreBackends   <span class="c">// H1 composition root, one more line</span>
+<span class="c">// Slice Sessions: the registry logic, with no storage code.</span>
+public sealed class SessionRegistry(IRepository&lt;SessionEntry&gt; sessions, IProvider provider, IEvents events)
 {
-    public static Store Create(string root) =&gt;
-        new(new FileEventLog(root), new FileDocStore(root), new DocSessionRegistry(new FileDocStore(root)));
-}</pre>
+    public SessionEntry Create(NewSession spec);          <span class="c">// provider.Create, sessions.Add, posts session.created</span>
+    public string FullCode(string id);                    <span class="c">// "O2 P1 S1": codes from the root down</span>
+    public SessionEntry Update(string id, int rev, SessionPatch patch, string by);
+    public IReadOnlyList&lt;SessionEntry&gt; List(SessionQuery q) =&gt; sessions.Query(q.ToSpec());
+}
+
+<span class="c">// Composition root: the type decides the place.</span>
+services.AddRepository&lt;SessionEntry&gt;(FileRepository.At(root, "sessions/{id}/session.json"));
+services.AddRepository&lt;Lease&gt;(FileRepository.At(root, "sessions/{id}/lease.json"));</pre>
+    <ul>
+      <li>No slice has its own store interface. A slice asks for <code>IRepository&lt;T&gt;</code> of its type.</li>
+      <li>Where the data is (local files, a database, an API) is a choice of the infrastructure. The slice does not change.</li>
+      <li>The run state files (lease, status, turn, state) are repositories of their own types too.</li>
+      <li>The event stream has more than get and update: append only, ordered reads and subscriptions. Its shape on the generic repository is an H1 question for the root session.</li>
+    </ul>
     <ul>
       <li><strong>Place:</strong> <code>store/sessions/&lt;id&gt;/session.json</code>, beside the run state files. A later implementation can keep the registry in a database and the run state in files.</li>
       <li><strong>Writer:</strong> the registry service in C#, in the supervisor process or in an <code>orch</code> process. Each write takes the lock <code>session.json.lock</code> and checks <code>rev</code>.</li>
@@ -277,16 +288,16 @@ public static class StoreBackends   <span class="c">// H1 composition root, one 
     <h2>All session data stays under one store root</h2>
     <pre class="side"><span class="c">&lt;store root&gt;/   ORCH_STORE, else &lt;orch home&gt;/store. H1 chooses the backend.</span>
   version.json, policy.json
-  events/&lt;day&gt;/, bodies/&lt;day&gt;/       <span class="c">the event stream (IEventLog)</span>
-  sessions/&lt;id&gt;/session.json         <span class="c">the registry entry (ISessionRegistry)</span>
-  sessions/&lt;id&gt;/lease.json, …        <span class="c">the run state (IDocStore)</span>
+  events/&lt;day&gt;/, bodies/&lt;day&gt;/       <span class="c">the event stream</span>
+  sessions/&lt;id&gt;/session.json         <span class="c">IRepository&lt;SessionEntry&gt;</span>
+  sessions/&lt;id&gt;/lease.json, …        <span class="c">IRepository&lt;Lease&gt;, …</span>
   subscriptions/, nudges/, claims/, supervisor/
 
 <span class="c">Not in the store: engine data. The engine keeps it in its own place.</span>
   ~/.claude/projects/…               <span class="c">Claude Code transcripts</span>
   app state                          <span class="c">sidebar, app parent link, Remote Control</span></pre>
     <ul>
-      <li><code>StoreBackends.Create(root)</code> makes the three ports from one root. No port has its own place.</li>
+      <li>The composition root gives each repository its place under one root. No slice knows a place.</li>
       <li>If H1 moves the store (a database, a cloud host), the registry, the run state and the stream move together.</li>
       <li>The store keeps only references to engine data: <code>engine.kind</code>, <code>sessionId</code>, <code>appId</code>.</li>
     </ul>

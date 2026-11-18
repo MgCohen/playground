@@ -1107,7 +1107,7 @@ Screenshots (mock mode, desktop corner): `docs/screens/r2-corner-open-question.p
 
 Page: `docs/session-design.html` (https://claude.ai/artifact/QKh7x9SkrnUp8q5E4rbYTs). Design only: no code change.
 
-Each session is one entry in a session registry, `store/sessions/<id>/session.json`. The registry is one more storage port (`ISessionRegistry`) on the H1 rules. Only the registry service in C# writes it; a plugin posts `session.update`. The run state (lease, heartbeat, status, turn, `state.json`) stays in its own files.
+Each session is one entry in a session registry, `store/sessions/<id>/session.json`. The registry is a slice (`SessionRegistry`) on a generic `IRepository<SessionEntry>`; the infrastructure decides the place (files, a database, an API). Each run state type is also an `IRepository<T>`. The shape of the event stream on the generic repository is an H1 question for the root session. Only the slice writes the entry; a plugin posts `session.update`. The run state (lease, heartbeat, status, turn, `state.json`) stays in its own files.
 
 | Part | Design |
 |---|---|
@@ -1116,9 +1116,9 @@ Each session is one entry in a session registry, `store/sessions/<id>/session.js
 | Replaces | `meta.json` and `control.json` (store version 3) |
 | Engine first | If the engine gives a function (attach, title, Remote Control, archive, transcript), the adapter uses it. The registry keeps no copy of an engine fact; `adapter.Read` gets it on demand |
 | Provider boundary | Features are vertical slices with no provider code (Sessions, DocsCheck, StateCheck, Doctor). Each part that depends on a provider goes through one interface, `IProvider`, in `Orchestrator.Providers`, with one folder for each provider (`Providers/ClaudeCode`). Methods: `Ask` (one-shot model call), `Create`, `Open`, `Turn`, `Set`, `Archive`, `Read` (facts with no model: app files, CLI), `CallerSessionId`, `Doctor`. A call into our system (start the tray, write a record, post an envelope) needs no provider |
-| Start | One start path: the chat (`spawn_child`), our app (UI, tray) and `orch new` call `ISessionRegistry.Create`, which calls adapter `Create` and `Open`. No official attach (`start_session`): F1 permits it only in a turn that the user started, and the app tree is not needed. A session started by hand joins with `orch enable` (a call into our system, no adapter). If the app adds a parent flag to the import (#106214), `Open` uses it |
+| Start | One start path: the chat (`spawn_child`), our app (UI, tray) and `orch new` call `SessionRegistry.Create`, which calls adapter `Create` and `Open`. No official attach (`start_session`): F1 permits it only in a turn that the user started, and the app tree is not needed. A session started by hand joins with `orch enable` (a call into our system, no adapter). If the app adds a parent flag to the import (#106214), `Open` uses it |
 | Set, Archive | Claude Code gives these only as model tools in a live app session. The adapter posts its own notice (`archive-self`, `archive-child`, `remote-control-child`), the model calls the tool, and `Read` confirms within a time limit. Result: `done`, `waiting` or `failed`. No code outside the adapter names an app tool |
-| Store root | The registry, the run state and the event stream stay under one store root (`ORCH_STORE`, else `<orch home>/store`). `StoreBackends.Create(root)` makes the three ports. Engine data stays in the engine |
+| Store root | The registry, the run state and the event stream stay under one store root (`ORCH_STORE`, else `<orch home>/store`). The composition root gives each repository its place under that root. Engine data stays in the engine |
 | Permissions | Setting `permissions`: `auto` (default) or `bypass`. The adapter maps it to the engine flag (`--permission-mode auto` or `bypassPermissions`). It is copied at create like each setting, and a change to `bypass` is a high-risk event. It does not permit `start_session` in a program turn |
 | Settings | Each setting can be set at create and updated by the parent or the user. A setting not set at create is a copy of the parent value; a root copies `policy.json` `sessionDefaults` |
 | Modes | A mode is a preset of four axes: `interaction` (task: one report at the end; stepwise: a report after each step, no confirmation; conversation: ends when somebody says done), `autonomy` (auto, ask, approve), `route` (parent, user), `visibility` (public: import and Remote Control at the earliest point; private: neither). `visibility` replaces `background`. Presets in `templates/modes/`: `auto`, `chat`, `ask`, `approve` (the sum test modes) |
@@ -1130,7 +1130,7 @@ Code parts (proposal):
 
 | # | Part | Size |
 |---|---|---|
-| C1 | `ISessionRegistry`, file implementation, contract tests | Medium |
+| C1 | `IRepository<T>` with a file implementation, the slice `SessionRegistry`, contract tests | Medium |
 | C2 | Store version 3: `meta.json` and `control.json` into `session.json` | Small |
 | C3 | Settings schema, copy at create, `mcp__orch__configure`, the settings block in the brief | Medium |
 | C4 | `templates/modes/` and the readers of the four axes | Medium |
