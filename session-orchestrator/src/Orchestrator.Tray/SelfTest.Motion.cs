@@ -79,6 +79,56 @@ public static partial class SelfTest
         await web.ExecuteScriptAsync("document.querySelector('.toast button')?.click()");
         checks.Add(new Check("m5-toast", bar == "m-count 5s", $"undo bar {bar}; undo clicked", toastPng));
         await Task.Delay(500);
+        checks.AddRange(await Pile(web, folder));
+        return checks;
+    }
+
+    const string TopTitle = "document.querySelector('[data-deck-card] .q')?.textContent ?? ''";
+
+    /// <summary>M1, M2, M3: the card pile. A swipe throws the card out, skip tucks it under, undo drops it in again.</summary>
+    static async Task<IEnumerable<Check>> Pile(CoreWebView2 web, string folder)
+    {
+        var checks = new List<Check>();
+        await Home(web, "cards");
+        await Task.Delay(400);
+        var slots = await Eval<string>(web, "[...document.querySelectorAll('.pile .pcard')].map(c => c.style.getPropertyValue('--i') + ':' + Math.round(c.getBoundingClientRect().width)).join(' ')");
+        var pilePng = await Snap(web, folder, "m3-pile", "window.scrollTo(0, 0)", 200);
+        checks.Add(new Check("m3-pile", slots.Split(' ').Length == 3, $"slot:width of each card {slots}", pilePng));
+
+        // M2: skip drops the top card and tucks it under the pile; the next card lifts to the top.
+        var first = await Eval<string>(web, TopTitle);
+        var tuckPng = await Snap(web, folder, "m2-tuck", "document.querySelector('[data-act=skip]').click()", 110);
+        await Task.Delay(700);
+        var next = await Eval<string>(web, TopTitle);
+        var liftPng = await Snap(web, folder, "m2-lifted", "", 0);
+        checks.Add(new Check("m2-tuck", next != first && next.Length > 0, $"top card before \"{first}\", after the skip \"{next}\"", $"{tuckPng};{liftPng}"));
+        await web.ExecuteScriptAsync("document.querySelector('.toast button')?.click()");
+        await Task.Delay(700);
+
+        // M1: a swipe to the right past the limit throws the card out to the right; the act runs at the end of the motion.
+        var throwable = await Eval<bool>(web, "!!document.querySelector('[data-act=right][data-throw]')");
+        var before = await Eval<string>(web, TopTitle);
+        const string swipe = """
+            (c => { const r = c.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+              const ev = (t, dx) => c.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: 7, isPrimary: true, clientX: x + dx, clientY: y + dx / 8, button: 0 }));
+              ev('pointerdown', 0); ev('pointermove', 40); ev('pointermove', 110); ev('pointermove', 160); ev('pointerup', 160); })(document.querySelector('[data-deck-card]'))
+            """;
+        await web.ExecuteScriptAsync(swipe);
+        // The screenshot takes longer than the throw, so the check holds the throw at its start (the release point, with the stamp) for the screenshot.
+        var flying = await Eval<string>(web, "(c => { if (!c) return ''; const a = c.getAnimations().find(x => x.animationName === 'm-fly-r'); a?.pause(); if (a) a.currentTime = 0; const r = c.getBoundingClientRect(); return c.className + ', left ' + Math.round(r.left) + ', opacity ' + Number(getComputedStyle(c).opacity).toFixed(2); })(document.querySelector('.pcard.out-r'))");
+        var flyPng = await Snap(web, folder, "m1-fly", "", 50);
+        var sideScroll = await Eval<bool>(web, "(window.scrollTo(200, window.scrollY), window.scrollX > 0)");
+        await web.ExecuteScriptAsync("document.querySelector('.pcard.out-r')?.getAnimations().find(x => x.animationName === 'm-fly-r')?.play()");
+        await Task.Delay(800);
+        var after = await Eval<string>(web, TopTitle);
+        checks.Add(new Check("m1-fly", throwable && flying.Contains("out-r") && after != before && !sideScroll, $"swipe right: card \"{before}\" class {flying}; top after \"{after}\"; side scroll {sideScroll}", flyPng));
+
+        // M3: undo brings the card back; it drops in from the top with a small spring.
+        var arrivePng = await Snap(web, folder, "m3-arrive", "document.querySelector('.toast button')?.click()", 120);
+        await Task.Delay(600);
+        var back = await Eval<string>(web, TopTitle);
+        var arrive = await Eval<bool>(web, "!!document.querySelector('[data-deck-card].arrive')");
+        checks.Add(new Check("m3-arrive", back == before && arrive, $"after the undo the top card is \"{back}\", class arrive {arrive}", arrivePng));
         return checks;
     }
 }
