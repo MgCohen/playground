@@ -1,4 +1,5 @@
-import { S, log, now, orch, readJson, writeJson } from './state.ts'
+import { S, now, orch } from './state.ts'
+import { isEnabled, log, readSession, writeHeartbeat, writeSession } from './backend.ts'
 
 // The process that holds the lease: orch process prints the id and the start time of its parent, the claude process
 // of this session. The supervisor releases a stale lease only when this process is gone (two writers, S0).
@@ -37,7 +38,7 @@ export function mayDeliver(holder: string, turn: any, lease: any, nowMs: number)
 }
 
 export async function turnOpen($: any): Promise<{ turn: any; lease: any; now: number }> {
-  return { turn: await readJson($, `${S.dir}/turn.json`), lease: await readJson($, `${S.dir}/lease.json`), now: await $.clock.now() }
+  return { turn: await readSession($, 'turn.json'), lease: await readSession($, 'lease.json'), now: await $.clock.now() }
 }
 
 export async function writeLease($: any, holder: string, reason: unknown): Promise<void> {
@@ -47,22 +48,22 @@ export async function writeLease($: any, holder: string, reason: unknown): Promi
     lease.pid = S.pid
     lease.started = S.started
   }
-  await writeJson($, `${S.dir}/lease.json`, lease)
+  await writeSession($, 'lease.json', lease)
 }
 
 export async function beat($: any): Promise<void> {
   if (!S.dir) return
-  if (!(await $.fs.exists(`${S.dir}/enabled`))) {
+  if (!(await isEnabled($))) {
     await writeLease($, 'none', { event: 'archived' })
     await log($, 'the enabled file is gone: lease released, plugin inactive')
     S.dir = undefined
     return
   }
-  await $.fs.write(`${S.dir}/heartbeat.txt`, await now($))
-  const lease = await readJson($, `${S.dir}/lease.json`)
+  await writeHeartbeat($)
+  const lease = await readSession($, 'lease.json')
   if (lease?.holder === S.holder) return
   if (lease?.holder === 'none') {
-    if (!mayTakeLease(S.holder, await readJson($, `${S.dir}/turn.json`), lease, await $.clock.now())) return
+    if (!mayTakeLease(S.holder, await readSession($, 'turn.json'), lease, await $.clock.now())) return
     await writeLease($, S.holder, { event: 'lease taken back', was: lease })
     await log($, 'lease taken back')
     return
@@ -72,7 +73,7 @@ export async function beat($: any): Promise<void> {
 
 export async function releaseLease($: any, e: unknown): Promise<void> {
   if (!S.dir) return
-  const lease = await readJson($, `${S.dir}/lease.json`)
+  const lease = await readSession($, 'lease.json')
   if (lease?.holder === S.holder) await writeLease($, 'none', { event: 'session.end', end: e })
   await log($, `session.end ${JSON.stringify(e)}`)
 }
