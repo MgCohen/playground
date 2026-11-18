@@ -207,7 +207,7 @@ public sealed partial class Supervisor
         var blocked = store.Events.OfKind(EventKinds.DeliveryBlocked).Select(b => b.Ref("envelope")).OfType<string>().ToHashSet();
         // The failed turns of a session that is not live are a failure of the turn runner (Fail). Here: a live session that takes no input.
         var stuck = open.Where(e => blocked.Contains(e.Id)).Select(e => e.Id).ToList();
-        if (stuck.Count == 0) Failures.Recover(store, id, Failures.NoAck, $"{TitleOf(id)} takes its input again");
+        if (stuck.Count == 0) Failures.Recover(store, id, Failures.NoAck, $"{TitleOf(id)}: it takes its input again");
         if (open.Count == 0) return;
         var delivery = options.Policy.Delivery;
         var live = store.IsLive(id, now);
@@ -242,7 +242,7 @@ public sealed partial class Supervisor
             store.Events.Post(new PostInput(EventKinds.DeliveryBlocked, Parties.Supervisor, e.From, body) { Session = id, Thread = e.Thread, Refs = refs });
         store.Log($"{id} delivery blocked: {e.Kind} {e.Id}: {reason}");
         var stuck = store.Undelivered(id).Where(u => u.Id == e.Id || store.Events.OfKind(EventKinds.DeliveryBlocked).Any(b => b.Ref("envelope") == u.Id)).Select(u => u.Id).ToList();
-        Failures.Report(store, id, Failures.NoAck, $"{TitleOf(id)} takes no input: {stuck.Count} envelopes wait", reason, stuck.Count, null, stuck);
+        Failures.Report(store, id, Failures.NoAck, $"{TitleOf(id)}: it takes no input ({stuck.Count} envelopes wait)", reason, stuck.Count, null, stuck);
     }
 
     // Turn runner: a session that is not live gets its envelopes with no ack as one engine turn.
@@ -372,7 +372,7 @@ public sealed partial class Supervisor
         {
             lock (gate) store.MarkSent(id, pending.Envelopes, Holders.Supervisor);
             if (failures.TryRemove(id, out _)) store.SaveBlocked(id, null);
-            Failures.Recover(store, id, Failures.FailedTurns, $"The supervisor turns of {TitleOf(id)} work again");
+            Failures.Recover(store, id, Failures.FailedTurns, $"{TitleOf(id)}: its supervisor turns work again");
             var output = store.ReadJson<LastOutput>(id, StoreFiles.LastOutput);
             store.Events.Append(EventKinds.TurnEnd, Parties.Session(id), Parties.Supervisor, Data.Of(("ok", true), ("seconds", result.Seconds), ("text", result.Text ?? "")),
                 Data.Of(("turnStart", start.Id), ("output", output is { } o && string.CompareOrdinal(o.Event, start.Id) > 0 ? o.Event : null)), id);
@@ -419,7 +419,7 @@ public sealed partial class Supervisor
         // The reason has no count and no time, so the blocked state changes only when the error changes (D, problem 4).
         store.SaveBlocked(id, $"supervisor turns fail: {error}");
         if (failure.Count >= options.MaxFailures)
-            Failures.Report(store, id, Failures.FailedTurns, $"The supervisor turns of {TitleOf(id)} fail: {failure.Count} tries", error, failure.Count,
+            Failures.Report(store, id, Failures.FailedTurns, $"{TitleOf(id)}: its supervisor turns fail ({failure.Count} tries)", error, failure.Count,
                 failure.Until is { } until ? Times.Format(until) : null, store.Undelivered(id).Select(e => e.Id).ToList());
         store.Events.Append(EventKinds.TurnFail, Parties.Session(id), Parties.Supervisor, Data.Of(("count", failure.Count), ("error", error)), Data.Of(("turnStart", turnStart)), id);
         store.Log($"{id} turn failed ({failure.Count}): {error}");

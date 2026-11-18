@@ -1,5 +1,5 @@
 {
-  "text": "The supervisor turns of Demo root fail: 3 tries",
+  "text": "Demo root: its supervisor turns fail (3 tries)",
   "session": "3c341eec-e774-464f-bdda-7258cf1048d6",
   "reason": "failed-turns",
   "state": "open",
