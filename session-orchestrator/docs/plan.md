@@ -2041,6 +2041,33 @@ The run showed that a type does one thing: it selects the agent and the skills o
 
 So a "session kind" today is the pair of role and type. The role says what the session does in a run. The type says which agent runs it. The run did not use a step of a type (`{ "type": name }`), because the planning workflow uses only `owner`. A type with tool limits or its own behavior does not exist. Recommendation: keep the type as a start setting of the provider, and do not add a separate kind field.
 
+## L live demo (2026-11-18)
+
+`tools/demo/demo.ps1` started a clean live demo from the branch `orch/c5-c3-findings`: one root with a `planning` run and three children, real `claude` on `haiku`, store `%LOCALAPPDATA%\orch\demo-store\store`, port 7791. The first full turns took about 30 s.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| The script runs from a clean start | Pass. It stops the old demo, publishes the stack, makes a new store and starts all processes |
+| Question cards | Pass. Two open questions: the child ("Which greeting word do we put in hello.txt?") and the root, from the step `ask` of the run ("Which language do we use in greeting.txt?") |
+| Report | Pass. `Demo child: report done` reported `done`: "report.txt is written." |
+| Update | Pass. `Demo child: send an update` sent "Half of the check list is done." (50 %) |
+| Session tree | Pass. `orch tree` and `/api/sessions` show the root and its three children |
+| Workflow run | Pass. `planning-586ab943` waits at the step `answer`. History: read, ask |
+| No failure flood | Pass. The messages to the user are the 2 questions, the report and the update. No "failed", "does not respond" or stuck message |
+| Model | Pass. The transcripts show `claude-haiku-5-5` for each turn |
+| Tray | Pass. The tray runs in live mode on the demo store and port |
+
+### Findings
+
+| Id | Finding | Proposal | State |
+|---|---|---|---|
+| L-F1 | The supervisor gives its full environment to each `claude` turn. A supervisor that starts from a Claude session gives the turns `CLAUDE_CODE_SESSION_ID`, `CLAUDE_CODE_HOST_SESSION_ID`, `CLAUDE_CODE_AGENT=orch:worker`, `CLAUDE_CODE_PLUGIN_DIRS` and the messaging socket of that session. In the first demo run the plugin wrote `appId = local_ab9acae5-...` (the app id of the host session) into the demo root | The provider removes the engine variables of the host from the turn environment, and sets only its own | Open (app code, owner D). The demo script removes the variables before the start |
+| L-F2 | With `haiku` and only the agent text of `orchestrator`, the root ran `orch run start` and ended its turn. The run stayed at the step `read`, with no stuck question | None in the app. The demo goal names each `orch run` command | Workaround in the demo |
+| L-F3 | The supervisor has no option for the model or the effort of a turn | Add a model and effort setting to the provider, if a cheap test run is a use case | Open, for review. The demo uses `ANTHROPIC_MODEL` |
+| L-F4 | The tray allows one normal instance for each user. The demo tray cannot start while the installed tray or another live tray runs | None. The script prints the tray command | No change |
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.

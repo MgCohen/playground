@@ -167,6 +167,41 @@ Known limits:
 - Test the phone layout in the browser pane of the desktop app: `preview_start` with the URL, then `resize_window` with the preset `mobile`.
 - The browser pane resets the viewport size when the pane width changes. Set `mobile` again before each screenshot.
 
+## The demo
+
+`tools/demo/demo.ps1` starts a live demo with real `claude` sessions on its own store and port. Run it again after each build: it stops the old demo and starts from a new store.
+
+| Command | Effect |
+|---|---|
+| `.	ools\demo\demo.ps1` | Build, make a new store, start the supervisor, the sessions and the tray |
+| `.	ools\demo\demo.ps1 -Status` | Show the processes, the URL and the session tree |
+| `.	ools\demo\demo.ps1 -Stop` | Stop the tray, the supervisor and its `claude` turns. The files stay |
+
+| Item | Default | Option |
+|---|---|---|
+| Demo folder | `%LOCALAPPDATA%\orch\demo-store` (`store\`, `app\`, `work\`, `logs\`, `demo.json`) | `-Root` |
+| Port and URL | 7791, `http://127.0.0.1:7791/` | `-Port` |
+| Model and effort | `haiku`, `low` (`ANTHROPIC_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`) | `-Model`, `-Effort` |
+| Tray | Started with `--live <store> --port <port> --no-supervisor --pin` | `-NoTray` |
+| Build | `dotnet publish` of the supervisor, `orch` and the tray into `app\` | `-NoBuild` |
+
+The tree that the script starts, all in stream `DEMO`:
+
+- Root `Demo root: plan greeting.txt`: type `orchestrator`, workflow `planning`. It starts the run, does the step `read`, and asks one question in the step `ask`. The run then waits at the step `answer`.
+- `Demo child: ask a question`: one `ask_user` question.
+- `Demo child: report done`: writes `report.txt`, then a `done` report.
+- `Demo child: send an update`: one update at 50 %.
+
+Rules of the script:
+
+- It refuses the real store (`%LOCALAPPDATA%\orch\store`, `store\`) and the port 7777.
+- The demo policy has no timeout on each level, so no default decision closes a card.
+- It removes each `CLAUDE*`, `ORCH_*`, `AI_AGENT` and `BAGGAGE` variable before it starts the supervisor. A start from a Claude session gives these variables to each turn (L-F1).
+- The goals go in files (`--goal-file`): Windows PowerShell 5.1 breaks a native argument with quotes or line breaks.
+- The root goal names each `orch run` command. With only the agent text, Haiku started the run and ended its turn at the step `read` (L-F2).
+- One normal tray runs for each user. If another normal tray runs, the script prints the tray command and does not start it. A self-test tray does not block.
+- To play the user: `$env:ORCH_STORE='<store>'; & '<root>pp\cli\orch.exe' answer <decision> <text>`.
+
 ## The end-to-end script
 
 - `dotnet run --project tests/Orchestrator.E2E -- 7790` runs the live recipe as one command: a test repository, a published supervisor on port 7790, a real session with a `high` and a `medium` decision, two supervisor crashes, and eight checks of the store and the stream. It takes about 3 minutes and prints PASS or FAIL for each check.
