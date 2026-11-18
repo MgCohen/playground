@@ -1,5 +1,6 @@
 // The orch tools: one tool for each message type. Each tool posts to the stream; the tool input schema is the template schema.
-import { MAX_WAIT_SECONDS, S, log, orch, readJson } from './state.ts'
+import { MAX_WAIT_SECONDS, S, orch } from './state.ts'
+import { log, readPolicy, readSession, readTemplate } from './backend.ts'
 import { ack, nudgePeer, post, type Envelope } from './stream.ts'
 
 export const ASK_TOOL = 'mcp__orch__ask_user'
@@ -12,18 +13,18 @@ export const SEND_TOOL = 'mcp__orch__send'
 export const PLAN_TOOL = 'mcp__orch__plan'
 
 async function templateSchema($: any, kind: string): Promise<any> {
-  const schema = await readJson($, `${S.home}/templates/${kind}/schema.json`)
+  const schema = await readTemplate($, kind, 'schema')
   if (!schema?.properties) throw new Error(`orch: no schema for template ${kind}`)
   return { type: 'object', properties: { ...schema.properties }, required: schema.required ?? [] }
 }
 
 async function purpose($: any, kind: string): Promise<string> {
-  const meta = await readJson($, `${S.home}/templates/${kind}/meta.json`)
+  const meta = await readTemplate($, kind, 'meta')
   return typeof meta?.purpose === 'string' ? `Use it when: ${meta.purpose}` : ''
 }
 
 async function riskLevels($: any): Promise<{ names: string[]; text: string }> {
-  const policy = S.store ? await readJson($, `${S.store}/policy.json`) : undefined
+  const policy = await readPolicy($)
   const levels: any[] = Array.isArray(policy?.levels) && policy.levels.length > 0 ? policy.levels : [{ name: 'low' }, { name: 'medium' }, { name: 'high' }]
   const text = levels.map(level => `${level.name}: ${level.description ?? ''}`).join(' ')
   return { names: levels.map(level => String(level.name)), text }
@@ -99,7 +100,7 @@ function self(): string {
 }
 
 async function parentId($: any): Promise<string | undefined> {
-  const meta = await readJson($, `${S.dir}/meta.json`)
+  const meta = await readSession($, 'meta.json')
   return typeof meta?.parent === 'string' ? meta.parent : undefined
 }
 

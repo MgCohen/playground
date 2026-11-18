@@ -1,5 +1,6 @@
 import type { Register } from 'claude-code'
-import { ROW_CHARS, S, TICK_MS, homeRoot, log, now, readJson, sessionDir, storeRoot, writeJson } from './state.ts'
+import { ROW_CHARS, S, TICK_MS, homeRoot, now } from './state.ts'
+import { enable, isEnabled, log, readSession, sessionDir, storeRoot, storeVersion, writeHeartbeat, writeMirror, writeSession } from './backend.ts'
 import { emitRow } from './events.ts'
 import { beat, findProcess, mayTakeLease, releaseLease, turnOpen, writeLease } from './lease.ts'
 import { deliver, tick, watchLoop } from './deliver.ts'
@@ -54,12 +55,12 @@ const ASK_IN_ORCH =
 
 async function writeStatus($: any, state: string, turnId: unknown): Promise<void> {
   if (!S.dir) return
-  await writeJson($, `${S.dir}/status.json`, { state, turnId, at: await now($) })
+  await writeSession($, 'status.json', { state, turnId, at: await now($) })
 }
 
 async function mirror($: any, e: any): Promise<void> {
   const row = { door: e.door, origin: e.origin, uuid: e.uuid, message: JSON.stringify(e.message).slice(0, ROW_CHARS) }
-  await writeJson($, `${S.dir}/mirror/${await $.clock.now()}-${e.uuid}.json`, row)
+  await writeMirror($, await $.clock.now(), e.uuid, row)
   await emitRow($, e)
 }
 
@@ -67,7 +68,7 @@ export const STORE_VERSION = 2
 
 // A store of another version has another contract: the plugin stays inactive and writes nothing.
 async function versionOk($: any): Promise<boolean> {
-  const version = await readJson($, `${await storeRoot($)}/version.json`)
+  const version = await storeVersion($)
   return version === undefined || version.version === STORE_VERSION
 }
 
@@ -80,15 +81,15 @@ async function activate($: any, dir: string, reason: unknown): Promise<void> {
   S.cwd = await $.session.cwd()
   S.holder = (await $.env.get('ORCH_HOLDER')) ?? 'live'
   S.wanted = true
-  const status = await readJson($, `${dir}/status.json`)
+  const status = await readSession($, 'status.json', dir)
   S.idle = status?.state !== 'running'
-  await $.fs.write(`${dir}/heartbeat.txt`, await now($))
+  await writeHeartbeat($, dir)
   await findProcess($)
   const open = await turnOpen($)
   if (mayTakeLease(S.holder, open.turn, open.lease, open.now)) await writeLease($, S.holder, reason)
   else await log($, 'a supervisor turn runs: the lease waits for its end')
   const host = await $.env.get('CLAUDE_CODE_HOST_SESSION_ID')
-  const meta = await readJson($, `${dir}/meta.json`)
+  const meta = await readSession($, 'meta.json', dir)
   if (host && meta && meta.appId !== host) await postMetaUpdate($, S.id!, 'appId', host)
   await log($, `activate plugin holder=${S.holder} ${JSON.stringify(reason)}`)
   await registerTools($)
@@ -101,26 +102,25 @@ async function activate($: any, dir: string, reason: unknown): Promise<void> {
 
 async function activateIfEnabled($: any, event: string): Promise<void> {
   const dir = await sessionDir($)
-  if (await $.fs.exists(`${dir}/enabled`)) await activate($, dir, { event })
+  if (await isEnabled($, dir)) await activate($, dir, { event })
 }
 
 async function writeMeta($: any, dir: string, title: string): Promise<void> {
-  const path = `${dir}/meta.json`
-  const old = await readJson($, path)
+  const old = await readSession($, 'meta.json', dir)
   if (old && title === '') return
   const cwd = await $.session.cwd()
   const name = String(cwd).split(/[\\/]/).filter(Boolean).pop() ?? 'chat'
-  await writeJson($, path, {
+  await writeSession($, 'meta.json', {
     ...(old ?? { id: await $.session.id(), cwd, createdBy: 'orch-enable', createdAt: await now($), started: true }),
     title: title !== '' ? title : old?.title ?? `App chat in ${name}`,
-  })
+  }, dir)
 }
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const result = await next(e)
     const dir = await sessionDir($)
-    if (await $.fs.exists(`${dir}/enabled`)) await activate($, dir, { event: 'session.start', start: e })
+    if (await isEnabled($, dir)) await activate($, dir, { event: 'session.start', start: e })
     await $.command.register({ name: 'orch-enable', description: 'Put this session under the orchestrator: stream delivery, mirror, lease and the orch tools. Optional: a title, for example /orch-enable Foobar root.' })
     return result
   })
@@ -130,7 +130,7 @@ export const register: Register = on => {
     const title = String(e.args ?? '').trim()
     await writeMeta($, dir, title)
     if (S.dir === dir) return { text: `This session is already enabled (${dir}).${title !== '' ? ` New title: ${title}.` : ''}` }
-    await $.fs.write(`${dir}/enabled`, '')
+    await enable($, dir)
     await activate($, dir, { event: 'orch-enable' })
     return { text: `Enabled. Store folder: ${dir}` }
   })

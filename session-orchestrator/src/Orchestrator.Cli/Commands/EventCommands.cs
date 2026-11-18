@@ -14,8 +14,8 @@ public static class EventCommands
     public static int Init(CommandContext c)
     {
         c.Store.Events.Open();
-        Home.CheckVersion(c.Store.Root, c.Store.Clock.GetUtcNow());
-        var policy = Home.LoadPolicy(c.Store.Root);
+        Home.CheckVersion(c.Store.Repositories, c.Store.Clock.GetUtcNow());
+        var policy = Home.LoadPolicy(c.Store.Repositories);
         c.Output.WriteLine($"Store {c.Store.Root} is ready: version {StoreVersion.Current}, {policy.Levels.Count} policy levels.");
         return 0;
     }
@@ -71,12 +71,12 @@ public static class EventCommands
         foreach (var e in found) Print(c, e, titles);
         if (!c.Args.Flag("follow")) return 0;
         var last = found.Select(e => e.Id).Order(Core.Ordering.Names.Order).LastOrDefault();
-        using var watcher = new StreamWatcher(c.Store.Root);
+        using var watcher = c.Store.Repositories.Watch();
         var next = filter with { Since = null, Newest = false, Limit = null, ThreadHeads = false, After = last ?? (c.Store.Clock.GetUtcNow() - TimeSpan.FromSeconds(2)).ToUnixTimeMilliseconds().ToString() };
         var seen = new HashSet<string>();
         while (true)
         {
-            watcher.Wait(StreamWatcher.DefaultSweep).GetAwaiter().GetResult();
+            watcher.Wait(Core.Storage.StreamSignal.DefaultSweep).GetAwaiter().GetResult();
             foreach (var e in c.Store.Query(next))
                 if (seen.Add(e.Id)) Print(c, e, titles);
         }
@@ -99,7 +99,7 @@ public static class EventCommands
         var end = timeout is { } t ? DateTime.UtcNow + t : (DateTime?)null;
         var printed = new HashSet<string>();
         var start = (c.Store.Clock.GetUtcNow() - TimeSpan.FromSeconds(2)).ToUnixTimeMilliseconds().ToString();
-        using var watcher = new StreamWatcher(c.Store.Root);
+        using var watcher = c.Store.Repositories.Watch();
         while (true)
         {
             var candidates = Parties.SessionId(to) is { } session
@@ -136,7 +136,7 @@ public static class EventCommands
 
     /// <summary>The sender of a command: the session that runs it, if the store knows it, else the user.</summary>
     public static string DefaultSender(CommandContext c) =>
-        Environment.GetEnvironmentVariable("CLAUDE_CODE_SESSION_ID") is { Length: > 0 } id && File.Exists(c.Store.PathOf(id, StoreFiles.Enabled))
+        Environment.GetEnvironmentVariable("CLAUDE_CODE_SESSION_ID") is { Length: > 0 } id && c.Store.IsEnabled(id)
             ? Parties.Session(id)
             : Parties.User;
 

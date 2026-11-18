@@ -63,10 +63,10 @@ public static class ToolCommands
         var shell = new Shell(c.Cwd);
         Check("home", () => (File.Exists(Path.Combine(Home.Root(), Home.Solution)), Home.Root()));
         Check("install", () => Install.Check(new Shell(Home.Root()), Install.Commit));
-        Check("store", () => (Directory.Exists(c.Store.Root), c.Store.Root));
+        Check("store", () => (c.Store.Repositories.Exists(), c.Store.Root));
         Check("policy", () =>
         {
-            var policy = Home.LoadPolicy(c.Store.Root);
+            var policy = Home.LoadPolicy(c.Store.Repositories);
             return (true, string.Join(", ", policy.Levels.Select(l => $"{l.Name} {(l.TimeoutSeconds is { } t ? $"{t} s" : "never")}")));
         });
         Check("templates", () =>

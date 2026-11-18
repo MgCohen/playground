@@ -1,6 +1,7 @@
 // The TypeScript binding of the Stream API: post, ack and nudge. The C# binding (EventStream.cs) is the reference.
 // Only C# renders: the plugin gets the text for the model from orch watch or orch read --for.
-import { S, newId, readJson } from './state.ts'
+import { S, newId } from './state.ts'
+import { bodyPath, createEnvelope, readTemplate } from './backend.ts'
 
 export type Envelope = { id: string; kind: string; from: string; to: string; thread?: string; needs?: string; subject?: string; refs?: Record<string, unknown>; text?: string }
 
@@ -33,8 +34,8 @@ export function classOf(party: string): string {
 
 async function meta($: any, kind: string): Promise<any> {
   if (META[kind] !== undefined) return META[kind]
-  const value = (await readJson($, `${S.home}/templates/${kind}/meta.json`)) ?? null
-  const schema = (await readJson($, `${S.home}/templates/${kind}/schema.json`)) ?? null
+  const value = (await readTemplate($, kind, 'meta')) ?? null
+  const schema = (await readTemplate($, kind, 'schema')) ?? null
   META[kind] = value === null ? null : { ...value, required: schema?.required ?? [], dependentRequired: schema?.dependentRequired ?? {} }
   return META[kind]
 }
@@ -81,12 +82,11 @@ export async function post($: any, kind: string, from: string, to: string, data:
   const at = new Date(await $.clock.now()).toISOString()
   const day = new Date(ms).toISOString().slice(0, 10)
   const id = `${ms}-${newId().slice(0, 8)}-${S.holder}`
-  const path = `bodies/${day}/${id}.json`
-  await $.fs.write(`${S.store}/${path}`, JSON.stringify(body, null, 2))
+  const path = bodyPath(day, id)
   const envelope: Record<string, unknown> = { id, at, session: S.id, kind, from, to, subject: subject(kind, body), body: path, refs: clean(options.refs ?? {}) }
   if (options.thread) envelope.thread = options.thread
   if (options.needs) envelope.needs = options.needs
-  await $.fs.write(`${S.store}/events/${day}/${id}.json`, JSON.stringify(envelope, null, 2))
+  await createEnvelope($, day, id, body, envelope)
   return id
 }
 

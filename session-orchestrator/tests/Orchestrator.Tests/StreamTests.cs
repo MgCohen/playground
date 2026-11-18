@@ -2,6 +2,7 @@ using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
 using Orchestrator.Store;
+using Orchestrator.Store.Local;
 
 namespace Orchestrator.Tests;
 
@@ -226,7 +227,7 @@ public sealed class StreamTests
         using var t = new Rig();
         t.Store.Events.Nudge(Parties.Session("abc"), "e1");
         Assert.That(File.ReadAllText(Path.Combine(t.Folder, StoreFiles.Nudges, "session-abc")), Is.EqualTo("e1"));
-        Assert.That(t.Store.Events.Nudged(Parties.Session("abc")), Is.Not.Null);
+        Assert.That(t.Store.Events.IsNudged(Parties.Session("abc")), Is.True);
     }
 
     [Test]
@@ -302,7 +303,7 @@ public sealed class StreamTests
         t.Store.WriteJson(id, new Status("idle", null, Times.Format(t.Clock.Now)), StoreFiles.Status);
         var message = t.Store.Send(id, "ping");
         await t.Cycle();
-        Assert.That(t.Store.Events.Nudged(Parties.Session(id)), Is.Null);
+        Assert.That(t.Store.Events.IsNudged(Parties.Session(id)), Is.False);
         t.Clock.Advance(TimeSpan.FromSeconds(16));
         t.MakeLive(id, TimeSpan.Zero, TimeSpan.Zero);
         await t.Cycle();

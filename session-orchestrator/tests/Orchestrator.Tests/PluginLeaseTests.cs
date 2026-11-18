@@ -90,8 +90,7 @@ public sealed class PluginLeaseTests
     {
         // Review of PR #14, item 2: the parent plugin wrote the meta.json of the child. Now it posts meta.update.
         var register = File.ReadAllText(Path.Combine(Hooks, "register.ts"));
-        Assert.That(System.Text.RegularExpressions.Regex.Matches(register, @"writeJson\(\$, [^
-]*meta\.json|writeJson\(\$, path,").Count, Is.EqualTo(1), "only /orch-enable creates the meta of its own session");
+        Assert.That(System.Text.RegularExpressions.Regex.Matches(register, @"writeSession\(\$, 'meta\.json'").Count, Is.EqualTo(1), "only /orch-enable creates the meta of its own session");
         Assert.That(register, Does.Contain("postMetaUpdate($, S.id!, 'appId', host)"));
         var output = Node($$"""
             import { remoteControlTarget } from '{{Url("register.ts")}}';
@@ -99,6 +98,24 @@ public sealed class PluginLeaseTests
             """);
         if (output is null) Assert.Ignore("node is not on the PATH");
         Assert.That(output, Is.EqualTo("a,a,a,b,"));
+    }
+
+    [Test]
+    public void The_node_hook_tests_pass_and_only_the_backend_has_store_io()
+    {
+        // H3: plugin/hooks/test/ holds the backend tests and the check that only backend.ts has store IO.
+        try
+        {
+            var info = new ProcessStartInfo("node", ["--test", Path.Combine(Hooks, "test") + Path.DirectorySeparatorChar]) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+            using var process = Process.Start(info)!;
+            var output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            Assert.That(process.ExitCode, Is.EqualTo(0), output);
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            Assert.Ignore("node is not on the PATH");
+        }
     }
 
     [Test]

@@ -3,6 +3,7 @@ using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
 using Orchestrator.Core.Ordering;
+using Orchestrator.Core.Storage;
 using Orchestrator.Core.Templates;
 
 namespace Orchestrator.Store;
@@ -17,12 +18,13 @@ public sealed record PostInput(string Kind, string From, string To, IReadOnlyDic
 }
 
 /// <summary>
-/// The Stream API: post, subscribe, query, read and nudge on the store. Envelopes live in events/, bodies in bodies/.
-/// The class keeps all envelopes in memory and reads only new files at each call.
+/// The Stream API: post, subscribe, query, read and nudge on the store, through the repositories of
+/// <see cref="IRepositories"/>. The class keeps all envelopes in memory, with indexes, and adds only the new
+/// envelopes of the repository at each call.
 /// </summary>
 public sealed class EventStream
 {
-    readonly string root;
+    readonly IRepositories repos;
     readonly TimeProvider clock;
     readonly string writer;
     readonly TemplateSet? templates;
@@ -35,27 +37,27 @@ public sealed class EventStream
     readonly Dictionary<string, List<Event>> byKind = [];
     readonly Dictionary<string, List<Event>> byFrom = [];
     readonly Dictionary<string, JsonElement> bodies = [];
-    readonly HashSet<string> closedDays = [];
     long lastMs;
 
     public EventStream(string root, TimeProvider clock, string writer = Parties.Supervisor, TemplateSet? templates = null)
+        : this(StoreBackends.Create(root), clock, writer, templates)
     {
-        this.root = root;
+    }
+
+    public EventStream(IRepositories repos, TimeProvider clock, string writer = Parties.Supervisor, TemplateSet? templates = null)
+    {
+        this.repos = repos;
         this.clock = clock;
         this.writer = writer;
         this.templates = templates;
     }
 
-    public string Root => root;
+    public string Root => repos.Location;
 
     // 0. Setup
 
-    /// <summary>Makes the folders of the stream.</summary>
-    public void Open()
-    {
-        foreach (var folder in new[] { StoreFiles.Events, StoreFiles.Bodies, StoreFiles.Subscriptions, StoreFiles.Nudges })
-            Directory.CreateDirectory(Path.Combine(root, folder));
-    }
+    /// <summary>Makes the store ready for the stream.</summary>
+    public void Open() => repos.Prepare();
 
     // 1. Post
 
@@ -71,16 +73,17 @@ public sealed class EventStream
             Check(post);
             Claim(post);
             var (id, ms) = NewId();
-            var day = Day(ms);
-            var body = $"{StoreFiles.Bodies}/{day}/{id}.json";
-            Files.WriteJson(Path.Combine(root, body), post.Body);
+            var body = $"{StoreFiles.Bodies}/{Day(ms)}/{id}.json";
+            var element = JsonSerializer.SerializeToElement(post.Body, StoreJson.Options);
+            repos.Bodies.Add(new Doc<JsonElement>(body, element));
+            repos.Bodies.Save();
             var e = new Event(id, Times.Format(clock.GetUtcNow()), post.Session, post.Kind, post.From, post.To, Subjects.Of(post.Kind, post.Body), body, ToElements(post.Refs))
             {
                 Thread = post.Thread,
                 Needs = post.Needs,
             };
-            Files.WriteJson(Path.Combine(root, StoreFiles.Events, day, $"{id}.json"), e);
-            bodies[e.Body] = JsonSerializer.SerializeToElement(post.Body, StoreJson.Options);
+            Write(e);
+            bodies[e.Body] = element;
             Add(e);
             return e;
         }
@@ -97,7 +100,7 @@ public sealed class EventStream
         {
             if (templates?.Has(original.Kind) == true && templates[original.Kind].Meta is { } meta && !meta.AllowsTo(Parties.ClassOf(to)))
                 throw new MessageException($"{original.Kind}: a forward to {to} is not allowed. Allowed: {string.Join(", ", meta.To)}");
-            var (id, ms) = NewId();
+            var (id, _) = NewId();
             var allRefs = new Dictionary<string, object?>(refs ?? new Dictionary<string, object?>()) { [RefKeys.Of] = original.Id };
             var e = original with
             {
@@ -107,10 +110,17 @@ public sealed class EventStream
                 Refs = ToElements(allRefs),
                 Needs = needs,
             };
-            Files.WriteJson(Path.Combine(root, StoreFiles.Events, Day(ms), $"{id}.json"), e);
+            Write(e);
             Add(e);
             return e;
         }
+    }
+
+    /// <summary>The envelope is the commit point of a post.</summary>
+    void Write(Event e)
+    {
+        repos.Events.Add(new Doc<Event>(e.Id, e));
+        repos.Events.Save();
     }
 
     /// <summary>The pong: an ack with refs.of. <paramref name="from"/> is the receiver, <paramref name="by"/> the way it arrived.</summary>
@@ -148,26 +158,18 @@ public sealed class EventStream
     }
 
     /// <summary>
-    /// First answer wins between processes too: before an answer is posted, its writer creates claims/answer/&lt;thread&gt;
-    /// with an exclusive create. A second writer gets the first answer in the error text.
+    /// First answer wins between processes too: before an answer is posted, its writer adds the claim
+    /// answer/&lt;thread&gt;. A second add of the same claim fails, and its writer gets the first answer in the error text.
     /// </summary>
     void Claim(PostInput post)
     {
         if (post.Kind != EventKinds.Answer || post.Thread is not { } thread) return;
-        var path = Path.Combine(root, StoreFiles.Claims, "answer", thread);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        try
-        {
-            using var claim = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            claim.Write(System.Text.Encoding.UTF8.GetBytes(post.From));
-        }
-        catch (IOException) when (File.Exists(path))
-        {
-            for (var attempt = 0; attempt < 20 && FirstAnswer(thread) is null; attempt++) System.Threading.Thread.Sleep(50);
-            var first = FirstAnswer(thread);
-            var text = first is null ? "(the answer is not written yet)" : Fields(first).GetValueOrDefault("text");
-            throw new MessageException($"decision {thread} already has an answer from {first?.From ?? Files.ReadText(path) ?? "another writer"}: {text}. The session has this answer. Nothing changed.");
-        }
+        var claim = StoreIds.AnswerClaim(thread);
+        if (repos.Claims.TryCreate(claim, post.From)) return;
+        for (var attempt = 0; attempt < 20 && FirstAnswer(thread) is null; attempt++) System.Threading.Thread.Sleep(50);
+        var first = FirstAnswer(thread);
+        var text = first is null ? "(the answer is not written yet)" : Fields(first).GetValueOrDefault("text");
+        throw new MessageException($"decision {thread} already has an answer from {first?.From ?? repos.Claims.Read(claim) ?? "another writer"}: {text}. The session has this answer. Nothing changed.");
     }
 
     (string Id, long Ms) NewId()
@@ -264,7 +266,7 @@ public sealed class EventStream
         lock (gate)
         {
             if (bodies.TryGetValue(e.Body, out var cached)) return cached;
-            var body = Files.ReadJson<JsonElement>(Path.Combine(root, e.Body));
+            var body = repos.Bodies.Read(e.Body);
             if (body.ValueKind == JsonValueKind.Undefined) return null;
             bodies[e.Body] = body;
             return body;
@@ -276,42 +278,21 @@ public sealed class EventStream
     // 5. Nudge
 
     /// <summary>A wake-up signal with no content: the receiver looks at the stream.</summary>
-    public void Nudge(string to, string? id = null) =>
-        Files.Write(Path.Combine(root, StoreFiles.Nudges, Parties.Folder(to)), id ?? "");
+    public void Nudge(string to, string? id = null) => repos.Nudges.Put(Parties.Folder(to), id ?? "");
 
-    public DateTimeOffset? Nudged(string party)
-    {
-        var path = Path.Combine(root, StoreFiles.Nudges, Parties.Folder(party));
-        return File.Exists(path) ? File.GetLastWriteTimeUtc(path) : null;
-    }
+    /// <summary>True when the party has a nudge.</summary>
+    public bool IsNudged(string party) => repos.Nudges.Exists(Parties.Folder(party));
 
     // 2. Subscribe
 
     public StreamSubscription Subscribe(string party, string name, Func<Event, bool> filter, string? description = null) =>
-        new(this, Path.Combine(root, StoreFiles.Subscriptions, Parties.Folder(party), StoreFiles.Json(name)), party, name, filter, description, clock);
+        new(this, repos.Cursors, $"{Parties.Folder(party)}/{name}", party, name, filter, description, clock);
 
     // The cache
 
     void Refresh()
     {
-        var folder = Path.Combine(root, StoreFiles.Events);
-        if (!Directory.Exists(folder)) return;
-        var days = Files.Names(folder);
-        var added = new List<Event>();
-        foreach (var day in days)
-        {
-            if (closedDays.Contains(day)) continue;
-            foreach (var name in Files.Names(Path.Combine(folder, day)))
-            {
-                var id = Path.GetFileNameWithoutExtension(name);
-                if (byId.ContainsKey(id)) continue;
-                if (Files.ReadJson<Event>(Path.Combine(folder, day, name)) is { } e) added.Add(EventKinds.Current(e));
-            }
-        }
-        // A day closes when two newer days exist: a late writer can still add a file to yesterday.
-        foreach (var day in days.Take(Math.Max(0, days.Count - 2))) closedDays.Add(day);
-        if (added.Count == 0) return;
-        foreach (var e in added) Add(e);
+        foreach (var doc in repos.Events.List(d => !byId.ContainsKey(d.Id))) Add(EventKinds.Current(doc.Value));
     }
 
     void Add(Event e)
@@ -351,6 +332,7 @@ public sealed class EventStream
         return low;
     }
 
+    /// <summary>The day of an id time: a part of the body path of the envelope contract.</summary>
     static string Day(long ms) => DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime.ToString("yyyy-MM-dd");
 
     static IReadOnlyDictionary<string, JsonElement> ToElements(IReadOnlyDictionary<string, object?>? refs) =>
@@ -370,20 +352,17 @@ public sealed class StreamSubscription
     /// </summary>
     public static readonly TimeSpan Grace = TimeSpan.FromSeconds(120);
 
-    sealed record State(string Party, string Name, string? Cursor, List<string> Recent, string At)
-    {
-        public string? Filter { get; init; }
-    }
-
     readonly EventStream stream;
-    readonly string path;
+    readonly IRepository<Doc<CursorState>, string> cursors;
+    readonly string id;
     readonly Func<Event, bool> filter;
     readonly TimeProvider clock;
 
-    internal StreamSubscription(EventStream stream, string path, string party, string name, Func<Event, bool> filter, string? description, TimeProvider clock)
+    internal StreamSubscription(EventStream stream, IRepository<Doc<CursorState>, string> cursors, string id, string party, string name, Func<Event, bool> filter, string? description, TimeProvider clock)
     {
         this.stream = stream;
-        this.path = path;
+        this.cursors = cursors;
+        this.id = id;
         this.filter = filter;
         this.clock = clock;
         Party = party;
@@ -394,7 +373,8 @@ public sealed class StreamSubscription
     public string Party { get; }
     public string Name { get; }
     public string? Description { get; }
-    public string Path => path;
+    /// <summary>The id of the cursor in <see cref="IRepositories.Cursors"/>.</summary>
+    public string Id => id;
 
     public string? Cursor => Load().Cursor;
 
@@ -408,50 +388,54 @@ public sealed class StreamSubscription
 
     public void Done(string id) => Done([id]);
 
+    /// <summary>
+    /// Merges the done ids into the cursor: read, merge, save. The supervisor and orch watch write the same cursor.
+    /// A save of an old version fails, so the merge reads the newer cursor and merges again. No writer loses the
+    /// done ids of the other writer.
+    /// </summary>
     public void Done(IEnumerable<string> ids)
     {
         var list = ids.ToList();
         if (list.Count == 0) return;
-        using var held = Hold();
-        var state = Load();
-        var cursor = state.Cursor;
-        var recent = state.Recent.ToHashSet();
-        foreach (var id in list)
-        {
-            recent.Add(id);
-            if (cursor is null || Names.Order.Compare(id, cursor) > 0) cursor = id;
-        }
-        var floor = Minus(cursor!, Grace);
-        var kept = recent.Where(id => Names.Order.Compare(id, floor) > 0).Order(Names.Order).ToList();
-        Files.WriteJson(path, new State(Party, Name, cursor, kept, Times.Format(clock.GetUtcNow())) { Filter = Description });
+        // The repository has one unit of work for all threads of this process. Without the lock, a save of one thread
+        // can take the change of another thread and the other thread then saves nothing. Other processes use the version.
+        lock (cursors) Merge(list);
     }
 
-    State Load() => Files.ReadJson<State>(path) ?? new State(Party, Name, null, [], "");
-
-    /// <summary>
-    /// The lock of the read, merge and write in <see cref="Done(IEnumerable{string})"/>. The supervisor and orch watch
-    /// write the same cursor. Without the lock, the last write loses the done ids of the other writer.
-    /// </summary>
-    FileStream Hold()
+    void Merge(List<string> list)
     {
-        var file = path + ".lock";
-        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(file)!);
-        var end = DateTime.UtcNow + LockWait;
-        while (true)
+        for (var attempt = 1; ; attempt++)
         {
+            var doc = cursors.Get(id);
+            var state = doc?.Value ?? Empty;
+            var cursor = state.Cursor;
+            var recent = state.Recent.ToHashSet();
+            foreach (var done in list)
+            {
+                recent.Add(done);
+                if (cursor is null || Names.Order.Compare(done, cursor) > 0) cursor = done;
+            }
+            var floor = Minus(cursor!, Grace);
+            var kept = recent.Where(r => Names.Order.Compare(r, floor) > 0).Order(Names.Order).ToList();
+            var merged = new CursorState(Party, Name, cursor, kept, Times.Format(clock.GetUtcNow())) { Filter = Description };
+            if (doc is null) cursors.Add(new Doc<CursorState>(id, merged));
+            else doc.Value = merged;
             try
             {
-                return new FileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 1, FileOptions.None);
+                cursors.Save();
+                return;
             }
-            catch (IOException) when (DateTime.UtcNow < end)
+            catch (StoreConflictException) when (attempt < MergeAttempts)
             {
-                System.Threading.Thread.Sleep(10);
             }
         }
     }
 
-    /// <summary>The longest wait for the lock of the cursor file. After it, the write fails with an IOException.</summary>
-    public static readonly TimeSpan LockWait = TimeSpan.FromSeconds(5);
+    const int MergeAttempts = 50;
+
+    CursorState Empty => new(Party, Name, null, [], "");
+
+    CursorState Load() => cursors.Read(id) ?? Empty;
 
     static string Minus(string id, TimeSpan by) =>
         long.TryParse(id.Split('-')[0], out var ms) ? Math.Max(0, ms - (long)by.TotalMilliseconds).ToString() : id;

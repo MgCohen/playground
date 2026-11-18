@@ -8,12 +8,12 @@ namespace Orchestrator.Web;
 /// </summary>
 public sealed class StreamHub : IDisposable
 {
-    readonly StreamWatcher watcher;
+    readonly Core.Storage.IStreamSignal watcher;
 
     public StreamHub(FileStore store)
     {
         store.Events.Open();
-        watcher = new StreamWatcher(store.Root);
+        watcher = store.Repositories.Watch();
         watcher.Changed += () => Changed?.Invoke();
     }
 
