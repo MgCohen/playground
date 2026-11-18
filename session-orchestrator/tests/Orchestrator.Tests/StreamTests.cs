@@ -295,7 +295,7 @@ public sealed class StreamTests
     }
 
     [Test]
-    public async Task The_watchdog_nudges_a_live_idle_session_and_then_posts_delivery_blocked()
+    public async Task The_watchdog_nudges_a_live_idle_session_and_then_posts_one_failure()
     {
         using var t = new Rig();
         var id = t.Create("start");
@@ -313,8 +313,11 @@ public sealed class StreamTests
         await t.Cycle();
         var blocked = t.Store.Events.All().Where(e => e.Kind == EventKinds.DeliveryBlocked).ToList();
         Assert.That(blocked.Select(b => b.Ref("envelope")).Distinct(), Is.EquivalentTo(new[] { message.Id, t.Store.Events.All().First(e => e.Kind == EventKinds.Message).Id }));
-        Assert.That(blocked.All(b => b.To == Parties.User && b.Needs == Needs.Ack), Is.True);
-        Assert.That(new Inbox(t.Store).Cards().Count(c => c.Kind == EventKinds.DeliveryBlocked), Is.EqualTo(2));
+        Assert.That(blocked.All(b => b.To == Parties.User && b.Needs is null), Is.True, "a trace for each envelope, with no card");
+        var cards = new Inbox(t.Store).Cards();
+        Assert.That(cards.Count(c => c.Kind == EventKinds.DeliveryBlocked), Is.EqualTo(0));
+        var failure = cards.Single(c => c.Kind == EventKinds.Failure);
+        Assert.That((failure.Fields["reason"], failure.Fields["tries"]), Is.EqualTo((Failures.NoAck, 2.0)), "one failure for the session, for both envelopes");
         Assert.That(t.Turns, Is.Empty);
     }
 

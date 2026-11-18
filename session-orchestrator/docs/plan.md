@@ -2083,6 +2083,55 @@ The script moved onto `orch/d-data-upgrade`, which has the fake provider of D (`
 | The supervisor on the copy | Pass. In the first minutes: 81 new envelopes, all internal (72 state detects, 5 lease releases, 1 fake turn). No message to the user. `/api/sessions` shows the 7 active sessions |
 | The live store did not change | Pass. The script only reads it. The copy has its own folder `%LOCALAPPDATA%\orch\demo-live` |
 
+## D result: store upgrade and message content (2026-11-18)
+
+Session D fixed the data side that the user found strange at the top of the stack (PR #45). Branch `orch/d-data-upgrade`, base `orch/c5-c3-findings`.
+
+| Step | Result |
+|---|---|
+| 1. Upgrade from version 1 | `orch store upgrade` reads version 1 and 2. A version 1 store also gets the history mark: a cursor at the newest envelope for each subscription that can match an old envelope |
+| 2. Root notice text | A parent notice to the user uses `render/user-<kind>.md`: "Session", and the acts of the user |
+| 3. Fake provider | `ORCH_PROVIDER=fake`, behavior file in `ORCH_FAKE`. No model, no `claude`, no app |
+| 4. Question with no thread | It gets its own envelope id as thread, so it makes a card. A post of `decision` or `query` is stored as `question` |
+| 5. Failure events | One `failure` thread for each session and reason, updated on each try, closed by `recovered`. `delivery.blocked` is a trace with no card |
+| Tests | `dotnet test --solution Orchestrator.slnx`: 784 pass, 0 fail. `node --test plugin/hooks/test/`: 20 of 20 |
+
+### Check on a copy of the real store
+
+The real store (`session-orchestrator/store/`, version 1) was copied with `orch store migrate --force` into the scratchpad, then upgraded. The real store did not change.
+
+| Check | Result |
+|---|---|
+| `orch store upgrade --dry-run`, then `orch store upgrade` | 57 registry entries, 116 cursors of the history mark, version 3 |
+| `orch tree` of the #45 code | All 57 sessions, with codes and phases |
+| `orch inbox` | Empty: no old question makes a card |
+| Supervisor of the #45 code, 150 s, fake `claude`, scratch `cwd` | No old envelope delivered or relayed again. Only new lifecycle events (`session.state`, one `report-missing`) |
+
+### Check on dummy data (port 7810, fake provider)
+
+Four dummy sessions: a root and three children. The root and two children fail, one child asks a question through `POST /api/stream` with no thread.
+
+| Check | Result |
+|---|---|
+| Question card | ✅ "Which color goes in color.txt?", with the options and the recommendation |
+| Failure cards | ✅ one for each failed session: "Shot: root: its supervisor turns fail (3 tries)", with the error and the state `open` |
+| Root notice | ✅ "Session "Shot: root" (...) does not respond", with "stop it, or send it new input" |
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| D1 | `orch store upgrade` refused version 1, and the docs said there is no migration | Fixed |
+| D1a | Version 1 envelopes have no acks and no threads. The #45 supervisor would deliver each old brief and message again, and relay the 55 old questions again | Fixed: the history mark |
+| D1b | `orch store migrate` cannot copy a store while sessions write to it: the hash check fails, also with `--force` | Recorded in `know-how.md`. For the real move, stop all writers first |
+| D2 | A root got "Child ... does not respond" and "tell the user in your status block" | Fixed |
+| D2a | The stop-latch fault text said "Tell the user to type in the session", also to the user | Fixed: "A person must type in the session" |
+| D3 | A question from `POST /api/stream` with no thread was never open, so it made no card. It was a bug, not a design: `ask_user` always gives a thread | Fixed |
+| D4 | One `delivery.blocked` card for each envelope and each try; one `blocked` for each try, because its reason had the count; a copy of `delivery.blocked` to the supervisor itself | Fixed: one `failure` thread for each session and reason |
+| D5 | Sessions D, L and V can conflict on the real supervisor, the tray, the app and the ports | Rules in `know-how.md` ("Test work next to the real sessions"). Environments: issue #47 |
+| D6 | The web tests started the app with the real provider: a test session could start a real `claude` turn | Fixed: the web tests use the fake provider |
+| D7 | The card setting (which kinds make a card) does not exist. The inbox view decides in code | Open: the user wants it as a filter (code, app setting or live page filter), later |
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
