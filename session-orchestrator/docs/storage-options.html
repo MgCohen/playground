@@ -1,0 +1,323 @@
+<title>Orchestrator Storage Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* Layout: one reading column, tabs at the top, wide tables scroll in their own box. Same family as the tunnel plan page. */
+:root {
+  --bg: #f5f7f6; --panel: #ffffff; --fg: #1a2421; --muted: #59665f; --line: #d5ddd9;
+  --accent: #23645a; --accent-soft: #e0efeb; --warn: #8f5a00; --warn-soft: #f9eedb;
+  --bad: #a3302a; --bad-soft: #f7e2e0; --good: #2d6a3a; --good-soft: #e2f1e5;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111816; --panel: #19221f; --fg: #e2e9e6; --muted: #98a7a0; --line: #2c3833;
+  --accent: #6cc7b6; --accent-soft: #173430; --warn: #e2a64a; --warn-soft: #3a2c14;
+  --bad: #ef8a83; --bad-soft: #3d1f1d; --good: #7fcf8f; --good-soft: #1b3321; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111816; --panel: #19221f; --fg: #e2e9e6; --muted: #98a7a0; --line: #2c3833;
+  --accent: #6cc7b6; --accent-soft: #173430; --warn: #e2a64a; --warn-soft: #3a2c14;
+  --bad: #ef8a83; --bad-soft: #3d1f1d; --good: #7fcf8f; --good-soft: #1b3321; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); }
+.wrap { max-width: 900px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.2; }
+h1 { font-size: 30px; margin: 0 0 6px; }
+h2 { font-size: 21px; margin: 28px 0 10px; }
+h3 { font-size: 16px; margin: 20px 0 6px; }
+p { max-width: 68ch; margin: 8px 0; }
+.eyebrow { font: 600 12px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.summary { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 16px 0; }
+.summary p { margin: 4px 0; }
+nav.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 4px; border-bottom: 1px solid var(--line); }
+nav.tabs button { font: 600 14px var(--body); color: var(--muted); background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 10px; cursor: pointer; }
+nav.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+nav.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scroll { overflow-x: auto; margin: 10px 0; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; background: var(--panel); font-size: 14px; }
+th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; }
+th { font-weight: 600; background: var(--accent-soft); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+code { font-family: var(--mono); font-size: 13px; background: var(--accent-soft); padding: 1px 4px; border-radius: 3px; }
+pre { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+ol, ul { padding-left: 22px; max-width: 68ch; }
+li { margin: 4px 0; }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.bars { display: grid; grid-template-columns: minmax(110px, max-content) 1fr minmax(48px, max-content); gap: 6px 10px; align-items: center; max-width: 640px; font-size: 14px; }
+.bars .bar { height: 14px; background: var(--accent); border-radius: 2px; }
+.bars .bar.muted { background: var(--muted); }
+.bars .n { text-align: right; font-variant-numeric: tabular-nums; }
+.diagram { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+.diagram svg { display: block; min-width: 660px; width: 100%; height: auto; }
+svg text { fill: var(--fg); font: 13px var(--body); }
+svg .small { fill: var(--muted); font-size: 11px; }
+svg .box { fill: var(--panel); stroke: var(--line); }
+svg .boxa { fill: var(--accent-soft); stroke: var(--accent); }
+svg .boxd { fill: var(--panel); stroke: var(--muted); stroke-dasharray: 5 4; }
+svg .edge { stroke: var(--muted); fill: none; stroke-width: 1.5; }
+svg .edged { stroke: var(--muted); fill: none; stroke-width: 1.5; stroke-dasharray: 5 4; }
+svg .zone { fill: none; stroke: var(--line); stroke-dasharray: 5 4; }
+svg .arrow { fill: var(--muted); }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Session orchestrator · H1 storage</div>
+  <h1>Orchestrator Storage Options</h1>
+  <div class="summary">
+    <p><strong>Decision:</strong> each store uses the VSA <code>IRepository&lt;T, TId&gt;</code>. Version 1 is a local folder implementation in <code>%LOCALAPPDATA%\orch\store</code>.</p>
+    <p>Version 2 is probably a Notion implementation: Notion is then the store, read through its API, with an in-memory cache for the life of the process.</p>
+    <p>A change of store is one new implementation and one changed line in the composition root. No caller changes.</p>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Plan sections">
+    <button role="tab" id="tab-target" aria-controls="p-target" aria-selected="true">Target</button>
+    <button role="tab" id="tab-ports" aria-controls="p-ports" aria-selected="false">Ports</button>
+    <button role="tab" id="tab-versions" aria-controls="p-versions" aria-selected="false">Versions</button>
+    <button role="tab" id="tab-plan" aria-controls="p-plan" aria-selected="false">Plan</button>
+    <button role="tab" id="tab-options" aria-controls="p-options" aria-selected="false">Options</button>
+    <button role="tab" id="tab-needs" aria-controls="p-needs" aria-selected="false">Needs</button>
+  </nav>
+
+  <!-- TARGET -->
+  <section role="tabpanel" id="p-target" aria-labelledby="tab-target">
+    <h2>All callers use repositories; only the implementations touch the storage</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 780 300" role="img" aria-label="Supervisor, orch CLI, tray and Web API use the store core. The store core uses one IRepository for each data kind. The composition root selects the local folder implementation in version 1 and the Notion implementation in version 2. A cache wraps the implementation. The plugin hooks write local files that the supervisor reads.">
+        <defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker></defs>
+        <rect class="box" x="20" y="20" width="150" height="40" rx="6"/><text x="32" y="45">Supervisor</text>
+        <rect class="box" x="20" y="70" width="150" height="40" rx="6"/><text x="32" y="95">orch CLI</text>
+        <rect class="box" x="20" y="120" width="150" height="40" rx="6"/><text x="32" y="145">Tray, Web API</text>
+
+        <rect class="boxa" x="215" y="40" width="175" height="100" rx="6"/>
+        <text x="227" y="64">Store core</text>
+        <text class="small" x="227" y="84">rules, StreamQuery,</text>
+        <text class="small" x="227" y="100">subscriptions, views</text>
+
+        <rect class="boxa" x="425" y="58" width="150" height="64" rx="6"/>
+        <text x="437" y="84">IRepository&lt;T, TId&gt;</text>
+        <text class="small" x="437" y="104">one for each data kind</text>
+
+        <rect class="box" x="610" y="20" width="155" height="44" rx="6"/><text x="622" y="40">Local folder</text><text class="small" x="622" y="56">version 1</text>
+        <rect class="boxd" x="610" y="80" width="155" height="44" rx="6"/><text x="622" y="100">Cache + Notion API</text><text class="small" x="622" y="116">version 2</text>
+
+        <path class="edge" d="M170,40 L213,70" marker-end="url(#m)"/>
+        <path class="edge" d="M170,90 L213,90" marker-end="url(#m)"/>
+        <path class="edge" d="M170,140 L213,112" marker-end="url(#m)"/>
+        <path class="edge" d="M390,90 L423,90" marker-end="url(#m)"/>
+        <path class="edge" d="M575,80 L608,46" marker-end="url(#m)"/>
+        <path class="edged" d="M575,100 L608,102" marker-end="url(#m)"/>
+
+        <rect class="zone" x="10" y="190" width="760" height="100" rx="8"/>
+        <text class="small" x="22" y="210">Plugin (TypeScript, 10 s hook budget)</text>
+        <rect class="box" x="20" y="226" width="150" height="44" rx="6"/><text x="32" y="253">Hooks (5 files)</text>
+        <rect class="boxa" x="215" y="226" width="175" height="44" rx="6"/><text x="227" y="253">backend.ts</text>
+        <rect class="box" x="425" y="226" width="150" height="44" rx="6"/><text x="437" y="253">Local files</text>
+        <path class="edge" d="M170,248 L213,248" marker-end="url(#m)"/>
+        <path class="edge" d="M390,248 L423,248" marker-end="url(#m)"/>
+        <path class="edged" d="M500,224 L500,124" marker-end="url(#m)"/>
+        <text class="small" x="508" y="180">supervisor reads</text>
+      </svg>
+    </div>
+
+    <h3>Decisions</h3>
+    <div class="scroll"><table>
+      <tr><th>Question</th><th>Answer of the user</th></tr>
+      <tr><td>Storage direction</td><td>VSA <code>IRepository</code> for each store. Local folder first, Notion probably second</td></tr>
+      <tr><td>Store location</td><td><code>%LOCALAPPDATA%\orch\store</code></td></tr>
+      <tr><td>Backup</td><td>Definitions in git; no backup for instances now</td></tr>
+      <tr><td>Notion mirror</td><td>Never. Notion is the store or is not used</td></tr>
+    </table></div>
+  </section>
+
+  <!-- PORTS -->
+  <section role="tabpanel" id="p-ports" aria-labelledby="tab-ports" hidden>
+    <h2>One generic port: the VSA repository</h2>
+<pre><code>// vsa-template/packs/Vsa/Kernel/Infrastructure/IRepository.cs
+public interface IRepository&lt;T, TId&gt; where T : Entity&lt;TId&gt; where TId : notnull {
+    Task&lt;T?&gt; GetAsync(TId id, CancellationToken ct);
+    Task&lt;List&lt;T&gt;&gt; ListAsync(Func&lt;T, bool&gt; where, CancellationToken ct);
+    void Add(T entity);
+    void Remove(T entity);
+    Task SaveChangesAsync(CancellationToken ct);
+}
+
+// The only place that selects the implementations. No configuration.
+public static class StoreBackends
+{
+    public static Repositories Create(string root) =&gt; Repositories.LocalFolder(root);
+    // Version 2: Repositories.Notion(token, databases) wrapped in Repositories.Cached(...)
+}</code></pre>
+    <p>The project copies the interface into its own code. The repository rule of the playground forbids shared files between projects.</p>
+
+    <h3>Port map: each data kind is one entity in one repository</h3>
+    <div class="scroll"><table>
+      <tr><th>Data kind</th><th>Entity, id</th><th>Local folder today</th><th>State</th><th>Version 2</th><th>Part</th></tr>
+      <tr><td>Event stream</td><td><code>Event</code>, envelope id</td><td><code>events/&lt;day&gt;/</code></td><td><span class="pill warn">Planned</span></td><td>Notion database</td><td>H2; Notion H6</td></tr>
+      <tr><td>Envelope bodies</td><td><code>Body</code>, body path</td><td><code>bodies/&lt;day&gt;/</code></td><td><span class="pill warn">Planned</span></td><td>Page content</td><td>H2; Notion H6</td></tr>
+      <tr><td>Session registry</td><td><code>SessionEntry</code>, session id</td><td><code>sessions/&lt;id&gt;/session.json</code></td><td><span class="pill warn">Designed (S1, PR #28)</span></td><td>Notion database</td><td>S2; Notion H6</td></tr>
+      <tr><td>Templates</td><td><code>Template</code>, kind</td><td><code>LocalTemplateStore</code></td><td><span class="pill good">Built (F1, PR #30)</span></td><td>Notion database</td><td>F2</td></tr>
+      <tr><td>Policy and settings</td><td><code>Policy</code>, name</td><td><code>policy.json</code></td><td><span class="pill warn">Planned</span></td><td>Notion page</td><td>H2; Notion H6</td></tr>
+      <tr><td>Work stream records</td><td>None: a <code>stream</code> field</td><td>On sessions and events</td><td><span class="pill good">Designed (C1, PR #29)</span></td><td>A Notion relation</td><td>None</td></tr>
+      <tr><td>Run state, claims, subscriptions</td><td><code>Lease</code>, <code>Claim</code>, <code>Cursor</code></td><td><code>sessions/</code>, <code>claims/</code>, <code>subscriptions/</code></td><td><span class="pill warn">Planned</span></td><td>Stays local</td><td>H2</td></tr>
+      <tr><td>Logs</td><td>None: <code>ILogSink</code></td><td><code>log.txt</code>, <code>log-*.txt</code>, <code>mirror/</code></td><td><span class="pill warn">Planned</span></td><td>Stays local</td><td>H2</td></tr>
+    </table></div>
+    <p>F1 built <code>ITemplateStore</code>. Part F2 puts it on <code>IRepository&lt;Template, string&gt;</code>, or adds a repository adapter under it. Logs are append-only text, not entities, so they keep their own small port.</p>
+
+    <h3>Four rules that each implementation must keep</h3>
+    <ol>
+      <li><strong>First write wins.</strong> <code>SaveChangesAsync</code> fails on an <code>Add</code> with an id that exists. Claims and the first answer use this.</li>
+      <li><strong>Version check.</strong> An entity has a version. A save of an old version fails. The cursor merge uses this.</li>
+      <li><strong>No IO outside the implementations.</strong> An architecture test fails on store file access in other code.</li>
+      <li><strong>One contract suite.</strong> The same NUnit tests run against each implementation.</li>
+    </ol>
+
+    <h3>These callers bypass the ports today</h3>
+    <div class="scroll"><table>
+      <tr><th>File</th><th>Direct IO</th></tr>
+      <tr><td><code>Supervisor.cs</code></td><td><code>docs-checks/</code> exists and write</td></tr>
+      <tr><td><code>Supervisor.Lifecycle.cs</code></td><td>Delete <code>forgotten.json</code>, <code>meta.json</code> exists</td></tr>
+      <tr><td><code>EventCommands.cs</code></td><td><code>enabled</code> exists</td></tr>
+      <tr><td><code>StateReader.cs</code>, <code>Lifecycle.cs</code></td><td><code>state.json</code>, <code>enabled</code></td></tr>
+      <tr><td><code>FileStore.cs</code>, <code>EventStream.cs</code>, <code>StreamWatcher.cs</code></td><td>All store files; become the local folder implementation</td></tr>
+      <tr><td>Plugin: <code>stream.ts</code>, <code>lease.ts</code>, <code>state.ts</code>, <code>register.ts</code>, <code>events.ts</code></td><td><code>$.fs</code> reads and writes</td></tr>
+    </table></div>
+  </section>
+
+  <!-- VERSIONS -->
+  <section role="tabpanel" id="p-versions" aria-labelledby="tab-versions" hidden>
+    <h2>Version 1 is local; version 2 makes Notion the store, not a copy</h2>
+    <div class="scroll"><table>
+      <tr><th>Item</th><th>Version 1: local folder</th><th>Version 2: Notion</th></tr>
+      <tr><td>Store</td><td><code>%LOCALAPPDATA%\orch\store</code></td><td>Notion databases, linked</td></tr>
+      <tr><td>Read</td><td>Files, with an index by session</td><td>Notion API, then parse</td></tr>
+      <tr><td>Cache</td><td>The in-memory index of <code>EventStream</code></td><td>In-memory cache for the process life, with a timer</td></tr>
+      <tr><td>Write</td><td>Temp file, then move</td><td>Through the cache to the API at once</td></tr>
+      <tr><td>First write wins</td><td>Exclusive create</td><td>Supervisor is the only Notion writer</td></tr>
+      <tr><td>Plugin hooks</td><td>Local files</td><td>Local files; the supervisor writes them to Notion</td></tr>
+      <tr><td>Run state, logs</td><td>Local</td><td>Local</td></tr>
+    </table></div>
+
+    <h3>Why Notion is the store and never a mirror</h3>
+    <p>Notion linked database views keep related documents in sync. A change to one record shows in each page that points to it, with no extra updates. A mirror loses this, because the source of truth stays elsewhere.</p>
+
+    <h3>Notion limits that version 2 must design for</h3>
+    <div class="scroll"><table>
+      <tr><th>Limit</th><th>Value</th><th>Effect</th></tr>
+      <tr><td>API rate</td><td>Average 3 requests/s per integration</td><td>Cache reads; batch writes</td></tr>
+      <tr><td>Rich text item</td><td>2,000 characters</td><td>Bodies split into blocks</td></tr>
+      <tr><td>Append request</td><td>100 blocks, 500 KB</td><td>Long bodies take more calls</td></tr>
+      <tr><td>Latency</td><td>About 0.3 to 1 s per call</td><td>Not in a 10 s hook</td></tr>
+      <tr><td>Atomic create</td><td>None</td><td>One writer: the supervisor</td></tr>
+      <tr><td><code>ListAsync(Func)</code></td><td>Filter runs in memory</td><td>Cache the database; add a query filter later</td></tr>
+    </table></div>
+    <p>The limit values come from the public Notion limits page. The latency values are typical values, not measurements on this PC.</p>
+  </section>
+
+  <!-- PLAN -->
+  <section role="tabpanel" id="p-plan" aria-labelledby="tab-plan" hidden>
+    <h2>The repositories come first; each later part is behind them</h2>
+    <div class="scroll"><table>
+      <tr><th>Part</th><th>Work stream</th><th>Content</th><th>When</th></tr>
+      <tr><td>H2 core repositories</td><td>H (storage)</td><td><code>IRepository</code> copy, local folder implementation, <code>ILogSink</code>, <code>StoreBackends.Create</code>, architecture and contract tests</td><td>Now</td></tr>
+      <tr><td>H3 plugin backend</td><td>H (storage)</td><td><code>backend.ts</code>: the only hook module with store IO</td><td>Now</td></tr>
+      <tr><td>H4 store upkeep</td><td>H (storage)</td><td>Index by session (B2-9), day cache, store in <code>%LOCALAPPDATA%\orch\store</code></td><td>After H2</td></tr>
+      <tr><td>S2 registry adapter</td><td>S (sessions)</td><td><code>SessionEntry</code> repository on H2 (S1 code part C1)</td><td>After H2</td></tr>
+      <tr><td>F2 template adapter</td><td>F (templates)</td><td>Templates on <code>IRepository</code>; Notion implementation later</td><td>After H2</td></tr>
+      <tr><td>H5 remote access</td><td>H (storage)</td><td>Supervisor API for cloud workers (G1 HTTP mode)</td><td>With G1</td></tr>
+      <tr><td>H6 Notion store</td><td>H (storage)</td><td>Notion implementations, cache wrapper, supervisor as the only writer</td><td>Version 2</td></tr>
+    </table></div>
+    <p>H2 has no change of behavior: the local folder implementation takes the code of <code>FileStore</code>, <code>EventStream</code> and <code>StreamWatcher</code>. The existing tests must pass with no change.</p>
+
+    <h3>Backup</h3>
+    <ul>
+      <li>Definitions (templates, policy defaults, mode presets) keep their source files in this repository. Git is their backup.</li>
+      <li>Instances (events, bodies, sessions, logs) get no backup now.</li>
+    </ul>
+
+    <h3>Rules for each part</h3>
+    <ol>
+      <li>Change <code>docs/store.md</code> in the same commit as a store file.</li>
+      <li>Keep each cache one that the store can make again.</li>
+      <li>Test with a scratchpad <code>ORCH_STORE</code>, never with <code>store/</code>.</li>
+    </ol>
+
+    <h2>Non-goals</h2>
+    <ul>
+      <li>No Notion mirror. Reason: Notion is the store or is not used.</li>
+      <li>No configuration to select the implementation. Reason: one implementation at a time; a code change is enough.</li>
+      <li>No direct store access for cloud workers. Reason: one writer path keeps the lease and claim rules in C#.</li>
+      <li>No Notion calls in plugin hooks. Reason: the 10 s hook budget and the rate limit.</li>
+      <li>No migration of version 1 stores. Reason: <code>store.md</code> rule 4.</li>
+    </ul>
+  </section>
+
+  <!-- OPTIONS -->
+  <section role="tabpanel" id="p-options" aria-labelledby="tab-options" hidden>
+    <h2>Compared options for the store</h2>
+    <div class="scroll"><table>
+      <tr><th>Option</th><th>Plugin hooks</th><th>First write wins</th><th>Offline PC</th><th>Result</th></tr>
+      <tr><td>Local folder</td><td><span class="pill good">No change</span></td><td><span class="pill good">Exclusive create</span></td><td><span class="pill good">Works</span></td><td>Version 1</td></tr>
+      <tr><td>SQLite on this PC</td><td><span class="pill warn">Through <code>orch</code> or HTTP</span></td><td><span class="pill good">Unique key</span></td><td><span class="pill good">Works</span></td><td>Possible implementation, not planned</td></tr>
+      <tr><td>Hosted database</td><td><span class="pill bad">Network in each hook</span></td><td><span class="pill good">Unique key</span></td><td><span class="pill bad">Store gone</span></td><td>Not planned</td></tr>
+      <tr><td>Notion</td><td><span class="pill warn">Local files, supervisor writes</span></td><td><span class="pill warn">One writer</span></td><td><span class="pill bad">Store gone</span></td><td>Version 2, probably</td></tr>
+    </table></div>
+    <p>Cloudflare D1 Free gives 100,000 row writes and 5 million row reads each day. It has no C# driver: the code calls its HTTP API with a token.</p>
+  </section>
+
+  <!-- NEEDS -->
+  <section role="tabpanel" id="p-needs" aria-labelledby="tab-needs" hidden>
+    <h2>Four local writers, one lease rule, and a 10 s hook budget set the limits</h2>
+    <div class="scroll"><table>
+      <tr><th>Need</th><th>Today</th><th>Effect on the design</th></tr>
+      <tr><td>Writers</td><td>Supervisor, <code>orch</code>, plugin hooks, tray</td><td>Each implementation accepts all four</td></tr>
+      <tr><td>Plugin hook writes</td><td><code>$.fs.write</code>, about 2,000 a day</td><td>Hooks have file and process calls only</td></tr>
+      <tr><td>Readers</td><td><code>StreamQuery</code>, named views, SSE</td><td>Index by id, thread, kind, party</td></tr>
+      <tr><td>Push</td><td><code>StreamWatcher</code> plus a 60 s sweep</td><td>A change signal or a poll</td></tr>
+      <tr><td>First answer wins</td><td>Exclusive create of <code>claims/answer/</code></td><td>Rule 1 of the ports</td></tr>
+      <tr><td>Cursor lock</td><td><code>&lt;name&gt;.json.lock</code></td><td>Rule 2 of the ports</td></tr>
+      <tr><td>Lease</td><td>Heartbeat every 3 s</td><td>Run state stays local</td></tr>
+      <tr><td>Git safety</td><td>Ignored folder in the main checkout</td><td>Store moves to <code>%LOCALAPPDATA%</code></td></tr>
+      <tr><td>Cloud workers, phone</td><td>Supervisor API through the tunnel</td><td>No direct store access</td></tr>
+    </table></div>
+
+    <h3>The store holds 3,654 envelopes after two days; 88 % of one day are traces</h3>
+    <p>Envelopes of 2026-11-17 by kind, main store. Total that day: 2,350.</p>
+    <div class="bars" role="img" aria-label="Bar chart: session.tool 1271, session.output 553, session.input 233, all other kinds 293.">
+      <span>session.tool</span><span class="bar" style="width:100%"></span><span class="n">1,271</span>
+      <span>session.output</span><span class="bar" style="width:43.5%"></span><span class="n">553</span>
+      <span>session.input</span><span class="bar" style="width:18.3%"></span><span class="n">233</span>
+      <span>All other kinds</span><span class="bar muted" style="width:23.1%"></span><span class="n">293</span>
+    </div>
+    <p>B2-9: <code>FileStore.Report</code> and <code>FileStore.OpenDecisions</code> copy the full stream for each session at each tick. Part H4 fixes it with an index by session.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('nav.tabs button'));
+  var names = tabs.map(function (t) { return t.id.slice(4); });
+  function show(id) {
+    tabs.forEach(function (t) {
+      var on = t.id === 'tab-' + id;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      show(t.id.slice(4));
+      try { history.replaceState(null, '', '#' + t.id.slice(4)); } catch (e) {}
+    });
+  });
+  function fromHash() {
+    var h = (location.hash || '').slice(1);
+    show(names.indexOf(h) >= 0 ? h : 'target');
+  }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+})();
+</script>

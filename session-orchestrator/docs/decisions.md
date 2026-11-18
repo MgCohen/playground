@@ -77,3 +77,13 @@ The build session made these decisions while the user was away. The user reviews
 | 2026-11-17 | B2: the stop deadline | The state stays, and the parent gets `child-not-responding` with fault `stop` | The design page has two rules ("30 s, then not responding" and "a deadline changes nothing"). The general rule wins |
 | 2026-11-17 | B2: the earliest point of the import of a new child | A short opening turn (notice `open-in-app`), then the import, then the brief in the app | The app imports only a session with a transcript, and a model turn makes the transcript. A transcript file written by the supervisor would depend on an internal format |
 | 2026-11-17 | B2: is a background session imported? | Yes, with Remote Control off | The user wants each child in the app by default. `background` only keeps it off the phone |
+| 2026-11-17 | H1: are the Notion and D1 limits measured? | No. Values from the public limits pages; latency values are typical values | Plan only: the brief permits no account and no Notion write |
+| 2026-11-17 | H1: do cloud workers write the store directly? | No. They call the supervisor API through the tunnel | G1 Q6a. One writer path keeps the lease and claim rules in C# |
+| 2026-11-17 | H1: how is the storage made swappable? | Two ports, `IEventLog` and `IDocStore`, plus `backend.ts` in the plugin. One composition root selects the implementation in code, with no configuration | User request: change files to a server or Notion with only a new implementation |
+| 2026-11-18 | H1: where do work stream records live? | No own port. The `stream` field rides on `ISessionRegistry` and `IEventLog` | C1 (PR #29) has no store record for a work stream |
+| 2026-11-18 | H1: are envelopes and bodies two ports? | No. One port, `IEventLog` | The body write before the envelope is the commit rule; one adapter keeps the order |
+| 2026-11-18 | H1 (user): storage direction | VSA `IRepository<T, TId>` for each store. Local folder first; Notion probably second, through the API with an in-memory cache | User answer. Replaces the `IEventLog` and `IDocStore` proposal |
+| 2026-11-18 | H1 (user): store location | `%LOCALAPPDATA%\orch\store` | User answer: a `git clean -fdx` deletes a store in the checkout |
+| 2026-11-18 | H1 (user): backup | Definitions in git; no backup for instances now | User answer |
+| 2026-11-18 | H1 (user): Notion mirror | Never. Notion is the store or is not used | User answer: linked database views keep documents in sync |
+| 2026-11-18 | H1: logs on `IRepository`? | No. Logs keep a small `ILogSink` | Logs are append-only text, not entities |
