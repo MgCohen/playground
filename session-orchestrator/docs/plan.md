@@ -1278,3 +1278,56 @@ Design page: `docs/stream-design.html` (https://claude.ai/artifact/JErtGVNeiAxtU
 ### Approval
 
 The user approved the C1 design in chat on 2026-11-18.
+
+## S1 design: session registry (2026-11-17)
+
+Page: `docs/session-design.html` (https://claude.ai/artifact/QKh7x9SkrnUp8q5E4rbYTs). Design only: no code change.
+
+Each session is one entry in a session registry, `store/sessions/<id>/session.json`. The registry is a slice (`SessionRegistry`) on a generic `IRepository<SessionEntry>`; the infrastructure decides the place (files, a database, an API). Each run state type is also an `IRepository<T>`. The shape of the event stream on the generic repository is an H1 question for the root session. Only the slice writes the entry; a plugin posts `session.update`. The run state (lease, heartbeat, status, turn, `state.json`) stays in its own files.
+
+| Part | Design |
+|---|---|
+| Names | Id (today the Claude Code id, behind the engine adapter), code (`S1`), title. The full code is the codes from the root down; the app title is `[O2 P1 S1] <title>` |
+| Entry | `id`, `code`, `engine` (kind, `sessionId`, `appId`: references only), `parent`, `title`, `owner`, `tags`, `stream`, `work`, `role`, `settings`, `lifecycle` (phase and a copy of the B2 state), `created`, `updated`. Children are a query |
+| Replaces | `meta.json` and `control.json` (store version 3) |
+| Engine first | If the engine gives a function (attach, title, Remote Control, archive, transcript), the adapter uses it. The registry keeps no copy of an engine fact; `adapter.Read` gets it on demand |
+| Provider boundary | Features are vertical slices with no provider code (Sessions, DocsCheck, StateCheck, Doctor). Each part that depends on a provider goes through one interface, `IProvider`, in `Orchestrator.Providers`, with one folder for each provider (`Providers/ClaudeCode`). Methods: `Ask` (one-shot model call), `Create`, `Open`, `Turn`, `Set`, `Archive`, `Read` (facts with no model: app files, CLI), `CallerSessionId`, `Doctor`. A call into our system (start the tray, write a record, post an envelope) needs no provider |
+| Start | One start path: the chat (`spawn_child`), our app (UI, tray) and `orch new` call `SessionRegistry.Create`, which calls adapter `Create` and `Open`. No official attach (`start_session`): F1 permits it only in a turn that the user started, and the app tree is not needed. A session started by hand joins with `orch enable` (a call into our system, no adapter). If the app adds a parent flag to the import (#106214), `Open` uses it |
+| Set, Archive | Claude Code gives these only as model tools in a live app session. The adapter posts its own notice (`archive-self`, `archive-child`, `remote-control-child`), the model calls the tool, and `Read` confirms within a time limit. Result: `done`, `waiting` or `failed`. No code outside the adapter names an app tool |
+| Store root | The registry, the run state and the event stream stay under one store root (`ORCH_STORE`, else `<orch home>/store`). The composition root gives each repository its place under that root. Engine data stays in the engine |
+| Permissions | Setting `permissions`: `auto` (default) or `bypass`. The adapter maps it to the engine flag (`--permission-mode auto` or `bypassPermissions`). It is copied at create like each setting, and a change to `bypass` is a high-risk event. It does not permit `start_session` in a program turn |
+| Settings | Each setting can be set at create and updated by the parent or the user. A setting not set at create is a copy of the parent value; a root copies `policy.json` `sessionDefaults` |
+| Modes | A mode is a preset of four axes: `interaction` (task: one report at the end; stepwise: a report after each step, no confirmation; conversation: ends when somebody says done), `autonomy` (auto, ask, approve), `route` (parent, user), `visibility` (public: import and Remote Control at the earliest point; private: neither). `visibility` replaces `background`. Presets in `templates/modes/`: `auto`, `chat`, `ask`, `approve` (the sum test modes) |
+| Report rules | `reportOn` (done, blocked, asked). The plugin changes a `working` report with no status request into an `update` (sum test F5) |
+| Loop | The table of who sends what is on the Loop tab. A chat line closes a decision only with `answer:` (F2, PR #27) |
+| Other engines | `IProvider` with capabilities. A tool joins with `orch session join`, takes the lease, and uses `orch watch` and `orch post` with the same envelopes |
+
+Code parts (proposal):
+
+| # | Part | Size |
+|---|---|---|
+| C1 | `IRepository<T>` with a file implementation, the slice `SessionRegistry`, contract tests | Medium |
+| C2 | Store version 3: `meta.json` and `control.json` into `session.json` | Small |
+| C3 | Settings schema, copy at create, `mcp__orch__configure`, the settings block in the brief | Medium |
+| C4 | `templates/modes/` and the readers of the four axes | Medium |
+| C5 | `IProvider` in `Orchestrator.Providers` with `Providers/ClaudeCode`. `ClaudeDocsChecker` and `ClaudeStateChecker` become the neutral slices `DocsCheck` and `StateCheck` that call `Ask`. Logic of today, no behavior change | Medium |
+| C6 | `orch session` CLI, `/api/sessions` fields, codes and app titles (`set_session_title`) | Small |
+| C7 | `orch session join` for other engines, with lease and heartbeat | Small |
+
+C5 scope: the Claude Code coupling in the code today (review of 2026-11-17).
+
+C5 moves code behind the adapter and keeps the logic of today. No behavior changes: for example `Read` reads the app record files as `AppRecords.cs` does today (risk: an internal format).
+
+| Place | Coupling | Move to |
+|---|---|---|
+| `Store/Lifecycle.cs` | `OpenCommand` (`claude.exe --desktop --resume`), `Import` (`local_<id>`), the archive wait | Adapter `Open`, `Archive` |
+| `Store/AppRecords.cs`, `StateReader.cs` | Reads the internal app files (`Claude-Data/*/claude-code-sessions/*.json`, `isArchived`) | Adapter `Read`. It stays a file read: the supervisor process has no app tool |
+| `Core/Contract/Records.cs`, `States.cs`, `Policy.cs` | `Imported`, `RemoteControl`, `AppId`, `Background`, `RemoteControlAsked`, `RemoteControlSeconds` in the core contract | `engine` references and adapter facts; the policy value goes to the adapter options |
+| `Cli` `SessionCommands`, `EventCommands`, `ToolCommands` | `CLAUDE_CODE_SESSION_ID`, the `doctor` checks of `claude` and `~/.claude/settings.json` | An adapter method `CurrentSessionId()`, a doctor check for each adapter |
+| `Supervisor/ClaudeRunner.cs` | `ClaudeRunner`, `ClaudeDocsChecker`, `ClaudeStateChecker` call `claude -p` directly | `Claude.Run` and the flags go to `Providers/ClaudeCode`. `ClaudeRunner` becomes `Turn`; the prompts and parses stay in the slices `DocsCheck` and `StateCheck`, which call `Ask` |
+| `templates/*/render/*.md` | The text names `mcp__orch__*` tools and `orch:` skills | A render for each engine, or tool names from the adapter |
+| `plugin/` | The live side in Claude Code | Stays: it is the Claude Code part of the adapter |
+
+Later: enforce the provider boundary. Options: `Orchestrator.Providers` as its own assembly that only the composition root references, and an NUnit architecture test that fails on `claude`, `CLAUDE_CODE_`, `Claude-Data` or a `ProcessStartInfo` of a provider outside `Providers/`. `plugin/` is out of the check.
+
+Open: a probe of `set_session_title` from a child and from the parent; the first engine after Claude Code; a team owner.
