@@ -554,6 +554,9 @@ public sealed class EdgeTab : LayeredForm
         }
     }
 
+    /// <summary>The file of the saved top, or null.</summary>
+    public string? PlaceFile => placeFile;
+
     /// <summary>The saved top of the tab, or null.</summary>
     public int? SavedTop => LoadTop();
 

@@ -38,7 +38,15 @@ public sealed partial class TrayApp : ApplicationContext
         // The tab runs on its own thread: its events come back to the thread of the widget.
         Tab.OpenRequested += () => Tab.SlideOut(() => Form.BeginInvoke(Form.ShowWidget));
         Form.Minimized += Tab.SlideIn;
-        Form.Showing += () => { if (Tab.OnScreen) Tab.SlideOut(); };
+        // Always: a slide in that waits on the thread of the tab is not on the screen yet, but it runs before this slide out (V4).
+        Form.Showing += () => Tab.SlideOut();
+        // A notice that came during the shrink shows when the widget is hidden (V4).
+        Form.Hidden += () =>
+        {
+            if (waiting is not { } notice) return;
+            waiting = null;
+            Notify(notice);
+        };
         Store = services.GetRequiredService<Orchestrator.Store.FileStore>();
         board = services.GetRequiredService<Orchestrator.Web.Board>();
         hub = services.GetRequiredService<Orchestrator.Web.StreamHub>();
@@ -81,14 +89,24 @@ public sealed partial class TrayApp : ApplicationContext
     /// </summary>
     public void Notify((WaitCounts Counts, string? Title, string? Sub) next)
     {
-        if (Form.Visible && !Form.Growing)
+        // One form at a time (V4): while the widget shows or grows, the tab stays hidden and gets only the counts.
+        if (Form.Visible && !Form.Hiding)
         {
+            waiting = null;
             Tab.SetCounts(next.Counts);
+            return;
+        }
+        // While the widget shrinks, the notice waits for the end of the hide.
+        if (Form.Hiding)
+        {
+            waiting = next;
             return;
         }
         if (next.Counts.Total > 0 && !Tab.OnScreen) Tab.SlideIn();
         Tab.SetCounts(next.Counts, next.Title, next.Sub);
     }
+
+    (WaitCounts Counts, string? Title, string? Sub)? waiting;
 
     /// <summary>The waiting cards by type, and the newest one for the peek bubble.</summary>
     public (WaitCounts Counts, string? Title, string? Sub) Counts()

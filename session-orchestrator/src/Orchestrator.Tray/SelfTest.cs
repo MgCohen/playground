@@ -40,7 +40,10 @@ public static partial class SelfTest
         return file;
     }
 
-    /// <summary>Runs all checks, or with <paramref name="only"/> "notify" only the checks of the notice motion (V1, V2).</summary>
+    /// <summary>
+    /// Runs all checks, or with <paramref name="only"/> a list of groups: "notify" (the notice motion, V1 and V2) and "overlap"
+    /// (one form at a time, V4). The groups run with the test places of the widget and the edge tab.
+    /// </summary>
     public static async Task<int> Run(TrayApp tray, string folder, string? only = null)
     {
         var form = tray.Form;
@@ -48,10 +51,17 @@ public static partial class SelfTest
         var checks = new List<Check>();
         var web = await Until(() => Task.FromResult(form.Web), TimeSpan.FromSeconds(60)) ?? throw new TimeoutException("WebView2 did not start in 60 seconds.");
         await Until(() => Found(web, "main.page"), TimeSpan.FromSeconds(30));
-        if (only == "notify")
+        if (only is not null)
         {
+            var groups = only.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             await Task.Delay(1200);
-            checks.AddRange(await NoticeMotion(tray, web, folder));
+            TestPlaces(tray);
+            form.HideWidget();
+            await Settle(form);
+            form.ShowWidget();
+            await Settle(form);
+            if (groups.Contains("notify")) checks.AddRange(await NoticeMotion(tray, web, folder));
+            if (groups.Contains("overlap")) checks.AddRange(await Overlap(tray, folder));
             return Write(checks, folder);
         }
         foreach (var step in Steps)
@@ -119,7 +129,9 @@ public static partial class SelfTest
         checks.AddRange(await Ball(form, web, folder));
         checks.Add(await Video(form, folder));
         checks.AddRange(await Edge(tray, web, folder));
+        TestPlaces(tray);
         checks.AddRange(await NoticeMotion(tray, web, folder));
+        checks.AddRange(await Overlap(tray, folder));
         return Write(checks, folder);
     }
 
