@@ -30,8 +30,47 @@ public static partial class SelfTest
         var (diff, ratio) = BallDiff(native, page, form.DeviceDpi / 96f * 62);
         var png = Path.Combine(folder, "tray-v5-ball.png");
         Zoom([native, page], png, 3);
+        // V15: each frame of the handover shows a ball. One pixel inside the orange area, sampled on a pool thread.
+        var spot = new Point(square.Left + square.Width / 2 - (int)(form.DeviceDpi / 96f * 62 * .3f), square.Top + square.Height / 2);
+        static bool Orange(Color c) => c.R > 200 && c.G is > 70 and < 150 && c.B < 90;
+        async Task<(int Samples, int Missing)> Watch(int ms)
+        {
+            return await Task.Run(() =>
+            {
+                var end = Environment.TickCount64 + ms;
+                int n = 0, miss = 0;
+                using var one = new Bitmap(1, 1);
+                using var g = Graphics.FromImage(one);
+                while (Environment.TickCount64 < end)
+                {
+                    g.CopyFromScreen(spot, Point.Empty, new Size(1, 1));
+                    n++;
+                    if (!Orange(one.GetPixel(0, 0))) miss++;
+                    Thread.Sleep(2);
+                }
+                return (n, miss);
+            });
+        }
+        form.HideWidget();
+        await Settle(form);
+        await Task.Delay(300);
+        form.ShowWidget();
+        // The handover comes after the pop in, the gap and the grow; watch from before its start to after its end.
+        await Task.Delay(BallWindow.InMs + WidgetForm.GapMs + WidgetForm.GrowMs - 80);
+        var show = await Watch(400);
+        await Settle(form);
+        await Task.Delay(400);
+        // The hide: the ball pops out, so watch only the first frames, while the ball is still big.
+        var hideWatch = Watch(70);
+        form.HideWidget();
+        var hide = await hideWatch;
+        await Settle(form);
+        form.ShowWidget();
+        await Settle(form);
         backdrop.Hide();
-        return [new Check("v5-one-ball", diff <= 3 && ratio <= .02,
+        var handover = new Check("v15-handover", show.Missing == 0 && hide.Missing == 0,
+            $"show: {show.Missing} of {show.Samples} samples with no ball; hide: {hide.Missing} of {hide.Samples} (expect 0)", "");
+        return [handover, new Check("v5-one-ball", diff <= 3 && ratio <= .02,
             $"mean color difference {diff:0.0} inside the ball circle (expect 3 or less); {ratio:P1} of the pixels differ by more than 24 (expect 2 % or less)", png)];
     }
 

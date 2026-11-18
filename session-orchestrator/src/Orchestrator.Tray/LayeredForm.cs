@@ -121,6 +121,12 @@ public abstract partial class LayeredForm : Form
         if (spent < 4) Thread.Sleep(4);
     }
 
+    /// <summary>Waits for <paramref name="count"/> compositions of the screen on a pool thread (V15: a handover after the paint).</summary>
+    public static Task NextFrames(int count) => Task.Run(() =>
+    {
+        for (var i = 0; i < count; i++) WaitForFrame();
+    });
+
     [LibraryImport("dwmapi.dll")]
     private static partial int DwmFlush();
 

@@ -131,9 +131,10 @@ public sealed partial class WidgetForm : Form
         closing = true;
         starting = false;
         grow.Stop();
-        Page("document.documentElement.classList.add('ball')");
+        // V15: the native ball shows first; the page button hides only after two frames on the screen, so no frame has no ball.
         ball.Place(HomeCenter(), BallSize);
         ball.PopOut(null);
+        _ = LayeredForm.NextFrames(2).ContinueWith(_ => BeginInvoke(() => { if (run == sequence) Page("document.documentElement.classList.add('ball')"); }), TaskScheduler.Default);
         After(BallWindow.OutMs / 2, run, () => BeginGrow(open: false));
     }
 
@@ -178,6 +179,26 @@ public sealed partial class WidgetForm : Form
         catch (Exception e) when (e is InvalidOperationException or System.Text.Json.JsonException or System.Runtime.InteropServices.COMException)
         {
         }
+    }
+
+    /// <summary>
+    /// V15: the home button of the page takes the place of the native ball. The script shows the button; the ball hides only
+    /// after the page ran the script and two frames reached the screen, so no frame shows neither of them.
+    /// </summary>
+    async void HandOver(int run)
+    {
+        if (pageReady && Web is { } web)
+        {
+            try
+            {
+                await web.ExecuteScriptAsync("document.documentElement.classList.remove('ball')");
+            }
+            catch (Exception e) when (e is InvalidOperationException or System.Runtime.InteropServices.COMException)
+            {
+            }
+            await LayeredForm.NextFrames(2);
+        }
+        if (run == sequence) ball.HideNow();
     }
 
     /// <summary>Runs a script in the page, if the page is there. The page ignores a class that it does not know.</summary>
@@ -289,8 +310,7 @@ public sealed partial class WidgetForm : Form
             starting = false;
             shadow.Track(this, Height);
             shadow.FadeOut();
-            Page("document.documentElement.classList.remove('ball')");
-            ball.HideNow();
+            HandOver(sequence);
             MeasureHome();
         }
         // No region: the full window with the rounded corners, the border and the shadow of the system.
