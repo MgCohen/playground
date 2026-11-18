@@ -1,0 +1,11 @@
+@* The home ball: one element for the closed form and the home button of the open panel. CSS moves it between the two places. *@
+<button type="button" class="home @(Spin ? "spin" : "")" aria-label="Home" @onclick="OnClick">
+    <CountRing Counts="Counts" />
+    <i class="core"></i>
+</button>
+
+@code {
+    [Parameter] public Counts Counts { get; set; } = new(0, 0, 0, 0);
+    [Parameter] public bool Spin { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+}

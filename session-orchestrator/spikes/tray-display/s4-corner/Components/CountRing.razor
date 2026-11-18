@@ -1,0 +1,17 @@
+@* The ring of the waiting cards by type, as one CSS conic gradient. *@
+<i class="ring" style="@Style"></i>
+
+@code {
+    [Parameter] public Counts Counts { get; set; } = new(0, 0, 0, 0);
+
+    string Style
+    {
+        get
+        {
+            if (Counts.Total == 0) return "--a1: 0deg; --a2: 0deg; --a3: 0deg; --a4: 0deg";
+            double a = 0;
+            string At(int n) => $"{(a += 360.0 * n / Counts.Total):0.#}deg";
+            return $"--a1: {At(Counts.Questions)}; --a2: {At(Counts.Reviews)}; --a3: {At(Counts.Reports)}; --a4: {At(Counts.Blocked)}";
+        }
+    }
+}

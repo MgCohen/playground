@@ -1,0 +1,81 @@
+@* The whole tray display: the panel, its app bar, and the closed form at the corner (ball, pill, peek).
+   One state: open or closed. CSS does all the motion. C# only sets the click area at the start of an open and at the end of a close. *@
+@implements IDisposable
+@inject Shell Shell
+
+<div class="stage @(open ? "open" : "")">
+    <div class="panel">
+        <header class="hd">
+            <span class="title">@Title</span>
+            <button type="button" class="close" title="Close" @onclick="Close">×</button>
+        </header>
+        <section class="body">@ChildContent</section>
+        <nav class="bar"><i></i><i class="gap"></i><i></i></nav>
+    </div>
+    <Peek On="peek" Title="@peekTitle" Sub="@peekSub" />
+    <Pill Counts="Shell.Counts" />
+    <HomeBall Counts="Shell.Counts" Spin="spin" OnClick="Toggle" />
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    bool open, spin, peek;
+    string peekTitle = "", peekSub = "";
+    int run;
+
+    protected override void OnInitialized()
+    {
+        Shell.Toggled += OnToggled;
+        Shell.CardAdded += OnCard;
+        Shell.SetHits(Shell.CornerArea);
+    }
+
+    void OnToggled() => _ = InvokeAsync(Toggle);
+
+    Task Toggle() => open ? Close() : Open();
+
+    Task Open()
+    {
+        Shell.SetHits(Shell.StageArea);
+        open = true;
+        peek = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    async Task Close()
+    {
+        open = false;
+        StateHasChanged();
+        await Task.Delay(340);
+        if (!open) Shell.SetHits(Shell.CornerArea);
+    }
+
+    void OnCard(string title, string sub) => _ = InvokeAsync(async () =>
+    {
+        var mine = ++run;
+        spin = true;
+        if (!open)
+        {
+            peek = true;
+            peekTitle = title;
+            peekSub = sub;
+        }
+        StateHasChanged();
+        await Task.Delay(800);
+        spin = false;
+        StateHasChanged();
+        await Task.Delay(4200);
+        if (mine != run) return;
+        peek = false;
+        StateHasChanged();
+    });
+
+    public void Dispose()
+    {
+        Shell.Toggled -= OnToggled;
+        Shell.CardAdded -= OnCard;
+    }
+}
