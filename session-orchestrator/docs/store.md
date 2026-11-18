@@ -38,7 +38,9 @@ The default store root is out of the checkout, so a `git clean -fdx` cannot dele
   sessions/<id>/                     the lifecycle files of one session (below)
   supervisor/log.txt                 one line for each turn, relay, default, nudge and blocked delivery
   templates/<kind>/                  an added template, or a replacement of a core template (Types, below)
-  templates/.removed/<kind>-<time>/  the files of a removed or replaced store template
+  templates/modes/<name>/            an added mode, or a replacement of a core mode (Template system, below)
+  templates/workflows/<name>/        an added workflow, or a replacement of a core workflow
+  templates/[<catalog>/].removed/<name>-<time>-<n>/  the files of a removed or replaced store definition
 ```
 
 A `<party>` in a file name has `-` in place of `:`, because Windows refuses `:` in a file name: `session:<id>` becomes `session-<id>`.
@@ -61,7 +63,10 @@ The C# code reads and writes the store only through `IRepositories` (`src/Orches
 | `Sessions` | `Doc<string>` (the id) | session id | `sessions/<id>/` |
 | `SessionFile<T>(file)` | `Doc<T>` | session id | `sessions/<id>/<file>` |
 | `SessionItems<T>(id, folder)` | `Doc<T>` | item name | `sessions/<id>/<folder>/<name>.json` |
+| `Definitions(catalog)` | `Doc<Definition>` (the files of one folder) | definition name | `templates/<kind>/`, `templates/modes/<name>/`, `templates/workflows/<name>/` |
 | `Log` (`ILogSink`) | none | none | `supervisor/log.txt` |
+
+The version of a `Definition` is the FNV-1a hash of each file path and text, in path order. A change and a remove of a definition move the old folder to `.removed/`.
 
 Rules of each implementation. The contract tests (`RepositoryContractTests`) run them against each data kind:
 
@@ -180,10 +185,10 @@ Two roots hold templates:
 
 | Root | Content | Changed by |
 |---|---|---|
-| `<home>/templates/` | The core templates of the tool, and `_spec/` (`meta.schema.json`, `view.schema.json`, `looks.json`) | A commit |
+| `<home>/templates/` | The core templates of the tool, and `_spec/` (`meta.schema.json`, `view.schema.json`, `looks.json`, `mode.schema.json`, `workflow.schema.json`) | A commit |
 | `<store>/templates/` | Added templates. A folder with a core name replaces that core template | `orch template add <folder> [--replace]`, `orch template remove <kind>` |
 
-The code reads templates only through `ITemplateStore` (`List`, `Get`, `Add`, `Remove`). `LocalTemplateStore` is the implementation for the two folders. `TemplateCheck` checks a template against `_spec/`: the name (`^[a-z][a-z0-9-]{1,31}$`, not `list`, `check`, `add` or `remove`), the meta and the view against their schemas, each view field in the schema, each look in `looks.json` and in an allowed place, and the example against the schema. `add` refuses a template that does not pass. A store template that does not load is skipped, and `orch template` and `orch doctor` show the error. A running supervisor reads the templates at start: restart it after a change.
+The code reads templates only through `ITemplateStore` (`List`, `Get`, `Add`, `Remove`). `TemplateStore` is the one implementation: a thin slice on two `Definitions(Catalog.Templates)` repositories (Template system, below). `TemplateCheck` checks a template against `_spec/`: the name (`^[a-z][a-z0-9-]{1,31}$`, not `list`, `check`, `add`, `remove`, `modes` or `workflows`), the meta and the view against their schemas, each view field in the schema, each look in `looks.json` and in an allowed place, and the example against the schema. `add` refuses a template that does not pass. A store template that does not load is skipped, and `orch template` and `orch doctor` show the error. A running supervisor reads the templates at start: restart it after a change.
 
 An added kind needs no code change. The stream checks its schema and meta, the UI shows it with its `view.json`, and a session gets `render/session.md` if it exists.
 
@@ -222,6 +227,54 @@ The lifecycle notices of the supervisor:
 The provider gives the app tool names: `remoteControlTool` and `archiveTool` (`IProvider.AppTools`). The supervisor adds them to `remote-control-self`, `remote-control-child`, `archive-child` and `archive-self`. No template names an app tool.
 
 A root session has no parent: each notice to the parent goes to the user as a `message` from `supervisor` with `needs: ack`. Its text is the render of the notice.
+
+## Template system
+
+The template system has three catalogs. Each definition is one folder with the marker file of its catalog. A folder with no marker file, or a name that starts with `_` or `.`, is not a definition.
+
+| Catalog | Folder | Marker | Spec | C# slice | Read by |
+|---|---|---|---|---|---|
+| `templates` | `templates/<kind>/` | `schema.json` | `meta.schema.json`, `view.schema.json`, `looks.json` | `TemplateStore` (`ITemplateStore`), `TemplateSet` | The stream, the UI, the renders, the hooks |
+| `modes` | `templates/modes/<name>/` | `mode.json` | `mode.schema.json` | `DefinitionCatalog<ModeDefinition>` (`Home.Modes`) | S4 (the readers of the four axes) |
+| `workflows` | `templates/workflows/<name>/` | `workflow.json` | `workflow.schema.json` | `DefinitionCatalog<WorkflowDefinition>` (`Home.Workflows`) | C2 (the runner) |
+
+```
+templates/
+├─ _spec/                    the spec files: one schema for each marker file, and the look catalog
+├─ <kind>/                   one message template: schema.json, meta.json, view.json, example.json, render
+├─ modes/<name>/             one session mode: mode.json, optional render/*.md
+│    auto, chat, ask, approve    the four presets of S1
+└─ workflows/<name>/         one workflow: workflow.json, optional render/*.md
+     planning                    the first workflow of C1
+```
+
+Each catalog has two layers, `LayeredDefinitions`: the core definitions of `<home>/templates/` and the store definitions of `<store>/templates/`. A store definition with a core name replaces the core definition. A core definition cannot be removed. The plugin hook `readDefinition` (`backend.ts`) reads the same two roots with the same marker and name rules; `readTemplate` is the `templates` catalog.
+
+A mode (`mode.json`):
+
+| Field | Values |
+|---|---|
+| `name`, `version`, `describe` | The folder name, 1 or more, one sentence |
+| `interaction` | `task`, `stepwise`, `conversation` |
+| `autonomy` | `auto`, `ask`, `approve` |
+| `route` | `parent`, `user` |
+| `visibility` | `public`, `private` |
+
+A workflow (`workflow.json`): `name`, `version`, `purpose`, `entry` (the id of the entry step), `done` (the definition of done) and `steps`. Each step:
+
+| Field | Content |
+|---|---|
+| `id`, `title`, `instructions` | Required |
+| `executor` | `agent` (one turn of a session), `ask` (a human answers), `tool` (a deterministic call) |
+| `session` | Agent steps only: `owner` (default), `new`, `{ "session": id }` or `{ "type": name }` |
+| `when`, `exit` | The entry and exit conditions, as text |
+| `input`, `output`, `templates` | Lists. Each template is a message kind that must exist |
+| `approval` | `{ by, strategy }`, strategy `required`, `skippable` or `ignored` |
+| `messages` | `[{ kind, to, when }]` |
+| `next` | `[{ step, when }]`. No `when`: always valid |
+| `done` | `true`: this step can end the work |
+
+`WorkflowDefinition.Check` refuses a repeated step id, an unknown entry step, a `next` to an unknown step, a session on a step that is not an agent step, an unknown message kind, a workflow with no `done` step, and a step that the entry step does not reach. `orch template check` checks each template, mode and workflow. `orch template modes` and `orch template workflows` list them.
 
 ## Subscriptions and delivery
 

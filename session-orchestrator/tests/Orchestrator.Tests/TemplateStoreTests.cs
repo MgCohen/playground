@@ -4,6 +4,7 @@ using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Templates;
 using Orchestrator.Store;
+using Orchestrator.Store.Local;
 using Orchestrator.Web.Components.Ui.Looks;
 
 namespace Orchestrator.Tests;
@@ -17,7 +18,7 @@ public sealed class TemplateStoreTests
 
     string StoreRoot => Path.Combine(root, StoreFiles.Templates);
 
-    LocalTemplateStore Store() => new(Home.Templates(), StoreRoot, Spec);
+    TemplateStore Store() => Home.TemplateStore(root);
 
     [SetUp]
     public void Folder() => root = Directory.CreateTempSubdirectory("orch-templates-").FullName;
@@ -59,7 +60,7 @@ public sealed class TemplateStoreTests
     [TestCaseSource(nameof(CoreKinds))]
     public void Each_core_template_passes_the_spec(string kind)
     {
-        var files = new LocalTemplateStore(Home.Templates(), null).Get(kind)!;
+        var files = Home.TemplateStore(null).Get(kind)!;
         Assert.That(TemplateCheck.Check(files, Spec), Is.Empty);
     }
 
@@ -98,18 +99,18 @@ public sealed class TemplateStoreTests
     [Test]
     public void A_store_template_replaces_a_core_template_until_it_is_removed()
     {
-        var core = new LocalTemplateStore(Home.Templates(), null).Get(Kinds.Message)!;
+        var core = Home.TemplateStore(null).Get(Kinds.Message)!;
         var view = core.View!.Replace("\"label\": \"Message\"", "\"label\": \"Note\"");
         Store().Add(core with { View = view });
 
-        var set = new TemplateSet(Store(), Home.Templates());
+        var set = Home.LoadTemplates(root);
         Assert.That(set[Kinds.Message].ReplacesCore);
         Assert.That(set[Kinds.Message].View!.Label, Is.EqualTo("Note"));
 
         Store().Remove(Kinds.Message);
-        set = new TemplateSet(Store(), Home.Templates());
+        set = Home.LoadTemplates(root);
         Assert.That((set[Kinds.Message].Source, set[Kinds.Message].View!.Label), Is.EqualTo((TemplateSources.Core, "Message")));
-        Assert.That(Directory.GetDirectories(Path.Combine(StoreRoot, LocalTemplateStore.Removed)), Has.Length.EqualTo(1), "the removed files stay");
+        Assert.That(Directory.GetDirectories(Path.Combine(StoreRoot, LocalDefinitionRepository.Removed)), Has.Length.EqualTo(1), "the removed files stay");
     }
 
     [Test]
@@ -144,7 +145,7 @@ public sealed class TemplateStoreTests
     [Test]
     public void The_document_has_the_content_actions_of_the_view_main_first_and_danger_last()
     {
-        var set = new TemplateSet(Home.Templates());
+        var set = Home.LoadTemplates(null);
         var plan = Views.Document(set, Kinds.Plan, new Dictionary<string, object?> { ["title"] = "T", ["steps"] = new List<object?> { "a" } });
         Assert.That(plan.Actions.Select(a => (a.Id, a.Role)), Is.EqualTo(new[] { ("approve", "main"), ("change", "other"), ("refuse", "danger") }));
         var message = Views.Document(set, Kinds.Message, new Dictionary<string, object?> { ["text"] = "Hi" });
@@ -178,7 +179,7 @@ public sealed class TemplateStoreTests
     {
         Directory.CreateDirectory(Path.Combine(StoreRoot, "broken"));
         File.WriteAllText(Path.Combine(StoreRoot, "broken", "schema.json"), "{ not json");
-        var set = new TemplateSet(Store(), Home.Templates());
+        var set = Home.LoadTemplates(root);
         Assert.That(set.Has(Kinds.Question));
         Assert.That(set.LoadErrors, Has.One.StartsWith("broken"));
     }
@@ -187,7 +188,7 @@ public sealed class TemplateStoreTests
     public void The_cli_lists_checks_adds_and_removes()
     {
         var folder = Path.Combine(root, "source", "risk-note");
-        RiskNote().WriteFolder(folder);
+        LocalDefinitionRepository.WriteFolder(folder, RiskNote().ToDefinition());
         var old = Environment.GetEnvironmentVariable("ORCH_STORE");
         Environment.SetEnvironmentVariable("ORCH_STORE", root);
         try

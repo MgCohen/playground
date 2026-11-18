@@ -1158,10 +1158,10 @@ Port map:
 | Event stream | `Event`, envelope id | `events/<day>/` | Built (H2) | Notion database | H2; Notion H6 |
 | Envelope bodies | `Body`, body path | `bodies/<day>/` | Built (H2) | Page content | H2; Notion H6 |
 | Session registry | `SessionEntry`, session id | `sessions/<id>/session.json` | Designed (S1, PR #28) | Notion database | S2; Notion H6 |
-| Templates | `Template`, kind | F1 `ITemplateStore` → F2 `IRepository` | Built (F1, PR #30) | Notion database | F2 |
+| Templates | `Definition`, kind | `templates/<kind>/` | Built (F2: `Definitions(Catalog.Templates)`) | Notion database | F2; Notion H6 |
 | Session settings | Field `settings` of `SessionEntry` | `sessions/<id>/session.json` | Designed (S1) | With the registry | S2 |
-| Modes | `Mode`, name (definition) | `templates/modes/` | Designed (S1) | Notion database | F2 |
-| Workflow definitions | `Workflow`, name (definition) | `templates/` (F2 sets the folder) | Designed (C1) | Notion database | F2 |
+| Modes | `Definition`, name | `templates/modes/<name>/` | Built (F2: schema, 4 presets) | Notion database | F2; readers S4 |
+| Workflow definitions | `Definition`, name | `templates/workflows/<name>/` | Built (F2: schema, `planning`) | Notion database | F2; runner C2 |
 | Workflow runs | `WorkflowRun`, run id | In the store (C2 sets the folder) | Designed (C1) | Notion database | C2 |
 | Policy | `Policy`, name | `policy.json` | Built (H2) | Notion page | H2; Notion H6 |
 | Store versions | `StoreVersion`, `version` (repository `StoreVersions`) | `version.json` | Built (H2) | Stays local | H2 |
@@ -1298,6 +1298,46 @@ Findings:
 - H4-1: each `orch` command makes `version.json` and `policy.json` at the store root (`Home.CheckVersion`, `Home.LoadPolicy`). After the default change, a first command on the new root makes a fresh store. The migration accepts it and sets it aside.
 - H4-2: the remaining cost of a tick is about 3 file system calls for each refresh (the `events/` and open day write times). A refresh happens at each query. A time window with no refresh in one tick would remove them, but a post of another process would then show later.
 - H4-3: `plugin/hooks` sessions that run now loaded the old `storeRoot` default. They keep the old store until they start again.
+
+## F2 result: template system on IRepository (2026-11-18)
+
+Branch `orch/f2-templates`, base `orch/integration-stack` (I2). The design rows are in `docs/decisions.md`. The contract is in `docs/store.md`, section "Template system".
+
+```
+LayeredDefinitions(catalog)          core wins only when the store has no definition of that name
+├─ core:  StoreBackends.Core  → LocalDefinitionRepository(<home>/templates, catalog)
+└─ store: repos.Definitions   → LocalDefinitionRepository(<store>/templates, catalog)
+      used by
+      ├─ TemplateStore (ITemplateStore) → TemplateSet → stream, UI, renders, CLI
+      ├─ DefinitionCatalog<ModeDefinition>     (Home.Modes)     → S4
+      └─ DefinitionCatalog<WorkflowDefinition> (Home.Workflows) → C2
+```
+
+| Item | Result |
+|---|---|
+| Repository | `IRepositories.Definitions(Catalog)`: `IRepository<Doc<Definition>, string>`. `Definition` is the files of one folder. Local implementation: `LocalDefinitionRepository` |
+| Templates | `ITemplateStore` is a thin slice (`TemplateStore`). `LocalTemplateStore` and the file IO in `Core/Templates/TemplateStore.cs` are removed |
+| Architecture test | The two F1 exceptions (`TemplateStore.cs`, `Home.cs` `StoreFiles.Templates`) are removed |
+| Modes | `_spec/mode.schema.json`; `templates/modes/{auto,chat,ask,approve}/mode.json` (S1 presets) |
+| Workflows | `_spec/workflow.schema.json`, graph rules in `WorkflowDefinition.Check`; `templates/workflows/planning/workflow.json` (the C1 draft: read, ask, answer, record, spec, approve, propose) |
+| Hook | `readDefinition($, catalog, name, file)` in `backend.ts`; `readTemplate` uses it. Same roots, marker files and name rule as C# |
+| CLI | `orch template check` checks the three catalogs; `orch template modes`, `orch template workflows` |
+
+Tests:
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | ✅ 487 tests: 480 pass, 7 skip (demo seed and the contract change tests of write-once kinds) |
+| Contract suite | ✅ `LocalTemplateDefinitionContract`, `LocalModeDefinitionContract`, `LocalWorkflowDefinitionContract` |
+| `DefinitionTests` | ✅ The presets, the axis values, the planning graph, the graph rules, store replace and remove, `.removed/`, reserved names, the hook catalogs, the CLI |
+| `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | ✅ 14 of 14 |
+
+Findings and notes:
+
+- F2-1: a list of a catalog reads each definition folder in full. The local catalogs are small, so this is fast. A Notion implementation needs a cache (H1: in-memory cache with a timer).
+- F2-2: the step conditions are text. C2 decides which conditions become tool checks.
+- F2-3: no plugin tool reads a mode or a workflow yet. `readDefinition` is ready for S4 and C2.
+- F2-4: a running supervisor reads the templates at its start, as before (F1-3).
 
 ## C1 design: streams (2026-11-17)
 
@@ -1644,7 +1684,7 @@ flowchart LR
 |---|---|---|---|
 | P0 | S (owner S) | `IProvider` in `Orchestrator.Providers`, `Providers/ClaudeCode`. Logic of today. Built: see "P0 result" | After I2 |
 | H4 | H | Store move to `%LOCALAPPDATA%\orch\store`, index by session, day cache, migration. Done: see "H4 result". `Lifecycle.cs` not changed | After I2. Merge before P0 if both touch `Home` or `Lifecycle.cs` |
-| F2 | F | Templates on `IRepository`; modes and workflows as definitions | After I2 |
+| F2 | F | Templates on `IRepository`; modes and workflows as definitions. Done: see "F2 result" | After I2 |
 | E2 | E | Visuals: the next E1 items and spike E-5 | After I2 |
 | S2 | S | Session registry on `IRepository`, store version 3 | After P0 and H4 |
 | G2 | G | Cloud workers (G-3, G-4) and the supervisor API with the `orch` HTTP mode (H5) | In parallel with S2 |

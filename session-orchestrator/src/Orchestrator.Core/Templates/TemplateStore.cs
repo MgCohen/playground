@@ -1,20 +1,20 @@
-using System.Text.RegularExpressions;
+using Orchestrator.Core.Storage;
 
 namespace Orchestrator.Core.Templates;
 
-/// <summary>The source of a template: the core set of the tool, or the store of the user.</summary>
+/// <summary>The source of a definition: the core set of the tool, or the store of the user.</summary>
 public static class TemplateSources
 {
     public const string Core = "core";
     public const string Store = "store";
 }
 
-/// <summary>One row of <see cref="ITemplateStore.List"/>. <c>Location</c> is a folder, a URL, or another address of the implementation.</summary>
+/// <summary>One row of a definition list. <c>Location</c> is a folder, a URL, or another address of the implementation.</summary>
 public sealed record TemplateInfo(string Kind, string Source, bool ReplacesCore, string Location);
 
 /// <summary>
-/// The agreed format of one template: the text of each file. An implementation of <see cref="ITemplateStore"/>
-/// reads and writes this shape. Renders: the key "" is render.md, each other key is render/&lt;key&gt;.md.
+/// The agreed format of one message template: the text of each file. Renders: the key "" is render.md, each other
+/// key is render/&lt;key&gt;.md. <see cref="From"/> and <see cref="ToDefinition"/> map it to the stored <see cref="Definition"/>.
 /// </summary>
 public sealed record TemplateFiles(string Kind, string Schema, string? Meta, string? View, string? Example, IReadOnlyDictionary<string, string> Renders)
 {
@@ -25,44 +25,98 @@ public sealed record TemplateFiles(string Kind, string Schema, string? Meta, str
     public const string RenderFile = "render.md";
     public const string RenderFolder = "render";
 
-    /// <summary>Reads the files of one template folder. The folder name is the kind.</summary>
-    public static TemplateFiles ReadFolder(string folder)
+    /// <summary>The template of a stored definition. The name of the definition is the kind.</summary>
+    public static TemplateFiles From(string kind, Definition definition)
     {
-        var kind = Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)));
-        var schema = Path.Combine(folder, SchemaFile);
-        if (!File.Exists(schema)) throw new TemplateException($"{folder} has no {SchemaFile}");
         var renders = new Dictionary<string, string>();
-        if (File.Exists(Path.Combine(folder, RenderFile))) renders[""] = Read(Path.Combine(folder, RenderFile))!;
-        if (Directory.Exists(Path.Combine(folder, RenderFolder)))
-            foreach (var file in Directory.GetFiles(Path.Combine(folder, RenderFolder), "*.md"))
-                renders[Path.GetFileNameWithoutExtension(file)] = Read(file)!;
-        return new TemplateFiles(kind, Read(schema)!, Read(Path.Combine(folder, MetaFile)), Read(Path.Combine(folder, ViewFile)), Read(Path.Combine(folder, ExampleFile)), renders);
+        if (definition[RenderFile] is { } main) renders[""] = main;
+        foreach (var (path, text) in definition.Files)
+            if (path.StartsWith(RenderFolder + "/") && path.EndsWith(".md") && path.Count(c => c == '/') == 1)
+                renders[path[(RenderFolder.Length + 1)..^3]] = text;
+        return new TemplateFiles(kind, definition[SchemaFile] ?? throw new TemplateException($"{kind} has no {SchemaFile}"),
+            definition[MetaFile], definition[ViewFile], definition[ExampleFile], renders);
     }
 
-    /// <summary>Writes the files into <paramref name="folder"/>. The folder must not exist.</summary>
-    public void WriteFolder(string folder)
+    public Definition ToDefinition()
     {
-        Directory.CreateDirectory(folder);
-        File.WriteAllText(Path.Combine(folder, SchemaFile), Schema);
-        if (Meta is not null) File.WriteAllText(Path.Combine(folder, MetaFile), Meta);
-        if (View is not null) File.WriteAllText(Path.Combine(folder, ViewFile), View);
-        if (Example is not null) File.WriteAllText(Path.Combine(folder, ExampleFile), Example);
-        foreach (var (name, text) in Renders)
-        {
-            var path = name.Length == 0 ? Path.Combine(folder, RenderFile) : Path.Combine(folder, RenderFolder, $"{name}.md");
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(path, text);
-        }
+        var files = new Dictionary<string, string> { [SchemaFile] = Schema };
+        if (Meta is not null) files[MetaFile] = Meta;
+        if (View is not null) files[ViewFile] = View;
+        if (Example is not null) files[ExampleFile] = Example;
+        foreach (var (name, text) in Renders) files[name.Length == 0 ? RenderFile : $"{RenderFolder}/{name}.md"] = text;
+        return new Definition(files);
     }
-
-    static string? Read(string path) => File.Exists(path) ? File.ReadAllText(path).ReplaceLineEndings("\n") : null;
 }
 
 public sealed class TemplateException(string message) : Exception(message);
 
 /// <summary>
-/// The library contract of the templates. The CLI and the supervisor read and change templates only through it.
-/// Today: <see cref="LocalTemplateStore"/> (two folders). Later: another implementation (Notion, a cloud bucket) that returns the same shapes.
+/// One place of definitions: a repository and the address of each definition in it, for messages.
+/// </summary>
+public sealed record DefinitionSource(string Name, IRepository<Doc<Definition>, string> Repository, Func<string, string> LocationOf);
+
+/// <summary>
+/// The definitions of one catalog in two layers: the core set of the tool (read only) and the store of the user.
+/// A store definition with a core name replaces the core definition. The local folder, a later Notion database or a
+/// cloud bucket is only the repository: this rule stays the same.
+/// </summary>
+public sealed class LayeredDefinitions(Catalog catalog, DefinitionSource core, DefinitionSource? store)
+{
+    public Catalog Catalog { get; } = catalog;
+
+    /// <summary>The definitions that apply: one row for each name. A store definition wins over a core definition.</summary>
+    public IReadOnlyList<TemplateInfo> List()
+    {
+        var coreNames = Names(core);
+        var storeNames = store is null ? [] : Names(store);
+        return coreNames.Union(storeNames).Order(StringComparer.Ordinal).Select(name => storeNames.Contains(name)
+            ? new TemplateInfo(name, TemplateSources.Store, coreNames.Contains(name), store!.LocationOf(name))
+            : new TemplateInfo(name, TemplateSources.Core, false, core.LocationOf(name))).ToList();
+    }
+
+    /// <summary>The definition that applies, or null.</summary>
+    public Definition? Get(string name)
+    {
+        if (!Catalog.IsName(name)) return null;
+        return (store is null ? null : store.Repository.Read(name)) ?? core.Repository.Read(name);
+    }
+
+    public bool IsCore(string name) => Catalog.IsName(name) && core.Repository.Exists(name);
+
+    /// <summary>Adds a definition to the store. A name that is in the store already needs <paramref name="replace"/>.</summary>
+    public TemplateInfo Add(string name, Definition definition, bool replace)
+    {
+        if (store is null) throw new TemplateException($"this {Catalog.Name} catalog has no store");
+        var repository = store.Repository;
+        if (repository.Get(name) is { } existing)
+        {
+            if (!replace) throw new TemplateException($"{name} is in the store already. Use --replace.");
+            existing.Value = definition;
+        }
+        else repository.Add(new Doc<Definition>(name, definition));
+        repository.Save();
+        return List().First(t => t.Kind == name);
+    }
+
+    /// <summary>Removes a store definition. A core definition cannot be removed; the removal of its replacement makes the core definition apply again.</summary>
+    public void Remove(string name)
+    {
+        var doc = store is null || !Catalog.IsName(name) ? null : store.Repository.Get(name);
+        if (doc is null)
+            throw new TemplateException(IsCore(name) ? $"{name} is a core {Single()}. Only a store {Single()} can be removed." : $"no {Single()} {name} in the store");
+        store!.Repository.Remove(doc);
+        store.Repository.Save();
+    }
+
+    string Single() => Catalog == Catalog.Templates ? "template" : Catalog.Name[..^1];
+
+    static HashSet<string> Names(DefinitionSource source) =>
+        source.Repository.List(_ => true).Select(d => d.Id).Where(Catalog.IsName).ToHashSet();
+}
+
+/// <summary>
+/// The library contract of the message templates. The CLI and the supervisor read and change templates only through it.
+/// <see cref="TemplateStore"/> is the only implementation: the storage is the <c>IRepository</c> under it.
 /// </summary>
 public interface ITemplateStore
 {
@@ -79,76 +133,30 @@ public interface ITemplateStore
     void Remove(string kind);
 }
 
-/// <summary>Two folders: the core templates of the tool (read only) and the templates of the store. A store folder with a core name replaces the core template.</summary>
-public sealed partial class LocalTemplateStore(string coreRoot, string? storeRoot, TemplateSpec? spec = null) : ITemplateStore
+/// <summary>The message templates: a thin slice on the template catalog of <see cref="LayeredDefinitions"/>, with the spec check.</summary>
+public sealed class TemplateStore(LayeredDefinitions definitions, Func<TemplateSpec> spec) : ITemplateStore
 {
-    /// <summary>The folder in the store root that keeps the removed templates.</summary>
-    public const string Removed = ".removed";
-
-    public string CoreRoot { get; } = coreRoot;
-    public string? StoreRoot { get; } = storeRoot;
-
-    public IReadOnlyList<TemplateInfo> List()
+    public TemplateStore(DefinitionSource core, DefinitionSource? store, Func<TemplateSpec> spec)
+        : this(new LayeredDefinitions(Catalog.Templates, core, store), spec)
     {
-        var core = Kinds(CoreRoot);
-        var store = StoreRoot is null ? [] : Kinds(StoreRoot);
-        return core.Union(store).Order(StringComparer.Ordinal).Select(kind => store.Contains(kind)
-            ? new TemplateInfo(kind, TemplateSources.Store, core.Contains(kind), Path.Combine(StoreRoot!, kind))
-            : new TemplateInfo(kind, TemplateSources.Core, false, Path.Combine(CoreRoot, kind))).ToList();
     }
 
-    public TemplateFiles? Get(string kind)
-    {
-        if (!IsName(kind)) return null;
-        var info = List().FirstOrDefault(t => t.Kind == kind);
-        return info is null ? null : TemplateFiles.ReadFolder(info.Location);
-    }
+    public IReadOnlyList<TemplateInfo> List() => definitions.List().Where(t => IsName(t.Kind)).ToList();
+
+    public TemplateFiles? Get(string kind) => IsName(kind) && definitions.Get(kind) is { } d ? TemplateFiles.From(kind, d) : null;
 
     public TemplateInfo Add(TemplateFiles files, bool replace = false)
     {
-        if (StoreRoot is null) throw new TemplateException("this template store has no store folder");
-        var errors = TemplateCheck.Check(files, spec ?? TemplateSpec.Load(CoreRoot));
+        var errors = TemplateCheck.Check(files, spec());
         if (errors.Count > 0) throw new TemplateException($"{files.Kind} is not a valid template: {string.Join("; ", errors)}");
-        var folder = Path.Combine(StoreRoot, files.Kind);
-        if (Directory.Exists(folder))
-        {
-            if (!replace) throw new TemplateException($"{files.Kind} is in the store already. Use --replace.");
-            Archive(folder, files.Kind);
-        }
-        var temp = Path.Combine(StoreRoot, $".add-{files.Kind}-{Guid.NewGuid():N}");
-        files.WriteFolder(temp);
-        Directory.Move(temp, folder);
-        return List().First(t => t.Kind == files.Kind);
+        return definitions.Add(files.Kind, files.ToDefinition(), replace);
     }
 
-    public void Remove(string kind)
-    {
-        var folder = StoreRoot is null || !IsName(kind) ? null : Path.Combine(StoreRoot, kind);
-        if (folder is null || !Directory.Exists(folder))
-            throw new TemplateException(Kinds(CoreRoot).Contains(kind) ? $"{kind} is a core template. Only a store template can be removed." : $"no template {kind} in the store");
-        Archive(folder, kind);
-    }
+    public void Remove(string kind) => definitions.Remove(kind);
 
-    void Archive(string folder, string kind)
-    {
-        var target = Path.Combine(StoreRoot!, Removed, $"{kind}-{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfff}");
-        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-        Directory.Move(folder, target);
-    }
+    /// <summary>A kind name: a definition name (<see cref="Catalog.IsName"/>) that is not a reserved word.</summary>
+    public static bool IsName(string kind) => Catalog.IsName(kind) && !Reserved.Contains(kind);
 
-    /// <summary>The kinds in a root: each folder with a valid name and a schema.json. Folders that start with "_" or "." are not kinds.</summary>
-    static HashSet<string> Kinds(string root) =>
-        Directory.Exists(root)
-            ? Directory.GetDirectories(root).Select(Path.GetFileName).OfType<string>()
-                .Where(name => IsName(name) && File.Exists(Path.Combine(root, name, TemplateFiles.SchemaFile))).ToHashSet()
-            : [];
-
-    /// <summary>A kind name: not a reserved word; lower case, digits and "-", 2 to 32 characters, a letter first. No dot: dots are for the system kinds (pr.opened).</summary>
-    public static bool IsName(string kind) => NameRule().IsMatch(kind) && !Reserved.Contains(kind);
-
-    /// <summary>The words of the CLI command "orch template": not kind names.</summary>
-    public static readonly IReadOnlySet<string> Reserved = new HashSet<string> { "list", "check", "add", "remove" };
-
-    [GeneratedRegex("^[a-z][a-z0-9-]{1,31}$")]
-    private static partial Regex NameRule();
+    /// <summary>The words of the CLI command "orch template", and the folders of the other catalogs: not kind names.</summary>
+    public static readonly IReadOnlySet<string> Reserved = new HashSet<string> { "list", "check", "add", "remove", Catalog.Modes.Folder, Catalog.Workflows.Folder };
 }

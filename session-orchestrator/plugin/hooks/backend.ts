@@ -128,10 +128,31 @@ export async function readPolicy($: any): Promise<any> {
 
 // A template file. The store templates root of F1 (<store>/templates/<kind>/) comes first: a store folder with a core
 // name replaces the core template. Else the core templates of the tool (<home>/templates/<kind>/).
+// The catalogs of the template system, as in C# (Catalog in Orchestrator.Core/Storage/Definition.cs): the folder
+// under the templates root, and the marker file that makes a folder a definition.
+export const CATALOGS = {
+  templates: { folder: '', marker: 'schema.json' },
+  modes: { folder: 'modes/', marker: 'mode.json' },
+  workflows: { folder: 'workflows/', marker: 'workflow.json' },
+} as const
+
+export type CatalogName = keyof typeof CATALOGS
+
+// The C# name rule of a definition (Catalog.IsName). Other names are never read.
+const DEFINITION_NAME = /^[a-z][a-z0-9-]{1,31}$/
+
+// One JSON file of a definition. The two roots of LayeredDefinitions in C#: <store>/templates first, if the store
+// folder has the marker file of the catalog, else the core templates in <home>/templates.
+export async function readDefinition($: any, catalog: CatalogName, name: string, file: string): Promise<any> {
+  if (!DEFINITION_NAME.test(name) || !/^[a-z][a-z0-9.-]*\.json$/.test(file)) return undefined
+  const { folder, marker } = CATALOGS[catalog]
+  if (S.store && (await $.fs.exists(`${S.store}/templates/${folder}${name}/${marker}`)))
+    return readJson($, `${S.store}/templates/${folder}${name}/${file}`)
+  return readJson($, `${S.home}/templates/${folder}${name}/${file}`)
+}
+
 export async function readTemplate($: any, kind: string, file: TemplateFile): Promise<any> {
-  if (S.store && (await $.fs.exists(`${S.store}/templates/${kind}/schema.json`)))
-    return readJson($, `${S.store}/templates/${kind}/${file}.json`)
-  return readJson($, `${S.home}/templates/${kind}/${file}.json`)
+  return readDefinition($, 'templates', kind, `${file}.json`)
 }
 
 // An envelope: the body first, then the envelope. The envelope is the commit point. Both are creates.

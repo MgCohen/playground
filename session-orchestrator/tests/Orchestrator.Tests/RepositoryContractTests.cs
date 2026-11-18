@@ -309,3 +309,22 @@ public sealed class RepositoryRuleTests
         Assert.That(StoreJson.Write(JsonSerializer.SerializeToElement(fields, StoreJson.Options)), Is.EqualTo(StoreJson.Write(fields)));
     }
 }
+
+public abstract class LocalDefinitionContract(Catalog catalog) : RepositoryContract<Definition>
+{
+    protected override IRepository<Doc<Definition>, string> Open(string root) => new LocalRepositories(root).Definitions(catalog);
+
+    protected override string IdOf(int n) => $"def-{n}";
+
+    protected override Definition Sample(int n) => new(new Dictionary<string, string>
+    {
+        [catalog.Marker] = $"{{ \"name\": \"def-{n}\", \"n\": {n} }}",
+        ["render/session.md"] = $"Text {n} – ü\nline 2",
+    });
+}
+
+public sealed class LocalTemplateDefinitionContract() : LocalDefinitionContract(Catalog.Templates);
+
+public sealed class LocalModeDefinitionContract() : LocalDefinitionContract(Catalog.Modes);
+
+public sealed class LocalWorkflowDefinitionContract() : LocalDefinitionContract(Catalog.Workflows);

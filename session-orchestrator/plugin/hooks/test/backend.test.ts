@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { S } from '../state.ts'
-import { StoreConflict, createEnvelope, log, readSession, readSessionVersioned, readTemplate, storeRoot, versionOf, writeSession } from '../backend.ts'
+import { StoreConflict, createEnvelope, log, readSession, readDefinition, readSessionVersioned, readTemplate, storeRoot, versionOf, writeSession } from '../backend.ts'
 import { post } from '../stream.ts'
 
 // Known versions of three texts. VersionRuleTests (C#) checks the same values.
@@ -112,4 +112,18 @@ test('storeRoot: ORCH_STORE, else %LOCALAPPDATA%/orch/store, the same default as
   assert.equal(await storeRoot(env({ LOCALAPPDATA: local })), 'C:/Users/u/AppData/Local/orch/store')
   assert.equal(await storeRoot(env({ ORCH_STORE: '', LOCALAPPDATA: local })), 'C:/Users/u/AppData/Local/orch/store', 'an empty ORCH_STORE is not set, as in C#')
   assert.equal(await storeRoot(env({ HOME: '/home/u' })), '/home/u/.local/share/orch/store')
+})
+
+test('a mode and a workflow read from the same two roots, with the marker file of their catalog', async () => {
+  reset()
+  const $ = fake({
+    'home/templates/modes/chat/mode.json': JSON.stringify({ from: 'core' }),
+    'store/templates/modes/chat/mode.json': JSON.stringify({ from: 'store' }),
+    'home/templates/workflows/planning/workflow.json': JSON.stringify({ from: 'core' }),
+    'store/templates/workflows/planning/notes.json': JSON.stringify({ from: 'store' }),
+  })
+  assert.equal((await readDefinition($, 'modes', 'chat', 'mode.json')).from, 'store')
+  assert.equal((await readDefinition($, 'workflows', 'planning', 'workflow.json')).from, 'core', 'a store folder with no marker file is not a definition')
+  assert.equal(await readDefinition($, 'modes', '../chat', 'mode.json'), undefined, 'a name outside the C# rule is never read')
+  assert.equal(await readDefinition($, 'templates', '_spec', 'meta.schema.json'), undefined)
 })
