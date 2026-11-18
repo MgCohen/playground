@@ -141,6 +141,27 @@ public sealed class TemplateStoreTests
         Assert.That(Directory.Exists(Path.Combine(StoreRoot, "risk-note")), Is.False);
     }
 
+    [Test]
+    public void The_document_has_the_content_actions_of_the_view_main_first_and_danger_last()
+    {
+        var set = new TemplateSet(Home.Templates());
+        var plan = Views.Document(set, Kinds.Plan, new Dictionary<string, object?> { ["title"] = "T", ["steps"] = new List<object?> { "a" } });
+        Assert.That(plan.Actions.Select(a => (a.Id, a.Role)), Is.EqualTo(new[] { ("approve", "main"), ("change", "other"), ("refuse", "danger") }));
+        var message = Views.Document(set, Kinds.Message, new Dictionary<string, object?> { ["text"] = "Hi" });
+        Assert.That(message.Actions, Is.Empty, "no actions: the app hides the corner button");
+    }
+
+    [Test]
+    public void Two_main_actions_or_a_repeated_id_are_refused()
+    {
+        var view = RiskNote().View!.Replace("\"document\":", """
+            "actions": [ { "id": "ok", "label": "OK", "role": "main" }, { "id": "ok", "label": "Yes", "role": "main" } ], "document":
+            """);
+        var errors = TemplateCheck.Check(RiskNote(view: view), Spec);
+        Assert.That(errors, Has.Some.Contains("more than one main action"));
+        Assert.That(errors, Has.Some.Contains("the id \"ok\" is not unique"));
+    }
+
     [TestCase("Risk")]
     [TestCase("pr.opened")]
     [TestCase("check")]

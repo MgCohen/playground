@@ -2,6 +2,11 @@
   "label": "Question",
   "icon": "q",
   "tone": "new",
+  "actions": [
+    { "id": "accept", "label": "Accept", "role": "main" },
+    { "id": "other", "label": "Other answer", "role": "other" },
+    { "id": "skip", "label": "Skip", "role": "other" }
+  ],
   "document": {
     "title": ["{{question}}"],
     "facts": [

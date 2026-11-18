@@ -19,6 +19,20 @@
       },
       "additionalProperties": false
     },
+    "actions": {
+      "type": "array",
+      "description": "Optional: the content actions of the document page (the corner button). The id is the contract with the app code, which maps it to a behavior. At most one main action. Danger actions show last, in red, and ask to confirm.",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "role"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "label": { "type": "string", "minLength": 1 },
+          "role": { "enum": ["main", "other", "danger"] }
+        },
+        "additionalProperties": false
+      }
+    },
     "document": {
       "type": "object",
       "required": ["title", "facts", "blocks"],

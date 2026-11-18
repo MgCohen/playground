@@ -1149,3 +1149,4 @@ Screenshots: `docs/screens/f1-corner-open-question.png`, `f1-corner-open-report.
 - F1-5: no plugin tool for an added kind, and no HTTP API for the templates (Q3: later).
 - F1-6: X3, X4, X6 to X10 stay proposals (Q4). The user reviews the looks later.
 - F1-7: a test store with a session that has no `claude` starts a supervisor turn. Use `ORCH_CLAUDE=<a name that does not exist>` for a parity test store.
+- F1-8: `view.json` `actions` (the content actions of E1) and `meta.json` `card.accept`/`card.refuse` overlap. The card keys are not read by code. Later: one list, with the behavior (post, verdict) in meta and the look (label, role) in the view.

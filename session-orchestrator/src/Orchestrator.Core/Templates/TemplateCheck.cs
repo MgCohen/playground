@@ -127,6 +127,9 @@ public static partial class TemplateCheck
         }
 
         Field(view.ToneBy?.Field, "toneBy");
+        var actions = view.Actions ?? [];
+        if (actions.Count(a => a.Role == ActionSpec.Main) > 1) errors.Add("view.json actions: more than one main action");
+        foreach (var id in actions.GroupBy(a => a.Id).Where(g => g.Count() > 1).Select(g => g.Key)) errors.Add($"view.json actions: the id \"{id}\" is not unique");
         Texts(view.Document.Title, "document.title");
         Texts(view.Document.Subtitle, "document.subtitle");
         Texts(view.Preview.Title, "preview.title");
