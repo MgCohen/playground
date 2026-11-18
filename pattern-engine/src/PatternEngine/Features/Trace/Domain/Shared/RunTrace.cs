@@ -139,4 +139,24 @@ public sealed record RunTrace
 
     [JsonPropertyName("graph")]
     public List<NodeState> Graph { get; init; } = [];
+
+    /// <summary>The spec and the compose loop, when engine.decider is compose. Null for the status decider.</summary>
+    [JsonPropertyName("compose")]
+    public ComposeTraceRecord? Compose { get; init; }
+}
+
+/// <summary>The compose part of a run trace: the spec rubrics, the spec errors, one score line for each anchor (G3), and the loop trace.</summary>
+public sealed record ComposeTraceRecord
+{
+    [JsonPropertyName("spec")]
+    public List<string> Spec { get; init; } = [];
+
+    [JsonPropertyName("spec_errors")]
+    public List<string> SpecErrors { get; init; } = [];
+
+    [JsonPropertyName("scores")]
+    public List<string> Scores { get; init; } = [];
+
+    [JsonPropertyName("loop")]
+    public object? Loop { get; init; }
 }

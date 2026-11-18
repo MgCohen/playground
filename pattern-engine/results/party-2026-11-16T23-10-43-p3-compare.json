@@ -1,0 +1,360 @@
+{
+  "run_id": "2026-11-16T23-10-43-p3-compare",
+  "kind": "compose",
+  "mode": "dev",
+  "model": "haiku",
+  "strategy": "compare",
+  "calls": 11,
+  "cost": 0.006601630000000001,
+  "runs": [
+    {
+      "case": "a1",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "cost 9, best 9"
+        }
+      ],
+      "measures": {
+        "cost": "9",
+        "best cost": "9"
+      },
+      "grader_accuracy": "20 of 20",
+      "trace": {
+        "task": "a1",
+        "strategy": "compare",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "a1",
+            "set": [
+              "paladin"
+            ],
+            "reason": "Paladin alone is tagged healer, tank and fighter, costs 9 (within 12), and has no cleric; its graded remainder is empty. No cheaper party works, since the only healer under 9 is druid (7), which needs a tank and a fighter costing at least 3 more (10 total)."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Three valid cheap parties without the non-free cleric cover healer, tank, and fighter within 12 gold, so I\u0027m grading them together to compare remainders before committing the cheapest.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "a1",
+                "set": [
+                  "druid",
+                  "guard",
+                  "squire"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "druid has tag healer, and the party is all three heroes, so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "guard has tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "squire has tag fighter, so the party has a fighter."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 7 (druid) \u002B 2 (guard) \u002B 1 (squire) = 10, which is 12 or less."
+                  },
+                  {
+                    "rubric": "available",
+                    "ok": true,
+                    "reason": "No hero in the set is a cleric; the not-free hero is absent from the party."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "a1",
+                "set": [
+                  "paladin",
+                  "squire"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "paladin has the healer tag, and the party is paladin and squire."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "paladin has the tank tag."
+                  },
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "paladin and squire both have the fighter tag."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "total cost is 9 (paladin) \u002B 1 (squire) = 10, which is 12 or less."
+                  },
+                  {
+                    "rubric": "available",
+                    "ok": true,
+                    "reason": "the party is paladin and squire; cleric is not in the set, so no not-free hero is present."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "a1",
+                "set": [
+                  "druid",
+                  "knight"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "druid has the healer tag, so the party (druid, knight) has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "knight has the tank tag, so the party has a tank."
+                  },
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "knight has the fighter tag, so the party has a fighter."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "total cost is 7 (druid) \u002B 5 (knight) = 12, which is 12 or less."
+                  },
+                  {
+                    "rubric": "available",
+                    "ok": true,
+                    "reason": "the party is druid and knight only; no cleric (the not-free hero) is in the set, so none is in the party."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "grade",
+            "note": "Paladin alone (cost 9) covers healer, tank and fighter without the cleric, and it is the cheapest possible party (the cheapest healer, druid at 7, needs at least 3 more for tank and fighter, so 10), so I\u0027m grading this untested single-hero set before committing.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "a1",
+                "set": [
+                  "paladin"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The only hero, paladin, has the tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The only hero, paladin, has the tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "The only hero, paladin, has the tag fighter, so the party has a fighter."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "The party is paladin alone, with cost 9, which is 12 or less."
+                  },
+                  {
+                    "rubric": "available",
+                    "ok": true,
+                    "reason": "The party is paladin alone. Paladin is not the not-free hero cleric, so the party has none of the not-free heroes."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 3,
+            "action": "commit",
+            "note": "I committed the single-hero party [paladin] because the existing graded verdict shows an empty remainder and it is the cheapest valid option at 9 gold, so no new grades were needed.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 4,
+        "cache_hits": 0,
+        "calls": 7,
+        "cost": 0.00425632,
+        "ms": 35569
+      }
+    },
+    {
+      "case": "a2",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "cost 8, best 8"
+        }
+      ],
+      "measures": {
+        "cost": "8",
+        "best cost": "8"
+      },
+      "grader_accuracy": "4 of 4",
+      "trace": {
+        "task": "a2",
+        "strategy": "compare",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "a2",
+            "set": [
+              "spellblade",
+              "sage"
+            ],
+            "reason": "Graded earlier with all four rubrics yes (mage, lore, budget 8 \u003C= 8, and no apprentice). No cheaper valid party exists: the non-apprentice mage options are spellblade (6) and archmage (10), and the cheapest lore hero is sage (2)."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Only one under-budget party can cover both mage and lore without the apprentice: spellblade (6) plus sage (2), totaling 8, so I\u0027m grading that set; other combinations exceed 8 gold.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "a2",
+                "set": [
+                  "spellblade",
+                  "sage"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "mage",
+                    "ok": true,
+                    "reason": "spellblade has the tag mage, so the party (spellblade, sage) has a mage."
+                  },
+                  {
+                    "rubric": "lore",
+                    "ok": true,
+                    "reason": "sage has the tag lore, so the party has a lore."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 6 (spellblade) \u002B 2 (sage) = 8, which is 8 or less."
+                  },
+                  {
+                    "rubric": "available",
+                    "ok": true,
+                    "reason": "The set has no apprentice; the heroes are spellblade and sage, neither of which is not free."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "The set [spellblade, sage] was already graded with an empty remainder, and it is the cheapest valid party (8 gold), since the only other mage, archmage, costs 10, so I commit it without spending another grade.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 1,
+        "cache_hits": 0,
+        "calls": 3,
+        "cost": 0.0017564500000000001,
+        "ms": 19131
+      }
+    },
+    {
+      "case": "a3",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "none is correct"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "none is correct"
+        }
+      ],
+      "measures": {
+        "cost": "none",
+        "best cost": "none"
+      },
+      "grader_accuracy": "0 of 0",
+      "trace": {
+        "task": "a3",
+        "strategy": "compare",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "a3",
+            "reason": "No party can pass the lockpick and available rubrics together. In the catalog, only thief has the lockpick tag, and thief is the one hero the available rubric forbids. So no set can have an empty remainder."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "commit",
+            "note": "I committed none without grading because the catalog rules out any valid party: lockpick requires thief, and available forbids thief.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 0,
+        "cache_hits": 0,
+        "calls": 1,
+        "cost": 0.0005888600000000001,
+        "ms": 6453
+      }
+    }
+  ],
+  "grader_check": [],
+  "report": "Pass: 3 of 3. best-cost: 3 of 3. 11 agent calls, $0.007."
+}

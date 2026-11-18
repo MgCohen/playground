@@ -82,7 +82,9 @@ Which number does child 2 give to the sum?
 Answer here. I send your words to the child.
 ```
 
-A child that asks in its own chat uses the same template, with the title "⏳ Question" and the last line "Answer here, or in the root session."
+A child that asks in its own chat uses the same template, with the title "⏳ Question" and the last line "In the chat, start the answer with `answer:`. You can also answer in the root session."
+
+In a child chat, only a message that starts with `answer:` closes the decision. A message without `answer:` is a normal message: the decision stays open.
 
 ## Answers of the user
 

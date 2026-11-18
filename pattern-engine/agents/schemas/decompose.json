@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "needs": {
+      "type": "array",
+      "description": "each need of the text, with a kind and a name from the rules of the pack",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string" },
+          "name": { "type": "string" },
+          "amount": { "type": ["integer", "null"] }
+        },
+        "required": ["kind", "name", "amount"]
+      }
+    },
+    "missing": {
+      "type": "array",
+      "description": "one short question for each value that the rules require and the text does not give",
+      "items": { "type": "string" }
+    },
+    "note": { "type": "string" }
+  },
+  "required": ["needs", "missing", "note"]
+}

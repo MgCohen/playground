@@ -1,0 +1,379 @@
+{
+  "runId": "2026-11-17T02-06-15",
+  "domain": "topology",
+  "engine": "csharp-hybrid",
+  "mode": "dev",
+  "label": "engine-decider",
+  "model": "haiku",
+  "k": 1,
+  "ablate": [],
+  "graders": [
+    "structure",
+    "rules",
+    "flow",
+    "questions"
+  ],
+  "solution_graders": [
+    "selection",
+    "built",
+    "proposed"
+  ],
+  "catalog": "a307e7d3ddf7",
+  "cases": 1,
+  "runs": [
+    {
+      "case": "hand-partialfit-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "partial-fit"
+      ],
+      "request": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "solution",
+          "parts": [
+            {
+              "p": "command_pipeline"
+            },
+            {
+              "p": "*"
+            }
+          ]
+        },
+        "remainder": [
+          "no-fit"
+        ],
+        "io": {
+          "inputs": [
+            "Request"
+          ],
+          "outputs": [
+            "Event"
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "match",
+        "tree": {
+          "p": "solution",
+          "v": "plain",
+          "parts": [
+            {
+              "p": "observer",
+              "v": "plain"
+            },
+            {
+              "p": "retry-payment-three-times-with-delay",
+              "v": "plain"
+            }
+          ]
+        },
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [
+          "Does a pattern of the set do this job: Retry a failed payment three times?",
+          "Does a pattern of the set do this job: Wait a delay between the tries?",
+          "Does a pattern of the set do this job: Count the tries?"
+        ],
+        "remainder": [
+          {
+            "text": "Does a pattern of the set do this job: Retry a failed payment three times? Does a pattern of the set do this job: Wait a delay between the tries? Does a pattern of the set do this job: Count the tries?",
+            "outcome": "no-fit",
+            "pattern": "retry-payment-three-times-with-delay",
+            "proposed": "patterns/retry-payment-three-times-with-delay.md",
+            "joined": true
+          }
+        ],
+        "attempts": 3,
+        "stop_reason": null,
+        "hashes": {
+          "catalog": "ccb11f7ba91f",
+          "patterns": {
+            "observer": "0bd02ed5500e",
+            "retry-payment-three-times-with-delay": "1f577fad543a"
+          }
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a part that tries a failed payment again three times, with a delay between the tries.",
+            "status": "solved",
+            "pattern": "observer",
+            "variant": "plain",
+            "params": null,
+            "children": [
+              1
+            ],
+            "open": [
+              "Does a pattern of the set do this job: Retry a failed payment three times?",
+              "Does a pattern of the set do this job: Wait a delay between the tries?",
+              "Does a pattern of the set do this job: Count the tries?"
+            ],
+            "reason": null
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "depth": 1,
+            "text": "Does a pattern of the set do this job: Retry a failed payment three times? Does a pattern of the set do this job: Wait a delay between the tries? Does a pattern of the set do this job: Count the tries?",
+            "status": "none",
+            "pattern": "retry-payment-three-times-with-delay",
+            "variant": "plain",
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "gap: no entry covers job-1, job-2, job-3"
+          }
+        ],
+        "compose": {
+          "spec": [
+            "io (code): Does the set take only Event from outside, and give Effect?",
+            "job-1 (grader): Does a pattern of the set do this job: Retry a failed payment three times?",
+            "job-2 (grader): Does a pattern of the set do this job: Wait a delay between the tries?",
+            "job-3 (grader): Does a pattern of the set do this job: Count the tries?"
+          ],
+          "spec_errors": [],
+          "scores": [
+            "request: score 3 of 6 (all, fail); failed: job-1, job-2, job-3; 3 turns, 2 grades, 0 cache hits, 6 calls"
+          ],
+          "loop": {
+            "task": "request",
+            "strategy": "cover",
+            "outcome": "committed",
+            "stop_reason": null,
+            "commits": [
+              {
+                "spec": "request",
+                "set": [
+                  "observer.plain"
+                ],
+                "reason": "Last turn, and no catalog set can make all rubrics yes. observer.plain has the smallest remainder (job-1, job-2, job-3), so it is committed with a gap for the missing retry, delay, and count work.",
+                "remainder": [
+                  "job-1",
+                  "job-2",
+                  "job-3"
+                ],
+                "gap": {
+                  "new_id": "retry_payment_three_times_with_delay",
+                  "nearest": "command_pipeline.plain"
+                }
+              }
+            ],
+            "turns": [
+              {
+                "turn": 1,
+                "action": "grade",
+                "note": "I'm starting with observer.plain because the request is a part that reacts to a failed payment event, which matches its \"react to an event\" use, and its Event-in, Effect-out ports fit the io rubric; I'll grade it alone to see what remains.",
+                "refused": [],
+                "grades": [
+                  {
+                    "spec": "request",
+                    "set": [
+                      "observer.plain"
+                    ],
+                    "verdicts": [
+                      {
+                        "rubric": "io",
+                        "ok": true,
+                        "reason": "takes Event, gives Effect"
+                      },
+                      {
+                        "rubric": "job-1",
+                        "ok": false,
+                        "reason": "The only pattern, observer.plain, notifies other parts of an event so each can react on its own, for example by sending an email. It does not retry a failed payment, and nothing else in the set does either."
+                      },
+                      {
+                        "rubric": "job-2",
+                        "ok": false,
+                        "reason": "observer.plain has no delay step. Its line names only event notification, and no other pattern in the set adds a wait between tries."
+                      },
+                      {
+                        "rubric": "job-3",
+                        "ok": false,
+                        "reason": "observer.plain has no counting step. Its ports are event in and effect out, with no counter or tries state, and no other pattern in the set counts anything."
+                      },
+                      {
+                        "rubric": "set:connect",
+                        "ok": true,
+                        "reason": "each input gets a value"
+                      },
+                      {
+                        "rubric": "set:loop-entry",
+                        "ok": true,
+                        "reason": "each loop has an entry"
+                      }
+                    ],
+                    "remainder": [
+                      "job-1",
+                      "job-2",
+                      "job-3"
+                    ],
+                    "cached": false,
+                    "error": null,
+                    "parts": null,
+                    "key": "35bb2461eded|9901c3865582|41c867928c95/haiku+code|1c056ce94fbd"
+                  }
+                ],
+                "error": null
+              },
+              {
+                "turn": 2,
+                "action": "grade",
+                "note": "I'm starting with command_pipeline.plain, since the request changes data in steps and its use-when matches; the validated variant is skipped because the request asks for no input check.",
+                "refused": [],
+                "grades": [
+                  {
+                    "spec": "request",
+                    "set": [
+                      "command_pipeline.plain"
+                    ],
+                    "verdicts": [
+                      {
+                        "rubric": "io",
+                        "ok": false,
+                        "reason": "needs a Request input that the request does not give and no pattern gives; gives no Effect"
+                      },
+                      {
+                        "rubric": "job-1",
+                        "ok": false,
+                        "reason": "The only pattern, command_pipeline.plain, takes a request and runs its steps to produce an event. Its line names no retry logic, so it does not retry a failed payment three times."
+                      },
+                      {
+                        "rubric": "job-2",
+                        "ok": false,
+                        "reason": "command_pipeline.plain names no delay. The rules forbid adding a delay the line does not name, so nothing in the set waits between tries."
+                      },
+                      {
+                        "rubric": "job-3",
+                        "ok": false,
+                        "reason": "command_pipeline.plain names no counter or attempt tracking. Its line only describes changing data in steps from a request to an event, so it does not count tries."
+                      },
+                      {
+                        "rubric": "set:connect",
+                        "ok": false,
+                        "reason": "the input request (Request) of command_pipeline.plain gets no value"
+                      },
+                      {
+                        "rubric": "set:loop-entry",
+                        "ok": true,
+                        "reason": "each loop has an entry"
+                      }
+                    ],
+                    "remainder": [
+                      "io",
+                      "job-1",
+                      "job-2",
+                      "job-3",
+                      "set:connect"
+                    ],
+                    "cached": false,
+                    "error": null,
+                    "parts": null,
+                    "key": "983db7441a75|9901c3865582|41c867928c95/haiku+code|1c056ce94fbd"
+                  }
+                ],
+                "error": null
+              },
+              {
+                "turn": 3,
+                "action": "commit",
+                "note": "This is the last turn, and no catalog set covers all rubrics, so I commit the observer.plain set, which has the smallest remainder, and record a gap for a retry-with-delay-and-count entry whose nearest catalog entry is command_pipeline.plain.",
+                "refused": [],
+                "grades": [],
+                "error": null
+              }
+            ],
+            "grades": 2,
+            "cache_hits": 0,
+            "calls": 6,
+            "cost": 0.003923670000000001,
+            "ms": 41374,
+            "scores": [
+              {
+                "anchor": "request",
+                "ok": 3,
+                "total": 6,
+                "rule": "all",
+                "pass": false,
+                "failed": [
+                  "job-1",
+                  "job-2",
+                  "job-3"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "grades": {
+        "verdicts": {
+          "structure": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "rules": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          },
+          "flow": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "solution: the part \"s1\" never runs",
+              "solution: the part \"s2\" never runs",
+              "solution: the output \"s1_effect\" gets no value",
+              "solution: the output \"s2_event\" gets no value"
+            ]
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": false,
+        "consistent": true,
+        "solution": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "solution[0] > command_pipeline: expected \"command_pipeline\", got \"observer\""
+            ]
+          },
+          "built": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "solution[0] > command_pipeline: expected \"command_pipeline\", got \"observer\""
+            ]
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          }
+        },
+        "solution_score": 0
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 89078,
+        "Cost": 0.008699380000000001,
+        "Calls": 10,
+        "Escalations": 0,
+        "Error": null
+      }
+    }
+  ]
+}

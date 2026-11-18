@@ -190,14 +190,26 @@ function promptText(message: any): string {
   return content.filter((part: any) => part?.type === 'text').map((part: any) => String(part.text ?? '')).join('\n').trim()
 }
 
-// A line that the user types in the chat answers the open decision of this session, only when exactly one is open.
+const REMINDER = /<system-reminder>[\s\S]*?<\/system-reminder>/gi
+const ANSWER_PREFIX = /^answer:/i
+
+// A chat message is an answer only when it starts with "answer:". Questions and requests in the chat
+// must not close a decision. App reminder blocks are not text of the user, so they go first.
+export function chatAnswer(text: string): string | undefined {
+  const clean = text.replace(REMINDER, '').trim()
+  if (!ANSWER_PREFIX.test(clean)) return undefined
+  const answer = clean.replace(ANSWER_PREFIX, '').trim()
+  return answer === '' ? undefined : answer
+}
+
+// A chat message that starts with "answer:" answers the open decision of this session, only when exactly one is open.
 // orch chat-answer posts the answer with via chat and its ack, so the deliverer does not send it again.
 export async function answerFromChat($: any, e: any): Promise<void> {
   if (!S.dir || !S.id || e.origin?.kind !== 'composer') return
-  const text = promptText(e.message)
-  if (text === '') return
+  const text = chatAnswer(promptText(e.message))
+  if (text === undefined) return
   const run = await orch($, ['chat-answer', S.id, text])
-  await log($, `chat line: ${run.text.slice(0, 200)}`)
+  await log($, `chat answer: ${run.text.slice(0, 200)}`)
 }
 
 export async function askUser($: any, e: any): Promise<any> {
@@ -210,7 +222,7 @@ export async function askUser($: any, e: any): Promise<any> {
   } catch (error) {
     return { result: `orch: the question was not recorded: ${error instanceof Error ? error.message : String(error)}. Fix the fields and call the tool again.` }
   }
-  const later = `Question ${id} is in the user queue. If you have a parent session, it sees the question too. Write the question in your reply text with the "Question" template of the skill orch:orch-reply, so that the user can read it here. The user can answer in this chat or in the parent session. End your turn now. An answer in this chat is your answer. An answer from elsewhere arrives as a new message that starts with "Answer to decision ${id}".`
+  const later = `Question ${id} is in the user queue. If you have a parent session, it sees the question too. Write the question in your reply text with the "Question" template of the skill orch:orch-reply, so that the user can read it here. Tell the user: "In the chat, start the answer with \`answer:\`." A chat message without \`answer:\` does not close the question. The user can also answer in the parent session. End your turn now. A chat message that starts with \`answer:\` is your answer. An answer from elsewhere arrives as a new message that starts with "Answer to decision ${id}".`
   if (wait === 0) {
     await log($, `ask_user ${id} pending`)
     return { result: `PENDING: ${later}` }

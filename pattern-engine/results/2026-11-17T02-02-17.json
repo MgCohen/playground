@@ -1,0 +1,426 @@
+{
+  "runId": "2026-11-17T02-02-17",
+  "domain": "topology",
+  "engine": "csharp-hybrid",
+  "mode": "dev",
+  "label": "engine-decider",
+  "model": "haiku",
+  "k": 1,
+  "ablate": [],
+  "graders": [
+    "structure",
+    "rules",
+    "flow",
+    "questions"
+  ],
+  "solution_graders": [
+    "selection",
+    "built",
+    "proposed"
+  ],
+  "catalog": "a307e7d3ddf7",
+  "cases": 1,
+  "runs": [
+    {
+      "case": "hand-rule-001",
+      "run": 1,
+      "tags": [
+        "hand",
+        "near-miss"
+      ],
+      "request": "Design a query handler that also saves the changes that the user sends.",
+      "expect": {
+        "outcome": "match",
+        "tree": {
+          "p": "cqrs_system",
+          "parts": [
+            {
+              "p": "command_pipeline"
+            },
+            {
+              "p": "store"
+            }
+          ]
+        },
+        "io": {
+          "inputs": [
+            "Request"
+          ],
+          "outputs": [
+            "Saved"
+          ]
+        }
+      },
+      "hidden": null,
+      "trace": {
+        "outcome": "stopped",
+        "tree": null,
+        "nearest": null,
+        "deltas": [],
+        "proposed": null,
+        "questions": [],
+        "open_requirements": [],
+        "remainder": [],
+        "attempts": 0,
+        "stop_reason": "compose no-commit: stop: the remainder did not become smaller in one turn, and the last turn gave no valid commit",
+        "hashes": {
+          "catalog": "a307e7d3ddf7",
+          "patterns": {}
+        },
+        "notes": [],
+        "graph": [
+          {
+            "id": 0,
+            "parent": null,
+            "depth": 0,
+            "text": "Design a query handler that also saves the changes that the user sends.",
+            "status": "unresolved",
+            "pattern": null,
+            "variant": null,
+            "params": null,
+            "children": [],
+            "open": [],
+            "reason": "compose no-commit: stop: the remainder did not become smaller in one turn, and the last turn gave no valid commit"
+          }
+        ],
+        "compose": {
+          "spec": [
+            "io (code): Does the set take only Request from outside, and give View, Saved?",
+            "job-1 (grader): Does a pattern of the set do this job: Handle a query?",
+            "job-2 (grader): Does a pattern of the set do this job: Save the changes that the user sends?"
+          ],
+          "spec_errors": [],
+          "scores": [
+            "request: score 0 of 3 (all, fail); failed: io, job-1, job-2; 6 turns, 4 grades, 0 cache hits, 11 calls"
+          ],
+          "loop": {
+            "task": "request",
+            "strategy": "cover",
+            "outcome": "no-commit",
+            "stop_reason": "stop: the remainder did not become smaller in one turn, and the last turn gave no valid commit",
+            "commits": [
+              {
+                "spec": "request",
+                "set": null,
+                "reason": "no commit",
+                "remainder": null,
+                "gap": null
+              }
+            ],
+            "turns": [
+              {
+                "turn": 1,
+                "action": "grade",
+                "note": "Starting with command_pipeline.plain, since the request changes (saves) data and does not ask for validation; grading it first to see what remains.",
+                "refused": [],
+                "grades": [
+                  {
+                    "spec": "request",
+                    "set": [
+                      "command_pipeline.plain"
+                    ],
+                    "verdicts": [
+                      {
+                        "rubric": "io",
+                        "ok": false,
+                        "reason": "gives no View; gives no Saved"
+                      },
+                      {
+                        "rubric": "job-1",
+                        "ok": false,
+                        "reason": "The only pattern is command_pipeline.plain, which handles requests that change data. Its do-not-use text says that a request which only reads data and changes nothing should use query_handler, and this spec is a query handler. query_handler is not in the set, so no pattern handles a query."
+                      },
+                      {
+                        "rubric": "job-2",
+                        "ok": false,
+                        "reason": "command_pipeline.plain runs command steps on data changes and outputs an Event. Its line does not name saving or persisting changes. Its do-not-use text sends event-keeping to store, which is not in the set, so the pattern does not save the user's changes."
+                      },
+                      {
+                        "rubric": "set:connect",
+                        "ok": true,
+                        "reason": "one pattern"
+                      },
+                      {
+                        "rubric": "set:loop-entry",
+                        "ok": true,
+                        "reason": "each loop has an entry"
+                      }
+                    ],
+                    "remainder": [
+                      "io",
+                      "job-1",
+                      "job-2"
+                    ],
+                    "cached": false,
+                    "error": null,
+                    "parts": null,
+                    "key": "983db7441a75|8acf3457943c|41c867928c95/haiku+code|8d355e04b0be"
+                  }
+                ],
+                "error": null
+              },
+              {
+                "turn": 2,
+                "action": "grade",
+                "note": "The request needs a query handler (job-1) plus a save step (job-2), and the prior set lacked the query and store patterns, so I'm grading a set that adds query_handler.plain for the view and store.plain for the saved output, with command_pipeline.plain to turn the Request into an Event.",
+                "refused": [],
+                "grades": [
+                  {
+                    "spec": "request",
+                    "set": [
+                      "query_handler.plain",
+                      "command_pipeline.plain",
+                      "store.plain"
+                    ],
+                    "verdicts": [
+                      {
+                        "rubric": "io",
+                        "ok": true,
+                        "reason": "takes Request, gives View, Saved"
+                      },
+                      {
+                        "rubric": "job-1",
+                        "ok": false,
+                        "reason": "query_handler.plain is the only pattern that handles a query, but its do-not-use text says it does not apply when the request also changes or saves data. The spec asks for a query handler that also saves changes, so that text matches the request and query_handler does not do the job. command_pipeline.plain does not read data or return a view, and store.plain only keeps events, so no pattern handles the query."
+                      },
+                      {
+                        "rubric": "job-2",
+                        "ok": true,
+                        "reason": "store.plain is used when the request keeps changes so that they are saved, and its variant is Always. Its input is Event, which command_pipeline.plain outputs, so the two join by port type. Together they take the user's changes and save them."
+                      },
+                      {
+                        "rubric": "set:connect",
+                        "ok": false,
+                        "reason": "no port of query_handler.plain connects to another pattern of the set"
+                      },
+                      {
+                        "rubric": "set:loop-entry",
+                        "ok": true,
+                        "reason": "each loop has an entry"
+                      }
+                    ],
+                    "remainder": [
+                      "job-1",
+                      "set:connect"
+                    ],
+                    "cached": false,
+                    "error": null,
+                    "parts": null,
+                    "key": "0a91354face8|8acf3457943c|41c867928c95/haiku+code|8d355e04b0be"
+                  }
+                ],
+                "error": null
+              },
+              {
+                "turn": 3,
+                "action": "grade",
+                "note": "The previous set left job-1 and set:connect unmet, so I'm grading a new set that swaps in the validated command pipeline variant alongside the query handler and store, since the request is a query plus a save and I cannot regrade the old set.",
+                "refused": [],
+                "grades": [
+                  {
+                    "spec": "request",
+                    "set": [
+                      "query_handler.plain",
+                      "command_pipeline.validated",
+                      "store.plain"
+                    ],
+                    "verdicts": [
+                      {
+                        "rubric": "io",
+                        "ok": true,
+                        "reason": "takes Request, gives View, Saved"
+                      },
+                      {
+                        "rubric": "job-1",
+                        "ok": true,
+                        "reason": "query_handler.plain has the use text 'The request reads data and returns a view of it', its variant is Always, and it takes a Request and returns a View. That matches handling a query."
+                      },
+                      {
+                        "rubric": "job-2",
+                        "ok": true,
+                        "reason": "store.plain has the use text 'The request keeps events or changes, so that they are saved', and its variant is Always. That matches saving changes. command_pipeline.validated takes the user's Request and outputs an Event, which joins store.plain's Event input, so the user's changes reach the store and get saved."
+                      },
+                      {
+                        "rubric": "set:connect",
+                        "ok": false,
+                        "reason": "no port of query_handler.plain connects to another pattern of the set"
+                      },
+                      {
+                        "rubric": "set:loop-entry",
+                        "ok": true,
+                        "reason": "each loop has an entry"
+                      }
+                    ],
+                    "remainder": [
+                      "set:connect"
+                    ],
+                    "cached": false,
+                    "error": null,
+                    "parts": null,
+                    "key": "c8418746515f|8acf3457943c|41c867928c95/haiku+code|8d355e04b0be"
+                  }
+                ],
+                "error": null
+              },
+              {
+                "turn": 4,
+                "action": "grade",
+                "note": "The validated 3-pattern set meets every rubric except set:connect, so I add observer.plain, the only remaining pattern that takes an Event, to try to connect the set.",
+                "refused": [],
+                "grades": [
+                  {
+                    "spec": "request",
+                    "set": [
+                      "query_handler.plain",
+                      "command_pipeline.validated",
+                      "store.plain",
+                      "observer.plain"
+                    ],
+                    "verdicts": [
+                      {
+                        "rubric": "io",
+                        "ok": true,
+                        "reason": "takes Request, gives View, Saved"
+                      },
+                      {
+                        "rubric": "job-1",
+                        "ok": false,
+                        "reason": "query_handler.plain is the only pattern that handles a query, but its 'do not use when' text ('The request also changes or saves data (use command_pipeline)') matches the spec, which asks for a query handler that also saves changes. So it does not do the job. No other pattern returns a view: command_pipeline.validated outputs an Event, store.plain outputs Saved, and observer.plain outputs Effect."
+                      },
+                      {
+                        "rubric": "job-2",
+                        "ok": true,
+                        "reason": "store.plain's use-when is 'The request keeps events or changes, so that they are saved', and its input is Event. command_pipeline.validated takes the user's Request, changes data, and outputs event Event, so its output joins store.plain's input by type (Event). Together they take the user's changes and save them. The validated variant is conditional on the request asking for validation, which the spec does not mention, but the pipeline still processes the user's change requests."
+                      },
+                      {
+                        "rubric": "set:connect",
+                        "ok": false,
+                        "reason": "no port of query_handler.plain connects to another pattern of the set"
+                      },
+                      {
+                        "rubric": "set:loop-entry",
+                        "ok": true,
+                        "reason": "each loop has an entry"
+                      }
+                    ],
+                    "remainder": [
+                      "job-1",
+                      "set:connect"
+                    ],
+                    "cached": false,
+                    "error": null,
+                    "parts": null,
+                    "key": "4d896bee3987|8acf3457943c|41c867928c95/haiku+code|8d355e04b0be"
+                  }
+                ],
+                "error": null
+              },
+              {
+                "turn": 5,
+                "action": "commit",
+                "note": "This is the last turn, so I commit the graded set with the smallest remainder, [query_handler.plain, command_pipeline.validated, store.plain], which passes io, job-1 and job-2 and leaves only set:connect open, and I add a gap entry for a connector that links the parts.",
+                "refused": [
+                  "spec \"request\": [query_handler.plain, command_pipeline.validated, store.plain] fails the set check set:connect (no port of query_handler.plain connects to another pattern of the set); commit a set that passes each set check"
+                ],
+                "grades": [],
+                "error": null
+              },
+              {
+                "turn": 6,
+                "action": "commit",
+                "note": "This is the last turn, so I commit the set with the smallest remainder, which is [query_handler.plain, command_pipeline.validated, store.plain] with only set:connect unmet, and add a gap entry for the missing link because no catalog pattern takes View as input.",
+                "refused": [
+                  "spec \"request\": [query_handler.plain, command_pipeline.validated, store.plain] fails the set check set:connect (no port of query_handler.plain connects to another pattern of the set); commit a set that passes each set check"
+                ],
+                "grades": [],
+                "error": null
+              }
+            ],
+            "grades": 4,
+            "cache_hits": 0,
+            "calls": 11,
+            "cost": 0.007952019999999999,
+            "ms": 94081,
+            "scores": [
+              {
+                "anchor": "request",
+                "ok": 0,
+                "total": 3,
+                "rule": "all",
+                "pass": false,
+                "failed": [
+                  "io",
+                  "job-1",
+                  "job-2"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "grades": {
+        "verdicts": {
+          "structure": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "no output"
+            ]
+          },
+          "rules": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "no output"
+            ]
+          },
+          "flow": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "no topology"
+            ]
+          },
+          "questions": {
+            "ok": true,
+            "skipped": false,
+            "failures": []
+          }
+        },
+        "pass": false,
+        "consistent": false,
+        "solution": {
+          "selection": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "expected outcome \"match\", got \"stopped\"",
+              "cqrs_system: missing"
+            ]
+          },
+          "built": {
+            "ok": false,
+            "skipped": false,
+            "failures": [
+              "no top pattern"
+            ]
+          },
+          "proposed": {
+            "ok": true,
+            "skipped": true,
+            "failures": []
+          }
+        },
+        "solution_score": 0
+      },
+      "pass": false,
+      "agent": {
+        "Ms": 94121,
+        "Cost": 0.007952019999999999,
+        "Calls": 11,
+        "Escalations": 0,
+        "Error": "no output"
+      }
+    }
+  ]
+}

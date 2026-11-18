@@ -59,4 +59,7 @@ public sealed class AgentGateway(IJudge judge, string workDir, RunLimits limits,
     }
 
     public long ElapsedMs => watch.ElapsedMilliseconds;
+
+    /// <summary>The checker version of one agent: see <see cref="IJudge.Version"/>.</summary>
+    public string Version(string agent) => judge.Version(agent);
 }

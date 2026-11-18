@@ -1,0 +1,36 @@
+# Settings of the party domain. They override pe.settings.yaml.
+
+compose:
+  strategy: greedy              # greedy | compare | in-order | pool
+  limits:
+    turns: 8
+    grades_per_turn: 8
+    grades: 40
+    set_size: 6                 # heroes in one party
+  cache: true                   # same element, rubrics, checker and context = no new grader call (G1)
+  code_checks: false            # R1: the agents must find each rubric failure; the oracle checks after the run
+  gaps: false                   # B4: a commit must close the remainder, or be none
+
+party:
+  tags: [healer, tank, fighter, scout, tracker, lockpick, mage, lore]
+  stats: [strength, intelligence, agility, knowledge]
+  stat_range: [1, 10]
+  fields:                       # tags | cost | stats: what the agents see, for each rung
+    cover: [tags]
+    budget: [tags, cost]
+    available: [tags, cost]
+    many: [tags, cost]
+    stats: [tags, cost, stats]
+    prose: [tags, cost, stats]
+  pass: { rubrics: [valid], rule: all }   # rule: all | percent, with pass_at
+  grade: [smallest, best-cost, best-total, spec]
+  decomposer:                   # rung 6
+    spec: decompose             # decompose | given (control: the hidden anchor goes to the run)
+    lore: on                    # on | off: lore.md goes to the decomposer
+    retries: 1                  # more decomposer calls when code refuses the answer
+    ranges: { stat_min: [1, 60], max_cost: [0, 100] }
+
+eval:
+  modes:
+    smoke: { sample: 3, k: 1, model: haiku }
+    dev:   { sample: 5, k: 1, model: haiku }

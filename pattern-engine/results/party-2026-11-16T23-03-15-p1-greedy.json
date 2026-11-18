@@ -1,0 +1,517 @@
+{
+  "run_id": "2026-11-16T23-03-15-p1-greedy",
+  "kind": "compose",
+  "mode": "dev",
+  "model": "haiku",
+  "strategy": "greedy",
+  "calls": 19,
+  "cost": 0.00866181,
+  "runs": [
+    {
+      "case": "c1",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "smallest",
+          "Ok": true,
+          "Reason": "size 1, smallest 1"
+        }
+      ],
+      "measures": {
+        "cost": "14",
+        "best cost": "5",
+        "size": "1",
+        "smallest": "1"
+      },
+      "grader_accuracy": "2 of 2",
+      "trace": {
+        "task": "c1",
+        "strategy": "greedy",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "c1",
+            "set": [
+              "champion"
+            ],
+            "reason": "Champion is tagged both healer and tank, and the earlier grade of [champion] returned an empty remainder, so both rubrics are yes."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Champion is tagged both healer and tank, so it alone may satisfy both rubrics; I\u0027m grading that single-hero party first, per the greedy strategy.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "c1",
+                "set": [
+                  "champion"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The set has one hero, champion, whose tags include healer, so the party has a healer tag."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The set has one hero, champion, whose tags include tank, so the party has a tank tag."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "Committing the already-graded set [champion] for c1, since its empty remainder means both the healer and tank rubrics are met, so no further grading is needed.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 1,
+        "cache_hits": 0,
+        "calls": 3,
+        "cost": 0.0011197199999999998,
+        "ms": 15270
+      }
+    },
+    {
+      "case": "c2",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "smallest",
+          "Ok": true,
+          "Reason": "size 1, smallest 1"
+        }
+      ],
+      "measures": {
+        "cost": "3",
+        "best cost": "3",
+        "size": "1",
+        "smallest": "1"
+      },
+      "grader_accuracy": "2 of 2",
+      "trace": {
+        "task": "c2",
+        "strategy": "greedy",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "c2",
+            "set": [
+              "thief"
+            ],
+            "reason": "Graded earlier: scout yes and lockpick yes, remainder none, so every rubric is satisfied."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Starting the greedy build for c2 with thief, the one hero that makes both the scout and lockpick rubrics true.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "c2",
+                "set": [
+                  "thief"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "scout",
+                    "ok": true,
+                    "reason": "The party is one hero, thief, and its tags include scout, so the party has a scout."
+                  },
+                  {
+                    "rubric": "lockpick",
+                    "ok": true,
+                    "reason": "The party is one hero, thief, and its tags include lockpick, so the party has a lockpick."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "The graded set [thief] already returned an empty remainder for c2 (scout yes, lockpick yes), so I commit it without spending another grade.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 1,
+        "cache_hits": 0,
+        "calls": 3,
+        "cost": 0.00113976,
+        "ms": 15355
+      }
+    },
+    {
+      "case": "c3",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "smallest",
+          "Ok": true,
+          "Reason": "size 2, smallest 2"
+        }
+      ],
+      "measures": {
+        "cost": "16",
+        "best cost": "9",
+        "size": "2",
+        "smallest": "2"
+      },
+      "grader_accuracy": "8 of 8",
+      "trace": {
+        "task": "c3",
+        "strategy": "greedy",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "c3",
+            "set": [
+              "champion",
+              "hunter"
+            ],
+            "reason": "The earlier grade of [champion, hunter] returned all four rubrics yes (healer, tank, scout, tracker) with an empty remainder, so this party satisfies c3."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Starting the greedy build with champion, since it covers three of the four c3 rubrics (healer, tank, scout) on its own.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "c3",
+                "set": [
+                  "champion"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The only hero, champion, has the tag healer in its listed tags, so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The only hero, champion, has the tag tank in its listed tags, so the party has a tank."
+                  },
+                  {
+                    "rubric": "scout",
+                    "ok": true,
+                    "reason": "The only hero, champion, has the tag scout in its listed tags, so the party has a scout."
+                  },
+                  {
+                    "rubric": "tracker",
+                    "ok": false,
+                    "reason": "The tags shown for champion are fighter, tank, scout and healer. None is tracker, so the party has no tracker."
+                  }
+                ],
+                "remainder": [
+                  "tracker"
+                ],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "grade",
+            "note": "The graded champion-only party is missing a tracker, so I\u0027m adding hunter, which is the tracker-tagged hero, and grading the party again.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "c3",
+                "set": [
+                  "champion",
+                  "hunter"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The champion hero has the healer tag in its listed tags (fighter, tank, scout, healer), so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The champion hero has the tank tag in its listed tags, so the party has a tank."
+                  },
+                  {
+                    "rubric": "scout",
+                    "ok": true,
+                    "reason": "The champion hero has the scout tag in its listed tags, so the party has a scout."
+                  },
+                  {
+                    "rubric": "tracker",
+                    "ok": true,
+                    "reason": "The hunter hero has the tracker tag in its listed tags, so the party has a tracker."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 3,
+            "action": "commit",
+            "note": "I\u0027m committing the party [champion, hunter] without a new grade, because the input already shows its graded verdicts are all yes with an empty remainder.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 2,
+        "cache_hits": 0,
+        "calls": 5,
+        "cost": 0.0023510400000000004,
+        "ms": 28575
+      }
+    },
+    {
+      "case": "c4",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "smallest",
+          "Ok": true,
+          "Reason": "size 3, smallest 3"
+        }
+      ],
+      "measures": {
+        "cost": "17",
+        "best cost": "9",
+        "size": "3",
+        "smallest": "3"
+      },
+      "grader_accuracy": "8 of 8",
+      "trace": {
+        "task": "c4",
+        "strategy": "greedy",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "c4",
+            "set": [
+              "archmage",
+              "thief",
+              "ranger"
+            ],
+            "reason": "This set was already graded with an empty remainder: mage, lore, lockpick and tracker are all yes."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Starting the greedy party with archmage, which covers two of the four c4 rubrics (mage and lore), the most any single hero can cover.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "c4",
+                "set": [
+                  "archmage"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "mage",
+                    "ok": true,
+                    "reason": "The only hero, archmage, has the tag mage, so the party has a mage."
+                  },
+                  {
+                    "rubric": "lore",
+                    "ok": true,
+                    "reason": "archmage has the tag lore, so the party has a lore."
+                  },
+                  {
+                    "rubric": "lockpick",
+                    "ok": false,
+                    "reason": "No hero has the tag lockpick. archmage\u0027s tags are mage, lore, healer."
+                  },
+                  {
+                    "rubric": "tracker",
+                    "ok": false,
+                    "reason": "No hero has the tag tracker. archmage\u0027s tags are mage, lore, healer."
+                  }
+                ],
+                "remainder": [
+                  "lockpick",
+                  "tracker"
+                ],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "grade",
+            "note": "The remainder after archmage is lockpick and tracker, and no single hero covers both, so I\u0027m adding thief (lockpick) and ranger (tracker) to the party and grading it.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "c4",
+                "set": [
+                  "archmage",
+                  "thief",
+                  "ranger"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "mage",
+                    "ok": true,
+                    "reason": "archmage has the tag mage, so the party has a mage."
+                  },
+                  {
+                    "rubric": "lore",
+                    "ok": true,
+                    "reason": "archmage has the tag lore, so the party has a lore."
+                  },
+                  {
+                    "rubric": "lockpick",
+                    "ok": true,
+                    "reason": "thief has the tag lockpick, so the party has a lockpick."
+                  },
+                  {
+                    "rubric": "tracker",
+                    "ok": true,
+                    "reason": "ranger has the tag tracker, so the party has a tracker."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 3,
+            "action": "commit",
+            "note": "I committed the already-graded set [archmage, thief, ranger] because its remainder is empty, so no new grade is needed.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 2,
+        "cache_hits": 0,
+        "calls": 5,
+        "cost": 0.00257614,
+        "ms": 31759
+      }
+    },
+    {
+      "case": "c5",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "none is correct"
+        },
+        {
+          "Rubric": "smallest",
+          "Ok": true,
+          "Reason": "none is correct"
+        }
+      ],
+      "measures": {
+        "cost": "none",
+        "best cost": "none"
+      },
+      "grader_accuracy": "2 of 2",
+      "trace": {
+        "task": "c5",
+        "strategy": "greedy",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "c5",
+            "reason": "No catalog entry carries a necromancer tag, so the necromancer rubric cannot be made yes by any party, and the healer rubric alone cannot complete the spec."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Following the greedy strategy, I\u0027m grading a first party with archmage, which makes the healer rubric true, so the grader can show which rubrics remain.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "c5",
+                "set": [
+                  "archmage"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The only hero, archmage, has the tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "necromancer",
+                    "ok": false,
+                    "reason": "The only hero, archmage, has the tags mage, lore, and healer. None is necromancer, so the party has no necromancer."
+                  }
+                ],
+                "remainder": [
+                  "necromancer"
+                ],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "The remainder is the necromancer rubric, and no catalog entry has a necromancer tag, so no party can satisfy it; per the strategy I commit none for c5.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 1,
+        "cache_hits": 0,
+        "calls": 3,
+        "cost": 0.0014751500000000002,
+        "ms": 17071
+      }
+    }
+  ],
+  "grader_check": [],
+  "report": "Pass: 5 of 5. smallest: 5 of 5. 19 agent calls, $0.009."
+}
