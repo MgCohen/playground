@@ -1782,6 +1782,47 @@ orch run start|show|list|step|stop        (Cli/Commands/RunCommands.cs)
 - The workflow page (E), the review and PR workflows (roadmap), the real use (C3).
 - `docs/render-design.html` is not published again to its artifact.
 
+## C4 result: stream id in envelopes and stream filters (2026-11-18)
+
+Branch `orch/c4-stream-filters`, base `orch/c2-workflow-runner` (C2, PR #41). The contract is in `docs/store.md`, section "Envelope" (the `stream` field) and "Query" (the `stream` key). The decisions are in `docs/decisions.md` (rows "C4").
+
+```
+post (C# EventStream.Post, plugin stream.ts post)
+  stream = input stream ?? registry entry of (session ?? from ?? to).Stream
+  forward: the stream of the original
+read
+  no stream field -> no stream (old envelopes, sessions with no stream)
+filter
+  StreamQuery.Stream / key stream     -> orch events --stream, GET /api/stream?stream=, /api/events, /api/stream/<view>
+  registry entry Stream               -> orch tree|status|questions --stream, GET /api/sessions?stream=, /api/decisions?stream=
+new session
+  orch new --stream, spawn_child stream, POST /api/sessions { stream }
+  no stream -> the stream of the parent (SessionRegistry.Create, S2)
+```
+
+| Item | Result |
+|---|---|
+| Envelope | Field `stream`. C#: `Event.Stream`, `PostInput.Stream`, `EventStream.StreamOf` (cache of each read entry). Plugin: `streamOf` |
+| Query | `StreamQuery.Stream`: exact id, no case. Text key `stream` |
+| CLI | `orch events --stream S`, `orch tree --stream S`, `orch status --stream S` (each session of the stream), `orch questions --stream S`. `orch status` prints the `stream` line |
+| HTTP | Key `stream` on `/api/stream`, `/api/events`, the views and `/api/stream/live`. Parameter `stream` on `/api/sessions` and `/api/decisions`. Field `stream` in the `POST /api/sessions` body |
+| Inheritance | Already in the registry (S2). New tests through `orch new` and the API body |
+
+### Test results
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 581 total: 574 pass, 7 skipped, 0 fail (before C4: 574) |
+| `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | 16 pass, 0 fail (before C4: 15) |
+| New: `StreamFilterTests` | The stream of an envelope, of a child, of a forward and of a post input; no field with no stream; an old envelope; the query and its text form; the four CLI filters; `orch new` with and with no stream; the API body; the HTTP parameters |
+| New: `backend.test.ts` | A plugin envelope has the stream of its entry, and no field when the entry has none |
+
+### Not in C4
+
+- The new session form field (stream E). The workflow page.
+- A migration of old envelopes: they keep no stream.
+- An `orch sessions` command: `orch tree --stream` is the list.
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
@@ -1810,6 +1851,7 @@ flowchart LR
 | S2 | S | Session registry on `IRepository`, store version 3. Done: see "S2 result" | After P0 and H4 |
 | G2 | G | Cloud workers (G-3, G-4) and the supervisor API with the `orch` HTTP mode (H5) | In parallel with S2 |
 | C2 | C | Workflow runner on `IRepository`, the planning workflow, the term rename in skills and tools. Done: see "C2 result". Then C3: one real stream | After S2 and F2 |
+| C4 | C | The stream id in each envelope, the `--stream` filters, the `stream` API parameter and field. Done: see "C4 result" | After C2 |
 | D2 | D | Named tunnel, service token for cloud workers | After G2, next month |
 
 Rules for these tasks:

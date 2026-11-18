@@ -24,9 +24,9 @@ public sealed class FileStore
         Root = Repositories.Location;
         Clock = clock ?? TimeProvider.System;
         Texts = new Texts(templates ?? Home.LoadTemplates(Root));
-        Events = new EventStream(Repositories, Clock, writer, Texts.Templates);
-        Renderer = new Renderer(this);
         Registry = new SessionRegistry(Repositories.SessionEntries, Clock, name => Home.Modes(Root).Files(name) is not null);
+        Events = new EventStream(Repositories, Clock, writer, Texts.Templates, Registry);
+        Renderer = new Renderer(this);
     }
 
     public IRepositories Repositories { get; }

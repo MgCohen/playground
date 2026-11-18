@@ -131,7 +131,7 @@ Both tests check the same three known values. The files have no `version` field.
 
 Rules of the `stream` field (C4):
 
-1. The writer copies `stream` from the registry entry of the session. The session is `session`, else the session of `from`, else the session of `to`. C#: `EventStream.StreamOf`. Plugin: `streamOf` (`stream.ts`) reads the entry of its own session.
+1. The writer copies `stream` from the registry entry of the session. The session is `session`, else the session of `from`, else the session of `to`. C#: `EventStream.StreamOf`, through `SessionRegistry.Get` (an `EventStream` with no registry writes no stream). Plugin: `streamOf` (`stream.ts`) reads the entry of its own session.
 2. A `stream` in `PostInput` wins over the registry.
 3. A forward keeps the `stream` of the original.
 4. A session with no stream gives an envelope with no `stream` field. An envelope from before C4 has no `stream` field too. A reader treats both as "no stream". No migration adds the field.

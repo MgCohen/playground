@@ -3,6 +3,7 @@ using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
 using Orchestrator.Core.Ordering;
+using Orchestrator.Core.Sessions;
 using Orchestrator.Core.Storage;
 using Orchestrator.Core.Templates;
 
@@ -33,6 +34,7 @@ public sealed class EventStream
     readonly TimeProvider clock;
     readonly string writer;
     readonly TemplateSet? templates;
+    readonly SessionRegistry? registry;
     readonly Lock gate = new();
     readonly List<Event> events = [];
     readonly Dictionary<string, Event> byId = [];
@@ -52,9 +54,11 @@ public sealed class EventStream
     {
     }
 
-    public EventStream(IRepositories repos, TimeProvider clock, string writer = Parties.Supervisor, TemplateSet? templates = null)
+    /// <param name="registry">The source of the stream of each envelope (<see cref="StreamOf"/>). Null: envelopes with no stream.</param>
+    public EventStream(IRepositories repos, TimeProvider clock, string writer = Parties.Supervisor, TemplateSet? templates = null, SessionRegistry? registry = null)
     {
         this.repos = repos;
+        this.registry = registry;
         this.clock = clock;
         this.writer = writer;
         this.templates = templates;
@@ -104,11 +108,11 @@ public sealed class EventStream
     /// </summary>
     public string? StreamOf(string? session)
     {
-        if (session is null) return null;
+        if (session is null || registry is null) return null;
         lock (gate)
         {
             if (streams.TryGetValue(session, out var known)) return known;
-            if (repos.SessionEntries.Read(session) is not { } entry) return null;
+            if (registry.Get(session) is not { } entry) return null;
             streams[session] = entry.Stream;
             return entry.Stream;
         }
