@@ -241,6 +241,33 @@ steps:
   </section>
 
   <section>
+    <h2>How the work moves through the graph</h2>
+<pre class="cmd">owner session
+   │ starts the run
+   ▼
+runner (deterministic: CLI and store)       run state in the store, one event for each step
+   │ 1. the current step is done
+   │ 2. each next step checks its own entry requirements
+   │ 3. one valid step  → go there
+   │    many valid steps → the agent picks one
+   │    no valid step    → the run stops and asks
+   │ 4. call the executor of the step, with the context that the step names
+   │ 5. if the definition of done is true → end, report to the owner
+   ▼
+executor of the step
+   ├─ tool    deterministic: call an API, write a file, send a report
+   ├─ ask     ask a human with the question template
+   └─ agent   one turn of a session</pre>
+    <div class="scroll"><table>
+      <tr><th>Session of an agent step</th><th>Meaning</th><th>Example</th></tr>
+      <tr><td><code>owner</code></td><td>The session that started the run</td><td>The orchestrator does the step itself</td></tr>
+      <tr><td><code>existing</code></td><td>A fixed session that already exists</td><td>Stream sessions A and B take turns</td></tr>
+      <tr><td><code>new</code></td><td>The run starts a new session for the step. A hidden background helper is a session too</td><td>A review helper for one step</td></tr>
+    </table></div>
+    <p>All three are valid. Each agent step names its session in its configuration.</p>
+  </section>
+
+  <section>
     <h2>Where a workflow lives, and how a session finds it</h2>
     <div class="scroll"><table>
       <tr><th>Point</th><th>Now</th><th>Later</th></tr>
@@ -416,6 +443,8 @@ orch sessions --stream C</pre>
       <tr><td>W3</td><td>How does a session find its workflow?</td><td>The brief names it, or the session finds it in the catalog in the middle of a chat</td></tr>
       <tr><td>W4</td><td>Which workflow comes first?</td><td>Planning</td></tr>
       <tr><td>W5</td><td>How does a workflow define approvals?</td><td>Each step: if it needs an approval, who approves, and the strategy (required, skippable, ignored). Workflows are made by configuration</td></tr>
+      <tr><td>T1</td><td>Can a workflow run across sessions?</td><td>Yes. An agent step runs in the owner, in an existing session, or in a new session. All are valid</td></tr>
+      <tr><td>T2</td><td>How does the work move to the next step?</td><td>Valid, then pick: each next step checks its entry requirements. One valid: go. Many valid: the agent picks. None: stop and ask</td></tr>
     </table></div>
   </section>
 </div>
