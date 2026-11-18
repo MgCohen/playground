@@ -246,10 +246,10 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .nav2 .ic { width: 22px; height: 22px; }
 .nav2 .it.on { color: var(--text); }
 .nav2 .it.on::after { content: ""; position: absolute; left: 50%; margin-left: -3px; bottom: 1px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-.nav2 .home { width: 62px; height: 62px; margin-top: -30px; border-radius: 50%; color: var(--on-accent); display: grid; place-items: center; position: relative;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, #ffffff), color-mix(in srgb, var(--accent) 94%, #000000));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 -3px 6px rgba(110,35,0,.14), 0 6px 12px rgba(120,45,5,.24), 0 2px 3px rgba(120,45,5,.18); }
-.nav2 .home .ic { width: 26px; height: 26px; }
+/* V5: the home ball is one image (home-ball.png: a 100 px square with the 62 px ball, its icon and its shadow). The native ball
+   of the tray and the edge tab draw the same file. */
+.nav2 .home { width: 62px; height: 62px; margin-top: -30px; border-radius: 50%; position: relative; isolation: isolate; }
+.nav2 .home::before { content: ""; position: absolute; inset: -19px; z-index: -1; background: url(home-ball.png) center / 100px 100px no-repeat; pointer-events: none; }
 .nav2 .bdg { position: absolute; top: 3px; right: 0; font: 700 9px/1 var(--f-body); background: var(--accent); color: var(--on-accent); border-radius: 999px; padding: 3px 5px; }
 
 /* ===== Mic and the new session form ===== */
@@ -285,8 +285,10 @@ code { font-family: var(--f-mono); font-size: .92em; }
 
 /* ===== M7: small motion ===== */
 /* Press: a raised button goes into the surface for 80 ms. */
-.btn, .chip, .fbtn, .pin, .wbtn, .nav2 .home, .nav2 .it, .seg button, .cfab, .dial .btn { transition: transform .08s, box-shadow .08s; }
-.btn:not(:disabled):active, .chip:active, .fbtn:active, .nav2 .home:active, .cfab:active, .dial .btn:active { transform: translateY(1px) scale(.98); box-shadow: var(--sh-carve); }
+.btn, .chip, .fbtn, .pin, .wbtn, .nav2 .home, .nav2 .it, .seg button, .cfab, .dial .btn { transition: transform .08s, box-shadow .08s, filter .08s; }
+.btn:not(:disabled):active, .chip:active, .fbtn:active, .cfab:active, .dial .btn:active { transform: translateY(1px) scale(.98); box-shadow: var(--sh-carve); }
+/* The home ball is an image: the press moves it down and makes it a little darker. */
+.nav2 .home:active { transform: translateY(1px) scale(.96); filter: brightness(.94); }
 .nav2 .it:active, .seg button:active, .pin:active, .wbtn:active { transform: scale(.92); }
 /* Ring draw: the arcs draw on first show in 900 ms. The deep ring sweeps, so each type starts after the type before it. */
 @property --draw { syntax: "<angle>"; inherits: false; initial-value: 360deg; }

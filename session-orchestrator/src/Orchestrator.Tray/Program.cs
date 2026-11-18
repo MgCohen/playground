@@ -7,7 +7,7 @@ using Orchestrator.Web;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The start of the tray app. Usage: Orchestrator.Tray.exe [--hidden] [--pin] [--selftest &lt;folder&gt; [--only notify,overlap]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
+/// The start of the tray app. Usage: Orchestrator.Tray.exe [--write-ball &lt;png&gt;] [--hidden] [--pin] [--selftest &lt;folder&gt; [--only notify,overlap]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
 /// Mock mode (the default): the window shows mock data from a temporary store.
 /// Live mode: the window shows a real store. With no store after --live, the tray uses the default store root (<see cref="Home.StoreRoot"/>). The supervisor process of that store (on the port) does the ticks; the tray only reads and posts.
 /// If no supervisor answers on the port, the tray starts one in its own process, unless --no-supervisor.
@@ -19,6 +19,12 @@ public static partial class Program
     {
         // A start from a terminal (tray.ps1) writes its output to that terminal. A shortcut start has no console.
         _ = AttachConsole(-1);
+        // V5: write the image of the home ball, then exit. The file is Orchestrator.Web/wwwroot/home-ball.png.
+        if (Value(args, "--write-ball") is { } ballFile)
+        {
+            EdgeTab.WriteBall(Path.GetFullPath(ballFile));
+            return 0;
+        }
         var at = Array.IndexOf(args, "--selftest");
         var selfTest = at >= 0 ? Path.GetFullPath(at + 1 < args.Length ? args[at + 1] : "selftest") : null;
         TrayApp? tray = null;

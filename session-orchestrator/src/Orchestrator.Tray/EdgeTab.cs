@@ -492,15 +492,54 @@ public sealed class EdgeTab : LayeredForm
         g.Restore(state);
     }
 
-    /// <summary>The home ball: the look of the home button of the app (app.css .nav2 .home), with the home icon.</summary>
+    /// <summary>
+    /// V5: the home ball is one image, <c>Orchestrator.Web/wwwroot/home-ball.png</c>. The home button of the page shows it, and the
+    /// native ball and the edge tab draw it here, so the three are the same pixels. The image is a square of
+    /// <see cref="BallBox"/> × the ball size: the ball in the center and its shadow around it.
+    /// </summary>
     public static void Ball(Graphics g, float cx, float cy, float d)
     {
-        var rect = new RectangleF(cx - d / 2, cy - d / 2, d, d);
-        // The drop shadow under the ball.
-        for (var i = 3; i >= 1; i--)
+        var box = d * BallBox;
+        var state = g.Save();
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        g.DrawImage(BallImage.Value, cx - box / 2, cy - box / 2, box, box);
+        g.Restore(state);
+    }
+
+    /// <summary>The side of the image square for a ball of size 1: 100 CSS px for the 62 px ball.</summary>
+    public const float BallBox = 100f / 62f;
+
+    static readonly Lazy<Bitmap> BallImage = new(() =>
+    {
+        using var stream = typeof(EdgeTab).Assembly.GetManifestResourceStream("home-ball.png") ?? throw new InvalidOperationException("The resource home-ball.png is missing.");
+        return new Bitmap(stream);
+    });
+
+    /// <summary>Writes the image of the home ball (the source of <see cref="Ball"/> and of the page button) at 3× scale.</summary>
+    public static void WriteBall(string png)
+    {
+        const int scale = 3;
+        var size = (int)Math.Round(100f * scale);
+        using var bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(bitmap))
         {
-            using var sh = new SolidBrush(Color.FromArgb(18, 120, 45, 5));
-            var k = i * d * .04f;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.Clear(Color.Transparent);
+            DrawBall(g, size / 2f, size / 2f, 62f * scale);
+        }
+        bitmap.Save(png, ImageFormat.Png);
+    }
+
+    /// <summary>The drawing of the image of the home ball. Only <see cref="WriteBall"/> uses it.</summary>
+    static void DrawBall(Graphics g, float cx, float cy, float d)
+    {
+        var rect = new RectangleF(cx - d / 2, cy - d / 2, d, d);
+        // The drop shadow under the ball: 14 thin steps to 12 % of the ball outside it, so the edge fades with no bands.
+        for (var i = 14; i >= 1; i--)
+        {
+            using var sh = new SolidBrush(Color.FromArgb(5, 120, 45, 5));
+            var k = i * d * .12f / 14;
             g.FillEllipse(sh, rect.X - k, rect.Y - k + d * .08f, d + 2 * k, d + 2 * k);
         }
         using (var fill = new LinearGradientBrush(rect, Mix(Accent, Color.White, .08), Mix(Accent, Color.Black, .06), LinearGradientMode.Vertical))
