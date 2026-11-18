@@ -10,7 +10,7 @@ public static partial class SelfTest
         var checks = new List<Check>();
         const string PathText = "[...document.querySelectorAll('.hd .path > *')].map(e => e.textContent.trim()).join(' ')";
 
-        // T3: Sessions › a session › Stream › a document. With three parents, the first one becomes "…".
+        // T3: Sessions › a session › Stream › a document. With two or more parents, the first ones become "…" (V7).
         await Home(web, "sessions");
         await web.ExecuteScriptAsync($"{Go}(document.querySelector('a.srow').getAttribute('href'))");
         await Task.Delay(900);
@@ -27,7 +27,7 @@ public static partial class SelfTest
         await web.ExecuteScriptAsync("[...document.querySelectorAll('.hd .path .cr')].at(-1).click()");
         await Task.Delay(900);
         var back = await Eval<string>(web, PathText);
-        var ok = two.StartsWith("Sessions ›") && three.StartsWith("Sessions ›") && three.EndsWith("› Stream") && four.StartsWith("… ›") && back == three;
+        var ok = two.StartsWith("Sessions ›") && three.StartsWith("… ›") && three.EndsWith("› Stream") && four.StartsWith("… ›") && back == three;
         checks.Add(new Check("t3-path", ok, $"session \"{two}\"; locked stream \"{three}\"; document \"{four}\"; back \"{back}\"", $"{twoPng};{fourPng}"));
 
         // T4: pin, minimize and close are always in the header. Close hides the widget; the tray icon shows it again.

@@ -60,6 +60,9 @@ public sealed record CardView(Card Card, string Type, CardGroup Group, string La
 /// <summary>The fixed parts of the UI: card types, kinds, icons and times.</summary>
 public static class Ui
 {
+    /// <summary>V7: the size class of a title block: "long" for a text of more than 90 characters (the body style).</summary>
+    public static string TitleSize(string? title) => title is { Length: > 90 } ? "long" : "";
+
     public static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
     /// <summary>The card type sets the labels and the acts of the right and the left action.</summary>

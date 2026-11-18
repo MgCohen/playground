@@ -2041,6 +2041,75 @@ The run showed that a type does one thing: it selects the agent and the skills o
 
 So a "session kind" today is the pair of role and type. The role says what the session does in a run. The type says which agent runs it. The run did not use a step of a type (`{ "type": name }`), because the planning workflow uses only `owner`. A type with tool limits or its own behavior does not exist. Recommendation: keep the type as a start setting of the provider, and do not add a separate kind field.
 
+## V: Visual fixes in the tray and web UI (2026-11-18)
+
+V fixes the visual issues that the user found in the app of PR #45. Branch `orch/v-visual-fixes`, base `orch/c5-c3-findings`. Tray self-test: 59 of 59 PASS. `dotnet test --solution Orchestrator.slnx`: 781 tests, 0 failed. The checks of V1, V2 and V4 also ran with `--live` on a copy of the demo store of session L (port 7800, no supervisor, `ORCH_IMPORT=0`, fake `ORCH_CLAUDE`).
+
+### Issues
+
+| # | Issue | Cause | Fix | State |
+|---|---|---|---|---|
+| V1 | Toast ghost: an empty blurred box stays after the peek bubble fades | The edge tab clock ran on the UI thread of the widget. After each store change, that thread counts the cards (26 to 43 ms) and loads the Blazor views. The fade moved one fixed step for each tick, so each stall made it longer | The edge tab has its own UI thread (`EdgeTab.Start`). The extend and the bubble move by elapsed time. `TrayApp` merges a burst of store changes into one count | Fixed |
+| V2 | Ring jitter: the ring spin does not move smoothly | The same stalls: frame gaps of up to 110 ms in the 800 ms spin | The same thread. A motion paces its frames on `DwmFlush` (one frame for each display refresh) | Fixed |
+| V3 | Test trays on the screen of the user, over the trays of other sessions | The self-test used the home places, where the user's tray and the demo tray of L are. Real mouse input then went to the other window | The self-test uses test places: the widget at the top left, the edge tab high on the right edge. A probe puts a fixed backdrop behind the measured area | Fixed |
+| V4 | The widget and the edge tab show at the same time | A store change during the grow slid the tab in, and no code slid it out after the grow | While the widget shows or grows, a change updates only the counts. During the shrink, the notice waits for the hide. `Showing` always slides the tab out | Fixed |
+| V5 | The home button has depth at the pop in, and looks flat after the page loads | Two drawings: the native ball (GDI+) and the page button (CSS) | One image, `Orchestrator.Web/wwwroot/home-ball.png`. The page button, the native ball and the edge tab show the same file. `Orchestrator.Tray --write-ball <png>` writes it | Fixed |
+| V6 | The small rings of the stream rows draw again at each tab change | Each tab change makes new row elements, and each ring plays its 900 ms draw | The end of the first ring draw sets `drawn` on the root (`motion.js`); `app.css` stops the draw after that | Fixed |
+| V7 | The cards and the card pages look badly formatted | Mostly the layout of the document page; four defects are data. See "V7 review" | See "V7 review" | Layout fixed; data sent to session D |
+
+### Measured result (store copy, one store post each 250 ms)
+
+| Check | Before | After |
+|---|---|---|
+| V2: frames in the 800 ms spin | 41 | 60 |
+| V2: worst frame gap | 102.5 ms | 23.4 ms |
+| V1: bubble side clear after the fade start | 473 ms | 269 ms |
+| V4: samples with both forms at rest | 24 | 0 |
+| V5: mean color difference in the ball (0 to 255) | 5.7, with 8 % of the pixels far off | 0.6, with 0 % |
+
+Proof (`docs/screens/`): `tray-v1-fade-live-before.png`, `tray-v1-fade-live-after.png`, `tray-v2-spin-live-before.png`, `tray-v2-spin-live-after.png`, `tray-v4-show-live-before.png`, `tray-v4-show-live-after.png` (store copy); `tray-v1-fade-before.png`, `tray-v1-fade-after.png`, `tray-v2-spin-before.png`, `tray-v2-spin-after.png`, `tray-v4-show-before.png`, `tray-v4-show-after.png`, `tray-v5-ball-before.png`, `tray-v5-ball-after.png`, `tray-v6-ring-before.png`, `tray-v6-ring-after.png` (mock store).
+
+### The threads of the tray
+
+```mermaid
+flowchart LR
+    Store[Store change] --> Hub[StreamHub.Changed]
+    Hub --> UI[Widget UI thread: count, Blazor loads]
+    UI -->|SetCounts, SlideIn, Peek| Tab[Edge tab thread: clock, frames]
+    Tab -->|OpenRequested| UI
+```
+
+### Self-test groups
+
+`--selftest <folder> --only <groups>` runs a part of the self-test at the test places. Groups: `notify` (V1, V2, with a store load of `ORCH_PROBE_LOAD_MS`, default 100 ms), `overlap` (V4), `ball` (V5), `drag`, `edge` (N1, N2) and `cards` (pictures of the cards and of two stream rows of each kind, V7).
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| V-F1 | `Copy-Item` keeps the time of the file, so MSBuild did not compile a copied source file again. One test run used an old build | Use `cp` or touch the file before a build |
+| V-F2 | The hidden Blazor views still load on the UI thread of the widget after each store change. They do not stop the edge tab, which has its own thread | Open: load the views only while the widget shows |
+| V-F3 | The demo tray of session L runs an old build, so it still shows V4 | No change: L updates its build |
+
+### V7 review
+
+Source: 23 pictures of a copy of the live store (`--live <copy> --port 7802`, `ORCH_IMPORT=0`, fake `ORCH_CLAUDE`), group `cards`. The inbox of the copy was empty, so the pictures show the stream and twelve document pages.
+
+| # | Defect | Class | Fix |
+|---|---|---|---|
+| 1 | A long summary shows in the headline style and fills the first screen | Layout | A title of more than 90 characters uses the body style (`.q.long`, `Ui.TitleSize`) |
+| 3 | Text fields show raw Markdown: backticks, `- ` and `1.` lines | Layout | `Markdown.cs`: paragraphs, line breaks, lists, code and bold, after an HTML encode |
+| 4 | The header path cuts each parent to 2 to 4 letters | Layout | "…" and only the last parent, up to 12 characters (`PathTrail.Shown`) |
+| 5 | Long option chips have pill corners | Layout | Chips of a block have 16 px corners |
+| 6 | The pill says "closed" next to "State: done" | Layout | The pill shows only while the document waits |
+| 7, 8 | A fact value (a default, a folder) is cut | Layout | Text and code facts wrap (`.fv`) |
+| 9 | The question under an answer has no gap | Layout | The second line of a title block has an 8 px gap |
+| 10 | The page bar covers lines during a scroll | Layout | No change: at the end of the scroll, the last block ends above the bar |
+| 11 to 16, 20 | Breaks in identifiers, full URLs as link labels, a small caption under the title, grey well blocks, empty space, "you" and "user" for the same party, "55 %" | Layout | Open: low |
+| 2, 17, 18, 19 | Summaries too long for a title, a raw voice transcript, a "Root:" prefix, a raw tool id, paragraphs as Done items | Data | Sent to session D through the root |
+
+Proof (`docs/screens/`): `tray-v7-page-1-before.png`, `tray-v7-page-1-after.png`, `tray-v7-page-12-before.png`, `tray-v7-page-12-after.png`, `tray-v7-page-6-end-before.png`, `tray-v7-page-6-end-after.png`.
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
