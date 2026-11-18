@@ -1114,7 +1114,8 @@ Design page: `docs/stream-design.html` (https://claude.ai/artifact/JErtGVNeiAxtU
 - Each session decides if it starts children, and how deep. There is no top root.
 - The creator sets the **kind** of a session: `general` (default) or `orchestrator`. Its effect is open.
 - Scope: orchestration only (create, communicate, control, split). The kinds of work, the review workflow and the PR workflow are on the roadmap.
-- A **workflow** is a sequence of steps, with loops. Each step defines its instructions, input, output, actor (agent or human), messages and approval (who, and the strategy: required, skippable, ignored). Workflows are made by configuration.
+- A **workflow** is a graph of steps. It has one entry step and a definition of done, but no fixed exit step. Loops are allowed. The work ends when a step finds that the definition of done is true.
+- Each **step** is a node with its own configuration: entry and exit conditions, instructions, input, output, templates, actor (agent or human), messages, approval (who, and the strategy: required, skippable, ignored) and the next steps with their conditions. Workflows are made by configuration.
 - For now a workflow is a Markdown file or a skill. Later the template store holds it, and a session gets it on demand.
 - The brief names the workflow, or the session finds it in the catalog in the middle of a chat.
 - The first workflow is **planning**.

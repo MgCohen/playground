@@ -120,7 +120,7 @@ dl.facts dd { margin: 0; min-width: 0; max-width: 70ch; }
 <header>
   <div class="eyebrow">Session orchestrator · design C1</div>
   <h1>Streams</h1>
-  <p class="summary">A stream is a group of work. It is a <code>stream</code> id on sessions and events, not a store record. Each session decides if it works alone or starts children, and how deep. The creator of a session sets its kind. A workflow is a sequence of steps, with loops. Each step defines its input, output, actor and approval. The first workflow is planning. Status: all questions have answers. The design waits for the approval of the user.</p>
+  <p class="summary">A stream is a group of work. It is a <code>stream</code> id on sessions and events, not a store record. Each session decides if it works alone or starts children, and how deep. The creator of a session sets its kind. A workflow is a graph of steps with one entry step and a definition of done. Each step is a node with its own configuration. Loops are allowed. The first workflow is planning. Status: all questions have answers. The design waits for the approval of the user.</p>
 </header>
 
 <nav role="tablist" aria-label="Sections">
@@ -189,7 +189,7 @@ flowchart TD
 <!-- WORKFLOWS -->
 <div class="panel" id="workflows">
   <section>
-    <h2>A workflow is a sequence of steps, with loops</h2>
+    <h2>A workflow is a graph of steps</h2>
     <div class="box"><pre class="mermaid">
 flowchart TD
   S1[1 Read the goal and the docs] --> S2[2 Ask one question]
@@ -201,21 +201,26 @@ flowchart TD
   S6 -->|change| S2
   S6 -->|approve| S7[7 Propose the next tasks]
     </pre></div>
-    <p>This is the draft of the planning workflow, the first workflow. It follows the work of this C1 session.</p>
+    <p>The work enters at the entry step. Each step moves the work to a next step, by a condition. The graph can loop. The work ends when a step finds that the definition of done is true. There is no fixed exit step.</p>
+    <p>The graph above is the draft of the planning workflow, the first workflow. It follows the work of this C1 session.</p>
   </section>
 
   <section>
-    <h2>Each step defines its parts</h2>
+    <h2>Each step is a node with its own configuration</h2>
     <div class="scroll"><table>
       <tr><th>Field</th><th>Meaning</th><th>Example</th></tr>
       <tr><td><code>instructions</code></td><td>What to do in the step</td><td>"Ask one question in the full format"</td></tr>
+      <tr><td><code>entry</code></td><td>The condition to start the step</td><td>An open question exists</td></tr>
       <tr><td><code>input</code></td><td>What the step needs</td><td>The brief, an open question</td></tr>
       <tr><td><code>output</code></td><td>What the step makes</td><td>A decision row, a spec</td></tr>
+      <tr><td><code>exit</code></td><td>The condition to leave the step</td><td>The answer is recorded</td></tr>
+      <tr><td><code>templates</code></td><td>The templates that the step uses</td><td><code>question</code>, <code>report</code></td></tr>
       <tr><td><code>actor</code></td><td>Who does the step: an agent or a human</td><td><code>human</code></td></tr>
       <tr><td><code>approval</code></td><td>If the step needs an approval, and who gives it</td><td>The user, the orchestrator</td></tr>
       <tr><td><code>strategy</code></td><td>How the approval works</td><td><code>required</code>, <code>skippable</code>, <code>ignored</code></td></tr>
       <tr><td><code>messages</code></td><td>When the step sends a message, and to whom</td><td>A report to the orchestrator</td></tr>
-      <tr><td><code>next</code></td><td>The next step, or a loop back by the output</td><td>change → step 2</td></tr>
+      <tr><td><code>next</code></td><td>The next steps, each with a condition. A loop goes back to an earlier step</td><td>change → step 2</td></tr>
+      <tr><td><code>done</code></td><td>If this step can end the work: it checks the definition of done of the workflow</td><td>Step 7: the spec is approved</td></tr>
     </table></div>
     <p>A step can start a child session that runs its own workflow. So a workflow can run in one session or across a tree of sessions.</p>
   </section>
@@ -406,7 +411,7 @@ orch sessions --stream C</pre>
       <tr><td>Q6</td><td>Where do task PRs merge?</td><td>The parent decides. Roadmap: PR workflow</td></tr>
       <tr><td>Q7</td><td>Where is a stream recorded?</td><td>Nowhere. A <code>stream</code> id on sessions and events</td></tr>
       <tr><td>Q8</td><td>How does the user approve?</td><td>It depends on the type of work: in the orchestrator or in the session that does the work</td></tr>
-      <tr><td>W1</td><td>What is a workflow?</td><td>A sequence of steps, with loops. Each step has instructions, input, output, actor and messages</td></tr>
+      <tr><td>W1</td><td>What is a workflow?</td><td>A graph of steps: one entry step, a definition of done, loops allowed. Each step is a node with its own configuration</td></tr>
       <tr><td>W2</td><td>Where is a workflow defined?</td><td>Now: Markdown or a skill. Later: the template store, on demand</td></tr>
       <tr><td>W3</td><td>How does a session find its workflow?</td><td>The brief names it, or the session finds it in the catalog in the middle of a chat</td></tr>
       <tr><td>W4</td><td>Which workflow comes first?</td><td>Planning</td></tr>
