@@ -40,6 +40,7 @@ public sealed class GrowShadow : LayeredForm
     /// <summary>The shown part of the widget: its bottom <paramref name="height"/> pixels.</summary>
     public void Track(Form owner, int height)
     {
+        if (!Visible) Faults.Trace($"shadow track: show at height {height}, owner visible {owner.Visible}, state {owner.WindowState}");
         // V20: no shadow for a widget that is hidden or minimized.
         if (!owner.Visible || owner.WindowState == FormWindowState.Minimized)
         {
@@ -91,6 +92,12 @@ public sealed class GrowShadow : LayeredForm
         using var fill = new SolidBrush(Fill);
         g.FillPath(fill, path);
     });
+
+    protected override void OnVisibleChanged(EventArgs e)
+    {
+        base.OnVisibleChanged(e);
+        Faults.Trace($"shadow visible {Visible}");
+    }
 
     protected override void Dispose(bool disposing)
     {

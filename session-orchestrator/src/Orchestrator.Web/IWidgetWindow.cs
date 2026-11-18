@@ -12,6 +12,9 @@ public interface IWidgetWindow
 
     void SetPinned(bool pinned);
 
+    /// <summary>The label of a named tray instance (the name and the build), shown in the header; null for no label.</summary>
+    string? Label => null;
+
     /// <summary>T4: the widget goes into its minimized form (the edge tab), which stays on the screen.</summary>
     void Minimize();
 

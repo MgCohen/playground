@@ -19,6 +19,9 @@ public sealed class WidgetWindow : IWidgetWindow
 
     public bool Pinned => Form?.Pinned ?? false;
 
+    /// <summary>The label of a named instance (--instance), for example "v · 838b208"; null for the normal tray.</summary>
+    public string? Label { get; set; }
+
     public event Action? PinnedChanged;
 
     public void SetPinned(bool pinned)

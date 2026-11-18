@@ -86,6 +86,7 @@ public sealed partial class WidgetForm : Form
     /// </summary>
     public void ShowWidget()
     {
+        Faults.Trace($"widget show: visible {Visible}, closing {closing}, state {WindowState}");
         if (!Visible || closing)
         {
             var run = ++sequence;
@@ -127,6 +128,7 @@ public sealed partial class WidgetForm : Form
     /// </summary>
     public void HideWidget()
     {
+        Faults.Trace($"widget hide: visible {Visible}, closing {closing}, minimizing {minimizing}");
         if (!Visible || closing) return;
         var run = ++sequence;
         closing = true;
@@ -225,6 +227,7 @@ public sealed partial class WidgetForm : Form
     /// <summary>T4: the widget shrinks and hides, then its minimized form (the edge tab, N1) slides in.</summary>
     public void Minimize()
     {
+        Faults.Trace($"widget minimize: visible {Visible}, closing {closing}");
         if (!Visible || closing) return;
         minimizing = true;
         HideWidget();
@@ -277,6 +280,7 @@ public sealed partial class WidgetForm : Form
 
     void BeginGrow(bool open)
     {
+        Faults.Trace($"grow start: open {open}, visible {Visible}");
         closing = !open;
         GrowFrames.Clear();
         Frame(false);
@@ -303,6 +307,7 @@ public sealed partial class WidgetForm : Form
             return;
         }
         grow.Stop();
+        Faults.Trace($"grow end: closing {closing}, minimizing {minimizing}");
         if (closing)
         {
             closing = false;
@@ -465,12 +470,14 @@ public sealed partial class WidgetForm : Form
     protected override void OnVisibleChanged(EventArgs e)
     {
         base.OnVisibleChanged(e);
+        Faults.Trace($"widget visible {Visible}");
         if (!Visible) shadow.Hide();
     }
 
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
+        Faults.Trace($"widget resize: state {WindowState}, size {Size}");
         if (WindowState == FormWindowState.Minimized) shadow.Hide();
         else if (Visible && !Growing && !shadow.Visible && IsHandleCreated) shadow.Track(this, Height);
     }

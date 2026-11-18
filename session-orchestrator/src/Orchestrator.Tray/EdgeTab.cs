@@ -150,6 +150,7 @@ public sealed class EdgeTab : LayeredForm
     public void SlideIn()
     {
         if (Elsewhere(SlideIn)) return;
+        Faults.Trace("side badge: slide in");
         Place();
         if (!Visible) Show();
         Animate(1, SlideInMs, null);
@@ -159,6 +160,7 @@ public sealed class EdgeTab : LayeredForm
     public void SlideOut(Action? then = null)
     {
         if (Elsewhere(() => SlideOut(then))) return;
+        Faults.Trace($"side badge: slide out, visible {Visible}");
         if (!Visible)
         {
             then?.Invoke();

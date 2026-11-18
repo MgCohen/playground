@@ -21,6 +21,11 @@
             <h1 class="cur">@Title</h1>
         </nav>
     }
+    @if (window?.Label is { } label)
+    {
+        @* A named tray instance (a test tray next to another tray) shows its name and build. *@
+        <span class="inst mono" title="Tray instance and build">@label</span>
+    }
     @if (window is not null)
     {
         <span class="wb" @onmousedown:stopPropagation>

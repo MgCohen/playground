@@ -18,6 +18,26 @@ public static class Faults
     /// <summary>The first exception, as text, or null.</summary>
     public static string? First { get; private set; }
 
+    /// <summary>V20: true for a named instance: each state step of the widget, its shadow and the side badge goes to the log.</summary>
+    public static bool Tracing { get; set; }
+
+    /// <summary>One state step, when <see cref="Tracing"/> is on.</summary>
+    public static void Trace(string step)
+    {
+        if (!Tracing || Log is null) return;
+        lock (Gate)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(Log)!);
+                File.AppendAllText(Log, $"{DateTimeOffset.Now:HH:mm:ss.fff} [{Environment.CurrentManagedThreadId}] {step}{Environment.NewLine}");
+            }
+            catch (Exception io) when (io is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+
     public static void Add(Exception? e, string where)
     {
         var text = $"{DateTimeOffset.Now:O} {where} (thread {Environment.CurrentManagedThreadId} {Thread.CurrentThread.Name}): {e}";

@@ -45,6 +45,7 @@ public static partial class Program
 
         // V19: an unhandled exception goes to the log, with no dialog of Windows Forms. The tray keeps running.
         Faults.Log = selfTest is not null ? Path.Combine(selfTest, "exceptions.log") : Path.Combine(data, named is null ? "tray.log" : $"tray.{named}.log");
+        Faults.Tracing = named is not null && selfTest is null;
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
         Application.ThreadException += (_, e) => Faults.Add(e.Exception, "UI thread");
         AppDomain.CurrentDomain.UnhandledException += (_, e) => Faults.Add(e.ExceptionObject as Exception, "process");
@@ -61,6 +62,16 @@ public static partial class Program
         if (live is not null) StartSupervisor(store.Root, port, start: !args.Contains("--no-supervisor"));
         Console.WriteLine($"orch tray: {label}");
         using var services = Services(store, live is null ? MockStore.MockPolicy : store.Policy, ticks: live is null);
+        // A named instance shows its name and build in the header and in the icon tip.
+        if (named is not null)
+        {
+            var build = typeof(Program).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion is { } v && v.Contains('+')
+                ? v[(v.IndexOf('+') + 1)..] is { Length: >= 7 } sha ? sha[..7] : v
+                : File.GetLastWriteTime(typeof(Program).Assembly.Location).ToString("MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+            services.GetRequiredService<WidgetWindow>().Label = $"{named} · {build}";
+            label = $"{named} · {build}, {label}";
+        }
         tray = new TrayApp(services, label, show: selfTest is not null || !args.Contains("--hidden"), pinned: selfTest is not null || args.Contains("--pin"),
             placeFile: selfTest is null ? Path.Combine(data, named is null ? "place.json" : $"place.{named}.json") : SelfTest.FreshPlaceFile(selfTest));
         var code = 0;
