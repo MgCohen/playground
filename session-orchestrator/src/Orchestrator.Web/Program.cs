@@ -26,6 +26,7 @@ builder.Services.AddSingleton(services => new SupervisorOptions(4, 3, 2, Home.Lo
 });
 builder.Services.AddSingleton<Supervisor>();
 builder.Services.AddSingleton<Board>();
+builder.Services.AddSingleton(services => new DemoPane(services.GetRequiredService<FileStore>(), provider, port, () => services.GetRequiredService<Supervisor>().Tick()));
 builder.Services.AddSingleton(services => new Orchestrator.Store.Remote.StoreService(services.GetRequiredService<FileStore>().Repositories));
 builder.Services.AddScoped<PathTrail>();
 builder.Services.AddSingleton<StreamHub>();

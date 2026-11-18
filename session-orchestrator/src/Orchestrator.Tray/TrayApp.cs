@@ -34,10 +34,20 @@ public sealed partial class TrayApp : ApplicationContext
         {
             if (e.Button == MouseButtons.Left) Form.Toggle();
         };
-        Tab = new EdgeTab(placeFile is null ? null : Path.Combine(Path.GetDirectoryName(placeFile)!, "edge-tab.txt"));
-        Tab.OpenRequested += () => Tab.SlideOut(Form.ShowWidget);
+        Tab = EdgeTab.Start(placeFile is null ? null : Path.Combine(Path.GetDirectoryName(placeFile)!, "edge-tab.txt"));
+        // The tab runs on its own thread: its events come back to the thread of the widget.
+        Tab.OpenRequested += () => Tab.SlideOut(() => Form.BeginInvoke(Form.ShowWidget));
         Form.Minimized += Tab.SlideIn;
-        Form.Showing += () => { if (Tab.OnScreen) Tab.SlideOut(); };
+        // Always: a slide in that waits on the thread of the tab is not on the screen yet, but it runs before this slide out (V4).
+        Form.Showing += () => Tab.SlideOut();
+        // A notice that came during the shrink shows when the widget is hidden (V4).
+        Form.Hidden += () =>
+        {
+            if (waiting is not { } notice) return;
+            waiting = null;
+            Notify(notice);
+        };
+        Store = services.GetRequiredService<Orchestrator.Store.FileStore>();
         board = services.GetRequiredService<Orchestrator.Web.Board>();
         hub = services.GetRequiredService<Orchestrator.Web.StreamHub>();
         hub.Changed += Changed;
@@ -52,13 +62,25 @@ public sealed partial class TrayApp : ApplicationContext
     /// <summary>N1: the minimized form of the widget at the right edge of the screen.</summary>
     public EdgeTab Tab { get; }
 
+    /// <summary>The store that the tray shows. The self-test writes to it.</summary>
+    public Orchestrator.Store.FileStore Store { get; }
+
     readonly Orchestrator.Web.Board board;
     readonly Orchestrator.Web.StreamHub hub;
 
+    int changing;
+
+    // A burst of store changes gives one count: the first change waits a short time, the others in that time do nothing.
     void Changed()
     {
         if (exiting || Form.IsDisposed || !Form.IsHandleCreated) return;
-        Form.BeginInvoke(() => Notify(Counts()));
+        if (Interlocked.Exchange(ref changing, 1) == 1) return;
+        _ = Task.Delay(250).ContinueWith(_ =>
+        {
+            Interlocked.Exchange(ref changing, 0);
+            if (exiting || Form.IsDisposed) return;
+            Form.BeginInvoke(() => Notify(Counts()));
+        }, TaskScheduler.Default);
     }
 
     /// <summary>
@@ -67,14 +89,24 @@ public sealed partial class TrayApp : ApplicationContext
     /// </summary>
     public void Notify((WaitCounts Counts, string? Title, string? Sub) next)
     {
-        if (Form.Visible && !Form.Growing)
+        // One form at a time (V4): while the widget shows or grows, the tab stays hidden and gets only the counts.
+        if (Form.Visible && !Form.Hiding)
         {
+            waiting = null;
             Tab.SetCounts(next.Counts);
+            return;
+        }
+        // While the widget shrinks, the notice waits for the end of the hide.
+        if (Form.Hiding)
+        {
+            waiting = next;
             return;
         }
         if (next.Counts.Total > 0 && !Tab.OnScreen) Tab.SlideIn();
         Tab.SetCounts(next.Counts, next.Title, next.Sub);
     }
+
+    (WaitCounts Counts, string? Title, string? Sub)? waiting;
 
     /// <summary>The waiting cards by type, and the newest one for the peek bubble.</summary>
     public (WaitCounts Counts, string? Title, string? Sub) Counts()
@@ -101,7 +133,7 @@ public sealed partial class TrayApp : ApplicationContext
         if (exiting) return;
         exiting = true;
         Form.Exiting = true;
-        Tab.Hide();
+        Tab.Stop();
         Form.Close();
         icon.Visible = false;
         ExitThread();
@@ -112,7 +144,7 @@ public sealed partial class TrayApp : ApplicationContext
         if (disposing)
         {
             hub.Changed -= Changed;
-            Tab.Dispose();
+            Tab.Stop();
             icon.Dispose();
             Form.Dispose();
             dot.Dispose();

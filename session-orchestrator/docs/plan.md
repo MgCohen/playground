@@ -2041,6 +2041,48 @@ The run showed that a type does one thing: it selects the agent and the skills o
 
 So a "session kind" today is the pair of role and type. The role says what the session does in a run. The type says which agent runs it. The run did not use a step of a type (`{ "type": name }`), because the planning workflow uses only `owner`. A type with tool limits or its own behavior does not exist. Recommendation: keep the type as a start setting of the provider, and do not add a separate kind field.
 
+## L live demo (2026-11-18)
+
+`tools/demo/demo.ps1` started a clean live demo from the branch `orch/c5-c3-findings`: one root with a `planning` run and three children, real `claude` on `haiku`, store `%LOCALAPPDATA%\orch\demo-store\store`, port 7791. The first full turns took about 30 s.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| The script runs from a clean start | Pass. It stops the old demo, publishes the stack, makes a new store and starts all processes |
+| Question cards | Pass. Two open questions: the child ("Which greeting word do we put in hello.txt?") and the root, from the step `ask` of the run ("Which language do we use in greeting.txt?") |
+| Report | Pass. `Demo child: report done` reported `done`: "report.txt is written." |
+| Update | Pass. `Demo child: send an update` sent "Half of the check list is done." (50 %) |
+| Session tree | Pass. `orch tree` and `/api/sessions` show the root and its three children |
+| Workflow run | Pass. `planning-586ab943` waits at the step `answer`. History: read, ask |
+| No failure flood | Pass. The messages to the user are the 2 questions, the report and the update. No "failed", "does not respond" or stuck message |
+| Model | Pass. The transcripts show `claude-haiku-5-5` for each turn |
+| Tray | Pass. The tray runs in live mode on the demo store and port |
+
+### Findings
+
+| Id | Finding | Proposal | State |
+|---|---|---|---|
+| L-F1 | The supervisor gives its full environment to each `claude` turn. A supervisor that starts from a Claude session gives the turns `CLAUDE_CODE_SESSION_ID`, `CLAUDE_CODE_HOST_SESSION_ID`, `CLAUDE_CODE_AGENT=orch:worker`, `CLAUDE_CODE_PLUGIN_DIRS` and the messaging socket of that session. In the first demo run the plugin wrote `appId = local_ab9acae5-...` (the app id of the host session) into the demo root | The provider removes the engine variables of the host from the turn environment, and sets only its own | Open (app code, owner D). The demo script removes the variables before the start |
+| L-F2 | With `haiku` and only the agent text of `orchestrator`, the root ran `orch run start` and ended its turn. The run stayed at the step `read`, with no stuck question | None in the app. The demo goal names each `orch run` command | Workaround in the demo |
+| L-F3 | The supervisor has no option for the model or the effort of a turn | Add a model and effort setting to the provider, if a cheap test run is a use case | Open, for review. The demo uses `ANTHROPIC_MODEL` |
+| L-F4 | The tray allows one normal instance for each user. The demo tray cannot start while the installed tray or another live tray runs | None. The script prints the tray command | No change |
+| L-F5 | Windows PowerShell 5.1 breaks a native argument with quotes or line breaks, and makes a native stderr line an error | None in the app | The script puts goals and bodies in files and runs natives with a helper |
+| L-F6 | A copied session names its real folder in `work.cwd` and `work.repo`. An archive in the demo UI of a copy runs `git worktree remove` on that real folder | The environment feature of issue #47 must guard this. Until then, a copy must point each session to a scratch folder | Workaround in the demo: `-FromLive` rewrites both fields |
+| L-F7 | With the fake provider, `orch tree` shows `new` for each session, but `/api/sessions` shows `idle` and `done`. `orch tree` reads `status.json`, and only the plugin writes it | `orch tree` uses the lifecycle state when `status.json` is absent | Open (app code, owner D) |
+| L-F8 | `orch store migrate --force` cannot copy a store that live sessions write: new files arrive during the copy, so the check finds differences and keeps no copy | None for the real migration (it needs a stopped store). A demo copy uses a snapshot | Workaround in the demo: `robocopy`, then `orch store upgrade --force` |
+
+### Fake and live copy (2026-11-18, on the branch of D)
+
+The script moved onto `orch/d-data-upgrade`, which has the fake provider of D (`ORCH_PROVIDER=fake`, `ORCH_FAKE`) and `orch store upgrade`.
+
+| Check | Result |
+|---|---|
+| `-Fake` tree (port 7793) | Pass. 2 questions, 1 report, 1 update, and `planning-d4a45ba3` waits at the step `answer` on the root question. History: read, ask, answer. No model call, 0 failure messages |
+| `-FromLive` copy (port 7792) | Pass. `robocopy` of the 58 sessions (30 MB) of `session-orchestrator\store`, upgrade to version 3 (58 registry entries). No copied `session.json` names a real folder |
+| The supervisor on the copy | Pass. In the first minutes: 81 new envelopes, all internal (72 state detects, 5 lease releases, 1 fake turn). No message to the user. `/api/sessions` shows the 7 active sessions |
+| The live store did not change | Pass. The script only reads it. The copy has its own folder `%LOCALAPPDATA%\orch\demo-live` |
+
 ## D result: store upgrade and message content (2026-11-18)
 
 Session D fixed the data side that the user found strange at the top of the stack (PR #45). Branch `orch/d-data-upgrade`, base `orch/c5-c3-findings`.
@@ -2143,6 +2185,101 @@ Findings:
 - R-F12: a console start in a folder that is not trusted waits at the trust prompt, and no session can answer it. A worktree of a trusted repository is trusted. Fallback: after `ImportWait` with no lease, the supervisor stops the console process and starts the child with a print turn.
 - R-F13: a test supervisor needs `ORCH_BIN` for its build of `orch`: the plugin of a live process calls the `orch` on `PATH` (R-22 failed first with the installed `orch`, which has no `watch`).
 - R-F4: so a session started by the supervisor needs `set_remote_control`. Only a live app session has that tool.
+
+## V: Visual fixes in the tray and web UI (2026-11-18)
+
+V fixes the visual issues that the user found in the app of PR #45. Branch `orch/v-visual-fixes`, base `orch/c5-c3-findings`. Tray self-test: 59 of 59 PASS. `dotnet test --solution Orchestrator.slnx`: 781 tests, 0 failed. The checks of V1, V2 and V4 also ran with `--live` on a copy of the demo store of session L (port 7800, no supervisor, `ORCH_IMPORT=0`, fake `ORCH_CLAUDE`).
+
+### Issues
+
+| # | Issue | Cause | Fix | State |
+|---|---|---|---|---|
+| V1 | Toast ghost: an empty blurred box stays after the peek bubble fades | The edge tab clock ran on the UI thread of the widget. After each store change, that thread counts the cards (26 to 43 ms) and loads the Blazor views. The fade moved one fixed step for each tick, so each stall made it longer | The edge tab has its own UI thread (`EdgeTab.Start`). The extend and the bubble move by elapsed time. `TrayApp` merges a burst of store changes into one count | Fixed |
+| V2 | Ring jitter: the ring spin does not move smoothly | The same stalls: frame gaps of up to 110 ms in the 800 ms spin | The same thread. A motion paces its frames on `DwmFlush` (one frame for each display refresh) | Fixed |
+| V3 | Test trays on the screen of the user, over the trays of other sessions | The self-test used the home places, where the user's tray and the demo tray of L are. Real mouse input then went to the other window | The self-test uses test places: the widget at the top left, the edge tab high on the right edge. A probe puts a fixed backdrop behind the measured area | Fixed |
+| V4 | The widget and the edge tab show at the same time | A store change during the grow slid the tab in, and no code slid it out after the grow | While the widget shows or grows, a change updates only the counts. During the shrink, the notice waits for the hide. `Showing` always slides the tab out | Fixed |
+| V5 | The home button has depth at the pop in, and looks flat after the page loads | Two drawings: the native ball (GDI+) and the page button (CSS) | One image, `Orchestrator.Web/wwwroot/home-ball.png`. The page button, the native ball and the edge tab show the same file. `Orchestrator.Tray --write-ball <png>` writes it | Fixed |
+| V6 | The small rings of the stream rows draw again at each tab change | Each tab change makes new row elements, and each ring plays its 900 ms draw | The end of the first ring draw sets `drawn` on the root (`motion.js`); `app.css` stops the draw after that | Fixed |
+| V7 | The cards and the card pages look badly formatted | Mostly the layout of the document page; four defects are data. See "V7 review" | See "V7 review" | Layout fixed; data sent to session D |
+
+### Measured result (store copy, one store post each 250 ms)
+
+| Check | Before | After |
+|---|---|---|
+| V2: frames in the 800 ms spin | 41 | 60 |
+| V2: worst frame gap | 102.5 ms | 23.4 ms |
+| V1: bubble side clear after the fade start | 473 ms | 269 ms |
+| V4: samples with both forms at rest | 24 | 0 |
+| V5: mean color difference in the ball (0 to 255) | 5.7, with 8 % of the pixels far off | 0.6, with 0 % |
+
+Proof (`docs/screens/`): `tray-v1-fade-live-before.png`, `tray-v1-fade-live-after.png`, `tray-v2-spin-live-before.png`, `tray-v2-spin-live-after.png`, `tray-v4-show-live-before.png`, `tray-v4-show-live-after.png` (store copy); `tray-v1-fade-before.png`, `tray-v1-fade-after.png`, `tray-v2-spin-before.png`, `tray-v2-spin-after.png`, `tray-v4-show-before.png`, `tray-v4-show-after.png`, `tray-v5-ball-before.png`, `tray-v5-ball-after.png`, `tray-v6-ring-before.png`, `tray-v6-ring-after.png` (mock store).
+
+### The threads of the tray
+
+```mermaid
+flowchart LR
+    Store[Store change] --> Hub[StreamHub.Changed]
+    Hub --> UI[Widget UI thread: count, Blazor loads]
+    UI -->|SetCounts, SlideIn, Peek| Tab[Edge tab thread: clock, frames]
+    Tab -->|OpenRequested| UI
+```
+
+### Self-test groups
+
+`--selftest <folder> --only <groups>` runs a part of the self-test at the test places. Groups: `notify` (V1, V2, with a store load of `ORCH_PROBE_LOAD_MS`, default 100 ms), `overlap` (V4), `ball` (V5), `drag`, `edge` (N1, N2) and `cards` (pictures of the cards and of two stream rows of each kind, V7).
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| V-F1 | `Copy-Item` keeps the time of the file, so MSBuild did not compile a copied source file again. One test run used an old build | Use `cp` or touch the file before a build |
+| V-F2 | The hidden Blazor views still load on the UI thread of the widget after each store change. They do not stop the edge tab, which has its own thread | Open: load the views only while the widget shows |
+| V-F3 | The demo tray of session L runs an old build, so it still shows V4 | No change: L updates its build |
+
+### V7 review
+
+Source: 23 pictures of a copy of the live store (`--live <copy> --port 7802`, `ORCH_IMPORT=0`, fake `ORCH_CLAUDE`), group `cards`. The inbox of the copy was empty, so the pictures show the stream and twelve document pages.
+
+| # | Defect | Class | Fix |
+|---|---|---|---|
+| 1 | A long summary shows in the headline style and fills the first screen | Layout | A title of more than 90 characters uses the body style (`.q.long`, `Ui.TitleSize`) |
+| 3 | Text fields show raw Markdown: backticks, `- ` and `1.` lines | Layout | `Markdown.cs`: paragraphs, line breaks, lists, code and bold, after an HTML encode |
+| 4 | The header path cuts each parent to 2 to 4 letters | Layout | "…" and only the last parent, up to 12 characters (`PathTrail.Shown`) |
+| 5 | Long option chips have pill corners | Layout | Chips of a block have 16 px corners |
+| 6 | The pill says "closed" next to "State: done" | Layout | The pill shows only while the document waits |
+| 7, 8 | A fact value (a default, a folder) is cut | Layout | Text and code facts wrap (`.fv`) |
+| 9 | The question under an answer has no gap | Layout | The second line of a title block has an 8 px gap |
+| 10 | The page bar covers lines during a scroll | Layout | No change: at the end of the scroll, the last block ends above the bar |
+| 11 to 16, 20 | Breaks in identifiers, full URLs as link labels, a small caption under the title, grey well blocks, empty space, "you" and "user" for the same party, "55 %" | Layout | Open: low |
+| 2, 17, 18, 19 | Summaries too long for a title, a raw voice transcript, a "Root:" prefix, a raw tool id, paragraphs as Done items | Data | Sent to session D through the root |
+
+Proof (`docs/screens/`): `tray-v7-page-1-before.png`, `tray-v7-page-1-after.png`, `tray-v7-page-12-before.png`, `tray-v7-page-12-after.png`, `tray-v7-page-6-end-before.png`, `tray-v7-page-6-end-after.png`.
+
+## I6: Integration of D, L and V (2026-11-18)
+
+Branch `orch/integration-dlv`, base `orch/c5-c3-findings`. It starts from `orch/l-demo-fake` (L), then merges `orch/v-visual-fixes` (V) and `orch/d-data-upgrade` (D, two commits after L).
+
+| Check | Result |
+|---|---|
+| Conflicts | Only `docs/plan.md` and `docs/decisions.md`. Both sides are kept. No code conflict, so no new decision |
+| `dotnet test --solution Orchestrator.slnx` | 804 tests: 791 passed, 13 skipped, 0 failed |
+| `node --test test/` in `plugin/hooks` | 20 of 20 pass |
+| Tray self-test | Not run: the tray code is the same as on V (59 of 59 PASS there) |
+
+### Demo control pane (2026-11-18)
+
+The page `/demo` of a fake demo supervisor writes dummy events into its store. The user clicked the buttons on port 7791 and watched the tray.
+
+| Check | Result |
+|---|---|
+| Tests | Pass. `DemoPaneTests` (6): the guard, each button, the failure rule in the behavior file, the burst. Full suite: 810 tests, 1 failure (the architecture rule on file IO), fixed with an entry and its reason |
+| Live, port 7791 | Pass. Add question and Add report make a card and a tray notice. The other buttons change the tree and the stream |
+| Plain page | Pass. Its own layout: no app bar, no link to the other pages |
+
+| Id | Finding | State |
+|---|---|---|
+| L-F9 | The tray notices and counts only inbox cards (questions, reviews, reports, blocked). A new session, an update or a message makes no notice. This is the design | Proposal for V: a quiet peek bubble with no count for these events, if the user wants it |
+| L-F10 | The tray check of `demo.ps1` saw a tray of V (`--instance v`) as a block. That tray has its own lock | Fixed: the check ignores a tray with `--instance` |
 
 ## Next tasks
 

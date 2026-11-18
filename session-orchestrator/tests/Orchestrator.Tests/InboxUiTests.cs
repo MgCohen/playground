@@ -204,7 +204,7 @@ public sealed class InboxUiTests
         var closed = context.Render<Open>(p => p.Add(x => x.Id, asked.Id));
         Assert.That(closed.FindAll(".pagebar .cfab"), Is.Empty, "a closed item has no content actions");
         Assert.That(closed.Find(".pagebar a.btn.pri").GetAttribute("href"), Is.EqualTo($"sessions/{s}"));
-        Assert.That(closed.Find(".pill").TextContent, Is.EqualTo("answered"));
+        Assert.That(closed.FindAll(".row.head .pill"), Is.Empty, "a closed item shows no pill in its title block (V7)");
         Assert.That(closed.Markup, Does.Contain("Result"));
     }
 
