@@ -895,7 +895,7 @@ Open: the self call `set_remote_control` with `enabled: false` on `self` showed 
 
 Regression found in the fix of item 9, and fixed: the snapshot used the hung time as the default when the hung window had no event of the session. A supervisor turn that counted as running before its `turn.start` was posted looked hung (`not-responding`), in about 2 of 7 runs of one test. Now an empty hung window falls back to the 24 h window, and no event at all gives no hung fault. Test `A_supervisor_turn_with_no_event_yet_is_not_hung_and_a_turn_with_old_events_is`.
 
-Finding B2-9 (open, A2): `FileStore.Report` and `FileStore.OpenDecisions` still copy the full stream (`Events.All()`) at each call, and the snapshot calls them for each session at each tick. An index by session in `EventStream` would fix it. This is the transport of A2, so B2 does not change it.
+Finding B2-9 (fixed in H4, see "H4 result"): `FileStore.Report` and `FileStore.OpenDecisions` still copy the full stream (`Events.All()`) at each call, and the snapshot calls them for each session at each tick. An index by session in `EventStream` would fix it. This is the transport of A2, so B2 does not change it.
 Unit tests after the review fixes: 197 of 197 pass (`dotnet test --solution Orchestrator.slnx`).
 
 ## Q1 result: one question kind (2026-11-17)
@@ -1158,10 +1158,10 @@ Port map:
 | Event stream | `Event`, envelope id | `events/<day>/` | Built (H2) | Notion database | H2; Notion H6 |
 | Envelope bodies | `Body`, body path | `bodies/<day>/` | Built (H2) | Page content | H2; Notion H6 |
 | Session registry | `SessionEntry`, session id | `sessions/<id>/session.json` | Designed (S1, PR #28) | Notion database | S2; Notion H6 |
-| Templates | `Template`, kind | F1 `ITemplateStore` → F2 `IRepository` | Built (F1, PR #30) | Notion database | F2 |
+| Templates | `Definition`, kind | `templates/<kind>/` | Built (F2: `Definitions(Catalog.Templates)`) | Notion database | F2; Notion H6 |
 | Session settings | Field `settings` of `SessionEntry` | `sessions/<id>/session.json` | Designed (S1) | With the registry | S2 |
-| Modes | `Mode`, name (definition) | `templates/modes/` | Designed (S1) | Notion database | F2 |
-| Workflow definitions | `Workflow`, name (definition) | `templates/` (F2 sets the folder) | Designed (C1) | Notion database | F2 |
+| Modes | `Definition`, name | `templates/modes/<name>/` | Built (F2: schema, 4 presets) | Notion database | F2; readers S4 |
+| Workflow definitions | `Definition`, name | `templates/workflows/<name>/` | Built (F2: schema, `planning`) | Notion database | F2; runner C2 |
 | Workflow runs | `WorkflowRun`, run id | In the store (C2 sets the folder) | Designed (C1) | Notion database | C2 |
 | Policy | `Policy`, name | `policy.json` | Built (H2) | Notion page | H2; Notion H6 |
 | Store versions | `StoreVersion`, `version` (repository `StoreVersions`) | `version.json` | Built (H2) | Stays local | H2 |
@@ -1269,6 +1269,94 @@ Branch `orch/integration-h2-h3`, base `orch/session-ff65da95` (H1). It merges H2
 | Cursor merge | `StreamSubscription.Done` holds a lock on the repository. Without it, `Two_writers_of_one_cursor_lose_no_done_id` failed on H2 |
 
 Tests: `dotnet test --solution Orchestrator.slnx` passes 410, skips 7. `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` passes 8 of 8.
+
+## H4 result: store move, index and day cache (2026-11-18)
+
+Branch `orch/h4-store-move`, base `orch/integration-stack` (I2).
+
+| Item | Result |
+|---|---|
+| One store root | `ORCH_STORE`, else `%LOCALAPPDATA%\orch\store`. C# `Home.StoreRoot` (orch, supervisor, tray), plugin `backend.ts` `storeRoot`, `install.ps1 -Store`. `tray.ps1 -LiveDefault` and `--live` with no folder use it. `StoreBackends.Create` takes that root |
+| Migration | `orch store migrate [--from] [--to] [--dry-run] [--force]`: copy to `<target>.migrating`, check each file (size, SHA-256), rename. Refuses a source with a heartbeat in the last 30 s, and a target with data. A fresh target (only `version.json`, `policy.json`) goes to `<target>.fresh-<time>`. Deletes nothing |
+| B2-9 | `EventStream.OfSession` (index by session) and `LastFrom`/`PostsFrom` (index by sender and kind). `Report`, `Decisions`, `StateReader`, `Forgotten` and `Recovery` use them |
+| Day cache | `LocalEventRepository` lists `events/` and an open day folder again only when its write time changed or is newer than 2 s. `IAppendFeed` gives `EventStream` only the new envelopes |
+| Docs | `docs/store.md`: "Store root", "Migration of the old store", "Reads of the envelopes" |
+
+Tests:
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | ✅ 451 pass, 7 skip (new: `StoreMoveTests` 6, `SessionIndexTests` 5) |
+| `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | ✅ 14 of 14 (new: `storeRoot` default) |
+| Live migration in the scratchpad (`ORCH_STORE`, `ORCH_PORT=7871`): `orch init`, `enable`, `send` on the old store; `orch tree` on the new root (makes a fresh store); `orch store migrate` | ✅ 8 files copied and checked; the fresh store set aside; `orch events` on the new root shows both envelopes; the source did not change |
+| Benchmark (scratchpad, not in the repository): 20 sessions, 2,350 envelopes (one day of the main store), `Report` and `OpenDecisions` for each session | Base: 52.3 ms per tick. H4: 16.1 ms per tick |
+
+Not done (out of scope): the migration of the real store. To do it: stop the tray, the supervisor and the sessions; run `orch store migrate`; run `install.ps1` again; then start the supervisor and run `orch doctor`. Keep the old `store/` as a backup out of the checkout.
+
+Findings:
+
+- H4-1: each `orch` command makes `version.json` and `policy.json` at the store root (`Home.CheckVersion`, `Home.LoadPolicy`). After the default change, a first command on the new root makes a fresh store. The migration accepts it and sets it aside.
+- H4-2: the remaining cost of a tick is about 3 file system calls for each refresh (the `events/` and open day write times). A refresh happens at each query. A time window with no refresh in one tick would remove them, but a post of another process would then show later.
+- H4-3: `plugin/hooks` sessions that run now loaded the old `storeRoot` default. They keep the old store until they start again.
+
+## F2 result: template system on IRepository (2026-11-18)
+
+Branch `orch/f2-templates`, base `orch/integration-stack` (I2). The design rows are in `docs/decisions.md`. The contract is in `docs/store.md`, section "Template system".
+
+```
+LayeredDefinitions(catalog)          core wins only when the store has no definition of that name
+├─ core:  StoreBackends.Core  → LocalDefinitionRepository(<home>/templates, catalog)
+└─ store: repos.Definitions   → LocalDefinitionRepository(<store>/templates, catalog)
+      used by
+      ├─ TemplateStore (ITemplateStore) → TemplateSet → stream, UI, renders, CLI
+      ├─ DefinitionCatalog<ModeDefinition>     (Home.Modes)     → S4
+      └─ DefinitionCatalog<WorkflowDefinition> (Home.Workflows) → C2
+```
+
+| Item | Result |
+|---|---|
+| Repository | `IRepositories.Definitions(Catalog)`: `IRepository<Doc<Definition>, string>`. `Definition` is the files of one folder. Local implementation: `LocalDefinitionRepository` |
+| Templates | `ITemplateStore` is a thin slice (`TemplateStore`). `LocalTemplateStore` and the file IO in `Core/Templates/TemplateStore.cs` are removed |
+| Architecture test | The two F1 exceptions (`TemplateStore.cs`, `Home.cs` `StoreFiles.Templates`) are removed |
+| Modes | `_spec/mode.schema.json`; `templates/modes/{auto,chat,ask,approve}/mode.json` (S1 presets) |
+| Workflows | `_spec/workflow.schema.json`, graph rules in `WorkflowDefinition.Check`; `templates/workflows/planning/workflow.json` (the C1 draft: read, ask, answer, record, spec, approve, propose) |
+| Hook | `readDefinition($, catalog, name, file)` in `backend.ts`; `readTemplate` uses it. Same roots, marker files and name rule as C# |
+| CLI | `orch template check` checks the three catalogs; `orch template modes`, `orch template workflows` |
+
+Tests:
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | ✅ 487 tests: 480 pass, 7 skip (demo seed and the contract change tests of write-once kinds) |
+| Contract suite | ✅ `LocalTemplateDefinitionContract`, `LocalModeDefinitionContract`, `LocalWorkflowDefinitionContract` |
+| `DefinitionTests` | ✅ The presets, the axis values, the planning graph, the graph rules, store replace and remove, `.removed/`, reserved names, the hook catalogs, the CLI |
+| `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | ✅ 14 of 14 |
+
+Findings and notes:
+
+- F2-1: a list of a catalog reads each definition folder in full. The local catalogs are small, so this is fast. A Notion implementation needs a cache (H1: in-memory cache with a timer).
+- F2-2: the step conditions are text. C2 decides which conditions become tool checks.
+- F2-3: no plugin tool reads a mode or a workflow yet. `readDefinition` is ready for S4 and C2.
+- F2-4: a running supervisor reads the templates at its start, as before (F1-3).
+
+## I3 result: integration of H4, P0 and F2 (2026-11-18)
+
+Branch `orch/integration-i3`, base `orch/integration-stack` (I2, PR #34). Merge order: H4, then P0, then F2.
+
+| Merge | Branch | Conflicts | Resolution |
+|---|---|---|---|
+| H4 (PR #37) | `orch/h4-store-move` | None | - |
+| P0 (PR #35) | `orch/p0-providers` | `Web/Program.cs`, `docs/plan.md`, `docs/decisions.md` | `Program.cs`: the P0 provider wiring, and the H4 import rule (`root` equals `Home.DefaultStoreRoot()`). Docs: keep the rows of both |
+| F2 (PR #36) | `orch/f2-templates` | `plugin/hooks/test/backend.test.ts`, `docs/plan.md`, `docs/decisions.md` | Test: import `storeRoot` and `readDefinition`, keep both new tests. Docs: keep the rows and the results of both |
+
+`Lifecycle.cs`, `StoreBackends.cs`, `Home.cs` and `docs/store.md` merged with no conflict. `StoreBackends.Create(root)` takes the H4 store root, and `Core` and `Store` give the F2 definition sources.
+
+Tests:
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | ✅ 501 tests: 494 pass, 7 skip. `ProviderBoundaryTests` and `ArchitectureTests` pass |
+| `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | ✅ 15 of 15 |
 
 ## C1 design: streams (2026-11-17)
 
@@ -1546,6 +1634,52 @@ Start lesson: the first C5 brief had double quotes. PowerShell cut the argument 
 | G1-4 | The tray starts the supervisor only at its own start | Accepted. Start it again with `orch supervisor start` |
 | G1-5 | The supervisor that runs today on port 7777 was started by hand. `install.ps1` does not stop it, and the tray uses it | Note for the real install |
 
+## P0 result: provider boundary (2026-11-18)
+
+Branch `orch/p0-providers`, base `orch/integration-stack`. The choices are in `docs/decisions.md` (rows "P0").
+
+```
+Web/Program.cs (composition root)
+  ProviderFactory.Create(store root, home, plugin folder)  -> the class with [DefaultProvider]
+    ProviderTurns(provider)   : ITurnRunner   -> IProvider.Turn
+    DocsChecker(provider)     : IDocsChecker  -> prompt, IProvider.Ask, parse
+    StateChecker(provider)    : IStateChecker -> prompt, IProvider.Ask, parse
+    Lifecycle(store, provider)                -> OpenCommand, AppId, Read
+    SupervisorOptions.Provider                -> AppTools in the notices
+```
+
+| Item | Before | Now |
+|---|---|---|
+| Project | None | `src/Orchestrator.Providers` (references Core only): `IProvider.cs`, `ProviderFactory.cs`, `Processes/`, `ClaudeCode/` |
+| `IProvider` | None | `Name`, `Turn`, `Ask`, `OpenCommand`, `AppId`, `Read`, `CallerSessionId`, `AppTools`, `PluginTools`, `Doctor` |
+| `claude -p` and its flags | `Supervisor/ClaudeRunner.cs` | `ClaudeCode/Claude.cs` (the process run) and `ClaudeCodeProvider.cs` (the flags) |
+| Docs check and state check | `ClaudeDocsChecker`, `ClaudeStateChecker` | Neutral slices `DocsChecker`, `StateChecker` in Supervisor. Prompt and parse as before |
+| App open and import | `Lifecycle.OpenCommand`, `local_<id>` | `IProvider.OpenCommand`, `IProvider.AppId` |
+| App records | `Store/AppRecords.cs` | `ClaudeCode/AppRecords.cs`, through `IProvider.Read` |
+| Caller session id | `CLAUDE_CODE_SESSION_ID` in Cli | `IProvider.CallerSessionId` |
+| Doctor checks `claude`, `plugin` | `ToolCommands.cs` | `IProvider.Doctor`. Same order of the output lines |
+| App tool names | `templates/notice/render/*.md` | Notice fields `remoteControlTool`, `archiveTool` from `IProvider.AppTools` |
+| Architecture test | None | `ProviderBoundaryTests`: no Claude Code name in `src/` and `templates/` outside `src/Orchestrator.Providers/ClaudeCode/` |
+
+### Test results
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 450 total: 443 pass, 7 skipped, 0 fail |
+| `node --test test/` in `plugin/hooks` | 13 pass, 0 fail |
+| `ProviderBoundaryTests` | 3 pass. The scan also finds known names in samples, and no false hit on `git rebase --abort` or `mcp__orch__report` |
+
+### Behavior changes
+
+- The docs check also disallows `PowerShell` (one read-only tool set for `Ask`).
+- A notice of the four kinds above that was posted before the change renders with empty tool names.
+
+### Not in P0
+
+- The core contract fields `Imported`, `RemoteControl`, `AppId`, `Background`: S2 moves them.
+- `mcp__orch__` and `orch:` in the templates: the tools and skills of our plugin. A render for each engine comes with the second engine.
+- `plugin/`: the Claude Code side of the provider.
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
@@ -1567,9 +1701,9 @@ flowchart LR
 
 | Task | Stream | Content | Start |
 |---|---|---|---|
-| P0 | S (owner S) | `IProvider` in `Orchestrator.Providers`, `Providers/ClaudeCode`. Logic of today | After I2 |
-| H4 | H | Store move to `%LOCALAPPDATA%\orch\store`, index by session, day cache, migration | After I2. Merge before P0 if both touch `Home` or `Lifecycle.cs` |
-| F2 | F | Templates on `IRepository`; modes and workflows as definitions | After I2 |
+| P0 | S (owner S) | `IProvider` in `Orchestrator.Providers`, `Providers/ClaudeCode`. Logic of today. Built: see "P0 result" | After I2 |
+| H4 | H | Store move to `%LOCALAPPDATA%\orch\store`, index by session, day cache, migration. Done: see "H4 result". `Lifecycle.cs` not changed | After I2. Merge before P0 if both touch `Home` or `Lifecycle.cs` |
+| F2 | F | Templates on `IRepository`; modes and workflows as definitions. Done: see "F2 result" | After I2 |
 | E2 | E | Visuals: the next E1 items and spike E-5 | After I2 |
 | S2 | S | Session registry on `IRepository`, store version 3 | After P0 and H4 |
 | G2 | G | Cloud workers (G-3, G-4) and the supervisor API with the `orch` HTTP mode (H5) | In parallel with S2 |

@@ -1,16 +1,14 @@
 namespace Orchestrator.Supervisor;
 
-public sealed record TurnRequest(string Id, string Cwd, string Prompt, bool IsNew)
-{
-    public string? Agent { get; init; }
-    public string? Title { get; init; }
-}
-
-public sealed record TurnResult(bool Ok, string? Text, string? Error, double Seconds);
-
 public interface ITurnRunner
 {
     Task<TurnResult> Run(TurnRequest request, CancellationToken cancel);
+}
+
+/// <summary>The turns of the provider.</summary>
+public sealed class ProviderTurns(IProvider provider) : ITurnRunner
+{
+    public Task<TurnResult> Run(TurnRequest request, CancellationToken cancel) => provider.Turn(request, cancel);
 }
 
 public sealed record DocsRequest(string Cwd, string Question, IReadOnlyList<string> Options, IReadOnlyList<string> Docs);
@@ -41,6 +39,9 @@ public sealed record SupervisorOptions(int MaxRuns, int MaxFailures, int MaxChec
     public TimeSpan ImportWait { get; init; } = TimeSpan.FromSeconds(30);
     public TimeSpan FirstReminder { get; init; } = TimeSpan.FromMinutes(10);
     public TimeSpan NextReminder { get; init; } = TimeSpan.FromHours(1);
+
+    /// <summary>The engine of the sessions: the app tools in the notices of Remote Control and archive.</summary>
+    public IProvider Provider { get; init; } = ProviderFactory.Default;
 
     /// <summary>The fallback agent. Null: an unknown state stays unknown and goes to the user.</summary>
     public IStateChecker? StateChecker { get; init; }

@@ -136,7 +136,7 @@ public static class EventCommands
 
     /// <summary>The sender of a command: the session that runs it, if the store knows it, else the user.</summary>
     public static string DefaultSender(CommandContext c) =>
-        Environment.GetEnvironmentVariable("CLAUDE_CODE_SESSION_ID") is { Length: > 0 } id && c.Store.IsEnabled(id)
+        c.Provider.CallerSessionId() is { Length: > 0 } id && c.Store.IsEnabled(id)
             ? Parties.Session(id)
             : Parties.User;
 

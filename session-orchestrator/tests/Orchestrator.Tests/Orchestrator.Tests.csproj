@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+    <Using Include="Orchestrator.Providers" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="bunit" />

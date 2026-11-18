@@ -1,11 +1,32 @@
 # Store contract
 
-All communication goes through one event stream in the store. A sender posts a body file and an envelope. Each party gets a push for each envelope to its address, then queries and reads what it needs. The environment variable `ORCH_STORE` changes the store root.
+All communication goes through one event stream in the store. A sender posts a body file and an envelope. Each party gets a push for each envelope to its address, then queries and reads what it needs.
+
+## Store root
+
+| Order | Store root |
+|---|---|
+| 1 | `ORCH_STORE`, when it is set and not empty |
+| 2 | The default store root: `%LOCALAPPDATA%\orch\store` (on Windows). With no `LOCALAPPDATA`: `$HOME/.local/share/orch/store` |
+
+Each part uses this one rule: `Home.StoreRoot` (C#: `orch`, the supervisor, the tray), `storeRoot` in `plugin/hooks/backend.ts`, and the default of `install.ps1 -Store`. `StoreBackends.Create` takes the root that `Home.StoreRoot` gives. The test `StoreMoveTests` checks each place.
+
+The default store root is out of the checkout, so a `git clean -fdx` cannot delete it (H1). The old default was `<home>/store` in the checkout. `orch store root` prints the store root. `tray.ps1 -LiveDefault` and `Orchestrator.Tray.exe --live` with no folder show the default store root.
+
+### Migration of the old store
+
+`orch store migrate [--from DIR] [--to DIR] [--dry-run] [--force]` copies the old store to the store root. The default source is `<home>/store`. The default target is the store root.
+
+1. The command refuses the copy in these cases: the source has no `version.json`; the target has data (a file other than `version.json` and `policy.json`); `<target>.migrating` exists; a session of the source has a heartbeat in the last 30 s (`--force` skips only this check).
+2. It copies each file to `<target>.migrating`. It skips `*.tmp` files of writes in progress.
+3. It compares each file of the source with its copy: the size and the SHA-256 hash. A missing, an extra or a changed file is a difference.
+4. With no difference, it renames `<target>.migrating` to the target. Each `orch` command makes a fresh store (only `version.json` and `policy.json`) at its first run. The migration renames such a target to `<target>.fresh-<time>` first; it deletes no file. With a difference, it lists the differences, keeps `<target>.migrating` for examination, and does not make the target.
+5. It never changes or deletes the source. It prints the next steps: remove an old `ORCH_STORE`, run `install.ps1` again, start the supervisor, then move the old folder out of the checkout as a backup.
 
 ## Layout
 
 ```
-store/
+<store root>/
   version.json                       { version: 2, at }
   policy.json                        the policy in use
   events/<day>/<id>.json             envelopes, append only, one file each
@@ -17,7 +38,9 @@ store/
   sessions/<id>/                     the lifecycle files of one session (below)
   supervisor/log.txt                 one line for each turn, relay, default, nudge and blocked delivery
   templates/<kind>/                  an added template, or a replacement of a core template (Types, below)
-  templates/.removed/<kind>-<time>/  the files of a removed or replaced store template
+  templates/modes/<name>/            an added mode, or a replacement of a core mode (Template system, below)
+  templates/workflows/<name>/        an added workflow, or a replacement of a core workflow
+  templates/[<catalog>/].removed/<name>-<time>-<n>/  the files of a removed or replaced store definition
 ```
 
 A `<party>` in a file name has `-` in place of `:`, because Windows refuses `:` in a file name: `session:<id>` becomes `session-<id>`.
@@ -40,12 +63,28 @@ The C# code reads and writes the store only through `IRepositories` (`src/Orches
 | `Sessions` | `Doc<string>` (the id) | session id | `sessions/<id>/` |
 | `SessionFile<T>(file)` | `Doc<T>` | session id | `sessions/<id>/<file>` |
 | `SessionItems<T>(id, folder)` | `Doc<T>` | item name | `sessions/<id>/<folder>/<name>.json` |
+| `Definitions(catalog)` | `Doc<Definition>` (the files of one folder) | definition name | `templates/<kind>/`, `templates/modes/<name>/`, `templates/workflows/<name>/` |
 | `Log` (`ILogSink`) | none | none | `supervisor/log.txt` |
+
+The version of a `Definition` is the FNV-1a hash of each file path and text, in path order. A change and a remove of a definition move the old folder to `.removed/`.
 
 Rules of each implementation. The contract tests (`RepositoryContractTests`) run them against each data kind:
 
 1. A save of an `Add` with an id that exists fails with `StoreConflictException` (`Exists`). The local folder writes a temp file and moves it with no overwrite. The claims and the envelopes use this rule.
 2. Each entity has a version. A save of a change or a remove fails when the stored version is newer (`Stale`). A put of a whole file (lease, meta, status) reads again and writes again: the last writer wins.
+
+### Reads of the envelopes
+
+The envelopes are append only. Two parts keep the reads of each tick small:
+
+| Part | Where | Rule |
+|---|---|---|
+| Append feed | `IAppendFeed<T>` (`Core/Storage`), on `LocalEventRepository` | `ReadFrom(position)` gives only the envelopes after the position. `EventStream` keeps its position, so a call does not scan the envelopes that it has |
+| Day cache | `LocalEventRepository` | A day folder with two newer day folders is closed and never listed again. An open day folder is listed again only when its write time changed, or when its write time is newer than 2 s (`Settle`). The list of day folders (`events/`) has the same cache |
+| Index by session | `EventStream.OfSession(id, since)` | The envelopes from a session, to a session, or with the session in the `session` field, in id order |
+| Index by sender and kind | `EventStream.LastFrom`, `PostsFrom` | The posts (no forwards) of one sender and one kind. `FileStore.Report` and `FileStore.Decisions` use it |
+
+The day cache needs this rule of the file system: a create, a rename or a delete of a file in a folder changes the write time of the folder. NTFS and the Linux file systems follow it. A writer must create each envelope file in its day folder; a write to a file that exists does not change the folder write time.
 
 ### Version rule
 
@@ -146,10 +185,10 @@ Two roots hold templates:
 
 | Root | Content | Changed by |
 |---|---|---|
-| `<home>/templates/` | The core templates of the tool, and `_spec/` (`meta.schema.json`, `view.schema.json`, `looks.json`) | A commit |
+| `<home>/templates/` | The core templates of the tool, and `_spec/` (`meta.schema.json`, `view.schema.json`, `looks.json`, `mode.schema.json`, `workflow.schema.json`) | A commit |
 | `<store>/templates/` | Added templates. A folder with a core name replaces that core template | `orch template add <folder> [--replace]`, `orch template remove <kind>` |
 
-The code reads templates only through `ITemplateStore` (`List`, `Get`, `Add`, `Remove`). `LocalTemplateStore` is the implementation for the two folders. `TemplateCheck` checks a template against `_spec/`: the name (`^[a-z][a-z0-9-]{1,31}$`, not `list`, `check`, `add` or `remove`), the meta and the view against their schemas, each view field in the schema, each look in `looks.json` and in an allowed place, and the example against the schema. `add` refuses a template that does not pass. A store template that does not load is skipped, and `orch template` and `orch doctor` show the error. A running supervisor reads the templates at start: restart it after a change.
+The code reads templates only through `ITemplateStore` (`List`, `Get`, `Add`, `Remove`). `TemplateStore` is the one implementation: a thin slice on two `Definitions(Catalog.Templates)` repositories (Template system, below). `TemplateCheck` checks a template against `_spec/`: the name (`^[a-z][a-z0-9-]{1,31}$`, not `list`, `check`, `add`, `remove`, `modes` or `workflows`), the meta and the view against their schemas, each view field in the schema, each look in `looks.json` and in an allowed place, and the example against the schema. `add` refuses a template that does not pass. A store template that does not load is skipped, and `orch template` and `orch doctor` show the error. A running supervisor reads the templates at start: restart it after a change.
 
 An added kind needs no code change. The stream checks its schema and meta, the UI shows it with its `view.json`, and a session gets `render/session.md` if it exists.
 
@@ -180,12 +219,62 @@ The lifecycle notices of the supervisor:
 | `child-archived-in-app` | Parent | The user archived the session in the app sidebar, and the store side is not archived |
 | `archive-reminder` | Parent | Done for `reminderMinutes`, no open PR, not archived. One time |
 | `open-in-app` | Session | The only input of the first turn of a new session when the supervisor imports sessions (`ORCH_IMPORT`). The turn makes the transcript, the import follows, and the brief waits for the live app session |
-| `remote-control-self` | Session | After the import into the app, unless `meta.background` (F4) |
-| `remote-control-child` | Parent | `remoteControlSeconds` after `remote-control-self`, and `meta.remoteControl` is not set. Field `appId` |
-| `archive-child` | Parent | F8, path 2: the app still shows a session that is archived in the store. At once when the session is not live (it cannot archive itself), else at the deadline of the request. The parent turns Remote Control off, then calls `archive_session` (probes 2a to 2c). Field `appId` |
+| `remote-control-self` | Session | After the import into the app, unless `meta.background` (F4). Field `remoteControlTool` |
+| `remote-control-child` | Parent | `remoteControlSeconds` after `remote-control-self`, and `meta.remoteControl` is not set. Fields `appId`, `remoteControlTool` |
+| `archive-child` | Parent | F8, path 2: the app still shows a session that is archived in the store. At once when the session is not live (it cannot archive itself), else at the deadline of the request. The parent turns Remote Control off, then archives it in the app (probes 2a to 2c). Fields `appId`, `remoteControlTool`, `archiveTool` |
 | `state-inferred` | Parent | The fallback agent inferred the state. Fields `state`, `text` |
 
+The provider gives the app tool names: `remoteControlTool` and `archiveTool` (`IProvider.AppTools`). The supervisor adds them to `remote-control-self`, `remote-control-child`, `archive-child` and `archive-self`. No template names an app tool.
+
 A root session has no parent: each notice to the parent goes to the user as a `message` from `supervisor` with `needs: ack`. Its text is the render of the notice.
+
+## Template system
+
+The template system has three catalogs. Each definition is one folder with the marker file of its catalog. A folder with no marker file, or a name that starts with `_` or `.`, is not a definition.
+
+| Catalog | Folder | Marker | Spec | C# slice | Read by |
+|---|---|---|---|---|---|
+| `templates` | `templates/<kind>/` | `schema.json` | `meta.schema.json`, `view.schema.json`, `looks.json` | `TemplateStore` (`ITemplateStore`), `TemplateSet` | The stream, the UI, the renders, the hooks |
+| `modes` | `templates/modes/<name>/` | `mode.json` | `mode.schema.json` | `DefinitionCatalog<ModeDefinition>` (`Home.Modes`) | S4 (the readers of the four axes) |
+| `workflows` | `templates/workflows/<name>/` | `workflow.json` | `workflow.schema.json` | `DefinitionCatalog<WorkflowDefinition>` (`Home.Workflows`) | C2 (the runner) |
+
+```
+templates/
+├─ _spec/                    the spec files: one schema for each marker file, and the look catalog
+├─ <kind>/                   one message template: schema.json, meta.json, view.json, example.json, render
+├─ modes/<name>/             one session mode: mode.json, optional render/*.md
+│    auto, chat, ask, approve    the four presets of S1
+└─ workflows/<name>/         one workflow: workflow.json, optional render/*.md
+     planning                    the first workflow of C1
+```
+
+Each catalog has two layers, `LayeredDefinitions`: the core definitions of `<home>/templates/` and the store definitions of `<store>/templates/`. A store definition with a core name replaces the core definition. A core definition cannot be removed. The plugin hook `readDefinition` (`backend.ts`) reads the same two roots with the same marker and name rules; `readTemplate` is the `templates` catalog.
+
+A mode (`mode.json`):
+
+| Field | Values |
+|---|---|
+| `name`, `version`, `describe` | The folder name, 1 or more, one sentence |
+| `interaction` | `task`, `stepwise`, `conversation` |
+| `autonomy` | `auto`, `ask`, `approve` |
+| `route` | `parent`, `user` |
+| `visibility` | `public`, `private` |
+
+A workflow (`workflow.json`): `name`, `version`, `purpose`, `entry` (the id of the entry step), `done` (the definition of done) and `steps`. Each step:
+
+| Field | Content |
+|---|---|
+| `id`, `title`, `instructions` | Required |
+| `executor` | `agent` (one turn of a session), `ask` (a human answers), `tool` (a deterministic call) |
+| `session` | Agent steps only: `owner` (default), `new`, `{ "session": id }` or `{ "type": name }` |
+| `when`, `exit` | The entry and exit conditions, as text |
+| `input`, `output`, `templates` | Lists. Each template is a message kind that must exist |
+| `approval` | `{ by, strategy }`, strategy `required`, `skippable` or `ignored` |
+| `messages` | `[{ kind, to, when }]` |
+| `next` | `[{ step, when }]`. No `when`: always valid |
+| `done` | `true`: this step can end the work |
+
+`WorkflowDefinition.Check` refuses a repeated step id, an unknown entry step, a `next` to an unknown step, a session on a step that is not an agent step, an unknown message kind, a workflow with no `done` step, and a step that the entry step does not reach. `orch template check` checks each template, mode and workflow. `orch template modes` and `orch template workflows` list them.
 
 ## Subscriptions and delivery
 

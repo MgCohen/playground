@@ -16,17 +16,52 @@ public static class Home
         typeof(Home).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false).OfType<System.Reflection.AssemblyMetadataAttribute>()
             .FirstOrDefault(a => a.Key == "OrchHome")?.Value is { } path && File.Exists(Path.Combine(path, Solution)) ? Path.GetFullPath(path) : null;
 
+    /// <summary>The store root: <c>ORCH_STORE</c>, else <see cref="DefaultStoreRoot"/>.</summary>
     public static string StoreRoot() =>
-        Environment.GetEnvironmentVariable("ORCH_STORE") is { Length: > 0 } store ? Path.GetFullPath(store) : Path.Combine(Root(), "store");
+        Environment.GetEnvironmentVariable("ORCH_STORE") is { Length: > 0 } store ? Path.GetFullPath(store) : DefaultStoreRoot();
+
+    /// <summary>
+    /// The default store root (H1): <c>%LOCALAPPDATA%\orch\store</c>. It is out of the checkout, so a <c>git clean -fdx</c>
+    /// cannot delete it. The plugin (<c>backend.ts</c> <c>storeRoot</c>) and <c>install.ps1 -Store</c> use the same default.
+    /// </summary>
+    public static string DefaultStoreRoot() =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify), "orch", "store");
+
+    /// <summary>The default store root before H4: <c>&lt;home&gt;/store</c> in the checkout. Only <c>orch store migrate</c> uses it.</summary>
+    public static string OldStoreRoot() => Path.Combine(Root(), "store");
 
     public static string Config(string name) => Path.Combine(Root(), "config", name);
 
     public static string Templates() => Path.Combine(Root(), "templates");
 
-    /// <summary>The template store of a store root: the core templates of the tool, and the templates of &lt;store&gt;/templates that add to them or replace them.</summary>
-    public static LocalTemplateStore TemplateStore(string storeRoot) => new(Templates(), Path.Combine(storeRoot, StoreFiles.Templates));
+    /// <summary>The spec of the template system: the files of templates/_spec in the home folder.</summary>
+    public static TemplateSpec Spec() => TemplateSpec.Load(Templates());
 
-    public static TemplateSet LoadTemplates(string storeRoot) => new(TemplateStore(storeRoot), Templates());
+    /// <summary>
+    /// One catalog of the template system: the core definitions of the tool, and the definitions of the store that add
+    /// to them or replace them. No store root: the core definitions only.
+    /// </summary>
+    public static LayeredDefinitions Definitions(Catalog catalog, string? storeRoot) =>
+        new(catalog, StoreBackends.Core(Templates(), catalog), storeRoot is null ? null : StoreBackends.Store(StoreBackends.Create(storeRoot), catalog));
+
+    /// <summary>The message templates of a store root.</summary>
+    public static TemplateStore TemplateStore(string? storeRoot) => new(Definitions(Catalog.Templates, storeRoot), Spec);
+
+    public static TemplateSet LoadTemplates(string? storeRoot) => new(TemplateStore(storeRoot), Templates());
+
+    /// <summary>The session modes (S1) of a store root.</summary>
+    public static DefinitionCatalog<ModeDefinition> Modes(string? storeRoot)
+    {
+        var spec = new Lazy<TemplateSpec>(Spec);
+        return new(Definitions(Catalog.Modes, storeRoot), (name, d) => ModeDefinition.Check(name, d, spec.Value));
+    }
+
+    /// <summary>The workflow definitions (C1) of a store root. <paramref name="templates"/> checks the message kinds that a step names.</summary>
+    public static DefinitionCatalog<WorkflowDefinition> Workflows(string? storeRoot, TemplateSet? templates = null)
+    {
+        var spec = new Lazy<TemplateSpec>(Spec);
+        return new(Definitions(Catalog.Workflows, storeRoot), (name, d) => WorkflowDefinition.Check(name, d, spec.Value, templates is null ? null : templates.Has));
+    }
 
     public static Policy LoadPolicy(string storeRoot) => LoadPolicy(StoreBackends.Create(storeRoot));
 

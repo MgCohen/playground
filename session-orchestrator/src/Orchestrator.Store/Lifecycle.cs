@@ -1,11 +1,14 @@
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Stack;
+using Orchestrator.Providers;
 
 namespace Orchestrator.Store;
 
-public sealed class Lifecycle(FileStore store)
+public sealed class Lifecycle(FileStore store, IProvider? provider = null)
 {
+    readonly IProvider provider = provider ?? ProviderFactory.Default;
+
     public const string WorktreeSuffix = ".wt";
     public const string BranchPrefix = "orch/session-";
 
@@ -122,12 +125,6 @@ public sealed class Lifecycle(FileStore store)
         return updated;
     }
 
-    public static IReadOnlyList<string> OpenCommand(string id, string? cwd = null)
-    {
-        var folder = cwd is { Length: > 0 } ? $" -WorkingDirectory '{cwd.Replace('/', '\\')}'" : "";
-        return ["powershell", "-NoProfile", "-Command", $"Start-Process -FilePath 'claude.exe' -ArgumentList '--desktop','--resume','{id}'{folder} -WindowStyle Hidden"];
-    }
-
     public Meta Enable(string id, string cwd, string? title, string? parent, string by)
     {
         var old = store.Has(id, StoreFiles.Meta) ? store.Meta(id) : null;
@@ -146,12 +143,12 @@ public sealed class Lifecycle(FileStore store)
     public bool Import(string id, TimeSpan? wait = null)
     {
         var meta = store.Meta(id);
-        var command = OpenCommand(id, store.Cwd(id));
+        var command = provider.OpenCommand(id, store.Cwd(id));
         new Shell(store.Cwd(id) ?? Environment.CurrentDirectory).Must(command[0], [.. command.Skip(1)]);
-        var appId = $"local_{id}";
+        var appId = provider.AppId(id);
         var end = DateTime.UtcNow + (wait ?? TimeSpan.FromSeconds(30));
-        while (!AppRecords.Exists(appId) && DateTime.UtcNow < end) Thread.Sleep(1000);
-        if (!AppRecords.Exists(appId))
+        while (!provider.Read(appId).InApp && DateTime.UtcNow < end) Thread.Sleep(1000);
+        if (!provider.Read(appId).InApp)
         {
             store.Log($"{id} import not confirmed: the app has no record {appId}");
             return false;
@@ -166,13 +163,13 @@ public sealed class Lifecycle(FileStore store)
         var asked = new List<(string Id, string AppId)>();
         foreach (var id in ids)
         {
-            if (store.Meta(id).AppId is not { } appId || !store.IsLive(id, store.Clock.GetUtcNow()) || AppRecords.IsArchived(appId)) continue;
-            store.Events.Post(new PostInput(EventKinds.Notice, Parties.Supervisor, Parties.Session(id), store.Texts.Notice("archive-self")) { Session = id });
+            if (store.Meta(id).AppId is not { } appId || !store.IsLive(id, store.Clock.GetUtcNow()) || provider.Read(appId).Archived) continue;
+            store.Events.Post(new PostInput(EventKinds.Notice, Parties.Supervisor, Parties.Session(id), store.Texts.Notice("archive-self", [.. provider.AppTools])) { Session = id });
             asked.Add((id, appId));
         }
         var end = DateTime.UtcNow + wait;
-        while (asked.Any(a => !AppRecords.IsArchived(a.AppId)) && DateTime.UtcNow < end) Thread.Sleep(poll ?? TimeSpan.FromSeconds(1));
-        return [.. asked.Select(a => AppRecords.IsArchived(a.AppId)
+        while (asked.Any(a => !provider.Read(a.AppId).Archived) && DateTime.UtcNow < end) Thread.Sleep(poll ?? TimeSpan.FromSeconds(1));
+        return [.. asked.Select(a => provider.Read(a.AppId).Archived
             ? $"The app archived {a.Id[..Math.Min(8, a.Id.Length)]} (the session archived itself)."
             : $"The app still shows {a.Id[..Math.Min(8, a.Id.Length)]}: it did not archive itself in {wait.TotalSeconds:0} s. Archive it from the sidebar.")];
     }

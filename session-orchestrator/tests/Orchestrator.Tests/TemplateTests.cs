@@ -6,7 +6,7 @@ namespace Orchestrator.Tests;
 
 public sealed class TemplateTests
 {
-    static readonly TemplateSet Set = new(Home.Templates());
+    static readonly TemplateSet Set = Home.LoadTemplates(null);
 
     static IEnumerable<string> AllKinds() => Kinds.All;
 

@@ -10,13 +10,16 @@ var bind = Environment.GetEnvironmentVariable("ORCH_BIND") is { Length: > 0 } ho
 builder.WebHost.UseUrls($"http://{bind}:{port}");
 builder.Services.AddSingleton(new FileStore(root));
 var pluginDir = Environment.GetEnvironmentVariable("ORCH_PLUGIN_DIR") is { Length: > 0 } dir ? Path.GetFullPath(dir) : null;
-builder.Services.AddSingleton<ITurnRunner>(new ClaudeRunner(root, pluginDir));
-builder.Services.AddSingleton<IDocsChecker, ClaudeDocsChecker>();
-var import = Environment.GetEnvironmentVariable("ORCH_IMPORT") is { Length: > 0 } flag ? flag == "1" : root == Path.Combine(Home.Root(), "store");
+var provider = ProviderFactory.Create(new ProviderOptions(root, Home.Root(), pluginDir));
+builder.Services.AddSingleton(provider);
+builder.Services.AddSingleton<ITurnRunner>(new ProviderTurns(provider));
+builder.Services.AddSingleton<IDocsChecker>(new DocsChecker(provider));
+var import = Environment.GetEnvironmentVariable("ORCH_IMPORT") is { Length: > 0 } flag ? flag == "1" : string.Equals(root, Home.DefaultStoreRoot(), StringComparison.OrdinalIgnoreCase);
 builder.Services.AddSingleton(services => new SupervisorOptions(4, 3, 2, Home.LoadPolicy(root))
 {
-    Import = import ? id => new Lifecycle(services.GetRequiredService<FileStore>()).Import(id) : null,
-    StateChecker = new ClaudeStateChecker(pluginDir),
+    Import = import ? id => new Lifecycle(services.GetRequiredService<FileStore>(), provider).Import(id) : null,
+    StateChecker = new StateChecker(provider),
+    Provider = provider,
 });
 builder.Services.AddSingleton<Supervisor>();
 builder.Services.AddSingleton<Board>();

@@ -76,7 +76,7 @@ public sealed partial class Supervisor
         {
             if (taken.Name == "archive" && s.AppArchived && s.Enabled) NotifyParent(id, "child-archived-in-app");
             if (taken.Name == "auto-archive" && s.InApp && !s.AppArchived && store.IsLive(id, s.Now))
-                Notify(Parties.Session(id), null, store.Texts.Notice("archive-self"));
+                Notify(Parties.Session(id), null, store.Texts.Notice("archive-self", [.. options.Provider.AppTools]));
         }
         if (r.Escalated > 0 && r.File.Requested is { } request) Escalate(id, request, r.Escalated, s);
     }
@@ -91,7 +91,7 @@ public sealed partial class Supervisor
         }
         if (level == 1 && HasLiveParent(meta) && meta.AppId is { } appId && s.InApp && !s.AppArchived)
         {
-            NotifyParent(id, "archive-child", ("appId", appId));
+            NotifyParent(id, "archive-child", [("appId", appId), .. options.Provider.AppTools]);
             return;
         }
         if (level == 2 || !HasLiveParent(meta))
@@ -125,14 +125,14 @@ public sealed partial class Supervisor
 
     /// <summary>
     /// F8, path 2: a session that the app still shows but that is not live cannot archive itself. Its parent gets
-    /// archive-child at once (Remote Control off, then archive_session: probe 2a to 2c), not at the deadline.
+    /// archive-child at once (Remote Control off, then the app archive: probe 2a to 2c), not at the deadline.
     /// </summary>
     StateFile ParentArchivePath(string id, StateFile file, Snapshot s)
     {
         if (file.Requested is not { To: States.Archived, Escalations: 0 } request || s.Enabled || !s.InApp || s.AppArchived || store.IsLive(id, s.Now)) return file;
         var meta = store.Meta(id);
         if (!HasLiveParent(meta) || meta.AppId is not { } appId) return file;
-        NotifyParent(id, "archive-child", ("appId", appId));
+        NotifyParent(id, "archive-child", [("appId", appId), .. options.Provider.AppTools]);
         return file with { Requested = request with { Escalations = 1 } };
     }
 
@@ -144,7 +144,7 @@ public sealed partial class Supervisor
     void Forgotten(string id, DateTimeOffset now)
     {
         var self = Parties.Session(id);
-        var input = store.Events.Since(now - StateReader.Window).LastOrDefault(e => e.To == self && e.From != Parties.Supervisor && store.IsDeliverable(e))?.Id ?? "none";
+        var input = store.Events.OfSession(id, now - StateReader.Window).LastOrDefault(e => e.To == self && e.From != Parties.Supervisor && store.IsDeliverable(e))?.Id ?? "none";
         var report = $"{store.Report(id)?.Event ?? "none"}|{input}";
         var marker = store.ReadJson<ForgottenMarker>(id, StoreFiles.Forgotten);
         if (marker is null || marker.Report != report)
@@ -167,7 +167,7 @@ public sealed partial class Supervisor
         var self = Parties.Session(id);
         var asked = store.Events.Thread(RemoteControlThread(id)).LastOrDefault(e => e.Kind == EventKinds.Notice && e.To == self);
         if (asked is null || Times.Parse(asked.At) is not { } at || (now - at).TotalSeconds < s.Timers.RemoteControlSeconds) return file;
-        NotifyParent(id, "remote-control-child", ("appId", appId));
+        NotifyParent(id, "remote-control-child", [("appId", appId), .. options.Provider.AppTools]);
         return file with { RemoteControlAsked = Times.Format(now) };
     }
 

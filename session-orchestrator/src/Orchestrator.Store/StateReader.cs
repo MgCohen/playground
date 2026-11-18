@@ -3,12 +3,15 @@ using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
 using Orchestrator.Core.Lifecycle;
 using Orchestrator.Core.Stack;
+using Orchestrator.Providers;
 
 namespace Orchestrator.Store;
 
 /// <summary>Reads the lifecycle facts of one session into a <see cref="Snapshot"/>, and reads and writes state.json.</summary>
-public sealed class StateReader(FileStore store)
+public sealed class StateReader(FileStore store, IProvider? provider = null)
 {
+    readonly IProvider provider = provider ?? ProviderFactory.Default;
+
     /// <summary>The state file. <c>Invalid</c> is true when the file exists but is not valid JSON or names no known state.</summary>
     public (StateFile? File, bool Invalid) State(string id)
     {
@@ -46,14 +49,16 @@ public sealed class StateReader(FileStore store)
         var floor = now - Window;
         bool Own(Event e) => e.From == self || e.Kind == EventKinds.TurnStart && e.Session == id;
         // The hung window first; only when it is empty, the 24 h window. No event at all: null, not hung (a new turn).
-        var lastOwn = store.Events.Since(now - hung).Where(Own).Select(e => Times.Parse(e.At)).Max()
-            ?? store.Events.Since(floor).Where(Own).Select(e => Times.Parse(e.At)).Max();
-        bool InputAfter(DateTimeOffset? at) => at is { } t && store.Events.Since(t > floor ? t : floor).Any(e => e.To == self && store.IsDeliverable(e) && Times.Parse(e.At) > t);
+        // The index by session gives only the envelopes of this session (finding B2-9).
+        var lastOwn = store.Events.OfSession(id, now - hung).Where(Own).Select(e => Times.Parse(e.At)).Max()
+            ?? store.Events.OfSession(id, floor).Where(Own).Select(e => Times.Parse(e.At)).Max();
+        bool InputAfter(DateTimeOffset? at) => at is { } t && store.Events.OfSession(id, t > floor ? t : floor).Any(e => e.To == self && store.IsDeliverable(e) && Times.Parse(e.At) > t);
         var undelivered = store.Undelivered(id);
         var openDecisions = store.OpenDecisions(id).Count;
         var blocked = store.Blocked(id);
         var appId = meta.AppId;
-        var inApp = appId is not null && AppRecords.Exists(appId);
+        var app = appId is not null ? provider.Read(appId) : new AppFacts(false, false);
+        var inApp = app.InApp;
         return new Snapshot(now)
         {
             Timers = policy.Lifecycle,
@@ -80,7 +85,7 @@ public sealed class StateReader(FileStore store)
             OpenDecisions = openDecisions,
             OpenPrs = store.Stacks(id).SelectMany(e => e.Versions).Count(v => v.State is VersionStates.Open or VersionStates.Ready && v.Pr is not null),
             InApp = inApp,
-            AppArchived = inApp && AppRecords.IsArchived(appId!),
+            AppArchived = app.Archived,
         };
     }
 

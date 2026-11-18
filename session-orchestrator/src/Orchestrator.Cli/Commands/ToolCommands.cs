@@ -2,6 +2,7 @@ using System.Text.Json;
 using Orchestrator.Cli.Git;
 using Orchestrator.Core.Templates;
 using Orchestrator.Store;
+using Orchestrator.Store.Local;
 
 namespace Orchestrator.Cli;
 
@@ -18,13 +19,17 @@ public static class ToolCommands
             case "check":
                 return TemplateCheckCommand(c, set);
             case "add":
-                var added = set.Store.Add(TemplateFiles.ReadFolder(c.Args.Required(2, "folder")), c.Args.Flag("replace"));
+                var added = set.Store.Add(ReadFolder(c.Args.Required(2, "folder")), c.Args.Flag("replace"));
                 c.Output.WriteLine($"Added {added.Kind} to {added.Location}{(added.ReplacesCore ? ". It replaces the core template" : "")}. A running supervisor uses it after a restart.");
                 return 0;
+            case "modes":
+                return DefinitionList(c, Home.Modes(c.Store.Root).List());
+            case "workflows":
+                return DefinitionList(c, Home.Workflows(c.Store.Root).List());
             case "remove":
                 var kind = c.Args.Required(2, "kind");
                 set.Store.Remove(kind);
-                c.Output.WriteLine($"Removed {kind} from the store. The old files are in {LocalTemplateStore.Removed}/. A running supervisor applies it after a restart.");
+                c.Output.WriteLine($"Removed {kind} from the store. The old files are in {LocalDefinitionRepository.Removed}/. A running supervisor applies it after a restart.");
                 return 0;
         }
         if (!set.Has(word))
@@ -57,6 +62,17 @@ public static class ToolCommands
         return 0;
     }
 
+    /// <summary>A template folder of the user. The folder name is the kind.</summary>
+    static TemplateFiles ReadFolder(string folder) =>
+        TemplateFiles.From(Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder))), LocalDefinitionRepository.ReadFolder(folder));
+
+    static int DefinitionList(CommandContext c, IReadOnlyList<TemplateInfo> list)
+    {
+        foreach (var d in list)
+            c.Output.WriteLine($"{d.Kind,-12} {(d.Source == TemplateSources.Store ? (d.ReplacesCore ? "store, replaces core" : "store") : "core"),-21} {d.Location}");
+        return 0;
+    }
+
     static int TemplateList(CommandContext c, TemplateSet set)
     {
         foreach (var t in set.All.OrderBy(t => t.Kind, StringComparer.Ordinal))
@@ -68,11 +84,15 @@ public static class ToolCommands
         return set.LoadErrors.Count == 0 ? 0 : 1;
     }
 
-    /// <summary>orch template check [&lt;kind&gt;] [--folder DIR]: the checks of the spec (templates/_spec) for one template, a folder, or all.</summary>
+    /// <summary>
+    /// orch template check [&lt;kind&gt;] [--folder DIR]: the checks of the spec (templates/_spec) for one template, a
+    /// folder, or all. With no kind and no folder, it also checks each mode and each workflow.
+    /// </summary>
     static int TemplateCheckCommand(CommandContext c, TemplateSet set)
     {
-        var spec = TemplateSpec.Load(Home.Templates());
-        var targets = c.Args.Option("folder") is { } folder ? [TemplateFiles.ReadFolder(folder)]
+        var spec = Home.Spec();
+        var all = c.Args.Option("folder") is null && c.Args.Positional.Count <= 2;
+        var targets = c.Args.Option("folder") is { } folder ? [ReadFolder(folder)]
             : c.Args.Positional.Count > 2 ? [set.Store.Get(c.Args.Positional[2]) ?? throw new TemplateException($"no template {c.Args.Positional[2]}")]
             : set.Store.List().Select(info => set.Store.Get(info.Kind)).OfType<TemplateFiles>().ToList();
         var bad = 0;
@@ -82,8 +102,26 @@ public static class ToolCommands
             if (errors.Count > 0) bad++;
             c.Output.WriteLine(errors.Count == 0 ? $"{files.Kind}: ok" : files.Kind + ":" + string.Concat(errors.Select(e => Environment.NewLine + "  " + e)));
         }
+        if (all)
+        {
+            bad += CheckCatalog(c, Home.Modes(c.Store.Root));
+            bad += CheckCatalog(c, Home.Workflows(c.Store.Root, set));
+        }
         foreach (var e in set.LoadErrors) c.Output.WriteLine($"not loaded: {e}");
         return bad == 0 && set.LoadErrors.Count == 0 ? 0 : 1;
+    }
+
+    static int CheckCatalog<T>(CommandContext c, DefinitionCatalog<T> catalog) where T : class
+    {
+        var bad = 0;
+        foreach (var info in catalog.List())
+        {
+            var errors = catalog.Check(info.Kind, catalog.Files(info.Kind)!);
+            if (errors.Count > 0) bad++;
+            var name = $"{catalog.Catalog.Folder}/{info.Kind}";
+            c.Output.WriteLine(errors.Count == 0 ? $"{name}: ok" : name + ":" + string.Concat(errors.Select(e => Environment.NewLine + "  " + e)));
+        }
+        return bad;
     }
 
     static string Description(Template t) =>
@@ -110,7 +148,7 @@ public static class ToolCommands
         Check("home", () => (File.Exists(Path.Combine(Home.Root(), Home.Solution)), Home.Root()));
         Check("install", () => Install.Check(new Shell(Home.Root()), Install.Commit));
         Check("app", () => Install.CheckApp(new Shell(Home.Root()), SupervisorHost.AppRoot()));
-        Check("store", () => (c.Store.Repositories.Exists(), c.Store.Root));
+        Check("store", () => (c.Store.Repositories.Exists(), c.Store.Repositories.Exists() || !StoreMigration.IsStore(Home.OldStoreRoot()) ? c.Store.Root : $"{c.Store.Root} does not exist. The old store {Home.OldStoreRoot()} exists: run orch store migrate"));
         Check("policy", () =>
         {
             var policy = Home.LoadPolicy(c.Store.Repositories);
@@ -123,16 +161,11 @@ public static class ToolCommands
             var ok = bad.Count == 0 && loadErrors.Count == 0;
             return (ok, ok ? $"{c.Store.Templates.All.Count()} kinds, each example is valid" : string.Join("; ", bad.Select(t => $"invalid example: {t.Kind}").Concat(loadErrors.Select(e => $"not loaded: {e}"))));
         });
-        Check("claude", () => shell.Run("claude", "--version") is var r && r.Ok ? (true, r.Text) : (false, "not on the PATH"));
+        // The first engine check comes before gh and the others after it, in the order of the checks before the provider boundary.
+        var engine = c.Provider.Doctor((program, arguments) => shell.Run(program, arguments) is var r ? (r.Ok, r.Text) : default);
+        foreach (var check in engine.Take(1)) Check(check.Name, check.Test);
         Check("gh", () => shell.Run("gh", "auth", "status") is var r && r.Ok ? (true, "signed in") : (false, "not signed in: run gh auth login"));
-        Check("plugin", () =>
-        {
-            var settings = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude", "settings.json");
-            var json = JsonDocument.Parse(File.ReadAllText(settings)).RootElement;
-            if (!json.TryGetProperty("env", out var env) || !env.TryGetProperty("CLAUDE_CODE_PLUGIN_DIRS", out var dirs)) return (false, "CLAUDE_CODE_PLUGIN_DIRS is not in the env block of ~/.claude/settings.json");
-            var path = dirs.GetString() ?? "";
-            return (File.Exists(Path.Combine(path, ".claude-plugin", "plugin.json")), path);
-        });
+        foreach (var check in engine.Skip(1)) Check(check.Name, check.Test);
         Check("supervisor", () =>
         {
             var port = Environment.GetEnvironmentVariable("ORCH_PORT") ?? "7777";
@@ -175,7 +208,7 @@ public static class ToolCommands
     }
 
     /// <summary>
-    /// Prints the id and the start time of the parent process: the process that ran orch. In a session, that is the claude
+    /// Prints the id and the start time of the parent process: the process that ran orch. In a session, that is the engine
     /// process, so the plugin writes them in lease.json and the supervisor can check if the holder of a live lease is alive.
     /// </summary>
     public static int Process(CommandContext c)

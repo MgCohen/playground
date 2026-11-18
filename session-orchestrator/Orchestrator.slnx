@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Orchestrator.Core/Orchestrator.Core.csproj" />
+    <Project Path="src/Orchestrator.Providers/Orchestrator.Providers.csproj" />
     <Project Path="src/Orchestrator.Store/Orchestrator.Store.csproj" />
     <Project Path="src/Orchestrator.Supervisor/Orchestrator.Supervisor.csproj" />
     <Project Path="src/Orchestrator.Web/Orchestrator.Web.csproj" />

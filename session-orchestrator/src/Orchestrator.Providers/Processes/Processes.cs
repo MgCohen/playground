@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Orchestrator.Core.Leases;
 
-namespace Orchestrator.Store;
+namespace Orchestrator.Providers;
 
 /// <summary>The process list of Windows: the parent of each process, the start time, and the alive check of a lease.</summary>
 public static class Processes

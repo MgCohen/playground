@@ -57,10 +57,14 @@ async function replace($: any, path: string, value: unknown, expected?: bigint):
   await $.fs.write(path, json(value))
 }
 
-// Today: ORCH_STORE, else <home>/store. Target of H4 (the H1 decision): %LOCALAPPDATA%\orch\store as the default
-// root, with the move of the old store. H4 changes this fallback and install.ps1 -Store together.
+// The store root: ORCH_STORE, else the default store root of H1, %LOCALAPPDATA%\orch\store. C# (Home.DefaultStoreRoot)
+// and install.ps1 -Store use the same default. With no LOCALAPPDATA (not Windows): $HOME/.local/share/orch/store, as .NET.
 export async function storeRoot($: any): Promise<string> {
-  return (await $.env.get('ORCH_STORE')) ?? `${S.home}/store`
+  const store = await $.env.get('ORCH_STORE')
+  if (store) return store
+  const local = await $.env.get('LOCALAPPDATA')
+  if (local) return `${local.replace(/\\/g, '/')}/orch/store`
+  return `${((await $.env.get('HOME')) || S.home).replace(/\\/g, '/')}/.local/share/orch/store`
 }
 
 export async function sessionDir($: any): Promise<string> {
@@ -124,10 +128,31 @@ export async function readPolicy($: any): Promise<any> {
 
 // A template file. The store templates root of F1 (<store>/templates/<kind>/) comes first: a store folder with a core
 // name replaces the core template. Else the core templates of the tool (<home>/templates/<kind>/).
+// The catalogs of the template system, as in C# (Catalog in Orchestrator.Core/Storage/Definition.cs): the folder
+// under the templates root, and the marker file that makes a folder a definition.
+export const CATALOGS = {
+  templates: { folder: '', marker: 'schema.json' },
+  modes: { folder: 'modes/', marker: 'mode.json' },
+  workflows: { folder: 'workflows/', marker: 'workflow.json' },
+} as const
+
+export type CatalogName = keyof typeof CATALOGS
+
+// The C# name rule of a definition (Catalog.IsName). Other names are never read.
+const DEFINITION_NAME = /^[a-z][a-z0-9-]{1,31}$/
+
+// One JSON file of a definition. The two roots of LayeredDefinitions in C#: <store>/templates first, if the store
+// folder has the marker file of the catalog, else the core templates in <home>/templates.
+export async function readDefinition($: any, catalog: CatalogName, name: string, file: string): Promise<any> {
+  if (!DEFINITION_NAME.test(name) || !/^[a-z][a-z0-9.-]*\.json$/.test(file)) return undefined
+  const { folder, marker } = CATALOGS[catalog]
+  if (S.store && (await $.fs.exists(`${S.store}/templates/${folder}${name}/${marker}`)))
+    return readJson($, `${S.store}/templates/${folder}${name}/${file}`)
+  return readJson($, `${S.home}/templates/${folder}${name}/${file}`)
+}
+
 export async function readTemplate($: any, kind: string, file: TemplateFile): Promise<any> {
-  if (S.store && (await $.fs.exists(`${S.store}/templates/${kind}/schema.json`)))
-    return readJson($, `${S.store}/templates/${kind}/${file}.json`)
-  return readJson($, `${S.home}/templates/${kind}/${file}.json`)
+  return readDefinition($, 'templates', kind, `${file}.json`)
 }
 
 // An envelope: the body first, then the envelope. The envelope is the commit point. Both are creates.

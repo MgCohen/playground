@@ -17,7 +17,7 @@ public sealed record LookCatalog(string Description, IReadOnlyList<LookSpec> Loo
 }
 
 /// <summary>The agreed format of a template: the spec files in templates/_spec. They come with the tool, not with the store.</summary>
-public sealed record TemplateSpec(JsonSchema Meta, JsonSchema View, LookCatalog Looks)
+public sealed record TemplateSpec(JsonSchema Meta, JsonSchema View, LookCatalog Looks, JsonSchema Mode, JsonSchema Workflow)
 {
     public const string Folder = "_spec";
 
@@ -28,7 +28,9 @@ public sealed record TemplateSpec(JsonSchema Meta, JsonSchema View, LookCatalog 
         return new TemplateSpec(
             JsonSchema.FromText(File.ReadAllText(Path.Combine(folder, "meta.schema.json"))),
             JsonSchema.FromText(File.ReadAllText(Path.Combine(folder, "view.schema.json"))),
-            StoreJson.Read<LookCatalog>(File.ReadAllText(Path.Combine(folder, "looks.json"))) ?? throw new TemplateException($"{folder}/looks.json does not parse"));
+            StoreJson.Read<LookCatalog>(File.ReadAllText(Path.Combine(folder, "looks.json"))) ?? throw new TemplateException($"{folder}/looks.json does not parse"),
+            JsonSchema.FromText(File.ReadAllText(Path.Combine(folder, "mode.schema.json"))),
+            JsonSchema.FromText(File.ReadAllText(Path.Combine(folder, "workflow.schema.json"))));
     }
 }
 
@@ -39,7 +41,7 @@ public static partial class TemplateCheck
     {
         var errors = new List<string>();
         var kind = files.Kind;
-        if (!LocalTemplateStore.IsName(kind)) errors.Add($"{kind}: the name must match ^[a-z][a-z0-9-]{{1,31}}$");
+        if (!TemplateStore.IsName(kind)) errors.Add($"{kind}: the name must match ^[a-z][a-z0-9-]{{1,31}}$");
 
         JsonSchema? schema = null;
         HashSet<string> props = [];
@@ -82,7 +84,7 @@ public static partial class TemplateCheck
         return errors;
     }
 
-    static JsonElement? Evaluate(JsonSchema schema, string text, string file, List<string> errors)
+    internal static JsonElement? Evaluate(JsonSchema schema, string text, string file, List<string> errors)
     {
         JsonElement root;
         try

@@ -19,7 +19,7 @@ Design page: https://claude.ai/artifact/EggEYH4ivUuPGG9Pw4k1y1 (source `docs/orc
 | `config/` | The decision policies |
 | `docs/` | `plan.md`, `store.md`, `know-how.md`, `decisions.md`, the design page |
 | `spikes/` | Spike scripts, test briefs, and the frozen TypeScript supervisor (`supervisor-ts/`) |
-| `store/` | Runtime data. Git ignores it |
+| `store/` | The old store folder, before H4. Git ignores it. The store is now in `%LOCALAPPDATA%\orch\store`: run `orch store migrate` once |
 
 Build and test:
 
@@ -33,4 +33,4 @@ Start the supervisor and the UI (`http://127.0.0.1:7777/`, API under `/api`):
 dotnet run --project src/Orchestrator.Web
 ```
 
-`ORCH_STORE` sets the store folder and `ORCH_PORT` the port. `ORCH_TOKEN` adds a token sign-in, and `ORCH_BIND=0.0.0.0` serves the UI to a phone on the same network (use it only with `ORCH_TOKEN`).
+`ORCH_STORE` sets the store folder (default `%LOCALAPPDATA%\orch\store`) and `ORCH_PORT` the port. `ORCH_TOKEN` adds a token sign-in, and `ORCH_BIND=0.0.0.0` serves the UI to a phone on the same network (use it only with `ORCH_TOKEN`).
