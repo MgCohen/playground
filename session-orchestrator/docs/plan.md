@@ -1949,6 +1949,26 @@ Not tested: a real cloud session, the setup script in a VM, the tunnel. The end-
 | G2-5 | The HTTP mode has no push. `orch watch` polls every 2 s | Accepted. An SSE subscription can come later |
 | G2-6 | `docs/render-design.html` changed (field `where` in the brief view). The artifact is not published from this branch | Publish after the merge |
 
+## I4 result: final integration (2026-11-18)
+
+Branch `orch/integration-final`, from `orch/c4-stream-filters` (I3, S2, C2, C4). Merged: `orch/g2-cloud-workers` (G2) and `orch/e2-visuals` (E2).
+
+| Overlap | Fix |
+|---|---|
+| G2 field `where` in `meta.json` | Moved to the registry entry: `work.where` (`cloud`, else null). The cloud session id goes in `engine.appId`. The supervisor, the brief and the tests use the entry |
+| G2 store API and the S2, C2 repositories | Two new kinds on the wire: `session-entries` and `workflow-runs`. The `orch` HTTP mode now reads the registry and the runs, so `--stream` filters work over HTTP |
+| G2 store API and the C4 `stream` parameter | No code conflict. `POST /api/sessions` takes `stream` and `where` |
+| E2 UI and the C2 term rename | No change: E2 adds no UI text with "decision" |
+| `docs/plan.md`, `docs/decisions.md`, `docs/store.md` | Rows and sections of both sides kept. `docs/store.md` documents `work.where` |
+
+### Test results
+
+| Check | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 765 total, 752 passed, 13 skipped, 0 failed |
+| `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | 18 passed, 0 failed |
+| `.	ray.ps1 -SelfTest` | 50 views, 50 passed |
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
@@ -1978,6 +1998,8 @@ flowchart LR
 | G2 | G | Cloud workers (G-3, G-4) and the supervisor API with the `orch` HTTP mode (H5). Built: see "G2 result" | In parallel with S2 |
 | C2 | C | Workflow runner on `IRepository`, the planning workflow, the term rename in skills and tools. Done: see "C2 result". Then C3: one real stream | After S2 and F2 |
 | C4 | C | The stream id in each envelope, the `--stream` filters, the `stream` API parameter and field. Done: see "C4 result" | After C2 |
+| I4 | I | Final integration of C4, G2 and E2. Done: see "I4 result" | After C4, G2 and E2 |
+| C3 | C | One real stream with the planning workflow on a scratch supervisor. Done: see "C3 live run" | After I4 |
 | D2 | D | Named tunnel, service token for cloud workers | After G2, next month |
 
 Rules for these tasks:
