@@ -102,6 +102,7 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
     <button role="tab" data-tab="run">F2 Workflow run</button>
     <button role="tab" data-tab="stack">F3 PR stack</button>
     <button role="tab" data-tab="pr">F4 PR</button>
+    <button role="tab" data-tab="backlog">Backlog F5–F12</button>
     <span class="sep" aria-hidden="true"></span>
     <button role="tab" data-tab="flows">User workflows</button>
     <button role="tab" data-tab="gaps">Data gaps</button>
@@ -115,6 +116,7 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
       <option value="run">F2 Workflow run</option>
       <option value="stack">F3 PR stack</option>
       <option value="pr">F4 PR</option>
+      <option value="backlog">Backlog F5–F12</option>
     </optgroup>
     <optgroup label="Across features">
       <option value="flows">User workflows</option>
@@ -153,6 +155,7 @@ flowchart LR
       <tr><td class="mono">F2</td><td>Workflow run page</td><td>Shows where a run is, why it waits and where it can go. You act on the wait</td><td><span class="chip have">most</span></td></tr>
       <tr><td class="mono">F3</td><td>PR stack page</td><td>Shows the PRs of a stream in their merge order and what waits for you. You review and merge here</td><td><span class="chip part">part</span></td></tr>
       <tr><td class="mono">F4</td><td>PR page</td><td>Shows one PR with its task, session, diff, tests and defaults. You give the verdict here</td><td><span class="chip part">part</span></td></tr>
+      <tr><td class="mono">F5–F12</td><td>Backlog</td><td>Later features: status and analytics, projects, reminders, multi-project work, and more. Tracked here, built one at a time</td><td>—</td></tr>
       <tr><td class="mono">W1–W3</td><td>User workflows</td><td>The paths across the pages: answer a run, review a stream, review a default</td><td>—</td></tr>
     </table></div>
   </section>
@@ -469,6 +472,141 @@ sequenceDiagram
   </section>
 </div>
 
+<!-- BACKLOG -->
+<div class="panel" id="backlog" hidden>
+  <section>
+    <h2>Backlog</h2>
+    <p class="summary">Later advanced features. This tab records them, so that we can track them. We work on one at a time. When the work on a feature starts, it gets its own tab with all the parts: summary, logic, capabilities, workflow and data.</p>
+    <div class="scroll"><table>
+      <tr><th>Id</th><th>Feature</th><th>What it does for the user</th><th>Data</th><th>State</th></tr>
+      <tr><td class="mono">F5</td><td>Status and analytics</td><td>Shows the health of the system and how it changes in time: open sessions, waits, errors</td><td><span class="chip have">most</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F6</td><td>Projects</td><td>Groups the work by project (one repository), and by feature inside a project</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F7</td><td>Timers and stale reminders</td><td>Tells you about items that nobody touched for a long time</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F8</td><td>Multi-project work</td><td>Connects the work of one feature across more than one repository</td><td><span class="chip gap">gap</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F9</td><td>Stream page</td><td>One page for a stream: its sessions, runs and PRs together ("Later drafts" in ui-drafts)</td><td><span class="chip have">most</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F10</td><td>Templates catalog</td><td>Lists the message kinds, modes and workflows. Shows one with its view and fields</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F11</td><td>Storage and store</td><td>Shows the store root, version, size and repository health in Settings</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F12</td><td>Setup and supervisor</td><td>Shows the supervisor state, the app version, the update check and the cloud workers</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <span class="kicker">F5 · Status and analytics</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>A status page that gives the full picture. The top shows the current state. Under it, charts show how each number goes up and down over the last hours and days.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>Now: open sessions by state (running, idle, stale, forgotten, not responding)</li>
+        <li>Now: open questions, PRs that wait for a review, runs that wait</li>
+        <li>Errors in the last hour and day: <code>turn.fail</code>, <code>delivery.blocked</code>, <code>blocked</code>, <code>state.conflict</code>, <code>merge.block</code></li>
+        <li>Trends: each number over time, with up and down markers</li>
+        <li>Filter by project and by stream</li>
+        <li>Tap a number: the list of items behind it</li>
+      </ul></div>
+      <div class="box"><h3>Logic</h3><ul>
+        <li>Each number is a query of the event stream and the registry. No new record</li>
+        <li>A trend is a count by hour or by day of one envelope kind or one state change</li>
+        <li>When a kind of error repeats more than usual, the page marks the rise</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> envelopes, <code>state.json</code> history, registry</li>
+        <li><span class="chip gap">gap</span> a count API by kind and by time bucket</li>
+        <li><span class="chip gap">gap</span> a cache, so that the page does not read all days each time</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">F6 · Projects</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>A project is one real project with its own repository, for example the VSA template, the VSA Unity package or Arctic. Inside a project, one feature can need many sessions and many PRs. That unit needs its own group, so that you can see all its work together.</p></div>
+      <div class="box"><h3>Proposal: three levels</h3>
+<pre class="mermaid">
+flowchart TD
+  P1["Project · VSA template · one repo"] --> S1["Stream · a big feature"]
+  P1 --> S2["Stream · another feature"]
+  S1 --> T1["Task · one session"]
+  S1 --> T2["Task · one session"]
+  P2["Project · VSA Unity package"] --> S3["Stream"]
+</pre>
+        <p>The C1 stream already groups the work of many sessions. So the proposal is: project → stream → task. See Q8.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>Projects list: each project with its streams, open sessions and PRs that wait</li>
+        <li>Project page: its streams, sessions, runs and PRs</li>
+        <li>New session form: pick the project, then the stream</li>
+        <li>A project filter on each page</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> <code>work.repo</code> and <code>work.cwd</code> in each registry entry</li>
+        <li><span class="chip gap">gap</span> a project record: name, repository, default branch, docs</li>
+        <li><span class="chip gap">gap</span> a <code>project</code> field on the session entry and the envelope</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">F7 · Timers and stale reminders</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>Reminders for items that nobody touched for a long time. Today only questions (10 min, then 60 min) and forgotten sessions get reminders. F7 gives the same rule to each item that waits.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>Stale PR: open, with no review for N hours</li>
+        <li>Stale run: in a wait for N hours</li>
+        <li>Stale session: idle with no report, or done and not archived</li>
+        <li>Stale stream: no envelope for N days</li>
+        <li>A timer that you set on an item: "remind me in 2 hours"</li>
+        <li>A "stale" badge on each page, and a list on the status page (F5)</li>
+        <li>Snooze and dismiss</li>
+      </ul></div>
+      <div class="box"><h3>Logic</h3><ul>
+        <li>The age of an item is the time since its last envelope</li>
+        <li>The limits are settings, as the <code>reminders</code> setting is today</li>
+        <li>One reminder for each stale episode, as <code>forgotten.json</code> does today. A new envelope starts a new episode</li>
+        <li>The watchdog of the supervisor checks the limits on each tick</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> question reminders, forgotten, <code>archive-reminder</code></li>
+        <li><span class="chip gap">gap</span> limits for PRs, runs and streams</li>
+        <li><span class="chip gap">gap</span> a timer record and a snooze record</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">F8 · Multi-project work</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>One feature can need work in more than one repository. Example: the VSA package changes. Then the VSA Unity package uses it as a consumer. Then the work goes back to the VSA package. The sessions and PRs are in different repositories, but they are one piece of work.</p></div>
+      <div class="box"><h3>Proposal</h3>
+<pre class="mermaid">
+flowchart LR
+  subgraph A["Project · VSA (producer)"]
+    A1["PR #12 · new API"]
+    A3["PR #14 · fix from the consumer"]
+  end
+  subgraph B["Project · VSA Unity (consumer)"]
+    B1["PR #7 · use the new API"]
+  end
+  A1 -->|needs| B1
+  B1 -->|finds a problem| A3
+</pre>
+        <p>A stream can hold sessions from more than one project. A PR can name a PR in another repository as "needs". See Q9.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>Stream page and PR stack across repositories, grouped by project</li>
+        <li>"Needs" links between PRs in different repositories</li>
+        <li>Merge order across repositories: the producer first</li>
+        <li>A child session in another repository, with the same stream</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> a stream id on each session, in any repository</li>
+        <li><span class="chip gap">gap</span> PR links across repositories</li>
+        <li><span class="chip gap">gap</span> <code>orch merge</code> knows one repository only</li>
+      </ul></div>
+    </div>
+  </section>
+</div>
+
 <!-- USER WORKFLOWS -->
 <div class="panel" id="flows" hidden>
   <section>
@@ -585,6 +723,14 @@ flowchart TD
       <p>The rules of F3 and F4 fit the step format of C2. As a workflow, the PR page becomes a run page with a PR view.</p>
       <p>Options: (a) no, keep the review rules in <code>orch</code>; (b) yes, sketch the pages for it and record it as a roadmap item.</p>
       <p class="rec">Recommendation: (b) as a record only. The sketches show the PR page both ways.</p></div>
+    <div class="q"><b>Q8. What is the unit inside a project, for a big feature?</b>
+      <p>A project is a repository. A big feature has many sessions and PRs. The C1 stream already groups many sessions.</p>
+      <p>Options: (a) the stream is that unit: project → stream → task; (b) a new unit, for example "initiative", between project and stream; (c) the stream stays free, and a project is only a filter.</p>
+      <p class="rec">Recommendation: (a). It adds no new term, and the stream already has its id on each session and envelope.</p></div>
+    <div class="q"><b>Q9. Can one stream span more than one project?</b>
+      <p>Multi-project work (F8) puts the sessions of one feature in different repositories.</p>
+      <p>Options: (a) yes: a stream has one main project, and can hold sessions of other projects; (b) no: one stream for each project, and a link between the streams.</p>
+      <p class="rec">Recommendation: (a). The work is one piece, and the stream bar shows it in one place.</p></div>
   </section>
 </div>
 </div>
