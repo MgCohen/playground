@@ -46,9 +46,10 @@ public sealed class StateReader(FileStore store)
         var floor = now - Window;
         bool Own(Event e) => e.From == self || e.Kind == EventKinds.TurnStart && e.Session == id;
         // The hung window first; only when it is empty, the 24 h window. No event at all: null, not hung (a new turn).
-        var lastOwn = store.Events.Since(now - hung).Where(Own).Select(e => Times.Parse(e.At)).Max()
-            ?? store.Events.Since(floor).Where(Own).Select(e => Times.Parse(e.At)).Max();
-        bool InputAfter(DateTimeOffset? at) => at is { } t && store.Events.Since(t > floor ? t : floor).Any(e => e.To == self && store.IsDeliverable(e) && Times.Parse(e.At) > t);
+        // The index by session gives only the envelopes of this session (finding B2-9).
+        var lastOwn = store.Events.OfSession(id, now - hung).Where(Own).Select(e => Times.Parse(e.At)).Max()
+            ?? store.Events.OfSession(id, floor).Where(Own).Select(e => Times.Parse(e.At)).Max();
+        bool InputAfter(DateTimeOffset? at) => at is { } t && store.Events.OfSession(id, t > floor ? t : floor).Any(e => e.To == self && store.IsDeliverable(e) && Times.Parse(e.At) > t);
         var undelivered = store.Undelivered(id);
         var openDecisions = store.OpenDecisions(id).Count;
         var blocked = store.Blocked(id);

@@ -103,7 +103,8 @@ public sealed class FileStore
     public Decision? Decision(string id, string decision) => Decision(decision) is { } d && d.Session == id ? d : null;
 
     public IReadOnlyList<Decision> Decisions(string id) =>
-        Events.FromParty(Parties.Session(id)).Where(e => EventKinds.Questions.Contains(e.Kind) && !e.IsForward && e.Thread is not null).Select(ToDecision).ToList();
+        EventKinds.Questions.SelectMany(kind => Events.PostsFrom(Parties.Session(id), kind)).Where(e => e.Thread is not null)
+            .OrderBy(e => e.Id, Core.Ordering.Names.Order).Select(ToDecision).ToList();
 
     public bool IsAnswered(string id, string decision) => Events.FirstAnswer(decision) is not null;
 

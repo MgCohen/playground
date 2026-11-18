@@ -9,7 +9,7 @@ namespace Orchestrator.Tray;
 /// <summary>
 /// The start of the tray app. Usage: Orchestrator.Tray.exe [--hidden] [--pin] [--selftest &lt;folder&gt;] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
 /// Mock mode (the default): the window shows mock data from a temporary store.
-/// Live mode: the window shows a real store. The supervisor process of that store (on the port) does the ticks; the tray only reads and posts.
+/// Live mode: the window shows a real store. With no store after --live, the tray uses the default store root (<see cref="Home.StoreRoot"/>). The supervisor process of that store (on the port) does the ticks; the tray only reads and posts.
 /// If no supervisor answers on the port, the tray starts one in its own process, unless --no-supervisor.
 /// </summary>
 public static partial class Program
@@ -39,7 +39,7 @@ public static partial class Program
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 
-        var live = Value(args, "--live");
+        var live = Value(args, "--live") ?? (args.Contains("--live") ? Home.StoreRoot() : null);
         using var mock = live is null ? MockStore.Create() : null;
         var store = live is null ? mock!.Store : new FileStore(live, writer: TrayWriter);
         var port = int.TryParse(Value(args, "--port") ?? Environment.GetEnvironmentVariable("ORCH_PORT"), out var p) ? p : 7777;
@@ -77,7 +77,7 @@ public static partial class Program
     static string? Value(string[] args, string name)
     {
         var at = Array.IndexOf(args, name);
-        return at >= 0 && at + 1 < args.Length ? args[at + 1] : null;
+        return at >= 0 && at + 1 < args.Length && !args[at + 1].StartsWith("--", StringComparison.Ordinal) ? args[at + 1] : null;
     }
 
     /// <summary>

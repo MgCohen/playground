@@ -895,7 +895,7 @@ Open: the self call `set_remote_control` with `enabled: false` on `self` showed 
 
 Regression found in the fix of item 9, and fixed: the snapshot used the hung time as the default when the hung window had no event of the session. A supervisor turn that counted as running before its `turn.start` was posted looked hung (`not-responding`), in about 2 of 7 runs of one test. Now an empty hung window falls back to the 24 h window, and no event at all gives no hung fault. Test `A_supervisor_turn_with_no_event_yet_is_not_hung_and_a_turn_with_old_events_is`.
 
-Finding B2-9 (open, A2): `FileStore.Report` and `FileStore.OpenDecisions` still copy the full stream (`Events.All()`) at each call, and the snapshot calls them for each session at each tick. An index by session in `EventStream` would fix it. This is the transport of A2, so B2 does not change it.
+Finding B2-9 (fixed in H4, see "H4 result"): `FileStore.Report` and `FileStore.OpenDecisions` still copy the full stream (`Events.All()`) at each call, and the snapshot calls them for each session at each tick. An index by session in `EventStream` would fix it. This is the transport of A2, so B2 does not change it.
 Unit tests after the review fixes: 197 of 197 pass (`dotnet test --solution Orchestrator.slnx`).
 
 ## Q1 result: one question kind (2026-11-17)
@@ -1270,6 +1270,35 @@ Branch `orch/integration-h2-h3`, base `orch/session-ff65da95` (H1). It merges H2
 
 Tests: `dotnet test --solution Orchestrator.slnx` passes 410, skips 7. `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` passes 8 of 8.
 
+## H4 result: store move, index and day cache (2026-11-18)
+
+Branch `orch/h4-store-move`, base `orch/integration-stack` (I2).
+
+| Item | Result |
+|---|---|
+| One store root | `ORCH_STORE`, else `%LOCALAPPDATA%\orch\store`. C# `Home.StoreRoot` (orch, supervisor, tray), plugin `backend.ts` `storeRoot`, `install.ps1 -Store`. `tray.ps1 -LiveDefault` and `--live` with no folder use it. `StoreBackends.Create` takes that root |
+| Migration | `orch store migrate [--from] [--to] [--dry-run] [--force]`: copy to `<target>.migrating`, check each file (size, SHA-256), rename. Refuses a source with a heartbeat in the last 30 s, and a target with data. A fresh target (only `version.json`, `policy.json`) goes to `<target>.fresh-<time>`. Deletes nothing |
+| B2-9 | `EventStream.OfSession` (index by session) and `LastFrom`/`PostsFrom` (index by sender and kind). `Report`, `Decisions`, `StateReader`, `Forgotten` and `Recovery` use them |
+| Day cache | `LocalEventRepository` lists `events/` and an open day folder again only when its write time changed or is newer than 2 s. `IAppendFeed` gives `EventStream` only the new envelopes |
+| Docs | `docs/store.md`: "Store root", "Migration of the old store", "Reads of the envelopes" |
+
+Tests:
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | ✅ 451 pass, 7 skip (new: `StoreMoveTests` 6, `SessionIndexTests` 5) |
+| `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | ✅ 14 of 14 (new: `storeRoot` default) |
+| Live migration in the scratchpad (`ORCH_STORE`, `ORCH_PORT=7871`): `orch init`, `enable`, `send` on the old store; `orch tree` on the new root (makes a fresh store); `orch store migrate` | ✅ 8 files copied and checked; the fresh store set aside; `orch events` on the new root shows both envelopes; the source did not change |
+| Benchmark (scratchpad, not in the repository): 20 sessions, 2,350 envelopes (one day of the main store), `Report` and `OpenDecisions` for each session | Base: 52.3 ms per tick. H4: 16.1 ms per tick |
+
+Not done (out of scope): the migration of the real store. To do it: stop the tray, the supervisor and the sessions; run `orch store migrate`; run `install.ps1` again; then start the supervisor and run `orch doctor`. Keep the old `store/` as a backup out of the checkout.
+
+Findings:
+
+- H4-1: each `orch` command makes `version.json` and `policy.json` at the store root (`Home.CheckVersion`, `Home.LoadPolicy`). After the default change, a first command on the new root makes a fresh store. The migration accepts it and sets it aside.
+- H4-2: the remaining cost of a tick is about 3 file system calls for each refresh (the `events/` and open day write times). A refresh happens at each query. A time window with no refresh in one tick would remove them, but a post of another process would then show later.
+- H4-3: `plugin/hooks` sessions that run now loaded the old `storeRoot` default. They keep the old store until they start again.
+
 ## C1 design: streams (2026-11-17)
 
 Design page: `docs/stream-design.html` (https://claude.ai/artifact/JErtGVNeiAxtUqxVvvMxA7). Vocabulary: `docs/vocabulary.html` (https://claude.ai/artifact/R22wQC78trvXokgDcp7Fvk). The user answered all questions in chat. The rows are in `docs/decisions.md`.
@@ -1568,7 +1597,7 @@ flowchart LR
 | Task | Stream | Content | Start |
 |---|---|---|---|
 | P0 | S (owner S) | `IProvider` in `Orchestrator.Providers`, `Providers/ClaudeCode`. Logic of today | After I2 |
-| H4 | H | Store move to `%LOCALAPPDATA%\orch\store`, index by session, day cache, migration | After I2. Merge before P0 if both touch `Home` or `Lifecycle.cs` |
+| H4 | H | Store move to `%LOCALAPPDATA%\orch\store`, index by session, day cache, migration. Done: see "H4 result". `Lifecycle.cs` not changed | After I2. Merge before P0 if both touch `Home` or `Lifecycle.cs` |
 | F2 | F | Templates on `IRepository`; modes and workflows as definitions | After I2 |
 | E2 | E | Visuals: the next E1 items and spike E-5 | After I2 |
 | S2 | S | Session registry on `IRepository`, store version 3 | After P0 and H4 |

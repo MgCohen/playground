@@ -2,7 +2,8 @@
 # Usage: .\tray.ps1                               Mock mode: mock data, no claude process. Exit with the tray menu.
 #        .\tray.ps1 -SelfTest                     Opens each view, examines the DOM, writes screenshots to selftest\ and exits.
 #        .\tray.ps1 -Live <store> [-Port <port>]  Live mode: shows a real store on the port (default ORCH_PORT or 7777). If no supervisor answers, the tray starts one (orch supervisor start rules).
-param([switch] $SelfTest, [string] $Live, [int] $Port)
+#        .\tray.ps1 -LiveDefault [-Port <port>]   Live mode on the default store root: ORCH_STORE, else %LOCALAPPDATA%\orch\store.
+param([switch] $SelfTest, [string] $Live, [switch] $LiveDefault, [int] $Port)
 $ErrorActionPreference = 'Stop'
 $project = Join-Path $PSScriptRoot 'src\Orchestrator.Tray'
 dotnet build $project -v q --nologo | Out-Null
@@ -10,6 +11,7 @@ if ($LASTEXITCODE -ne 0) { throw "The build of $project failed. Run: dotnet buil
 $appArgs = @()
 if ($SelfTest) { $appArgs += '--selftest', (Join-Path $PSScriptRoot 'selftest') }
 if ($Live) { $appArgs += '--live', (Resolve-Path $Live).Path }
+elseif ($LiveDefault) { $appArgs += '--live' }
 if ($Port) { $appArgs += '--port', $Port }
 dotnet run --no-build --project $project -- @appArgs
 exit $LASTEXITCODE

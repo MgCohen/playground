@@ -18,7 +18,7 @@ Read these files before you change this project:
 - Record each test result and each finding in `docs/plan.md`.
 - Keep the design page current. After a change, publish it again to the same artifact URL.
 - Never use click questions. The user answers in free text or by voice.
-- Test a live change in the scratchpad with its own `ORCH_STORE` and `ORCH_PORT`. Never use `store/` for tests.
+- Test a live change in the scratchpad with its own `ORCH_STORE` and `ORCH_PORT`. Never use the real store (`%LOCALAPPDATA%\orch\store`, or the old `store/`) for tests.
 
 ## Stack
 

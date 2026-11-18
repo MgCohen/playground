@@ -57,10 +57,14 @@ async function replace($: any, path: string, value: unknown, expected?: bigint):
   await $.fs.write(path, json(value))
 }
 
-// Today: ORCH_STORE, else <home>/store. Target of H4 (the H1 decision): %LOCALAPPDATA%\orch\store as the default
-// root, with the move of the old store. H4 changes this fallback and install.ps1 -Store together.
+// The store root: ORCH_STORE, else the default store root of H1, %LOCALAPPDATA%\orch\store. C# (Home.DefaultStoreRoot)
+// and install.ps1 -Store use the same default. With no LOCALAPPDATA (not Windows): $HOME/.local/share/orch/store, as .NET.
 export async function storeRoot($: any): Promise<string> {
-  return (await $.env.get('ORCH_STORE')) ?? `${S.home}/store`
+  const store = await $.env.get('ORCH_STORE')
+  if (store) return store
+  const local = await $.env.get('LOCALAPPDATA')
+  if (local) return `${local.replace(/\\/g, '/')}/orch/store`
+  return `${((await $.env.get('HOME')) || S.home).replace(/\\/g, '/')}/.local/share/orch/store`
 }
 
 export async function sessionDir($: any): Promise<string> {
