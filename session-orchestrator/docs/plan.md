@@ -1141,7 +1141,7 @@ Rules for each implementation: (1) `SaveChangesAsync` fails on an `Add` with an 
 | H5 remote access | H | Supervisor API for cloud workers (G1 HTTP mode) | With G1 |
 | H6 Notion store | H | Notion implementations, cache wrapper, supervisor as the only writer | Version 2 |
 
-Callers that bypass the ports today: `Supervisor.cs`, `Supervisor.Lifecycle.cs`, `EventCommands.cs`, `StateReader.cs`, `Lifecycle.cs`, and the hooks `stream.ts`, `lease.ts`, `state.ts`, `register.ts`, `events.ts`.
+Callers that bypass the ports today: `Supervisor.cs`, `Supervisor.Lifecycle.cs`, `EventCommands.cs`, `StateReader.cs`, `Lifecycle.cs`. The hooks use `backend.ts` since H3.
 
 Measured on the main store (2026-11-17): 3,654 envelopes in 2 days; 2,350 on 11-17, of which 88 % are `session.tool`, `session.output` and `session.input`.
 
@@ -1179,3 +1179,39 @@ Test results: `dotnet test --solution Orchestrator.slnx` passes: 413 tests, 406 
 - The plugin hooks still write the store directly. H3 moves them behind `backend.ts`.
 - `FileStore.PathOf` stays for tests that write a file as a hook does. It delegates to `LocalRepositories.PathOf`.
 - `SessionItems` of `stack/` lists only `*.json` files. Before H2 it read each name and dropped the names that were not JSON. The result is the same.
+
+## H3 result: plugin store backend (2026-11-18)
+
+`plugin/hooks/backend.ts` is the only hook module with store IO (`$.fs`). The other modules name an entity, and `backend.ts` knows the path. No change of behavior: the paths and the file contents stay the same.
+
+| Function | Entity | Path |
+|---|---|---|
+| `readSession`, `writeSession` | Session file: `lease.json`, `turn.json`, `status.json`, `meta.json`, `control.json`, `last-output.json` | `sessions/<id>/<file>` |
+| `isEnabled`, `enable` | Enabled marker | `sessions/<id>/enabled` |
+| `writeHeartbeat` | Heartbeat | `sessions/<id>/heartbeat.txt` |
+| `writeMirror` | Mirror row | `sessions/<id>/mirror/<ms>-<uuid>.json` |
+| `log` | Log of the process | `sessions/<id>/log-<holder>.txt` |
+| `controlState` | Lifecycle control | `sessions/<id>/control.json` |
+| `createEnvelope` | Body, then envelope | `bodies/<day>/<id>.json`, `events/<day>/<id>.json` |
+| `storeVersion`, `readPolicy` | Store contract, policy | `version.json`, `policy.json` |
+| `readTemplate` | Template meta and schema | `<home>/templates/<kind>/<file>.json` |
+| `storeRoot`, `sessionDir` | Store root, session folder | `ORCH_STORE`, else `<home>/store` |
+
+Store rules in `backend.ts`:
+
+1. A second create of an id fails with `StoreConflict`. `createEnvelope` uses it for the body and the envelope.
+2. A save with an expected version fails with `StoreConflict` if the file on disk has another `version`. No hook file has a version on the C# side yet, so no caller passes a version now. H2 adds the versions.
+
+Tests:
+
+| Test | Result |
+|---|---|
+| `node --test plugin/hooks/test/` (new: store IO check, create rule, version rule, read of bad JSON, post paths, log trim) | ✅ 6 of 6 |
+| `PluginLeaseTests` and `ContractTests` (the hook tests in C#; `PluginLeaseTests` now also runs the node tests) | ✅ 12 of 12 |
+| `dotnet test --solution Orchestrator.slnx` | ✅ 298 pass, 1 skip (demo seed) |
+
+Notes:
+
+- The store IO check refuses `$.fs`, an `fs:` key and an import of `fs` or `node:fs` in each hook module other than `backend.ts`. The test files in `plugin/hooks/test/` are not hook modules.
+- The brief names `PluginHookTests`. That class does not exist: the hook tests are `PluginLeaseTests` and `ContractTests`.
+- A create now reads the file before it writes, so a post does one more `exists` call for each file. `$.fs` has no exclusive create.

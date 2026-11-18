@@ -1,7 +1,8 @@
 // The session deliverer: a reactor of the live session on the stream.
 // A child `orch watch --to session:<id>` pushes one JSON line for each new envelope. When the session is idle,
 // the deliverer lists the envelopes with no ack (with their texts), submits them as one turn, and posts an ack for each.
-import { S, controlState, log, orch } from './state.ts'
+import { S, orch } from './state.ts'
+import { controlState, log } from './backend.ts'
 import { ack, post, type Envelope } from './stream.ts'
 import { mayDeliver, turnOpen } from './lease.ts'
 
