@@ -75,7 +75,7 @@ The envelopes are append only. Two parts keep the reads of each tick small:
 | Part | Where | Rule |
 |---|---|---|
 | Append feed | `IAppendFeed<T>` (`Core/Storage`), on `LocalEventRepository` | `ReadFrom(position)` gives only the envelopes after the position. `EventStream` keeps its position, so a call does not scan the envelopes that it has |
-| Day cache | `LocalEventRepository` | A day folder with two newer day folders is closed and never listed again. An open day folder is listed again only when its write time changed, or when its write time is newer than 2 s (`Settle`) |
+| Day cache | `LocalEventRepository` | A day folder with two newer day folders is closed and never listed again. An open day folder is listed again only when its write time changed, or when its write time is newer than 2 s (`Settle`). The list of day folders (`events/`) has the same cache |
 | Index by session | `EventStream.OfSession(id, since)` | The envelopes from a session, to a session, or with the session in the `session` field, in id order |
 | Index by sender and kind | `EventStream.LastFrom`, `PostsFrom` | The posts (no forwards) of one sender and one kind. `FileStore.Report` and `FileStore.Decisions` use it |
 

@@ -88,6 +88,15 @@ public sealed class SessionIndexTests
             var two = writer.Append(EventKinds.SessionTool, Parties.Session("a"), Parties.Supervisor, Data("two"));
             Assert.That(repo.ReadFrom(1).Select(d => d.Id), Is.EqualTo(new[] { two.Id }), "a new file changes the write time of the folder");
             Assert.That(repo.Listings, Is.EqualTo(listings + 1));
+
+            // A new day folder changes the write time of events/: the list of days is read again.
+            var events = Path.Combine(folder, StoreFiles.Events);
+            Directory.SetLastWriteTimeUtc(day, DateTime.UtcNow - TimeSpan.FromMinutes(1));
+            Directory.SetLastWriteTimeUtc(events, DateTime.UtcNow - TimeSpan.FromMinutes(1));
+            Assert.That(repo.ReadFrom(2), Is.Empty);
+            var tomorrow = new EventStream(folder, new ManualClock(DateTimeOffset.UtcNow.AddDays(1)), writer: "t");
+            var three = tomorrow.Append(EventKinds.SessionTool, Parties.Session("a"), Parties.Supervisor, Data("three"));
+            Assert.That(repo.ReadFrom(2).Select(d => d.Id), Is.EqualTo(new[] { three.Id }));
         }
         finally
         {

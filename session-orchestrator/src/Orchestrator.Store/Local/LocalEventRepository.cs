@@ -26,6 +26,7 @@ public sealed class LocalEventRepository(string root) : IRepository<Doc<Event>, 
     readonly Dictionary<string, Doc<Event>> byId = [];
     readonly HashSet<string> closedDays = [];
     readonly Dictionary<string, DateTime> dayWrites = [];
+    IReadOnlyList<string> days = [];
     readonly List<Doc<Event>> added = [];
     readonly List<Doc<Event>> removed = [];
 
@@ -110,15 +111,13 @@ public sealed class LocalEventRepository(string root) : IRepository<Doc<Event>, 
     void Refresh()
     {
         if (!Directory.Exists(Folder)) return;
-        var days = Files.Names(Folder);
+        // A new day folder changes the write time of events/, so the list of days has the same cache.
+        if (Changed("", Folder)) days = Files.Names(Folder);
         foreach (var day in days)
         {
             if (closedDays.Contains(day)) continue;
             var folder = Path.Combine(Folder, day);
-            // The write time is read before the listing: a file that arrives during the listing changes it again.
-            var write = Directory.GetLastWriteTimeUtc(folder);
-            if (dayWrites.TryGetValue(day, out var seen) && seen == write && DateTime.UtcNow - write > Settle) continue;
-            dayWrites[day] = write;
+            if (!Changed(day, folder)) continue;
             Listings++;
             foreach (var name in Files.Names(folder))
             {
@@ -129,6 +128,18 @@ public sealed class LocalEventRepository(string root) : IRepository<Doc<Event>, 
         // A day closes when two newer days exist: a late writer can still add a file to yesterday.
         foreach (var day in days.Take(Math.Max(0, days.Count - 2)))
             if (closedDays.Add(day)) dayWrites.Remove(day);
+    }
+
+    /// <summary>
+    /// True when the folder needs a listing: its write time changed, or it is newer than <see cref="Settle"/>. The
+    /// write time is read before the listing: a file that arrives during the listing changes it again.
+    /// </summary>
+    bool Changed(string key, string folder)
+    {
+        var write = Directory.GetLastWriteTimeUtc(folder);
+        if (dayWrites.TryGetValue(key, out var seen) && seen == write && DateTime.UtcNow - write > Settle) return false;
+        dayWrites[key] = write;
+        return true;
     }
 
     Doc<Event> Keep(Event e, string text) => Keep(new Doc<Event>(e.Id, e) { Version = Versions.Of(text) });
