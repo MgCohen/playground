@@ -171,7 +171,7 @@ flowchart LR
         <tr><td>C2</td><td>Store version 3: <code>meta.json</code> and <code>control.json</code> into <code>session.json</code></td><td>Small</td></tr>
         <tr><td>C3</td><td>Settings schema, copy at create, <code>mcp__orch__configure</code>, the settings block in the brief</td><td>Medium</td></tr>
         <tr><td>C4</td><td><code>templates/modes/</code> and the readers of the four axes</td><td>Medium</td></tr>
-        <tr><td>C5</td><td><code>IEngineAdapter</code> (create, open, turn, read, set, archive) with the Claude Code adapter. The supervisor and the CLI call Claude Code only through it</td><td>Medium</td></tr>
+        <tr><td>C5</td><td><code>IProvider</code> in <code>Orchestrator.Providers</code> (ask, create, open, turn, set, archive, read, caller id, doctor) with <code>Providers/ClaudeCode</code>. <code>DocsCheck</code> and <code>StateCheck</code> become neutral slices. No other code knows a provider</td><td>Medium</td></tr>
         <tr><td>C6</td><td><code>orch session</code> CLI, <code>/api/sessions</code> fields, tree view with tags</td><td>Small</td></tr>
         <tr><td>C7</td><td><code>orch session join</code> for other engines, with lease and heartbeat</td><td>Small</td></tr>
       </tbody>
@@ -603,22 +603,55 @@ sequenceDiagram
 <!-- ENGINES -->
 <div class="panel off" id="engines" role="tabpanel">
   <section>
-    <h2>Each engine is an adapter behind one port</h2>
-    <pre class="side"><span class="c">// Orchestrator.Core/Engines. The supervisor calls only this port.</span>
-public interface IEngineAdapter
+    <h2>Features are vertical slices; providers are one boundary</h2>
+    <div class="box"><pre class="mermaid">
+flowchart TB
+  subgraph SL["Feature slices: no provider code"]
+    SE["Sessions: create, open, turn, set, archive"]
+    DC["DocsCheck: prompt, parse"]
+    SC["StateCheck: prompt, parse"]
+    DR["Doctor"]
+  end
+  SL --> IP["IProvider (Orchestrator.Providers)"]
+  IP --> CC["Providers/ClaudeCode: claude -p, app files, notices with app tools"]
+  IP -.-> CX["Providers/Codex, later"]
+    </pre></div>
+    <pre class="side"><span class="c">// Orchestrator.Providers: the one boundary to a provider.
+// A slice holds its own logic (prompt, parse, rules) and calls this interface
+// only for the part that depends on the provider: a model call, an app fact, a CLI command.</span>
+public interface IProvider
 {
-    string Kind { get; }                                      <span class="c">// "claude-code", "codex", "script"</span>
-    EngineCaps Caps { get; }                                  <span class="c">// Resume, App, RemoteControl, LiveDelivery</span>
-    Task&lt;EngineRef&gt; Create(NewSession spec);                <span class="c">// the engine makes the session and gives its id</span>
-    Task Open(SessionEntry s);                                <span class="c">// first turn; public: show it where the engine can</span>
+    string Kind { get; }                                      <span class="c">// "claude-code", "codex"</span>
+    ProviderCaps Caps { get; }                                <span class="c">// Resume, App, RemoteControl, LiveDelivery</span>
+
+    <span class="c">// One-shot model call, no session. Used by DocsCheck and StateCheck.</span>
+    Task&lt;AskResult&gt; Ask(AskRequest r);                      <span class="c">// prompt, cwd, access: read-only, role, max turns</span>
+
+    <span class="c">// Model sessions. Used by the Sessions slice.</span>
+    Task&lt;EngineRef&gt; Create(NewSession spec);                <span class="c">// the provider makes the session and gives its id</span>
+    Task Open(SessionEntry s);                                <span class="c">// first turn; public: show it where the provider can</span>
     Task&lt;TurnResult&gt; Turn(SessionEntry s, string input);    <span class="c">// delivery when not live</span>
-    Task&lt;EngineFacts&gt; Read(SessionEntry s);                 <span class="c">// facts that the engine keeps</span>
     Task&lt;OpResult&gt; Set(SessionEntry s, EngineSetting setting); <span class="c">// title, visibility, model; done, waiting or failed</span>
-    Task&lt;OpResult&gt; Archive(SessionEntry s);                <span class="c">// engine side of the archive; done, waiting or failed</span>
-    Task&lt;AskResult&gt; Ask(AskRequest r);                      <span class="c">// one-shot model call, no session (docs check, state check)</span>
+    Task&lt;OpResult&gt; Archive(SessionEntry s);                <span class="c">// done, waiting or failed</span>
+
+    <span class="c">// Provider facts with no model: app files, CLI, API.</span>
+    Task&lt;EngineFacts&gt; Read(SessionEntry s);                 <span class="c">// in the app, archived in the app</span>
+    string? CallerSessionId();                                <span class="c">// the session that runs orch (CLAUDE_CODE_SESSION_ID)</span>
+    Task&lt;DoctorResult&gt; Doctor();                            <span class="c">// installed and configured</span>
 }
-<span class="c">// ISessionRegistry.Create calls adapter.Create, writes the entry, then calls adapter.Open.
-// No other code calls an engine.</span></pre>
+
+<span class="c">// A slice, with no provider code:</span>
+public sealed class DocsCheck(IProvider provider)
+{
+    public async Task&lt;DocsResult&gt; Check(DocsRequest q) =&gt;
+        Parse((await provider.Ask(new AskRequest(q.Cwd, Prompt(q), Access.ReadOnly, MaxTurns: 12))).Text);
+}</pre>
+    <ul>
+      <li>There is no <code>ClaudeDocsChecker</code> and no <code>ClaudeStateChecker</code>. There is one <code>DocsCheck</code> and one <code>StateCheck</code>. The prompt and the parse are in the slice.</li>
+      <li>Only <code>Providers/ClaudeCode</code> knows <code>claude</code>, its flags, the app files, the app tool names and <code>CLAUDE_CODE_*</code> variables.</li>
+      <li>A neutral request (<code>Access.ReadOnly</code>, a role name) becomes the provider form (<code>--allowedTools Read,Glob,Grep</code>, <code>--agent orch:state-checker</code>) inside the provider.</li>
+      <li>A call into our system (start the tray, write a record, post an envelope) needs no provider.</li>
+    </ul>
     <div class="scroll"><table>
       <thead><tr><th>Capability</th><th>Claude Code</th><th>Other engine</th><th>If absent</th></tr></thead>
       <tbody>
@@ -642,7 +675,7 @@ flowchart LR
   API --> ST[("Store: records, stream, run state")]
   ST --> OUT["Supervisor, registry service, tray"]
   subgraph OUTB["Out to a model: adapter only"]
-    OUT --> AD["IEngineAdapter"]
+    OUT --> AD["IProvider"]
     AD --> CC["Claude Code"]
     AD -.-> CX["Codex, later"]
   end
@@ -655,7 +688,7 @@ flowchart LR
         <tr><td>Talk to a session: a supervisor turn</td><td>Yes</td><td>Adapter <code>Turn</code></td></tr>
         <tr><td>Change a session on the engine side: title, Remote Control, archive, model</td><td>Yes</td><td>Adapter <code>Set</code>, <code>Archive</code></td></tr>
         <tr><td>Read an engine fact: in the app, archived in the app</td><td>Yes</td><td>Adapter <code>Read</code></td></tr>
-        <tr><td>A one-shot model call: docs check, state check</td><td>Yes</td><td>Adapter <code>Ask</code>, behind <code>IDocsChecker</code> and <code>IStateChecker</code></td></tr>
+        <tr><td>A one-shot model call: docs check, state check</td><td>Yes</td><td>Provider <code>Ask</code>, called by the slices <code>DocsCheck</code> and <code>StateCheck</code></td></tr>
         <tr><td>Start the tray or the supervisor</td><td>No</td><td>Direct, from a person, a model or a script</td></tr>
         <tr><td>Write a record: tags, code, a setting, a note</td><td>No</td><td><code>orch</code>, the API or the registry service</td></tr>
         <tr><td>Post or read an envelope</td><td>No</td><td><code>orch post</code>, <code>orch watch</code>, the MCP tools</td></tr>
