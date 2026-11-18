@@ -13,9 +13,12 @@ namespace Orchestrator.Tests;
 /// The contract of <see cref="IRepository{T, TId}"/>. Each fixture below runs these tests against one data kind of one
 /// implementation. A new implementation (for example Notion, H6) adds its fixtures here.
 /// </summary>
-public abstract class RepositoryContract<T>
+public abstract class RepositoryContract<T>(string backend)
 {
     string root = "";
+
+    /// <summary>The store of the backend of this fixture: the local folder, or the store API of a test supervisor on it (H5).</summary>
+    protected IRepositories Repos(string root) => backend == Backends.Http ? TestStoreApi.Open(root) : new LocalRepositories(root);
 
     /// <summary>A new repository on the same store, as a second process opens it.</summary>
     protected abstract IRepository<Doc<T>, string> Open(string root);
@@ -172,11 +175,13 @@ public abstract class RepositoryContract<T>
     }
 }
 
-public sealed class LocalEventContract : RepositoryContract<Event>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalEventContract(string backend) : RepositoryContract<Event>(backend)
 {
     static readonly DateTimeOffset Start = new(2026, 11, 18, 10, 0, 0, TimeSpan.Zero);
 
-    protected override IRepository<Doc<Event>, string> Open(string root) => new LocalRepositories(root).Events;
+    protected override IRepository<Doc<Event>, string> Open(string root) => Repos(root).Events;
 
     protected override string IdOf(int n) => $"{Start.AddDays(n).ToUnixTimeMilliseconds()}-0000000{n}-test";
 
@@ -186,20 +191,24 @@ public sealed class LocalEventContract : RepositoryContract<Event>
     protected override bool Changes => false;
 }
 
-public sealed class LocalBodyContract : RepositoryContract<JsonElement>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalBodyContract(string backend) : RepositoryContract<JsonElement>(backend)
 {
-    protected override IRepository<Doc<JsonElement>, string> Open(string root) => new LocalRepositories(root).Bodies;
+    protected override IRepository<Doc<JsonElement>, string> Open(string root) => Repos(root).Bodies;
 
     protected override string IdOf(int n) => $"{StoreFiles.Bodies}/2026-11-1{n}/{n}-abc-test.json";
 
     protected override JsonElement Sample(int n) => JsonSerializer.SerializeToElement(new Dictionary<string, object?> { ["text"] = $"body {n} – ü", ["n"] = n }, StoreJson.Options);
 }
 
-public sealed class LocalPolicyContract : RepositoryContract<Policy>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalPolicyContract(string backend) : RepositoryContract<Policy>(backend)
 {
     static readonly Policy Default = Policy.Parse(File.ReadAllText(Home.Config("policy.default.json")), "policy.default.json");
 
-    protected override IRepository<Doc<Policy>, string> Open(string root) => new LocalRepositories(root).Policies;
+    protected override IRepository<Doc<Policy>, string> Open(string root) => Repos(root).Policies;
 
     protected override string IdOf(int n) => StoreIds.Policy;
 
@@ -208,9 +217,11 @@ public sealed class LocalPolicyContract : RepositoryContract<Policy>
     protected override int Ids => 1;
 }
 
-public sealed class LocalStoreVersionsContract : RepositoryContract<StoreVersion>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalStoreVersionsContract(string backend) : RepositoryContract<StoreVersion>(backend)
 {
-    protected override IRepository<Doc<StoreVersion>, string> Open(string root) => new LocalRepositories(root).StoreVersions;
+    protected override IRepository<Doc<StoreVersion>, string> Open(string root) => Repos(root).StoreVersions;
 
     protected override string IdOf(int n) => StoreIds.Version;
 
@@ -219,36 +230,44 @@ public sealed class LocalStoreVersionsContract : RepositoryContract<StoreVersion
     protected override int Ids => 1;
 }
 
-public sealed class LocalClaimContract : RepositoryContract<string>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalClaimContract(string backend) : RepositoryContract<string>(backend)
 {
-    protected override IRepository<Doc<string>, string> Open(string root) => new LocalRepositories(root).Claims;
+    protected override IRepository<Doc<string>, string> Open(string root) => Repos(root).Claims;
 
     protected override string IdOf(int n) => StoreIds.AnswerClaim($"decision-{n}");
 
     protected override string Sample(int n) => $"session:writer-{n}";
 }
 
-public sealed class LocalCursorContract : RepositoryContract<CursorState>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalCursorContract(string backend) : RepositoryContract<CursorState>(backend)
 {
-    protected override IRepository<Doc<CursorState>, string> Open(string root) => new LocalRepositories(root).Cursors;
+    protected override IRepository<Doc<CursorState>, string> Open(string root) => Repos(root).Cursors;
 
     protected override string IdOf(int n) => $"session-s{n}/deliver";
 
     protected override CursorState Sample(int n) => new($"session:s{n}", "deliver", $"{n}-x-test", [$"{n}-x-test"], $"2026-11-18T10:00:0{n}Z") { Filter = "to = self" };
 }
 
-public sealed class LocalNudgeContract : RepositoryContract<string>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalNudgeContract(string backend) : RepositoryContract<string>(backend)
 {
-    protected override IRepository<Doc<string>, string> Open(string root) => new LocalRepositories(root).Nudges;
+    protected override IRepository<Doc<string>, string> Open(string root) => Repos(root).Nudges;
 
     protected override string IdOf(int n) => $"session-s{n}";
 
     protected override string Sample(int n) => n == 0 ? "" : $"{n}-x-test";
 }
 
-public sealed class LocalSessionFolderContract : RepositoryContract<string>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalSessionFolderContract(string backend) : RepositoryContract<string>(backend)
 {
-    protected override IRepository<Doc<string>, string> Open(string root) => new LocalRepositories(root).Sessions;
+    protected override IRepository<Doc<string>, string> Open(string root) => Repos(root).Sessions;
 
     protected override string IdOf(int n) => $"session-{n}";
 
@@ -257,27 +276,33 @@ public sealed class LocalSessionFolderContract : RepositoryContract<string>
     protected override bool Changes => false;
 }
 
-public sealed class LocalLeaseContract : RepositoryContract<Lease>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalLeaseContract(string backend) : RepositoryContract<Lease>(backend)
 {
-    protected override IRepository<Doc<Lease>, string> Open(string root) => new LocalRepositories(root).SessionFile<Lease>(StoreFiles.Lease);
+    protected override IRepository<Doc<Lease>, string> Open(string root) => Repos(root).SessionFile<Lease>(StoreFiles.Lease);
 
     protected override string IdOf(int n) => $"session-{n}";
 
     protected override Lease Sample(int n) => new(n % 2 == 0 ? Holders.Live : Holders.Supervisor, $"2026-11-18T10:00:0{n}Z") { Pid = 100 + n };
 }
 
-public sealed class LocalHeartbeatContract : RepositoryContract<string>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalHeartbeatContract(string backend) : RepositoryContract<string>(backend)
 {
-    protected override IRepository<Doc<string>, string> Open(string root) => new LocalRepositories(root).SessionFile<string>(StoreFiles.Heartbeat);
+    protected override IRepository<Doc<string>, string> Open(string root) => Repos(root).SessionFile<string>(StoreFiles.Heartbeat);
 
     protected override string IdOf(int n) => $"session-{n}";
 
     protected override string Sample(int n) => $"2026-11-18T10:00:0{n}Z";
 }
 
-public sealed class LocalSessionItemContract : RepositoryContract<DocsCheck>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalSessionItemContract(string backend) : RepositoryContract<DocsCheck>(backend)
 {
-    protected override IRepository<Doc<DocsCheck>, string> Open(string root) => new LocalRepositories(root).SessionItems<DocsCheck>("session-1", StoreFiles.DocsChecks);
+    protected override IRepository<Doc<DocsCheck>, string> Open(string root) => Repos(root).SessionItems<DocsCheck>("session-1", StoreFiles.DocsChecks);
 
     protected override string IdOf(int n) => $"decision-{n}";
 
@@ -310,9 +335,9 @@ public sealed class RepositoryRuleTests
     }
 }
 
-public abstract class LocalDefinitionContract(Catalog catalog) : RepositoryContract<Definition>
+public abstract class LocalDefinitionContract(Catalog catalog, string backend) : RepositoryContract<Definition>(backend)
 {
-    protected override IRepository<Doc<Definition>, string> Open(string root) => new LocalRepositories(root).Definitions(catalog);
+    protected override IRepository<Doc<Definition>, string> Open(string root) => Repos(root).Definitions(catalog);
 
     protected override string IdOf(int n) => $"def-{n}";
 
@@ -323,8 +348,14 @@ public abstract class LocalDefinitionContract(Catalog catalog) : RepositoryContr
     });
 }
 
-public sealed class LocalTemplateDefinitionContract() : LocalDefinitionContract(Catalog.Templates);
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalTemplateDefinitionContract(string backend) : LocalDefinitionContract(Catalog.Templates, backend);
 
-public sealed class LocalModeDefinitionContract() : LocalDefinitionContract(Catalog.Modes);
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalModeDefinitionContract(string backend) : LocalDefinitionContract(Catalog.Modes, backend);
 
-public sealed class LocalWorkflowDefinitionContract() : LocalDefinitionContract(Catalog.Workflows);
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalWorkflowDefinitionContract(string backend) : LocalDefinitionContract(Catalog.Workflows, backend);

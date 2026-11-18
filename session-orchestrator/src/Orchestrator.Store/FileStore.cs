@@ -18,11 +18,17 @@ public sealed class FileStore
     Policy? policy;
 
     public FileStore(string root, TimeProvider? clock = null, TemplateSet? templates = null, string writer = Parties.Supervisor)
+        : this(StoreBackends.Create(root), clock, templates, writer)
     {
-        Repositories = StoreBackends.Create(root);
+    }
+
+    /// <summary>The store on given repositories, for example the store API of a test supervisor.</summary>
+    public FileStore(IRepositories repositories, TimeProvider? clock = null, TemplateSet? templates = null, string writer = Parties.Supervisor)
+    {
+        Repositories = repositories;
         Root = Repositories.Location;
         Clock = clock ?? TimeProvider.System;
-        Texts = new Texts(templates ?? Home.LoadTemplates(Root));
+        Texts = new Texts(templates ?? Home.LoadTemplatesOf(repositories));
         Events = new EventStream(Repositories, Clock, writer, Texts.Templates);
         Renderer = new Renderer(this);
     }

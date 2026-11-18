@@ -23,6 +23,7 @@ builder.Services.AddSingleton(services => new SupervisorOptions(4, 3, 2, Home.Lo
 });
 builder.Services.AddSingleton<Supervisor>();
 builder.Services.AddSingleton<Board>();
+builder.Services.AddSingleton(services => new Orchestrator.Store.Remote.StoreService(services.GetRequiredService<FileStore>().Repositories));
 builder.Services.AddSingleton<StreamHub>();
 builder.Services.AddSingleton(services => new SignIn(services.GetRequiredService<IConfiguration>()["ORCH_TOKEN"]));
 builder.Services.AddHostedService<TickService>();
@@ -34,6 +35,7 @@ app.UseMiddleware<SignInMiddleware>();
 app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapOrchestratorApi();
+app.MapStoreApi();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 var store = app.Services.GetRequiredService<FileStore>();
 var policy = app.Services.GetRequiredService<SupervisorOptions>().Policy;
