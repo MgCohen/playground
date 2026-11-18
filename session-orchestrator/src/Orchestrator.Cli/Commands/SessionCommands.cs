@@ -57,8 +57,9 @@ public static class SessionCommands
     public static int Tree(CommandContext c)
     {
         var store = c.Store;
-        var all = store.AllSessions().ToHashSet();
-        var metas = all.Select(store.Session).ToList();
+        var stream = c.Args.Option("stream");
+        var metas = store.AllSessions().Select(store.Session).Where(m => InStream(m, stream)).ToList();
+        var all = metas.Select(m => m.Id).ToHashSet();
         var now = store.Clock.GetUtcNow();
         void Print(SessionEntry meta, int depth)
         {
@@ -66,20 +67,35 @@ public static class SessionCommands
             foreach (var child in metas.Where(m => m.Parent == meta.Id).OrderBy(m => m.Created?.At)) Print(child, depth + 1);
         }
         foreach (var root in metas.Where(m => m.Parent is null || !all.Contains(m.Parent)).OrderBy(m => m.Created?.At)) Print(root, 0);
-        if (metas.Count == 0) c.Output.WriteLine("No sessions.");
+        if (metas.Count == 0) c.Output.WriteLine(stream is null ? "No sessions." : $"No sessions in stream {stream}.");
         return 0;
     }
 
+    /// <summary>True when there is no stream filter, or the session is in the stream (the registry entry, no case).</summary>
+    public static bool InStream(SessionEntry meta, string? stream) =>
+        stream is null || string.Equals(meta.Stream, stream, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The status of one session, or with <c>--stream</c> the status of each session of that stream.</summary>
     public static int Status(CommandContext c)
     {
+        if (c.Args.Option("stream") is not { } stream) return Status(c, c.Session(1));
+        if (c.Args.Positional.Count > 1) throw new UsageException("give a <session> or --stream, not both");
+        var metas = c.Store.AllSessions().Select(c.Store.Session).Where(m => InStream(m, stream)).OrderBy(m => m.Created?.At, StringComparer.Ordinal).ToList();
+        foreach (var meta in metas) Status(c, meta.Id);
+        if (metas.Count == 0) c.Output.WriteLine($"No sessions in stream {stream}.");
+        return 0;
+    }
+
+    static int Status(CommandContext c, string id)
+    {
         var store = c.Store;
-        var id = c.Session(1);
         var meta = store.Session(id);
         var now = store.Clock.GetUtcNow();
         c.Output.WriteLine(Line(store, meta, now));
         c.Output.WriteLine($"  id: {id}");
         c.Output.WriteLine($"  cwd: {store.Cwd(id)}");
         c.Output.WriteLine($"  code: {store.Registry.FullCode(id)}");
+        if (meta.Stream is { } inStream) c.Output.WriteLine($"  stream: {inStream}");
         if (meta.Work.Branch is { } branch) c.Output.WriteLine($"  worktree: {meta.Work.Cwd} on {branch} (repository {meta.Work.Repo})");
         if (meta.Parent is { } parent) c.Output.WriteLine($"  parent: {parent}");
         var lease = store.Lease(id);

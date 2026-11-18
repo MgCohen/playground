@@ -16,8 +16,8 @@ namespace Orchestrator.Cli
               orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--type A] [--stream S] [--workflow W] [--worktree] [--allow-defaults] [--background] [--parent ID]
               orch enable [--title T] [--parent ID] [--id ID]
               orch send <session> <text> [--from P]
-              orch tree
-              orch status <session>
+              orch tree [--stream S]
+              orch status <session> | --stream S
               orch stop <session> [--reason R]
               orch resume <session>
               orch archive <session> [--force] [--tree] [--store-only] [--wait <seconds>]
@@ -29,7 +29,7 @@ namespace Orchestrator.Cli
               orch run step <run> [--holds "c1; c2"] [--output-<name> text] [--pick STEP] [--answer T] [--verdict approve|change|refuse] [--skip-approval] [--done]
               orch run stop <run> [--reason R]
             Questions (old name: decisions; the command names stay)
-              orch questions [--session ID]              (old name, kept: orch decisions)
+              orch questions [--session ID] [--stream S]           (old name, kept: orch decisions)
               orch answer <question> <text> [--via P]
               orch chat-answer <session> <text>
               orch inbox [accept|refuse <id> [text]]
@@ -42,7 +42,7 @@ namespace Orchestrator.Cli
               orch merge <pr>|<branch> [--base B]
             Stream and tools (P: user, supervisor, session:<id> or the first characters of a session id)
               orch init
-              orch post <kind> --to P [--from P] [--thread T] [--needs N] [--reply ID] [--via P] [--json FILE|-] [--<field> value]
+              orch post <kind> --to P [--from P] [--thread T] [--stream S] [--needs N] [--reply ID] [--via P] [--json FILE|-] [--<field> value]
               orch events [--view inbox|decisions|timeline|thread|ledger [ARG]] [--since 3h] [--until T] [--after ID] [--kind a,b] [--session ID] [--party P] [--from P] [--to P] [--thread T] [--needs [answer|review|ack]] [--open] [--ledger] [--forwards false] [--heads] [--newest] [--limit N] [--follow] [--json] [--body]
               orch read <id> [--for P] [--render NAME]
               orch watch --to P [--kind a,b] [--thread T] [--render NAME] [--once] [--timeout S] [--list]

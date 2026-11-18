@@ -13,6 +13,9 @@ public sealed record Event(string Id, string At, string? Session, string Kind, s
     public string? Thread { get; init; }
     public string? Needs { get; init; }
 
+    /// <summary>The work stream (C1) of the session of the envelope, from the session registry. Null: no stream, or an envelope from before C4.</summary>
+    public string? Stream { get; init; }
+
     public string? Ref(string key) => Refs.TryGetValue(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     public IReadOnlyList<string> RefList(string key) =>
