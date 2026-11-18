@@ -107,6 +107,15 @@ public interface IRunMessages
 
     /// <summary>A free text message to a session.</summary>
     void Notify(string session, string text);
+
+    /// <summary>
+    /// The thread of the newest open question that <paramref name="session"/> asked itself (not through the runner)
+    /// at or after the time <paramref name="since"/>. Null: none.
+    /// </summary>
+    string? OpenQuestion(string session, string since) => null;
+
+    /// <summary>Closes a question of the run that has no answer: the run moved on, and the question is stale.</summary>
+    void Close(string thread, string reason) { }
 }
 
 /// <summary>A tool step: the runner calls the named <see cref="IWorkflowTool"/>.</summary>
@@ -137,9 +146,19 @@ public sealed class AskExecutor(IRunMessages messages) : IStepExecutor
     public StepStart Start(StepContext context)
     {
         var step = context.Step;
+        var run = context.Run;
         var to = step.Approval?.By ?? "user";
         var options = step.Approval is not null ? RunVerdicts.All.ToList() : null;
-        var thread = messages.Ask(context.Run.Owner, to, $"{step.Title}: {step.Instructions}", context.Prompt, options);
+        // C3-F3: one question, one answer. When the owner asked the question itself in the step before, the step uses that thread.
+        var before = run.History.Count >= 2 ? run.History[^2] : null;
+        var thread = step.Approval is null && before is not null ? messages.OpenQuestion(run.Owner, before.Started) : null;
+        if (thread is null)
+        {
+            var text = before?.Output.GetValueOrDefault("question") is { Length: > 0 } question && step.Input?.Contains("question") == true
+                ? question
+                : $"{step.Title}: {step.Instructions}";
+            thread = messages.Ask(run.Owner, to, text, context.Prompt, options);
+        }
         return new StepStart(null, new RunWait(WaitKinds.Ask, $"The step {step.Id} waits for the answer of {to}.") { Thread = thread, By = to, Options = options }) { Thread = thread };
     }
 
