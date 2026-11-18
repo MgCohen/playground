@@ -460,6 +460,18 @@ Store version 3 keeps the data of each session in one registry entry, `sessions/
 | `lifecycle` | `phase` (`active`, `stopped`, `archived`) with `at`, `by` and `reason`; `started` (the engine session exists) | `orch stop`, `resume`, `archive`, the API, the supervisor |
 | `created`, `updated` | A time and a party | Each write |
 
+### A child that the app starts (R-F8)
+
+A parent that runs in the desktop app starts each child that is not a background child with the app tool, so the child shows in the app with Remote Control from the start. The app gives the session id, so the entry cannot exist before the start.
+
+| Step | Who | Store effect |
+|---|---|---|
+| `spawn_child` runs `orch new … --app-start` | Plugin of the parent | No entry. The brief goes to a start file in `%TEMP%/orch-starts/` (`ORCH_START_DIR` moves it): `store`, `brief`, `createdBy`, `from`. The output is `app-start <file>`, then the app call for the parent |
+| The parent calls the app tool | Parent | None |
+| `orch join <file>` as the first action | Child | The entry with the id of the child: `engine.imported: true`, `engine.appId`, `lifecycle.started: true`, `work.cwd` only (the worktree of the app is the app's), the enabled file, the brief envelope, `session.start`. The start file is deleted |
+
+The supervisor runs no first turn for a joined entry: it is started. A background child, a cloud child and a parent outside the app get the entry at once, as before.
+
 The full code is the codes from the root down, with a space between them: `O1 C2 C1`. The app title is `[<full code>] <title>` (`SessionRegistry.AppTitle`). The registry does not store the full code, so a changed code of a parent cannot make it old. A code has no space.
 
 ### Settings

@@ -57,6 +57,11 @@ public sealed class FakeProvider(ProviderOptions options) : IProvider
 
     public string? CallerSessionId() => null;
 
+    /// <summary>True when the behavior file has <c>"app": { "caller": true }</c>.</summary>
+    public bool CallerInApp() => Load().App?.Caller ?? false;
+
+    public string? AppStartInstruction(AppStartRequest request) => $"fake_start_session title={request.Title} cwd={request.Cwd} worktree={request.Worktree} command={request.Command}";
+
     public IReadOnlyList<DoctorCheck> Doctor(CommandRun run) =>
         [new DoctorCheck("fake provider", () => (true, BehaviorFile is null ? "no behavior file: each turn is good" : $"behavior file {BehaviorFile}"))];
 
@@ -109,5 +114,8 @@ public sealed class FakeProvider(ProviderOptions options) : IProvider
     {
         public bool InApp { get; init; }
         public bool Archived { get; init; }
+
+        /// <summary>The process that calls the provider runs in the app (the caller of <c>orch new --app-start</c>).</summary>
+        public bool Caller { get; init; }
     }
 }

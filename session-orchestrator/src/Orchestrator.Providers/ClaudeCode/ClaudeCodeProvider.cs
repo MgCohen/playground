@@ -122,6 +122,38 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
 
     public string? CallerSessionId() => Environment.GetEnvironmentVariable(SessionIdVariable) is { Length: > 0 } id ? id : null;
 
+    /// <summary>The desktop app sets this variable in each session that it runs. A headless <c>claude -p</c> turn does not have it (R-16).</summary>
+    public const string EntrypointVariable = "CLAUDE_CODE_ENTRYPOINT";
+
+    public const string DesktopEntrypoint = "claude-desktop";
+
+    /// <summary>The app tool that starts a session: in the sidebar at once, with Remote Control from the start (R-16).</summary>
+    public const string StartTool = "mcp__ccd_session__start_session";
+
+    public bool CallerInApp() => Environment.GetEnvironmentVariable(EntrypointVariable) == DesktopEntrypoint;
+
+    /// <summary>
+    /// The call of <see cref="StartTool"/> for the parent. The permission mode is explicit: an app session started with
+    /// no mode showed <c>auto</c> at the start and <c>default</c> after its first turn (R-16).
+    /// </summary>
+    public string? AppStartInstruction(AppStartRequest request)
+    {
+        var prompt = $"You are a child session under the orchestrator. As your first action, run this shell command, and nothing before it: {request.Command} . Then follow the brief that arrives as the next message.";
+        var call = new Dictionary<string, object>
+        {
+            ["initiation"] = "user_asked",
+            ["context"] = "fresh",
+            ["title"] = request.Title,
+            ["cwd"] = request.Cwd,
+            ["use_worktree"] = request.Worktree,
+            ["permission_mode"] = "auto",
+            ["prompt"] = prompt,
+            ["background"] = $"A child session of the orchestrator for the task \"{request.Title}\". The command in the prompt joins it to the orchestrator store; the brief with the goal, the scope and the done check then arrives as a message.",
+        };
+        return $"Start the child in the desktop app now: call {StartTool} with these inputs: {JsonSerializer.Serialize(call)}. "
+            + "Do not change the prompt. If you do not have that tool, or the call is refused, call spawn_child again with the same fields and inApp false: then the supervisor starts the child.";
+    }
+
     public IReadOnlyList<DoctorCheck> Doctor(CommandRun run) =>
     [
         new("claude", () => run("claude", "--version") is var r && r.Ok ? (true, r.Text) : (false, "not on the PATH")),

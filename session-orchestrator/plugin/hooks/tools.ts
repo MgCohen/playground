@@ -91,6 +91,10 @@ export async function registerTools($: any): Promise<void> {
   const brief = await templateSchema($, 'brief')
   delete brief.properties.parent
   delete brief.properties.allowDefaults
+  brief.properties.inApp = {
+    type: 'boolean',
+    description: 'Default true: if this session runs in the desktop app, start the child in the app, with Remote Control. false: the supervisor starts the child.',
+  }
   await $.tool.register({
     name: 'spawn_child',
     description: `${await purpose($, 'brief')} Start a child session under the orchestrator (the brief template). The skill orch:orch-brief tells how to fill it. When the child reports done or blocked, you get a new message that starts with "Report from child".`,
@@ -174,14 +178,31 @@ export async function spawnChild($: any, e: any): Promise<any> {
   if (e.worktree === true) argv.push('--worktree')
   if (e.background === true) argv.push('--background')
   if (e.where === 'cloud') argv.push('--where', 'cloud')
+  if (e.inApp !== false) argv.push('--app-start')
   const run = await orch($, argv)
   if (!run.ok) {
     await log($, `spawn_child failed: ${run.text.slice(0, 400)}`)
     return { result: `orch: spawn_child failed: ${run.text.slice(0, 400)}. Fix the fields, or do the work yourself.` }
   }
+  const start = appStart(run.text)
+  if (start) {
+    await log($, `spawn_child ${e.title}: app start ${start.file}`)
+    return { result: start.instruction }
+  }
   const child = run.text.split(/\r?\n/).pop() ?? run.text
   await log($, `spawn_child ${child} ${e.title}`)
   return { result: `Started child "${e.title}" (${child}). It reports back as a new message that starts with "Report from child". If you have nothing else to do now, end your turn.` }
+}
+
+// The output of `orch new --app-start` for a parent in the desktop app: the line "app-start <file>", then the app call
+// that starts the child (R-F8). Any other output is the id of a child that the supervisor starts.
+export const APP_START_MARK = 'app-start '
+
+export function appStart(output: string): { file: string; instruction: string } | undefined {
+  const lines = output.trim().split(/\r?\n/)
+  const first = lines.findIndex(line => line.startsWith(APP_START_MARK))
+  if (first < 0) return undefined
+  return { file: lines[first].slice(APP_START_MARK.length).trim(), instruction: lines.slice(first + 1).join('\n').trim() }
 }
 
 export async function answerChild($: any, e: any): Promise<any> {

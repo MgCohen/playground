@@ -13,8 +13,10 @@ namespace Orchestrator.Cli
             orch: the command of the session orchestrator. Each command reads or writes the store (ORCH_STORE).
 
             Sessions
-              orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--type A] [--stream S] [--workflow W] [--worktree] [--allow-defaults] [--background] [--where local|cloud] [--parent ID]
+              orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--type A] [--stream S] [--workflow W] [--worktree] [--allow-defaults] [--background] [--where local|cloud] [--parent ID] [--app-start]
+                                                        --app-start: a caller in the desktop app gets a start file and the app call that starts the child there
               orch enable [--title T] [--parent ID] [--id ID]
+              orch join <start file> [--id ID]         the first command of a child that the app started: the store entry, the brief, the parent link
               orch send <session> <text> [--from P]
               orch tree [--stream S]
               orch status <session> | --stream S
@@ -81,6 +83,7 @@ namespace Orchestrator.Cli
                 {
                     "new" => SessionCommands.New(command),
                     "enable" => SessionCommands.Enable(command),
+                    "join" => SessionCommands.Join(command),
                     "send" => SessionCommands.Send(command),
                     "tree" => SessionCommands.Tree(command),
                     "status" => SessionCommands.Status(command),

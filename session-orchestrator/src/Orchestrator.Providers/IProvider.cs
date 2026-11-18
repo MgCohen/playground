@@ -27,6 +27,18 @@ public interface IProvider
     /// <summary>The engine session id of the session that runs this process. Null: the process does not run in a session.</summary>
     string? CallerSessionId();
 
+    /// <summary>
+    /// True when the process that runs this call is a session in the app of the engine, with the app tools. A parent in
+    /// the app starts its children with the app tool, so they show in the app with Remote Control from the start (R-F8).
+    /// </summary>
+    bool CallerInApp();
+
+    /// <summary>
+    /// The instruction for a parent in the app: start the child with the app tool, with this first command. Null: the
+    /// engine cannot start a session from the app, and the supervisor starts the child.
+    /// </summary>
+    string? AppStartInstruction(AppStartRequest request);
+
     /// <summary>The notice fields that name the app tools for Remote Control and archive.</summary>
     IReadOnlyList<(string Key, object? Value)> AppTools { get; }
 
@@ -42,6 +54,9 @@ public delegate (bool Ok, string Text) CommandRun(string program, params string[
 
 /// <summary>One setup check of orch doctor.</summary>
 public sealed record DoctorCheck(string Name, Func<(bool Ok, string Detail)> Test);
+
+/// <summary>A child that a parent in the app starts. <c>Command</c>: the first command of the child, which joins it to the store.</summary>
+public sealed record AppStartRequest(string Title, string Cwd, bool Worktree, string Command);
 
 /// <summary>The app facts of one session. <c>InApp</c>: the app has a record of the session.</summary>
 public sealed record AppFacts(bool InApp, bool Archived);
