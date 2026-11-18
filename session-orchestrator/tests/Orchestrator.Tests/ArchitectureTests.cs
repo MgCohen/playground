@@ -21,6 +21,7 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Store/SupervisorHost.cs", [], "the supervisor process records and the install record of the app, not the store"),
         ("src/Orchestrator.Providers/ClaudeCode/AppRecords.cs", [], "the records of the desktop app, not the store"),
         ("src/Orchestrator.Providers/Fake/FakeProvider.cs", [], "the behavior file of the fake provider, not the store"),
+        ("src/Orchestrator.Web/DemoPane.cs", [], "the behavior file of the fake provider and the scratch folder of new demo sessions, not the store"),
         ("src/Orchestrator.Providers/ClaudeCode/ClaudeCodeProvider.cs", ["File.ReadAllText(settings)", "plugin.json"], "the settings of Claude Code for orch doctor"),
         ("src/Orchestrator.Tray/SelfTest.cs", [], "the screenshots of the tray self test"),
         ("src/Orchestrator.Tray/SelfTest.Motion.cs", [], "the screenshots of the motion checks of the tray self test"),

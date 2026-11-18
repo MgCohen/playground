@@ -1,0 +1,77 @@
+@page "/demo"
+@inherits LiveView
+@layout DemoLayout
+@inject DemoPane Pane
+
+@* The demo control pane. No link goes here: open /demo by hand on a demo supervisor with the fake provider. *@
+
+<PageTitle>Demo pane · orch</PageTitle>
+
+<header class="crd hd"><h1 class="title disp">Demo pane</h1></header>
+
+<div class="stack">
+    @if (Pane.Refusal is { } reason)
+    {
+        <div class="empty" id="demo-refused"><span class="nm">The demo pane is off</span><span class="sub">@reason</span></div>
+    }
+    else
+    {
+        <div class="crd">
+            <div class="kv"><span class="k">Store</span><span class="mono ell">@Board.StoreRoot</span></div>
+            <label class="kv"><span class="k">Session</span>
+                <select id="demo-session" @bind="session">
+                    <option value="">Random session</option>
+                    @foreach (var (id, title) in sessions)
+                    {
+                        <option value="@id">@title (@id[..8])</option>
+                    }
+                </select>
+            </label>
+        </div>
+        <div class="acts small" id="demo-actions" style="flex-wrap: wrap">
+            <button class="btn" @onclick="() => Run(() => Pane.AddSession(session))">Add session</button>
+            <button class="btn" @onclick="() => Run(() => Pane.AddQuestion(session))">Add question</button>
+            <button class="btn" @onclick="() => Run(Pane.AddAnswer)">Add answer</button>
+            <button class="btn" @onclick="() => Run(() => Pane.AddReport(session))">Add report</button>
+            <button class="btn" @onclick="() => Run(() => Pane.AddUpdate(session))">Add update</button>
+            <button class="btn" @onclick="() => Run(() => Pane.AddMessage(session))">Add message</button>
+            <button class="btn" @onclick="() => Run(() => Pane.ToggleFailure(session))">@(Pane.Fails(session) ? "Turns work again" : "Fail turns")</button>
+            <button class="btn" @onclick="() => Run(() => string.Join(Environment.NewLine, Pane.Burst(10)))">Burst ×10</button>
+        </div>
+        <h2 class="gt">Log</h2>
+        <div class="crd" id="demo-log">
+            @if (log.Count == 0)
+            {
+                <span class="sub">Each action writes one line here. Watch the tray or the inbox for the change.</span>
+            }
+            @foreach (var line in log)
+            {
+                <div class="mono">@line</div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    IReadOnlyList<(string Id, string Title)> sessions = [];
+    string session = "";
+    readonly List<string> log = [];
+
+    protected override void Load() => sessions = Pane.Refusal is null ? Pane.Sessions() : [];
+
+    void Run(Func<string> action)
+    {
+        string text;
+        try
+        {
+            text = action();
+        }
+        catch (Exception e) when (e is MessageException or IOException or InvalidOperationException)
+        {
+            text = $"Error: {e.Message}";
+        }
+        foreach (var line in text.Split(Environment.NewLine).Reverse()) log.Insert(0, $"{DateTime.Now:HH:mm:ss} {line}");
+        if (log.Count > 50) log.RemoveRange(50, log.Count - 50);
+        Load();
+    }
+}

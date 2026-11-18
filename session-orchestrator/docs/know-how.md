@@ -246,6 +246,25 @@ The behavior file `fake.json` makes each turn good after 500 ms. Each model call
 - `orch store migrate` cannot make this copy: the live sessions write new files during the copy, so its check fails (L-F8).
 - Step 3 is necessary: an archive in the demo UI runs `git worktree remove` on the folder of the session (L-F6).
 
+### The demo pane
+
+The page `/demo` of a demo supervisor has buttons that write dummy events into its store, for example `http://127.0.0.1:7793/demo`. No link goes to it: open it by hand next to the tray. Code: `src/Orchestrator.Web/DemoPane.cs` and `Components/Pages/Demo.razor`.
+
+| Button | Event |
+|---|---|
+| Add session | A new root, or a child of the selected session. The fake provider runs its first turn |
+| Add question | A `question` to the user with `needs: answer`, options, a risk and a default |
+| Add answer | The answer of the user to the oldest open question |
+| Add report | A `done` report, or one time in four a `blocked` report, with `needs: ack` |
+| Add update | An `update` with a random progress value |
+| Add message | A `message` to the parent, or to the user for a root |
+| Fail turns | A rule in the fake behavior file: each turn of the session fails. The pane then sends the session a message, so a turn runs. A second click removes the rule |
+| Burst ×10 | Ten random events of the kinds above |
+
+- The pane works only if the provider is the fake provider, the port is not 7777, and the store is not the real store (`%LOCALAPPDATA%\orch\store` or `store\`). Else the page says why it is off, and each action refuses.
+- With no session selected, each action picks a random enabled session. With no session, it makes one first.
+- Each action uses the store functions of `orch new`, `orch post` and `orch answer`, then starts a tick.
+
 ### Rules of the script
 
 - It refuses the real store (`%LOCALAPPDATA%\orch\store`, `store\`, the `-LiveStore` folder) as its target, and the port 7777.
