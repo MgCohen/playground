@@ -107,11 +107,45 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - A full team runs in one VM if `orch` is on `PATH`: `dotnet pack src/Orchestrator.Cli` and `dotnet tool update -g`, then `~/.dotnet/tools` on `PATH` and `DOTNET_ROOT` set. Start the supervisor with `ORCH_PLUGIN_DIR=$PWD/plugin`.
 - Results: `docs/c0-probe.md`, `docs/c5-probe.md`, and the findings C0 and C5 in `docs/plan.md`.
 
+## Cloud environment
+
+A cloud worker is a cloud session of the engine that works for the supervisor on this PC (G2). The supervisor starts it with `where: cloud` in the brief. The worker calls `orch` in HTTP mode; the plugin stays off when `ORCH_URL` is set.
+
+```mermaid
+sequenceDiagram
+    participant S as Supervisor (this PC)
+    participant C as claude CLI
+    participant W as Cloud worker (VM)
+    S->>C: claude --cloud "<brief + notice cloud-worker>"
+    C-->>S: session_... (kept in meta.appId)
+    W->>S: orch post report (ORCH_URL, token)
+    S->>C: claude -p "<message>" --cloud session_...
+```
+
+Files: `src/Orchestrator.Providers/ClaudeCode/Cloud/setup.sh` and `environment.env`.
+
+1. Make the tunnel and the service token of D2 first. A cloud worker cannot reach `*.trycloudflare.com` (G-0.1).
+2. Make a long random token. Keep it in 1Password.
+3. Start the supervisor with `ORCH_TOKEN=<token>`. Local tools on 127.0.0.1 need no token.
+4. In the cloud environment settings, add the variables of `environment.env`. Set `ORCH_URL` to the tunnel address.
+5. Add `ORCH_TOKEN` as a network secret for the `ORCH_URL` host, if the environment has network secrets. Else set it as a variable there. Never in the repository.
+6. Add the host of `ORCH_URL` to the network allow list of the environment.
+7. Set the setup script to `bash session-orchestrator/src/Orchestrator.Providers/ClaudeCode/Cloud/setup.sh`.
+8. Run `claude --cloud "hello"` one time in the repository folder on this PC, and trust the folder. The supervisor cannot answer the trust prompt; its cloud start stops after 2 minutes.
+
+The setup script installs .NET 10 and `orch`, puts both in `/usr/local/bin`, and writes `~/.claude/settings.json` in the VM: auto mode and an allow list for `orch`, `dotnet`, `git` and `node` (C0-3). An existing settings file stays.
+
+Known limits:
+
+- A cloud turn ends when the engine takes the prompt, not when the worker ends its turn. The worker reports through the store API.
+- The flags and the output of a real cloud start are not checked yet. The end-to-end test comes with D2.
+
 ## The orch tool
 
 - Install or update it after a change of `src/Orchestrator.Cli`: `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` (`install` the first time).
 - The build embeds the repository path, so `orch` finds `templates/` and `config/` from any folder. `ORCH_HOME` overrides it.
 - `orch` uses `ORCH_STORE`. A supervisor turn sets it, so a session that runs `orch` writes to the store of its supervisor.
+- HTTP mode: with `ORCH_URL`, each store command calls the store API of that supervisor, with `ORCH_TOKEN` in `X-Orch-Token`. With no `ORCH_URL`, no `ORCH_STORE` and no folder at the default store root, `orch` calls `http://127.0.0.1:<ORCH_PORT or 7777>`. `orch supervisor`, `orch store` and `orch process` always use the local folder.
 - `orch doctor` checks the home, the store, the policy, the templates, `claude`, `gh`, the plugin path and the supervisor.
 
 ## Session lifecycle
