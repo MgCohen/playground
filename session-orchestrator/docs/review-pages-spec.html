@@ -102,7 +102,7 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
     <button role="tab" data-tab="run">F2 Workflow run</button>
     <button role="tab" data-tab="stack">F3 PR stack</button>
     <button role="tab" data-tab="pr">F4 PR</button>
-    <button role="tab" data-tab="backlog">Backlog F5–F12</button>
+    <button role="tab" data-tab="backlog">Backlog F5–F13</button>
     <span class="sep" aria-hidden="true"></span>
     <button role="tab" data-tab="flows">User workflows</button>
     <button role="tab" data-tab="gaps">Data gaps</button>
@@ -116,7 +116,7 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
       <option value="run">F2 Workflow run</option>
       <option value="stack">F3 PR stack</option>
       <option value="pr">F4 PR</option>
-      <option value="backlog">Backlog F5–F12</option>
+      <option value="backlog">Backlog F5–F13</option>
     </optgroup>
     <optgroup label="Across features">
       <option value="flows">User workflows</option>
@@ -155,7 +155,7 @@ flowchart LR
       <tr><td class="mono">F2</td><td>Workflow run page</td><td>Shows where a run is, why it waits and where it can go. You act on the wait</td><td><span class="chip have">most</span></td></tr>
       <tr><td class="mono">F3</td><td>PR stack page</td><td>Shows the PRs of a stream in their merge order and what waits for you. You review and merge here</td><td><span class="chip part">part</span></td></tr>
       <tr><td class="mono">F4</td><td>PR page</td><td>Shows one PR with its task, session, diff, tests and defaults. You give the verdict here</td><td><span class="chip part">part</span></td></tr>
-      <tr><td class="mono">F5–F12</td><td>Backlog</td><td>Later features: status and analytics, projects, reminders, multi-project work, and more. Tracked here, built one at a time</td><td>—</td></tr>
+      <tr><td class="mono">F5–F13</td><td>Backlog</td><td>Later features: status and analytics, projects, reminders, multi-project work, and more. Tracked here, built one at a time</td><td>—</td></tr>
       <tr><td class="mono">W1–W3</td><td>User workflows</td><td>The paths across the pages: answer a run, review a stream, review a default</td><td>—</td></tr>
     </table></div>
   </section>
@@ -487,6 +487,7 @@ sequenceDiagram
       <tr><td class="mono">F10</td><td>Templates catalog</td><td>Lists the message kinds, modes and workflows. Shows one with its view and fields</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
       <tr><td class="mono">F11</td><td>Storage and store</td><td>Shows the store root, version, size and repository health in Settings</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
       <tr><td class="mono">F12</td><td>Setup and supervisor</td><td>Shows the supervisor state, the app version, the update check and the cloud workers</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F13</td><td>Session status page</td><td>The page of one session. It exists, but it shows little. F13 completes it: registry, work tree, runs, PRs, questions, state reason</td><td><span class="chip have">most</span></td><td><span class="chip part">built in part</span></td></tr>
     </table></div>
   </section>
 
@@ -602,6 +603,36 @@ flowchart LR
         <li><span class="chip have">have</span> a stream id on each session, in any repository</li>
         <li><span class="chip gap">gap</span> PR links across repositories</li>
         <li><span class="chip gap">gap</span> <code>orch merge</code> knows one repository only</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">F13 · Session status page</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>The page <code>/sessions/{id}</code> exists (<code>SessionStatus.razor</code>), but nobody worked on it after the first version. It is the center of the links: a run step, a PR and the stream bar all open it. So it must show the full session: what it is, where it is in the work, and what waits.</p></div>
+      <div class="box"><h3>Today</h3><ul>
+        <li>Progress ring, name, parent, state pill</li>
+        <li>Counts: cards, events, age</li>
+        <li>Children (flat list), related links from reports</li>
+        <li>Details: id, branch, folder, holder</li>
+        <li>Acts: event stream, message, stop or resume, archive</li>
+      </ul></div>
+      <div class="box"><h3>To add</h3><ul>
+        <li>Stream bar (F1), and the project (F6) later</li>
+        <li>Registry: full code, role, type, workflow, settings and their source (ui-drafts, Draft 2)</li>
+        <li>Work tree: parent and children with their role and state</li>
+        <li>Runs: the run that it owns, the run steps that it does (F2)</li>
+        <li>PRs: its stack versions and task PRs (F3, F4)</li>
+        <li>Open questions and recorded defaults</li>
+        <li>State reason: <code>waitReason</code>, <code>fault</code>, stale or forgotten since when (F7)</li>
+        <li>Last report: state, summary, next steps</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> registry entry, <code>state.json</code>, stack files, envelopes, runs</li>
+        <li><span class="chip part">part</span> runs of a session: a scan of all runs by <code>owner</code> and <code>history[].session</code></li>
+        <li><span class="chip gap">gap</span> task PRs (P-G4)</li>
       </ul></div>
     </div>
   </section>
@@ -731,6 +762,10 @@ flowchart TD
       <p>Multi-project work (F8) puts the sessions of one feature in different repositories.</p>
       <p>Options: (a) yes: a stream has one main project, and can hold sessions of other projects; (b) no: one stream for each project, and a link between the streams.</p>
       <p class="rec">Recommendation: (a). The work is one piece, and the stream bar shows it in one place.</p></div>
+    <div class="q"><b>Q10. Does the session status page (F13) join the first set?</b>
+      <p>The run page and the PR page link to the session page. Today that page does not show runs, PRs or the registry.</p>
+      <p>Options: (a) yes: sketch it with F2–F4; (b) no: keep it in the backlog.</p>
+      <p class="rec">Recommendation: (a). Without it, the links from the new pages open a page with little data.</p></div>
   </section>
 </div>
 </div>
