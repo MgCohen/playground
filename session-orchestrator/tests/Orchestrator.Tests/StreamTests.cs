@@ -202,7 +202,7 @@ public sealed class StreamTests
         {
             var output = new StringWriter();
             Assert.That(Cli.Cli.Run(["decisions"], output, output, t.Folder), Is.EqualTo(1));
-            Assert.That(output.ToString(), Does.Contain("no migration"));
+            Assert.That(output.ToString(), Does.Contain("orch store upgrade"));
         }
         finally
         {
@@ -331,12 +331,12 @@ public sealed class StreamTests
     }
 
     [Test]
-    public void A_store_of_version_1_is_refused_with_no_migration()
+    public void A_store_of_version_1_is_refused_and_the_error_names_the_upgrade()
     {
         using var t = new Rig();
         Files.WriteJson(Path.Combine(t.Folder, StoreFiles.Version), new StoreVersion(1, "x"));
         var refused = Assert.Throws<InvalidDataException>(() => Home.CheckVersion(t.Folder, t.Clock.Now))!;
-        Assert.That(refused.Message, Does.Contain("no migration"));
+        Assert.That(refused.Message, Does.Contain("orch store upgrade"));
     }
 
     [Test]

@@ -177,4 +177,29 @@ public sealed class QueryTests
         Assert.That(card.TryGetProperty("defaultAt", out var defaultAt), Is.True);
         Assert.That((await client.GetAsync("/api/stream?view=nothing")).StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
     }
+
+    [TestCase("question")]
+    [TestCase("decision")]
+    public async Task A_question_posted_with_no_thread_makes_a_card_and_an_answer_closes_it(string kind)
+    {
+        var (factory, root) = Start();
+        using var _ = factory;
+        var store = new FileStore(root);
+        var id = store.Create(new Seed { Title = "child", Cwd = "C:/x" }, "start");
+        var client = factory.CreateClient();
+        var post = await client.PostAsync("/api/stream", new StringContent($$"""
+            { "kind": "{{kind}}", "from": "session:{{id}}", "to": "user", "body": { "question": "Which color?", "options": ["red", "blue"] } }
+            """, System.Text.Encoding.UTF8, "application/json"));
+        Assert.That(post.StatusCode, Is.EqualTo(HttpStatusCode.Created), await post.Content.ReadAsStringAsync());
+        var posted = JsonDocument.Parse(await post.Content.ReadAsStringAsync()).RootElement;
+        var envelope = posted.GetProperty("id").GetString()!;
+        Assert.That(posted.GetProperty("thread").GetString(), Is.EqualTo(envelope), "a question with no thread gets its own id as the thread (D, problem 3)");
+        Assert.That(posted.GetProperty("kind").GetString(), Is.EqualTo(EventKinds.Question), "the old kind decision is stored as question");
+
+        var cards = JsonDocument.Parse(await client.GetStringAsync("/api/inbox")).RootElement;
+        Assert.That(cards.EnumerateArray().Select(c => c.GetProperty("id").GetString()), Is.EqualTo(new[] { envelope }));
+        var answer = await client.PostAsync($"/api/inbox/{envelope}/accept", new StringContent("""{ "text": "blue" }""", System.Text.Encoding.UTF8, "application/json"));
+        Assert.That(answer.IsSuccessStatusCode, Is.True, await answer.Content.ReadAsStringAsync());
+        Assert.That(JsonDocument.Parse(await client.GetStringAsync("/api/inbox")).RootElement.GetArrayLength(), Is.EqualTo(0));
+    }
 }

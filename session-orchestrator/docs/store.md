@@ -190,7 +190,9 @@ The views of a session are queries too: `Report` and `Update` are the newest pos
 5. A forward is a new envelope with a new `to`, the same body, the same `from` and `thread`, and `refs.of`.
 6. Before an answer, the writer adds the claim `answer/<thread>` (file `claims/answer/<thread>`). A second add of the claim fails, so the post is refused with the first answer. So the first answer wins also between processes (the supervisor, `orch`, the UI).
 7. The plugin refuses an unknown kind, a message kind with no `meta.json`, missing `required` or `dependentRequired` fields of `schema.json`, and a `from` or `to` that `meta.json` does not allow. The engine checks the full schema before the tool call. The plugin never posts an answer or a review: these go through `orch`, so the reply-type and first-answer checks are in C# only.
-8. The envelope file holds only the fields in the table above. The C# record has computed helpers (`Of`, `Reply`, `Via`, `IsForward`); they are not in the file.
+8. A question or a plan with no `thread` gets its own envelope id as the thread. So a question from `POST /api/stream` or `orch post` with no thread is open, makes a card and takes an answer, the same as one from `ask_user` (the tool call id).
+9. A post of an old question kind (`decision`, `query`) is stored as `question`.
+10. The envelope file holds only the fields in the table above. The C# record has computed helpers (`Of`, `Reply`, `Via`, `IsForward`); they are not in the file.
 
 ## Types
 
