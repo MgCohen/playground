@@ -33,7 +33,7 @@ The C# code reads and writes the store only through `IRepositories` (`src/Orches
 | `Events` | `Doc<Event>` | envelope id | `events/<day>/<id>.json` |
 | `Bodies` | `Doc<JsonElement>` | body path | `bodies/<day>/<id>.json` |
 | `Policies` | `Doc<Policy>` | `policy` | `policy.json` |
-| `Settings` | `Doc<StoreVersion>` | `version` | `version.json` |
+| `StoreVersions` | `Doc<StoreVersion>` | `version` | `version.json` |
 | `Claims` | `Doc<string>` (the writer) | `answer/<thread>` | `claims/answer/<thread>` |
 | `Cursors` | `Doc<CursorState>` | `<party>/<name>` | `subscriptions/<party>/<name>.json` |
 | `Nudges` | `Doc<string>` | `<party>` | `nudges/<party>` |

@@ -45,7 +45,7 @@ public static class Home
     public static StoreVersion CheckVersion(IRepositories repos, DateTimeOffset now)
     {
         var storeRoot = repos.Location;
-        if (repos.Settings.Read(StoreIds.Version) is { } found)
+        if (repos.StoreVersions.Read(StoreIds.Version) is { } found)
         {
             if (found.Version > StoreVersion.Current)
                 throw new InvalidDataException($"store {storeRoot} has version {found.Version}, newer than this supervisor ({StoreVersion.Current}). Update the orchestrator.");
@@ -54,7 +54,7 @@ public static class Home
             return found;
         }
         var version = new StoreVersion(StoreVersion.Current, Core.Leases.Times.Format(now));
-        repos.Settings.Put(StoreIds.Version, version);
+        repos.StoreVersions.Put(StoreIds.Version, version);
         return version;
     }
 
