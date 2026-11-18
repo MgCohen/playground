@@ -502,6 +502,19 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 .sbx .kv { padding: 10px 14px; display: grid; gap: 2px; font-size: 13px; flex: none; }
 .sbx .kv b { font-weight: 600; }
 
+/* N1 edge tab v2: full circle or half hidden, hover, click to open, drag up and down */
+.nedge2 { display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px 0 0 999px; background: var(--surf); box-shadow: var(--sh-raise), 0 8px 18px -8px rgba(0,0,0,.4);
+  overflow: hidden; max-width: var(--base); cursor: grab; touch-action: none; user-select: none; transition: max-width .28s cubic-bezier(.2,.8,.2,1), transform .28s cubic-bezier(.2,.8,.2,1); }
+.nedge2 .einfo { display: grid; gap: 1px; white-space: nowrap; opacity: 0; transition: opacity .18s; font-size: 12px; color: var(--text); }
+.nedge2 .einfo b { font-weight: 600; }
+.nedge2[data-e="a"]:hover, .nedge2[data-e="a"].drag { max-width: 280px; }
+.nedge2[data-e="a"]:hover .einfo, .nedge2[data-e="a"].drag .einfo { opacity: 1; transition-delay: .08s; }
+.nedge2[data-e="b"] { transform: translateX(42%); }
+.nedge2[data-e="b"]:hover, .nedge2[data-e="b"].drag { transform: none; }
+.nedge2.drag { cursor: grabbing; }
+.nmini { touch-action: none; }
+.nmini[hidden] { display: none; }
+
 /* Answer box */
 .answer { margin-top: 36px; padding: 18px 20px; border-radius: 18px; background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); display: grid; gap: 8px; }
 .answer code { display: block; padding: 10px 12px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); overflow-x: auto; white-space: pre; }
@@ -899,6 +912,9 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
         <div class="sw" id="n-form"><button aria-pressed="false" data-v="ball">Ball</button><button aria-pressed="true" data-v="ring">Ball + ring</button><button aria-pressed="false" data-v="hole">Ring only</button><button aria-pressed="false" data-v="badge">Ball + badge</button><button aria-pressed="false" data-v="pill">Pill</button><button aria-pressed="false" data-v="card">Compact card</button><button aria-pressed="false" data-v="edge">Edge tab</button></div></div>
       <div><div class="sub" style="margin-bottom:4px">Place</div>
         <div class="sw" id="n-place"><button aria-pressed="true" data-v="tray">Above the tray</button><button aria-pressed="false" data-v="corner">Top right</button><button aria-pressed="false" data-v="edge">Right edge, middle</button></div></div>
+      <div><div class="sub" style="margin-bottom:4px">Edge tab (form "Edge tab")</div>
+        <div class="sw" id="n-edge"><button aria-pressed="true" data-v="a">A full circle, hover shows the counts</button><button aria-pressed="false" data-v="b">B half hidden, hover slides it out</button></div></div>
+      <p class="sub">A click on the form opens the widget. A drag moves it: the edge tab moves only up and down, the other forms move freely.</p>
       <div><div class="sub" style="margin-bottom:4px">Attention at a new event</div>
         <div class="sw" id="n-att"><button aria-pressed="true" data-v="pulse">Pulse</button><button aria-pressed="false" data-v="bounce">Bounce</button><button aria-pressed="false" data-v="spin">Ring spin</button><button aria-pressed="false" data-v="glow">Glow</button><button aria-pressed="false" data-v="none">None</button></div></div>
       <label for="n-size">Ball size: <b id="n-size-v">40 px</b><input id="n-size" type="range" min="24" max="64" step="2" value="40"></label>
@@ -1573,7 +1589,7 @@ var Saved = (function () {
 // ===== N1, N2: minimize and notify =====
 (function () {
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var ns = { form: "ring", place: "tray", att: "pulse", size: 40, kind: "peek", evt: "q", hide: 5, c: { q: 3, rev: 1, rep: 2, blk: 1 } };
+  var ns = { edge: "a", ey: -1, ex: -1, form: "edge", place: "edge", att: "spin", size: 40, kind: "peek", evt: "q", hide: 5, c: { q: 3, rev: 1, rep: 2, blk: 1 } };
   var COL = { q: "var(--b-q)", rev: "var(--b-rev)", rep: "var(--b-rep)", blk: "var(--b-blk)" };
   var WORD = { q: ["question", "questions"], rev: ["review", "reviews"], rep: ["report", "reports"], blk: ["blocked", "blocked"] };
   var EVT = {
@@ -1615,7 +1631,8 @@ var Saved = (function () {
       case "badge": return shape(S, ball(S) + (t ? '<span class="nbadge">' + t + "</span>" : ""));
       case "pill": return '<div class="npill">' + ringBall(Math.round(S * .9)) + "<span>" + summary() + "</span></div>";
       case "card": return '<div class="ncard">' + ringBall(44) + '<div class="tx"><b>' + EVT.q.t + '</b><span class="sub">' + summary() + "</span></div></div>";
-      case "edge": var E = Math.round(S * 1.4); return '<div class="nedge" style="height:' + (E + 12) + "px;width:" + Math.round(E * .72 + 6) + 'px;overflow:hidden">' + ringBall(E) + "</div>";
+      case "edge": var E = Math.round(S * 1.4), parts = summary().split(" · ");
+        return '<div class="nedge2" data-e="' + ns.edge + '" style="--base:' + (E + 20) + 'px">' + ringBall(E) + '<span class="einfo"><b>' + parts[0] + "</b>" + (parts.length > 1 ? '<span class="sub">' + parts.slice(1).join(" · ") + "</span>" : "") + "</span></div>";
     }
   }
   function renderMini() {
@@ -1625,7 +1642,10 @@ var Saved = (function () {
     ["q", "rev", "rep", "blk"].forEach(function (k) { document.getElementById("n-" + k).value = ns.c[k]; document.getElementById("n-" + k + "-v").textContent = ns.c[k]; });
     document.getElementById("n-size-v").textContent = ns.size + " px";
     document.getElementById("n-hide-v").textContent = ns.hide + " s";
-    document.getElementById("n-vals").textContent = "N1: " + FORMS[ns.form] + ", " + PLACES[ns.place] + ", " + ns.att + ", size " + ns.size + "; N2: " + KINDS[ns.kind] + ", hide after " + ns.hide + " s";
+    document.getElementById("n-vals").textContent = "N1: " + FORMS[ns.form] + (ns.form === "edge" ? (ns.edge === "a" ? " (full circle, hover shows the counts)" : " (half hidden, hover slides it out)") : "") + ", " + PLACES[ns.place] + ", " + ns.att + ", size " + ns.size + ", click opens, drag moves; N2: " + KINDS[ns.kind] + ", hide after " + ns.hide + " s";
+    // A dragged place wins over the place switch.
+    n1.style.left = ""; n1.style.right = ""; n1.style.top = ""; n1.style.bottom = "";
+    if (ns.ey >= 0) { n1.style.top = ns.ey + "px"; n1.style.bottom = "auto"; if (ns.ex >= 0 && ns.form !== "edge") { n1.style.left = ns.ex + "px"; n1.style.right = "auto"; } }
   }
   function attention(m) {
     var el = m.firstElementChild; if (!el || reduce || ns.att === "none") return;
@@ -1726,7 +1746,36 @@ var Saved = (function () {
   document.getElementById("n2-send").addEventListener("click", send);
   document.getElementById("n2-clear").addEventListener("click", clear);
   renderMini();
-  Saved.bind("notify", ns, { sw: { "n-form": "form", "n-place": "place", "n-att": "att", "n-kind": "kind", "n-evt": "evt" }, range: { "n-size": "size", "n-hide": "hide" } }, renderMini);
+  document.getElementById("n-edge").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; this.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); }); ns.edge = b.dataset.v; renderMini(); });
+  var nsSave = Saved.bind("notify", ns, { sw: { "n-form": "form", "n-place": "place", "n-att": "att", "n-kind": "kind", "n-evt": "evt", "n-edge": "edge" }, range: { "n-size": "size", "n-hide": "hide" } }, renderMini);
+  document.getElementById("n-place").addEventListener("click", function () { ns.ey = -1; ns.ex = -1; renderMini(); nsSave.save(); });
+  // Click opens the widget. Drag moves the form: the edge tab only up and down.
+  (function () {
+    var drag = null, desk = document.getElementById("n1desk");
+    n1.addEventListener("pointerdown", function (e) {
+      if (e.button !== 0) return;
+      var r = n1.getBoundingClientRect(), d = desk.getBoundingClientRect();
+      drag = { x: e.clientX, y: e.clientY, top: r.top - d.top, left: r.left - d.left, w: r.width, h: r.height, dw: d.width, dh: d.height, moved: false };
+      n1.setPointerCapture(e.pointerId);
+    });
+    n1.addEventListener("pointermove", function (e) {
+      if (!drag) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+      if (!drag.moved) { drag.moved = true; var t = n1.querySelector(".nedge2"); if (t) t.classList.add("drag"); }
+      var top = Math.max(8, Math.min(drag.dh - 48 - drag.h, drag.top + dy));
+      ns.ey = Math.round(top); n1.style.top = ns.ey + "px"; n1.style.bottom = "auto";
+      if (ns.form !== "edge") { var left = Math.max(8, Math.min(drag.dw - 8 - drag.w, drag.left + dx)); ns.ex = Math.round(left); n1.style.left = ns.ex + "px"; n1.style.right = "auto"; }
+    });
+    function end(e) {
+      if (!drag) return;
+      var moved = drag.moved; drag = null;
+      var t = n1.querySelector(".nedge2"); if (t) t.classList.remove("drag");
+      if (moved) nsSave.save(); else if (minimized) restore();
+    }
+    n1.addEventListener("pointerup", end);
+    n1.addEventListener("pointercancel", function () { drag = null; });
+  })();
   document.addEventListener("tabshown", function (e) { if (e.detail === "notify" && !minimized) setTimeout(function () { minimize(); }, 400); });
 })();
 // ===== T3, T4: header path and window buttons =====
