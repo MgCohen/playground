@@ -88,6 +88,8 @@ public sealed partial class WidgetForm : Form
     {
         if (!Visible || closing)
         {
+            minimizing = false;
+            Showing?.Invoke();
             if (!Visible) Location = Start();
             Frame(false);
             Reveal(0);
@@ -111,8 +113,21 @@ public sealed partial class WidgetForm : Form
         BeginGrow(open: false);
     }
 
-    /// <summary>T4: the widget shrinks and hides, and its minimized form shows. Until the edge tab exists, it hides to the tray.</summary>
-    public void Minimize() => HideWidget();
+    /// <summary>T4: the widget shrinks and hides, then its minimized form (the edge tab, N1) slides in.</summary>
+    public void Minimize()
+    {
+        if (!Visible || closing) return;
+        minimizing = true;
+        HideWidget();
+    }
+
+    bool minimizing;
+
+    /// <summary>The widget is hidden after a minimize: the tray app shows the edge tab.</summary>
+    public event Action? Minimized;
+
+    /// <summary>The widget starts to show: the tray app hides the edge tab.</summary>
+    public event Action? Showing;
 
     public void Toggle()
     {
@@ -172,6 +187,11 @@ public sealed partial class WidgetForm : Form
         {
             closing = false;
             Hide();
+            if (minimizing)
+            {
+                minimizing = false;
+                Minimized?.Invoke();
+            }
         }
         // No region: the full window with the rounded corners, the border and the shadow of the system.
         _ = SetWindowRgn(Handle, 0, true);

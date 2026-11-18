@@ -24,6 +24,7 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Tray/SelfTest.cs", [], "the screenshots of the tray self test"),
         ("src/Orchestrator.Tray/SelfTest.Motion.cs", [], "the screenshots of the motion checks of the tray self test"),
         ("src/Orchestrator.Tray/WidgetForm.cs", [], "the place of the tray widget on the screen"),
+        ("src/Orchestrator.Tray/EdgeTab.cs", [], "the place of the edge tab on the screen"),
         ("src/Orchestrator.Tray/Program.cs", ["\"templates\"", "selftest-error.txt"], "the check of the home folder, and the error file of the self test"),
         ("src/Orchestrator.Tray/MockStore.cs", ["CreateTempSubdirectory", "Directory.CreateDirectory(cwd)", "Directory.Delete(Folder"], "the mock store makes and deletes its own temp folder and the cwd of its sessions"),
         ("src/Orchestrator.Store/Home.cs", ["Solution", "File.ReadAllText(source)"], "the home folder and config/policy.default.json of the repository"),

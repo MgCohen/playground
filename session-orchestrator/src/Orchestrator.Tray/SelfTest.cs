@@ -29,16 +29,20 @@ public static partial class SelfTest
         new("session-stream", $"{Go}(document.querySelector('.pagebar a.pri').getAttribute('href'))", ".lock"),
     ];
 
-    /// <summary>The place file of the self-test: a new file in the self-test folder, so the widget starts at its home location.</summary>
+    /// <summary>The place file of the self-test: a new file in the self-test folder, so the widget and the edge tab start at their home places.</summary>
     public static string FreshPlaceFile(string folder)
     {
         var file = Path.Combine(folder, "place.json");
         if (File.Exists(file)) File.Delete(file);
+        // The edge tab keeps its place next to the widget place.
+        var tab = Path.Combine(folder, "edge-tab.txt");
+        if (File.Exists(tab)) File.Delete(tab);
         return file;
     }
 
-    public static async Task<int> Run(WidgetForm form, string folder)
+    public static async Task<int> Run(TrayApp tray, string folder)
     {
+        var form = tray.Form;
         Directory.CreateDirectory(folder);
         var checks = new List<Check>();
         var web = await Until(() => Task.FromResult(form.Web), TimeSpan.FromSeconds(60)) ?? throw new TimeoutException("WebView2 did not start in 60 seconds.");
@@ -106,6 +110,7 @@ public static partial class SelfTest
         checks.Add(await PlaceClamp(form, folder));
         checks.Add(await Grow(form, folder));
         checks.Add(await Video(form, folder));
+        checks.AddRange(await Edge(tray, web, folder));
         foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
         await File.WriteAllTextAsync(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
         return checks.All(c => c.Pass) ? 0 : 1;

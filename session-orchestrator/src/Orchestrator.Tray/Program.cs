@@ -56,7 +56,7 @@ public static partial class Program
             {
                 try
                 {
-                    code = await SelfTest.Run(tray.Form, selfTest);
+                    code = await SelfTest.Run(tray, selfTest);
                 }
                 catch (Exception e)
                 {
