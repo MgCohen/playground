@@ -20,11 +20,19 @@ public sealed record NewSession(string? Title, string? Cwd, string? Brief, strin
     /// <summary>The work stream (C1). Null: the stream of the parent.</summary>
     public string? Stream { get; init; }
 
+    /// <summary>The session type: a custom agent (C1). Null: none.</summary>
+    public string? Type { get; init; }
+
+    /// <summary>The workflow of the session (C1). Null: none.</summary>
+    public string? Workflow { get; init; }
+
     public BriefFields ToBrief() => new()
     {
         Title = Title, Goal = Goal ?? Brief, Scope = Scope, DoneWhen = DoneWhen, Skills = Skills,
         Agent = Agent, Cwd = Cwd, Worktree = Worktree, Parent = Parent, AllowDefaults = AllowDefaults, Background = Background, Where = Where,
         Stream = string.IsNullOrWhiteSpace(Stream) ? null : Stream,
+        Type = string.IsNullOrWhiteSpace(Type) ? null : Type,
+        Workflow = string.IsNullOrWhiteSpace(Workflow) ? null : Workflow,
     };
 }
 

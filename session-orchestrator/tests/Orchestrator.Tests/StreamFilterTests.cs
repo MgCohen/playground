@@ -124,6 +124,24 @@ public sealed class StreamFilterTests
     }
 
     [Test]
+    public async Task The_new_session_api_takes_a_type_and_a_workflow()
+    {
+        var store = Directory.CreateTempSubdirectory("orch-new-").FullName;
+        Environment.SetEnvironmentVariable("ORCH_STORE", store);
+        using var factory = new WebApplicationFactory<Program>();
+        _ = factory.Server;
+        Environment.SetEnvironmentVariable("ORCH_STORE", null);
+        var client = factory.CreateClient();
+        var body = new StringContent("""{"title":"T","cwd":"C:/x","goal":"g","stream":"C","type":"decider","workflow":"planning"}""", System.Text.Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("/api/sessions", body);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created), await response.Content.ReadAsStringAsync());
+        var id = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.GetProperty("id").GetString()!;
+        var meta = new FileStore(store).Session(id);
+        Assert.That((meta.Stream, meta.Type?.Agent, meta.Workflow), Is.EqualTo(("C", "decider", "planning")));
+        Assert.That(new NewSession("t", "C:/x", "g", null) { Type = " ", Workflow = "" }.ToBrief() is { Type: null, Workflow: null }, "empty fields mean none");
+    }
+
+    [Test]
     public async Task The_http_api_takes_a_stream_parameter()
     {
         var store = Directory.CreateTempSubdirectory("orch-stream-").FullName;
