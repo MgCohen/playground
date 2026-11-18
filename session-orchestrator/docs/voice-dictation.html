@@ -232,7 +232,7 @@ flowchart LR
       <tr><td><b>B.</b> Browser engine (Web Speech API)</td><td>free</td><td><span class="pill bad">no</span> WebView2 and Edge give a "network" error</td><td>yes</td><td>yes</td><td>yes, to Google</td></tr>
       <tr><td><b>C.</b> Windows voice typing (Win+H)</td><td>free</td><td><span class="pill ok">yes, today</span> No code</td><td>yes</td><td>yes</td><td>yes, to Microsoft</td></tr>
       <tr><td><b>D.</b> Windows speech API in the tray host (C#)</td><td>free</td><td><span class="pill ok">yes</span></td><td>with a language pack</td><td>yes</td><td>optional</td></tr>
-      <tr><td><b>E.</b> Local Whisper in the supervisor (Whisper.net, GPU)</td><td>free</td><td><span class="pill ok">yes</span></td><td>yes, it detects the language</td><td>in steps of a few seconds</td><td><span class="pill ok">no</span></td></tr>
+      <tr><td><b>E.</b> Local model in the supervisor on the GPU: Parakeet TDT v3 or Whisper Large v3 Turbo (<code>sherpa-onnx</code> or Whisper.net in C#)</td><td>free</td><td><span class="pill ok">yes</span></td><td>yes, it detects the language</td><td>in steps of a few seconds</td><td><span class="pill ok">no</span></td></tr>
       <tr><td><b>F.</b> Cloud service with your own key: OpenAI <code>gpt-4o-mini-transcribe</code></td><td>about 0.003 USD/min, about 9 USD/month</td><td><span class="pill ok">yes</span></td><td>yes</td><td>after stop</td><td>yes, to OpenAI</td></tr>
       <tr><td><b>G.</b> Cloud service with your own key: Groq Whisper turbo</td><td>about 0.04 USD/hour, about 2 USD/month</td><td><span class="pill ok">yes</span></td><td>yes</td><td>after stop</td><td>yes, to Groq</td></tr>
       <tr><td><b>H.</b> Cloud streaming service: Deepgram</td><td>free credit, then less than 0.01 USD/min</td><td><span class="pill ok">yes</span></td><td>yes</td><td><span class="pill ok">yes, word by word</span></td><td>yes, to Deepgram</td></tr>
@@ -250,6 +250,49 @@ flowchart LR
       <li>It also stops a recording after 2 minutes, or after 15 seconds of silence. Your dictations are up to 5 minutes.</li>
       <li>The transcription does not use Claude messages or tokens. Thus no other paid plan of Claude gives this service.</li>
     </ul>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>Does Anthropic give a speech service?</h2><span class="hint">no</span></summary>
+  <div class="body">
+    <ul>
+      <li>The Claude API accepts text, images and documents. It has no audio input and no transcription endpoint.</li>
+      <li>The dictation of Claude Code, the Claude app and Remote Control uses an internal Anthropic service. Only Anthropic apps can use it.</li>
+      <li>Thus no option uses your Anthropic account. Orca does not use it either.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>How Orca does it</h2><span class="hint">stablyai/orca, open source, read on 2026-11-18</span></summary>
+  <div class="body">
+    <div class="scroll"><table>
+      <tr><th>Part</th><th>Orca</th></tr>
+      <tr><td>Desktop engine</td><td>A local model in a child process, run by <code>transcribe-cpp</code> (GGUF models, GPU through Vulkan or Metal). The user downloads the model in the settings</td></tr>
+      <tr><td>Recommended model</td><td><b>Parakeet TDT v3</b> (NVIDIA, 0.6 B, int8): multilingual European languages, Portuguese included, offline</td></tr>
+      <tr><td>Other local models</td><td>Parakeet v2 and Unified (English), Whisper Tiny, Whisper Large v3 Turbo, SenseVoice, Nemotron 3.5 (streaming), Zipformer (streaming)</td></tr>
+      <tr><td>Cloud models</td><td>OpenAI GPT Transcribe with your own key, and any OpenAI-compatible service (for example Groq)</td></tr>
+      <tr><td>Live text</td><td>A voice detector (Silero VAD) cuts the audio at each pause. The model decodes each phrase, so text shows phrase by phrase. Streaming models show the words live</td></tr>
+      <tr><td>Controls</td><td>Toggle or hold a shortcut, a choice of microphone, a "Listening…" pill with Stop</td></tr>
+      <tr><td>Android engine</td><td>On the phone itself: ML Kit GenAI speech recognition (Gemini Nano where the phone has it), else the Android on-device recognizer (Android 13+)</td></tr>
+      <tr><td>Android setting</td><td><b>Automatic</b> (the phone, and the computer if the phone fails), <b>This phone</b> (no audio goes to the computer), <b>Computer</b></td></tr>
+    </table></div>
+    <p>Orca does not use an Anthropic account for dictation.</p>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>Speech on Android</h2><span class="hint">for the Android app later</span></summary>
+  <div class="body">
+    <div class="scroll"><table>
+      <tr><th>Engine</th><th>Cost</th><th>Note</th></tr>
+      <tr><td>Android on-device recognizer, ML Kit GenAI</td><td>free</td><td>The model is part of the phone, so the app ships no model. Live text. Orca uses it</td></tr>
+      <tr><td>Whisper with <code>whisper.cpp</code></td><td>free</td><td>It runs, but slowly on a phone. One benchmark: 106 s for Whisper Tiny</td></tr>
+      <tr><td>Whisper, Parakeet or Moonshine with <code>sherpa-onnx</code></td><td>free</td><td>The same benchmark: 2 s for Whisper Tiny, 51 times faster. The app must ship a model of 40 to 600 MB</td></tr>
+      <tr><td>A cloud service</td><td>see the comparison</td><td>The phone sends the audio to the provider, not to the PC</td></tr>
+    </table></div>
+    <p>Thus the phone does not need to send a voice note to the PC. The Android app uses the phone's own engine.</p>
   </div>
 </details>
 
@@ -272,18 +315,19 @@ flowchart LR
     <div class="scroll"><pre class="mermaid">
 flowchart LR
   T["Tray widget<br/>(WebView2)"] -- "audio" --> S["Supervisor<br/>POST /api/transcribe"]
-  A["Android app<br/>(later)"] -- "audio" --> S
   S --> E{"Engine setting"}
-  E --> L["Local Whisper on the GPU<br/>(default)"]
+  E --> L["Local model on the GPU<br/>(default)"]
   E --> C["Cloud service<br/>(optional, own key)"]
+  A["Android app<br/>(later)"] --> P["Engine of the phone<br/>(on-device)"]
   L --> X["Text into the field"]
   C --> X
+  P --> X
     </pre></div>
     <ul>
-      <li>The app records the audio with the browser recorder (<code>getUserMedia</code>). WebView2 allows the mic, and the tray host can allow it with no prompt.</li>
-      <li>The supervisor changes the audio into text. Thus each app (tray, Android, phone browser) uses the same engine and the same settings.</li>
-      <li>The engine is a setting: local Whisper first, a cloud service with your own key as a second choice.</li>
-      <li>On a phone browser, the mic needs HTTPS. Thus the phone browser gets dictation only after the Cloudflare tunnel. The Android app does not have this limit.</li>
+      <li>The tray records the audio with the browser recorder (<code>getUserMedia</code>). WebView2 allows the mic, and the tray host can allow it with no prompt.</li>
+      <li>The supervisor changes the audio into text with a local model on the GPU. A cloud service with your own key is a second choice in the settings.</li>
+      <li>The Android app uses the engine of the phone, as Orca does. The audio stays on the phone.</li>
+      <li>On a phone browser, the mic needs HTTPS. Until the tunnel, the mic key of the phone keyboard covers the phone browser.</li>
     </ul>
   </div>
 </details>
@@ -297,6 +341,8 @@ flowchart LR
       <li><a href="https://techcommunity.microsoft.com/discussions/edgeinsiderdiscussions/web-speech-api-not-working-in-edge-v-147/4514880">Edge forum: Web Speech API does not work in Edge</a></li>
       <li><a href="https://diyai.io/ai-tools/speech-to-text/openai-whisper-api-pricing-2026/">OpenAI transcription prices 2026</a></li>
       <li><a href="https://costbench.com/software/ai-transcription-apis/openai-whisper/">Transcription price list (Groq, OpenAI, Deepgram)</a></li>
+      <li><a href="https://github.com/stablyai/orca">Orca source code</a>: <code>src/main/speech/model-catalog.ts</code>, <code>src/main/speech/stt-transcribe-cpp-recognizer.ts</code>, <code>mobile/src/hooks/mobile-dictation-device-engine.ts</code>, <code>MlKitSpeechEngine.kt</code>, <code>docs/site/content/docs/settings.mdx</code></li>
+      <li><a href="https://voiceping-landingpage-prod.pages.dev/en/blog/research-offline-speech-transcription-benchmark/">Offline speech benchmark on Android (sherpa-onnx compared with whisper.cpp)</a></li>
     </ul>
   </div>
 </details>
@@ -311,10 +357,10 @@ flowchart LR
 <details class="fold" open>
   <summary><h2>Q5. Which engine do we build first?</h2><span class="pill">open</span></summary>
   <div class="body q"><dl>
-    <dt>Question</dt><dd>Local Whisper on this GPU, a cloud service with your own key, or both behind one setting?</dd>
-    <dt>Context</dt><dd>The Claude dictation has no public API (tab Engine options). This PC has an RTX 5080, so local Whisper is free, private and fast. A cloud service needs a key and a payment, but works when the PC is busy or off.</dd>
-    <dt>Options</dt><dd>E: local Whisper only · F, G or H: one cloud service only · E first, with a setting for a cloud service later</dd>
-    <dt>Recommendation</dt><dd><span class="pill rec">E first</span> No cost, no key, the audio stays on the PC, and it detects English and Portuguese. Add a cloud service later only if a need comes.</dd>
+    <dt>Question</dt><dd>For the tray: a local model on this GPU, a cloud service with your own key, or both behind one setting?</dd>
+    <dt>Context</dt><dd>Anthropic gives no speech service (tab Engine options). Orca recommends the local model Parakeet TDT v3, which knows English and Portuguese. This PC has an RTX 5080, so a local model is free, private and fast. A cloud service needs a key and a payment.</dd>
+    <dt>Options</dt><dd>Local Parakeet TDT v3 · local Whisper Large v3 Turbo · one cloud service only · a local model first, with a setting for a cloud service later</dd>
+    <dt>Recommendation</dt><dd><span class="pill rec">local Parakeet TDT v3 first</span> A first test compares it with Whisper Large v3 Turbo on your own voice, then we keep the better one. Add a cloud setting later only if a need comes.</dd>
   </dl></div>
 </details>
 
@@ -322,19 +368,19 @@ flowchart LR
   <summary><h2>Q6. Do you need to see the text while you speak?</h2><span class="pill">open</span></summary>
   <div class="body q"><dl>
     <dt>Question</dt><dd>Must the words show while you speak, as in Claude Code, or is all the text a few seconds after stop acceptable?</dd>
-    <dt>Context</dt><dd>Text after stop is simple and has the best quality. Live text with local Whisper sends the audio in steps of a few seconds, and the last words change as the model hears more. That is more work.</dd>
-    <dt>Options</dt><dd>Text after stop · live text in steps of a few seconds · text after stop first, live text later</dd>
-    <dt>Recommendation</dt><dd><span class="pill rec">after stop first</span> With this GPU the wait is a few seconds. Live text can come in a second step.</dd>
+    <dt>Context</dt><dd>Text after stop is simple and has the best quality. Orca shows text phrase by phrase: a voice detector cuts the audio at each pause, and the model decodes each phrase. That is more work.</dd>
+    <dt>Options</dt><dd>Text after stop · text phrase by phrase, as Orca · text after stop first, phrase by phrase later</dd>
+    <dt>Recommendation</dt><dd><span class="pill rec">after stop first</span> With this GPU the wait is a few seconds. Phrase by phrase can come in a second step.</dd>
   </dl></div>
 </details>
 
 <details class="fold" open>
-  <summary><h2>Q7. What about the phone until the Android app exists?</h2><span class="pill">open</span></summary>
+  <summary><h2>Q7. Which engine does the Android app use?</h2><span class="pill">open</span></summary>
   <div class="body q"><dl>
-    <dt>Question</dt><dd>Does the web UI on the phone need dictation now, or is the mic key of the phone keyboard enough until the Android app?</dd>
-    <dt>Context</dt><dd>A phone browser allows the mic only on HTTPS. The Cloudflare tunnel is the last step of the plan. The mic key of the phone keyboard works today with no code.</dd>
-    <dt>Options</dt><dd>Tray only now; the phone keyboard until the Android app · also the phone browser now, with a local HTTPS certificate · also the phone browser, after the tunnel</dd>
-    <dt>Recommendation</dt><dd><span class="pill rec">tray only now</span> The tray is your main place on the PC. The phone keyboard covers the phone until the Android app.</dd>
+    <dt>Question</dt><dd>Does the Android app use only the engine of the phone, or the phone first with the PC as a fallback?</dd>
+    <dt>Context</dt><dd>You prefer that the phone does not send a voice note to the PC. Orca has three settings: Automatic, This phone, Computer. The Android app is later, so this decision only goes into the plan now. Until then, the mic key of the phone keyboard covers the phone browser.</dd>
+    <dt>Options</dt><dd>This phone only · Automatic: the phone, and the PC if the phone fails · a setting with the three choices, as Orca</dd>
+    <dt>Recommendation</dt><dd><span class="pill rec">This phone only</span> It is what you asked for, and it is the simplest. Add the PC fallback only if a phone engine is too weak.</dd>
   </dl></div>
 </details>
 
