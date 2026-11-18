@@ -7,17 +7,19 @@ using Orchestrator.Web.Components;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The widget: 350 × 720 logical pixels (lower on a small work area), no title bar, rounded corners, a thin border, not in the taskbar.
+/// The widget: 350 × 720 logical pixels (lower on a small work area), no title bar, rounded corners, no outline, not in the taskbar.
 /// It holds the BlazorWebView with the A4 views of Orchestrator.Web. A drag of the page header moves it. The saved place
 /// (place.json) keeps its position for the next show and the next start; without a saved place it opens in the corner above the tray.
-/// Close hides the widget. Only Exit in the tray menu stops the app.
+/// Close hides the widget. Only Exit in the tray menu stops the app. The widget grows from its bottom edge when it shows,
+/// and shrinks to its bottom edge when it hides.
 /// </summary>
 public sealed partial class WidgetForm : Form
 {
     public const int LogicalWidth = 350;
     public const int LogicalHeight = 720;
 
-    static readonly Color Border = Color.FromArgb(0x5a, 0x58, 0x54);
+    // The canvas color of the page. It shows only before the web view paints.
+    static readonly Color Canvas = Color.FromArgb(0xe6, 0xe3, 0xde);
 
     readonly BlazorWebView view;
     readonly string? placeFile;
@@ -38,15 +40,21 @@ public sealed partial class WidgetForm : Form
         TopMost = pinned;
         Text = "Orchestrator";
         Icon = icon;
-        // The 1-pixel padding shows the back color as the thin border around the web view.
-        BackColor = Border;
-        Padding = new Padding(1);
+        // No outline: the web view fills the window. The rounded corners and the shadow of the system mark the edge.
+        BackColor = Canvas;
         view = new BlazorWebView { Dock = DockStyle.Fill, HostPage = "wwwroot/index.html", Services = services };
         view.RootComponents.Add<Routes>("#app");
         view.RootComponents.Add<HeadOutlet>("head::after");
         Controls.Add(view);
         Size = Scaled();
         Location = Start();
+        grow.Tick += (_, _) => GrowStep();
+        // The first show waits for the page, so the widget does not grow over an empty web view.
+        view.BlazorWebViewInitialized += (_, e) => e.WebView.CoreWebView2.NavigationCompleted += (_, _) =>
+        {
+            pageReady = true;
+            if (growWaits) BeginGrow(open: true);
+        };
     }
 
     /// <summary>Keeps the widget on top of the other windows (TopMost).</summary>
@@ -76,19 +84,102 @@ public sealed partial class WidgetForm : Form
     /// <summary>Shows the widget at its home location in the corner above the tray.</summary>
     public void ShowWidget()
     {
-        if (!Visible)
+        if (!Visible || closing)
         {
-            Location = Start();
+            if (!Visible) Location = Start();
+            Frame(false);
+            Reveal(0);
             Show();
+            if (pageReady) BeginGrow(open: true);
+            else
+            {
+                growWaits = true;
+                // A page that never reports its load still shows after 3 s.
+                _ = Task.Delay(3000).ContinueWith(_ => BeginInvoke(() => { if (growWaits) BeginGrow(open: true); }), TaskScheduler.Default);
+            }
         }
         if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
         Activate();
     }
 
+    /// <summary>Hides the widget: it shrinks to the bottom edge, then it hides.</summary>
+    public void HideWidget()
+    {
+        if (!Visible || closing) return;
+        BeginGrow(open: false);
+    }
+
     public void Toggle()
     {
-        if (Visible) Hide();
+        if (Visible && !closing) HideWidget();
         else ShowWidget();
+    }
+
+    // ===== Grow and shrink =====
+    // The widget grows from height 0 at its bottom edge to its full height, and shrinks back to hide.
+    // The window keeps its size and place. A window region shows only the bottom part, so the page does not
+    // lay out again on each frame. At the end the region goes, and the rounded corners of the system come back.
+
+    /// <summary>The time of the grow at show, in milliseconds.</summary>
+    public const int GrowMs = 280;
+
+    /// <summary>The time of the shrink at hide, in milliseconds.</summary>
+    public const int ShrinkMs = 200;
+
+    readonly System.Windows.Forms.Timer grow = new() { Interval = 10 };
+    readonly System.Diagnostics.Stopwatch growClock = new();
+    bool pageReady;
+    bool growWaits;
+    bool closing;
+
+    /// <summary>The shown height of each frame of the last grow or shrink, in pixels. The self-test reads it.</summary>
+    public List<int> GrowFrames { get; } = [];
+
+    /// <summary>True while the widget grows or shrinks.</summary>
+    public bool Growing => grow.Enabled;
+
+    void BeginGrow(bool open)
+    {
+        growWaits = false;
+        closing = !open;
+        GrowFrames.Clear();
+        Frame(false);
+        growClock.Restart();
+        grow.Start();
+        GrowStep();
+    }
+
+    void GrowStep()
+    {
+        var time = closing ? ShrinkMs : GrowMs;
+        var t = Math.Min(1.0, growClock.Elapsed.TotalMilliseconds / time);
+        // Grow: ease out (fast start, soft stop). Shrink: ease in (soft start, fast end).
+        var part = closing ? 1 - t * t * t : 1 - Math.Pow(1 - t, 3);
+        var shown = (int)Math.Round(Height * part);
+        GrowFrames.Add(shown);
+        if (t < 1)
+        {
+            Reveal(shown);
+            return;
+        }
+        grow.Stop();
+        if (closing)
+        {
+            closing = false;
+            Hide();
+        }
+        // No region: the full window with the rounded corners, the border and the shadow of the system.
+        _ = SetWindowRgn(Handle, 0, true);
+        Frame(true);
+    }
+
+    /// <summary>Shows only the bottom <paramref name="height"/> pixels of the window, with rounded corners.</summary>
+    void Reveal(int height)
+    {
+        var radius = (int)(16 * DeviceDpi / 96f);
+        var region = CreateRoundRectRgn(0, Height - height, Width + 1, Height + 1, radius, radius);
+        // The system owns the region after the call.
+        _ = SetWindowRgn(Handle, region, true);
     }
 
     /// <summary>Starts a drag of the window, as a drag of a title bar. The call returns when the mouse button is up.</summary>
@@ -156,10 +247,21 @@ public sealed partial class WidgetForm : Form
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        var round = DwmwcpRound;
+        Frame(true);
+    }
+
+    /// <summary>
+    /// The frame of the system: rounded corners and the shadow, with no border line. The frame always has the full window size,
+    /// so the grow turns it off and shows the rounded window region only.
+    /// </summary>
+    void Frame(bool on)
+    {
+        var round = on ? DwmwcpRound : DwmwcpDoNotRound;
         _ = DwmSetWindowAttribute(Handle, DwmwaWindowCornerPreference, ref round, sizeof(int));
-        var color = Border.R | (Border.G << 8) | (Border.B << 16);
+        var color = DwmwaColorNone;
         _ = DwmSetWindowAttribute(Handle, DwmwaBorderColor, ref color, sizeof(int));
+        var policy = on ? DwmncrpUseWindowStyle : DwmncrpDisabled;
+        _ = DwmSetWindowAttribute(Handle, DwmwaNcRenderingPolicy, ref policy, sizeof(int));
     }
 
     protected override void OnDpiChanged(DpiChangedEventArgs e)
@@ -181,7 +283,7 @@ public sealed partial class WidgetForm : Form
         if (!Exiting && e.CloseReason == CloseReason.UserClosing)
         {
             e.Cancel = true;
-            Hide();
+            HideWidget();
             return;
         }
         base.OnFormClosing(e);
@@ -210,6 +312,11 @@ public sealed partial class WidgetForm : Form
     const int DwmwaWindowCornerPreference = 33;
     const int DwmwaBorderColor = 34;
     const int DwmwcpRound = 2;
+    const int DwmwcpDoNotRound = 1;
+    const int DwmwaColorNone = unchecked((int)0xFFFFFFFE);
+    const int DwmwaNcRenderingPolicy = 2;
+    const int DwmncrpUseWindowStyle = 0;
+    const int DwmncrpDisabled = 1;
 
     [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -217,6 +324,12 @@ public sealed partial class WidgetForm : Form
 
     [LibraryImport("user32.dll", EntryPoint = "SendMessageW")]
     private static partial nint SendMessage(nint hwnd, int msg, nint wParam, nint lParam);
+
+    [LibraryImport("gdi32.dll")]
+    private static partial nint CreateRoundRectRgn(int left, int top, int right, int bottom, int width, int height);
+
+    [LibraryImport("user32.dll")]
+    private static partial int SetWindowRgn(nint hwnd, nint region, [MarshalAs(UnmanagedType.Bool)] bool redraw);
 
     [LibraryImport("dwmapi.dll")]
     private static partial int DwmSetWindowAttribute(nint hwnd, int attribute, ref int value, int size);
