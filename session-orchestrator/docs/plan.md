@@ -2097,6 +2097,30 @@ Four dummy sessions: a root and three children. The root and two children fail, 
 | D12 | Report Done items were paragraphs | `done`, `next` and `blockers`: one fact for each item, 200 characters and 12 items maximum (schema and skill). A post over the limit is refused, so the session writes it again shorter |
 | D7 | The card setting (which kinds make a card) does not exist. The inbox view decides in code | Open: the user wants it as a filter (code, app setting or live page filter), later |
 
+## R spike: Remote Control at the start (2026-11-18)
+
+Result: no CLI command starts or imports a session into the desktop app with Remote Control on. The command table is in `docs/know-how.md` ("Remote Control at the start").
+
+Test setup: scratchpad folder `spike/s1`, test store `spike/store`, port 7840. Test sessions: `4b0a24cd` ("R spike B", imported, in the sidebar), `1e268431` (transcript only), `f57246a9` ("R spike E", `--bg` job, stopped).
+
+| Test | Command | Result |
+|---|---|---|
+| R-1 | `--desktop --remote-control --session-id <new>` | Exit 1, refused |
+| R-2 | `--desktop --session-id <new>` | Exit 1, refused |
+| R-3 | `--desktop --remote-control --resume <known>` | Exit 1, refused |
+| R-4 | `--desktop --resume <known>` | Imported. Remote Control off |
+| R-5 | `-p --remote-control` | No effect |
+| R-6 | `--bg --remote-control` | Remote Control on from turn 1, not in the app. Own id |
+| R-7 | `--desktop --resume <live --bg id>` | Exit 1: stop the job first |
+| R-8 | `--desktop --settings <file> --resume <known>` | Exit 1, refused |
+
+Findings:
+
+- R-F1: `--desktop` takes no flag other than `--resume` or `--continue`. So the first import of a new session needs a transcript, and the opening turn stays headless.
+- R-F2: the app turns on Remote Control by default (`ccRemoteControlDefaultEnabled`) only for sessions that it makes. An imported session never gets it.
+- R-F3: a `--bg --remote-control` job has Remote Control from turn 1, but the app cannot import it while it runs, and Remote Control stops with the job.
+- R-F4: so a session started by the supervisor needs `set_remote_control`. Only a live app session has that tool.
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.

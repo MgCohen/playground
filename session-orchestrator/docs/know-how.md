@@ -84,6 +84,28 @@ Dummy data (questions, reports, messages) goes in with `POST /api/stream` or `or
 
 - To open a supervisor session in the desktop app, run `claude.exe --desktop --resume <id>` with PowerShell `Start-Process`. From bash it gives exit 1.
 - Then send one message to the session (`send_message`) to start its process. `set_remote_control` makes it visible on the phone.
+### Remote Control at the start (spike R, 2026-11-18, claude 2.1.312)
+
+No CLI command starts or imports a session into the desktop app with Remote Control on. `--desktop` accepts only `--resume` or `--continue`.
+
+| Command | Result |
+|---|---|
+| `--desktop --remote-control --session-id <new>` | Exit 1: "--desktop only opens the Claude Desktop app; it can't be combined with `--remote-control`." |
+| `--desktop --session-id <new>` | Exit 1: "... can't be combined with `--session-id`." |
+| `--desktop --remote-control --resume <known>` | Exit 1, same text as `--remote-control` above |
+| `--desktop --settings <file> --resume <known>` | Exit 1: "... can't be combined with `--settings`." |
+| `--desktop --resume <known>` | Exit 0. The app imports the session. Remote Control stays off |
+| `--desktop` | Exit 0. The app opens. No new session |
+| `-p --remote-control <name>` | Exit 0. The flag has no effect: no bridge, no link |
+| `--bg --remote-control <name>` | Remote Control is on from the first turn (phone, claude.ai). Not in the app sidebar. `--bg` ignores `--session-id` and gives its own id |
+| `--desktop --resume <id of a live --bg job>` | Exit 1: "That session is running in the background ... `claude stop` first" |
+
+- `--desktop` refuses redirected output. To read its error text, run it in a console and read the console buffer.
+- The app record (`claude-code-sessions/.../local_<id>.json`) holds `remoteControlUserEnabled` and `bridgeSessionIds` after a Remote Control change.
+- The app setting `ccRemoteControlDefaultEnabled: true` applies only to sessions that the app makes. In 130 app records, no imported session (`adoptedFromOtherSurface: true`) has `remoteControlAutoEligible: true`.
+- `remoteControlAtStartup: true` is a user, flag or policy setting. Project and local settings cannot turn it on. A user setting changes all sessions, so the orchestrator does not use it.
+- So an imported session needs `set_remote_control`: by the session in its first live app turn, or by its parent.
+
 - The app keeps transcripts under `~/.claude/projects/<folder key>/`, keyed to the folder of the session. The spike sessions are under the keys of their folders, for example `claude-orchestrator-spikes-p2`. `dee17212` is under a scratchpad key of the build session. A resume from another folder may not find them (not tested).
 
 ## Settings history
