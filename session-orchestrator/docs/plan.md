@@ -2208,6 +2208,17 @@ Source: 23 pictures of a copy of the live store (`--live <copy> --port 7802`, `O
 
 Proof (`docs/screens/`): `tray-v7-page-1-before.png`, `tray-v7-page-1-after.png`, `tray-v7-page-12-before.png`, `tray-v7-page-12-after.png`, `tray-v7-page-6-end-before.png`, `tray-v7-page-6-end-after.png`.
 
+## I6: Integration of D, L and V (2026-11-18)
+
+Branch `orch/integration-dlv`, base `orch/c5-c3-findings`. It starts from `orch/l-demo-fake` (L), then merges `orch/v-visual-fixes` (V) and `orch/d-data-upgrade` (D, two commits after L).
+
+| Check | Result |
+|---|---|
+| Conflicts | Only `docs/plan.md` and `docs/decisions.md`. Both sides are kept. No code conflict, so no new decision |
+| `dotnet test --solution Orchestrator.slnx` | 804 tests: 791 passed, 13 skipped, 0 failed |
+| `node --test test/` in `plugin/hooks` | 20 of 20 pass |
+| Tray self-test | Not run: the tray code is the same as on V (59 of 59 PASS there) |
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
