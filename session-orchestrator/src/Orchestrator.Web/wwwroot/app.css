@@ -17,6 +17,8 @@
   --hole-bg: radial-gradient(circle at 35% 28%, #ffffff, #f3f2ef 72%);
   --scrim: rgba(27,26,24,.38);
   --r: 22px; --r-sm: 12px;
+  --ease-out: cubic-bezier(.2,.8,.2,1); --ease-spring: cubic-bezier(.3,1.45,.5,1); --shine: rgba(255,255,255,.55);
+  interpolate-size: allow-keywords;
   --f-disp: Doto, "Cascadia Mono", monospace; --f-body: Inter, system-ui, "Segoe UI", sans-serif; --f-mono: "JetBrains Mono", "Cascadia Mono", monospace;
   color-scheme: light;
 }
@@ -35,7 +37,7 @@
   --sh-ring: inset 4px 4px 7px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.12);
   --sh-hole: 0 10px 20px rgba(0,0,0,.75), 0 2px 4px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12), inset 0 -4px 8px rgba(0,0,0,.35);
   --hole-bg: radial-gradient(circle at 35% 28%, #3a3a40, #26262a 72%);
-  --scrim: rgba(0,0,0,.55);
+  --scrim: rgba(0,0,0,.55); --shine: rgba(255,255,255,.08);
   color-scheme: dark; } }
 
 * { box-sizing: border-box; }
@@ -153,11 +155,13 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .lgr b { font: 800 15px var(--f-disp); }
 .fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; }
 .fold > summary::-webkit-details-marker { display: none; }
-.fold > summary .chev { padding-right: 12px; transition: transform .15s; }
+.fold > summary .chev { padding-right: 12px; transition: transform .26s var(--ease-out); }
 .fold[open] > summary .chev { transform: rotate(90deg); }
+/* M7 fold: the rows open their height (the details content box animates from 0 to auto). */
+.fold::details-content { height: 0; overflow: clip; transition: height .26s var(--ease-out), content-visibility .26s allow-discrete; }
+.fold[open]::details-content { height: auto; }
 .fold > summary > .srow { flex: 1; }
 .foldh { padding: 12px; }
-.fold:not([open]) > .srow, .fold:not([open]) > .seeall { display: none; }
 .seeall { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 11px; border-top: 1px solid var(--line-c); font-weight: 600; color: var(--accent); }
 .events-block { display: grid; gap: 8px; }
 .dotc { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; }
@@ -244,6 +248,43 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .actions { display: flex; gap: 8px; margin-top: 6px; }
 .primary { min-height: 46px; padding: 0 16px; border: 0; border-radius: var(--r-sm); background: var(--accent); color: var(--on-accent); font-weight: 600; box-shadow: var(--sh-raise); }
 .primary:disabled { opacity: .4; }
+
+/* ===== M5: sheets and toast ===== */
+.scrim { animation: m-fade .22s ease both; }
+.sheet { animation: m-up .34s var(--ease-out) both; }
+.closing > .scrim, .scrim.closing { animation: m-fade-out .2s ease both; }
+.closing > .sheet, .sheet.closing { animation: m-down .22s ease-in both; }
+.toast:not(.inline) { overflow: hidden; animation: m-drop .32s var(--ease-spring) both; }
+.toast .ubar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--accent); transform-origin: left; animation: m-count 5s linear both; }
+@keyframes m-fade { from { opacity: 0; } }
+@keyframes m-fade-out { to { opacity: 0; } }
+@keyframes m-up { from { transform: translateY(105%); } }
+@keyframes m-down { to { transform: translateY(105%); } }
+@keyframes m-drop { from { transform: translate(-50%, -140%); } }
+@keyframes m-count { to { transform: scaleX(0); } }
+
+/* ===== M7: small motion ===== */
+/* Press: a raised button goes into the surface for 80 ms. */
+.btn, .chip, .fbtn, .pin, .wbtn, .nav2 .home, .nav2 .it, .seg button, .cfab, .dial .btn { transition: transform .08s, box-shadow .08s; }
+.btn:not(:disabled):active, .chip:active, .fbtn:active, .nav2 .home:active, .cfab:active, .dial .btn:active { transform: translateY(1px) scale(.98); box-shadow: var(--sh-carve); }
+.nav2 .it:active, .seg button:active, .pin:active, .wbtn:active { transform: scale(.92); }
+/* Ring draw: the arcs draw on first show in 900 ms. The deep ring sweeps, so each type starts after the type before it. */
+@property --draw { syntax: "<angle>"; inherits: false; initial-value: 360deg; }
+@property --p { syntax: "<number>"; inherits: true; initial-value: 0; }
+.dring .fill { mask: conic-gradient(#000 var(--draw), transparent 0); animation: m-sweep .9s var(--ease-out) both; }
+.ring .fill { animation: m-arc .9s var(--ease-out) both; }
+@keyframes m-sweep { from { --draw: 0deg; } }
+@keyframes m-arc { from { --p: 0; } }
+
+/* ===== M6: loading (tray widget only): a skeleton until Blazor starts, then the content fades in ===== */
+.boot { max-width: 560px; margin: 0 auto; padding: 12px 10px 0; display: flex; flex-direction: column; gap: 10px; min-height: 100dvh; }
+.boot i { display: block; border-radius: var(--r); background: var(--sunken); box-shadow: var(--sh-carve); position: relative; overflow: hidden; flex: none; }
+.boot i::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, var(--shine), transparent); animation: m-shine 1.3s ease-in-out infinite; }
+.boot .b-hd { height: 48px; } .boot .b-ring { height: 150px; } .boot .b-row { height: 64px; } .boot .b-row.s { height: 44px; }
+.boot .b-bar { margin: auto 4px 10px; height: 58px; border-radius: 999px; }
+@keyframes m-shine { to { transform: translateX(100%); } }
+/* The page fades, not .app: an animation on .app makes a stacking context, and the backdrop of the app bar then covers the bar. */
+.page { animation: m-fade .18s ease both; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 

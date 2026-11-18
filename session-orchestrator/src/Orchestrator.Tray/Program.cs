@@ -61,6 +61,8 @@ public static partial class Program
                 catch (Exception e)
                 {
                     Console.Error.WriteLine($"FAIL self-test: {e}");
+                    // A start with no console (a redirect, a shortcut) still keeps the error.
+                    File.WriteAllText(Path.Combine(selfTest, "selftest-error.txt"), e.ToString());
                     code = 1;
                 }
                 tray.Exit();

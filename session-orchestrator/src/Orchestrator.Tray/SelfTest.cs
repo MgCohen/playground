@@ -7,7 +7,7 @@ namespace Orchestrator.Tray;
 /// The self-test of the window (--selftest &lt;folder&gt;): it opens each A4 view with the mock data, examines the DOM,
 /// and writes a screenshot of each view. The exit code is 0 when all checks pass.
 /// </summary>
-public static class SelfTest
+public static partial class SelfTest
 {
     public sealed record Check(string View, bool Pass, string Message, string Screenshot);
 
@@ -91,6 +91,7 @@ public static class SelfTest
         await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
         await Task.Delay(800);
         checks.AddRange(await RenderShots(form, web, folder));
+        checks.AddRange(await Motion(web, folder));
         await web.ExecuteScriptAsync($"{Go}('')");
         await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
         await Task.Delay(800);

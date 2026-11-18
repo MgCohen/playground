@@ -41,7 +41,7 @@
 
 @if (toast is { } t)
 {
-    <div class="toast" role="status"><span class="grow">@t.Text</span>@if (t.Undo is not null) {<button type="button" @onclick="Undo">Undo</button>}</div>
+    <div class="toast" role="status" @key="t"><span class="grow">@t.Text</span>@if (t.Undo is not null) {<button type="button" @onclick="Undo">Undo</button>@if (pending is not null) {<i class="ubar" aria-hidden="true"></i>}}</div>
 }
 @if (sheet is { } s)
 {
