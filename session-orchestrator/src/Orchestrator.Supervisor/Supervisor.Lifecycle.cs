@@ -70,7 +70,7 @@ public sealed partial class Supervisor
             if (r.From == States.Stopped && to != States.Archived) NotifyParent(id, "child-resumed");
             if (to == States.Archived) NotifyParent(id, "child-archived");
             if (to == States.Forgotten) Forgotten(id, s.Now);
-            if (r.From == States.Forgotten && to is States.Done or States.Stopped or States.Archived) File.Delete(store.PathOf(id, StoreFiles.Forgotten));
+            if (r.From == States.Forgotten && to is States.Done or States.Stopped or States.Archived) store.Delete(id, StoreFiles.Forgotten);
         }
         if (r.Requested && r.Taken is { To: States.Archived } taken)
         {
@@ -198,7 +198,7 @@ public sealed partial class Supervisor
             var target = f.GetValueOrDefault("session") as string ?? from;
             var field = f.GetValueOrDefault("field") as string;
             var value = f.GetValueOrDefault("value");
-            var allowed = from is not null && target is not null && File.Exists(store.PathOf(target, StoreFiles.Meta)) && field switch
+            var allowed = from is not null && target is not null && store.Has(target, StoreFiles.Meta) && field switch
             {
                 "appId" => target == from && value is string,
                 "remoteControl" => value is bool && (target == from || store.Meta(target).Parent == from),
@@ -254,7 +254,7 @@ public sealed partial class Supervisor
 
     // Notices to the parent. A root has no parent: its notices go to the user queue as a message that needs an ack.
 
-    bool HasLiveParent(Meta meta) => meta.Parent is { } parent && File.Exists(store.PathOf(parent, StoreFiles.Enabled));
+    bool HasLiveParent(Meta meta) => meta.Parent is { } parent && store.IsEnabled(parent);
 
     void NotifyParent(string id, string kind, params (string Key, object? Value)[] fields)
     {

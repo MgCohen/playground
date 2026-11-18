@@ -5,6 +5,7 @@ using Orchestrator.Core.Leases;
 using Orchestrator.Core.Lifecycle;
 using Orchestrator.Core.Policy;
 using Orchestrator.Store;
+using Orchestrator.Store.Local;
 
 namespace Orchestrator.Tests;
 

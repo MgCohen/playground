@@ -179,3 +179,12 @@ public sealed record Control(string State, string At, string By)
 {
     public string? Reason { get; init; }
 }
+
+/// <summary>
+/// The cursor of one subscription, in subscriptions/&lt;party&gt;/&lt;name&gt;.json: the newest done id, and the done ids
+/// of the last grace time.
+/// </summary>
+public sealed record CursorState(string Party, string Name, string? Cursor, List<string> Recent, string At)
+{
+    public string? Filter { get; init; }
+}

@@ -4,13 +4,14 @@ using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
 using Orchestrator.Core.Policy;
 using Orchestrator.Core.Stack;
+using Orchestrator.Core.Storage;
 using Orchestrator.Core.Templates;
 
 namespace Orchestrator.Store;
 
 /// <summary>
-/// The store: the stream (<see cref="Events"/>) and the lifecycle files of each session. Decisions, answers,
-/// reviews, reports and the pending deliveries are queries of the stream.
+/// The store: the stream (<see cref="Events"/>) and the run state of each session, through the repositories of
+/// <see cref="Repositories"/>. Decisions, answers, reviews, reports and the pending deliveries are queries of the stream.
 /// </summary>
 public sealed class FileStore
 {
@@ -18,13 +19,17 @@ public sealed class FileStore
 
     public FileStore(string root, TimeProvider? clock = null, TemplateSet? templates = null, string writer = Parties.Supervisor)
     {
-        Root = Path.GetFullPath(root);
+        Repositories = StoreBackends.Create(root);
+        Root = Repositories.Location;
         Clock = clock ?? TimeProvider.System;
         Texts = new Texts(templates ?? new TemplateSet(Home.Templates()));
-        Events = new EventStream(Root, Clock, writer, Texts.Templates);
+        Events = new EventStream(Repositories, Clock, writer, Texts.Templates);
         Renderer = new Renderer(this);
     }
 
+    public IRepositories Repositories { get; }
+
+    /// <summary>Where the store is: <see cref="IRepositories.Location"/>.</summary>
     public string Root { get; }
     public TimeProvider Clock { get; }
     public EventStream Events { get; }
@@ -35,29 +40,38 @@ public sealed class FileStore
     /// <summary>The policy in use: store/policy.json, or the one the supervisor sets.</summary>
     public Policy Policy
     {
-        get => policy ??= Home.LoadPolicy(Root);
+        get => policy ??= Home.LoadPolicy(Repositories);
         set => policy = value;
     }
 
     public string Now => Times.Format(Clock.GetUtcNow());
 
-    public string Dir(string id) => Path.Combine(Root, StoreFiles.Sessions, id);
+    /// <summary>The local path of a session file. Only for tests that write a file as a hook does: the code uses the repositories.</summary>
+    public string PathOf(string id, params string[] parts) => ((Local.LocalRepositories)Repositories).PathOf(id, parts);
 
-    public string PathOf(string id, params string[] parts) => Path.Combine([Dir(id), .. parts]);
+    public IReadOnlyList<string> AllSessions() => Repositories.Sessions.List(_ => true).Select(d => d.Id).ToList();
 
-    public IReadOnlyList<string> AllSessions() => Files.Names(Path.Combine(Root, StoreFiles.Sessions));
+    public IReadOnlyList<string> Sessions() => AllSessions().Where(IsEnabled).ToList();
 
-    public IReadOnlyList<string> Sessions() => AllSessions().Where(id => File.Exists(PathOf(id, StoreFiles.Enabled))).ToList();
+    /// <summary>True when the session has the enabled marker.</summary>
+    public bool IsEnabled(string id) => Has(id, StoreFiles.Enabled);
 
-    public Meta Meta(string id) => Files.ReadJson<Meta>(PathOf(id, StoreFiles.Meta)) ?? new Meta(id);
+    /// <summary>Writes or deletes the enabled marker.</summary>
+    public void SetEnabled(string id, bool enabled)
+    {
+        if (enabled) WriteText(id, StoreFiles.Enabled, "");
+        else Delete(id, StoreFiles.Enabled);
+    }
 
-    public void SaveMeta(Meta meta) => Files.WriteJson(PathOf(meta.Id, StoreFiles.Meta), meta);
+    public Meta Meta(string id) => ReadJson<Meta>(id, StoreFiles.Meta) ?? new Meta(id);
 
-    public Lease Lease(string id) => Files.ReadJson<Lease>(PathOf(id, StoreFiles.Lease)) ?? new Lease(Holders.None, "");
+    public void SaveMeta(Meta meta) => WriteJson(meta.Id, meta, StoreFiles.Meta);
 
-    public void SaveLease(string id, Lease lease) => Files.WriteJson(PathOf(id, StoreFiles.Lease), lease);
+    public Lease Lease(string id) => ReadJson<Lease>(id, StoreFiles.Lease) ?? new Lease(Holders.None, "");
 
-    public DateTimeOffset? Heartbeat(string id) => Times.Parse(Files.ReadText(PathOf(id, StoreFiles.Heartbeat)));
+    public void SaveLease(string id, Lease lease) => WriteJson(id, lease, StoreFiles.Lease);
+
+    public DateTimeOffset? Heartbeat(string id) => Times.Parse(ReadText(id, StoreFiles.Heartbeat));
 
     public bool IsLive(string id, DateTimeOffset now) => LeaseRules.IsLive(Lease(id), Heartbeat(id), now);
 
@@ -75,7 +89,7 @@ public sealed class FileStore
     {
         var id = meta.Id.Length > 0 ? meta.Id : Guid.NewGuid().ToString();
         SaveMeta(meta with { Id = id, CreatedAt = Now });
-        Files.Write(PathOf(id, StoreFiles.Enabled), "");
+        SetEnabled(id, true);
         return id;
     }
 
@@ -156,8 +170,7 @@ public sealed class FileStore
     public string? SessionOf(string decision)
     {
         if (DecisionEvent(decision) is { } e) return Parties.SessionId(e.From) ?? e.Session;
-        var file = StoreFiles.Json(decision);
-        return AllSessions().FirstOrDefault(id => File.Exists(PathOf(id, StoreFiles.Stack, file)));
+        return AllSessions().FirstOrDefault(id => Repositories.SessionItems<StackEntry>(id, StoreFiles.Stack).Exists(decision));
     }
 
     public string? ResolveSession(string prefix)
@@ -243,7 +256,7 @@ public sealed class FileStore
             if (Events.Find(envelope) is { } e && !Events.IsAcked(e.Id)) Events.Ack(e, Parties.Session(id), by);
     }
 
-    public Status? Status(string id) => Files.ReadJson<Status>(PathOf(id, StoreFiles.Status));
+    public Status? Status(string id) => ReadJson<Status>(id, StoreFiles.Status);
 
     /// <summary>The newest <c>blocked</c> envelope about the session. Its reason is None when the session is not blocked.</summary>
     public Blocked? Blocked(string id) =>
@@ -257,18 +270,45 @@ public sealed class FileStore
             new Dictionary<string, object?> { ["text"] = reason is null ? "delivery unblocked" : $"delivery blocked: {reason}", ["reason"] = reason }, session: id);
     }
 
-    public StackEntry? Stack(string id, string decision) => Files.ReadJson<StackEntry>(PathOf(id, StoreFiles.Stack, StoreFiles.Json(decision)));
+    public StackEntry? Stack(string id, string decision) => Repositories.SessionItems<StackEntry>(id, StoreFiles.Stack).Read(decision);
 
     public IReadOnlyList<StackEntry> Stacks(string id) =>
-        Files.Names(PathOf(id, StoreFiles.Stack)).Select(name => Files.ReadJson<StackEntry>(PathOf(id, StoreFiles.Stack, name))).OfType<StackEntry>().ToList();
+        Repositories.SessionItems<StackEntry>(id, StoreFiles.Stack).List(_ => true).Select(d => d.Value).OfType<StackEntry>().ToList();
 
-    public void SaveStack(StackEntry entry) => Files.WriteJson(PathOf(entry.Session, StoreFiles.Stack, StoreFiles.Json(entry.Decision)), entry);
+    public void SaveStack(StackEntry entry) => Repositories.SessionItems<StackEntry>(entry.Session, StoreFiles.Stack).Put(entry.Decision, entry);
 
     public IReadOnlyList<Event> Ledger() => this.Query(StreamQueries.Ledger);
 
-    public T? ReadJson<T>(string id, params string[] parts) => Files.ReadJson<T>(PathOf(id, parts));
+    // Run state files of a session: one file (parts: the file name), or one item of a session folder (parts: the
+    // folder and the item name, with or without .json).
 
-    public void WriteJson<T>(string id, T value, params string[] parts) => Files.WriteJson(PathOf(id, parts), value);
+    public T? ReadJson<T>(string id, params string[] parts) => Repository<T>(id, parts, out var key).Read(key);
 
-    public void Log(string line) => Files.Append(Path.Combine(Root, StoreFiles.SupervisorLog), $"{Now} {line}");
+    public void WriteJson<T>(string id, T value, params string[] parts) => Repository<T>(id, parts, out var key).Put(key, value);
+
+    /// <summary>True when the run state file exists, valid or not.</summary>
+    public bool Has(string id, params string[] parts) => Repository<string>(id, parts, out var key).Exists(key);
+
+    public string? ReadText(string id, params string[] parts) => Repository<string>(id, parts, out var key).Read(key);
+
+    public void WriteText(string id, string file, string text) => Repositories.SessionFile<string>(file).Put(id, text);
+
+    public void Delete(string id, params string[] parts) => Repository<string>(id, parts, out var key).Delete(key);
+
+    IRepository<Doc<T>, string> Repository<T>(string id, string[] parts, out string key)
+    {
+        switch (parts.Length)
+        {
+            case 1:
+                key = id;
+                return Repositories.SessionFile<T>(parts[0]);
+            case 2:
+                key = parts[1].EndsWith(".json") ? parts[1][..^5] : parts[1];
+                return Repositories.SessionItems<T>(id, parts[0]);
+            default:
+                throw new ArgumentException($"a run state file has one or two parts, not {parts.Length}: {string.Join("/", parts)}");
+        }
+    }
+
+    public void Log(string line) => Repositories.Log.Write($"{Now} {line}");
 }

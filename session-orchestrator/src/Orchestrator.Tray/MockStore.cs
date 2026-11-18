@@ -84,11 +84,11 @@ public sealed class MockStore : IDisposable
     string Session(string title, string cwd, string? parent, string goal)
     {
         var id = new Messages(Store).NewSession(new BriefFields { Title = title, Goal = goal, Cwd = cwd, Parent = parent }, Parties.User);
-        Files.WriteJson(Store.PathOf(id, StoreFiles.Status), new Status("idle", null, Store.Now));
+        Store.WriteJson(id, new Status("idle", null, Store.Now), StoreFiles.Status);
         return id;
     }
 
-    void Running(string id) => Files.WriteJson(Store.PathOf(id, StoreFiles.Status), new Status("running", null, Store.Now));
+    void Running(string id) => Store.WriteJson(id, new Status("running", null, Store.Now), StoreFiles.Status);
 
     string Decision(string id, string question, string context, string[] options, string? defaultOption, string risk)
     {

@@ -1,5 +1,6 @@
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Policy;
+using Orchestrator.Core.Storage;
 
 namespace Orchestrator.Store;
 
@@ -21,19 +22,24 @@ public static class Home
 
     public static string Templates() => Path.Combine(Root(), "templates");
 
-    public static Policy LoadPolicy(string storeRoot)
+    public static Policy LoadPolicy(string storeRoot) => LoadPolicy(StoreBackends.Create(storeRoot));
+
+    /// <summary>The policy of the store. A store with no policy gets a copy of config/policy.default.json.</summary>
+    public static Policy LoadPolicy(IRepositories repos)
     {
-        var path = Path.Combine(storeRoot, StoreFiles.Policy);
-        var source = File.Exists(path) ? path : Config("policy.default.json");
+        if (repos.Policies.Read(StoreIds.Policy) is { } stored) return stored;
+        var source = Config("policy.default.json");
         var policy = Policy.Parse(File.ReadAllText(source), source);
-        if (!File.Exists(path)) Files.WriteJson(path, policy);
+        repos.Policies.TryCreate(StoreIds.Policy, policy);
         return policy;
     }
 
-    public static StoreVersion CheckVersion(string storeRoot, DateTimeOffset now)
+    public static StoreVersion CheckVersion(string storeRoot, DateTimeOffset now) => CheckVersion(StoreBackends.Create(storeRoot), now);
+
+    public static StoreVersion CheckVersion(IRepositories repos, DateTimeOffset now)
     {
-        var path = Path.Combine(storeRoot, StoreFiles.Version);
-        if (Files.ReadJson<StoreVersion>(path) is { } found)
+        var storeRoot = repos.Location;
+        if (repos.Settings.Read(StoreIds.Version) is { } found)
         {
             if (found.Version > StoreVersion.Current)
                 throw new InvalidDataException($"store {storeRoot} has version {found.Version}, newer than this supervisor ({StoreVersion.Current}). Update the orchestrator.");
@@ -42,7 +48,7 @@ public static class Home
             return found;
         }
         var version = new StoreVersion(StoreVersion.Current, Core.Leases.Times.Format(now));
-        Files.WriteJson(path, version);
+        repos.Settings.Put(StoreIds.Version, version);
         return version;
     }
 

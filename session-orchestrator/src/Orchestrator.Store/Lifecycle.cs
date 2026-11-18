@@ -42,7 +42,7 @@ public sealed class Lifecycle(FileStore store)
         var lines = new List<string>();
         store.Events.Append(EventKinds.SessionArchive, by, Parties.Session(id), Messages.Fields(("text", "archived"), ("blockers", blockers)), null, id);
         store.WriteJson(id, new Control(ControlStates.Archived, store.Now, by) { Reason = blockers.Count > 0 ? string.Join("; ", blockers) : null }, StoreFiles.Control);
-        File.Delete(store.PathOf(id, StoreFiles.Enabled));
+        store.SetEnabled(id, false);
         lines.Add($"Archived {id}. The supervisor does not run it again.");
         if (store.Meta(id) is { Repo: { } repo, Cwd: { } worktree, Branch: { } branch })
             lines.Add(RemoveWorktree(repo, worktree, branch));
@@ -130,7 +130,7 @@ public sealed class Lifecycle(FileStore store)
 
     public Meta Enable(string id, string cwd, string? title, string? parent, string by)
     {
-        var old = File.Exists(store.PathOf(id, StoreFiles.Meta)) ? store.Meta(id) : null;
+        var old = store.Has(id, StoreFiles.Meta) ? store.Meta(id) : null;
         var meta = (old ?? new Meta(id) { Cwd = cwd, CreatedBy = by, CreatedAt = store.Now, Started = true }) with
         {
             Title = title ?? old?.Title ?? $"Chat in {Path.GetFileName(cwd.TrimEnd('/', '\\'))}",
@@ -138,7 +138,7 @@ public sealed class Lifecycle(FileStore store)
             Imported = true,
         };
         store.SaveMeta(meta);
-        Files.Write(store.PathOf(id, StoreFiles.Enabled), "");
+        store.SetEnabled(id, true);
         store.Events.Append(EventKinds.SessionStart, parent is null ? Parties.User : Parties.Session(parent), Parties.Session(id), Messages.Fields(("text", $"{meta.Title} enabled"), ("title", meta.Title)), parent is null ? null : Messages.Fields(("parent", parent)), id);
         return meta;
     }

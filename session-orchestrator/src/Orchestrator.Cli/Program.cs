@@ -59,7 +59,7 @@ namespace Orchestrator.Cli
             var command = new CommandContext(store, args, output, cwd);
             try
             {
-                if (args.Positional[0] is not ("doctor" or "template" or "process")) Home.CheckVersion(store.Root, store.Clock.GetUtcNow());
+                if (args.Positional[0] is not ("doctor" or "template" or "process")) Home.CheckVersion(store.Repositories, store.Clock.GetUtcNow());
                 return args.Positional[0] switch
                 {
                     "new" => SessionCommands.New(command),

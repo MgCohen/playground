@@ -166,14 +166,13 @@ public sealed partial class Supervisor
     void StartDocsCheck(string id, Decision decision)
     {
         var key = $"{id}/{decision.Id}";
-        var path = store.PathOf(id, StoreFiles.DocsChecks, StoreFiles.Json(decision.Id));
-        if (checks.ContainsKey(key) || File.Exists(path) || checks.Count >= options.MaxChecks) return;
+        if (checks.ContainsKey(key) || store.Has(id, StoreFiles.DocsChecks, decision.Id) || checks.Count >= options.MaxChecks) return;
         if (store.Cwd(id) is not { } cwd) return;
         var request = new DocsRequest(cwd, decision.Question ?? "", decision.Options ?? [], options.Policy.Docs);
-        Track(checks, key, () => CheckDocs(id, decision, request, path));
+        Track(checks, key, () => CheckDocs(id, decision, request));
     }
 
-    async Task CheckDocs(string id, Decision decision, DocsRequest request, string path)
+    async Task CheckDocs(string id, Decision decision, DocsRequest request)
     {
         DocsResult result;
         string? error = null;
@@ -186,7 +185,7 @@ public sealed partial class Supervisor
             result = new DocsResult(false);
             error = e.Message;
         }
-        Files.WriteJson(path, new DocsCheck(result.Answered, result.Answer, result.Source, Times.Format(Now)) { Error = error });
+        store.WriteJson(id, new DocsCheck(result.Answered, result.Answer, result.Source, Times.Format(Now)) { Error = error }, StoreFiles.DocsChecks, decision.Id);
         if (!result.Answered || result.Answer is not { } answer) return;
         lock (gate)
         {

@@ -3,6 +3,7 @@ using System.Text.Json;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Store;
+using Orchestrator.Store.Local;
 
 namespace Orchestrator.Tests;
 
