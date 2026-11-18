@@ -189,18 +189,21 @@ public sealed class InboxUiTests
     }
 
     [Test]
-    public void A_closed_item_opens_with_its_result_and_the_actions_off()
+    public void A_closed_item_opens_with_its_result_and_no_content_actions()
     {
         using var rig = new Rig();
         var s = Session(rig, "Closed");
         var asked = Ask(rig, s, "x1", "Closed question?", ["A", "B"], "A");
         using var context = Context(rig);
         var open = context.Render<Open>(p => p.Add(x => x.Id, asked.Id));
-        Assert.That(open.FindAll(".sticky-acts .btn").All(b => !b.HasAttribute("disabled")), Is.True);
+        Assert.That(open.FindAll(".pagebar .cfab"), Has.Count.EqualTo(1), "an open item has its content actions in the corner button");
+        open.Find(".pagebar .cfab").Click();
+        Assert.That(open.FindAll(".dial [data-act]").Select(b => b.GetAttribute("data-act")), Is.EqualTo(new[] { "accept", "other", "skip" }));
 
         new Messages(rig.Store).Answer(s, "x1", "B");
         var closed = context.Render<Open>(p => p.Add(x => x.Id, asked.Id));
-        Assert.That(closed.FindAll(".sticky-acts .btn").All(b => b.HasAttribute("disabled")), Is.True);
+        Assert.That(closed.FindAll(".pagebar .cfab"), Is.Empty, "a closed item has no content actions");
+        Assert.That(closed.Find(".pagebar a.btn.pri").GetAttribute("href"), Is.EqualTo($"sessions/{s}"));
         Assert.That(closed.Find(".pill").TextContent, Is.EqualTo("answered"));
         Assert.That(closed.Markup, Does.Contain("Result"));
     }
@@ -233,7 +236,7 @@ public sealed class InboxUiTests
         var cards = context.Render<Cards>();
         cards.Find("[data-act=left]").Click();
         var status = context.Render<SessionStatus>(p => p.Add(x => x.Id, s));
-        status.FindAll(".sticky-acts .btn").First().Click();
+        status.Find(".pagebar [data-act=message]").Click();
         foreach (var markup in new[] { cards.Markup, status.Markup })
         {
             var html = new HtmlParser().ParseDocument(markup);

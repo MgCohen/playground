@@ -34,12 +34,60 @@ public sealed partial class TrayApp : ApplicationContext
         {
             if (e.Button == MouseButtons.Left) Form.Toggle();
         };
+        Tab = new EdgeTab(placeFile is null ? null : Path.Combine(Path.GetDirectoryName(placeFile)!, "edge-tab.txt"));
+        Tab.OpenRequested += () => Tab.SlideOut(Form.ShowWidget);
+        Form.Minimized += Tab.SlideIn;
+        Form.Showing += () => { if (Tab.OnScreen) Tab.SlideOut(); };
+        board = services.GetRequiredService<Orchestrator.Web.Board>();
+        hub = services.GetRequiredService<Orchestrator.Web.StreamHub>();
+        hub.Changed += Changed;
+        Tab.SetCounts(Counts().Counts);
         if (show) Form.ShowWidget();
         // The window handle exists, so a second start can marshal to the UI thread.
         else _ = Form.Handle;
     }
 
     public WidgetForm Form { get; }
+
+    /// <summary>N1: the minimized form of the widget at the right edge of the screen.</summary>
+    public EdgeTab Tab { get; }
+
+    readonly Orchestrator.Web.Board board;
+    readonly Orchestrator.Web.StreamHub hub;
+
+    void Changed()
+    {
+        if (exiting || Form.IsDisposed || !Form.IsHandleCreated) return;
+        Form.BeginInvoke(() => Notify(Counts()));
+    }
+
+    /// <summary>
+    /// N2: a new waiting card while the widget is hidden (closed or minimized): the edge tab slides in, its ring spins, and the
+    /// peek bubble shows the newest card. While the widget shows, the counts change with no notice.
+    /// </summary>
+    public void Notify((WaitCounts Counts, string? Title, string? Sub) next)
+    {
+        if (Form.Visible && !Form.Growing)
+        {
+            Tab.SetCounts(next.Counts);
+            return;
+        }
+        if (next.Counts.Total > 0 && !Tab.OnScreen) Tab.SlideIn();
+        Tab.SetCounts(next.Counts, next.Title, next.Sub);
+    }
+
+    /// <summary>The waiting cards by type, and the newest one for the peek bubble.</summary>
+    public (WaitCounts Counts, string? Title, string? Sub) Counts()
+    {
+        var cards = board.Cards();
+        var counts = new WaitCounts(
+            cards.Count(c => c.Group == Orchestrator.Web.CardGroup.Questions),
+            cards.Count(c => c.Group == Orchestrator.Web.CardGroup.Reviews),
+            cards.Count(c => c.Group == Orchestrator.Web.CardGroup.Reports),
+            cards.Count(c => c.Group == Orchestrator.Web.CardGroup.Blocked));
+        var newest = cards.MaxBy(c => c.Id, StringComparer.Ordinal);
+        return (counts, newest is null ? null : $"{newest.Label} · {newest.SessionTitle}", newest?.Title);
+    }
 
     /// <summary>Shows the widget from any thread. A second start of the app calls it.</summary>
     public void ShowFromAnyThread()
@@ -53,6 +101,7 @@ public sealed partial class TrayApp : ApplicationContext
         if (exiting) return;
         exiting = true;
         Form.Exiting = true;
+        Tab.Hide();
         Form.Close();
         icon.Visible = false;
         ExitThread();
@@ -62,6 +111,8 @@ public sealed partial class TrayApp : ApplicationContext
     {
         if (disposing)
         {
+            hub.Changed -= Changed;
+            Tab.Dispose();
             icon.Dispose();
             Form.Dispose();
             dot.Dispose();
