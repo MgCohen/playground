@@ -16,8 +16,19 @@ public static class Home
         typeof(Home).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false).OfType<System.Reflection.AssemblyMetadataAttribute>()
             .FirstOrDefault(a => a.Key == "OrchHome")?.Value is { } path && File.Exists(Path.Combine(path, Solution)) ? Path.GetFullPath(path) : null;
 
+    /// <summary>The store root: <c>ORCH_STORE</c>, else <see cref="DefaultStoreRoot"/>.</summary>
     public static string StoreRoot() =>
-        Environment.GetEnvironmentVariable("ORCH_STORE") is { Length: > 0 } store ? Path.GetFullPath(store) : Path.Combine(Root(), "store");
+        Environment.GetEnvironmentVariable("ORCH_STORE") is { Length: > 0 } store ? Path.GetFullPath(store) : DefaultStoreRoot();
+
+    /// <summary>
+    /// The default store root (H1): <c>%LOCALAPPDATA%\orch\store</c>. It is out of the checkout, so a <c>git clean -fdx</c>
+    /// cannot delete it. The plugin (<c>backend.ts</c> <c>storeRoot</c>) and <c>install.ps1 -Store</c> use the same default.
+    /// </summary>
+    public static string DefaultStoreRoot() =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify), "orch", "store");
+
+    /// <summary>The default store root before H4: <c>&lt;home&gt;/store</c> in the checkout. Only <c>orch store migrate</c> uses it.</summary>
+    public static string OldStoreRoot() => Path.Combine(Root(), "store");
 
     public static string Config(string name) => Path.Combine(Root(), "config", name);
 
