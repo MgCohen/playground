@@ -6,7 +6,7 @@
 
 @if (lockNode is { } locked)
 {
-    <a class="back" href="sessions/@locked.Meta.Id"><Icon Name="chevL" />@Ui.Name(locked)</a>
+    <PageHeader Title="Stream" Tab="false" Parent="@(new Crumb(Ui.Name(locked), $"sessions/{locked.Meta.Id}"))" />
 }
 else
 {

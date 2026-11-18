@@ -1,0 +1,392 @@
+<title>Orch UI Drafts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a page of drafts; each draft is a 350 px widget frame in the app look (app.css tokens), with notes beside it. */
+:root {
+  --page: #efece7; --page-tx: #2a2825; --page-mu: #6b665f; --page-line: rgba(27,26,24,.12);
+  --canvas: #e6e3de; --canvas-tx: #45423d; --surf: #fdfdfc; --text: #1b1a18; --tx2: #3a3834; --muted: #5f5b55; --line-c: rgba(27,26,24,.10);
+  --sunken: #dedbd6; --sunken-mu: #66625c; --accent: #ff6a1a; --on-accent: #1b1a18;
+  --done: #23733a; --pending: #8a5a0b; --failed: #b3261e; --new: #1f5fbf;
+  --b-q: #ff6a1a; --b-rev: #6f9cff; --b-rep: #8fd94f; --b-blk: #ff5c5c;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.63), 0 2px 3px rgba(60,50,40,.06), 0 10px 21px -8px rgba(60,50,40,.24);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.63), 0 2px 6px rgba(60,50,40,.12);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(60,50,40,.18), inset -2px -2px 4px rgba(255,255,255,.57);
+  --f-disp: Doto, "Cascadia Mono", monospace; --f-body: Inter, system-ui, "Segoe UI", sans-serif; --f-mono: "JetBrains Mono", "Cascadia Mono", monospace;
+  --r: 22px; --r-sm: 12px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #101012; --page-tx: #e9e6e1; --page-mu: #a29e97; --page-line: rgba(244,243,241,.12);
+  --canvas: #161618; --canvas-tx: #cfccc6; --surf: #28282d; --text: #f4f3f1; --tx2: #dcd9d4; --muted: #a8a49d; --line-c: rgba(244,243,241,.10);
+  --sunken: #111113; --sunken-mu: #9a968f; --on-accent: #111111;
+  --done: #7fd18f; --pending: #f0a640; --failed: #f59a9a; --new: #8ab4ff;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 3px rgba(0,0,0,.2), 0 10px 21px -8px rgba(0,0,0,.45);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 6px rgba(0,0,0,.4);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.05);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --page: #101012; --page-tx: #e9e6e1; --page-mu: #a29e97; --page-line: rgba(244,243,241,.12);
+  --canvas: #161618; --canvas-tx: #cfccc6; --surf: #28282d; --text: #f4f3f1; --tx2: #dcd9d4; --muted: #a8a49d; --line-c: rgba(244,243,241,.10);
+  --sunken: #111113; --sunken-mu: #9a968f; --on-accent: #111111;
+  --done: #7fd18f; --pending: #f0a640; --failed: #f59a9a; --new: #8ab4ff;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 3px rgba(0,0,0,.2), 0 10px 21px -8px rgba(0,0,0,.45);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 6px rgba(0,0,0,.4);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.05);
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--page-tx); font: 14px/1.45 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 22px; }
+h1 { font: 800 30px/1.1 var(--f-disp); margin: 0; letter-spacing: .02em; }
+h2 { font: 700 19px/1.25 var(--f-body); margin: 0; text-wrap: balance; }
+h3 { font: 600 12px var(--f-body); text-transform: uppercase; letter-spacing: .07em; color: var(--page-mu); margin: 0; }
+.intro { color: var(--page-mu); max-width: 70ch; margin: 0; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tabs button { font: 600 13px var(--f-body); color: var(--page-tx); background: transparent; border: 1px solid var(--page-line); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--page-tx); color: var(--page); border-color: var(--page-tx); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.draft { display: grid; grid-template-columns: 362px minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 820px) { .draft { grid-template-columns: minmax(0, 1fr); } }
+.notes { display: grid; gap: 14px; min-width: 0; }
+.notes p, .notes li { margin: 0; color: var(--page-tx); max-width: 62ch; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.sw { display: flex; gap: 6px; flex-wrap: wrap; }
+.sw button { border: 1px solid var(--page-line); background: transparent; color: var(--page-tx); border-radius: 10px; padding: 7px 12px; font: 600 12.5px var(--f-body); cursor: pointer; text-align: left; }
+.sw button[aria-pressed="true"] { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: -2px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th, .tbl td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--page-line); vertical-align: top; }
+.tbl th { font-weight: 600; color: var(--page-mu); font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; }
+.tblw { overflow-x: auto; }
+code { font: 12px var(--f-mono); }
+.tag { font: 600 10.5px var(--f-body); text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: var(--on-accent); }
+
+/* ===== The widget frame (the app look) ===== */
+.phone { width: 100%; max-width: 362px; background: var(--canvas); border-radius: 18px; padding: 12px 6px 12px 10px; display: grid; gap: 10px; color: var(--text);
+  box-shadow: 0 18px 40px -18px rgba(0,0,0,.45); max-height: 900px; overflow-y: auto; scrollbar-gutter: stable; }
+.crd { background: var(--surf); box-shadow: var(--sh-raise); border-radius: var(--r); }
+.well { background: var(--sunken); box-shadow: var(--sh-carve); border-radius: var(--r-sm); }
+.hd { display: flex; align-items: center; gap: 6px; min-height: 50px; padding: 6px 8px 6px 14px; }
+.path { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 4px; white-space: nowrap; overflow: hidden; }
+.path .cr { font: 500 12px var(--f-body); color: var(--muted); }
+.path .cur { font: 700 15px var(--f-body); overflow: hidden; text-overflow: ellipsis; }
+.wb { display: flex; gap: 2px; color: var(--muted); }
+.wb i { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; font-style: normal; font-size: 14px; }
+.wb i.pin { background: var(--accent); color: var(--on-accent); }
+.pad { padding: 12px 14px; }
+.row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.grow { flex: 1; min-width: 0; }
+.nm { font-weight: 600; }
+.sub { font-size: 11.5px; color: var(--muted); }
+.mono { font: 11.5px var(--f-mono); }
+.disp { font-family: var(--f-disp); font-weight: 800; letter-spacing: .02em; }
+.gt { font: 600 11px var(--f-body); text-transform: uppercase; letter-spacing: .07em; color: var(--canvas-tx); margin: 4px 6px -4px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: var(--st);
+  background: color-mix(in srgb, var(--st) 14%, transparent); border: 1px solid color-mix(in srgb, var(--st) 40%, transparent); white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--st); }
+.ring { width: 76px; height: 76px; border-radius: 50%; flex: none; display: grid; place-items: center; position: relative;
+  background: conic-gradient(var(--accent) calc(var(--p) * 1turn), var(--sunken) 0); }
+.ring::after { content: ""; position: absolute; inset: 10px; border-radius: 50%; background: var(--surf); box-shadow: var(--sh-raise-sm); }
+.ring span { position: relative; z-index: 1; text-align: center; line-height: 1.05; }
+.kv { display: flex; gap: 10px; padding: 8px 12px; font-size: 13px; }
+.kv + .kv { border-top: 1px solid var(--line-c); }
+.kv .k { flex: none; width: 34%; color: var(--tx2); }
+.kv .v { min-width: 0; overflow-wrap: anywhere; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { padding: 4px 10px; border-radius: 999px; background: var(--surf); box-shadow: var(--sh-raise-sm); font-size: 12px; font-weight: 500; }
+.bar { display: flex; gap: 8px; padding: 8px; position: sticky; bottom: 0; z-index: 2; }
+.btn { flex: 1; min-height: 40px; border: 0; border-radius: var(--r-sm); background: var(--sunken); color: var(--text); font: 600 13px var(--f-body); display: grid; place-items: center; }
+.btn.pri { background: var(--accent); color: var(--on-accent); flex-grow: 1.5; }
+.btn.dg { flex: 0 0 42px; color: var(--failed); }
+
+/* The graph of the steps */
+.graph { width: 100%; height: auto; display: block; }
+.graph .edge { fill: none; stroke: var(--muted); stroke-width: 1.6; opacity: .55; }
+.graph .edge.went { stroke: var(--done); opacity: 1; }
+.graph .edge.next { stroke: var(--accent); opacity: 1; stroke-dasharray: 4 3; }
+.graph .node rect { fill: var(--surf); stroke: var(--line-c); stroke-width: 1; }
+.graph .node.done rect { fill: color-mix(in srgb, var(--done) 12%, var(--surf)); stroke: var(--done); }
+.graph .node.cur rect { fill: var(--accent); stroke: var(--accent); }
+.graph .node.can rect { stroke: var(--accent); stroke-dasharray: 3 2; }
+.graph .node text { fill: var(--text); font: 600 10.5px var(--f-body); }
+.graph .node.cur text { fill: var(--on-accent); }
+.graph .node .ex { font: 500 8.5px var(--f-mono); fill: var(--muted); }
+.graph .node.cur .ex { fill: var(--on-accent); opacity: .75; }
+.graph .lbl { font: 500 8.5px var(--f-body); fill: var(--muted); }
+.graph .badge { font: 700 8.5px var(--f-body); fill: var(--done); }
+
+/* History */
+.tl { position: relative; display: grid; gap: 7px; padding-left: 26px; }
+.tl::before { content: ""; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 3px; border-radius: 2px; background: var(--sunken); box-shadow: var(--sh-carve); }
+.tli { position: relative; padding: 8px 12px; font-size: 12.5px; }
+.tli::before { content: ""; position: absolute; left: -22px; top: 13px; width: 11px; height: 11px; border-radius: 50%; background: var(--st, var(--done)); box-shadow: 0 0 0 3px var(--canvas); }
+.next { display: grid; gap: 6px; }
+.nx { display: flex; align-items: center; gap: 8px; padding: 9px 12px; font-size: 12.5px; }
+.ok { color: var(--done); font-weight: 700; }
+.no { color: var(--failed); font-weight: 700; }
+.steps { display: flex; gap: 3px; }
+.steps i { flex: 1; height: 8px; border-radius: 999px; background: var(--sunken); box-shadow: var(--sh-carve); }
+.steps i.d { background: var(--done); box-shadow: none; }
+.steps i.c { background: var(--accent); box-shadow: none; }
+.tree { display: grid; }
+.tree .node { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12.5px; border-top: 1px solid var(--line-c); }
+.tree .node:first-child { border-top: 0; }
+.tree .ind { flex: none; color: var(--muted); font-family: var(--f-mono); }
+.sample { font: 600 10px var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--page-mu); }
+[hidden] { display: none !important; }
+</style>
+
+<div class="wrap">
+  <header style="display:grid; gap:10px">
+    <span class="sample">Stream E · task E2 · drafts, not built code</span>
+    <h1>Orch UI Drafts</h1>
+    <p class="intro">UI drafts for the plans of the other work streams. Each draft is a widget frame in the look of the app, with sample data. The notes give the source of each field and the open questions. Pick an option, or say the change.</p>
+    <nav class="tabs" role="tablist" aria-label="Drafts">
+      <button role="tab" aria-selected="true" data-tab="workflow">1 · Workflow run</button>
+      <button role="tab" aria-selected="false" data-tab="session">2 · Session</button>
+      <button role="tab" aria-selected="false" data-tab="later">Later drafts</button>
+    </nav>
+  </header>
+
+  <!-- ===== 1. Workflow run ===== -->
+  <section data-panel="workflow" class="draft">
+    <div class="phone" id="wf-phone" aria-label="Workflow run page, sample">
+      <div class="crd hd"><div class="path"><span class="cr">Sessions</span><span class="cr">›</span><span class="cr">O2 Plan the inbox</span><span class="cr">›</span><span class="cur">Run · planning</span></div><div class="wb"><i class="pin">⌖</i><i>–</i><i>✕</i></div></div>
+
+      <div class="crd pad row" style="gap:14px">
+        <div class="ring" style="--p:.5"><span><b class="disp" style="font-size:19px">3/6</b><br><span class="sub">steps</span></span></div>
+        <div class="grow" style="display:grid; gap:4px">
+          <span class="sub">Workflow · planning</span>
+          <span class="nm" style="font-size:15px">Plan the inbox redesign</span>
+          <span><span class="pill" style="--st:var(--pending)">waits for you</span></span>
+          <span class="sub">Owner O2 · started 09:12 · loop 1</span>
+        </div>
+      </div>
+
+      <div data-v="a">
+        <h3 class="gt" style="margin:0 6px 6px">Graph</h3>
+        <div class="crd" style="padding:8px">
+          <svg class="graph" viewBox="0 0 320 300" role="img" aria-label="Step graph of the planning workflow">
+            <defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="currentColor"/></marker></defs>
+            <path class="edge went" d="M160 38 V62"/>
+            <path class="edge went" d="M160 92 V116"/>
+            <path class="edge next" d="M160 146 V170"/>
+            <path class="edge next" d="M110 131 H60 V170"/>
+            <path class="edge" d="M60 200 V222 H110 V102" />
+            <path class="edge" d="M160 200 V232"/>
+            <path class="edge" d="M210 131 H262 V232 H210"/>
+            <text class="lbl" x="68" y="160">change asked</text>
+            <text class="lbl" x="168" y="162">approved</text>
+            <text class="lbl" x="216" y="124">skip review</text>
+            <text class="lbl" x="66" y="236">loop</text>
+            <g class="node done"><rect x="110" y="8" width="100" height="30" rx="9"/><text x="160" y="22" text-anchor="middle">Collect goal</text><text class="ex" x="160" y="33" text-anchor="middle">ask · you</text></g>
+            <text class="badge" x="214" y="27">✓</text>
+            <g class="node done"><rect x="110" y="62" width="100" height="30" rx="9"/><text x="160" y="76" text-anchor="middle">Draft plan</text><text class="ex" x="160" y="87" text-anchor="middle">agent · O2</text></g>
+            <text class="badge" x="214" y="81">✓</text>
+            <g class="node cur"><rect x="110" y="116" width="100" height="30" rx="9"/><text x="160" y="130" text-anchor="middle">Review plan</text><text class="ex" x="160" y="141" text-anchor="middle">ask · you · required</text></g>
+            <g class="node can"><rect x="10" y="170" width="100" height="30" rx="9"/><text x="60" y="184" text-anchor="middle">Revise plan</text><text class="ex" x="60" y="195" text-anchor="middle">agent · O2</text></g>
+            <g class="node can"><rect x="110" y="170" width="100" height="30" rx="9"/><text x="160" y="184" text-anchor="middle">Split into tasks</text><text class="ex" x="160" y="195" text-anchor="middle">agent · new session</text></g>
+            <g class="node"><rect x="110" y="232" width="100" height="30" rx="9"/><text x="160" y="246" text-anchor="middle">Done check</text><text class="ex" x="160" y="257" text-anchor="middle">tool</text></g>
+            <text class="lbl" x="160" y="285" text-anchor="middle">Done when: plan approved and each task has a brief</text>
+          </svg>
+        </div>
+      </div>
+
+      <div data-v="b" hidden>
+        <h3 class="gt" style="margin:0 6px 6px">Steps</h3>
+        <div class="crd pad" style="display:grid; gap:8px">
+          <div class="steps" aria-hidden="true"><i class="d"></i><i class="d"></i><i class="c"></i><i></i><i></i><i></i></div>
+          <div class="row sub"><span class="grow">Collect goal ✓ · Draft plan ✓ · <b style="color:var(--accent)">Review plan</b></span><span>3 of 6</span></div>
+        </div>
+      </div>
+
+      <h3 class="gt">Current step</h3>
+      <div class="crd">
+        <div class="pad" style="display:grid; gap:6px">
+          <div class="row"><span class="grow nm" style="font-size:15px">Review plan</span><span class="pill" style="--st:var(--pending)">waits 12 min</span></div>
+          <span class="sub">The plan has 4 sections and 3 tasks. Approve it, or ask for a change.</span>
+        </div>
+        <div class="kv"><span class="k">Executor</span><span class="v">ask · a human</span></div>
+        <div class="kv"><span class="k">Actor</span><span class="v">you</span></div>
+        <div class="kv"><span class="k">Approval</span><span class="v">required · by you</span></div>
+        <div class="kv"><span class="k">Input</span><span class="v">plan · <span style="color:var(--new)">v2</span></span></div>
+        <div class="kv"><span class="k">Output</span><span class="v">review (approve, change)</span></div>
+      </div>
+
+      <h3 class="gt">Next steps</h3>
+      <div class="next">
+        <div class="crd nx"><span class="ok">✓</span><span class="grow"><b>Split into tasks</b><br><span class="sub">entry: review = approve</span></span><span class="sub">if approved</span></div>
+        <div class="crd nx"><span class="ok">✓</span><span class="grow"><b>Revise plan</b><br><span class="sub">entry: review = change</span></span><span class="sub">if change</span></div>
+        <div class="crd nx"><span class="no">✕</span><span class="grow"><b>Done check</b><br><span class="sub">entry: tasks exist · not yet</span></span><span class="sub">blocked</span></div>
+      </div>
+
+      <h3 class="gt">History</h3>
+      <div class="tl">
+        <div class="crd tli" style="--st:var(--pending)"><b>Review plan</b> started · <span class="mono">09:41</span><br><span class="sub">question sent to you</span></div>
+        <div class="crd tli"><b>Draft plan</b> done · <span class="mono">09:40</span><br><span class="sub">O2 · output plan v2 · 18 min</span></div>
+        <div class="crd tli"><b>Collect goal</b> done · <span class="mono">09:22</span><br><span class="sub">you answered by voice · 10 min</span></div>
+        <div class="crd tli" style="--st:var(--new)"><b>Run</b> started · <span class="mono">09:12</span><br><span class="sub">brief of O2 named the workflow</span></div>
+      </div>
+
+      <div class="crd bar"><span class="btn pri">Open question</span><span class="btn">Owner session</span><span class="btn dg" title="Stop run">■</span></div>
+    </div>
+
+    <div class="notes">
+      <span class="tag" style="justify-self:start">Draft 1</span>
+      <h2>Workflow run page</h2>
+      <p>One page for one run of a workflow. The order on the page: where the run is, the graph, the current step, the possible next steps, then the history. The page bar holds the page actions; the corner button (E-1) holds the actions of the waiting question.</p>
+      <h3>Pick the top part</h3>
+      <div class="sw" id="wf-sw">
+        <button aria-pressed="true" data-v="a">A · Step graph (recommended)</button>
+        <button aria-pressed="false" data-v="b">B · Step bar only</button>
+      </div>
+      <p><b>A</b> shows loops and branches (C1: a graph with one entry and no fixed exit). <b>B</b> is short, but it cannot show a loop. With A, a tap on a node can open that step's history.</p>
+      <h3>Source of each part</h3>
+      <div class="tblw"><table class="tbl">
+        <tr><th>Part</th><th>Source</th></tr>
+        <tr><td>Progress ring</td><td>Run: visited steps; "of 6" is the step count of the definition</td></tr>
+        <tr><td>Graph</td><td>Workflow definition (F2 templates) + run state (C2)</td></tr>
+        <tr><td>Current step</td><td>Step configuration: executor, actor, approval, input, output</td></tr>
+        <tr><td>Next steps</td><td>Each next step checks its entry; ✓ valid, ✕ not valid (C1 T2)</td></tr>
+        <tr><td>History</td><td>Event stream filtered by run id</td></tr>
+      </table></div>
+      <h3>Open questions</h3>
+      <ul>
+        <li>Progress: visited steps, or steps on the shortest path to done? A loop makes "3 of 6" vague.</li>
+        <li>Where does the page live: under the owner session (as here), or as its own tab "Runs"?</li>
+        <li>Large graphs: zoom and pan, or a list of step groups?</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== 2. Session ===== -->
+  <section data-panel="session" class="draft" hidden>
+    <div class="phone" aria-label="Session page, sample">
+      <div class="crd hd"><div class="path"><span class="cr">Sessions</span><span class="cr">›</span><span class="cur">[O2 C1] Inbox views</span></div><div class="wb"><i class="pin">⌖</i><i>–</i><i>✕</i></div></div>
+
+      <div class="crd pad" style="display:grid; gap:8px">
+        <div class="row">
+          <span class="disp" style="font-size:22px">O2 C1</span>
+          <span class="grow"></span>
+          <span class="pill" style="--st:var(--pending)">running</span>
+        </div>
+        <span class="nm" style="font-size:16px">Inbox views</span>
+        <div class="chips">
+          <span class="chip">role · <b>worker</b></span>
+          <span class="chip">type · <b>designer</b></span>
+          <span class="chip">stream · <b>A</b></span>
+        </div>
+        <span class="sub">Child of O2 Plan the inbox · works in run <span style="color:var(--new)">planning #1</span>, step Draft views</span>
+      </div>
+
+      <div data-s="a">
+        <h3 class="gt" style="margin:0 6px 6px">Registry</h3>
+        <div class="crd">
+          <div class="kv"><span class="k">Code</span><span class="v mono">[O2 C1]</span></div>
+          <div class="kv"><span class="k">Owner</span><span class="v">you</span></div>
+          <div class="kv"><span class="k">Work</span><span class="v">task A4 · branch <span class="mono">orch/session-06ade234</span></span></div>
+          <div class="kv"><span class="k">Workflow</span><span class="v">planning · worker</span></div>
+          <div class="kv"><span class="k">Type</span><span class="v">agent <span class="mono">designer</span> · skills <span class="mono">orch-ask, writing</span></span></div>
+          <div class="kv"><span class="k">Lifecycle</span><span class="v">active · B2 state running</span></div>
+          <div class="kv"><span class="k">Tags</span><span class="v">ui, inbox</span></div>
+        </div>
+        <h3 class="gt" style="margin:10px 6px 6px">Settings</h3>
+        <div class="crd">
+          <div class="kv"><span class="k">Mode</span><span class="v">ask <span class="sub">(stepwise · ask · parent · public)</span></span></div>
+          <div class="kv"><span class="k">Permissions</span><span class="v">auto</span></div>
+          <div class="kv"><span class="k">Report on</span><span class="v">done, blocked, asked</span></div>
+          <div class="kv"><span class="k">Source</span><span class="v sub">2 set at create · 3 copied from O2</span></div>
+        </div>
+        <h3 class="gt" style="margin:10px 6px 6px">Engine</h3>
+        <div class="crd">
+          <div class="kv"><span class="k">Kind</span><span class="v">claude-code</span></div>
+          <div class="kv"><span class="k">Session id</span><span class="v mono">06ade234-…</span></div>
+          <div class="kv"><span class="k">Remote Control</span><span class="v">on <span class="sub">· read from the app</span></span></div>
+        </div>
+      </div>
+
+      <div data-s="b" hidden>
+        <h3 class="gt" style="margin:0 6px 6px">Registry</h3>
+        <div class="crd pad" style="display:grid; gap:8px; font-size:12.5px">
+          <div class="row"><span class="sub" style="width:72px">Work</span><span class="grow">task A4 · <span class="mono">orch/session-06ade234</span></span></div>
+          <div class="row"><span class="sub" style="width:72px">Mode</span><span class="grow">ask · auto permissions</span></div>
+          <div class="row"><span class="sub" style="width:72px">Engine</span><span class="grow">claude-code · RC on</span></div>
+          <span class="sub" style="color:var(--new)">Show all 14 fields ›</span>
+        </div>
+      </div>
+
+      <h3 class="gt">Work tree · 3</h3>
+      <div class="crd tree">
+        <div class="node"><span class="ind">↑</span><span class="grow"><b>O2</b> Plan the inbox <span class="sub">· orchestrator</span></span><span class="pill" style="--st:var(--pending)">idle</span></div>
+        <div class="node" style="background:color-mix(in srgb, var(--accent) 10%, transparent)"><span class="ind">•</span><span class="grow"><b>O2 C1</b> Inbox views <span class="sub">· this session</span></span></div>
+        <div class="node"><span class="ind">└</span><span class="grow"><b>O2 C1 S1</b> Card motion <span class="sub">· worker</span></span><span class="pill" style="--st:var(--done)">done</span></div>
+        <div class="node"><span class="ind">└</span><span class="grow"><b>O2 C1 S2</b> Answer sheet <span class="sub">· free</span></span><span class="pill" style="--st:var(--pending)">running</span></div>
+      </div>
+
+      <div class="crd bar"><span class="btn pri">Event stream</span><span class="btn">Message</span><span class="btn">Settings</span><span class="btn dg" title="Stop">■</span></div>
+    </div>
+
+    <div class="notes">
+      <span class="tag" style="justify-self:start">Draft 2</span>
+      <h2>Session page with the registry</h2>
+      <p>The session page of today shows progress, counts and folders. This draft adds the S1 registry entry: the code, the role, the type, the stream, the workflow and the settings, and the work tree of the session (its parent and children).</p>
+      <h3>Pick the registry part</h3>
+      <div class="sw" id="s-sw">
+        <button aria-pressed="true" data-v="a">A · All fields in groups</button>
+        <button aria-pressed="false" data-v="b">B · Three lines + show all</button>
+      </div>
+      <p><b>A</b> shows each field in three groups: registry, settings, engine. <b>B</b> keeps the page short; the full entry opens on a tap.</p>
+      <h3>Source of each part</h3>
+      <div class="tblw"><table class="tbl">
+        <tr><th>Part</th><th>Source</th></tr>
+        <tr><td>Code, title, role, type, stream, workflow</td><td><code>SessionEntry</code> (S1, S2)</td></tr>
+        <tr><td>Settings and their source</td><td>Entry <code>settings</code>; "copied" = not set at create</td></tr>
+        <tr><td>Engine facts</td><td>Only references in the entry; Remote Control from <code>IProvider.Read</code></td></tr>
+        <tr><td>Work tree</td><td>Registry query: parent and children</td></tr>
+        <tr><td>Run link</td><td>Entry <code>workflow</code> + the run (C2)</td></tr>
+      </table></div>
+      <h3>Open questions</h3>
+      <ul>
+        <li>Can you change role, type or settings on this page, or only read them? (S1: the parent or the user can update settings.)</li>
+        <li>Work tree: full tree from the root, or only parent and children (as here)?</li>
+        <li>Is the stream a filter link (all sessions of stream A)?</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Later ===== -->
+  <section data-panel="later" hidden style="display:grid; gap:14px">
+    <h2>Later drafts</h2>
+    <p class="intro">Drafts that follow, in this order. Each one uses the plan of its stream.</p>
+    <div class="tblw"><table class="tbl">
+      <tr><th>Draft</th><th>Stream and plan</th><th>Content</th></tr>
+      <tr><td>Templates catalog</td><td>F1 templates, F2 template store</td><td>List of kinds and workflows; one kind with its view, fields and actions</td></tr>
+      <tr><td>Storage and store</td><td>H1 storage, H4 store move</td><td>Store root, version, size, repository health in Settings</td></tr>
+      <tr><td>Setup and supervisor</td><td>G1 install and start, G2 cloud</td><td>Supervisor state, app version, update check, cloud workers</td></tr>
+      <tr><td>Streams</td><td>C1 streams</td><td>Group the sessions and events by stream id</td></tr>
+    </table></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  function pick(group, attr, onPick) {
+    var box = document.getElementById(group);
+    if (!box) return;
+    box.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      box.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      document.querySelectorAll("[" + attr + "]").forEach(function (el) { el.hidden = el.getAttribute(attr) !== b.dataset.v; });
+    });
+  }
+  pick("wf-sw", "data-v");
+  pick("s-sw", "data-s");
+  var tabs = document.querySelectorAll('[role="tab"]');
+  function show(name) {
+    tabs.forEach(function (t) { t.setAttribute("aria-selected", t.dataset.tab === name ? "true" : "false"); });
+    document.querySelectorAll("[data-panel]").forEach(function (p) { p.hidden = p.dataset.panel !== name; });
+  }
+  tabs.forEach(function (t) { t.addEventListener("click", function () { show(t.dataset.tab); try { history.replaceState(null, "", "#" + t.dataset.tab); } catch (_) {} }); });
+  var start = (location.hash || "").slice(1);
+  if (["workflow", "session", "later"].indexOf(start) >= 0) show(start);
+})();
+</script>

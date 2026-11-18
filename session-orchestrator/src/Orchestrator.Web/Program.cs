@@ -20,6 +20,7 @@ builder.Services.AddSingleton(services => new SupervisorOptions(4, 3, 2, Home.Lo
 });
 builder.Services.AddSingleton<Supervisor>();
 builder.Services.AddSingleton<Board>();
+builder.Services.AddScoped<PathTrail>();
 builder.Services.AddSingleton<StreamHub>();
 builder.Services.AddSingleton(services => new SignIn(services.GetRequiredService<IConfiguration>()["ORCH_TOKEN"]));
 builder.Services.AddHostedService<TickService>();

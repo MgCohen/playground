@@ -23,6 +23,17 @@ static partial class Mouse
         Send(LeftUp);
     }
 
+    public static void Click(Point at)
+    {
+        SetCursorPos(at.X, at.Y);
+        Thread.Sleep(120);
+        Send(LeftDown);
+        Thread.Sleep(60);
+        Send(LeftUp);
+    }
+
+    public static void MoveTo(Point at) => SetCursorPos(at.X, at.Y);
+
     static void Send(uint flags)
     {
         var input = new Input { Type = 0, Mi = new MouseInput { Flags = flags } };
