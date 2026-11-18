@@ -67,12 +67,39 @@ public sealed class StoreMoveTests
 
             var again = new StringWriter();
             Assert.That(Run(target, again, "store", "migrate", "--from", rig.Folder), Is.EqualTo(1));
-            Assert.That(again.ToString(), Does.Contain("exists and is not empty").And.Contain("Nothing changed"));
+            Assert.That(again.ToString(), Does.Contain("exists and has data").And.Contain("Nothing changed"));
             Assert.That(Hashes(target), Is.EqualTo(before), "a second migration writes nothing into a store");
         }
         finally
         {
             Directory.Delete(Path.GetDirectoryName(Path.GetDirectoryName(target))!, true);
+        }
+    }
+
+    [Test]
+    public void Migrate_sets_a_fresh_target_store_aside_and_deletes_nothing()
+    {
+        using var rig = new Rig();
+        rig.Create("start", "root");
+        Home.CheckVersion(rig.Store.Repositories, rig.Clock.Now);
+        var parent = Directory.CreateTempSubdirectory("orch-move-").FullName;
+        var target = Path.Combine(parent, "store");
+        try
+        {
+            // Any orch command on the new default root makes a fresh store before the migration.
+            var output = new StringWriter();
+            Assert.That(Run(target, output, "init"), Is.EqualTo(0), output.ToString());
+            Assert.That(StoreMigration.IsFresh(target), Is.True);
+            output = new StringWriter();
+            Assert.That(Run(target, output, "store", "migrate", "--from", rig.Folder), Is.EqualTo(0), output.ToString());
+            Assert.That(output.ToString(), Does.Contain("fresh store with no data"));
+            Assert.That(Hashes(target), Is.EqualTo(Hashes(rig.Folder)));
+            var aside = Directory.GetDirectories(parent, "store.fresh-*").Single();
+            Assert.That(File.Exists(Path.Combine(aside, "version.json")), Is.True, "the fresh store is kept, not deleted");
+        }
+        finally
+        {
+            Directory.Delete(parent, true);
         }
     }
 

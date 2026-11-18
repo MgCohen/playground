@@ -17,10 +17,10 @@ The default store root is out of the checkout, so a `git clean -fdx` cannot dele
 
 `orch store migrate [--from DIR] [--to DIR] [--dry-run] [--force]` copies the old store to the store root. The default source is `<home>/store`. The default target is the store root.
 
-1. The command refuses the copy in these cases: the source has no `version.json`; the target exists and is not empty; `<target>.migrating` exists; a session of the source has a heartbeat in the last 30 s (`--force` skips only this check).
+1. The command refuses the copy in these cases: the source has no `version.json`; the target has data (a file other than `version.json` and `policy.json`); `<target>.migrating` exists; a session of the source has a heartbeat in the last 30 s (`--force` skips only this check).
 2. It copies each file to `<target>.migrating`. It skips `*.tmp` files of writes in progress.
 3. It compares each file of the source with its copy: the size and the SHA-256 hash. A missing, an extra or a changed file is a difference.
-4. With no difference, it renames `<target>.migrating` to the target. With a difference, it lists the differences, keeps `<target>.migrating` for examination, and does not make the target.
+4. With no difference, it renames `<target>.migrating` to the target. Each `orch` command makes a fresh store (only `version.json` and `policy.json`) at its first run. The migration renames such a target to `<target>.fresh-<time>` first; it deletes no file. With a difference, it lists the differences, keeps `<target>.migrating` for examination, and does not make the target.
 5. It never changes or deletes the source. It prints the next steps: remove an old `ORCH_STORE`, run `install.ps1` again, start the supervisor, then move the old folder out of the checkout as a backup.
 
 ## Layout

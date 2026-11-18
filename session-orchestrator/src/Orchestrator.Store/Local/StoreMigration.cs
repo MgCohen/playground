@@ -6,6 +6,9 @@ namespace Orchestrator.Store.Local;
 /// <summary>The result of <see cref="StoreMigration.Copy"/>.</summary>
 public sealed record MigrationResult(string From, string To, int Files, long Bytes, IReadOnlyList<string> Differences, IReadOnlyList<string> LiveSessions)
 {
+    /// <summary>Where a fresh target store went before the rename, or null.</summary>
+    public string? SetAside { get; init; }
+
     public bool Ok => Differences.Count == 0;
 }
 
@@ -31,12 +34,22 @@ public static class StoreMigration
             return $"the source and the target are the same folder: {from}. Set the target with --to, or unset ORCH_STORE";
         if (!IsStore(from))
             return $"{from} is not a store: it has no version.json";
-        if (Directory.Exists(to) && Directory.EnumerateFileSystemEntries(to).Any())
-            return $"the target {to} exists and is not empty. The migration never writes into a store. Move that folder away first";
+        if (Directory.Exists(to) && !IsFresh(to))
+            return $"the target {to} exists and has data. The migration never writes into a store with data. Move that folder away first";
         if (Directory.Exists(TempOf(to)))
             return $"{TempOf(to)} exists: an earlier migration stopped. Delete that folder (it is only a copy), then run the migration again";
         return null;
     }
+
+    /// <summary>The files that each orch command writes into a new store. A target with only these files has no data.</summary>
+    static readonly string[] FreshFiles = [StoreFiles.Json(Core.Storage.StoreIds.Version), StoreFiles.Json(Core.Storage.StoreIds.Policy)];
+
+    /// <summary>
+    /// True when the folder has no data: no file, or only version.json and policy.json, which each orch command
+    /// writes at its first run on the new default root.
+    /// </summary>
+    public static bool IsFresh(string root) =>
+        Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).All(path => FreshFiles.Contains(Path.GetRelativePath(root, path), StringComparer.OrdinalIgnoreCase));
 
     /// <summary>The sessions of the source with a heartbeat in the last <see cref="LiveWindow"/>.</summary>
     public static IReadOnlyList<string> LiveSessions(string from, DateTimeOffset now)
@@ -71,13 +84,19 @@ public static class StoreMigration
         foreach (var dir in Directory.EnumerateDirectories(from, "*", SearchOption.AllDirectories))
             Directory.CreateDirectory(Path.Combine(temp, Path.GetRelativePath(from, dir)));
         var differences = Check(from, temp);
+        string? aside = null;
         if (differences.Count == 0)
         {
-            if (Directory.Exists(to)) Directory.Delete(to);
+            // A fresh target has no data, but the migration deletes no file: it renames the folder.
+            if (Directory.Exists(to))
+            {
+                aside = $"{to.TrimEnd('\\', '/')}.fresh-{now.UtcDateTime:yyyyMMdd-HHmmss}";
+                Directory.Move(to, aside);
+            }
             Directory.CreateDirectory(Path.GetDirectoryName(to)!);
             Directory.Move(temp, to);
         }
-        return new MigrationResult(from, to, files.Count, bytes, differences, live);
+        return new MigrationResult(from, to, files.Count, bytes, differences, live) { SetAside = aside };
     }
 
     /// <summary>The differences between the source and the copy: a missing file, an extra file, or other content.</summary>

@@ -56,6 +56,7 @@ public static class StoreCommands
             return 1;
         }
         c.Output.WriteLine($"Copied {result.Files} files ({result.Bytes:N0} bytes) from {from} to {to}. The check found no difference.");
+        if (result.SetAside is { } aside) c.Output.WriteLine($"The target had a fresh store with no data (only version.json and policy.json). It is now in {aside}. Delete that folder when you like.");
         c.Output.WriteLine("The old store did not change. Next steps:");
         c.Output.WriteLine($"  1. Remove ORCH_STORE where it names {from}, or set it to {to}.");
         c.Output.WriteLine("  2. Run install.ps1 again: the tray shortcut then names the new store.");
