@@ -40,6 +40,13 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+/* S3: each scroll area keeps a fixed space for the scroll bar, so nothing moves when it comes.
+   S4: the bar is quiet: a 4 px round thumb with 1 px space, no track. It shows only when the area overflows. */
+html { scrollbar-gutter: stable; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { border-radius: 999px; border: 1px solid transparent; background-clip: padding-box; background-color: color-mix(in srgb, var(--muted) 40%, transparent); min-height: 32px; }
+:hover::-webkit-scrollbar-thumb { background-color: color-mix(in srgb, var(--muted) 70%, transparent); }
 body { background: var(--canvas); color: var(--text); font: 14px/1.4 var(--f-body); -webkit-tap-highlight-color: transparent; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; cursor: pointer; }
@@ -114,7 +121,8 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .acts { display: flex; gap: 8px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 46px; padding: 0 14px; border: 0; border-radius: var(--r-sm); background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); font-weight: 600; flex: 1; }
 .btn.pri { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow); }
-.btn.wl { background: var(--sunken); box-shadow: var(--sh-carve); color: var(--sunken-mu); flex: 0 0 64px; }
+/* S2: the skip button is raised like the other buttons, with a muted icon, so it does not look disabled. */
+.btn.wl { background: var(--surf); box-shadow: var(--sh-raise); color: var(--muted); flex: 0 0 64px; }
 .btn:disabled, .acts.off .btn { opacity: .38; box-shadow: none; cursor: default; }
 .acts.small .btn { min-height: 38px; flex: 0 1 auto; font-size: 13px; }
 .sticky-acts { position: sticky; bottom: 92px; z-index: 3; margin-top: 4px; }
@@ -194,7 +202,7 @@ code { font-family: var(--f-mono); font-size: .92em; }
 /* ===== Sheets and toast ===== */
 .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 20; }
 .sheet { position: fixed; z-index: 21; left: max(6px, env(safe-area-inset-left, 0px)); right: max(6px, env(safe-area-inset-right, 0px)); bottom: max(6px, env(safe-area-inset-bottom, 0px));
-  max-width: 548px; margin: 0 auto; max-height: 86dvh; overflow: auto; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 12px; border-radius: 26px; }
+  max-width: 548px; margin: 0 auto; max-height: 86dvh; overflow: auto; scrollbar-gutter: stable; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 12px; border-radius: 26px; }
 .grab { width: 40px; height: 5px; border-radius: 3px; background: var(--dim); align-self: center; }
 .ta { width: 100%; border: 0; padding: 12px; font: 15px/1.4 var(--f-body); resize: vertical; min-height: 84px; }
 .fsec { display: grid; gap: 6px; }
