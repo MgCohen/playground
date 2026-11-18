@@ -77,10 +77,11 @@ public static class SelfTest
         var fit = form.Fit(new Point(form.Left, area.Bottom - form.Height));
         checks.Add(new Check("taskbar-gap", gap == margin && area.Bottom - (fit.Y + form.Height) == margin,
             $"gap {gap} px above the work area bottom (expect {margin}); a drop on the taskbar edge moves up to a gap of {area.Bottom - (fit.Y + form.Height)} px", ""));
-        // The scroll bar width of the page: the window width less the width of the content box.
+        // The scroll bar gutter of the page: the window width less the width of the content box.
         var bar = JsonSerializer.Deserialize<double>(await web.ExecuteScriptAsync("window.innerWidth - document.documentElement.clientWidth"));
         var scrolls = JsonSerializer.Deserialize<bool>(await web.ExecuteScriptAsync("document.documentElement.scrollHeight > window.innerHeight"));
-        checks.Add(new Check("no-scroll-bar", bar == 0 && scrolls, $"scroll bar width {bar} px (expect 0), the home page scrolls {scrolls}", ""));
+        // S3, S4: a fixed gutter of 6 CSS px for the quiet scroll bar, so the content never moves.
+        checks.Add(new Check("scroll-gutter", bar == 6 && scrolls, $"scroll bar gutter {bar} px (expect 6), the home page scrolls {scrolls}", ""));
         // The backdrop behind the app bar: a fixed layer under the bar that fades the content into the canvas.
         var backdrop = JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync(
             "(s => s.position + ' ' + s.zIndex + ' ' + s.height + ' ' + (s.backgroundImage.startsWith('linear-gradient') ? 'gradient' : 'none'))(getComputedStyle(document.body, '::after'))"));
