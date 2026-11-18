@@ -23,9 +23,13 @@ else
             <div class="row head">
                 <KindRing Kind="@e.Kind" State="@state" P="@(open ? .5 : 1)" />
                 <span class="grow"><span class="nm">@Ui.KindLabel(e.Kind, fields)</span><span class="sub ell">@Board.Party(e.From) → @Board.Party(e.To) · @Ui.Clock(Ui.Time(e))</span></span>
-                <Pill Label="@(open ? "waits" : Closed)" State="@(open ? "pending" : "done")" />
+                @* V7: the pill shows only while the document waits; the facts of a closed document tell its state. *@
+                @if (open)
+                {
+                    <Pill Label="waits" State="pending" />
+                }
             </div>
-            <div class="pad"><p class="q">@doc.Title</p>@if (doc.Subtitle is { Length: > 0 } sub)
+            <div class="pad"><p class="q @Ui.TitleSize(doc.Title)">@doc.Title</p>@if (doc.Subtitle is { Length: > 0 } sub)
             {
                 <p class="sub pre subtitle">@sub</p>
             }</div>
@@ -69,7 +73,6 @@ else
     DocumentModel doc = default!;
     bool? sheet;
 
-    string Closed => results.LastOrDefault() is { } r ? r.Kind == EventKinds.Ack ? "seen" : r.Kind == EventKinds.Review ? "reviewed" : "answered" : "closed";
 
     // E-1 page actions: the same on each document page.
     IReadOnlyList<PageAct> PageActs => e?.Session is not { } session ? [] :
