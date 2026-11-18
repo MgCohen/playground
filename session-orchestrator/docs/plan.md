@@ -2219,6 +2219,21 @@ Branch `orch/integration-dlv`, base `orch/c5-c3-findings`. It starts from `orch/
 | `node --test test/` in `plugin/hooks` | 20 of 20 pass |
 | Tray self-test | Not run: the tray code is the same as on V (59 of 59 PASS there) |
 
+### Demo control pane (2026-11-18)
+
+The page `/demo` of a fake demo supervisor writes dummy events into its store. The user clicked the buttons on port 7791 and watched the tray.
+
+| Check | Result |
+|---|---|
+| Tests | Pass. `DemoPaneTests` (6): the guard, each button, the failure rule in the behavior file, the burst. Full suite: 810 tests, 1 failure (the architecture rule on file IO), fixed with an entry and its reason |
+| Live, port 7791 | Pass. Add question and Add report make a card and a tray notice. The other buttons change the tree and the stream |
+| Plain page | Pass. Its own layout: no app bar, no link to the other pages |
+
+| Id | Finding | State |
+|---|---|---|
+| L-F9 | The tray notices and counts only inbox cards (questions, reviews, reports, blocked). A new session, an update or a message makes no notice. This is the design | Proposal for V: a quiet peek bubble with no count for these events, if the user wants it |
+| L-F10 | The tray check of `demo.ps1` saw a tray of V (`--instance v`) as a block. That tray has its own lock | Fixed: the check ignores a tray with `--instance` |
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
