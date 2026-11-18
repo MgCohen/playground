@@ -2119,6 +2119,7 @@ Test setup: scratchpad folder `spike/s1`, test store `spike/store`, port 7840. T
 | R-12 | `claude --remote-control <name> --session-id <new> "<prompt>"` (interactive, in a console) | Same id. Remote Control on from turn 1 ("/remote-control is active"). The process stays open after the turn |
 | R-13 | `--desktop --resume <id>` while R-12 runs | Exit 1: "Session ... is open in another terminal. Run /desktop there instead." |
 | R-14 | `claude --remote-control <name> --resume <id> "/desktop"` | The CLI exits and the app imports the session. App state: `remoteControlState: off` |
+| R-15 | R-12 again ("R spike M"), then a look at the app sidebar by the user | Not in the sidebar, not in `list_sessions`, no app record. Only the imported tests (G, I, K) show |
 
 Findings:
 
