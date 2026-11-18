@@ -28,6 +28,12 @@ public sealed partial class Supervisor
     readonly ConcurrentDictionary<string, Task> checks = new();
     readonly ConcurrentDictionary<string, Failure> failures = new();
     readonly ConcurrentDictionary<string, DateTimeOffset> imports = new();
+
+    /// <summary>The console sessions that wait for their plugin to take the lease: the process id and the start time.</summary>
+    readonly ConcurrentDictionary<string, (int Pid, DateTimeOffset At)> consoles = new();
+
+    /// <summary>The sessions whose console start failed: they start with a print turn, not again in a console.</summary>
+    readonly ConcurrentDictionary<string, bool> noConsole = new();
     readonly ConcurrentDictionary<string, DateTimeOffset> nudged = new();
     readonly Lifecycle lifecycle;
     readonly Recovery recovery;
@@ -268,6 +274,7 @@ public sealed partial class Supervisor
             if (recovery.IsOldProcessAlive(id, now)) return;
             recovery.Recover(id, marker);
         }
+        ConsoleFallback(id, now);
         if (!CanRun(id, now)) return;
         CloudNotice(id);
         var pending = store.Pending(id);
@@ -318,7 +325,7 @@ public sealed partial class Supervisor
     bool UsesConsole(string id)
     {
         var meta = store.Session(id);
-        if (!options.ConsoleStart || !meta.IsNew() || Places.IsCloud(meta.Work.Where) || meta.IsPrivate() || meta.Parent is not { } parent) return false;
+        if (!options.ConsoleStart || noConsole.ContainsKey(id) || !meta.IsNew() || Places.IsCloud(meta.Work.Where) || meta.IsPrivate() || meta.Parent is not { } parent) return false;
         return store.Registry.Exists(parent) && store.Session(parent).Engine.Imported != true;
     }
 
@@ -421,7 +428,31 @@ public sealed partial class Supervisor
     {
         store.Registry.Update(id, e => e with { Engine = e.Engine with { Console = true, RemoteControl = true } }, Parties.Supervisor);
         imports[id] = Now;
+        if (result.Pid is { } pid) consoles[id] = (pid, Now);
         store.Log($"{id} started in a console with Remote Control (pid {result.Pid})");
+    }
+
+    /// <summary>
+    /// A console session whose plugin took no lease in <see cref="SupervisorOptions.ImportWait"/> did not start, for
+    /// example at the trust prompt of a new folder (R-20). The supervisor stops the process and starts the session again
+    /// with a print turn, so that two processes never write the session.
+    /// </summary>
+    void ConsoleFallback(string id, DateTimeOffset now)
+    {
+        if (!consoles.TryGetValue(id, out var console)) return;
+        if (store.Lease(id).Holder == Holders.Live)
+        {
+            consoles.TryRemove(id, out _);
+            return;
+        }
+        if (now - console.At < options.ImportWait) return;
+        consoles.TryRemove(id, out _);
+        noConsole[id] = true;
+        using (var handle = Processes.Open(console.Pid)) handle?.Terminate();
+        store.Registry.Update(id, e => e with { Engine = e.Engine with { Console = null, RemoteControl = null } }, Parties.Supervisor);
+        store.SetStarted(id, false);
+        imports.TryRemove(id, out _);
+        store.Log($"{id} console start took no lease in {options.ImportWait.TotalSeconds:0} s: process {console.Pid} stopped, the next turn is a print turn");
     }
 
     void ImportOnce(string id)

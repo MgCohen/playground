@@ -28,7 +28,7 @@ public sealed class FakeRunner(bool ok) : ITurnRunner
         OnRun?.Invoke(request);
         if (Gate is { } gate) await Task.WhenAny(gate.Task, Task.Delay(Timeout.Infinite, cancel)).ContinueWith(_ => { });
         if (cancel.IsCancellationRequested) return new TurnResult(false, null, "stopped", 0);
-        return ok ? new TurnResult(true, "done", null, 0) : new TurnResult(false, null, "boom", 0);
+        return ok ? new TurnResult(true, "done", null, 0) { Pid = request.RemoteControl ? 999_999 : null } : new TurnResult(false, null, "boom", 0);
     }
 }
 

@@ -2124,6 +2124,9 @@ Test setup: scratchpad folder `spike/s1`, test store `spike/store`, port 7840. T
 | R-17 | `start_session` with `cwd` as `C:/…` | Refused: "reached through a symbolic link (or another spelling)". With `C:\…` it starts |
 | R-18 | Live test of `orch new --app-start`, `start_session`, `orch join` on a test store ("R live child") | Joined. Remote Control `on`. The CLI id (`2ec9d858`) is not the app id (`local_1d15b9da`). `CLAUDE_CODE_HOST_SESSION_ID` holds the app id |
 | R-19 | R-18 with `permission_mode: "auto"` | The app reports `permissionMode: default` after the turn |
+| R-20 | Console start (test supervisor, port 7842) in a new folder that is not trusted | The console waits at the trust prompt. No transcript, no lease. The old fallback ran `-p --resume` next to the live process and failed |
+| R-21 | Interactive start in a new worktree of a trusted folder | No trust prompt. Remote Control link shown, READY |
+| R-22 | Console start end to end (test supervisor, port 7844, `ORCH_BIN` set): parent outside the app, child with `--worktree` | Console pid 246432, lease `live` in 4 s, the plugin delivered the brief, the child reported done. `orch archive` stopped the process and removed the worktree |
 
 Findings:
 
@@ -2137,6 +2140,8 @@ Findings:
 - R-F9: `orch join` must not resolve the store from the environment: an app child has no `ORCH_STORE`, and the HTTP fallback calls port 7777. The start file names the store.
 - R-F10: the app id of a session that the app made comes from `CLAUDE_CODE_HOST_SESSION_ID`, only in the app (a `-p` child inherits the id of its parent).
 - R-F11 (open): the permission mode of an app child shows `default` after its first turn, also with `permission_mode: auto`. Not solved.
+- R-F12: a console start in a folder that is not trusted waits at the trust prompt, and no session can answer it. A worktree of a trusted repository is trusted. Fallback: after `ImportWait` with no lease, the supervisor stops the console process and starts the child with a print turn.
+- R-F13: a test supervisor needs `ORCH_BIN` for its build of `orch`: the plugin of a live process calls the `orch` on `PATH` (R-22 failed first with the installed `orch`, which has no `watch`).
 - R-F4: so a session started by the supervisor needs `set_remote_control`. Only a live app session has that tool.
 
 ## Next tasks

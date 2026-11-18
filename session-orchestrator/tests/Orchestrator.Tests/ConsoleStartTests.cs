@@ -43,6 +43,37 @@ public sealed class ConsoleStartTests
     }
 
     [Test]
+    public async Task A_console_that_takes_no_lease_is_stopped_and_the_child_starts_with_a_print_turn()
+    {
+        using var t = new Rig(console: true);
+        var parent = await t.Started();
+        var child = t.Create("brief-text-9c1", "child", parent);
+        await t.Cycle();
+        t.Clock.Advance(TimeSpan.FromSeconds(31));
+        await t.Cycle();
+        await t.Cycle();
+        var turns = t.Turns.Where(r => r.Id == child).ToList();
+        Assert.That(turns.Select(r => (r.RemoteControl, r.IsNew)), Is.EqualTo(new[] { (true, true), (false, true) }), "R-20: a trust prompt, for example");
+        Assert.That(turns[1].Prompt, Does.Contain("brief-text-9c1"));
+        Assert.That(t.Store.Session(child).Engine.Console, Is.Null);
+    }
+
+    [Test]
+    public async Task A_console_whose_plugin_takes_the_lease_is_not_stopped()
+    {
+        using var t = new Rig(console: true);
+        var parent = await t.Started();
+        var child = t.Create("work", "child", parent);
+        await t.Cycle();
+        t.MakeLive(child, TimeSpan.Zero, TimeSpan.Zero);
+        t.Clock.Advance(TimeSpan.FromSeconds(31));
+        t.MakeLive(child, TimeSpan.Zero, TimeSpan.Zero);
+        await t.Cycle();
+        Assert.That(t.Turns.Count(r => r.Id == child), Is.EqualTo(1));
+        Assert.That(t.Store.Session(child).Engine.Console, Is.True);
+    }
+
+    [Test]
     public async Task A_child_of_a_parent_in_the_app_a_background_child_and_a_root_do_not_start_in_a_console()
     {
         using var t = new Rig(console: true);
