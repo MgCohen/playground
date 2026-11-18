@@ -1,7 +1,7 @@
-# Starts the tray app from the source.
+# Starts the tray app from the source, for development. The installed app comes from install.ps1.
 # Usage: .\tray.ps1                               Mock mode: mock data, no claude process. Exit with the tray menu.
 #        .\tray.ps1 -SelfTest                     Opens each view, examines the DOM, writes screenshots to selftest\ and exits.
-#        .\tray.ps1 -Live <store> [-Port <port>]  Live mode: shows a real store. Its supervisor must run on the port (default ORCH_PORT or 7777).
+#        .\tray.ps1 -Live <store> [-Port <port>]  Live mode: shows a real store on the port (default ORCH_PORT or 7777). If no supervisor answers, the tray starts one (orch supervisor start rules).
 param([switch] $SelfTest, [string] $Live, [int] $Port)
 $ErrorActionPreference = 'Stop'
 $project = Join-Path $PSScriptRoot 'src\Orchestrator.Tray'

@@ -43,6 +43,7 @@ namespace Orchestrator.Cli
               orch nudge <party> [id]
               orch template [<kind>] [--check FILE] [--render FILE] [--name N]
               orch doctor
+              orch supervisor start|stop|status [--port P] (the supervisor of ORCH_STORE: a published copy in ORCH_APP, else dotnet run of the source)
               orch process (the id and start time of the process that runs orch: the plugin puts them in lease.json)
             A <session> can be the first characters of its id.
             """;
@@ -59,7 +60,7 @@ namespace Orchestrator.Cli
             var command = new CommandContext(store, args, output, cwd);
             try
             {
-                if (args.Positional[0] is not ("doctor" or "template" or "process")) Home.CheckVersion(store.Root, store.Clock.GetUtcNow());
+                if (args.Positional[0] is not ("doctor" or "template" or "process" or "supervisor")) Home.CheckVersion(store.Root, store.Clock.GetUtcNow());
                 return args.Positional[0] switch
                 {
                     "new" => SessionCommands.New(command),
@@ -87,6 +88,7 @@ namespace Orchestrator.Cli
                     "events" => EventCommands.Events(command),
                     "template" => ToolCommands.Template(command),
                     "doctor" => ToolCommands.Doctor(command),
+                    "supervisor" => ToolCommands.Supervisor(command),
                     "process" => ToolCommands.Process(command),
                     _ => throw new UsageException($"unknown command {args.Positional[0]}"),
                 };
@@ -97,7 +99,7 @@ namespace Orchestrator.Cli
                 error.WriteLine("Run orch --help for the commands.");
                 return 2;
             }
-            catch (Exception e) when (e is MessageException or ShellException or FormatException or IOException or InvalidDataException)
+            catch (Exception e) when (e is MessageException or ShellException or FormatException or IOException or InvalidDataException or TimeoutException)
             {
                 error.WriteLine($"orch: {e.Message}");
                 return 1;
