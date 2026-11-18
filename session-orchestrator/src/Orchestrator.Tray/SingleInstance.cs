@@ -16,12 +16,14 @@ public sealed partial class SingleInstance : IDisposable
         wait = ThreadPool.RegisterWaitForSingleObject(show, (_, _) => onShow(), null, Timeout.Infinite, executeOnlyOnce: false);
     }
 
-    public static string Name(bool selfTest) => $"Orchestrator.Tray.{Environment.UserName}{(selfTest ? ".selftest" : "")}";
+    /// <summary>The lock name. A named instance (--instance) has its own lock, so a test tray can run next to another tray.</summary>
+    public static string Name(bool selfTest, string? instance = null) =>
+        $"Orchestrator.Tray.{Environment.UserName}{(selfTest ? ".selftest" : "")}{(instance is null ? "" : "." + instance)}";
 
     /// <summary>Returns null when another instance runs. That instance then shows its window.</summary>
-    public static SingleInstance? TryStart(bool selfTest, Action onShow)
+    public static SingleInstance? TryStart(bool selfTest, Action onShow, string? instance = null)
     {
-        var name = Name(selfTest);
+        var name = Name(selfTest, instance);
         var mutex = new Mutex(initiallyOwned: true, $"Local\\{name}", out var created);
         var show = new EventWaitHandle(false, EventResetMode.AutoReset, $"Local\\{name}.Show");
         if (!created)

@@ -34,7 +34,7 @@ public sealed partial class TrayApp : ApplicationContext
         {
             if (e.Button == MouseButtons.Left) Form.Toggle();
         };
-        Tab = EdgeTab.Start(placeFile is null ? null : Path.Combine(Path.GetDirectoryName(placeFile)!, "edge-tab.txt"));
+        Tab = EdgeTab.Start(placeFile is null ? null : Path.Combine(Path.GetDirectoryName(placeFile)!, Path.GetFileNameWithoutExtension(placeFile).Replace("place", "edge-tab") + ".txt"));
         // The tab runs on its own thread: its events come back to the thread of the widget.
         Tab.OpenRequested += () => Tab.SlideOut(() => Form.BeginInvoke(Form.ShowWidget));
         Form.Minimized += Tab.SlideIn;

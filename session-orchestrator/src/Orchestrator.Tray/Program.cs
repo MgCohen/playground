@@ -7,7 +7,7 @@ using Orchestrator.Web;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The start of the tray app. Usage: Orchestrator.Tray.exe [--write-ball &lt;png&gt;] [--hidden] [--pin] [--selftest &lt;folder&gt; [--only notify,overlap]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
+/// The start of the tray app. Usage: Orchestrator.Tray.exe [--write-ball &lt;png&gt;] [--instance &lt;name&gt;] [--hidden] [--pin] [--selftest &lt;folder&gt; [--only notify,overlap]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
 /// Mock mode (the default): the window shows mock data from a temporary store.
 /// Live mode: the window shows a real store. With no store after --live, the tray uses the default store root (<see cref="Home.StoreRoot"/>). The supervisor process of that store (on the port) does the ticks; the tray only reads and posts.
 /// If no supervisor answers on the port, the tray starts one in its own process, unless --no-supervisor.
@@ -28,7 +28,9 @@ public static partial class Program
         var at = Array.IndexOf(args, "--selftest");
         var selfTest = at >= 0 ? Path.GetFullPath(at + 1 < args.Length ? args[at + 1] : "selftest") : null;
         TrayApp? tray = null;
-        using var instance = SingleInstance.TryStart(selfTest is not null, () => tray?.ShowFromAnyThread());
+        // --instance <name>: a separate tray with its own lock, WebView2 folder and place file (a test next to another tray).
+        var named = Value(args, "--instance") is { } n && n.All(c => char.IsAsciiLetterOrDigit(c) || c == '-') ? n : null;
+        using var instance = SingleInstance.TryStart(selfTest is not null, () => tray?.ShowFromAnyThread(), named);
         if (instance is null)
         {
             Console.WriteLine("The tray app already runs. Its window comes to the front.");
@@ -39,7 +41,7 @@ public static partial class Program
         var home = Path.Combine(AppContext.BaseDirectory, "home");
         if (Directory.Exists(Path.Combine(home, "templates"))) Environment.SetEnvironmentVariable("ORCH_HOME", home);
         var data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Orchestrator.Tray");
-        Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", Path.Combine(data, selfTest is null ? "WebView2" : "WebView2.selftest"));
+        Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", Path.Combine(data, (selfTest is null ? "WebView2" : "WebView2.selftest") + (named is null ? "" : "." + named)));
 
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
@@ -54,7 +56,7 @@ public static partial class Program
         Console.WriteLine($"orch tray: {label}");
         using var services = Services(store, live is null ? MockStore.MockPolicy : store.Policy, ticks: live is null);
         tray = new TrayApp(services, label, show: selfTest is not null || !args.Contains("--hidden"), pinned: selfTest is not null || args.Contains("--pin"),
-            placeFile: selfTest is null ? Path.Combine(data, "place.json") : SelfTest.FreshPlaceFile(selfTest));
+            placeFile: selfTest is null ? Path.Combine(data, named is null ? "place.json" : $"place.{named}.json") : SelfTest.FreshPlaceFile(selfTest));
         var code = 0;
         if (selfTest is not null)
         {
