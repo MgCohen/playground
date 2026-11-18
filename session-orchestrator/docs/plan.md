@@ -1969,6 +1969,78 @@ Branch `orch/integration-final`, from `orch/c4-stream-filters` (I3, S2, C2, C4).
 | `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | 18 passed, 0 failed |
 | `.	ray.ps1 -SelfTest` | 50 views, 50 passed |
 
+## C3 live run (2026-11-18)
+
+One real stream with the planning workflow ran from entry to done on a scratch supervisor of the I4 branch. Stream `C3`, run `planning-7c9e7a96`, 13 minutes, 143 envelopes.
+
+```mermaid
+sequenceDiagram
+    participant U as User (orch answer)
+    participant O as O1 orchestrator
+    participant R as Runner (orch run)
+    participant W as O1 C1 worker
+    O->>R: orch run start planning
+    R-->>U: stuck question after read (F2)
+    O->>U: question (ask step)
+    R-->>U: question (answer step, F3)
+    U->>R: answer
+    O->>R: record, spec
+    R-->>U: approval question
+    U->>R: approve
+    O->>R: propose: done
+    O->>W: spawn_child (stream C3)
+    W-->>O: report done
+    O-->>U: report done (after the stale question closed)
+```
+
+### Setup
+
+| Item | Value |
+|---|---|
+| Build | `dotnet publish` of `Orchestrator.Web` and `Orchestrator.Cli` of the I4 branch into the scratchpad |
+| Supervisor | `ORCH_STORE=<scratchpad>/c3/store`, `ORCH_PORT=7791`, `ORCH_IMPORT=0`, `ORCH_PLUGIN_DIR=<I4 worktree>/plugin` |
+| `orch` | The I4 `orch.exe` first on `PATH`, so that the sessions and the plugin use it (C3-F5) |
+| Root | `orch new --type orchestrator --stream C3 --workflow planning`. Work folder: a scratch git repository with `AGENTS.md` |
+| User | Played with `orch answer` |
+
+### Checks
+
+| Check | Result |
+|---|---|
+| Entry to done through `orch run` | Pass. History: read, ask, answer, record, spec, approve, propose. Reason: "the definition of done is true" |
+| Registry: role, type, stream, codes | Pass. `O1`: role `orchestrator`, type `orchestrator`, stream `C3`, workflow `planning`. `O1 C1`: role `worker`, type `worker` with skills `orch:orch-ask` and `orch:orch-report`, stream `C3` from the parent |
+| Envelopes carry the stream | Pass. 143 of 143 envelopes have `stream: C3`, also the supervisor messages to the user |
+| `orch events --stream` | Pass. `C3` and `c3` show all 143 envelopes |
+| `orch tree --stream` | Pass. `C3` shows both sessions. `X` prints "No sessions in stream X." |
+| `/api/sessions?stream=` | Pass. `C3` gives the active root. `Z` gives none |
+| No write outside the scratch store | Pass. The real store has no envelope or session of the run. Its only matches are the `session.tool` events and the mirror of the I4 worker session, which typed the commands. The supervisor on port 7777 lists no run session. The engine kept its transcripts in `~/.claude/projects/<scratch folder key>`: engine data, not the store |
+| Stop | Both sessions archived, the scratch supervisor stopped, port 7791 closed |
+
+### Findings
+
+| Id | Finding | Proposal |
+|---|---|---|
+| C3-F1 | `POST /api/sessions` has no `type` and `workflow` fields. Only `orch new` and `spawn_child` take them | Add both fields to `NewSession` |
+| C3-F2 | The read step ended with no holds, so the runner asked a stuck question (high, to the user). The session then picked `ask` and the run moved on, but the stuck question stayed open. Later it refused the done report of the owner ("This session has an open question") | When a run moves on, close its own open stuck and pick questions (notice `question-closed`) |
+| C3-F3 | One question, two answers. The owner asked with `ask_user` in step `ask`. Then the ask step `answer` posted a second question with the step instructions as its text ("Answer: The user or the orchestrator answers the question.") | Let the answer step poll the thread of the owner question, or copy the output `question` into its question |
+| C3-F4 | The C2 term rename missed two CLI texts: `orch status` prints "open decision", and `orch questions` prints "No open decisions." | Rename both texts |
+| C3-F5 | The installed `orch` tool on `PATH` has no `run` command. The plugin and the sessions call `orch` by name, so a live test must put the `orch` of the branch first on `PATH` | Recorded in `docs/know-how.md`. Later: the supervisor puts its own `orch` first on the `PATH` of each turn |
+| C3-F6 | With `ORCH_IMPORT=0` no session is in the app. But the archive of the child sent the notice `archive-child` to the root, and 2 minutes later a message to the user: "Archive ... from the app sidebar" | Skip the app archive notice and its escalation when `engine.imported` is not true |
+| C3-F7 | The orchestrator ran `orch run start planning --goal` with no `--owner`, and the command found the owner | None: works as documented |
+
+### The session kind question: what does a type do?
+
+The run showed that a type does one thing: it selects the agent and the skills of the engine session at the start. The provider maps `type.agent` to `--agent orch:<name>`. No other code reads it.
+
+| Field | What the run showed |
+|---|---|
+| `type` | `orchestrator` on the root, `worker` with two skills on the child. It changed only the start arguments |
+| `role` | `orchestrator` from the type name at create (`Roles.Initial`), kept by `orch run start`. `worker` for the child, because it has a parent |
+| `workflow` | `planning` on the root. The child has none: `spawn_child` started it, not a run step |
+| `stream` | `C3` on the root. The child got it from the parent |
+
+So a "session kind" today is the pair of role and type. The role says what the session does in a run. The type says which agent runs it. The run did not use a step of a type (`{ "type": name }`), because the planning workflow uses only `owner`. A type with tool limits or its own behavior does not exist. Recommendation: keep the type as a start setting of the provider, and do not add a separate kind field.
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.

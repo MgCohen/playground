@@ -44,6 +44,7 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 3. Copy `config/policy.test.json` into a new store folder as `policy.json` (medium: 30 s).
 4. Publish a copy (`dotnet publish src/Orchestrator.Web -o <scratchpad>/sup`), then start it in the background: `ORCH_STORE=<store> ORCH_PORT=7779 dotnet <scratchpad>/sup/Orchestrator.Web.dll`. A supervisor that runs from `bin/` locks the DLLs, and the next build fails. The copy finds the repository through the path that the build embeds.
 5. Copy `spikes/p3/root.json` (one repository) or `spikes/p4/root.json` (PR stack) to the scratchpad, change its `cwd`, then send it: `curl -X POST -H 'content-type: application/json' --data @root.json http://127.0.0.1:7779/api/sessions`.
+5a. Put the `orch` of the branch first on the `PATH` of the supervisor: `dotnet publish src/Orchestrator.Cli -o <scratchpad>/cli`, then `PATH=<scratchpad>/cli:$PATH`. The plugin and the sessions call `orch` by name, and the installed tool can be older (C3-F5). For a workflow run, start the root with `orch new --type orchestrator --stream S --workflow planning`: the API has no `type` and `workflow` fields.
 6. Play the user with `orch answer <decision> <text>` and `orch review <decision> approve|change|refuse <text>`, with `ORCH_STORE` set to the test store.
 7. Watch `answers/`, `report.json` and `blocked.json` of the session. A POST starts a tick at once, so two close reviews run as two turns.
 8. Examine the ledger, the git graph and the PRs. Stop the supervisor.
