@@ -2264,3 +2264,14 @@ Later (not in the graph):
 | Item | Owner | Content | Start |
 |---|---|---|---|
 | Workflow page | E (UI), with C | A UI page for one workflow run: progress, the graph, the history, the current step on the graph and the possible next steps | Plan and design after C2 |
+
+## Tray display spikes (session "Visual issues review", 2026-11-18)
+
+Goal: find a simpler display for the tray than the four native windows of session V. The visuals are Razor and CSS only; C# does only the window. Code: `spikes/tray-display/`. Results: `spikes/tray-display/results/`.
+
+| Spike | Host | Result |
+|---|---|---|
+| S1 plain window | WinForms + `BlazorWebView`, DWM round corners | Windows draws the round corners and the soft shadow. The drag with `app-region: drag` (`IsNonClientRegionSupportEnabled`) is exact (120, -80 for 120, -80). The CSS open has 0 late frames. `Form.Opacity` fades the web content correctly |
+| S2 transparent window | WebView2 composition controller on DirectComposition, our own `WebViewManager` (about 250 lines) | Blazor runs on the host. The page is see-through to the desktop with a soft CSS shadow. A ball grows into the panel with a CSS `clip-path`: 1 late frame of 160 (24 ms). The window region sets the click area: clicks on the empty parts reach the window below, closed and after a close. The drag with `app-region: drag` through `GetNonClientRegionAtPoint` is exact |
+
+Finding: the first S2 run failed all mouse checks, because a popup of another app was on top. Mouse probes need a free screen.
