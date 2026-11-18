@@ -508,10 +508,12 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 .nedge2 .nshape { flex: none; }
 .nedge2 .einfo { display: grid; gap: 1px; white-space: nowrap; opacity: 0; transition: opacity .18s; font-size: 12px; color: var(--text); }
 .nedge2 .einfo b { font-weight: 600; }
-.nedge2[data-e="a"]:hover, .nedge2[data-e="a"].drag { max-width: 280px; }
-.nedge2[data-e="a"]:hover .einfo, .nedge2[data-e="a"].drag .einfo { opacity: 1; transition-delay: .08s; }
+/* The hover preview waits 350 ms, so a quick click or a tap opens the widget with no preview first. */
+.nedge2[data-e="a"]:hover, .nedge2[data-e="a"].drag { max-width: 280px; transition-delay: .35s; }
+.nedge2[data-e="a"]:hover .einfo, .nedge2[data-e="a"].drag .einfo { opacity: 1; transition-delay: .43s; }
+.nedge2.drag, .nedge2.drag .einfo { transition-delay: 0s !important; }
 .nedge2[data-e="b"] { transform: translateX(42%); }
-.nedge2[data-e="b"]:hover, .nedge2[data-e="b"].drag { transform: none; }
+.nedge2[data-e="b"]:hover, .nedge2[data-e="b"].drag { transform: none; transition-delay: .35s; }
 .nedge2.drag { cursor: grabbing; }
 .nmini { touch-action: none; }
 .nmini[hidden] { display: none; }
@@ -1633,7 +1635,7 @@ var Saved = (function () {
       case "pill": return '<div class="npill">' + ringBall(Math.round(S * .9)) + "<span>" + summary() + "</span></div>";
       case "card": return '<div class="ncard">' + ringBall(44) + '<div class="tx"><b>' + EVT.q.t + '</b><span class="sub">' + summary() + "</span></div></div>";
       case "edge": var E = Math.round(S * 1.4), parts = summary().split(" · ");
-        return '<div class="nedge2" data-e="' + ns.edge + '" style="--base:' + (E + 16) + 'px">' + ringBall(E) + '<span class="einfo"><b>' + parts[0] + "</b>" + (parts.length > 1 ? '<span class="sub">' + parts.slice(1).join(" · ") + "</span>" : "") + "</span></div>";
+        return '<div class="nedge2" data-e="' + ns.edge + '" style="--base:' + (E + 12) + 'px">' + ringBall(E) + '<span class="einfo"><b>' + parts[0] + "</b>" + (parts.length > 1 ? '<span class="sub">' + parts.slice(1).join(" · ") + "</span>" : "") + "</span></div>";
     }
   }
   function renderMini() {
