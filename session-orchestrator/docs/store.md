@@ -404,7 +404,7 @@ The plugin and the supervisor share one folder for each session: `store/sessions
 | `mirror/<ms>-<uuid>.json` | Plugin | `{ door, origin, uuid, message }` for the doors `prompt`, `response` and `tool-result`. `message` is JSON, cut to 4000 characters |
 | `log-<holder>.txt` | Plugin | Log lines of one holder (`live` or `supervisor`), cut to the last 100 000 characters |
 | `session.json` | `SessionRegistry` (in the supervisor and in `orch`), and `/orch-enable` (create, or a new title of its own entry, with the version of the read). A plugin never changes another field: it posts `meta.update`, and the registry writes the field | The registry entry: the section "Session registry" below. The supervisor runs no turn of a stopped or archived session (`lifecycle.phase`), and ends its running turn. The plugin delivers no envelope while the phase is not `active` |
-| `meta.json`, `control.json` | Store version 2 only | `orch store upgrade` reads them, and keeps them as a backup. No other code reads them |
+| `meta.json`, `control.json` | Store version 1 and 2 only | `orch store upgrade` reads them, and keeps them as a backup. No other code reads them |
 | `state.json` | Supervisor | The lifecycle state: `{ state, since, requested, inferred, guard, fault, waitReason, reminded, remoteControlAsked, history }` (below) |
 | `state-check.json` | Supervisor | `{ state, reason, at, error }`: the last answer of the fallback agent `orch:state-checker` |
 | `forgotten.json` | Supervisor | `{ report, nudged, notified }`: one forgotten episode. `report` is `<last report id>|<last input id>` (an input from another party than the supervisor). A new report or a new input starts a new episode: one nudge, then one notice to the parent. The file is deleted when the session goes from forgotten to done, stopped or archived |
@@ -462,9 +462,9 @@ The full code is the codes from the root down, with a space between them: `O1 C2
 4. A new behavior mode is a folder in `templates/modes/`. A new tier, key or permissions mode is one line in `SettingTiers`.
 5. Today only two readers use the settings: `visibility` `private` keeps Remote Control off (the old `background`), and `orch merge` reads `allowDefaults` on the session and its parents. S3 and S4 add the other readers.
 
-### Upgrade from version 2
+### Upgrade from version 1 or 2
 
-`orch store upgrade [--dry-run] [--force]` makes a store of version 2 a store of version 3. It runs only through the repositories.
+`orch store upgrade [--dry-run] [--force]` makes a store of version 1 or 2 a store of version 3. It runs only through the repositories. To upgrade the old store `<home>/store`, copy it first with `orch store migrate`, then run the upgrade on the copy.
 
 1. It refuses while a session has a heartbeat in the last 30 s (`--force` skips this check).
 2. For each session folder with `meta.json` or `control.json`, it makes the entry: the fields of `meta.json`, the phase of `control.json`, `background` as `behavior.visibility`, `allowDefaults` as `permissions.allowDefaults`. Parents come first, so each child copies the settings of its parent.
@@ -472,6 +472,8 @@ The full code is the codes from the root down, with a space between them: `O1 C2
 4. A meta with no `createdBy` gets `lifecycle.started: true`: version 2 made no new engine session for it.
 5. An entry that exists stays. It writes `version.json` last, so a stopped upgrade can run again.
 6. It deletes no file: `meta.json` and `control.json` stay as a backup.
+7. Version 1 only: the history mark. The `meta.json` and `control.json` of version 1 have the same fields, so steps 2 to 6 are the same. The envelopes of version 1 have no `thread`, no `needs` and no acks, and version 1 had no subscriptions. So each old envelope to a session looks undelivered, and each old `decision` of a child looks not relayed. The upgrade writes a cursor at the newest envelope, with the ids of the last 120 s in `recent`, for each subscription whose filter can match an old envelope: `session-<id>/deliver` and `supervisor/reports-<id>` of each session folder, `supervisor/relay` and `supervisor/meta`. A cursor that is newer stays.
+8. Version 1 only: the envelopes do not change. They stay readable as history (`orch events`, the timeline, the report of a session). A question of version 1 keeps its decision id in `refs.decision`, not in `thread`, so it is never open, never makes a card and never gets a default. The old kinds (`question.forward`, `report.forward`, `question.remind`, `question.close`) and the old parties (`plugin`, `composer`, `peer`) are only traces. The communication files of version 1 (`inbox/`, `answers/`, `decisions/`, `delivered/`, `reviews/`, `reports/`, `report.json`, `update.json`, `blocked.json`, `cursor.txt`, `forwarded*`) stay as a backup. No code reads them.
 
 ## Lifecycle state machine
 
@@ -691,7 +693,7 @@ A review of a default decision (`templates/review/render/<verdict>.md`):
 1. Write each file in one write: a temporary file, then a move.
 2. Only one writer has the lease. The plugin delivers only with holder `live`. With any other holder, the supervisor delivers with `claude -p`.
 3. A lease `live` counts as live while the heartbeat or the lease is less than 15 s old. After that, the session is `stale`. The supervisor releases the lease (`none`) only when the process in `lease.json` is gone. It never runs a turn while the holder is `live`. If the process is alive with no beat for `staleProcessSeconds`, the session is `not-responding`. The plugin takes a released lease back at its next beat.
-4. The supervisor and each `orch` command (except `doctor`, `template`, `process`, `supervisor` and `store`) refuse a store with another version. The plugin stays inactive in a store whose `version.json` is not version 3. A store of version 2 needs `orch store upgrade` (the section "Session registry"). There is no migration from version 1: move the old store to another folder and start with a new store.
+4. The supervisor and each `orch` command (except `doctor`, `template`, `process`, `supervisor` and `store`) refuse a store with another version. The plugin stays inactive in a store whose `version.json` is not version 3. A store of version 1 or 2 needs `orch store upgrade` (the section "Session registry").
 
 ## Recovery
 
