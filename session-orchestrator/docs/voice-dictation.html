@@ -104,7 +104,8 @@ pre.mermaid { margin: 0; background: transparent; text-align: center; font-famil
 
 <nav role="tablist" aria-label="Sections">
   <button role="tab" data-tab="context" aria-selected="true">Context</button>
-  <button role="tab" data-tab="questions" aria-selected="false">Open questions <span class="count">4</span></button>
+  <button role="tab" data-tab="engines" aria-selected="false">Engine options</button>
+  <button role="tab" data-tab="questions" aria-selected="false">Open questions <span class="count">3</span></button>
 </nav>
 
 <!-- ============ CONTEXT ============ -->
@@ -121,6 +122,20 @@ pre.mermaid { margin: 0; background: transparent; text-align: center; font-famil
       </tr>
     </table></div>
     <p>Rule from the user: the discussion stays in this chat. The session does not use <code>ask_user</code> or <code>update</code>. It sends a report to the root only when the user says so, or when the session is done.</p>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>Goal of the user</h2><span class="hint">from the discussion, 2026-11-18</span></summary>
+  <div class="body">
+    <ul>
+      <li>The user does most work by dictation, in Claude Code on the PC and in Remote Control on the phone.</li>
+      <li>The same dictation must work in the orchestrator app: click the mic on any card, speak, and the text goes into the field.</li>
+      <li>Apps: the tray widget on Windows now, and an Android app later.</li>
+      <li>Users: only the user. It is a private tool, not a consumer product. The user's own subscriptions are acceptable.</li>
+      <li>Language: English first. Portuguese is good to have.</li>
+      <li>Length: usually 30 seconds to 5 minutes, often in the middle. Sometimes a short answer.</li>
+    </ul>
   </div>
 </details>
 
@@ -203,60 +218,162 @@ flowchart LR
 
 </div>
 
+<!-- ============ ENGINE OPTIONS ============ -->
+<div class="panel off" id="engines">
+
+<p class="summary">Who changes the audio into text. Prices are from third-party price lists of 2026 and are approximate. The cost example uses 100 minutes of speech a day, about 3,000 minutes a month.</p>
+
+<details class="fold" open>
+  <summary><h2>Comparison</h2><span class="hint">tray on Windows, Android later, English and Portuguese, 30 s to 5 min</span></summary>
+  <div class="body">
+    <div class="scroll"><table>
+      <tr><th>Option</th><th>Cost</th><th>Works in the tray</th><th>Portuguese</th><th>Live text</th><th>Audio leaves the PC</th></tr>
+      <tr><td><b>A.</b> Claude dictation (the one you use now)</td><td>In the subscription</td><td><span class="pill bad">no</span> No public API</td><td>yes</td><td>yes</td><td>yes, to Anthropic</td></tr>
+      <tr><td><b>B.</b> Browser engine (Web Speech API)</td><td>free</td><td><span class="pill bad">no</span> WebView2 and Edge give a "network" error</td><td>yes</td><td>yes</td><td>yes, to Google</td></tr>
+      <tr><td><b>C.</b> Windows voice typing (Win+H)</td><td>free</td><td><span class="pill ok">yes, today</span> No code</td><td>yes</td><td>yes</td><td>yes, to Microsoft</td></tr>
+      <tr><td><b>D.</b> Windows speech API in the tray host (C#)</td><td>free</td><td><span class="pill ok">yes</span></td><td>with a language pack</td><td>yes</td><td>optional</td></tr>
+      <tr><td><b>E.</b> Local Whisper in the supervisor (Whisper.net, GPU)</td><td>free</td><td><span class="pill ok">yes</span></td><td>yes, it detects the language</td><td>in steps of a few seconds</td><td><span class="pill ok">no</span></td></tr>
+      <tr><td><b>F.</b> Cloud service with your own key: OpenAI <code>gpt-4o-mini-transcribe</code></td><td>about 0.003 USD/min, about 9 USD/month</td><td><span class="pill ok">yes</span></td><td>yes</td><td>after stop</td><td>yes, to OpenAI</td></tr>
+      <tr><td><b>G.</b> Cloud service with your own key: Groq Whisper turbo</td><td>about 0.04 USD/hour, about 2 USD/month</td><td><span class="pill ok">yes</span></td><td>yes</td><td>after stop</td><td>yes, to Groq</td></tr>
+      <tr><td><b>H.</b> Cloud streaming service: Deepgram</td><td>free credit, then less than 0.01 USD/min</td><td><span class="pill ok">yes</span></td><td>yes</td><td><span class="pill ok">yes, word by word</span></td><td>yes, to Deepgram</td></tr>
+    </table></div>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>Why the Claude dictation is not an option</h2></summary>
+  <div class="body">
+    <ul>
+      <li>Claude Code sends the audio to Anthropic servers. It needs a Claude.ai sign-in.</li>
+      <li>The documentation gives no public API or SDK for other apps.</li>
+      <li>A connection to the internal endpoint with your sign-in token is not supported. It can stop working on any update, and it can break the terms of use.</li>
+      <li>It also stops a recording after 2 minutes, or after 15 seconds of silence. Your dictations are up to 5 minutes.</li>
+      <li>The transcription does not use Claude messages or tokens. Thus no other paid plan of Claude gives this service.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>This PC</h2><span class="hint">important for option E</span></summary>
+  <div class="body">
+    <div class="scroll"><table>
+      <tr><th>Part</th><th>Value</th></tr>
+      <tr><td>CPU</td><td>Intel Core Ultra 9 275HX, 24 cores</td></tr>
+      <tr><td>GPU</td><td>NVIDIA GeForce RTX 5080 Laptop</td></tr>
+      <tr><td>RAM</td><td>63 GB</td></tr>
+    </table></div>
+    <p>This GPU runs the Whisper model <code>large-v3-turbo</code> many times faster than real time. Expected result: a 5-minute dictation becomes text in a few seconds after stop. A test must confirm this number.</p>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>Recommended design</h2><span class="hint">one engine for all apps</span></summary>
+  <div class="body">
+    <div class="scroll"><pre class="mermaid">
+flowchart LR
+  T["Tray widget<br/>(WebView2)"] -- "audio" --> S["Supervisor<br/>POST /api/transcribe"]
+  A["Android app<br/>(later)"] -- "audio" --> S
+  S --> E{"Engine setting"}
+  E --> L["Local Whisper on the GPU<br/>(default)"]
+  E --> C["Cloud service<br/>(optional, own key)"]
+  L --> X["Text into the field"]
+  C --> X
+    </pre></div>
+    <ul>
+      <li>The app records the audio with the browser recorder (<code>getUserMedia</code>). WebView2 allows the mic, and the tray host can allow it with no prompt.</li>
+      <li>The supervisor changes the audio into text. Thus each app (tray, Android, phone browser) uses the same engine and the same settings.</li>
+      <li>The engine is a setting: local Whisper first, a cloud service with your own key as a second choice.</li>
+      <li>On a phone browser, the mic needs HTTPS. Thus the phone browser gets dictation only after the Cloudflare tunnel. The Android app does not have this limit.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="fold">
+  <summary><h2>Sources</h2></summary>
+  <div class="body">
+    <ul>
+      <li><a href="https://code.claude.com/docs/en/voice-dictation">Claude Code voice dictation documentation</a></li>
+      <li><a href="https://groups.google.com/a/chromium.org/g/chromium-dev/c/RBZXqc0Zvmc">Chromium thread: webkitSpeechRecognition "network" error in an embedded browser</a></li>
+      <li><a href="https://techcommunity.microsoft.com/discussions/edgeinsiderdiscussions/web-speech-api-not-working-in-edge-v-147/4514880">Edge forum: Web Speech API does not work in Edge</a></li>
+      <li><a href="https://diyai.io/ai-tools/speech-to-text/openai-whisper-api-pricing-2026/">OpenAI transcription prices 2026</a></li>
+      <li><a href="https://costbench.com/software/ai-transcription-apis/openai-whisper/">Transcription price list (Groq, OpenAI, Deepgram)</a></li>
+    </ul>
+  </div>
+</details>
+
+</div>
+
 <!-- ============ OPEN QUESTIONS ============ -->
 <div class="panel off" id="questions">
 
-<p class="summary">Answer in the chat, in your own words, for example "Q1: both". When a question has an answer, it moves to the end of this tab with the answer.</p>
+<p class="summary">Answer in the chat, in your own words, for example "Q5: E". When a question has an answer, it moves to the end of this tab with the answer.</p>
 
 <details class="fold" open>
-  <summary><h2>Q1. Which app did "the Siri app" mean?</h2><span class="pill">open</span></summary>
+  <summary><h2>Q5. Which engine do we build first?</h2><span class="pill">open</span></summary>
   <div class="body q"><dl>
-    <dt>Question</dt><dd>Is it the tray widget on Windows, the web UI on the phone, or both?</dd>
-    <dt>Context</dt><dd>The root chat said "the Siri app", probably a voice error. Both apps have mic buttons, and each needs a different fix (P1, P2).</dd>
-    <dt>Options</dt><dd>The tray widget on Windows · the web UI on the phone · both, the same way · something else (a real Siri connection)</dd>
-    <dt>Recommendation</dt><dd><span class="pill rec">both</span> They use the same cards and <code>speech.js</code>, so one fix helps both.</dd>
+    <dt>Question</dt><dd>Local Whisper on this GPU, a cloud service with your own key, or both behind one setting?</dd>
+    <dt>Context</dt><dd>The Claude dictation has no public API (tab Engine options). This PC has an RTX 5080, so local Whisper is free, private and fast. A cloud service needs a key and a payment, but works when the PC is busy or off.</dd>
+    <dt>Options</dt><dd>E: local Whisper only · F, G or H: one cloud service only · E first, with a setting for a cloud service later</dd>
+    <dt>Recommendation</dt><dd><span class="pill rec">E first</span> No cost, no key, the audio stays on the PC, and it detects English and Portuguese. Add a cloud service later only if a need comes.</dd>
   </dl></div>
 </details>
 
 <details class="fold" open>
-  <summary><h2>Q2. Which languages do you speak to the app?</h2><span class="pill">open</span></summary>
+  <summary><h2>Q6. Do you need to see the text while you speak?</h2><span class="pill">open</span></summary>
   <div class="body q"><dl>
-    <dt>Question</dt><dd>English only, Portuguese only, or both? Do you mix the two in one answer?</dd>
-    <dt>Context</dt><dd>The engine always uses English (P5). Mixed languages need an engine that detects the language itself, for example Whisper.</dd>
-    <dt>Options</dt><dd>English only · Portuguese only · both, with a language switch · both, mixed in one answer</dd>
-    <dt>Recommendation</dt><dd>None. Only you know this, and it decides the engine.</dd>
+    <dt>Question</dt><dd>Must the words show while you speak, as in Claude Code, or is all the text a few seconds after stop acceptable?</dd>
+    <dt>Context</dt><dd>Text after stop is simple and has the best quality. Live text with local Whisper sends the audio in steps of a few seconds, and the last words change as the model hears more. That is more work.</dd>
+    <dt>Options</dt><dd>Text after stop · live text in steps of a few seconds · text after stop first, live text later</dd>
+    <dt>Recommendation</dt><dd><span class="pill rec">after stop first</span> With this GPU the wait is a few seconds. Live text can come in a second step.</dd>
   </dl></div>
 </details>
 
 <details class="fold" open>
-  <summary><h2>Q3. Which speech engine is acceptable?</h2><span class="pill">open</span></summary>
+  <summary><h2>Q7. What about the phone until the Android app exists?</h2><span class="pill">open</span></summary>
   <div class="body q"><dl>
-    <dt>Question</dt><dd>Free browser or Windows engines, a paid cloud speech service, or a local model on this PC?</dd>
-    <dt>Context</dt><dd>The free browser engine probably does not work in the tray (P1) and needs HTTPS on the phone (P2). A cloud service costs about 0.006 USD a minute, and the audio goes to the provider. A local Whisper model has no cost and no upload, but it uses CPU or GPU.</dd>
-    <dt>Options</dt><dd>Free engines only (browser, Win+H, phone keyboard) · cloud service through the supervisor · local Whisper in the supervisor · cloud first, local model later</dd>
-    <dt>Recommendation</dt><dd><span class="pill rec">local Whisper</span> In the supervisor, if this PC has enough power; else a cloud service. One engine on the server works the same in the tray and on the phone, and it detects the language.</dd>
-  </dl></div>
-</details>
-
-<details class="fold" open>
-  <summary><h2>Q4. How long is a typical dictation?</h2><span class="pill">open</span></summary>
-  <div class="body q"><dl>
-    <dt>Question</dt><dd>A short answer of one or two sentences, or a long brief of one minute or more? Do you also want voice commands?</dd>
-    <dt>Context</dt><dd>The recording stops at the first pause, and the text shows only at the end (P4).</dd>
-    <dt>Options</dt><dd>Short answers only · long briefs too, with a recording that continues until you push stop · both, plus voice commands (for example "approve" or "skip")</dd>
-    <dt>Recommendation</dt><dd><span class="pill rec">long briefs too</span> A recording that continues until stop. Voice commands can come later.</dd>
+    <dt>Question</dt><dd>Does the web UI on the phone need dictation now, or is the mic key of the phone keyboard enough until the Android app?</dd>
+    <dt>Context</dt><dd>A phone browser allows the mic only on HTTPS. The Cloudflare tunnel is the last step of the plan. The mic key of the phone keyboard works today with no code.</dd>
+    <dt>Options</dt><dd>Tray only now; the phone keyboard until the Android app · also the phone browser now, with a local HTTPS certificate · also the phone browser, after the tunnel</dd>
+    <dt>Recommendation</dt><dd><span class="pill rec">tray only now</span> The tray is your main place on the PC. The phone keyboard covers the phone until the Android app.</dd>
   </dl></div>
 </details>
 
 <h2>Answered</h2>
-<p class="empty">No answers yet.</p>
+
+<details class="fold closed">
+  <summary><h2>Q1. Which app did "the Siri app" mean?</h2><span class="pill ok">answered</span></summary>
+  <div class="body q"><dl>
+    <dt>Answer</dt><dd>The tray widget on Windows now, and the Android app later. The user does not know the words "Siri app"; it was probably a voice error for "the app".</dd>
+  </dl></div>
+</details>
+
+<details class="fold closed">
+  <summary><h2>Q2. Which languages?</h2><span class="pill ok">answered</span></summary>
+  <div class="body q"><dl>
+    <dt>Answer</dt><dd>English only for now. Portuguese is good to have.</dd>
+  </dl></div>
+</details>
+
+<details class="fold closed">
+  <summary><h2>Q3. Which speech engine is acceptable?</h2><span class="pill ok">answered</span></summary>
+  <div class="body q"><dl>
+    <dt>Answer</dt><dd>The user asked for the options: free ones, and ones that use a subscription. The options are in the tab Engine options. The choice is now Q5.</dd>
+  </dl></div>
+</details>
+
+<details class="fold closed">
+  <summary><h2>Q4. How long is a typical dictation?</h2><span class="pill ok">answered</span></summary>
+  <div class="body q"><dl>
+    <dt>Answer</dt><dd>Like this chat: 30 seconds to 5 minutes, usually in the middle. Sometimes a short answer.</dd>
+  </dl></div>
+</details>
 
 </div>
 </div>
 
 <script>
 (function () {
-  var names = ["context", "questions"];
+  var names = ["context", "engines", "questions"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "context";
     names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
