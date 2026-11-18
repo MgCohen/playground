@@ -49,6 +49,37 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 7. Watch `answers/`, `report.json` and `blocked.json` of the session. A POST starts a tick at once, so two close reviews run as two turns.
 8. Examine the ledger, the git graph and the PRs. Stop the supervisor.
 
+### Test work next to the real sessions
+
+Real sessions work on the real store all the time. So each test and each validation uses the demo store or a copy, never the real store. Proper environments (real, demo, test) are a later feature: [MgCohen/playground#47](https://github.com/MgCohen/playground/issues/47).
+
+1. Only the root session or the user starts, stops or restarts the real supervisor and the tray. No session runs `install.ps1` or `orch supervisor stop` on the real profile.
+2. Each session uses its own `ORCH_STORE` in its scratchpad and its own ports: L 7790 to 7799, V 7800 to 7809, D 7810 to 7819. The real supervisor uses 7777, the demo uses 7791.
+3. A test on real data uses a copy, the fake provider (below), `ORCH_IMPORT=0`, a scratch `ORCH_APP_DATA`, and scratch `cwd` and `repo` paths. A copy holds the real worktree paths, and an auto-archive can remove a worktree.
+4. Before a session touches a shared item (the real store, the real supervisor, the demo, the tray, an app session), it asks the root.
+
+`orch store migrate` cannot copy a store while sessions write to it: the hash check fails, also with `--force`. For a test snapshot, use the partial copy in `<target>.migrating`.
+
+### Fake provider
+
+`ORCH_PROVIDER=fake` selects the fake provider (`Providers/Fake/`): no model, no `claude` executable, no app. `ORCH_FAKE` names its behavior file. The provider reads the file at each call, so a change applies at once.
+
+```json
+{ "turn": { "ok": true, "text": "done", "delayMs": 0 },
+  "sessions": { "<id or prefix>": { "ok": false, "error": "boom" } },
+  "ask": { "ok": true, "text": "{ \"answered\": false }" },
+  "app": { "inApp": false, "archived": false } }
+```
+
+| Key | Effect |
+|---|---|
+| `turn` | The result of each turn. Default: good, with the text `fake turn of <id>` |
+| `sessions` | The result for one session. The longest matching id prefix wins |
+| `ask` | The reply of the docs check and of the state check. Default: no answer |
+| `app` | The app facts of each session. Default: not in the app |
+
+Dummy data (questions, reports, messages) goes in with `POST /api/stream` or `orch post`. Example: `ORCH_STORE=<copy> ORCH_PORT=7810 ORCH_PROVIDER=fake ORCH_FAKE=<file> dotnet <scratchpad>/sup/Orchestrator.Web.dll`.
+
 ## App sessions
 
 - To open a supervisor session in the desktop app, run `claude.exe --desktop --resume <id>` with PowerShell `Start-Process`. From bash it gives exit 1.

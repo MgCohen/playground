@@ -9,6 +9,7 @@ namespace Orchestrator.Providers.ClaudeCode;
 /// The app tools for Remote Control and archive exist only in a live app session, so the notices name them for the model.
 /// </summary>
 [DefaultProvider]
+[Provider("claude-code")]
 public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvider
 {
     /// <summary>The namespace of the orch plugin in Claude Code: an agent name without a namespace gets it.</summary>
