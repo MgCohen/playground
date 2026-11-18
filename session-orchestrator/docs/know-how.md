@@ -180,7 +180,7 @@ Known limits:
 | Item | Default | Option |
 |---|---|---|
 | Demo folder | `%LOCALAPPDATA%\orch\demo-store` (`store\`, `app\`, `work\`, `logs\`, `demo.json`) | `-Root` |
-| Port and URL | 7791, `http://127.0.0.1:7791/` | `-Port` |
+| Port and URL | 7791, `http://127.0.0.1:7791/`. The script refuses a port outside 7790-7799 (the range of L while L, V and D run in parallel, issue #47) | `-Port`, `-AnyPort` |
 | Model and effort | `haiku`, `low` (`ANTHROPIC_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`) | `-Model`, `-Effort` |
 | Tray | Started with `--live <store> --port <port> --no-supervisor --pin` | `-NoTray` |
 | Build | `dotnet publish` of the supervisor, `orch` and the tray into `app\` | `-NoBuild` |

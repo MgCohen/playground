@@ -3,7 +3,8 @@
 #        .\tools\demo\demo.ps1 -Stop               Stop the demo: the tray, the supervisor and its claude turns. The files stay.
 #        .\tools\demo\demo.ps1 -Status             Show the demo processes, the URL and the session tree.
 # Options: -Root <folder> (default %LOCALAPPDATA%\orch\demo-store), -Port <port> (default 7791),
-#          -Model <alias> (default haiku), -Effort <level> (default low), -NoTray, -NoBuild.
+#          -Model <alias> (default haiku), -Effort <level> (default low), -NoTray, -NoBuild,
+#          -AnyPort (allow a port outside 7790-7799).
 # The script never uses the real store (%LOCALAPPDATA%\orch\store or store\) and never the port 7777.
 param(
     [string] $Root = (Join-Path $env:LOCALAPPDATA 'orch\demo-store'),
@@ -13,7 +14,8 @@ param(
     [switch] $NoTray,
     [switch] $NoBuild,
     [switch] $Stop,
-    [switch] $Status
+    [switch] $Status,
+    [switch] $AnyPort
 )
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
@@ -32,6 +34,8 @@ function Assert-Safe {
         if ($store.TrimEnd('\') -ieq $bad.TrimEnd('\') -or $Root.TrimEnd('\') -ieq $bad.TrimEnd('\')) { throw "The demo must not use the real store $bad. Give another -Root." }
     }
     if ($Port -eq 7777) { throw 'Port 7777 is the port of the real supervisor. Give another -Port.' }
+    # Temporary rule while the sessions L, V and D run in parallel: L uses 7790-7799 (issue #47).
+    if (-not $AnyPort -and ($Port -lt 7790 -or $Port -gt 7799)) { throw "Port $Port is outside the demo range 7790-7799. Give a port in the range, or add -AnyPort." }
 }
 
 # UTF-8 with no BOM: the store readers expect plain JSON.
@@ -40,7 +44,8 @@ function Write-Utf8([string] $path, [string] $text) { [IO.File]::WriteAllText($p
 # Windows PowerShell 5.1 makes a native stderr line an error. Run natives with Continue and check the exit code.
 function Native {
     $ErrorActionPreference = 'Continue'
-    $exe, $rest = $args
+    $exe = $args[0]
+    $rest = @($args | Select-Object -Skip 1)
     & $exe @rest 2>&1 | ForEach-Object { "$_" }
     if ($LASTEXITCODE -ne 0) { throw "$exe failed with exit code $LASTEXITCODE." }
 }
