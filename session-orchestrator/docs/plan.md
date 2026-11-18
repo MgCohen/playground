@@ -1103,49 +1103,44 @@ Screenshots (mock mode, desktop corner): `docs/screens/r2-corner-open-question.p
 - R2-3: the well block of Open is a well in a card. It shows a double frame. Accepted for the later block review.
 - R2-4: `Ui.Look` and the `icon` and `tone` of `view.json` overlap. The ring still uses `Ui.Look`, because it also covers kinds with no template. Open question for the block review.
 
-## H1 plan: storage options (2026-11-17)
+## H1 plan: storage options (2026-11-17, decided 2026-11-18)
 
 Page: `docs/storage-options.html` (https://claude.ai/artifact/Qs363bVsydmVxf7Tm1S6FA). Plan only: no code change, no database, no Notion page.
 
-Recommendation: keep the files as the store. The needs today do not require a database or Notion.
+Decisions of the user:
 
-| Option | Result |
+| Question | Answer |
 |---|---|
-| A. Files + index | Recommended. Plugin hooks, lease and claims stay as they are |
-| B. SQLite on this PC | Later, only if a trigger fires. Hooks have no SQLite access |
-| C. Hosted database (Postgres, Cloudflare D1) | No. Network in each hook; the store stops when the PC is offline |
-| D. Notion as the store | No. No atomic create, rate limit of 3 requests/s |
-| E. Notion as a mirror | Optional, one way, from a supervisor reactor |
+| Storage direction | Each store uses the VSA `IRepository<T, TId>` (`vsa-template/packs/Vsa/Kernel/Infrastructure/IRepository.cs`, copied into the project). Version 1: a local folder implementation. Version 2: probably a Notion implementation, read through the API and parsed, with an in-memory cache with a timer for the life of the process |
+| Store location | `%LOCALAPPDATA%\orch\store` (default `ORCH_STORE`) |
+| Backup | Definitions (templates, policy defaults, mode presets) keep their source files in this repository; git is the backup. No backup for instances (events, bodies, sessions, logs) now |
+| Notion mirror | Never. Notion is the store or is not used. Reason: linked database views keep related documents in sync |
 
-A Notion implementation of the ports can work only behind one writer: Notion has no exclusive create and no lock.
+Port map:
 
-Measured on the main store (2026-11-17): 3,654 envelopes in 2 days; 2,350 on 11-17, of which 88 % are `session.tool`, `session.output` and `session.input`. Size: `events/` 6.0 MB, `bodies/` 9.6 MB, `sessions/` 28 MB.
-
-Port map (user request, 2026-11-18: H1 owns where all data lives):
-
-| Data kind | Port | Local adapter | State | Later adapters | Part |
+| Data kind | Entity, id | Local folder | State | Version 2 | Part |
 |---|---|---|---|---|---|
-| Event stream (envelopes) | `IEventLog` | `events/<day>/` | Planned | Supervisor API, Postgres; Notion behind one writer | H2; remote H5 |
-| Envelope bodies | `IEventLog` (same port: the body before the envelope) | `bodies/<day>/` | Planned | With the envelopes | H2; remote H5 |
-| Session registry | `ISessionRegistry` | `sessions/<id>/session.json` | Designed (S1, PR #28) | Supervisor API; Notion database | S2 |
-| Run state, subscriptions, claims, nudges | `IDocStore` | `sessions/`, `subscriptions/`, `claims/`, `nudges/` | Planned | Supervisor API only (heartbeat every 3 s) | H2 |
-| Templates | `ITemplateStore` | `LocalTemplateStore` | Built (F1, PR #30) | Server bucket; Notion database | F2 |
-| Policy and settings | `IPolicyStore` | `policy.json` | Planned | Supervisor API; Notion page | H2 |
-| Work stream records | None: a `stream` field on sessions and envelopes | | Designed (C1, PR #29) | With the registry and the stream | None |
-| Logs | `ILogSink` | `supervisor/log.txt`, `log-*.txt`, `mirror/` | Planned | Log service; no Notion (volume) | H2 |
+| Event stream | `Event`, envelope id | `events/<day>/` | Planned | Notion database | H2; Notion H6 |
+| Envelope bodies | `Body`, body path | `bodies/<day>/` | Planned | Page content | H2; Notion H6 |
+| Session registry | `SessionEntry`, session id | `sessions/<id>/session.json` | Designed (S1, PR #28) | Notion database | S2; Notion H6 |
+| Templates | `Template`, kind | `LocalTemplateStore` | Built (F1, PR #30) | Notion database | F2 |
+| Policy and settings | `Policy`, name | `policy.json` | Planned | Notion page | H2; Notion H6 |
+| Work stream records | None: a `stream` field (C1, PR #29) | On sessions and events | Designed | A Notion relation | None |
+| Run state, claims, subscriptions | `Lease`, `Claim`, `Cursor` | `sessions/`, `claims/`, `subscriptions/` | Planned | Stays local (heartbeat every 3 s) | H2 |
+| Logs | None: `ILogSink` (append-only text) | `log.txt`, `log-*.txt`, `mirror/` | Planned | Stays local | H2 |
+
+Rules for each implementation: (1) `SaveChangesAsync` fails on an `Add` with an id that exists (claims, first answer); (2) an entity has a version, and a save of an old version fails (cursor merge); (3) an architecture test refuses store IO outside the implementations; (4) one contract test suite runs against each implementation. In version 2 the supervisor is the only Notion writer, and the plugin hooks keep writing local files (10 s hook budget).
 
 | Part | Work stream | Content | When |
 |---|---|---|---|
-| H2 core ports | H | `IEventLog`, `IDocStore`, `IPolicyStore`, `ILogSink`, file adapters, `StoreBackends.Create`, architecture and contract tests. No change of behavior | Now |
+| H2 core repositories | H | `IRepository` copy, local folder implementation, `ILogSink`, `StoreBackends.Create`, architecture and contract tests. No change of behavior | Now |
 | H3 plugin backend | H | `backend.ts`: the only hook module with store IO | Now |
-| H4 store upkeep | H | Index by session (B2-9), day cache, store location, backup | After H2 |
-| S2 registry adapter | S | `ISessionRegistry` file adapter on H2 (S1 code part C1) | After H2 |
-| F2 template adapter | F | A remote `ITemplateStore` | If a trigger fires |
-| H5 remote adapters | H | Supervisor API adapters for cloud workers (G1 HTTP mode) | With G1 |
-| H6 Notion | H | Mirror reactor, or Notion adapters | If the user wants it |
+| H4 store upkeep | H | Index by session (B2-9), day cache, store in `%LOCALAPPDATA%\orch\store` | After H2 |
+| S2 registry adapter | S | `SessionEntry` repository on H2 (S1 code part C1) | After H2 |
+| F2 template adapter | F | Templates on `IRepository`; Notion implementation later | After H2 |
+| H5 remote access | H | Supervisor API for cloud workers (G1 HTTP mode) | With G1 |
+| H6 Notion store | H | Notion implementations, cache wrapper, supervisor as the only writer | Version 2 |
 
-Triggers for another adapter: a tick or cold query above 1 s, more than 100,000 envelopes, two PCs, or a user request.
+Callers that bypass the ports today: `Supervisor.cs`, `Supervisor.Lifecycle.cs`, `EventCommands.cs`, `StateReader.cs`, `Lifecycle.cs`, and the hooks `stream.ts`, `lease.ts`, `state.ts`, `register.ts`, `events.ts`.
 
-Port rule (user, 2026-11-17): all store operations go through the ports. One composition root (`StoreBackends.Create`, and `backend.ts` in the plugin) selects the implementation in code, with no configuration. An architecture test refuses store IO outside the implementations, and one contract test suite runs against each implementation. Callers that bypass the ports today: `Supervisor.cs`, `Supervisor.Lifecycle.cs`, `EventCommands.cs`, `StateReader.cs`, `Lifecycle.cs`, and the hooks `stream.ts`, `lease.ts`, `state.ts`, `register.ts`, `events.ts`.
-
-Cloud workers (G1 Q6a) and the phone (D1) reach the store only through the supervisor HTTP API and the tunnel.
+Measured on the main store (2026-11-17): 3,654 envelopes in 2 days; 2,350 on 11-17, of which 88 % are `session.tool`, `session.output` and `session.input`.
