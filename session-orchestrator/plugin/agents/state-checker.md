@@ -12,7 +12,7 @@ The states:
 |---|---|
 | `start` | A new session. Its first good turn did not start yet |
 | `running` | A turn is in flight |
-| `idle` | No turn. Possibly it waits for a decision, a child or a blocked report |
+| `idle` | No turn. Possibly it waits for an answer, a child or a blocked report |
 | `stale` | The lease is `live`, but the heartbeat is older than 15 s |
 | `not-responding` | Failed turns, the stop latch, input not taken, or a hung turn or process |
 | `forgotten` | Idle for a long time with no final report and no wait reason |

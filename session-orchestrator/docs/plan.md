@@ -1730,6 +1730,58 @@ orch, supervisor, API, UI
 - The settings schema, `mcp__orch__configure` and the brief block (S3). The readers of the mode axes (S4).
 - The design page `docs/session-design.html` is not published again: the design did not change.
 
+## C2 result: workflow runner (2026-11-18)
+
+Branch `orch/c2-workflow-runner`, base `orch/s2-session-registry` (S2). The contract is in `docs/store.md`, section "Workflow runs". The decisions are in `docs/decisions.md` (rows "C2").
+
+```
+orch run start|show|list|step|stop        (Cli/Commands/RunCommands.cs)
+  WorkflowHost.Runner(store)              (Store: IRunSessions, IRunMessages)
+    WorkflowRunner                        (Core/Workflows: traversal "valid, then pick", approvals, done)
+      IRepositories.WorkflowRuns  -> runs/<id>.json
+      Home.Workflows(store root)  -> the workflow catalog of F2
+      executors
+        ToolExecutor   -> IWorkflowTool (deterministic)
+        AskExecutor    -> a question in the event stream, the answer of its thread
+        AgentExecutor  -> owner | existing | new | { type }: a message, or Messages.NewSession (registry + brief)
+                          the supervisor runs the turn: IProvider.Turn, agent = type, else the role agent
+```
+
+| Item | Result |
+|---|---|
+| Runner | `WorkflowRunner`: start, step, stop, get, list. Exit condition, approval, definition of done, valid next steps, pick, stuck question, 200-visit guard |
+| Run state | `WorkflowRun` on `IRepository<Doc<WorkflowRun>>`, `runs/<id>.json` with a lock file. Contract fixture `LocalWorkflowRunContract` |
+| Executors | `tool`, `ask`, `agent`. The agent step resolves `owner`, `{ session }`, `new` and `{ type }` |
+| Step prompt | `RunPrompt`: instructions, input, outputs, templates, messages, approval, each condition with its use, the end command |
+| Definition | New step field `tool`, with two graph rules. The planning step `ask` lost its repeated entry condition |
+| Roles | The owner becomes `orchestrator`, a step session `worker`. `Roles.AgentOf`: the type, else the agent of the role |
+| Brief | Fields `stream`, `type`, `workflow` in the template, `orch new`, `spawn_child` and the session render |
+| Rename | Skills, agents, tool texts and templates: "question" for a question, "task" for a part. Kept ids: `docs/decisions.md`, row "C2: term rename, kept ids" |
+| CLI | `orch run start <workflow> [--owner S] [--goal G]`, `show`, `list`, `step`, `stop`; `orch questions` |
+
+### Test results
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 574 total: 567 pass, 7 skipped, 0 fail (before C2: 531) |
+| `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | 15 pass, 0 fail |
+| New: `WorkflowRunnerTests` (fakes of sessions, messages and tools) | Planning from its definition with a question loop and a change loop; one valid, no condition, text compare, many valid with pick, pick in the result, none valid with a question, the target entry condition; done only when the definition of done is true; the visit limit; the exit condition; required, skippable, ignored and refused approvals; tool, ask and the four agent sessions; run state on the repository; the prompt; the verdicts; the default agents; the `tool` rules |
+| New: `WorkflowStoreTests` | The planning workflow through the `orch run` commands, `orch answer` and the registry; a new step session through the registry and a supervisor turn with the agent `worker`; the brief fields and the stream of the parent |
+| Changed | The message texts "Answer to question" and "question <id>"; the new session form test skips the three new brief fields; `docs/render-design.html` written again (`ORCH_WRITE_DOCS=1`) |
+
+### Behavior changes
+
+- A child with no agent now runs with the plugin agent `worker`, and a root with role `orchestrator` with the agent `orchestrator`.
+- The answer to a question starts with "Answer to question <id>". The child and notice texts say "question <id>".
+- `mcp__orch__answer` takes `question`. The old field `decision` stays valid.
+
+### Not in C2
+
+- The stream id in each envelope, `orch events --stream`, `orch sessions --stream`.
+- The new session form and `/api/sessions` fields for `type`, `stream`, `workflow` (stream E).
+- The workflow page (E), the review and PR workflows (roadmap), the real use (C3).
+- `docs/render-design.html` is not published again to its artifact.
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
@@ -1757,7 +1809,7 @@ flowchart LR
 | E2 | E | Visuals: the next E1 items and spike E-5 | After I2 |
 | S2 | S | Session registry on `IRepository`, store version 3. Done: see "S2 result" | After P0 and H4 |
 | G2 | G | Cloud workers (G-3, G-4) and the supervisor API with the `orch` HTTP mode (H5) | In parallel with S2 |
-| C2 | C | Workflow runner on `IRepository`, the planning workflow, the term rename in skills and tools. Then C3: one real stream | After S2 and F2 |
+| C2 | C | Workflow runner on `IRepository`, the planning workflow, the term rename in skills and tools. Done: see "C2 result". Then C3: one real stream | After S2 and F2 |
 | D2 | D | Named tunnel, service token for cloud workers | After G2, next month |
 
 Rules for these tasks:

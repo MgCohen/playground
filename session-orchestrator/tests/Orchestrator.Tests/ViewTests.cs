@@ -172,7 +172,7 @@ public sealed class ViewTests
     public void Notice()
     {
         var d = Doc(Kinds.Notice);
-        Assert.That(d.Title, Is.EqualTo("Question closed: child \"Size child\" (3f2a9c1e-0000-4000-8000-000000000000), decision toolu_01RAQ: Which size do we use in size.txt? Answer: SMALL (from user)."));
+        Assert.That(d.Title, Is.EqualTo("Question closed: child \"Size child\" (3f2a9c1e-0000-4000-8000-000000000000), question toolu_01RAQ: Which size do we use in size.txt? Answer: SMALL (from user)."));
         Assert.That(FactLabels(d), Is.EqualTo(new[] { "Kind", "Session", "Child" }));
         Assert.That(d.Blocks.Single().Text, Does.StartWith("Question closed").And.Contain("Do not answer it again."));
 

@@ -24,7 +24,6 @@
       "executor": "agent",
       "instructions": "Ask one open question in the full format: the question, the context, the options and your recommendation.",
       "session": "owner",
-      "when": "an open question exists",
       "input": ["one open question"],
       "output": ["question"],
       "templates": ["question"],

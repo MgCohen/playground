@@ -31,5 +31,8 @@ public static class StoreFiles
     public const string Forgotten = "forgotten.json";
     public const string Templates = "templates";
 
+    /// <summary>The workflow runs (C2): <c>runs/&lt;id&gt;.json</c>.</summary>
+    public const string Runs = "runs";
+
     public static string Json(string id) => $"{id}.json";
 }

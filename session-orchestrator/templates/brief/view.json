@@ -5,7 +5,10 @@
   "document": {
     "title": ["{{title}}"],
     "facts": [
+      { "field": "type", "label": "Type" },
       { "field": "agent", "label": "Agent" },
+      { "field": "stream", "label": "Stream" },
+      { "field": "workflow", "label": "Workflow" },
       { "field": "cwd", "label": "Folder", "as": "code" },
       { "field": "worktree", "label": "Worktree" },
       { "field": "background", "label": "Background" },

@@ -23,6 +23,15 @@ public sealed record BriefFields
     public string? Parent { get; init; }
     public bool? AllowDefaults { get; init; }
     public bool? Background { get; init; }
+
+    /// <summary>The stream id (C1). Null: the stream of the parent.</summary>
+    public string? Stream { get; init; }
+
+    /// <summary>The custom agent of the session (C1). It replaces <see cref="Agent"/>, the old name, which stays valid.</summary>
+    public string? Type { get; init; }
+
+    /// <summary>The workflow that the session runs or works in (C1).</summary>
+    public string? Workflow { get; init; }
 }
 
 /// <summary>An answer of the docs check or the policy: why it applies, and where it comes from.</summary>
@@ -36,10 +45,12 @@ public sealed record AnswerSource(string By)
 /// <summary>The posts of the user and of the reactors, one method for each message type.</summary>
 public sealed class Messages(FileStore store)
 {
-    public string NewSession(BriefFields brief, string createdBy, string from = Parties.User)
+    /// <param name="role">The role of the new session. Null: <see cref="Roles.Initial"/>. A workflow run gives it.</param>
+    public string NewSession(BriefFields brief, string createdBy, string from = Parties.User, string? role = null)
     {
         var fields = Fields(("title", brief.Title), ("goal", brief.Goal), ("scope", brief.Scope), ("doneWhen", brief.DoneWhen),
-            ("skills", brief.Skills), ("agent", brief.Agent), ("cwd", brief.Cwd), ("worktree", brief.Worktree), ("parent", brief.Parent), ("allowDefaults", brief.AllowDefaults), ("background", brief.Background));
+            ("skills", brief.Skills), ("agent", brief.Agent), ("cwd", brief.Cwd), ("worktree", brief.Worktree), ("parent", brief.Parent), ("allowDefaults", brief.AllowDefaults), ("background", brief.Background),
+            ("stream", brief.Stream), ("type", brief.Type), ("workflow", brief.Workflow));
         Check(Kinds.Brief, fields);
         if (string.IsNullOrEmpty(brief.Cwd)) throw new MessageException("brief: cwd is necessary");
         var id = store.Create(new SessionSpec
@@ -47,7 +58,10 @@ public sealed class Messages(FileStore store)
             Title = brief.Title,
             Parent = brief.Parent,
             Work = new SessionWork { Cwd = brief.Cwd, Worktree = brief.Worktree },
-            Type = brief.Agent is null && brief.Skills is null ? null : new SessionType { Agent = brief.Agent, Skills = brief.Skills?.ToList() },
+            Type = (brief.Type ?? brief.Agent) is null && brief.Skills is null ? null : new SessionType { Agent = brief.Type ?? brief.Agent, Skills = brief.Skills?.ToList() },
+            Stream = brief.Stream,
+            Workflow = brief.Workflow,
+            Role = role,
             Settings = BriefSettings(brief),
             By = createdBy,
         }).Id;

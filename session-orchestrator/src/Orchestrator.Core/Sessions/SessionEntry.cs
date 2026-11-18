@@ -129,6 +129,20 @@ public static class Roles
     public static readonly IReadOnlyList<string> All = [Orchestrator, Worker, Free];
 
     /// <summary>
+    /// The default agent of a role (C1): the plugin agents orchestrator and worker. A free session has none. A type
+    /// (<see cref="SessionEntry.Type"/>) replaces the default agent. The provider maps the name to its engine.
+    /// </summary>
+    public static string? DefaultAgent(string? role) => role switch
+    {
+        Orchestrator => Orchestrator,
+        Worker => Worker,
+        _ => null,
+    };
+
+    /// <summary>The agent of a session: its type, else the default agent of its role.</summary>
+    public static string? AgentOf(SessionEntry entry) => entry.Type?.Agent is { Length: > 0 } agent ? agent : DefaultAgent(entry.Role);
+
+    /// <summary>
     /// The role of a new session before a workflow run sets it (C1): orchestrator for the orchestrator agent, worker for a
     /// child, else free.
     /// </summary>

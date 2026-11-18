@@ -7,7 +7,7 @@
   "properties": {
     "state": { "enum": ["working", "blocked", "done"] },
     "summary": { "type": "string", "minLength": 1, "description": "One or two sentences." },
-    "done": { "type": "array", "items": { "type": "string" }, "description": "The finished parts." },
+    "done": { "type": "array", "items": { "type": "string" }, "description": "The finished items." },
     "next": { "type": "array", "items": { "type": "string" }, "description": "The next steps." },
     "blockers": { "type": "array", "items": { "type": "string" }, "description": "The problems that stop the work." },
     "links": { "type": "array", "items": { "type": "string" }, "description": "Branches, PRs and files." },

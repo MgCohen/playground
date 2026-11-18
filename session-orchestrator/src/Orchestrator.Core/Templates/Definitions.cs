@@ -108,6 +108,8 @@ public sealed record WorkflowDefinition(string Name, int Version, string Purpose
                 if (!ids.Contains(next.Step)) yield return $"steps.{step.Id}.next: no step \"{next.Step}\"";
             if (step.Executor == WorkflowStep.Ask && step.Session is not null) yield return $"steps.{step.Id}: an ask step has no session";
             if (step.Executor != WorkflowStep.Agent && step.Session is not null) yield return $"steps.{step.Id}: only an agent step names a session";
+            if (step.Executor == WorkflowStep.Tool && string.IsNullOrEmpty(step.ToolName)) yield return $"steps.{step.Id}: a tool step names its tool";
+            if (step.Executor != WorkflowStep.Tool && step.ToolName is not null) yield return $"steps.{step.Id}: only a tool step names a tool";
             if (isKind is null) continue;
             foreach (var kind in (step.Templates ?? []).Concat((step.Messages ?? []).Select(m => m.Kind)).Distinct())
                 if (!isKind(kind)) yield return $"steps.{step.Id}: no message template \"{kind}\"";
@@ -137,6 +139,10 @@ public sealed record WorkflowStep(string Id, string Title, string Executor, stri
 
     /// <summary>Agent steps only: the session that does the step. "owner", "new", { "session": id } or { "type": name }. Default: owner.</summary>
     public JsonElement? Session { get; init; }
+
+    /// <summary>Tool steps only: the name of the deterministic tool that the runner calls.</summary>
+    [System.Text.Json.Serialization.JsonPropertyName("tool")]
+    public string? ToolName { get; init; }
 
     /// <summary>The entry condition of the step.</summary>
     public string? When { get; init; }

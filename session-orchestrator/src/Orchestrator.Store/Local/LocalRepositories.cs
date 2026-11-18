@@ -4,6 +4,7 @@ using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Sessions;
 using Orchestrator.Core.Storage;
+using Orchestrator.Core.Workflows;
 
 namespace Orchestrator.Store.Local;
 
@@ -31,6 +32,10 @@ public sealed class LocalRepositories : IRepositories
             id => Path.Combine(this.root, StoreFiles.Sessions, id, StoreFiles.Session),
             () => Files.Names(Path.Combine(this.root, StoreFiles.Sessions)).Where(id => File.Exists(Path.Combine(this.root, StoreFiles.Sessions, id, StoreFiles.Session))),
             JsonCodec<SessionEntry>.Instance, lockFiles: true);
+        WorkflowRuns = Repository(
+            id => Path.Combine(this.root, StoreFiles.Runs, StoreFiles.Json(id)),
+            () => Files.Names(Path.Combine(this.root, StoreFiles.Runs)).Where(name => name.EndsWith(".json")).Select(name => name[..^5]),
+            JsonCodec<WorkflowRun>.Instance, lockFiles: true);
         Log = new LocalLogSink(Path.Combine(this.root, StoreFiles.SupervisorLog));
     }
 
@@ -44,6 +49,7 @@ public sealed class LocalRepositories : IRepositories
     public IRepository<Doc<string>, string> Nudges { get; }
     public IRepository<Doc<string>, string> Sessions { get; }
     public IRepository<Doc<SessionEntry>, string> SessionEntries { get; }
+    public IRepository<Doc<WorkflowRun>, string> WorkflowRuns { get; }
     public ILogSink Log { get; }
 
     public IRepository<Doc<T>, string> SessionFile<T>(string file) =>
