@@ -1,0 +1,273 @@
+<title>Voice Dictation Discovery</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, foldable sections. Same tokens as the other orchestrator pages. */
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --fg: #1b2126;
+  --muted: #5b6670;
+  --line: #d9dee3;
+  --accent: #0f6e78;
+  --accent-soft: #e2f1f2;
+  --ok: #2c7a3f;
+  --warn: #9a6200;
+  --bad: #b0322b;
+  --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --ok: #6cc684; --warn: #e0a548; --bad: #ef7d74;
+    --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --ok: #6cc684; --warn: #e0a548; --bad: #ef7d74;
+  --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 20px; margin: 0; text-wrap: balance; }
+p, li { max-width: 72ch; }
+p { margin: 0; }
+ul, ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 5px; }
+.summary { color: var(--muted); max-width: 72ch; }
+nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap;
+}
+nav button {
+  font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.count { font-family: var(--font-mono); font-size: 12px; margin-left: 4px; }
+.panel { display: flex; flex-direction: column; gap: 14px; }
+.panel.off { display: none; }
+details.fold { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+details.fold > summary {
+  cursor: pointer; list-style: none; padding: 12px 14px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::before { content: "▸"; color: var(--accent); font-size: 13px; width: 12px; flex: none; }
+details.fold[open] > summary::before { content: "▾"; }
+details.fold > summary h2 { flex: 1 1 260px; min-width: 0; }
+details.fold > summary .hint { color: var(--muted); font-size: 13px; }
+.body { padding: 0 14px 16px 36px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+@media (max-width: 560px) { .body { padding-left: 14px; } }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+td code { white-space: nowrap; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.pill { font-family: var(--font-mono); font-size: 12px; border-radius: 12px; padding: 1px 8px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+.pill.bad { color: var(--bad); border-color: var(--bad); }
+.pill.rec { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--code-bg); border-radius: 0 6px 6px 0; max-width: 72ch; }
+.q { display: flex; flex-direction: column; gap: 8px; }
+.q dl { margin: 0; display: grid; grid-template-columns: 130px 1fr; gap: 6px 12px; }
+.q dt { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; padding-top: 2px; }
+.q dd { margin: 0; min-width: 0; }
+@media (max-width: 560px) { .q dl { grid-template-columns: 1fr; gap: 2px; } .q dd { margin-bottom: 8px; } }
+.closed summary h2 { color: var(--muted); }
+.empty { color: var(--muted); font-style: italic; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · session M · voice dictation · 2026-11-18</div>
+  <h1>Voice Dictation Discovery</h1>
+  <p class="summary">The user speaks, and the app makes the text of answers, messages and briefs. This page records the scope, the current state, the problems and the open questions. It changes as the discussion continues.</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" data-tab="context" aria-selected="true">Context</button>
+  <button role="tab" data-tab="questions" aria-selected="false">Open questions <span class="count">4</span></button>
+</nav>
+
+<!-- ============ CONTEXT ============ -->
+<div class="panel" id="context">
+
+<details class="fold" open>
+  <summary><h2>Scope of the session</h2><span class="hint">what is in, what is out</span></summary>
+  <div class="body">
+    <div class="scroll"><table>
+      <tr><th>In scope</th><th>Out of scope</th></tr>
+      <tr>
+        <td><ul><li>Discovery of the current state</li><li>Discussion of the goals with the user, in this chat</li><li>A written plan for voice dictation</li><li>Tests on a store copy with a fake provider, ports 7830-7839</li></ul></td>
+        <td><ul><li>App code before the user approves the plan</li><li>The work of D, V, L and P</li><li>Merges</li><li>The live store (<code>session-orchestrator/store/</code>) and port 7777</li></ul></td>
+      </tr>
+    </table></div>
+    <p>Rule from the user: the discussion stays in this chat. The session does not use <code>ask_user</code> or <code>update</code>. It sends a report to the root only when the user says so, or when the session is done.</p>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>Expected output</h2><span class="hint">the done check</span></summary>
+  <div class="body">
+    <ol>
+      <li>The user and the session discuss the situation and the goals.</li>
+      <li>The session writes a plan for voice dictation in <code>docs/plan.md</code>.</li>
+      <li>The user approves the plan.</li>
+    </ol>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>Current understanding</h2><span class="hint">how dictation works today</span></summary>
+  <div class="body">
+    <div class="scroll"><pre class="mermaid">
+flowchart LR
+  B["Mic button<br/>Mic.razor"] --> S["speech.js"]
+  S --> W["Browser speech engine<br/>(Web Speech API)"]
+  W --> C["Chrome or Edge browser:<br/>cloud engine of the browser"]
+  W --> V["Tray, WebView2:<br/>probably no engine"]
+  C --> F["Text field"]
+  V -. "probably fails, no error shows" .-> F
+    </pre></div>
+    <ul>
+      <li>There is one shared script, <code>speech.js</code>. The web UI and the tray widget both load it.</li>
+      <li>The tray widget shows the same Razor cards as the web UI through a BlazorWebView on WebView2.</li>
+      <li>The decision of 2026-11-16 in <code>decisions.md</code> says: "Phone dictation in the text field. No extra code." That means the mic key of the phone keyboard.</li>
+      <li>Nobody planned dictation as a feature with goals, and nobody tested a real transcript on a device.</li>
+      <li>The newest code is on <code>orch/integration-final</code>. The <code>main</code> branch does not have the tray app.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="fold">
+  <summary><h2>What we have</h2><span class="hint">code, UI and tests, with file names</span></summary>
+  <div class="body">
+    <div class="scroll"><table>
+      <tr><th>Part</th><th>File</th><th>State</th></tr>
+      <tr><td>Speech script</td><td><code>src/Orchestrator.Web/wwwroot/speech.js</code></td><td>The browser speech engine. It stops at the first pause and shows text only at the end. It has no error handler. The language comes from the page (<code>lang="en"</code>)</td></tr>
+      <tr><td>Mic button</td><td><code>Components/Cards/Mic.razor</code></td><td>One button next to each free-text field. Hidden if the browser has no speech engine</td></tr>
+      <tr><td>Fields with a mic</td><td><code>DecisionCard</code>, <code>DefaultCard</code>, <code>SessionCard</code>, <code>NewSessionForm</code>, the answer sheet in <code>Pages/Cards.razor</code></td><td><span class="pill ok">present</span></td></tr>
+      <tr><td>"Speak" card action</td><td><code>Ui.cs</code> (<code>CardDo.Speak</code>), <code>orchSpeech.focus</code> in <code>speech.js</code></td><td>Opens the answer sheet and starts the mic</td></tr>
+      <tr><td>Tray widget</td><td><code>src/Orchestrator.Tray/wwwroot/index.html</code></td><td>Loads <code>speech.js</code>. No mic permission handler in the WebView2 host</td></tr>
+      <tr><td>Tests</td><td><code>InboxUiTests</code>, <code>NewSessionFormTests</code>, <code>WebTests</code></td><td>They check only that each field has a mic button. A B1 check hid the buttons in a Chrome with no speech engine</td></tr>
+      <tr><td>Methods with no code</td><td>Windows Win+H, the mic key of the phone keyboard</td><td>They work in any text field</td></tr>
+    </table></div>
+    <details class="fold">
+      <summary><h2>Records that mention voice</h2></summary>
+      <div class="body">
+        <ul>
+          <li><code>plan.md</code>, "B1 result": new session form and mic buttons.</li>
+          <li><code>plan.md</code>, M4: "Each card has a free-text field and voice input."</li>
+          <li><code>plan.md</code>, A4 design and result: "Opinion and question: Speak (mic on) / Type", "Answer sheet: suggestions, free text, mic".</li>
+          <li><code>plan.md</code>, finding D9: one answer was a raw voice transcript and was too long for a title.</li>
+          <li><code>AGENTS.md</code> and the skill <code>orch-ask</code>: the user answers by voice, so the questions use free text and no click boxes.</li>
+          <li>E1 and E2 (tray visuals) have nothing about voice.</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>Problems</h2><span class="hint">found in the code, not tested yet</span></summary>
+  <div class="body">
+    <div class="scroll"><table>
+      <tr><th>#</th><th>Problem</th><th>Effect</th><th>State</th></tr>
+      <tr><td>P1</td><td>The tray runs in WebView2. WebView2 has the browser speech object, but it is known to have no speech engine behind it</td><td>The mic button shows, and a click does nothing</td><td><span class="pill warn">to test</span></td></tr>
+      <tr><td>P2</td><td>On the phone, the page is plain HTTP on the local network. Browsers allow the mic only on HTTPS or <code>localhost</code></td><td>The mic button shows but cannot record</td><td><span class="pill warn">to test</span></td></tr>
+      <tr><td>P3</td><td><code>speech.js</code> has no error handler</td><td>A failure shows no message to the user</td><td><span class="pill bad">confirmed in code</span></td></tr>
+      <tr><td>P4</td><td>The recording stops at the first pause (<code>continuous = false</code>), and no text shows until the end</td><td>A long brief is not possible</td><td><span class="pill bad">confirmed in code</span></td></tr>
+      <tr><td>P5</td><td>The language is always English (<code>lang="en"</code>)</td><td>Portuguese speech gives a bad transcript</td><td><span class="pill bad">confirmed in code</span></td></tr>
+      <tr><td>P6</td><td>The tests check only the markup</td><td>No test shows that a transcript reaches the field</td><td><span class="pill bad">confirmed in code</span></td></tr>
+    </table></div>
+  </div>
+</details>
+
+</div>
+
+<!-- ============ OPEN QUESTIONS ============ -->
+<div class="panel off" id="questions">
+
+<p class="summary">Answer in the chat, in your own words, for example "Q1: both". When a question has an answer, it moves to the end of this tab with the answer.</p>
+
+<details class="fold" open>
+  <summary><h2>Q1. Which app did "the Siri app" mean?</h2><span class="pill">open</span></summary>
+  <div class="body q"><dl>
+    <dt>Question</dt><dd>Is it the tray widget on Windows, the web UI on the phone, or both?</dd>
+    <dt>Context</dt><dd>The root chat said "the Siri app", probably a voice error. Both apps have mic buttons, and each needs a different fix (P1, P2).</dd>
+    <dt>Options</dt><dd>The tray widget on Windows · the web UI on the phone · both, the same way · something else (a real Siri connection)</dd>
+    <dt>Recommendation</dt><dd><span class="pill rec">both</span> They use the same cards and <code>speech.js</code>, so one fix helps both.</dd>
+  </dl></div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>Q2. Which languages do you speak to the app?</h2><span class="pill">open</span></summary>
+  <div class="body q"><dl>
+    <dt>Question</dt><dd>English only, Portuguese only, or both? Do you mix the two in one answer?</dd>
+    <dt>Context</dt><dd>The engine always uses English (P5). Mixed languages need an engine that detects the language itself, for example Whisper.</dd>
+    <dt>Options</dt><dd>English only · Portuguese only · both, with a language switch · both, mixed in one answer</dd>
+    <dt>Recommendation</dt><dd>None. Only you know this, and it decides the engine.</dd>
+  </dl></div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>Q3. Which speech engine is acceptable?</h2><span class="pill">open</span></summary>
+  <div class="body q"><dl>
+    <dt>Question</dt><dd>Free browser or Windows engines, a paid cloud speech service, or a local model on this PC?</dd>
+    <dt>Context</dt><dd>The free browser engine probably does not work in the tray (P1) and needs HTTPS on the phone (P2). A cloud service costs about 0.006 USD a minute, and the audio goes to the provider. A local Whisper model has no cost and no upload, but it uses CPU or GPU.</dd>
+    <dt>Options</dt><dd>Free engines only (browser, Win+H, phone keyboard) · cloud service through the supervisor · local Whisper in the supervisor · cloud first, local model later</dd>
+    <dt>Recommendation</dt><dd><span class="pill rec">local Whisper</span> In the supervisor, if this PC has enough power; else a cloud service. One engine on the server works the same in the tray and on the phone, and it detects the language.</dd>
+  </dl></div>
+</details>
+
+<details class="fold" open>
+  <summary><h2>Q4. How long is a typical dictation?</h2><span class="pill">open</span></summary>
+  <div class="body q"><dl>
+    <dt>Question</dt><dd>A short answer of one or two sentences, or a long brief of one minute or more? Do you also want voice commands?</dd>
+    <dt>Context</dt><dd>The recording stops at the first pause, and the text shows only at the end (P4).</dd>
+    <dt>Options</dt><dd>Short answers only · long briefs too, with a recording that continues until you push stop · both, plus voice commands (for example "approve" or "skip")</dd>
+    <dt>Recommendation</dt><dd><span class="pill rec">long briefs too</span> A recording that continues until stop. Voice commands can come later.</dd>
+  </dl></div>
+</details>
+
+<h2>Answered</h2>
+<p class="empty">No answers yet.</p>
+
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["context", "questions"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "context";
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
+    document.querySelectorAll("nav button").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
+    });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>
