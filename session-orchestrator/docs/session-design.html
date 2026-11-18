@@ -151,7 +151,7 @@ flowchart LR
     <h2>Design rules</h2>
     <ul>
       <li>Three names for each session: the id finds it, the code places it in the plan, the title tells what it does.</li>
-      <li>The app title starts with the full code, for example <code>[O2 P1 S1]</code>, so the user finds the root of each session.</li>
+      <li>The app title starts with the full code, for example <code>[O2 C1 S1]</code>, so the user finds the root of each session.</li>
       <li>One writer for the registry: the registry service. Plugins send a request envelope.</li>
       <li>Settings are typed fields, not brief text. A mode is a preset of four axes. The brief shows a render of them.</li>
       <li><strong>One start path.</strong> The chat (<code>spawn_child</code>), our app (UI, tray) and <code>orch new</code> all call <code>SessionRegistry.Create</code>, which calls adapter <code>Create</code> and <code>Open</code>.</li>
@@ -163,17 +163,16 @@ flowchart LR
   </section>
 
   <section>
-    <h2>Steps from this design</h2>
+    <h2>Tasks from this design (stream S, owner S)</h2>
     <div class="scroll"><table>
-      <thead><tr><th>#</th><th>Code part</th><th>Size</th></tr></thead>
+      <thead><tr><th>Task</th><th>Content</th><th>Size</th></tr></thead>
       <tbody>
-        <tr><td>C1</td><td><code>IRepository&lt;T&gt;</code> with a file implementation, the slice <code>SessionRegistry</code>, contract tests</td><td>Medium</td></tr>
-        <tr><td>C2</td><td>Store version 3: <code>meta.json</code> and <code>control.json</code> into <code>session.json</code></td><td>Small</td></tr>
-        <tr><td>C3</td><td>Settings schema, copy at create, <code>mcp__orch__configure</code>, the settings block in the brief</td><td>Medium</td></tr>
-        <tr><td>C4</td><td><code>templates/modes/</code> and the readers of the four axes</td><td>Medium</td></tr>
-        <tr><td>C5</td><td><code>IProvider</code> in <code>Orchestrator.Providers</code> (ask, create, open, turn, set, archive, read, caller id, doctor) with <code>Providers/ClaudeCode</code>. <code>DocsCheck</code> and <code>StateCheck</code> become neutral slices. No other code knows a provider</td><td>Medium</td></tr>
-        <tr><td>C6</td><td><code>orch session</code> CLI, <code>/api/sessions</code> fields, tree view with tags</td><td>Small</td></tr>
-        <tr><td>C7</td><td><code>orch session join</code> for other engines, with lease and heartbeat</td><td>Small</td></tr>
+        <tr><td>P0</td><td><code>IProvider</code> in <code>Orchestrator.Providers</code> (ask, create, open, turn, set, archive, read, caller id, doctor) with <code>Providers/ClaudeCode</code>. <code>DocsCheck</code> and <code>StateCheck</code> become neutral slices. No other code knows a provider</td><td>Medium</td></tr>
+        <tr><td>S2</td><td>The slice <code>SessionRegistry</code> on the <code>SessionEntry</code> repository of H2, contract tests. Store version 3: <code>meta.json</code> and <code>control.json</code> into <code>session.json</code></td><td>Medium</td></tr>
+        <tr><td>S3</td><td>Settings schema, copy at create, <code>mcp__orch__configure</code>, the settings block in the brief</td><td>Medium</td></tr>
+        <tr><td>S4</td><td>The readers of the four mode axes. F2 keeps the mode definitions in <code>templates/modes/</code></td><td>Medium</td></tr>
+        <tr><td>S5</td><td><code>orch session</code> CLI, <code>/api/sessions</code> fields, tree view with tags</td><td>Small</td></tr>
+        <tr><td>S6</td><td><code>orch session join</code> for other engines, with lease and heartbeat</td><td>Small</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -196,7 +195,9 @@ flowchart LR
   "tags": ["design", "orch"],
   "stream": "S1",                      <span class="c">// work stream key (C1 owns the workflow)</span>
   "work": { "cwd": "…", "repo": "…", "branch": "orch/session-6f1c2a90", "worktree": true },
-  "role": { "agent": "worker", "skills": ["orch:orch-ask"] }, <span class="c">// a record; only the adapter reads it to start the session</span>
+  "role": "worker",                    <span class="c">// orchestrator, worker or free: the relation to workflows (C1); the run sets it</span>
+  "type": { "agent": "decider", "skills": ["orch:orch-ask"] }, <span class="c">// optional custom agent; only the provider reads it to start the session</span>
+  "workflow": "planning",              <span class="c">// optional: the workflow that the session runs or works in</span>
   "settings": { "mode": "auto", "visibility": "public", "policy": "default",
                 "reportOn": ["done", "blocked", "asked"], "allowDefaults": false,
                 "permissions": "auto" },
@@ -213,9 +214,9 @@ flowchart LR
       <tbody>
         <tr><td>Id</td><td><code>73cc50ac-b388-…</code></td><td>The system finds the session</td></tr>
         <tr><td>Code</td><td><code>S1</code></td><td>Plans, roadmaps, the list of children</td></tr>
-        <tr><td>Full code</td><td><code>O2 P1 S1</code></td><td>The codes from the root down</td></tr>
+        <tr><td>Full code</td><td><code>O2 C1 S1</code></td><td>The codes from the root down</td></tr>
         <tr><td>Title</td><td><code>Session management and registry</code></td><td>The human-readable name</td></tr>
-        <tr><td>App title</td><td><code>[O2 P1 S1] Session management and registry</code></td><td>The app sidebar and the phone</td></tr>
+        <tr><td>App title</td><td><code>[O2 C1 S1] Session management and registry</code></td><td>The app sidebar and the phone</td></tr>
       </tbody>
     </table></div>
     <ul>
@@ -237,7 +238,9 @@ flowchart LR
         <tr><td>Engine facts</td><td>None: <code>adapter.Read</code></td><td>Imported, Remote Control, app archive, model: the engine keeps them</td></tr>
         <tr><td><code>parent</code></td><td>Creator</td><td>Never</td></tr>
         <tr><td><code>title</code>, <code>tags</code>, <code>stream</code>, <code>owner</code></td><td>Creator, user</td><td><code>orch session set</code>, API</td></tr>
-        <tr><td><code>work</code>, <code>role</code></td><td>Brief, first turn</td><td>Supervisor at the worktree step</td></tr>
+        <tr><td><code>work</code></td><td>Brief, first turn</td><td>Supervisor at the worktree step</td></tr>
+        <tr><td><code>role</code></td><td>The workflow run: owner, step or none</td><td>The runner, when the run changes</td></tr>
+        <tr><td><code>type</code>, <code>workflow</code></td><td>Creator, at create</td><td>Never for <code>type</code>; the runner for <code>workflow</code></td></tr>
         <tr><td><code>settings</code></td><td>Brief fields, defaults</td><td>User, parent (Settings tab)</td></tr>
         <tr><td><code>lifecycle.phase</code></td><td><code>orch stop</code>, <code>resume</code>, <code>archive</code></td><td>Registry service</td></tr>
         <tr><td><code>lifecycle.state</code></td><td>Supervisor</td><td>Copy of <code>state.json</code> at each transition</td></tr>
@@ -262,7 +265,7 @@ public interface IRepository&lt;T&gt; where T : IEntity
 public sealed class SessionRegistry(IRepository&lt;SessionEntry&gt; sessions, IProvider provider, IEvents events)
 {
     public SessionEntry Create(NewSession spec);          <span class="c">// provider.Create, sessions.Add, posts session.created</span>
-    public string FullCode(string id);                    <span class="c">// "O2 P1 S1": codes from the root down</span>
+    public string FullCode(string id);                    <span class="c">// "O2 C1 S1": codes from the root down</span>
     public SessionEntry Update(string id, int rev, SessionPatch patch, string by);
     public IReadOnlyList&lt;SessionEntry&gt; List(SessionQuery q) =&gt; sessions.Query(q.ToSpec());
 }
@@ -286,7 +289,7 @@ services.AddRepository&lt;Lease&gt;(FileRepository.At(root, "sessions/{id}/lease
 
   <section>
     <h2>All session data stays under one store root</h2>
-    <pre class="side"><span class="c">&lt;store root&gt;/   ORCH_STORE, else &lt;orch home&gt;/store. H1 chooses the backend.</span>
+    <pre class="side"><span class="c">&lt;store root&gt;/   %LOCALAPPDATA%\orch\store (H1). ORCH_STORE overrides it. H4 moves the store.</span>
   version.json, policy.json
   events/&lt;day&gt;/, bodies/&lt;day&gt;/       <span class="c">the event stream</span>
   sessions/&lt;id&gt;/session.json         <span class="c">IRepository&lt;SessionEntry&gt;</span>
@@ -440,8 +443,8 @@ flowchart LR
         <tr><td><code>task</code></td><td>Works to the goal. Reports once: done when the check passes</td></tr>
         <tr><td><code>conversation</code></td><td>Talks and waits for the next message. Done only when the user or parent says done</td></tr>
         <tr><td><code>stepwise</code></td><td>Reports the result of each step at once, with no confirmation. Can take follow-up requests. Done after the last step</td></tr>
-        <tr><td><code>auto</code></td><td>Continues alone. Asks only for a high-risk decision</td></tr>
-        <tr><td><code>ask</code></td><td>Asks each decision that the policy does not answer</td></tr>
+        <tr><td><code>auto</code></td><td>Continues alone. Asks only a high-risk question</td></tr>
+        <tr><td><code>ask</code></td><td>Asks each question that the policy does not answer</td></tr>
         <tr><td><code>approve</code></td><td>Works alone, then waits for an approval before each step and before done</td></tr>
         <tr><td><code>parent</code></td><td>Questions go to the parent, which handles them or asks the user</td></tr>
         <tr><td><code>user</code></td><td>Questions go to the session chat; the user answers with <code>answer:</code></td></tr>
@@ -565,7 +568,7 @@ stateDiagram-v2
       <tbody>
         <tr><td>1</td><td>A parent or the user starts a session</td><td>Parent → session</td><td><code>brief</code></td><td>After the opening turn and the import</td></tr>
         <tr><td>2</td><td>A parent has new work or a reply</td><td>Parent → session</td><td><code>message</code></td><td>At the next idle</td></tr>
-        <tr><td>3</td><td>The session needs a decision</td><td>Session → user</td><td><code>question</code></td><td>Route <code>parent</code>: forward to the parent at once</td></tr>
+        <tr><td>3</td><td>The session needs an answer</td><td>Session → user</td><td><code>question</code></td><td>Route <code>parent</code>: forward to the parent at once</td></tr>
         <tr><td>4</td><td>The user, parent, docs or policy decides</td><td>Party → session</td><td><code>answer</code></td><td>Next idle; first answer wins</td></tr>
         <tr><td>5</td><td>The question closes</td><td>Supervisor → parent</td><td><code>notice</code> question-closed</td><td>Next idle of the parent</td></tr>
         <tr><td>6</td><td>The session is done or blocked</td><td>Session → user</td><td><code>report</code></td><td>Forward to the parent at turn end</td></tr>
@@ -597,17 +600,17 @@ sequenceDiagram
   </section>
 
   <section>
-    <h2>A chat line closes a decision only with the prefix <code>answer:</code></h2>
+    <h2>A chat line closes a question only with the prefix <code>answer:</code></h2>
     <div class="scroll"><table>
-      <thead><tr><th>Chat line in a session with an open decision</th><th>Result</th></tr></thead>
+      <thead><tr><th>Chat line in a session with an open question</th><th>Result</th></tr></thead>
       <tbody>
-        <tr><td><code>answer: use 5</code></td><td>Answer "use 5", <code>via: chat</code>, decision closed</td></tr>
+        <tr><td><code>answer: use 5</code></td><td>Answer "use 5", <code>via: chat</code>, question closed</td></tr>
         <tr><td><code>Answer: yes</code></td><td>Same: the prefix ignores the case</td></tr>
-        <tr><td><code>why do you need this?</code></td><td>Plain input, decision stays open</td></tr>
+        <tr><td><code>why do you need this?</code></td><td>Plain input, question stays open</td></tr>
         <tr><td><code>&lt;system-reminder&gt;</code> block, then text</td><td>The block is removed before the check</td></tr>
       </tbody>
     </table></div>
-    <p>Finding F2 of the chat answer: each chat line closed the newest open decision, also a question or a request. PR #27 adds the prefix rule. The same rule applies in the parent chat: the parent calls <code>mcp__orch__answer</code> only for a line with <code>answer:</code>, or when the user names the question.</p>
+    <p>Finding F2 of the chat answer: each chat line closed the newest open question, also when the line was a question or a request. PR #27 adds the prefix rule. The same rule applies in the parent chat: the parent calls <code>mcp__orch__answer</code> only for a line with <code>answer:</code>, or when the user names the question.</p>
   </section>
 </div>
 
@@ -629,7 +632,7 @@ flowchart TB
     </pre></div>
     <pre class="side"><span class="c">// Orchestrator.Providers: the one boundary to a provider.
 // A slice holds its own logic (prompt, parse, rules) and calls this interface
-// only for the part that depends on the provider: a model call, an app fact, a CLI command.</span>
+// only for the code that depends on the provider: a model call, an app fact, a CLI command.</span>
 public interface IProvider
 {
     string Kind { get; }                                      <span class="c">// "claude-code", "codex"</span>
@@ -705,7 +708,7 @@ flowchart LR
         <tr><td>Post or read an envelope</td><td>No</td><td><code>orch post</code>, <code>orch watch</code>, the MCP tools</td></tr>
       </tbody>
     </table></div>
-    <p>Only the adapter knows how to start, talk to or change a model session. Each other part of the system is the same for each engine and for each caller.</p>
+    <p>Only the adapter knows how to start, talk to or change a model session. Each other component of the system is the same for each engine and for each caller.</p>
   </section>
 
   <section>

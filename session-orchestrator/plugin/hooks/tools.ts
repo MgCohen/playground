@@ -194,7 +194,7 @@ const REMINDER = /<system-reminder>[\s\S]*?<\/system-reminder>/gi
 const ANSWER_PREFIX = /^answer:/i
 
 // A chat message is an answer only when it starts with "answer:". Questions and requests in the chat
-// must not close a decision. App reminder blocks are not text of the user, so they go first.
+// must not close a question. App reminder blocks are not text of the user, so they go first.
 export function chatAnswer(text: string): string | undefined {
   const clean = text.replace(REMINDER, '').trim()
   if (!ANSWER_PREFIX.test(clean)) return undefined
@@ -202,7 +202,7 @@ export function chatAnswer(text: string): string | undefined {
   return answer === '' ? undefined : answer
 }
 
-// A chat message that starts with "answer:" answers the open decision of this session, only when exactly one is open.
+// A chat message that starts with "answer:" answers the open question of this session, only when exactly one is open.
 // orch chat-answer posts the answer with via chat and its ack, so the deliverer does not send it again.
 export async function answerFromChat($: any, e: any): Promise<void> {
   if (!S.dir || !S.id || e.origin?.kind !== 'composer') return
