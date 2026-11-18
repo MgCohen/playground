@@ -24,7 +24,7 @@ There is no other communication file. The inbox, the answers, the reviews, the r
 
 ## Repositories (C#)
 
-The C# code reads and writes the store only through `IRepositories` (`src/Orchestrator.Core/Storage/`). `StoreBackends.Create` selects the implementation. Only the local folder implementation (`src/Orchestrator.Store/Local/`) touches the files above. The test `ArchitectureTests` refuses store IO in other C# files. The plugin hooks write the same files directly (H3 moves them to `backend.ts`).
+The C# code reads and writes the store only through `IRepositories` (`src/Orchestrator.Core/Storage/`). `StoreBackends.Create` selects the implementation. Only the local folder implementation (`src/Orchestrator.Store/Local/`) touches the files above. The test `ArchitectureTests` refuses store IO in other C# files. The plugin hooks write the same files only through `plugin/hooks/backend.ts`.
 
 | Repository | Entity | Id | Files |
 |---|---|---|---|
@@ -43,7 +43,18 @@ The C# code reads and writes the store only through `IRepositories` (`src/Orches
 Rules of each implementation. The contract tests (`RepositoryContractTests`) run them against each data kind:
 
 1. A save of an `Add` with an id that exists fails with `StoreConflictException` (`Exists`). The local folder writes a temp file and moves it with no overwrite. The claims and the envelopes use this rule.
-2. Each entity has a version. A save of a change or a remove fails when the stored version is newer (`Stale`). The version of a local file is a hash of its text. A put of a whole file (lease, meta, status) reads again and writes again: the last writer wins, as before.
+2. Each entity has a version. A save of a change or a remove fails when the stored version is newer (`Stale`). A put of a whole file (lease, meta, status) reads again and writes again: the last writer wins.
+
+### Version rule
+
+The version of a stored file is a 64-bit FNV-1a hash of its UTF-8 text, as a signed 64-bit number. A file that does not exist has version 0. A hash of 0 becomes 1. The C# side and the plugin hooks use this one rule:
+
+| Side | Code | Test |
+|---|---|---|
+| C# | `Versions.Of` (`src/Orchestrator.Store/Local/LocalFileRepository.cs`) | `VersionRuleTests` |
+| Plugin hooks | `versionOf` (`plugin/hooks/backend.ts`) | `backend.test.ts` |
+
+Both tests check the same three known values. The files have no `version` field. A hook save with an expected version (`writeSession`) fails with `StoreConflict` when the file text on disk has another hash.
 
 ## Envelope
 

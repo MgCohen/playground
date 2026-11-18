@@ -397,6 +397,13 @@ public sealed class StreamSubscription
     {
         var list = ids.ToList();
         if (list.Count == 0) return;
+        // The repository has one unit of work for all threads of this process. Without the lock, a save of one thread
+        // can take the change of another thread and the other thread then saves nothing. Other processes use the version.
+        lock (cursors) Merge(list);
+    }
+
+    void Merge(List<string> list)
+    {
         for (var attempt = 1; ; attempt++)
         {
             var doc = cursors.Get(id);

@@ -5,8 +5,11 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { S } from '../state.ts'
-import { StoreConflict, createEnvelope, log, readSession, writeSession } from '../backend.ts'
+import { StoreConflict, createEnvelope, log, readSession, readSessionVersioned, readTemplate, versionOf, writeSession } from '../backend.ts'
 import { post } from '../stream.ts'
+
+// Known versions of three texts. VersionRuleTests (C#) checks the same values.
+const VERSIONS: Record<string, bigint> = { '': -3750763034362895579n, '{"title":"a"}': 7837972144070839554n, 'é': 775207407765167617n }
 
 const HOOKS = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -23,7 +26,7 @@ function fake(files: Record<string, string> = {}, ms = Date.parse('2026-11-18T10
 }
 
 function reset(): void {
-  Object.assign(S, { id: 's1', dir: 'store/sessions/s1', store: 'store', holder: 'live', lastMs: 0 })
+  Object.assign(S, { home: 'home', id: 's1', dir: 'store/sessions/s1', store: 'store', holder: 'live', lastMs: 0 })
 }
 
 test('only backend.ts has store IO in the hook modules', () => {
@@ -45,13 +48,22 @@ test('a second create of an envelope id fails and keeps the first envelope', asy
 
 test('a save of an old version fails, a save of the current version passes', async () => {
   reset()
-  const $ = fake({ 'store/sessions/s1/meta.json': JSON.stringify({ version: 3, title: 'a' }) })
-  await assert.rejects(writeSession($, 'meta.json', { version: 3, title: 'b' }, S.dir, 2), StoreConflict)
-  assert.equal((await readSession($, 'meta.json')).title, 'a')
-  await writeSession($, 'meta.json', { version: 4, title: 'c' }, S.dir, 3)
-  assert.equal((await readSession($, 'meta.json')).title, 'c')
+  const $ = fake({ 'store/sessions/s1/meta.json': JSON.stringify({ title: 'a' }) })
+  const read = await readSessionVersioned($, 'meta.json')
+  assert.equal(read.version, versionOf(JSON.stringify({ title: 'a' })))
+  await writeSession($, 'meta.json', { title: 'b' }, S.dir, read.version)
+  await assert.rejects(writeSession($, 'meta.json', { title: 'c' }, S.dir, read.version), StoreConflict)
+  assert.equal((await readSession($, 'meta.json')).title, 'b')
   await writeSession($, 'meta.json', { title: 'd' })
   assert.equal((await readSession($, 'meta.json')).title, 'd', 'with no expected version the save replaces the file')
+})
+
+// The same values are in VersionRuleTests (C#): both sides compute one version for one text.
+test('the version is the FNV-1a hash of the text, as in the C# store', () => {
+  assert.equal(versionOf(undefined), 0n)
+  assert.equal(versionOf(''), VERSIONS[''])
+  assert.equal(versionOf('{"title":"a"}'), VERSIONS['{"title":"a"}'])
+  assert.equal(versionOf('é'), VERSIONS['é'])
 })
 
 test('a session file that is not JSON reads as its text, and a missing file as undefined', async () => {
@@ -78,4 +90,16 @@ test('the log appends a line and keeps the last part of a long log', async () =>
   await log($, 'one')
   assert.equal($.files[path].length, 100000 + '2026-11-18T10:00:00.000Z one\n'.length)
   assert.ok($.files[path].endsWith('2026-11-18T10:00:00.000Z one\n'))
+})
+
+test('a template reads from the store templates root first, else from the core templates', async () => {
+  reset()
+  const $ = fake({
+    'home/templates/plan/meta.json': JSON.stringify({ from: 'core' }),
+    'home/templates/note/meta.json': JSON.stringify({ from: 'core' }),
+    'store/templates/plan/schema.json': '{}',
+    'store/templates/plan/meta.json': JSON.stringify({ from: 'store' }),
+  })
+  assert.equal((await readTemplate($, 'plan', 'meta')).from, 'store', 'a store folder with a core name replaces the core template')
+  assert.equal((await readTemplate($, 'note', 'meta')).from, 'core')
 })

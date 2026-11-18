@@ -1194,13 +1194,13 @@ Test results: `dotnet test --solution Orchestrator.slnx` passes: 413 tests, 406 
 | `controlState` | Lifecycle control | `sessions/<id>/control.json` |
 | `createEnvelope` | Body, then envelope | `bodies/<day>/<id>.json`, `events/<day>/<id>.json` |
 | `storeVersion`, `readPolicy` | Store contract, policy | `version.json`, `policy.json` |
-| `readTemplate` | Template meta and schema | `<home>/templates/<kind>/<file>.json` |
-| `storeRoot`, `sessionDir` | Store root, session folder | `ORCH_STORE`, else `<home>/store` |
+| `readTemplate` | Template meta and schema | `<store>/templates/<kind>/<file>.json` (F1), else `<home>/templates/<kind>/<file>.json` |
+| `storeRoot`, `sessionDir` | Store root, session folder | `ORCH_STORE`, else `<home>/store`. H4 makes `%LOCALAPPDATA%\orch\store` the default |
 
 Store rules in `backend.ts`:
 
 1. A second create of an id fails with `StoreConflict`. `createEnvelope` uses it for the body and the envelope.
-2. A save with an expected version fails with `StoreConflict` if the file on disk has another `version`. No hook file has a version on the C# side yet, so no caller passes a version now. H2 adds the versions.
+2. A save with an expected version fails with `StoreConflict` if the file on disk has another version. The version is the FNV-1a hash of the file text, as in H2 (`docs/store.md`, "Version rule"). `readSessionVersioned` gives the version for a later save.
 
 Tests:
 
@@ -1215,3 +1215,17 @@ Notes:
 - The store IO check refuses `$.fs`, an `fs:` key and an import of `fs` or `node:fs` in each hook module other than `backend.ts`. The test files in `plugin/hooks/test/` are not hook modules.
 - The brief names `PluginHookTests`. That class does not exist: the hook tests are `PluginLeaseTests` and `ContractTests`.
 - A create now reads the file before it writes, so a post does one more `exists` call for each file. `$.fs` has no exclusive create.
+
+## I1 result: integration of H2 and H3 (2026-11-18)
+
+Branch `orch/integration-h2-h3`, base `orch/session-ff65da95` (H1). It merges H2 (`orch/session-5cf03248`) and H3 (`orch/session-2358313a`).
+
+| Item | Result |
+|---|---|
+| Version rule | One rule: the FNV-1a hash of the file text (`docs/store.md`, "Version rule"). `backend.ts` has `versionOf` and `readSessionVersioned` |
+| Rule tests | `VersionRuleTests` (C#) and `backend.test.ts` check the same three values |
+| `readTemplate` | Reads `<store>/templates/<kind>/` first, else `<home>/templates/<kind>/` |
+| `storeRoot` | Same behavior. A comment names `%LOCALAPPDATA%\orch\store` as the H4 target |
+| Cursor merge | `StreamSubscription.Done` holds a lock on the repository. Without it, `Two_writers_of_one_cursor_lose_no_done_id` failed on H2 |
+
+Tests: `dotnet test --solution Orchestrator.slnx` passes 410, skips 7. `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` passes 8 of 8.

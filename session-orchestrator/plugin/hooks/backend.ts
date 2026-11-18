@@ -35,17 +35,30 @@ async function create($: any, path: string, text: string): Promise<void> {
   await $.fs.write(path, text)
 }
 
-// Rule 2: if the entity on disk has a version, a save with an old version fails. With no expected version, the save
-// replaces the file. No hook file has a version on the C# side yet; a caller passes the version that it read.
-async function replace($: any, path: string, value: unknown, expected?: number): Promise<void> {
+// The version of a stored file: a 64-bit FNV-1a hash of its UTF-8 text, as a signed 64-bit number. Never 0, because
+// 0 means "not stored". The C# side uses the same rule (Versions.Of in Orchestrator.Store/Local), so both sides agree.
+export function versionOf(text: string | undefined): bigint {
+  if (text === undefined) return 0n
+  let hash = 0xcbf29ce484222325n
+  for (const b of new TextEncoder().encode(text)) {
+    hash ^= BigInt(b)
+    hash = (hash * 0x100000001b3n) & 0xffffffffffffffffn
+  }
+  return hash === 0n ? 1n : BigInt.asIntN(64, hash)
+}
+
+// Rule 2: a save with an expected version fails if the file on disk has another version (another text). With no
+// expected version, the save replaces the file. A caller passes the version that it read (readSessionVersioned).
+async function replace($: any, path: string, value: unknown, expected?: bigint): Promise<void> {
   if (expected !== undefined) {
-    const old = await readJson($, path)
-    const version = typeof old?.version === 'number' ? old.version : undefined
-    if (version !== undefined && version !== expected) throw new StoreConflict(`${path}: version ${expected} is old, the store has ${version}`)
+    const version = versionOf(await readText($, path))
+    if (version !== expected) throw new StoreConflict(`${path}: version ${expected} is old, the store has ${version}`)
   }
   await $.fs.write(path, json(value))
 }
 
+// Today: ORCH_STORE, else <home>/store. Target of H4 (the H1 decision): %LOCALAPPDATA%\orch\store as the default
+// root, with the move of the old store. H4 changes this fallback and install.ps1 -Store together.
 export async function storeRoot($: any): Promise<string> {
   return (await $.env.get('ORCH_STORE')) ?? `${S.home}/store`
 }
@@ -63,7 +76,13 @@ export async function readSession($: any, file: SessionFile, dir: string | undef
   return readJson($, `${dir}/${file}`)
 }
 
-export async function writeSession($: any, file: SessionFile, value: unknown, dir: string | undefined = S.dir, expectedVersion?: number): Promise<void> {
+// A session file with its version, for a later save with an expected version.
+export async function readSessionVersioned($: any, file: SessionFile, dir: string | undefined = S.dir): Promise<{ value: any; version: bigint }> {
+  const text = await readText($, `${dir}/${file}`)
+  return { value: await readSession($, file, dir), version: versionOf(text) }
+}
+
+export async function writeSession($: any, file: SessionFile, value: unknown, dir: string | undefined = S.dir, expectedVersion?: bigint): Promise<void> {
   await replace($, `${dir}/${file}`, value, expectedVersion)
 }
 
@@ -103,7 +122,11 @@ export async function readPolicy($: any): Promise<any> {
   return S.store ? readJson($, `${S.store}/policy.json`) : undefined
 }
 
+// A template file. The store templates root of F1 (<store>/templates/<kind>/) comes first: a store folder with a core
+// name replaces the core template. Else the core templates of the tool (<home>/templates/<kind>/).
 export async function readTemplate($: any, kind: string, file: TemplateFile): Promise<any> {
+  if (S.store && (await $.fs.exists(`${S.store}/templates/${kind}/schema.json`)))
+    return readJson($, `${S.store}/templates/${kind}/${file}.json`)
   return readJson($, `${S.home}/templates/${kind}/${file}.json`)
 }
 
