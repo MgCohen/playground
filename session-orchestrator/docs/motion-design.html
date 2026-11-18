@@ -927,26 +927,25 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
     </div>
     <div class="spec tweak">
       <div class="head"><span class="tag">N2 · notify</span><h2>Notification</h2></div>
-      <p>Pick a kind and an event, then click "Send event". The first four kinds are the Windows toast: Windows draws it. The last three are our own window.</p>
+      <p>Pick a kind and an event, then click "Send event". All kinds are our own window and our own motion. The Windows toast is not used: its layout is fixed (decision of 2026-11-18).</p>
       <div><div class="sub" style="margin-bottom:4px">Kind</div>
-        <div class="sw" id="n-kind"><button aria-pressed="false" data-v="toast">Toast</button><button aria-pressed="true" data-v="toastbtn">Toast + buttons</button><button aria-pressed="false" data-v="reply">Toast + reply</button><button aria-pressed="false" data-v="reminder">Reminder</button><button aria-pressed="false" data-v="peek">Peek bubble</button><button aria-pressed="false" data-v="mcard">Mini card</button><button aria-pressed="false" data-v="flash">Form only</button></div></div>
+        <div class="sw" id="n-kind"><button aria-pressed="true" data-v="peek">Peek bubble</button><button aria-pressed="false" data-v="mcard">Mini card</button><button aria-pressed="false" data-v="flash">Form only</button></div></div>
       <div><div class="sub" style="margin-bottom:4px">Event</div>
         <div class="sw" id="n-evt"><button aria-pressed="true" data-v="q">Question</button><button aria-pressed="false" data-v="rep">Report</button><button aria-pressed="false" data-v="blk">Blocked</button></div></div>
       <label for="n-hide">Hide after: <b id="n-hide-v">5 s</b><input id="n-hide" type="range" min="2" max="12" step="1" value="5"></label>
       <div class="opts">
-        <div class="opt"><b>W</b><span class="t">Windows toast</span><span class="d">The look of Windows, with our logo (the ring). It works when the widget is closed and it stays in the notification center. Buttons and a reply box work from the toast. A reminder stays until you act.</span></div>
         <div class="opt"><b>P</b><span class="t">Peek bubble</span><span class="d">A short text comes out of the form, then goes back into it. Our look, small.</span></div>
         <div class="opt"><b>C</b><span class="t">Mini card</span><span class="d">A small card rises from the form, with the answer buttons. Our own toast.</span></div>
         <div class="opt"><b>F</b><span class="t">Form only</span><span class="d">No text. Only the attention motion and the new count on the form. The quietest kind.</span></div>
       </div>
-      <p class="cost">Build: the toast needs an app id that the install registers once. Windows owns the toast layout: no custom shapes and no motion. The peek bubble and the mini card are the same native window as the form.</p>
+      <p class="cost">Build: the peek bubble and the mini card are the same native window as the form. No install step is needed.</p>
       <div class="vals" id="n-vals"></div>
     </div>
   </section>
   <div class="answer">
     <h2>How to answer</h2>
     <p>Copy the value line above, or say the change. You can pick more than one, for example a form for each case. For example:</p>
-    <code>N1: ball + ring, above the tray, pulse, size 40; N2: toast + buttons for questions, peek bubble for reports, hide after 5 s</code>
+    <code>N1: ball + ring, above the tray, pulse, size 40; N2: mini card for questions, peek bubble for reports, hide after 5 s</code>
   </div>
   </div>
   <div class="panel" id="p-scroll" role="tabpanel" aria-labelledby="tab-scroll" hidden>
@@ -1574,7 +1573,7 @@ var Saved = (function () {
 // ===== N1, N2: minimize and notify =====
 (function () {
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var ns = { form: "ring", place: "tray", att: "pulse", size: 40, kind: "toastbtn", evt: "q", hide: 5, c: { q: 3, rev: 1, rep: 2, blk: 1 } };
+  var ns = { form: "ring", place: "tray", att: "pulse", size: 40, kind: "peek", evt: "q", hide: 5, c: { q: 3, rev: 1, rep: 2, blk: 1 } };
   var COL = { q: "var(--b-q)", rev: "var(--b-rev)", rep: "var(--b-rep)", blk: "var(--b-blk)" };
   var WORD = { q: ["question", "questions"], rev: ["review", "reviews"], rep: ["report", "reports"], blk: ["blocked", "blocked"] };
   var EVT = {
@@ -1620,6 +1619,8 @@ var Saved = (function () {
     }
   }
   function renderMini() {
+    if (["peek", "mcard", "flash"].indexOf(ns.kind) < 0) ns.kind = "peek";   // the Windows toast kinds are gone
+    document.querySelectorAll("#n-kind button").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.v === ns.kind ? "true" : "false"); });
     [n1, n2].forEach(function (m) { m.dataset.form = ns.form; m.dataset.place = ns.place; m.innerHTML = miniHTML(); });
     ["q", "rev", "rep", "blk"].forEach(function (k) { document.getElementById("n-" + k).value = ns.c[k]; document.getElementById("n-" + k + "-v").textContent = ns.c[k]; });
     document.getElementById("n-size-v").textContent = ns.size + " px";
