@@ -1,5 +1,5 @@
 /* orch inbox UI: the Porcelain Orange theme of Runner Studio (docs/inbox-design.html).
-   Raised cards, carved wells, arc rings. Doto for titles and numbers, Inter for text, JetBrains Mono for ids and times. */
+   Raised cards, carved wells, arc rings. Inter for titles, numbers and text (V14: no dotted font), JetBrains Mono for ids and times. */
 :root {
   --canvas: #e6e3de; --canvas-tx: #45423d;
   --surf: #fdfdfc; --text: #1b1a18; --tx2: #3a3834; --muted: #5f5b55; --line-c: rgba(27,26,24,.10);
@@ -19,7 +19,7 @@
   --r: 22px; --r-sm: 12px;
   --ease-out: cubic-bezier(.2,.8,.2,1); --ease-spring: cubic-bezier(.3,1.45,.5,1); --shine: rgba(255,255,255,.55);
   interpolate-size: allow-keywords;
-  --f-disp: Doto, "Cascadia Mono", monospace; --f-body: Inter, system-ui, "Segoe UI", sans-serif; --f-mono: "JetBrains Mono", "Cascadia Mono", monospace;
+  --f-disp: Inter, system-ui, "Segoe UI", sans-serif; --f-body: Inter, system-ui, "Segoe UI", sans-serif; --f-mono: "JetBrains Mono", "Cascadia Mono", monospace;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
@@ -74,8 +74,9 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .path .cr:hover { color: var(--text); text-decoration: underline; }
 .path .psep { color: var(--muted); font-size: 12px; flex: none; }
 .path .cur { margin: 0; font: 700 15px/1.2 var(--f-body); color: var(--text); flex: 0 0 auto; max-width: 62%; overflow: hidden; text-overflow: ellipsis; }
-.title { font-size: 19px; line-height: 1.1; margin: 0; font-weight: 800; }
-.disp { font-family: var(--f-disp); font-weight: 800; letter-spacing: .02em; }
+/* V14: the title of a tab page has the bold body font, as the title of a sub-page (.path .cur). */
+.title { font: 700 18px/1.1 var(--f-body); letter-spacing: -.01em; margin: 0; }
+.disp { font-family: var(--f-disp); font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
 .gt { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--canvas-tx); margin: 4px 6px -4px; }
 .row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-width: 0; }
 .row.flat { padding: 0; }
@@ -189,6 +190,8 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .deck-screen { flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: calc(100dvh - 190px); }
 .pile { position: relative; flex: 1; min-height: 380px; }
 /* M3: a real pile. Each card behind is 8 px lower and 4.5 % smaller; when the top card leaves, each card moves up one slot. */
+/* V17: a drag on the card (or on its link) is a swipe, never a native drag of a link or an image. */
+.pcard, .pcard a, .pcard img { -webkit-user-drag: none; }
 .pcard { position: absolute; inset: 0 0 14px; display: flex; flex-direction: column; touch-action: pan-y; user-select: none; will-change: transform; overflow: hidden;
   transform: translateY(calc(var(--i, 0) * 8px)) scale(calc(1 - var(--i, 0) * .045)); transform-origin: 50% 100%; z-index: calc(10 - var(--i, 0));
   transition: transform .32s var(--ease-out), opacity .32s var(--ease-out); }

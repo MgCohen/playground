@@ -25,6 +25,7 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Tray/SelfTest.cs", [], "the screenshots of the tray self test"),
         ("src/Orchestrator.Tray/SelfTest.Motion.cs", [], "the screenshots of the motion checks of the tray self test"),
         ("src/Orchestrator.Tray/SelfTest.Cards.cs", [], "the pictures of the cards of the tray self test (V7)"),
+        ("src/Orchestrator.Tray/SelfTest.Swipe.cs", [], "the picture of the swipe check of the tray self test (V17)"),
         ("src/Orchestrator.Tray/SelfTest.Overlap.cs", [], "the test place of the edge tab on the screen (V3)"),
         ("src/Orchestrator.Tray/WidgetForm.cs", [], "the place of the tray widget on the screen"),
         ("src/Orchestrator.Tray/EdgeTab.cs", [], "the place of the edge tab on the screen"),

@@ -20,7 +20,8 @@
                 <article class="crd pcard @(i > 0 ? "behind" : Arrives(c) ? "arrive" : "")" style="--i:@i" data-deck-card="@(i == 0)" aria-hidden="@(i > 0 ? "true" : null)" @key="c.Id">
                     @if (i == 0)
                     {
-                        <a class="card-link" href="events/@c.Id" aria-label="Open the full document"></a>
+                        @* V17: no native link drag, or the drag of the browser cancels the swipe. *@
+                        <a class="card-link" href="events/@c.Id" aria-label="Open the full document" draggable="false"></a>
                     }
                     <CardPreview Card="c" Now="Board.Now" />
                     @if (i == 0)
