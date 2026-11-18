@@ -1152,4 +1152,6 @@ C5 moves code behind the adapter and keeps the logic of today. No behavior chang
 | `templates/*/render/*.md` | The text names `mcp__orch__*` tools and `orch:` skills | A render for each engine, or tool names from the adapter |
 | `plugin/` | The live side in Claude Code | Stays: it is the Claude Code part of the adapter |
 
+Later: enforce the provider boundary. Options: `Orchestrator.Providers` as its own assembly that only the composition root references, and an NUnit architecture test that fails on `claude`, `CLAUDE_CODE_`, `Claude-Data` or a `ProcessStartInfo` of a provider outside `Providers/`. `plugin/` is out of the check.
+
 Open: a probe of `set_session_title` from a child and from the parent; the first engine after Claude Code; a team owner.
