@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Providers.ClaudeCode;
@@ -125,21 +124,37 @@ public sealed class CloudWorkerTests
     }
 
     [Test]
-    public void The_cloud_arguments_start_a_session_or_name_it()
+    public void The_cloud_arguments_start_a_session_or_send_to_it()
     {
-        var start = ClaudeCodeProvider.CloudArguments(new TurnRequest("s1", "C:/x", "brief", true) { Where = Places.Cloud, Title = "Cloud child", Agent = "worker" });
-        Assert.That(start, Is.EqualTo(new[] { "--cloud", "-n", "Cloud child", "--agent", "orch:worker" }));
-        var next = ClaudeCodeProvider.CloudArguments(new TurnRequest("s1", "C:/x", "more", false) { Where = Places.Cloud, AppId = "session_01abc" });
-        Assert.That(next, Is.EqualTo(new[] { "--cloud", "session_01abc" }));
+        var start = ClaudeCodeProvider.CloudArguments(new TurnRequest("s1", "C:/x", "the \"brief\"", true) { Where = Places.Cloud, Title = "Cloud child" });
+        Assert.That(start, Is.EqualTo(new[] { "--cloud", "the \"brief\"" }), "a start is not print mode: print mode refuses --cloud");
+        var next = ClaudeCodeProvider.CloudArguments(new TurnRequest("s1", "C:/x", "more", false) { Where = Places.Cloud, AppId = "session_01abcdefgh" });
+        Assert.That(next, Is.EqualTo(new[] { "-p", "more", "--cloud", "session_01abcdefgh" }));
         Assert.That(next, Has.None.EqualTo("--resume").And.None.EqualTo("--session-id"));
     }
 
     [Test]
-    public void The_cloud_session_id_is_the_first_session_id_of_the_output()
+    public void The_cloud_session_id_comes_from_the_output_of_the_start()
     {
-        var lines = new[] { "{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"session_01abc\"}", "{\"type\":\"result\",\"session_id\":\"session_01abc\"}" }
-            .Select(l => JsonSerializer.Deserialize<JsonElement>(l));
-        Assert.That(ClaudeCodeProvider.CloudSessionId(lines), Is.EqualTo("session_01abc"));
-        Assert.That(ClaudeCodeProvider.CloudSessionId([JsonSerializer.Deserialize<JsonElement>("{\"type\":\"x\"}")]), Is.Null);
+        var output = string.Join('\n', "Created cloud session session_01Y7UMGXQGcsekzz7bDemKjq", "View: https://claude.ai/code/session_01Y7UMGXQGcsekzz7bDemKjq");
+        Assert.That(ClaudeCodeProvider.CloudSessionId(output), Is.EqualTo("session_01Y7UMGXQGcsekzz7bDemKjq"));
+        Assert.That(ClaudeCodeProvider.CloudSessionId("no id here, only session_x"), Is.Null);
+    }
+
+    [Test]
+    public void The_cloud_environment_file_names_each_variable_and_holds_no_secret()
+    {
+        var folder = Path.Combine(Home.Root(), "src", "Orchestrator.Providers", "ClaudeCode", "Cloud");
+        var values = File.ReadAllLines(Path.Combine(folder, "environment.env"))
+            .Where(l => l.Length > 0 && !l.StartsWith('#'))
+            .Select(l => l.Split('=', 2))
+            .ToDictionary(p => p[0], p => p[1]);
+        Assert.That(values.Keys, Is.SupersetOf(new[] { "ORCH_URL", "ORCH_TOKEN", "ORCH_IMPORT", "DOTNET_ROOT" }));
+        Assert.That(values["ORCH_TOKEN"], Is.Empty, "the token is a secret: it never goes in the repository");
+        var setup = File.ReadAllText(Path.Combine(folder, "setup.sh"));
+        Assert.That(setup, Does.Contain("set -euo pipefail"));
+        Assert.That(setup, Does.Contain("dotnet tool update -g Orchestrator.Cli"));
+        Assert.That(setup, Does.Contain("\"defaultMode\""));
+        Assert.That(setup, Does.Not.Contain("ORCH_TOKEN="));
     }
 }
