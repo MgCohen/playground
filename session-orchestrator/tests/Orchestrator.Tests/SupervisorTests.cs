@@ -13,7 +13,7 @@ public sealed class SupervisorTests
         var id = t.Create("Do the work.", "root");
         await t.Cycle();
         Assert.That(t.Turns, Is.EqualTo(new[] { new TurnRequest(id, "C:/x", "Do the work.", true) { Title = "root" } }));
-        Assert.That(t.Store.Meta(id).Started, Is.True);
+        Assert.That(t.Store.Session(id).Lifecycle.Started, Is.True);
         Assert.That(t.Store.Pending(id).Text, Is.Empty);
     }
 

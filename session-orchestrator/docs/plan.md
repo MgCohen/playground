@@ -1157,9 +1157,9 @@ Port map:
 |---|---|---|---|---|---|
 | Event stream | `Event`, envelope id | `events/<day>/` | Built (H2) | Notion database | H2; Notion H6 |
 | Envelope bodies | `Body`, body path | `bodies/<day>/` | Built (H2) | Page content | H2; Notion H6 |
-| Session registry | `SessionEntry`, session id | `sessions/<id>/session.json` | Designed (S1, PR #28) | Notion database | S2; Notion H6 |
+| Session registry | `SessionEntry`, session id | `sessions/<id>/session.json` | Built (S2) | Notion database | Notion H6 |
 | Templates | `Definition`, kind | `templates/<kind>/` | Built (F2: `Definitions(Catalog.Templates)`) | Notion database | F2; Notion H6 |
-| Session settings | Field `settings` of `SessionEntry` | `sessions/<id>/session.json` | Designed (S1) | With the registry | S2 |
+| Session settings | Field `settings` of `SessionEntry` | `sessions/<id>/session.json` | Built (S2): tiers and resolution | With the registry | S3 |
 | Modes | `Definition`, name | `templates/modes/<name>/` | Built (F2: schema, 4 presets) | Notion database | F2; readers S4 |
 | Workflow definitions | `Definition`, name | `templates/workflows/<name>/` | Built (F2: schema, `planning`) | Notion database | F2; runner C2 |
 | Workflow runs | `WorkflowRun`, run id | In the store (C2 sets the folder) | Designed (C1) | Notion database | C2 |
@@ -1680,6 +1680,56 @@ Web/Program.cs (composition root)
 - `mcp__orch__` and `orch:` in the templates: the tools and skills of our plugin. A render for each engine comes with the second engine.
 - `plugin/`: the Claude Code side of the provider.
 
+## S2 result: session registry (2026-11-18)
+
+Branch `orch/s2-session-registry`, base `orch/integration-i3` (PR #38). The store contract is in `docs/store.md`, section "Session registry". The decisions are in `docs/decisions.md` (rows "S2").
+
+```
+orch, supervisor, API, UI
+  FileStore.Registry : SessionRegistry      (Orchestrator.Core/Sessions, the only writer)
+    IRepositories.SessionEntries : IRepository<Doc<SessionEntry>, string>
+      LocalRepositories -> sessions/<id>/session.json (with session.json.lock)
+```
+
+| Item | Before (version 2) | Now (version 3) |
+|---|---|---|
+| Session data | `meta.json` (record `Meta` in the core contract) | `session.json`, record `SessionEntry` |
+| Phase | `control.json` (record `Control`) | `lifecycle.phase`, `at`, `by`, `reason` |
+| `Imported`, `RemoteControl`, `AppId` | Fields of `Meta` | `engine.imported`, `engine.remoteControl`, `engine.appId` |
+| `Background` | Field of `Meta` | Setting `behavior.visibility`: `private` |
+| `AllowDefaults` | Field of `Meta` | Setting `permissions.allowDefaults` |
+| `Agent`, `Skills` | Fields of `Meta` | `type.agent`, `type.skills`; `role` from `Roles.Initial` |
+| `Started`, `CreatedBy` | Fields of `Meta` | `lifecycle.started`, `created`; `SessionEntry.IsNew()` |
+| Codes | None | `code` (`O<n>` root, `C<n>` child), `FullCode`, `AppTitle` |
+| Settings | None | Tiers `behavior` and `permissions`, copy from the direct parent at create, `Configure` by the user or the parent, `Resolve` along the chain |
+| Upgrade | None | `orch store upgrade [--dry-run] [--force]` |
+| Plugin | Reads `meta.json`, `control.json`; store version 2 | Reads `session.json`; store version 3; `/orch-enable` writes the entry |
+
+### Test results
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 531 total: 524 pass, 7 skipped, 0 fail (before S2: 501) |
+| `node --test test/` in `plugin/hooks` | 15 pass, 0 fail |
+| New: `LocalSessionEntryContract` | The repository contract on the registry |
+| New: `SessionCodeTests`, `SessionSettingsTests` | Codes, full code, app title, plugin entry with no code, two writers; defaults, copy from the parent, later parent change, who may configure, mode catalog check, resolution |
+| New: `StoreUpgradeTests` | Version 2 to 3 on a scratch store: each field, codes, phase, settings copy, old files kept, second run, stopped run, dry run, version 1 refused, the version error names the command, `orch store upgrade` with a live session |
+| New: `ArchitectureTests.Only_the_registry_touches_the_session_entries_and_only_the_upgrade_reads_meta_and_control` | Passes |
+| Manual: `orch store upgrade` on a scratch store (`ORCH_STORE` in the scratchpad) | `orch tree` refused version 2 and named the command; the dry run changed nothing; the upgrade made 2 entries; `orch status` showed `code: O1 C1` and the phase `stopped` |
+
+### Behavior changes
+
+- A store of version 2 does not run. The user runs `orch store upgrade` once, with the supervisor stopped. The real store was not upgraded.
+- A plugin of version 2 stays inactive in a store of version 3, and the reverse.
+- A child entry holds a copy of the `allowDefaults` value of its parent. The result of `orch merge` does not change, because it still walks the parent chain.
+- `orch status` shows the full code.
+
+### Not in S2
+
+- `session.created` and `session.changed` envelopes, `/api/sessions` fields for code and settings, `orch session` (S5).
+- The settings schema, `mcp__orch__configure` and the brief block (S3). The readers of the mode axes (S4).
+- The design page `docs/session-design.html` is not published again: the design did not change.
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
@@ -1705,7 +1755,7 @@ flowchart LR
 | H4 | H | Store move to `%LOCALAPPDATA%\orch\store`, index by session, day cache, migration. Done: see "H4 result". `Lifecycle.cs` not changed | After I2. Merge before P0 if both touch `Home` or `Lifecycle.cs` |
 | F2 | F | Templates on `IRepository`; modes and workflows as definitions. Done: see "F2 result" | After I2 |
 | E2 | E | Visuals: the next E1 items and spike E-5 | After I2 |
-| S2 | S | Session registry on `IRepository`, store version 3 | After P0 and H4 |
+| S2 | S | Session registry on `IRepository`, store version 3. Done: see "S2 result" | After P0 and H4 |
 | G2 | G | Cloud workers (G-3, G-4) and the supervisor API with the `orch` HTTP mode (H5) | In parallel with S2 |
 | C2 | C | Workflow runner on `IRepository`, the planning workflow, the term rename in skills and tools. Then C3: one real stream | After S2 and F2 |
 | D2 | D | Named tunnel, service token for cloud workers | After G2, next month |

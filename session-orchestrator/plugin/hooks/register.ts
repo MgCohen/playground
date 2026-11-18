@@ -1,6 +1,6 @@
 import type { Register } from 'claude-code'
 import { ROW_CHARS, S, TICK_MS, homeRoot, now } from './state.ts'
-import { enable, isEnabled, log, readSession, sessionDir, storeRoot, storeVersion, writeHeartbeat, writeMirror, writeSession } from './backend.ts'
+import { enable, isEnabled, log, readSession, readSessionVersioned, sessionDir, storeRoot, storeVersion, writeHeartbeat, writeMirror, writeSession } from './backend.ts'
 import { emitRow } from './events.ts'
 import { beat, findProcess, mayTakeLease, releaseLease, turnOpen, writeLease } from './lease.ts'
 import { deliver, tick, watchLoop } from './deliver.ts'
@@ -38,7 +38,7 @@ export function remoteControlTarget(id: unknown, self: string | undefined): stri
   return typeof id === 'string' && id.startsWith('local_') ? id.slice('local_'.length) : undefined
 }
 
-// meta.json has one writer, the supervisor: the plugin posts the change, and the supervisor writes it (review of PR #14, item 2).
+// session.json has one writer, the registry of the supervisor: the plugin posts the change, and the supervisor writes it (review of PR #14, item 2).
 async function postMetaUpdate($: any, session: string, field: string, value: unknown): Promise<void> {
   await post($, 'meta.update', `session:${S.id}`, 'supervisor', { text: `${field} = ${String(value)}`, session, field, value })
   await log($, `meta.update ${session} ${field} = ${String(value)}`)
@@ -64,7 +64,7 @@ async function mirror($: any, e: any): Promise<void> {
   await emitRow($, e)
 }
 
-export const STORE_VERSION = 2
+export const STORE_VERSION = 3
 
 // A store of another version has another contract: the plugin stays inactive and writes nothing.
 async function versionOk($: any): Promise<boolean> {
@@ -89,8 +89,8 @@ async function activate($: any, dir: string, reason: unknown): Promise<void> {
   if (mayTakeLease(S.holder, open.turn, open.lease, open.now)) await writeLease($, S.holder, reason)
   else await log($, 'a supervisor turn runs: the lease waits for its end')
   const host = await $.env.get('CLAUDE_CODE_HOST_SESSION_ID')
-  const meta = await readSession($, 'meta.json', dir)
-  if (host && meta && meta.appId !== host) await postMetaUpdate($, S.id!, 'appId', host)
+  const entry = await readSession($, 'session.json', dir)
+  if (host && entry && entry.engine?.appId !== host) await postMetaUpdate($, S.id!, 'appId', host)
   await log($, `activate plugin holder=${S.holder} ${JSON.stringify(reason)}`)
   await registerTools($)
   if (S.holder === 'live') watchLoop($).catch((error: unknown) => log($, `watch failed: ${String(error)}`))
@@ -105,16 +105,35 @@ async function activateIfEnabled($: any, event: string): Promise<void> {
   if (await isEnabled($, dir)) await activate($, dir, { event })
 }
 
-async function writeMeta($: any, dir: string, title: string): Promise<void> {
-  const old = await readSession($, 'meta.json', dir)
+// The registry entry of a session that joins with /orch-enable (store version 3). The plugin writes it only here: a new
+// entry, or the new title of its entry, with the version of the read. The supervisor gives the code at its next tick,
+// and the settings resolve from the defaults. Each other change is a meta.update post.
+async function writeEntry($: any, dir: string, title: string): Promise<void> {
+  const { value: old, version } = await readSessionVersioned($, 'session.json', dir)
   if (old && title === '') return
+  if (old) {
+    await writeSession($, 'session.json', { ...old, title, updated: { at: await now($), by: 'orch-enable' } }, dir, version)
+    return
+  }
+  const id = await $.session.id()
   const cwd = await $.session.cwd()
   const name = String(cwd).split(/[\\/]/).filter(Boolean).pop() ?? 'chat'
-  await writeSession($, 'meta.json', {
-    ...(old ?? { id: await $.session.id(), cwd, createdBy: 'orch-enable', createdAt: await now($), started: true }),
-    title: title !== '' ? title : old?.title ?? `App chat in ${name}`,
-  }, dir)
+  const stamp = { at: await now($), by: 'orch-enable' }
+  await writeSession($, 'session.json', {
+    id,
+    engine: { kind: ENGINE_KIND, sessionId: id },
+    title: title !== '' ? title : `App chat in ${name}`,
+    role: 'free',
+    work: { cwd },
+    settings: {},
+    lifecycle: { phase: 'active', at: stamp.at, by: stamp.by, started: true },
+    created: stamp,
+    updated: stamp,
+  }, dir, 0n)
 }
+
+// The engine kind of the entries that this plugin writes: the name of the C# provider (IProvider.Name).
+export const ENGINE_KIND = 'Claude Code'
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
@@ -128,7 +147,7 @@ export const register: Register = on => {
   on('command.run', { command: 'orch-enable' }, async ($, e: any) => {
     const dir = await sessionDir($)
     const title = String(e.args ?? '').trim()
-    await writeMeta($, dir, title)
+    await writeEntry($, dir, title)
     if (S.dir === dir) return { text: `This session is already enabled (${dir}).${title !== '' ? ` New title: ${title}.` : ''}` }
     await enable($, dir)
     await activate($, dir, { event: 'orch-enable' })
@@ -173,7 +192,7 @@ export const register: Register = on => {
     return { consumed: 'orch nudge: the plugin looks at the stream' }
   })
 
-  // F4: this session turned the Remote Control of itself or of a child on or off. meta.json of that session records it,
+  // F4: this session turned the Remote Control of itself or of a child on or off. session.json of that session records it,
   // so the supervisor sends no parent notice, and the archive knows the state.
   on('tool.call', { tool: REMOTE_CONTROL_TOOL }, async ($: any, e: any, next: any) => {
     const result = await next(e)

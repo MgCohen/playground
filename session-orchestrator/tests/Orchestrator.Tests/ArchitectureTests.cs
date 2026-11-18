@@ -67,6 +67,32 @@ public sealed class ArchitectureTests
         Assert.That(unused, Is.Empty, "Remove the entries that match no line.");
     }
 
+    /// <summary>
+    /// S2: the session data goes only through the registry. Only the slice <c>SessionRegistry</c> writes the entries, and
+    /// only the store upgrade reads the files of store version 2.
+    /// </summary>
+    [Test]
+    public void Only_the_registry_touches_the_session_entries_and_only_the_upgrade_reads_meta_and_control()
+    {
+        var allowed = new Dictionary<string, string[]>
+        {
+            ["SessionEntries"] = ["src/Orchestrator.Core/Storage/IRepositories.cs", "src/Orchestrator.Store/Local/LocalRepositories.cs", "src/Orchestrator.Store/FileStore.cs", "src/Orchestrator.Store/StoreUpgrade.cs"],
+            ["StoreFiles.Meta"] = ["src/Orchestrator.Store/StoreUpgrade.cs"],
+            ["StoreFiles.Control"] = ["src/Orchestrator.Store/StoreUpgrade.cs"],
+        };
+        var src = Path.Combine(Repo(), "src");
+        var refused = new List<string>();
+        foreach (var path in Directory.EnumerateFiles(src, "*.cs", SearchOption.AllDirectories))
+        {
+            var file = Path.GetRelativePath(Repo(), path).Replace('\\', '/');
+            if (file.Contains("/obj/") || file.Contains("/bin/")) continue;
+            var text = File.ReadAllText(path);
+            foreach (var (name, files) in allowed)
+                if (Regex.IsMatch(text, $@"\b{Regex.Escape(name)}\b") && !files.Contains(file)) refused.Add($"{file}: {name}");
+        }
+        Assert.That(refused, Is.Empty, "Read and write sessions through FileStore.Registry (SessionRegistry).");
+    }
+
     [Test]
     public void The_scan_finds_store_IO()
     {

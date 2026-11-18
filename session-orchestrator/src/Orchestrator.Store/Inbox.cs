@@ -26,7 +26,7 @@ public sealed class Inbox(FileStore store)
     Card ToCard(Event e)
     {
         var session = e.Session ?? Parties.SessionId(e.From) ?? "";
-        return new Card(e, session, store.Meta(session).Title ?? (session.Length > 8 ? session[..8] : session), store.Events.Fields(e))
+        return new Card(e, session, store.Session(session).Title ?? (session.Length > 8 ? session[..8] : session), store.Events.Fields(e))
         {
             DefaultAt = store.DefaultAt(e) is { } at ? Core.Leases.Times.Format(at) : null,
         };

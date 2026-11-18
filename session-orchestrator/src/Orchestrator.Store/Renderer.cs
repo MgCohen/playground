@@ -70,14 +70,14 @@ public sealed class Renderer(FileStore store)
     void AddChild(Event e, Dictionary<string, object?> data)
     {
         var child = Parties.SessionId(e.From) ?? e.Session ?? e.From;
-        var title = store.Meta(child).Title ?? Short(child);
+        var title = store.Session(child).Title ?? Short(child);
         data["child"] = child;
         data["sender"] = title;
         data.TryAdd("title", title);
     }
 
     string SenderName(string party) =>
-        Parties.SessionId(party) is { } id ? $"session \"{store.Meta(id).Title ?? Short(id)}\" ({id})" : party;
+        Parties.SessionId(party) is { } id ? $"session \"{store.Session(id).Title ?? Short(id)}\" ({id})" : party;
 
     static string Short(string id) => id.Length > 8 ? id[..8] : id;
 }

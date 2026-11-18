@@ -19,7 +19,7 @@ public sealed class DemoSeed
         if (string.IsNullOrEmpty(root)) Assert.Ignore("Set ORCH_SEED to an empty scratch folder.");
         var store = new FileStore(root);
 
-        string Session(string title, string? parent = null) => store.Create(new Meta("") { Title = title, Cwd = Path.GetTempPath(), Parent = parent, Started = true, Branch = "orch/session-demo" });
+        string Session(string title, string? parent = null) => store.Create(new Seed { Title = title, Cwd = Path.GetTempPath(), Parent = parent, Started = true, Branch = "orch/session-demo" });
         void Update(string id, string step, double progress, string summary) =>
             store.Events.Post(new PostInput(EventKinds.Update, Parties.Session(id), Parties.User, new Dictionary<string, object?> { ["step"] = step, ["progress"] = progress, ["summary"] = summary }) { Session = id });
 

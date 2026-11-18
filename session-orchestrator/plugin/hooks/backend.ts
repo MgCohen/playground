@@ -4,7 +4,7 @@
 import { S, now } from './state.ts'
 
 // The files in the folder of one session.
-export type SessionFile = 'lease.json' | 'turn.json' | 'status.json' | 'meta.json' | 'control.json' | 'last-output.json'
+export type SessionFile = 'lease.json' | 'turn.json' | 'status.json' | 'session.json' | 'last-output.json'
 
 export type TemplateFile = 'meta' | 'schema'
 
@@ -106,11 +106,11 @@ export async function writeMirror($: any, ms: number, uuid: unknown, row: unknow
   await $.fs.write(`${S.dir}/mirror/${ms}-${uuid}.json`, json(row))
 }
 
-// The lifecycle control of the session: active, stopped or archived (control.json).
+// The phase of the session: active, stopped or archived (lifecycle.phase of session.json, store version 3).
 export async function controlState($: any): Promise<string> {
   if (!S.dir) return 'active'
-  const control = await readSession($, 'control.json')
-  return typeof control?.state === 'string' ? control.state : 'active'
+  const entry = await readSession($, 'session.json')
+  return typeof entry?.lifecycle?.phase === 'string' ? entry.lifecycle.phase : 'active'
 }
 
 // The log of this process (log-<holder>.txt). It keeps the last 100,000 characters when it grows past 200,000.

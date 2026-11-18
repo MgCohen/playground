@@ -179,7 +179,7 @@ public static class Ui
         n.Blocked is { } b ? b
         : n.Update is { } u ? (u.Step is { Length: > 0 } step ? $"{step}: {u.Summary}" : u.Summary)
         : n.Report is { } r ? r.Summary ?? r.State ?? ""
-        : n.Meta.Cwd ?? "";
+        : n.Meta.Work.Cwd ?? "";
 
     public static string Name(SessionNode n) => n.Meta.Title ?? n.Meta.Id[..Math.Min(8, n.Meta.Id.Length)];
 

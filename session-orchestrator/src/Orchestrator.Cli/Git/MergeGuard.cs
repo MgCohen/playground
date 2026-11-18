@@ -88,8 +88,8 @@ public sealed class MergeGuard(FileStore store, Shell shell, TextWriter output)
 
     bool AllowsDefaults(string session)
     {
-        for (var id = session; id is not null; id = store.Meta(id).Parent)
-            if (store.Meta(id).AllowDefaults == true) return true;
+        for (var id = session; id is not null; id = store.Session(id).Parent)
+            if (store.Session(id).Settings.Flag(SettingTiers.Permissions, SettingTiers.AllowDefaults) == true) return true;
         return false;
     }
 

@@ -30,7 +30,7 @@ else
         <div class="grid3">
             <a class="well met" href="cards"><span class="sub">Cards</span><span class="disp met-n">@cardCount</span></a>
             <a class="well met" href="stream?session=@node.Meta.Id"><span class="sub">Events</span><span class="disp met-n">@eventCount</span></a>
-            <span class="well met"><span class="sub">Age</span><span class="disp met-n">@Ui.Ago(Orchestrator.Core.Leases.Times.Parse(node.Meta.CreatedAt ?? ""), Board.Now)</span></span>
+            <span class="well met"><span class="sub">Age</span><span class="disp met-n">@Ui.Ago(Orchestrator.Core.Leases.Times.Parse(node.Meta.Created?.At ?? ""), Board.Now)</span></span>
         </div>
 
         @if (node.Children.Count > 0)
@@ -62,11 +62,11 @@ else
         <h2 class="gt">Details</h2>
         <div class="crd">
             <div class="kv"><span class="k">Id</span><span class="mono ell">@node.Meta.Id</span></div>
-            @if (node.Meta.Branch is { } branch)
+            @if (node.Meta.Work.Branch is { } branch)
             {
                 <div class="kv"><span class="k">Branch</span><span class="mono ell">@branch</span></div>
             }
-            <div class="kv"><span class="k">Folder</span><span class="mono ell">@node.Meta.Cwd</span></div>
+            <div class="kv"><span class="k">Folder</span><span class="mono ell">@node.Meta.Work.Cwd</span></div>
             <div class="kv"><span class="k">Holder</span><span class="mono">@node.Holder@(node.Live ? " · live" : "")</span></div>
         </div>
 

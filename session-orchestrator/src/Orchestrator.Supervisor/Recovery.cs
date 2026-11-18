@@ -29,7 +29,7 @@ public sealed class Recovery(FileStore store)
         else
         {
             if (store.Events.Body(start ?? Placeholder(marker)) is { } body && body.TryGetProperty("isNew", out var isNew) && isNew.ValueKind == JsonValueKind.True)
-                store.SaveMeta(store.Meta(id) with { Started = false });
+                store.SetStarted(id, false);
             store.Events.Append(EventKinds.TurnFail, Parties.Session(id), Parties.Supervisor, Data.Of(("error", "supervisor restart before the prompt arrived"), ("recovered", true)), Data.Of(("turnStart", marker.Event)), id);
             store.Log($"{id} recovered turn {marker.Event}: the prompt did not arrive, its envelopes have no ack and go in the next turn");
         }

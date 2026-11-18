@@ -47,7 +47,7 @@ public abstract class LiveView : ComponentBase, IDisposable
             Message = done;
             ok = true;
         }
-        catch (Exception e) when (e is MessageException or IOException or ShellException)
+        catch (Exception e) when (e is MessageException or RegistryException or IOException or ShellException)
         {
             Message = e.Message;
         }

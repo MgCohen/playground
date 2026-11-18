@@ -3,6 +3,7 @@ using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
 using Orchestrator.Core.Policy;
+using Orchestrator.Core.Sessions;
 using Orchestrator.Core.Stack;
 using Orchestrator.Core.Storage;
 using Orchestrator.Core.Templates;
@@ -25,9 +26,13 @@ public sealed class FileStore
         Texts = new Texts(templates ?? Home.LoadTemplates(Root));
         Events = new EventStream(Repositories, Clock, writer, Texts.Templates);
         Renderer = new Renderer(this);
+        Registry = new SessionRegistry(Repositories.SessionEntries, Clock, name => Home.Modes(Root).Files(name) is not null);
     }
 
     public IRepositories Repositories { get; }
+
+    /// <summary>The session registry: the only way to read and write the session entries.</summary>
+    public SessionRegistry Registry { get; }
 
     /// <summary>Where the store is: <see cref="IRepositories.Location"/>.</summary>
     public string Root { get; }
@@ -63,9 +68,14 @@ public sealed class FileStore
         else Delete(id, StoreFiles.Enabled);
     }
 
-    public Meta Meta(string id) => ReadJson<Meta>(id, StoreFiles.Meta) ?? new Meta(id);
+    /// <summary>The registry entry of a session, or an empty entry with this id.</summary>
+    public SessionEntry Session(string id) => Registry.Of(id);
 
-    public void SaveMeta(Meta meta) => WriteJson(meta.Id, meta, StoreFiles.Meta);
+    /// <summary>Marks that the engine session exists (true), or that the next turn must make it again (false).</summary>
+    public void SetStarted(string id, bool started)
+    {
+        if (Registry.Exists(id)) Registry.Update(id, e => e with { Lifecycle = e.Lifecycle with { Started = started } }, Parties.Supervisor);
+    }
 
     public Lease Lease(string id) => ReadJson<Lease>(id, StoreFiles.Lease) ?? new Lease(Holders.None, "");
 
@@ -77,21 +87,23 @@ public sealed class FileStore
 
     public string? Cwd(string id)
     {
-        if (Meta(id).Cwd is { } cwd) return cwd;
+        if (Session(id).Work.Cwd is { } cwd) return cwd;
         var reason = Lease(id).Reason;
         return reason is { ValueKind: JsonValueKind.Object } r && r.TryGetProperty("start", out var start) && start.ValueKind == JsonValueKind.Object && start.TryGetProperty("cwd", out var c)
             ? c.GetString()
             : null;
     }
 
-    /// <summary>Writes meta.json and the enabled file of a new session. The first message is a post to the session.</summary>
-    public string Create(Meta meta)
+    /// <summary>Adds the registry entry and the enabled file of a new session. The first message is a post to the session.</summary>
+    public SessionEntry Create(SessionSpec spec)
     {
-        var id = meta.Id.Length > 0 ? meta.Id : Guid.NewGuid().ToString();
-        SaveMeta(meta with { Id = id, CreatedAt = Now });
-        SetEnabled(id, true);
-        return id;
+        var entry = Registry.Create(spec with { Engine = spec.Engine with { Kind = spec.Engine.Kind ?? EngineKind } });
+        SetEnabled(entry.Id, true);
+        return entry;
     }
+
+    /// <summary>The name of the provider that new entries record as <see cref="EngineRef.Kind"/>.</summary>
+    public static string EngineKind => Providers.ProviderFactory.Default.Name;
 
     // Questions: envelopes of kind question from a session. The thread is the decision id.
 

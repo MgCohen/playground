@@ -100,8 +100,8 @@ function self(): string {
 }
 
 async function parentId($: any): Promise<string | undefined> {
-  const meta = await readSession($, 'meta.json')
-  return typeof meta?.parent === 'string' ? meta.parent : undefined
+  const entry = await readSession($, 'session.json')
+  return typeof entry?.parent === 'string' ? entry.parent : undefined
 }
 
 export const EARLY_DONE =

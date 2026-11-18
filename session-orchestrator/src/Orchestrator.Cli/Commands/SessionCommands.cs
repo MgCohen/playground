@@ -55,14 +55,14 @@ public static class SessionCommands
     {
         var store = c.Store;
         var all = store.AllSessions().ToHashSet();
-        var metas = all.Select(store.Meta).ToList();
+        var metas = all.Select(store.Session).ToList();
         var now = store.Clock.GetUtcNow();
-        void Print(Meta meta, int depth)
+        void Print(SessionEntry meta, int depth)
         {
             c.Output.WriteLine($"{new string(' ', depth * 2)}{Line(store, meta, now)}");
-            foreach (var child in metas.Where(m => m.Parent == meta.Id).OrderBy(m => m.CreatedAt)) Print(child, depth + 1);
+            foreach (var child in metas.Where(m => m.Parent == meta.Id).OrderBy(m => m.Created?.At)) Print(child, depth + 1);
         }
-        foreach (var root in metas.Where(m => m.Parent is null || !all.Contains(m.Parent)).OrderBy(m => m.CreatedAt)) Print(root, 0);
+        foreach (var root in metas.Where(m => m.Parent is null || !all.Contains(m.Parent)).OrderBy(m => m.Created?.At)) Print(root, 0);
         if (metas.Count == 0) c.Output.WriteLine("No sessions.");
         return 0;
     }
@@ -71,12 +71,13 @@ public static class SessionCommands
     {
         var store = c.Store;
         var id = c.Session(1);
-        var meta = store.Meta(id);
+        var meta = store.Session(id);
         var now = store.Clock.GetUtcNow();
         c.Output.WriteLine(Line(store, meta, now));
         c.Output.WriteLine($"  id: {id}");
         c.Output.WriteLine($"  cwd: {store.Cwd(id)}");
-        if (meta.Branch is { } branch) c.Output.WriteLine($"  worktree: {meta.Cwd} on {branch} (repository {meta.Repo})");
+        c.Output.WriteLine($"  code: {store.Registry.FullCode(id)}");
+        if (meta.Work.Branch is { } branch) c.Output.WriteLine($"  worktree: {meta.Work.Cwd} on {branch} (repository {meta.Work.Repo})");
         if (meta.Parent is { } parent) c.Output.WriteLine($"  parent: {parent}");
         var lease = store.Lease(id);
         c.Output.WriteLine($"  lease: {lease.Holder} since {lease.Since}{(store.IsLive(id, now) ? " (live)" : "")}");
@@ -89,7 +90,7 @@ public static class SessionCommands
         return 0;
     }
 
-    public static string Line(FileStore store, Meta meta, DateTimeOffset now)
+    public static string Line(FileStore store, SessionEntry meta, DateTimeOffset now)
     {
         var id = meta.Id;
         var state = store.Status(id)?.State ?? "new";
@@ -99,7 +100,7 @@ public static class SessionCommands
         if (report is not null) flags.Add($"report {report}");
         if (open > 0) flags.Add($"{open} open");
         if (store.Blocked(id)?.Reason is not null) flags.Add("blocked");
-        if (new Lifecycle(store).Control(id).State is var control && control != Core.Contract.ControlStates.Active) flags.Add(control);
+        if (new Lifecycle(store).Control(id).Phase is var control && control != Core.Contract.ControlStates.Active) flags.Add(control);
         return $"{Short(id)} {meta.Title ?? "(no title)"} [{string.Join(", ", flags)}]";
     }
 

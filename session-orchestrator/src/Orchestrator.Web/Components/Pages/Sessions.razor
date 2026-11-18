@@ -39,7 +39,7 @@
     protected override void Load()
     {
         tree = Board.Tree();
-        parents = Ui.Flatten(tree).Where(n => n.Control != ControlStates.Archived).Select(n => new ParentOption(n.Meta.Id, Ui.Name(n), n.Meta.Cwd)).ToList();
+        parents = Ui.Flatten(tree).Where(n => n.Control != ControlStates.Archived).Select(n => new ParentOption(n.Meta.Id, Ui.Name(n), n.Meta.Work.Cwd)).ToList();
     }
 
     bool Start(NewSession input)

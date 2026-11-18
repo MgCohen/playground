@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
+using Orchestrator.Core.Sessions;
 using Orchestrator.Core.Storage;
 
 namespace Orchestrator.Store.Local;
@@ -26,6 +27,10 @@ public sealed class LocalRepositories : IRepositories
         Cursors = Repository(id => Path.Combine(this.root, StoreFiles.Subscriptions, StoreFiles.Json(id)), () => Nested(StoreFiles.Subscriptions), JsonCodec<CursorState>.Instance, lockFiles: true);
         Nudges = Repository(id => Path.Combine(this.root, StoreFiles.Nudges, id), () => Files.Names(Path.Combine(this.root, StoreFiles.Nudges)), TextCodec.Instance);
         Sessions = new LocalSessionFolders(Path.Combine(this.root, StoreFiles.Sessions));
+        SessionEntries = Repository(
+            id => Path.Combine(this.root, StoreFiles.Sessions, id, StoreFiles.Session),
+            () => Files.Names(Path.Combine(this.root, StoreFiles.Sessions)).Where(id => File.Exists(Path.Combine(this.root, StoreFiles.Sessions, id, StoreFiles.Session))),
+            JsonCodec<SessionEntry>.Instance, lockFiles: true);
         Log = new LocalLogSink(Path.Combine(this.root, StoreFiles.SupervisorLog));
     }
 
@@ -38,6 +43,7 @@ public sealed class LocalRepositories : IRepositories
     public IRepository<Doc<CursorState>, string> Cursors { get; }
     public IRepository<Doc<string>, string> Nudges { get; }
     public IRepository<Doc<string>, string> Sessions { get; }
+    public IRepository<Doc<SessionEntry>, string> SessionEntries { get; }
     public ILogSink Log { get; }
 
     public IRepository<Doc<T>, string> SessionFile<T>(string file) =>

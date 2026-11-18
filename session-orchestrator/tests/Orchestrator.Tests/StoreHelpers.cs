@@ -1,5 +1,6 @@
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
+using Orchestrator.Core.Sessions;
 using Orchestrator.Core.Stack;
 using Orchestrator.Store;
 
@@ -9,12 +10,34 @@ namespace Orchestrator.Tests;
 public static class StoreHelpers
 {
     /// <summary>A new session with its first message from the user.</summary>
-    public static string Create(this FileStore store, Meta meta, string text)
+    public static string Create(this FileStore store, Seed seed, string text)
     {
-        var id = store.Create(meta);
+        var id = store.Create(seed);
         store.Send(id, text);
         return id;
     }
+
+    /// <summary>A new registry entry and the enabled file. With no <see cref="Seed.CreatedBy"/>, the engine session exists.</summary>
+    public static string Create(this FileStore store, Seed seed)
+    {
+        var settings = new SessionSettings();
+        if (seed.AllowDefaults is { } allow) settings = settings.With(SettingTiers.Permissions, SettingTiers.AllowDefaults, allow);
+        if (seed.Background is { } background) settings = settings.With(SettingTiers.Behavior, SettingTiers.Visibility, background ? SettingTiers.Private : SettingTiers.Public);
+        return store.Create(new SessionSpec
+        {
+            Id = seed.Id,
+            Title = seed.Title,
+            Parent = seed.Parent,
+            Work = new SessionWork { Cwd = seed.Cwd, Repo = seed.Repo, Branch = seed.Branch, Worktree = seed.Worktree },
+            Settings = settings,
+            Started = seed.Started ?? (seed.CreatedBy is null ? true : null),
+            By = seed.CreatedBy ?? Parties.User,
+        }).Id;
+    }
+
+    /// <summary>Changes the registry entry of a session, as the supervisor does.</summary>
+    public static SessionEntry Change(this FileStore store, string id, Func<SessionEntry, SessionEntry> change) =>
+        store.Registry.Update(id, change, Parties.Supervisor);
 
     public static Event Send(this FileStore store, string id, string text, string from = Parties.User) => new Messages(store).Send(id, text, from);
 
@@ -56,4 +79,20 @@ public static class StoreHelpers
     /// <summary>True when the answer to the decision has an ack: the session got it.</summary>
     public static bool IsDelivered(this FileStore store, string id, string decision) =>
         store.Events.FirstAnswer(decision) is { } answer && store.Events.IsAcked(answer.Id);
+}
+
+/// <summary>The fields of a test session, with the names of store version 2. <see cref="StoreHelpers.Create(FileStore, Seed)"/> makes the entry.</summary>
+public sealed record Seed
+{
+    public string? Id { get; init; }
+    public string? Title { get; init; }
+    public string? Cwd { get; init; }
+    public string? Parent { get; init; }
+    public string? CreatedBy { get; init; }
+    public bool? Started { get; init; }
+    public bool? Worktree { get; init; }
+    public string? Repo { get; init; }
+    public string? Branch { get; init; }
+    public bool? AllowDefaults { get; init; }
+    public bool? Background { get; init; }
 }

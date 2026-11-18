@@ -57,7 +57,7 @@ public static class OrchestratorApi
     public static SessionView View(Supervisor.Supervisor supervisor, string id, DateTimeOffset now)
     {
         var store = supervisor.Store;
-        var meta = store.Meta(id);
+        var meta = store.Session(id);
         var state = new StateReader(store).State(id).File;
         return new SessionView(id, meta.Title, meta.Parent, store.Lease(id).Holder, store.IsLive(id, now), supervisor.IsRunning(id),
             store.Status(id)?.State, store.Report(id), store.Blocked(id)?.Reason, store.OpenDecisions(id).Count)
@@ -220,7 +220,7 @@ public static class OrchestratorApi
         {
             return work();
         }
-        catch (Exception e) when (e is MessageException or FormatException)
+        catch (Exception e) when (e is MessageException or RegistryException or FormatException)
         {
             return Results.BadRequest(new { error = e.Message });
         }

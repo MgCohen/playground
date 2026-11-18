@@ -2,6 +2,7 @@ using System.Text.Json;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Policy;
+using Orchestrator.Core.Sessions;
 using Orchestrator.Core.Stack;
 using Orchestrator.Core.Templates;
 
@@ -41,10 +42,29 @@ public sealed class Messages(FileStore store)
             ("skills", brief.Skills), ("agent", brief.Agent), ("cwd", brief.Cwd), ("worktree", brief.Worktree), ("parent", brief.Parent), ("allowDefaults", brief.AllowDefaults), ("background", brief.Background));
         Check(Kinds.Brief, fields);
         if (string.IsNullOrEmpty(brief.Cwd)) throw new MessageException("brief: cwd is necessary");
-        var id = Guid.NewGuid().ToString();
-        store.Create(new Meta(id) { Title = brief.Title, Cwd = brief.Cwd, Parent = brief.Parent, CreatedBy = createdBy, Worktree = brief.Worktree, Agent = brief.Agent, Skills = brief.Skills?.ToList(), AllowDefaults = brief.AllowDefaults, Background = brief.Background });
+        var id = store.Create(new SessionSpec
+        {
+            Title = brief.Title,
+            Parent = brief.Parent,
+            Work = new SessionWork { Cwd = brief.Cwd, Worktree = brief.Worktree },
+            Type = brief.Agent is null && brief.Skills is null ? null : new SessionType { Agent = brief.Agent, Skills = brief.Skills?.ToList() },
+            Settings = BriefSettings(brief),
+            By = createdBy,
+        }).Id;
         store.Events.Post(new PostInput(EventKinds.Brief, from, Parties.Session(id), Clean(fields)) { Session = id, Refs = brief.Parent is { } p ? Fields(("parent", p)) : null });
         return id;
+    }
+
+    /// <summary>
+    /// The settings that a brief sets: <c>allowDefaults</c> (tier permissions) and <c>background</c> (tier behavior,
+    /// visibility private). Each other value is a copy of the parent value.
+    /// </summary>
+    static SessionSettings BriefSettings(BriefFields brief)
+    {
+        var settings = new SessionSettings();
+        if (brief.AllowDefaults is { } allow) settings = settings.With(SettingTiers.Permissions, SettingTiers.AllowDefaults, allow);
+        if (brief.Background is { } background) settings = settings.With(SettingTiers.Behavior, SettingTiers.Visibility, background ? SettingTiers.Private : SettingTiers.Public);
+        return settings;
     }
 
     /// <summary>Free text to a session. The sender is the user, a session or the supervisor.</summary>
