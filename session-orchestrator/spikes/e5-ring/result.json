@@ -1,0 +1,50 @@
+{
+  "alpha": {
+    "hole": "#191970",
+    "body": "#ff6a1a",
+    "edge": [
+      "#ff6a1a",
+      "#ff6a1a",
+      "#ff6a1a",
+      "#ff6a1a",
+      "#ff6a1a",
+      "#cc582d",
+      "#994640",
+      "#663454",
+      "#322267",
+      "#191970",
+      "#191970",
+      "#191970",
+      "#3cb371",
+      "#3cb371",
+      "#3cb371"
+    ],
+    "windowAtHole": "ring window",
+    "clickInHoleReachesBack": false,
+    "clickOnRingReachesPage": true
+  },
+  "region": {
+    "hole": "#191970",
+    "body": "#ff6a1a",
+    "edge": [
+      "#ff6a1a",
+      "#ff6a1a",
+      "#ff6a1a",
+      "#ff6a1a",
+      "#ff6a1a",
+      "#cc582d",
+      "#994640",
+      "#663454",
+      "#322267",
+      "#191970",
+      "#191970",
+      "#191970",
+      "#3cb371",
+      "#3cb371",
+      "#3cb371"
+    ],
+    "windowAtHole": "back window",
+    "clickInHoleReachesBack": true,
+    "clickOnRingReachesPage": true
+  }
+}

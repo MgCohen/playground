@@ -1452,10 +1452,79 @@ Findings:
 | E1-24 | User answer N1 and N2 (read from the page store): N1 edge tab A (full circle, 6 px from the edge; hover preview with the counts after 350 ms), right edge, ring spin at a new event, size 40, click opens the widget (the tab slides out to the right), drag moves it up and down. N2 peek bubble, hide after 5 s. All E1 round 1 choices are now decided; the build starts | Decided |
 | E1-25 | Build 1 (E-2, E-3, E-4): app.css: the skip button `.btn.wl` is raised with a muted icon; `html` and the sheet keep a stable scroll gutter; the scroll bar is a 4 px round thumb with 1 px space, 40 % muted, 70 % on hover, no track, only when the area overflows. tray.css no longer hides the scroll bar (E-3 and E-4 set the scroll bar). Self-test check `no-scroll-bar` becomes `scroll-gutter` (expect 6 px). Tray self-test 25 of 25 PASS. Proof: `docs/screens/tray-e1-s2-skip.png`, `docs/screens/tray-e1-s4-scroll.png` | Done |
 
-Next steps of E1, in order:
+The section "E2: App visuals and motion, round 2" has the build of the chosen items and spike E-5.
 
-1. User review of the three tabs. Build the chosen items, one commit each, with self-test proof.
-2. Spike E-5, last: composition hosting for the tray widget. Find what it gives (soft-edge shapes such as a ring with a transparent hole, part transparency, blur behind), what it costs (WebView2 `CoreWebView2CompositionController` and DirectComposition in place of the BlazorWebView HWND control), and if it is worth it. Discuss with the user before the build.
+## E2: App visuals and motion, round 2 (2026-11-18)
+
+E2 builds the E1 items that the user chose (E1-16, E1-18, E1-19, E1-24) and fixes two defects of the tray widget. Branch `orch/e2-visuals`, base `orch/integration-stack`. Tray self-test: 50 of 50 PASS. `dotnet test --solution Orchestrator.slnx`: 447 tests, 0 failed.
+
+### Built items
+
+| Item | Result | Proof (`docs/screens/`) |
+|---|---|---|
+| Defect: place off screen | The saved place goes through `Fit` on each show and on a display change: a place on a screen that is gone comes into the nearest work area | Check `place-clamp`: saved X 2860 on a 2560 px screen, shown inside the work area. `tray-e2-place-clamp.png` |
+| Defect: drag 6 px off | The widget follows the pointer with the offset of the mouse down. The system move loop starts after the drag threshold; the widget does not use it | Check `drag`: two drags, 0,0 px off each |
+| M1 A fly out | A swipe or a button act that sends the card away throws it out in the act direction (300 ms). An act that opens the answer sheet keeps the card | `tray-e2-m1-fly.png` |
+| M2 A tuck under | Skip drops the card 180 ms under the pile; it rises into the last slot | `tray-e2-m2-tuck.png`, `tray-e2-m2-lifted.png` |
+| M3 A real pile | Up to three real cards, each 8 px lower and 4.5 % smaller. A card that comes back drops in from the top | `tray-e2-m3-pile.png`, `tray-e2-m3-arrive.png` |
+| M5 A sheets and toast | Sheets slide up over a fading scrim and down at close. The undo toast drops in; a bar counts the 5 s | `tray-e2-m5-sheet-up.png`, `tray-e2-m5-sheet-down.png`, `tray-e2-m5-toast.png` |
+| M6 A skeleton | The tray host page has a skeleton until Blazor starts; the page then fades in | `tray-e2-m6-skeleton.png` |
+| M7 all | Press state (80 ms), ring draw on first show (900 ms), fold height motion (260 ms) | `tray-e2-m7-ring-draw.png`, `tray-e2-m7-fold.png`, `tray-e2-m7-fold-open.png` |
+| T1 C rise + stagger | A tab change: the body rises 10 px; each block starts 40 ms after the block above it. The header stays | `tray-e2-t1-tab-rise.png` |
+| T2 A push | A view transition pushes a deeper page in from the right; back plays it in reverse. The app bar stays | `tray-e2-t2-push.png`, `tray-e2-t2-back.png` |
+| T3 A full path | The header shows the path of a sub-page. With three or more parents, the first ones become one "…" link | `tray-e2-t3-path-session.png`, `tray-e2-t3-path-document.png` |
+| T4 A always | Pin, minimize and close are always in the widget header | `tray-e2-t4-window-buttons.png` |
+| E-1 A page actions | Page actions in a bar at the bottom; content actions of `view.json` in a corner speed dial. A document page hides the app bar | `tray-e2-e1-document.png`, `tray-e2-e1-speed-dial.png`, `tray-e2-e1-session.png` |
+| N1 edge tab A | Minimize puts the widget into an edge tab at the right screen edge (ring 6 px from the edge). A hover of 350 ms shows the counts; a drag moves it up and down; a click opens the widget | `tray-e2-n1-edge-tab.png`, `tray-e2-n1-hover.png`, `tray-e2-n1-drag.png` |
+| N2 peek bubble | A new waiting card while the widget is hidden spins the ring and shows a bubble for 5 s | `tray-e2-n2-peek.png` |
+| G1 ball and grow | The home ball pops in (240 ms); after 60 ms the widget grows out of it. The page fades in, the app bar unfolds sideways, and a shadow grows with the widget. Hide: the ball pops out first (180 ms) | `tray-e2-g1-ball-in.png`, `tray-e2-g1-grow.png`, `tray-e2-g1-end.png`, `tray-e2-g1-hide.png` |
+
+### The show, the minimize and the notice
+
+```mermaid
+flowchart LR
+    Tray[Tray click] --> Ball[Ball pops in]
+    Ball -->|60 ms, or 500 ms pulse| Grow[Widget and shadow grow]
+    Grow --> Page[Home button replaces ball]
+    Page -->|Minimize| Tab[Edge tab slides in]
+    Tab -->|Click| Ball
+    Tab -->|New card| Peek[Ring spin, peek bubble]
+```
+
+The edge tab, the ball and the grow shadow are native windows with per-pixel alpha (`LayeredForm`, `UpdateLayeredWindow`), drawn with GDI+. They show at once, with no web page. The web parts use CSS first. JavaScript is in `swipe.js` (throw and tuck) and `motion.js` (the direction of the view transition).
+
+### Spike E-5: a ring widget with a transparent hole
+
+Probe: `spikes/e5-ring` (not in the solution). WebView2 uses a composition controller on a DirectComposition visual. The top window has no redirection bitmap. The page draws a ring with soft edges on a transparent background. A striped window stands behind it. Result file: `spikes/e5-ring/result.json`.
+
+| Check | No window region | Ring window region |
+|---|---|---|
+| Hole shows the window behind | ✅ | ✅ |
+| Soft edge (5 px of mixed values) | ✅ | ✅ |
+| Click in the hole reaches the window behind | ❌ the ring window gets it | ✅ |
+| Click on the ring reaches the page | ✅ the host sends the input | ✅ |
+
+Screenshots: `docs/screens/e5-ring-alpha.png`, `docs/screens/e5-ring-region.png`.
+
+| Part | Cost of a web widget in composition mode |
+|---|---|
+| Blazor host | BlazorWebView for WinForms has no composition mode. A custom `WebViewManager` host is necessary |
+| Input | The host sends each mouse, wheel and pointer event (`SendMouseInput`), and moves the keyboard focus |
+| Other parts | Cursor changes, drag areas, UI Automation and DPI changes each need host code |
+
+Result: a shape with a hole and soft edges works with web content. The cost is a custom Blazor host. Recommendation: keep the BlazorWebView widget rectangular. The small forms (edge tab, ball, bubble) use the layered windows of E2, which give the same soft edges with no web page. Use composition hosting only for a web-drawn form with a hole.
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| E2-1 | An animation with `fill-mode: both` on `.app` made a stacking context; the backdrop of the app bar then covered the bar | Fixed: the entrance animations fill backwards only. Self-test check `app-bar-on-top` |
+| E2-2 | A thrown card made a side scroll bar | Fixed: `.app { overflow-x: clip }`. Clip makes no scroll container, so the sticky bars still work |
+| E2-3 | `CapturePreviewAsync` takes longer than a motion of 300 ms | The checks hold the animations (Web Animations `pause` and `currentTime`) for each screenshot |
+| E2-4 | The widget took the focus and covered the ball | Fixed: the ball goes on top again after `Activate` |
+| E2-5 | The native forms use the light colors only | Open: dark colors for the edge tab, the ball and the bubble |
+| E2-6 | The roadmap line for the workflow page is in "Next tasks", table "Later" (base commit `ec5cbf7`) | No change necessary |
+
 
 ## G1 result: install and start (2026-11-17)
 
