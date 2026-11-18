@@ -35,10 +35,11 @@ public sealed class NewSessionFormTests
     public void The_form_has_each_brief_field_except_allowDefaults_and_background()
     {
         // background (B2) is not in the form yet: the UI views are stream A4. A form session has Remote Control on, the default.
+        // type, stream and workflow (C2) are not in the form yet: the form and the API fields are stream E. The old field agent sets the type.
         using var context = new BunitContext();
         var form = context.Render<NewSessionForm>();
         var names = form.FindAll("form [name]").Select(e => e.GetAttribute("name")).ToList();
-        Assert.That(names, Is.EquivalentTo(BriefProperties().Where(p => p is not ("allowDefaults" or "background"))));
+        Assert.That(names, Is.EquivalentTo(BriefProperties().Where(p => p is not ("allowDefaults" or "background" or "type" or "stream" or "workflow"))));
         Assert.That(form.Markup, Does.Not.Contain("allowDefaults").IgnoreCase);
         Assert.That(form.Markup, Does.Not.Contain("default decisions").IgnoreCase);
     }

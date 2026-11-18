@@ -13,7 +13,7 @@ namespace Orchestrator.Cli
             orch: the command of the session orchestrator. Each command reads or writes the store (ORCH_STORE).
 
             Sessions
-              orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--agent A] [--worktree] [--allow-defaults] [--background] [--parent ID]
+              orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--type A] [--stream S] [--workflow W] [--worktree] [--allow-defaults] [--background] [--parent ID]
               orch enable [--title T] [--parent ID] [--id ID]
               orch send <session> <text> [--from P]
               orch tree
@@ -22,7 +22,13 @@ namespace Orchestrator.Cli
               orch resume <session>
               orch archive <session> [--force] [--tree] [--store-only] [--wait <seconds>]
               orch open <session> [--dry-run]
-            Decisions
+            Workflow runs (a <run> can be the first characters of its id)
+              orch run start <workflow> [--owner SESSION] [--goal G] [--input-<name> text]
+              orch run show <run> [--json]
+              orch run list [--owner SESSION] [--open]
+              orch run step <run> [--holds "c1; c2"] [--output-<name> text] [--pick STEP] [--answer T] [--verdict approve|change|refuse] [--skip-approval] [--done]
+              orch run stop <run> [--reason R]
+            Questions (old name: decisions; the command names stay)
               orch decisions [--session ID]
               orch answer <decision> <text> [--via P]
               orch chat-answer <session> <text>
@@ -96,6 +102,7 @@ namespace Orchestrator.Cli
                     "events" => EventCommands.Events(command),
                     "template" => ToolCommands.Template(command),
                     "doctor" => ToolCommands.Doctor(command),
+                    "run" => RunCommands.Run(command),
                     "store" => StoreCommands.Store(command),
                     "supervisor" => ToolCommands.Supervisor(command),
                     "process" => ToolCommands.Process(command),
@@ -108,7 +115,7 @@ namespace Orchestrator.Cli
                 error.WriteLine("Run orch --help for the commands.");
                 return 2;
             }
-            catch (Exception e) when (e is MessageException or RegistryException or ShellException or FormatException or IOException or InvalidDataException or Core.Templates.TemplateException or TimeoutException)
+            catch (Exception e) when (e is MessageException or RegistryException or ShellException or FormatException or IOException or InvalidDataException or Core.Templates.TemplateException or TimeoutException or Core.Workflows.WorkflowException)
             {
                 error.WriteLine($"orch: {e.Message}");
                 return 1;

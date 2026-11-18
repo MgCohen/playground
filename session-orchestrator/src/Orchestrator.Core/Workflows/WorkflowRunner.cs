@@ -138,7 +138,7 @@ public sealed class WorkflowRunner
         {
             // The answer of an ask step is recorded in the store: that meets the exit condition. With an approval, the answer is also the verdict.
             if (step.Exit is { } exit) result = result with { Holds = [.. result.Holds, exit] };
-            if (step.Approval is not null && result.Verdict is null) result = result with { Verdict = Verdicts.Parse(answer) };
+            if (step.Approval is not null && result.Verdict is null) result = result with { Verdict = RunVerdicts.Parse(answer) };
         }
         return Complete(run, definition, step, result, by);
     }
@@ -180,7 +180,7 @@ public sealed class WorkflowRunner
             if (approval.Strategy == ApprovalStrategies.Ignored) outcome = ApprovalStrategies.Ignored;
             else if (result.Verdict is { } verdict)
             {
-                if (!Verdicts.All.Contains(verdict)) throw new WorkflowException($"verdict {verdict} is unknown (known: {string.Join(", ", Verdicts.All)})");
+                if (!RunVerdicts.All.Contains(verdict)) throw new WorkflowException($"verdict {verdict} is unknown (known: {string.Join(", ", RunVerdicts.All)})");
                 outcome = verdict;
             }
             else if (result.SkipApproval)
@@ -190,16 +190,16 @@ public sealed class WorkflowRunner
             }
             if (outcome is null)
             {
-                var thread = messages.Ask(run.Owner, approval.By, $"Approve the step \"{step.Title}\" of run {run.Id}?", Context(run, definition, step).Prompt, Verdicts.All.ToList());
+                var thread = messages.Ask(run.Owner, approval.By, $"Approve the step \"{step.Title}\" of run {run.Id}?", Context(run, definition, step).Prompt, RunVerdicts.All.ToList());
                 run = WithCurrent(run, v => v with { Thread = thread });
                 return run with
                 {
                     Status = RunStates.Waiting,
-                    Wait = new RunWait(WaitKinds.Approval, $"The step {step.Id} waits for the approval of {approval.By} ({approval.Strategy}).") { By = approval.By, Options = Verdicts.All.ToList(), Thread = thread },
+                    Wait = new RunWait(WaitKinds.Approval, $"The step {step.Id} waits for the approval of {approval.By} ({approval.Strategy}).") { By = approval.By, Options = RunVerdicts.All.ToList(), Thread = thread },
                 };
             }
             run = WithCurrent(run, v => v with { Approval = outcome });
-            if (outcome == Verdicts.Refuse) return run with { Status = RunStates.Stopped, Wait = null, Reason = $"{approval.By} refused the step {step.Id}" };
+            if (outcome == RunVerdicts.Refuse) return run with { Status = RunStates.Stopped, Wait = null, Reason = $"{approval.By} refused the step {step.Id}" };
         }
         return Route(run, definition, step, result.Pick, result.Done, by);
     }
@@ -207,7 +207,7 @@ public sealed class WorkflowRunner
     /// <summary>A waiting approval: the verdict or the skip of the step command, else the answer of the approval question.</summary>
     WorkflowRun Approval(WorkflowRun run, WorkflowDefinition definition, WorkflowStep step, StepResult? input, string by)
     {
-        var verdict = input?.Verdict ?? (input?.SkipApproval == true ? null : run.Wait?.Thread is { } t ? Verdicts.Parse(messages.Answer(t)) : null);
+        var verdict = input?.Verdict ?? (input?.SkipApproval == true ? null : run.Wait?.Thread is { } t ? RunVerdicts.Parse(messages.Answer(t)) : null);
         if (verdict is null && input?.SkipApproval != true) return run;
         return Approve(run with { Wait = null }, definition, step, new StepResult { Verdict = verdict, SkipApproval = input?.SkipApproval == true, Pick = input?.Pick }, by);
     }
@@ -263,7 +263,7 @@ public sealed class WorkflowRunner
 
     /// <summary>The true conditions of a visit: the holds, and the verdict of the approval.</summary>
     static List<string> Facts(RunStep visit) =>
-        visit.Approval is { } a && Verdicts.All.Contains(a) ? [.. visit.Holds, Verdicts.Fact(a)] : visit.Holds;
+        visit.Approval is { } a && RunVerdicts.All.Contains(a) ? [.. visit.Holds, RunVerdicts.Fact(a)] : visit.Holds;
 
     /// <summary>A condition with no text is always true. Else the facts must hold the same text (case and outer spaces do not count).</summary>
     public static bool Holds(IReadOnlyCollection<string> facts, string? condition) =>

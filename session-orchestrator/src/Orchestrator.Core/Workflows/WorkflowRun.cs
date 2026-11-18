@@ -126,7 +126,7 @@ public static class ApprovalStrategies
     public const string Ignored = "ignored";
 }
 
-public static class Verdicts
+public static class RunVerdicts
 {
     public const string Approve = "approve";
     public const string Change = "change";

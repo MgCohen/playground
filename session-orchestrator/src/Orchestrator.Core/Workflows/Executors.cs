@@ -138,7 +138,7 @@ public sealed class AskExecutor(IRunMessages messages) : IStepExecutor
     {
         var step = context.Step;
         var to = step.Approval?.By ?? "user";
-        var options = step.Approval is not null ? Verdicts.All.ToList() : null;
+        var options = step.Approval is not null ? RunVerdicts.All.ToList() : null;
         var thread = messages.Ask(context.Run.Owner, to, $"{step.Title}: {step.Instructions}", context.Prompt, options);
         return new StepStart(null, new RunWait(WaitKinds.Ask, $"The step {step.Id} waits for the answer of {to}.") { Thread = thread, By = to, Options = options }) { Thread = thread };
     }
