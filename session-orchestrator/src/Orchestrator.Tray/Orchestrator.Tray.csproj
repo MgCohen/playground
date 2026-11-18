@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
   <!--
     The desktop tray app (T1): a tray icon and a window with a BlazorWebView on WebView2.
-    It shows the Razor components of Orchestrator.Web with mock data in a temporary store. No supervisor ticks, no claude process.
+    It shows the Razor components of Orchestrator.Web with mock data in a temporary store. No supervisor ticks, no engine process.
   -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>

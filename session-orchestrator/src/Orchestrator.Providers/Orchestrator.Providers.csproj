@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The provider boundary. IProvider is the one interface for each function that depends on a session engine.
+    Only the folder of a provider knows the names of that engine. See the Engines tab of docs/session-design.html.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../Orchestrator.Core/Orchestrator.Core.csproj" />
+  </ItemGroup>
+</Project>

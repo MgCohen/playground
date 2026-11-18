@@ -1546,6 +1546,52 @@ Start lesson: the first C5 brief had double quotes. PowerShell cut the argument 
 | G1-4 | The tray starts the supervisor only at its own start | Accepted. Start it again with `orch supervisor start` |
 | G1-5 | The supervisor that runs today on port 7777 was started by hand. `install.ps1` does not stop it, and the tray uses it | Note for the real install |
 
+## P0 result: provider boundary (2026-11-18)
+
+Branch `orch/p0-providers`, base `orch/integration-stack`. The choices are in `docs/decisions.md` (rows "P0").
+
+```
+Web/Program.cs (composition root)
+  ProviderFactory.Create(store root, home, plugin folder)  -> the class with [DefaultProvider]
+    ProviderTurns(provider)   : ITurnRunner   -> IProvider.Turn
+    DocsChecker(provider)     : IDocsChecker  -> prompt, IProvider.Ask, parse
+    StateChecker(provider)    : IStateChecker -> prompt, IProvider.Ask, parse
+    Lifecycle(store, provider)                -> OpenCommand, AppId, Read
+    SupervisorOptions.Provider                -> AppTools in the notices
+```
+
+| Item | Before | Now |
+|---|---|---|
+| Project | None | `src/Orchestrator.Providers` (references Core only): `IProvider.cs`, `ProviderFactory.cs`, `Processes/`, `ClaudeCode/` |
+| `IProvider` | None | `Name`, `Turn`, `Ask`, `OpenCommand`, `AppId`, `Read`, `CallerSessionId`, `AppTools`, `PluginTools`, `Doctor` |
+| `claude -p` and its flags | `Supervisor/ClaudeRunner.cs` | `ClaudeCode/Claude.cs` (the process run) and `ClaudeCodeProvider.cs` (the flags) |
+| Docs check and state check | `ClaudeDocsChecker`, `ClaudeStateChecker` | Neutral slices `DocsChecker`, `StateChecker` in Supervisor. Prompt and parse as before |
+| App open and import | `Lifecycle.OpenCommand`, `local_<id>` | `IProvider.OpenCommand`, `IProvider.AppId` |
+| App records | `Store/AppRecords.cs` | `ClaudeCode/AppRecords.cs`, through `IProvider.Read` |
+| Caller session id | `CLAUDE_CODE_SESSION_ID` in Cli | `IProvider.CallerSessionId` |
+| Doctor checks `claude`, `plugin` | `ToolCommands.cs` | `IProvider.Doctor`. Same order of the output lines |
+| App tool names | `templates/notice/render/*.md` | Notice fields `remoteControlTool`, `archiveTool` from `IProvider.AppTools` |
+| Architecture test | None | `ProviderBoundaryTests`: no Claude Code name in `src/` and `templates/` outside `src/Orchestrator.Providers/ClaudeCode/` |
+
+### Test results
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 450 total: 443 pass, 7 skipped, 0 fail |
+| `node --test test/` in `plugin/hooks` | 13 pass, 0 fail |
+| `ProviderBoundaryTests` | 3 pass. The scan also finds known names in samples, and no false hit on `git rebase --abort` or `mcp__orch__report` |
+
+### Behavior changes
+
+- The docs check also disallows `PowerShell` (one read-only tool set for `Ask`).
+- A notice of the four kinds above that was posted before the change renders with empty tool names.
+
+### Not in P0
+
+- The core contract fields `Imported`, `RemoteControl`, `AppId`, `Background`: S2 moves them.
+- `mcp__orch__` and `orch:` in the templates: the tools and skills of our plugin. A render for each engine comes with the second engine.
+- `plugin/`: the Claude Code side of the provider.
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
@@ -1567,7 +1613,7 @@ flowchart LR
 
 | Task | Stream | Content | Start |
 |---|---|---|---|
-| P0 | S (owner S) | `IProvider` in `Orchestrator.Providers`, `Providers/ClaudeCode`. Logic of today | After I2 |
+| P0 | S (owner S) | `IProvider` in `Orchestrator.Providers`, `Providers/ClaudeCode`. Logic of today. Built: see "P0 result" | After I2 |
 | H4 | H | Store move to `%LOCALAPPDATA%\orch\store`, index by session, day cache, migration | After I2. Merge before P0 if both touch `Home` or `Lifecycle.cs` |
 | F2 | F | Templates on `IRepository`; modes and workflows as definitions | After I2 |
 | E2 | E | Visuals: the next E1 items and spike E-5 | After I2 |
