@@ -77,11 +77,6 @@ public sealed class TemplateSet
 {
     readonly Dictionary<string, Template> templates;
 
-    /// <summary>The core templates of <paramref name="root"/> only, with no store.</summary>
-    public TemplateSet(string root) : this(new LocalTemplateStore(root, null), root)
-    {
-    }
-
     public TemplateSet(ITemplateStore store, string root)
     {
         Root = root;

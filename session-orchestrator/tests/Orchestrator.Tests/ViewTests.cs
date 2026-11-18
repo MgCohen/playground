@@ -7,7 +7,7 @@ namespace Orchestrator.Tests;
 /// <summary>The document and the preview of the example of each kind (templates/&lt;kind&gt;/view.json).</summary>
 public sealed class ViewTests
 {
-    static readonly TemplateSet Set = new(Home.Templates());
+    static readonly TemplateSet Set = Home.LoadTemplates(null);
 
     static IEnumerable<string> AllKinds() => Kinds.All;
 
