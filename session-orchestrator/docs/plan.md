@@ -1514,6 +1514,16 @@ Screenshots: `docs/screens/e5-ring-alpha.png`, `docs/screens/e5-ring-region.png`
 
 Result: a shape with a hole and soft edges works with web content. The cost is a custom Blazor host. Recommendation: keep the BlazorWebView widget rectangular. The small forms (edge tab, ball, bubble) use the layered windows of E2, which give the same soft edges with no web page. Use composition hosting only for a web-drawn form with a hole.
 
+### UI drafts for the other streams
+
+Page: `docs/ui-drafts.html` (https://claude.ai/artifact/WSfAWg6otCmoRvpEg3h764). Drafts only, with sample data: no built code. Each draft is a widget frame in the look of the app, with options and open questions.
+
+| Draft | Plans used | Options | State |
+|---|---|---|---|
+| 1 Workflow run | C1 (graph, steps, executor, approval, entry checks), C2 | A step graph (recommended), B step bar | Open: user pick |
+| 2 Session | S1 registry entry, role and type (C1), settings and modes | A all fields in groups, B three lines and "show all" | Open: user pick |
+| Later | F1 and F2 templates, H1 and H4 storage, G1 and G2 setup, C1 streams | Listed on the tab "Later drafts" | Next |
+
 ### Findings
 
 | # | Finding | State |
