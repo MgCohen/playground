@@ -15,11 +15,12 @@ public sealed record NewSession(string? Title, string? Cwd, string? Brief, strin
     public bool? Worktree { get; init; }
     public bool? AllowDefaults { get; init; }
     public bool? Background { get; init; }
+    public string? Where { get; init; }
 
     public BriefFields ToBrief() => new()
     {
         Title = Title, Goal = Goal ?? Brief, Scope = Scope, DoneWhen = DoneWhen, Skills = Skills,
-        Agent = Agent, Cwd = Cwd, Worktree = Worktree, Parent = Parent, AllowDefaults = AllowDefaults, Background = Background,
+        Agent = Agent, Cwd = Cwd, Worktree = Worktree, Parent = Parent, AllowDefaults = AllowDefaults, Background = Background, Where = Where,
     };
 }
 

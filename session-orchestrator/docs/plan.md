@@ -1178,7 +1178,7 @@ Rules for each implementation: (1) `SaveChangesAsync` fails on an `Add` with an 
 | H4 store upkeep | H | Index by session (B2-9), day cache, store in `%LOCALAPPDATA%\orch\store` | After H2 |
 | S2 session registry | S | `SessionEntry` repository on H2, store version 3 | After P0 and H4 |
 | F2 template adapter | F | Templates on `IRepository`; modes and workflows as definitions; Notion implementation later | After I2 |
-| H5 remote access | H | Supervisor API for cloud workers, and the HTTP mode of `orch` (`ORCH_URL` and the API when no store folder exists; from G1) | In G2 |
+| H5 remote access | H | Supervisor API for cloud workers, and the HTTP mode of `orch` (`ORCH_URL` and the API when no store folder exists; from G1) | Built in G2: see "G2 result" |
 | H6 Notion store | H | Notion implementations, cache wrapper, supervisor as the only writer | Version 2 |
 
 Callers that bypass the ports today: `Supervisor.cs`, `Supervisor.Lifecycle.cs`, `EventCommands.cs`, `StateReader.cs`, `Lifecycle.cs`. The hooks use `backend.ts` since H3.
@@ -1565,10 +1565,10 @@ The steps of the cloud plan (page, section Q6) have G-step codes. They are steps
 | Step | Content | Task |
 |---|---|---|
 | G-0 probe | One cloud session: .NET 10, plugin, `claude -p`, Quick Tunnel | Done 2026-11-17 |
-| G-1 HTTP mode | `orch` uses `ORCH_URL` and the API when no store folder exists | H5 (H1 plan) |
+| G-1 HTTP mode | `orch` uses `ORCH_URL` and the API when no store folder exists | H5 (H1 plan), built in G2 |
 | G-2 public address | Tunnel with a service token for the API | D2, after G2 |
-| G-3 cloud children | Brief field `where: cloud`; the provider starts with `--cloud` | G2 |
-| G-4 environment file | Setup script and environment variables, recipe in `know-how.md` | G2 |
+| G-3 cloud children | Brief field `where: cloud`; the provider starts with `--cloud` | G2, built; end-to-end test in D2 |
+| G-4 environment file | Setup script and environment variables, recipe in `know-how.md` | G2, built; first real run in D2 |
 | G-5 team probe | Supervisor, web interface, a root and three children in one VM | Done 2026-11-18 |
 
 ### Test (scratchpad store, port 7861, `ORCH_DATA` in the scratchpad, `-NoTool`)
@@ -1680,6 +1680,52 @@ Web/Program.cs (composition root)
 - `mcp__orch__` and `orch:` in the templates: the tools and skills of our plugin. A render for each engine comes with the second engine.
 - `plugin/`: the Claude Code side of the provider.
 
+## G2 result: cloud workers and orch HTTP mode (2026-11-18)
+
+Branch `orch/g2-cloud-workers`, base `orch/integration-i3` (PR #38). The choices are in `docs/decisions.md` (rows "G2").
+
+```mermaid
+flowchart LR
+    W[Cloud worker: orch] -->|ORCH_URL + ORCH_TOKEN| G[SignInMiddleware]
+    G --> A[/api/store: StoreService/]
+    A --> R[Local repositories]
+    S[Supervisor] -->|where: cloud| P[IProvider.Turn]
+    P --> C[claude --cloud]
+```
+
+| Part | Result |
+|---|---|
+| H5 store API | `/api/store/<kind>/get\|list\|save`, `events/feed`, `log`, `prepare`. Ids outside the store give 400. Spec: `docs/store.md`, "Store API" |
+| `orch` HTTP mode | `HttpRepositories`, one more `IRepositories` implementation. `StoreBackends.Create` selects it for an `http(s)` root. `ORCH_URL` first; no store folder: the API on 127.0.0.1 |
+| Token check | Local caller (loopback, no proxy header): no token. Remote: `ORCH_TOKEN`. No token set: `/api/store` gives 403 |
+| Plugin hooks | Off with `ORCH_URL` (C0-2). The worker uses `orch` |
+| G-3 cloud children | Field `where` in the brief, API, CLI, `spawn_child` and the form. The supervisor calls only `IProvider.Turn` with `Where` and `AppId`. `--cloud` is only in `Providers/ClaudeCode/` |
+| Cloud notice | `cloud-worker` with the first turn: the party and the `orch post` calls |
+| G-4 environment | `Providers/ClaudeCode/Cloud/setup.sh` and `environment.env`. Recipe: `know-how.md`, "Cloud environment". C0-3: auto mode and an allow list in the VM settings |
+
+### Test results
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | ✅ 665 tests: 652 pass, 13 skip, 0 fail (I3: 501, 7 skip). The 6 new skips are the HTTP copies of the contract tests for the kinds that never change |
+| `RepositoryContractTests` | ✅ Each data kind on the local folder and on the store API of a test server |
+| `StoreApiTests` | ✅ Token rules, refused ids, a stale save writes nothing, the feed, and `orch new`, `post report`, `events`, `status` through Kestrel with `ORCH_URL`; nothing in `ORCH_STORE` |
+| `CloudWorkerTests` | ✅ Fake provider: start with the notice, `appId` kept, the next turn sends to it; no id gives a failed turn; the flag forms; the environment file has no secret |
+| `node --test plugin/hooks/test/` | ✅ 17 of 17, with `store-api-mode.test.ts` |
+
+Not tested: a real cloud session, the setup script in a VM, the tunnel. The end-to-end cloud test waits for D2 (tunnel and service token).
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| G2-1 | Print mode refuses `--cloud` (`know-how.md`). A cloud start is `claude --cloud "<prompt>"`, with the id in its output | Built. Check the output form in D2 |
+| G2-2 | A cloud turn ends when the engine takes the prompt. The supervisor can send the next message while the worker still works | Open: D2 checks if the cloud session queues it |
+| G2-3 | The first `claude --cloud` in a folder asks for trust. The supervisor stops the start after 2 minutes | Recipe step 8 trusts the folder once |
+| G2-4 | `FileStore` loaded the store templates with a second store from its root. On HTTP this made a second client | Fixed: `Home.LoadTemplatesOf(repositories)` |
+| G2-5 | The HTTP mode has no push. `orch watch` polls every 2 s | Accepted. An SSE subscription can come later |
+| G2-6 | `docs/render-design.html` changed (field `where` in the brief view). The artifact is not published from this branch | Publish after the merge |
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
@@ -1706,7 +1752,7 @@ flowchart LR
 | F2 | F | Templates on `IRepository`; modes and workflows as definitions. Done: see "F2 result" | After I2 |
 | E2 | E | Visuals: the next E1 items and spike E-5 | After I2 |
 | S2 | S | Session registry on `IRepository`, store version 3 | After P0 and H4 |
-| G2 | G | Cloud workers (G-3, G-4) and the supervisor API with the `orch` HTTP mode (H5) | In parallel with S2 |
+| G2 | G | Cloud workers (G-3, G-4) and the supervisor API with the `orch` HTTP mode (H5). Built: see "G2 result" | In parallel with S2 |
 | C2 | C | Workflow runner on `IRepository`, the planning workflow, the term rename in skills and tools. Then C3: one real stream | After S2 and F2 |
 | D2 | D | Named tunnel, service token for cloud workers | After G2, next month |
 

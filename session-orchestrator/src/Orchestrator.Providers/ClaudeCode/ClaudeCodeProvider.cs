@@ -9,7 +9,7 @@ namespace Orchestrator.Providers.ClaudeCode;
 /// The app tools for Remote Control and archive exist only in a live app session, so the notices name them for the model.
 /// </summary>
 [DefaultProvider]
-public sealed class ClaudeCodeProvider(ProviderOptions options) : IProvider
+public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvider
 {
     /// <summary>The namespace of the orch plugin in Claude Code: an agent name without a namespace gets it.</summary>
     public const string PluginNamespace = "orch";
@@ -30,6 +30,7 @@ public sealed class ClaudeCodeProvider(ProviderOptions options) : IProvider
 
     public async Task<TurnResult> Turn(TurnRequest request, CancellationToken cancel)
     {
+        if (request.Where == Places.Cloud) return await CloudTurn(request, cancel);
         var watch = Stopwatch.StartNew();
         var session = request.IsNew ? "--session-id" : "--resume";
         List<string> arguments = [.. SettingArguments(options.PluginDir), session, request.Id];
@@ -45,6 +46,41 @@ public sealed class ClaudeCodeProvider(ProviderOptions options) : IProvider
         var output = await Claude.Run(call, null, cancel);
         return new TurnResult(output.Ok, output.Result, output.Error, Math.Round(watch.Elapsed.TotalSeconds));
     }
+
+    /// <summary>The longest wait for a cloud start or a cloud message. A folder that is not trusted yet waits for a person.</summary>
+    public static TimeSpan CloudLimit { get; set; } = TimeSpan.FromMinutes(2);
+
+    /// <summary>
+    /// The arguments of a cloud turn. A start is <c>claude --cloud "&lt;prompt&gt;"</c>: it prints the session id and the
+    /// view URL, then exits (print mode refuses <c>--cloud</c>). A later turn is <c>claude -p "&lt;prompt&gt;" --cloud &lt;id&gt;</c>:
+    /// it sends one message. The cloud session gets the plugin, the permissions and <c>ORCH_URL</c> from its cloud
+    /// environment (G-4), not from this process. The end-to-end test with a real cloud session comes with D2.
+    /// </summary>
+    public static IReadOnlyList<string> CloudArguments(TurnRequest request) =>
+        request.IsNew || request.AppId is null ? ["--cloud", request.Prompt] : ["-p", request.Prompt, "--cloud", request.AppId];
+
+    /// <summary>The cloud session id in the output of a cloud start, for example <c>session_01Y7UMGXQGcsekzz7bDemKjq</c>.</summary>
+    public static string? CloudSessionId(string output) => CloudId().Match(output) is { Success: true } m ? m.Value : null;
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"\bsession_[0-9A-Za-z]{8,}\b")]
+    private static partial System.Text.RegularExpressions.Regex CloudId();
+
+    /// <summary>
+    /// A cloud turn ends when the engine took the prompt, not when the cloud session ends its turn. The cloud session
+    /// reports through the store API (H5).
+    /// </summary>
+    async Task<TurnResult> CloudTurn(TurnRequest request, CancellationToken cancel)
+    {
+        var watch = Stopwatch.StartNew();
+        if (!request.IsNew && request.AppId is null) return new TurnResult(false, null, "the cloud session has no id", 0);
+        var (exit, output, error) = await Claude.Plain(request.Cwd, CloudArguments(request), CloudLimit, cancel);
+        var seconds = Math.Round(watch.Elapsed.TotalSeconds);
+        if (exit != 0) return new TurnResult(false, null, $"cloud exit {exit}: {Cut(error.Length > 0 ? error : output)}", seconds);
+        var appId = request.IsNew ? CloudSessionId(output) : request.AppId;
+        return new TurnResult(true, Cut(output), null, seconds) { AppId = appId };
+    }
+
+    static string Cut(string text) => text.Trim() is { Length: > 400 } long_ ? long_[^400..] : text.Trim();
 
     public async Task<AskResult> Ask(AskRequest request, CancellationToken cancel)
     {

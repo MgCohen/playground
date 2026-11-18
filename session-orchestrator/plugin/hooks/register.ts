@@ -72,8 +72,19 @@ async function versionOk($: any): Promise<boolean> {
   return version === undefined || version.version === STORE_VERSION
 }
 
+// H5: with ORCH_URL the session is a cloud worker. The orch command calls the store API of the supervisor, and the
+// hooks write nothing, because a store folder in the VM is not the store (C0-2).
+export async function storeApiMode($: any): Promise<boolean> {
+  return Boolean(await $.env.get('ORCH_URL'))
+}
+
+// True when the plugin may activate in this process: no store API mode, and a store of this contract version.
+export async function mayActivate($: any): Promise<boolean> {
+  return !(await storeApiMode($)) && (await versionOk($))
+}
+
 async function activate($: any, dir: string, reason: unknown): Promise<void> {
-  if (!(await versionOk($))) return
+  if (!(await mayActivate($))) return
   S.id = await $.session.id()
   S.dir = dir
   S.home = await homeRoot($)
@@ -126,6 +137,7 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'orch-enable' }, async ($, e: any) => {
+    if (await storeApiMode($)) return { text: 'This session uses the store API of the supervisor (ORCH_URL). The plugin stays off. Use the orch command.' }
     const dir = await sessionDir($)
     const title = String(e.args ?? '').trim()
     await writeMeta($, dir, title)

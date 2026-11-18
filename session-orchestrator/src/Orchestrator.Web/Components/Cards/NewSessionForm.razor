@@ -42,6 +42,8 @@
 
         <label class="check"><input id="new-worktree" name="worktree" type="checkbox" @bind="worktree" /> Make a git worktree for this session</label>
 
+        <label class="check"><input id="new-where" name="where" type="checkbox" @bind="cloud" /> Run in a cloud session (needs the cloud environment)</label>
+
         <div class="actions">
             <button type="submit" class="primary" disabled="@(!CanStart)">Start session</button>
         </div>
@@ -54,7 +56,7 @@
     [Parameter] public bool Open { get; set; }
 
     string title = "", goal = "", scope = "", doneWhen = "", parent = "", cwd = "", agent = "", skills = "";
-    bool worktree;
+    bool worktree, cloud;
 
     ParentOption? Parent => Parents.FirstOrDefault(p => p.Id == parent);
 
@@ -72,13 +74,14 @@
         Agent = Text(agent),
         Skills = skills.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is { Length: > 0 } list ? [.. list] : null,
         Worktree = worktree ? true : null,
+        Where = cloud ? Core.Contract.Places.Cloud : null,
     };
 
     void Start()
     {
         if (!CanStart || !OnStart(Input())) return;
         title = goal = scope = doneWhen = parent = cwd = agent = skills = "";
-        worktree = false;
+        worktree = cloud = false;
     }
 
     static string? Text(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

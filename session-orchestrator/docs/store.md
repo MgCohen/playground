@@ -49,7 +49,7 @@ There is no other communication file. The inbox, the answers, the reviews, the r
 
 ## Repositories (C#)
 
-The C# code reads and writes the store only through `IRepositories` (`src/Orchestrator.Core/Storage/`). `StoreBackends.Create` selects the implementation. Only the local folder implementation (`src/Orchestrator.Store/Local/`) touches the files above. The test `ArchitectureTests` refuses store IO in other C# files. The plugin hooks write the same files only through `plugin/hooks/backend.ts`.
+The C# code reads and writes the store only through `IRepositories` (`src/Orchestrator.Core/Storage/`). `StoreBackends.Create` selects the implementation: an `http` or `https` root gives `HttpRepositories` (the store API of a supervisor, section "Store API"), each other root the local folder. Only the local folder implementation (`src/Orchestrator.Store/Local/`) touches the files above. The test `ArchitectureTests` refuses store IO in other C# files. The plugin hooks write the same files only through `plugin/hooks/backend.ts`.
 
 | Repository | Entity | Id | Files |
 |---|---|---|---|
@@ -68,7 +68,7 @@ The C# code reads and writes the store only through `IRepositories` (`src/Orches
 
 The version of a `Definition` is the FNV-1a hash of each file path and text, in path order. A change and a remove of a definition move the old folder to `.removed/`.
 
-Rules of each implementation. The contract tests (`RepositoryContractTests`) run them against each data kind:
+Rules of each implementation. The contract tests (`RepositoryContractTests`) run them against each data kind, on the local folder and on the store API of a test server:
 
 1. A save of an `Add` with an id that exists fails with `StoreConflictException` (`Exists`). The local folder writes a temp file and moves it with no overwrite. The claims and the envelopes use this rule.
 2. Each entity has a version. A save of a change or a remove fails when the stored version is newer (`Stale`). A put of a whole file (lease, meta, status) reads again and writes again: the last writer wins.
@@ -351,7 +351,7 @@ The plugin and the supervisor share one folder for each session: `store/sessions
 | `status.json` | Plugin | `{ state: running \| idle, turnId, at }` for the main loop |
 | `mirror/<ms>-<uuid>.json` | Plugin | `{ door, origin, uuid, message }` for the doors `prompt`, `response` and `tool-result`. `message` is JSON, cut to 4000 characters |
 | `log-<holder>.txt` | Plugin | Log lines of one holder (`live` or `supervisor`), cut to the last 100 000 characters |
-| `meta.json` | Supervisor, `spawn_child`, `orch new`, `orch enable`, `/orch-enable` (creation only). A plugin never changes it: it posts `meta.update`, and the supervisor writes the field | `{ id, parent, title, cwd, createdBy, createdAt, started, worktree, agent, skills, repo, branch, allowDefaults, imported, appId, background, remoteControl }`. `imported: true` after the app confirmed an import. `appId` is the id of the session in the app. `background: true` (from the brief) keeps Remote Control off. `remoteControl` is `true` or `false` after a `set_remote_control` call on the session: by the session itself, or by its parent with the app id `local_<id>`. The plugin of the caller posts `meta.update`. `allowDefaults: true` (only from the user) lets `orch merge` carry unapproved defaults. With `worktree: true`, the first turn makes a git worktree: `cwd` becomes the worktree folder, `repo` the repository and `branch` its branch. A session with `createdBy` and no `started` gets a new `claude -p` session with this id |
+| `meta.json` | Supervisor, `spawn_child`, `orch new`, `orch enable`, `/orch-enable` (creation only). A plugin never changes it: it posts `meta.update`, and the supervisor writes the field | `{ id, parent, title, cwd, createdBy, createdAt, started, worktree, agent, skills, repo, branch, allowDefaults, imported, appId, background, remoteControl, where }`. `where: cloud` (from the brief): a cloud session. Its `appId` is the cloud session id that the engine gave at the start; each later turn sends to it. `imported: true` after the app confirmed an import. `appId` is the id of the session in the app. `background: true` (from the brief) keeps Remote Control off. `remoteControl` is `true` or `false` after a `set_remote_control` call on the session: by the session itself, or by its parent with the app id `local_<id>`. The plugin of the caller posts `meta.update`. `allowDefaults: true` (only from the user) lets `orch merge` carry unapproved defaults. With `worktree: true`, the first turn makes a git worktree: `cwd` becomes the worktree folder, `repo` the repository and `branch` its branch. A session with `createdBy` and no `started` gets a new `claude -p` session with this id |
 | `state.json` | Supervisor | The lifecycle state: `{ state, since, requested, inferred, guard, fault, waitReason, reminded, remoteControlAsked, history }` (below) |
 | `state-check.json` | Supervisor | `{ state, reason, at, error }`: the last answer of the fallback agent `orch:state-checker` |
 | `forgotten.json` | Supervisor | `{ report, nudged, notified }`: one forgotten episode. `report` is `<last report id>|<last input id>` (an input from another party than the supervisor). A new report or a new input starts a new episode: one nudge, then one notice to the parent. The file is deleted when the session goes from forgotten to done, stopped or archived |
@@ -467,12 +467,55 @@ A version id is the decision id for version 1 and `<decision>-v<n>` after it. A 
 | `POST /api/inbox/<id>/refuse` | `{ text }` | The posted envelope |
 | `GET /api/sessions` | | Each enabled session: title, parent, holder, live, running, status, report, blocked, open decisions, and from `state.json`: `state`, `waitReason`, `requested`, `fault`, `inferred` |
 | `GET /api/decisions` | | All open decisions |
-| `POST /api/sessions` | `{ title, cwd, brief, parent?, background? }` | `{ id }`. A brief to the new session |
+| `POST /api/sessions` | `{ title, cwd, brief, parent?, background?, where? }` | `{ id }`. A brief to the new session. `where: cloud` starts a cloud session |
 | `POST /api/sessions/<id>/send` | `{ text }` | `{ event }`. A message from the user |
 | `POST /api/decisions/<session>/<id>` | `{ answer }` | `{ answered }`. An answer from the user |
 | `POST /api/decisions/<session>/<id>/review` | `{ verdict: approve \| change \| refuse, text }` | `{ event }`. A review to the session |
 | `GET /api/ledger` | | The answers by docs or policy, and each review |
 | `POST /api/sessions/<id>/stop`, `/resume`, `/archive?force=true` | | Lifecycle (stream B) |
+
+### Token check
+
+| Caller | Rule |
+|---|---|
+| Local: address `127.0.0.1` or `::1`, no proxy header | No token |
+| Remote, `ORCH_TOKEN` set | Header `X-Orch-Token`, `Authorization: Bearer`, or the sign-in cookie. Else 401 |
+| Remote, no `ORCH_TOKEN` | Pages and `/api/*` open; `/api/store` gives 403 |
+
+Proxy headers: `X-Forwarded-For`, `Forwarded`, `X-Real-IP`, `Cf-Connecting-Ip`, `Cf-Access-Jwt-Assertion`. A tunnel connects from `127.0.0.1`, so these headers make a request remote.
+
+## Store API (H5, `/api/store`)
+
+The store API gives each repository of `IRepositories` to a remote caller: `orch` in HTTP mode (`HttpRepositories`). `StoreService` applies each call to the local repositories of the supervisor. A document goes as its file text, so its version is the same on both sides (Version rule).
+
+```mermaid
+flowchart LR
+    W[Cloud worker: orch] -->|HTTPS + token| A[/api/store]
+    A --> S[StoreService]
+    S --> R[Local repositories]
+    R --> F[(Store folder)]
+```
+
+| Call | Body or query | Result |
+|---|---|---|
+| `GET /api/store` | | `{ location, exists, version }` |
+| `POST /api/store/prepare` | | Makes the stream folders |
+| `POST /api/store/log` | `{ line }` | 204. One line in the supervisor log |
+| `GET /api/store/<kind>/get` | `id` and the scope keys | `{ id, version, text }`, or 404 |
+| `GET /api/store/<kind>/list` | The scope keys | All documents of the kind |
+| `POST /api/store/<kind>/save` | `{ adds, changes, removes }`: `{ id, version, text }` each | `{ versions }`. 409 `{ conflict, id, message }` on a store rule |
+| `GET /api/store/events/feed` | `from` | `{ epoch, position, docs }`: the envelopes after `from`. A new supervisor process has a new `epoch` |
+
+| Kind | Scope keys |
+|---|---|
+| `events`, `bodies`, `policies`, `versions`, `claims`, `cursors`, `nudges`, `sessions` | None |
+| `session-file` | `file`, for example `lease.json` |
+| `session-items` | `session`, `folder` |
+| `definitions` | `catalog`: `templates`, `modes` or `workflows` |
+
+- An id is one or more parts with `/` between them. The API refuses an empty part, `.`, `..`, `\`, `:` and control characters (400). A scope key is one part.
+- A save checks the version of each change and remove before the first write. A refused save writes nothing.
+- The HTTP mode has no push: `Watch()` polls every 2 s.
 
 ## Questions to the user
 

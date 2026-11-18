@@ -25,7 +25,7 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Tray/WidgetForm.cs", [], "the place of the tray widget on the screen"),
         ("src/Orchestrator.Tray/Program.cs", ["\"templates\""], "the check of the home folder"),
         ("src/Orchestrator.Tray/MockStore.cs", ["CreateTempSubdirectory", "Directory.CreateDirectory(cwd)", "Directory.Delete(Folder"], "the mock store makes and deletes its own temp folder and the cwd of its sessions"),
-        ("src/Orchestrator.Store/Home.cs", ["Solution", "File.ReadAllText(source)"], "the home folder and config/policy.default.json of the repository"),
+        ("src/Orchestrator.Store/Home.cs", ["Solution", "File.ReadAllText(source)", "Directory.Exists(DefaultStoreRoot())"], "the home folder, config/policy.default.json of the repository, and the choice of the orch store (H5)"),
         ("src/Orchestrator.Store/Lifecycle.cs", ["worktree", "Directory.Exists(path)", "Path.GetDirectoryName(path)"], "the git worktree of a session"),
         ("src/Orchestrator.Store/FileStore.cs", ["(Local.LocalRepositories)Repositories).PathOf"], "the path helper for tests, which delegates to the implementation"),
         ("src/Orchestrator.Cli/Commands/EventCommands.cs", ["File.ReadAllText(json)"], "a JSON file of the user"),
