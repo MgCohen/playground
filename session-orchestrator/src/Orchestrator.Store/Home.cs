@@ -17,6 +17,18 @@ public static class Home
             .FirstOrDefault(a => a.Key == "OrchHome")?.Value is { } path && File.Exists(Path.Combine(path, Solution)) ? Path.GetFullPath(path) : null;
 
     /// <summary>The store root: <c>ORCH_STORE</c>, else <see cref="DefaultStoreRoot"/>.</summary>
+    /// <summary>
+    /// The folder of the <c>orch</c> tool that the supervisor gives to its turns (C3-F5): <c>ORCH_BIN</c>, else the folder
+    /// of the running program when it holds <c>orch.exe</c> or <c>orch</c>. Null: none.
+    /// </summary>
+    public static string? OrchDir(string? bin = null, string? folder = null)
+    {
+        bin ??= Environment.GetEnvironmentVariable("ORCH_BIN");
+        if (bin is { Length: > 0 }) return Path.GetFullPath(bin);
+        folder ??= AppContext.BaseDirectory;
+        return File.Exists(Path.Combine(folder, "orch.exe")) || File.Exists(Path.Combine(folder, "orch")) ? Path.GetFullPath(folder) : null;
+    }
+
     public static string StoreRoot() =>
         Environment.GetEnvironmentVariable("ORCH_STORE") is { Length: > 0 } store ? Path.GetFullPath(store) : DefaultStoreRoot();
 

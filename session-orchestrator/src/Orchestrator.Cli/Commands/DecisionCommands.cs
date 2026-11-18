@@ -17,7 +17,7 @@ public static class DecisionCommands
             c.Output.WriteLine($"{d.Id} [{d.Risk}{(d.DefaultOption is { } o ? $", default {o}" : "")}] {title}: {d.Question}");
             if (d.Options is { Length: > 0 } options) c.Output.WriteLine($"  options: {string.Join(", ", options)}");
         }
-        if (!any) c.Output.WriteLine("No open decisions.");
+        if (!any) c.Output.WriteLine("No open questions.");
         return 0;
     }
 
@@ -42,7 +42,7 @@ public static class DecisionCommands
         var open = c.Store.OpenDecisions(session);
         if (open.Count != 1)
         {
-            c.Output.WriteLine(open.Count == 0 ? "No open decision: the chat line is not an answer." : $"{open.Count} open decisions: the chat line answers none of them.");
+            c.Output.WriteLine(open.Count == 0 ? "No open question: the chat line is not an answer." : $"{open.Count} open questions: the chat line answers none of them.");
             return 0;
         }
         // The session already has the words in its chat, so the answer is delivered at once: its ack stops a second delivery.

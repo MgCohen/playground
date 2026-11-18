@@ -22,7 +22,8 @@
       "enum": [
         "user",
         "docs",
-        "policy"
+        "policy",
+        "supervisor"
       ]
     },
     "question": {

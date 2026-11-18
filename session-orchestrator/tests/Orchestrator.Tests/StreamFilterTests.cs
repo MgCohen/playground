@@ -96,7 +96,10 @@ public sealed class StreamFilterTests
         var questions = Run(rig, "questions", "--stream", "C");
         Assert.That(questions, Does.Contain("Question of C").And.Not.Contain("Question of other"));
 
+        Assert.That(Run(rig, "questions", "--stream", "Z"), Does.Contain("No open questions."), "C3-F4: the term is question");
+
         var status = Run(rig, "status", "--stream", "C");
+        Assert.That(status, Does.Contain("open question toolu_c").And.Not.Contain("open decision"), "C3-F4: the term is question");
         Assert.That(status, Does.Contain($"id: {parent}").And.Contain($"id: {child}").And.Contain("stream: C").And.Not.Contain(other));
 
         var events = Run(rig, "events", "--stream", "C", "--kind", "question");
@@ -121,6 +124,24 @@ public sealed class StreamFilterTests
     {
         Assert.That(new NewSession("t", "C:/x", "g", null) { Stream = "C" }.ToBrief().Stream, Is.EqualTo("C"));
         Assert.That(new NewSession("t", "C:/x", "g", "p") { Stream = " " }.ToBrief().Stream, Is.Null, "an empty stream takes the stream of the parent");
+    }
+
+    [Test]
+    public async Task The_new_session_api_takes_a_type_and_a_workflow()
+    {
+        var store = Directory.CreateTempSubdirectory("orch-new-").FullName;
+        Environment.SetEnvironmentVariable("ORCH_STORE", store);
+        using var factory = new WebApplicationFactory<Program>();
+        _ = factory.Server;
+        Environment.SetEnvironmentVariable("ORCH_STORE", null);
+        var client = factory.CreateClient();
+        var body = new StringContent("""{"title":"T","cwd":"C:/x","goal":"g","stream":"C","type":"decider","workflow":"planning"}""", System.Text.Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("/api/sessions", body);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created), await response.Content.ReadAsStringAsync());
+        var id = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.GetProperty("id").GetString()!;
+        var meta = new FileStore(store).Session(id);
+        Assert.That((meta.Stream, meta.Type?.Agent, meta.Workflow), Is.EqualTo(("C", "decider", "planning")));
+        Assert.That(new NewSession("t", "C:/x", "g", null) { Type = " ", Workflow = "" }.ToBrief() is { Type: null, Workflow: null }, "empty fields mean none");
     }
 
     [Test]

@@ -97,7 +97,7 @@ public sealed class Messages(FileStore store)
     /// </summary>
     public Event Answer(string session, string decision, string text, string by = Parties.User, string? via = null, AnswerSource? source = null)
     {
-        var asked = store.DecisionEvent(decision) ?? throw new MessageException($"no session has decision {decision}");
+        var asked = store.DecisionEvent(decision) ?? throw new MessageException($"no session has question {decision}");
         var body = Fields(("decision", decision), ("text", text), ("by", by), ("question", store.Events.Fields(asked).GetValueOrDefault("question") as string),
             ("reason", source?.Reason), ("source", source?.Source), ("onDefault", source?.OnDefault));
         Check(Kinds.Answer, body);

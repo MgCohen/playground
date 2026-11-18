@@ -74,6 +74,15 @@ public sealed class FakeMessages : IRunMessages
 
     public void Notify(string session, string text) => Notices.Add((session, text));
 
+    /// <summary>The questions that a session asked itself, with no runner: (thread, session).</summary>
+    public List<(string Thread, string Session)> Own { get; } = [];
+
+    public List<(string Thread, string Reason)> Closed { get; } = [];
+
+    public string? OpenQuestion(string session, string since) => Own.LastOrDefault(q => q.Session == session && !Answers.ContainsKey(q.Thread)).Thread;
+
+    public void Close(string thread, string reason) => Closed.Add((thread, reason));
+
     public string Last => Asked[^1].Thread;
 }
 
@@ -280,6 +289,70 @@ public sealed class WorkflowRunnerTests
         Assert.That(runner.Step(run.Id, null, "user").Step, Is.EqualTo("a"), "no answer yet");
         messages.Answers[messages.Last] = "c, because the test says so";
         Assert.That(runner.Step(run.Id, null, "user").Step, Is.EqualTo("c"));
+    }
+
+    [Test]
+    public void A_run_that_moves_on_closes_its_stale_stuck_question()
+    {
+        Fork();
+        var runner = Runner();
+        var run = runner.Start("fork", "owner", null, "user");
+        run = runner.Step(run.Id, Holds("something else"), "user");
+        var stuck = messages.Last;
+        run = runner.Step(run.Id, new StepResult { Pick = "b" }, "session:owner");
+        Assert.That(run.Step, Is.EqualTo("b"));
+        Assert.That(messages.Closed.Select(c => c.Thread), Is.EqualTo(new[] { stuck }));
+        Assert.That(messages.Closed[0].Reason, Does.Contain("moved on to step b"));
+    }
+
+    [Test]
+    public void A_stop_or_a_verdict_of_the_step_command_closes_the_open_question_but_an_answered_one_stays()
+    {
+        Approval(ApprovalStrategies.Required);
+        var runner = Runner();
+        var run = runner.Start("approval", "owner", null, "user");
+        runner.Step(run.Id, Holds("done"), "session:owner");
+        var approval = messages.Last;
+        runner.Step(run.Id, new StepResult { Verdict = RunVerdicts.Change }, "user");
+        Assert.That(messages.Closed.Select(c => c.Thread), Is.EqualTo(new[] { approval }));
+
+        runner.Step(run.Id, Holds("done"), "session:owner");
+        var second = messages.Last;
+        runner.Stop(run.Id, "test", "user");
+        Assert.That(messages.Closed.Select(c => c.Thread), Is.EqualTo(new[] { approval, second }));
+        Assert.That(messages.Closed[^1].Reason, Does.Contain("is stopped"));
+
+        var other = runner.Start("approval", "owner", null, "user");
+        runner.Step(other.Id, Holds("done"), "session:owner");
+        messages.Answers[messages.Last] = "approve";
+        runner.Step(other.Id, null, "user");
+        Assert.That(messages.Closed, Has.Count.EqualTo(2), "an answered question is not closed");
+    }
+
+    [Test]
+    public void An_ask_step_uses_the_open_question_of_the_owner_and_asks_no_second_question()
+    {
+        var runner = Runner();
+        var run = runner.Start("planning", "owner", null, "user");
+        run = runner.Step(run.Id, Holds("questions are open"), "session:owner");
+        messages.Own.Add(("toolu_own", "owner"));
+        var asked = messages.Asked.Count;
+        run = runner.Step(run.Id, new StepResult { Output = new Dictionary<string, string> { ["question"] = "Q1" } }, "session:owner");
+        Assert.That((run.Step, run.Wait!.Thread, run.Current!.Thread), Is.EqualTo(("answer", "toolu_own", "toolu_own")));
+        Assert.That(messages.Asked, Has.Count.EqualTo(asked), "no second question");
+        messages.Answers["toolu_own"] = "Blue.";
+        run = runner.Step(run.Id, null, "user");
+        Assert.That((run.Step, run.History[^2].Answer), Is.EqualTo(("record", "Blue.")));
+    }
+
+    [Test]
+    public void An_ask_step_with_no_owner_question_asks_the_output_question_of_the_step_before()
+    {
+        var runner = Runner();
+        var run = runner.Start("planning", "owner", null, "user");
+        run = runner.Step(run.Id, Holds("questions are open"), "session:owner");
+        run = runner.Step(run.Id, new StepResult { Output = new Dictionary<string, string> { ["question"] = "Which color?" } }, "session:owner");
+        Assert.That((run.Step, messages.Asked[^1].Question), Is.EqualTo(("answer", "Which color?")));
     }
 
     [Test]
@@ -655,6 +728,7 @@ public sealed class WorkflowStoreTests
         Run(rig, "run", "step", run.Id[..12], "--output-question", "Which color?");
         var thread = WorkflowHost.Runner(rig.Store, "test").Require(run.Id).Wait!.Thread!;
         Assert.That(rig.Store.Decision(thread)!.Session, Is.EqualTo(owner));
+        Assert.That(rig.Store.Decision(thread)!.Question, Is.EqualTo("Which color?"), "the output question of the ask step");
         Run(rig, "answer", thread, "Blue");
         Assert.That(Run(rig, "run", "step", run.Id), Does.Contain("step record"));
         Run(rig, "run", "step", run.Id, "--holds", "no questions are open");
@@ -664,6 +738,33 @@ public sealed class WorkflowStoreTests
         var shown = Run(rig, "run", "show", run.Id);
         Assert.That(shown, Does.Contain("1. read (agent)").And.Contain("approval: approve").And.Contain("7. propose (agent)"));
         Assert.That(Run(rig, "run", "list", "--open"), Does.Contain("No runs."));
+    }
+
+    [Test]
+    public void In_the_store_a_stale_stuck_question_closes_with_a_notice_and_the_ask_step_uses_the_owner_question()
+    {
+        using var rig = new Rig();
+        var owner = rig.Create("start", "Owner");
+        var runner = WorkflowHost.Runner(rig.Store, "test");
+        var run = runner.Start("planning", owner, null, Parties.User);
+        run = runner.Step(run.Id, new StepResult { Holds = ["something else"] }, Parties.Session(owner));
+        var stuck = run.Wait!.Thread!;
+        Assert.That(rig.Store.OpenDecisions(owner).Select(d => d.Id), Is.EqualTo(new[] { stuck }));
+
+        // C3-F2: the owner picks ask. The stuck question closes, with the notice question-closed to the owner.
+        run = runner.Step(run.Id, new StepResult { Pick = "ask" }, Parties.Session(owner));
+        Assert.That(rig.Store.OpenDecisions(owner), Is.Empty);
+        Assert.That(rig.Store.Events.FirstAnswer(stuck)!.From, Is.EqualTo(Parties.Supervisor));
+        var notice = rig.Store.Events.Thread(stuck).Single(e => e.Kind == EventKinds.Notice);
+        Assert.That((notice.To, rig.Store.Events.Fields(notice)["kind"]), Is.EqualTo((Parties.Session(owner), (object?)"question-closed")));
+
+        // C3-F3: the owner asks with ask_user. The answer step uses that question.
+        rig.Store.SaveDecision(new Decision("toolu_own", owner) { Question = "Which color?" });
+        run = runner.Step(run.Id, new StepResult { Output = new Dictionary<string, string> { ["question"] = "Which color?" } }, Parties.Session(owner));
+        Assert.That((run.Step, run.Wait!.Thread), Is.EqualTo(("answer", "toolu_own")));
+        Assert.That(rig.Store.OpenDecisions(owner).Select(d => d.Id), Is.EqualTo(new[] { "toolu_own" }), "one question");
+        new Messages(rig.Store).Answer(owner, "toolu_own", "Blue");
+        Assert.That(runner.Step(run.Id, null, Parties.User).Step, Is.EqualTo("record"));
     }
 
     [Test]

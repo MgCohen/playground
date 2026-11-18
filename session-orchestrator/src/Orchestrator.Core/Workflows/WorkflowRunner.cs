@@ -94,7 +94,20 @@ public sealed class WorkflowRunner
             WaitKinds.Stuck => Pick(run, definition, step, input?.Pick ?? FirstWord(wait.Thread is { } t ? messages.Answer(t) : null), definition.Steps.Select(s => s.Id).ToList(), by),
             _ => Result(run, definition, step, input, by),
         };
+        CloseStale(wait, run);
         return Save(run, by);
+    }
+
+    /// <summary>
+    /// C3-F2: when the run moves on from a wait with a question thread, the run closes that question if it has no
+    /// answer. A stale stuck or approval question then does not block a later done report of the owner.
+    /// </summary>
+    void CloseStale(RunWait? before, WorkflowRun after)
+    {
+        if (before?.Thread is not { } thread || after.Wait?.Thread == thread) return;
+        if (messages.Answer(thread) is not null) return;
+        var where = after.IsOpen ? $"moved on to step {after.Step}" : $"is {after.Status}";
+        messages.Close(thread, $"Closed: the run {after.Id} {where}. This question needs no answer.");
     }
 
     /// <summary>Stops an open run. The run keeps its history.</summary>
@@ -102,7 +115,10 @@ public sealed class WorkflowRunner
     {
         var run = Require(id);
         if (!run.IsOpen) return run;
-        return Save(run with { Status = RunStates.Stopped, Wait = null, Reason = reason }, by);
+        var wait = run.Wait;
+        run = run with { Status = RunStates.Stopped, Wait = null, Reason = reason };
+        CloseStale(wait, run);
+        return Save(run, by);
     }
 
     WorkflowDefinition Definition(WorkflowRun run) => definitions(run.Workflow) ?? throw new WorkflowException($"run {run.Id}: no workflow {run.Workflow}");

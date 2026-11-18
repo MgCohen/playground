@@ -108,6 +108,12 @@ async function parentId($: any): Promise<string | undefined> {
   return typeof entry?.parent === 'string' ? entry.parent : undefined
 }
 
+/**
+ * The output of `orch decisions` (also named `orch questions`) with no open question. The old text
+ * "No open decisions." of an older `orch` also counts (C3-F4).
+ */
+export const NO_OPEN_QUESTIONS = /^No open (questions|decisions)\b/
+
 export const EARLY_DONE =
   'orch: the report was not recorded. This session has an open question, so the work is not done. The end of a step is an update: call mcp__orch__update. Report done after the answer arrives.'
 
@@ -115,7 +121,7 @@ export async function report($: any, e: any): Promise<any> {
   if (!S.dir) return { deny: 'orch: this session is not enabled' }
   if (e.state === 'done' && S.id) {
     const open = await orch($, ['decisions', '--session', S.id])
-    if (open.ok && !open.text.startsWith('No open decisions')) return { result: EARLY_DONE }
+    if (open.ok && !NO_OPEN_QUESTIONS.test(open.text)) return { result: EARLY_DONE }
   }
   const fields = { state: e.state, summary: e.summary, done: e.done, next: e.next, blockers: e.blockers, links: e.links, details: e.details }
   const needs = e.state === 'done' || e.state === 'blocked' ? 'ack' : undefined

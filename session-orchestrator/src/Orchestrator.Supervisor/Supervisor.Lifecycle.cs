@@ -89,6 +89,8 @@ public sealed partial class Supervisor
             NotifyParent(id, "child-not-responding", ("fault", "stop"), ("text", $"The stop did not end its turn in {s.Timers.StopSeconds:0} s."));
             return;
         }
+        // C3-F6: the app archive texts are only for a session in the app. The snapshot also gives InApp false with no import.
+        if (meta.Engine.Imported != true) return;
         if (level == 1 && HasLiveParent(meta) && meta.Engine.AppId is { } appId && s.InApp && !s.AppArchived)
         {
             NotifyParent(id, "archive-child", [("appId", appId), .. options.Provider.AppTools]);

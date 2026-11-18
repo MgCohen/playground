@@ -2018,15 +2018,15 @@ sequenceDiagram
 
 ### Findings
 
-| Id | Finding | Proposal |
-|---|---|---|
-| C3-F1 | `POST /api/sessions` has no `type` and `workflow` fields. Only `orch new` and `spawn_child` take them | Add both fields to `NewSession` |
-| C3-F2 | The read step ended with no holds, so the runner asked a stuck question (high, to the user). The session then picked `ask` and the run moved on, but the stuck question stayed open. Later it refused the done report of the owner ("This session has an open question") | When a run moves on, close its own open stuck and pick questions (notice `question-closed`) |
-| C3-F3 | One question, two answers. The owner asked with `ask_user` in step `ask`. Then the ask step `answer` posted a second question with the step instructions as its text ("Answer: The user or the orchestrator answers the question.") | Let the answer step poll the thread of the owner question, or copy the output `question` into its question |
-| C3-F4 | The C2 term rename missed two CLI texts: `orch status` prints "open decision", and `orch questions` prints "No open decisions." | Rename both texts |
-| C3-F5 | The installed `orch` tool on `PATH` has no `run` command. The plugin and the sessions call `orch` by name, so a live test must put the `orch` of the branch first on `PATH` | Recorded in `docs/know-how.md`. Later: the supervisor puts its own `orch` first on the `PATH` of each turn |
-| C3-F6 | With `ORCH_IMPORT=0` no session is in the app. But the archive of the child sent the notice `archive-child` to the root, and 2 minutes later a message to the user: "Archive ... from the app sidebar" | Skip the app archive notice and its escalation when `engine.imported` is not true |
-| C3-F7 | The orchestrator ran `orch run start planning --goal` with no `--owner`, and the command found the owner | None: works as documented |
+| Id | Finding | Proposal | State |
+|---|---|---|---|
+| C3-F1 | `POST /api/sessions` has no `type` and `workflow` fields. Only `orch new` and `spawn_child` take them | Add both fields to `NewSession` | Fixed in C5. Test: `The_new_session_api_takes_a_type_and_a_workflow` |
+| C3-F2 | The read step ended with no holds, so the runner asked a stuck question (high, to the user). The session then picked `ask` and the run moved on, but the stuck question stayed open. Later it refused the done report of the owner ("This session has an open question") | When a run moves on, close its own open stuck and pick questions (notice `question-closed`) | Fixed in C5. A run that moves on or stops closes the open question of its last wait: stuck, approval or ask. A pick posts a message, not a question, so it has nothing to close. Tests: `A_run_that_moves_on_closes_its_stale_stuck_question`, `A_stop_or_a_verdict_of_the_step_command_closes_the_open_question_but_an_answered_one_stays`, `In_the_store_a_stale_stuck_question_closes_with_a_notice_and_the_ask_step_uses_the_owner_question` |
+| C3-F3 | One question, two answers. The owner asked with `ask_user` in step `ask`. Then the ask step `answer` posted a second question with the step instructions as its text ("Answer: The user or the orchestrator answers the question.") | Let the answer step poll the thread of the owner question, or copy the output `question` into its question | Fixed in C5: the answer step uses the thread of the owner question. With no owner question, it asks the output `question`. Tests: `An_ask_step_uses_the_open_question_of_the_owner_and_asks_no_second_question`, `An_ask_step_with_no_owner_question_asks_the_output_question_of_the_step_before` |
+| C3-F4 | The C2 term rename missed two CLI texts: `orch status` prints "open decision", and `orch questions` prints "No open decisions." | Rename both texts | Fixed in C5, with the other texts that the search found. Tests: `The_cli_filters_events_tree_status_and_questions_by_stream` (C# part), `report-done.test.ts` |
+| C3-F5 | The installed `orch` tool on `PATH` has no `run` command. The plugin and the sessions call `orch` by name, so a live test must put the `orch` of the branch first on `PATH` | Recorded in `docs/know-how.md`. Later: the supervisor puts its own `orch` first on the `PATH` of each turn | Fixed in C5: `ORCH_BIN`, else the folder of the supervisor when it holds `orch`. Tests: `OrchPathTests` |
+| C3-F6 | With `ORCH_IMPORT=0` no session is in the app. But the archive of the child sent the notice `archive-child` to the root, and 2 minutes later a message to the user: "Archive ... from the app sidebar" | Skip the app archive notice and its escalation when `engine.imported` is not true | Fixed in C5. Test: `A_child_with_no_import_gets_no_app_archive_notice_and_no_escalation` |
+| C3-F7 | The orchestrator ran `orch run start planning --goal` with no `--owner`, and the command found the owner | None: works as documented | No change |
 
 ### The session kind question: what does a type do?
 

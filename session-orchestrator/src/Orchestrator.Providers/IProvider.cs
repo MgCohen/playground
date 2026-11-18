@@ -74,4 +74,8 @@ public sealed record AskRequest(string Cwd, string Prompt, int MaxTurns)
 public sealed record AskResult(bool Ok, string? Text, string? Error);
 
 /// <summary>The values of the composition root. <c>PluginDir</c>: load the orch plugin from this folder. Null: from the user settings.</summary>
-public sealed record ProviderOptions(string? StoreRoot = null, string? HomeRoot = null, string? PluginDir = null);
+public sealed record ProviderOptions(string? StoreRoot = null, string? HomeRoot = null, string? PluginDir = null)
+{
+    /// <summary>The folder of the <c>orch</c> tool of the supervisor (C3-F5). Each turn gets it first on <c>PATH</c>. Null: the <c>PATH</c> does not change.</summary>
+    public string? OrchDir { get; init; }
+}

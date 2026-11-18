@@ -36,15 +36,29 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
         List<string> arguments = [.. SettingArguments(options.PluginDir), session, request.Id];
         if (request.IsNew && request.Title is { Length: > 0 } title) arguments.AddRange(["-n", title]);
         if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", Agent(agent)]);
-        var call = new ClaudeCall(request.Cwd, request.Prompt, arguments,
-            new Dictionary<string, string>
-            {
-                ["ORCH_HOLDER"] = Holders.Supervisor,
-                ["ORCH_STORE"] = (options.StoreRoot ?? "").Replace('\\', '/'),
-                ["ORCH_HOME"] = (options.HomeRoot ?? "").Replace('\\', '/'),
-            });
+        var call = new ClaudeCall(request.Cwd, request.Prompt, arguments, TurnEnvironment(options));
         var output = await Claude.Run(call, null, cancel);
         return new TurnResult(output.Ok, output.Result, output.Error, Math.Round(watch.Elapsed.TotalSeconds));
+    }
+
+    /// <summary>
+    /// The environment of a local turn: the holder, the store and the home. With <see cref="ProviderOptions.OrchDir"/>,
+    /// that folder comes first on <c>PATH</c>, so that the session and the plugin call the <c>orch</c> of the supervisor (C3-F5).
+    /// </summary>
+    public static Dictionary<string, string> TurnEnvironment(ProviderOptions options, string? path = null)
+    {
+        var environment = new Dictionary<string, string>
+        {
+            ["ORCH_HOLDER"] = Holders.Supervisor,
+            ["ORCH_STORE"] = (options.StoreRoot ?? "").Replace('\\', '/'),
+            ["ORCH_HOME"] = (options.HomeRoot ?? "").Replace('\\', '/'),
+        };
+        if (options.OrchDir is { Length: > 0 } dir)
+        {
+            path ??= Environment.GetEnvironmentVariable("PATH") ?? "";
+            environment["PATH"] = path.Length == 0 ? dir : dir + Path.PathSeparator + path;
+        }
+        return environment;
     }
 
     /// <summary>The longest wait for a cloud start or a cloud message. A folder that is not trusted yet waits for a person.</summary>
