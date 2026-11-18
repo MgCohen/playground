@@ -24,6 +24,8 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Providers/ClaudeCode/ClaudeCodeProvider.cs", ["File.ReadAllText(settings)", "plugin.json"], "the settings of Claude Code for orch doctor"),
         ("src/Orchestrator.Tray/SelfTest.cs", [], "the screenshots of the tray self test"),
         ("src/Orchestrator.Tray/SelfTest.Motion.cs", [], "the screenshots of the motion checks of the tray self test"),
+        ("src/Orchestrator.Tray/SelfTest.Cards.cs", [], "the pictures of the cards of the tray self test (V7)"),
+        ("src/Orchestrator.Tray/SelfTest.Overlap.cs", [], "the test place of the edge tab on the screen (V3)"),
         ("src/Orchestrator.Tray/WidgetForm.cs", [], "the place of the tray widget on the screen"),
         ("src/Orchestrator.Tray/EdgeTab.cs", [], "the place of the edge tab on the screen"),
         ("src/Orchestrator.Tray/Program.cs", ["\"templates\"", "selftest-error.txt"], "the check of the home folder, and the error file of the self test"),

@@ -19,6 +19,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" />
   </ItemGroup>
   <ItemGroup>
+    <!-- V5: the one image of the home ball. The page button shows the same file from the web assets. -->
+    <EmbeddedResource Include="../Orchestrator.Web/wwwroot/home-ball.png" LogicalName="home-ball.png" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- The templates and the policy go next to the exe, so an installed app does not need the source folder. -->
     <None Include="../../templates/**" Link="home/templates/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../config/**" Link="home/config/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
