@@ -142,6 +142,17 @@ public sealed class DefinitionTests
     }
 
     [Test]
+    public void The_plugin_hook_reads_the_same_catalogs_as_the_csharp_code()
+    {
+        var backend = File.ReadAllText(Path.Combine(Home.Root(), "plugin", "hooks", "backend.ts"));
+        foreach (var catalog in Catalog.All)
+        {
+            var folder = catalog.Folder.Length == 0 ? "" : catalog.Folder + "/";
+            Assert.That(backend, Does.Contain($"{catalog.Name}: {{ folder: '{folder}', marker: '{catalog.Marker}' }}"), catalog.Name);
+        }
+    }
+
+    [Test]
     public void The_cli_checks_and_lists_the_modes_and_workflows()
     {
         var old = Environment.GetEnvironmentVariable("ORCH_STORE");
