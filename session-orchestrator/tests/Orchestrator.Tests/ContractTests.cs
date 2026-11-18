@@ -25,6 +25,9 @@ public sealed class ContractTests
         ("notice", """{"kind":"question-closed","question":"Q?"}""", "question-closed: Q?"),
         ("message", """{"text":"a long text that is longer than eighty characters, so the rule must cut it at eighty"}""", "a long text that is longer than eighty characters, so the rule must cut it at ei"),
         ("brief", """{"title":"Color child","goal":"g"}""", "Color child"),
+        ("report", """{"state":"done","summary":"C2 is done. The planning workflow runs. All tests pass, see https://github.com/x/y/pull/41."}""", "C2 is done."),
+        ("answer", """{"decision":"d","text":"yes go with the first one. and also check the colors? thanks"}""", "yes go with the first one."),
+        ("message", """{"text":"Version 1.2 is out and the file is a.txt"}""", "Version 1.2 is out and the file is a.txt"),
     ];
 
     [Test]

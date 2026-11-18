@@ -35,6 +35,7 @@ public sealed class StreamFilterTests
         finally
         {
             Environment.SetEnvironmentVariable("ORCH_STORE", null);
+            Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, null);
         }
     }
 
@@ -131,9 +132,11 @@ public sealed class StreamFilterTests
     {
         var store = Directory.CreateTempSubdirectory("orch-new-").FullName;
         Environment.SetEnvironmentVariable("ORCH_STORE", store);
+        Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, Providers.Fake.FakeProvider.ProviderName);
         using var factory = new WebApplicationFactory<Program>();
         _ = factory.Server;
         Environment.SetEnvironmentVariable("ORCH_STORE", null);
+        Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, null);
         var client = factory.CreateClient();
         var body = new StringContent("""{"title":"T","cwd":"C:/x","goal":"g","stream":"C","type":"decider","workflow":"planning"}""", System.Text.Encoding.UTF8, "application/json");
         var response = await client.PostAsync("/api/sessions", body);
@@ -149,9 +152,11 @@ public sealed class StreamFilterTests
     {
         var store = Directory.CreateTempSubdirectory("orch-stream-").FullName;
         Environment.SetEnvironmentVariable("ORCH_STORE", store);
+        Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, Providers.Fake.FakeProvider.ProviderName);
         using var factory = new WebApplicationFactory<Program>();
         _ = factory.Server;
         Environment.SetEnvironmentVariable("ORCH_STORE", null);
+        Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, null);
         var files = new FileStore(store);
         var messages = new Messages(files);
         var parent = messages.NewSession(new BriefFields { Title = "P", Goal = "g", Cwd = "C:/x", Stream = "C" }, "test");

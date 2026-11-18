@@ -120,7 +120,7 @@ Both tests check the same three known values. The files have no `version` field.
 | `session` | The session that the envelope is about |
 | `stream` | The work stream (C1) of the session of the envelope. Rules below the table |
 | `from`, `to` | `user`, `supervisor`, `docs`, `policy` or `session:<full id>`. One receiver for each envelope |
-| `subject` | One line of 80 characters maximum. One rule in `Subjects.Of` (C#) and `subject` (`stream.ts`); the contract tests check both |
+| `subject` | One line: the first sentence (it ends with `.`, `!` or `?` and a space), cut at 80 characters. One rule in `Subjects.Of` (C#) and `subject` (`stream.ts`); the contract tests check both |
 | `body` | The path of the body. A forward points to the body of the original |
 | `thread` | Groups one conversation. For a question or a plan it is the tool call id; the answer, the review and the notices use the same thread |
 | `needs` | `answer`, `review` or `ack`: the receiver must act. Absent: nothing to do |
@@ -179,7 +179,7 @@ A flag key is true when it is present with no value, or with `true` or `1`. The 
 | `Thread(thread)` | `thread` | One conversation in order |
 | `Ledger` | `ledger` | The ledger |
 
-The views of a session are queries too: `Report` and `Update` are the newest post of the session, `Blocked` is the newest `blocked` envelope about the session, and `OpenDecisions` is the named query. The plugin posts `blocked` when a submit drops and when it goes through again (the stop latch); the supervisor (`SaveBlocked`) posts it when the reason of a failed turn changes. `Blocked.By` is `supervisor` for an envelope from the supervisor, else null (the stop latch). No session file holds the blocked state.
+The views of a session are queries too: `Report` and `Update` are the newest post of the session, `Blocked` is the newest `blocked` envelope about the session, and `OpenDecisions` is the named query. The plugin posts `blocked` when a submit drops and when it goes through again (the stop latch); the supervisor (`SaveBlocked`) posts it when the reason of a failed turn changes. The reason is `supervisor turns fail: <error>`, with no count and no time, so it changes only with the error. The count and the next try are in the `failure` envelope. `Blocked.By` is `supervisor` for an envelope from the supervisor, else null (the stop latch). No session file holds the blocked state.
 
 ## Post rules
 
@@ -190,7 +190,9 @@ The views of a session are queries too: `Report` and `Update` are the newest pos
 5. A forward is a new envelope with a new `to`, the same body, the same `from` and `thread`, and `refs.of`.
 6. Before an answer, the writer adds the claim `answer/<thread>` (file `claims/answer/<thread>`). A second add of the claim fails, so the post is refused with the first answer. So the first answer wins also between processes (the supervisor, `orch`, the UI).
 7. The plugin refuses an unknown kind, a message kind with no `meta.json`, missing `required` or `dependentRequired` fields of `schema.json`, and a `from` or `to` that `meta.json` does not allow. The engine checks the full schema before the tool call. The plugin never posts an answer or a review: these go through `orch`, so the reply-type and first-answer checks are in C# only.
-8. The envelope file holds only the fields in the table above. The C# record has computed helpers (`Of`, `Reply`, `Via`, `IsForward`); they are not in the file.
+8. A question or a plan with no `thread` gets its own envelope id as the thread. So a question from `POST /api/stream` or `orch post` with no thread is open, makes a card and takes an answer, the same as one from `ask_user` (the tool call id).
+9. A post of an old question kind (`decision`, `query`) is stored as `question`.
+10. The envelope file holds only the fields in the table above. The C# record has computed helpers (`Of`, `Reply`, `Via`, `IsForward`); they are not in the file.
 
 ## Types
 
@@ -219,8 +221,20 @@ An added kind needs no code change. The stream checks its schema and meta, the U
 | `review` | user | session | | | `render/<verdict>.md`, `render/plan.md` |
 | `notice` | supervisor | session | | | `render/<kind>.md`: `question-reminder`, `question-closed`, `archive-self`, `restart`, and the lifecycle notices (below) |
 | `ack` | session, user, supervisor | the sender | | | Not delivered |
+| `failure` | supervisor | user | | ack, message | Not delivered |
 
-Other kinds have no template: traces (`session.input`, `session.output`, `session.tool`, `turn.start`, `turn.end`, `turn.fail`), lifecycle names of stream B (`session.start`, `session.stop`, `session.resume`, `session.archive`, `session.import`, `session.end`, `session.state`, `state.conflict`, `meta.update`, `lease.take`, `lease.release`, `blocked`, `delivery.blocked`) and git (`branch.*`, `pr.*`, `merge.block`).
+A `failure` is a failure that the supervisor saw (D, problem 4). Fields: `text`, `session`, `reason` (`failed-turns` or `no-ack`), `state` (`open` or `recovered`), `error`, `tries`, `first`, `last`, `next`, `envelopes`. Each session and reason has one thread, `failure-<session>-<reason>` (`Failures.Thread`):
+
+| Moment | Post |
+|---|---|
+| `MaxFailures` failed supervisor turns, and each failed try after it | `failure` with `state: open`, the tries, the error, the next try and the waiting envelopes |
+| A live session does not take an envelope after the nudge | `delivery.blocked` (a trace) for the envelope, then `failure` `no-ack` with all stuck envelopes |
+| The same facts again | Nothing |
+| A good turn, or no stuck envelope | `failure` with `state: recovered` |
+
+The envelope has no `needs`: it knows nothing about cards. The inbox view decides (User inbox, below).
+
+Other kinds have no template: traces (`session.input`, `session.output`, `session.tool`, `turn.start`, `turn.end`, `turn.fail`), lifecycle names of stream B (`session.start`, `session.stop`, `session.resume`, `session.archive`, `session.import`, `session.end`, `session.state`, `state.conflict`, `meta.update`, `lease.take`, `lease.release`, `blocked`, `delivery.blocked`). `delivery.blocked` is a trace with no `needs`: to the user, and a copy to a sender session and git (`branch.*`, `pr.*`, `merge.block`).
 
 The lifecycle notices of the supervisor:
 
@@ -241,7 +255,7 @@ The lifecycle notices of the supervisor:
 
 The provider gives the app tool names: `remoteControlTool` and `archiveTool` (`IProvider.AppTools`). The supervisor adds them to `remote-control-self`, `remote-control-child`, `archive-child` and `archive-self`. No template names an app tool.
 
-A root session has no parent: each notice to the parent goes to the user as a `message` from `supervisor` with `needs: ack`. Its text is the render of the notice.
+A root session has no parent: each notice to the parent goes to the user as a `message` from `supervisor` with `needs: ack`. The same applies to a child whose parent is not enabled. Its text is the user render of the notice, `render/user-<kind>.md`: it names a "session", not a "child", and gives the acts of the user. Each notice kind to the parent has a user render (test `Each_notice_to_the_parent_has_a_render_for_the_user`). A user render is not a notice kind. All lifecycle messages of one session to the user share the thread `notice-<session>`. A new one gets the older open ones an ack from the supervisor (`by: superseded`, `state: read`), so the inbox shows one card for each session: its newest state.
 
 ## Template system
 
@@ -355,8 +369,8 @@ An agent step names its session: `owner`, `new` (a child of the owner with role 
 | Step | Receiver state | Action | Wait (`policy.json`, `delivery`) |
 |---|---|---|---|
 | 1 | Live and idle, no ack | `Nudge(session:<id>)`: `orch watch` looks at the stream again | `nudgeSeconds` (15) after the envelope or the last idle |
-| 2 | Still no ack | `delivery.blocked` to the user (`needs: ack`, a card) and to the sender | `peerSeconds` (60) more |
-| 3 | Not live | The turn runner delivers. After `MaxFailures` failed turns: `delivery.blocked` | |
+| 2 | Still no ack | `delivery.blocked` (a trace) to the user and to a sender session, and one `failure` `no-ack` for the session | `peerSeconds` (60) more |
+| 3 | Not live | The turn runner delivers. After `MaxFailures` failed turns: one `failure` `failed-turns` for the session | |
 
 The watchdog does not count the time while the live session runs a turn. A session sends a peer nudge (`$.session.send` with `[orch nudge]`) after a message to another session; the receiver consumes it in `session.receive`. The supervisor sends no peer nudge.
 
@@ -374,7 +388,7 @@ The watchdog does not count the time while the live session runs a turn. A sessi
 | Question follow | Supervisor | A closed notice when the question of a child closes; reminders while it waits with no default (10 min, then each hour) | notice |
 | Docs check, default | Supervisor (`docs`, `policy`) | An answer to the session, and a forward to the user with `needs: review` | answer, forward |
 | User inbox | UI, `orch inbox`, `GET /api/inbox` | Shows a card | answer, review, ack, message |
-| Watchdog | Supervisor | Nudge, then `delivery.blocked` | `delivery.blocked` |
+| Watchdog | Supervisor | Nudge, then `delivery.blocked` and `failure` | `delivery.blocked`, `failure` |
 
 ### User inbox
 
@@ -382,6 +396,7 @@ The watchdog does not count the time while the live session runs a turn. A sessi
 open cards = envelopes to = user with needs (or a question with no answer)
              minus envelopes with a reply (refs.reply) or an ack (refs.of)
              minus a report with needs ack whose forward has an ack (the parent got it)
+             plus the newest failure of each failure thread, while its state is open and it has no ack
              the newest envelope of each thread
 ```
 
@@ -389,7 +404,7 @@ open cards = envelopes to = user with needs (or a question with no answer)
 |---|---|---|
 | question | answer = `defaultOption` (or the text); with no default, the text is required | answer = the text |
 | answer by docs or policy | review approve | review refuse with the text |
-| report done or blocked, `delivery.blocked` | ack (`state: read`) | message with the text to the session, then ack |
+| report done or blocked, `failure` | ack (`state: read`): "Seen" | message with the text to the session, then ack |
 
 ## Session files
 
@@ -404,7 +419,7 @@ The plugin and the supervisor share one folder for each session: `store/sessions
 | `mirror/<ms>-<uuid>.json` | Plugin | `{ door, origin, uuid, message }` for the doors `prompt`, `response` and `tool-result`. `message` is JSON, cut to 4000 characters |
 | `log-<holder>.txt` | Plugin | Log lines of one holder (`live` or `supervisor`), cut to the last 100 000 characters |
 | `session.json` | `SessionRegistry` (in the supervisor and in `orch`), and `/orch-enable` (create, or a new title of its own entry, with the version of the read). A plugin never changes another field: it posts `meta.update`, and the registry writes the field | The registry entry: the section "Session registry" below. The supervisor runs no turn of a stopped or archived session (`lifecycle.phase`), and ends its running turn. The plugin delivers no envelope while the phase is not `active` |
-| `meta.json`, `control.json` | Store version 2 only | `orch store upgrade` reads them, and keeps them as a backup. No other code reads them |
+| `meta.json`, `control.json` | Store version 1 and 2 only | `orch store upgrade` reads them, and keeps them as a backup. No other code reads them |
 | `state.json` | Supervisor | The lifecycle state: `{ state, since, requested, inferred, guard, fault, waitReason, reminded, remoteControlAsked, history }` (below) |
 | `state-check.json` | Supervisor | `{ state, reason, at, error }`: the last answer of the fallback agent `orch:state-checker` |
 | `forgotten.json` | Supervisor | `{ report, nudged, notified }`: one forgotten episode. `report` is `<last report id>|<last input id>` (an input from another party than the supervisor). A new report or a new input starts a new episode: one nudge, then one notice to the parent. The file is deleted when the session goes from forgotten to done, stopped or archived |
@@ -462,9 +477,9 @@ The full code is the codes from the root down, with a space between them: `O1 C2
 4. A new behavior mode is a folder in `templates/modes/`. A new tier, key or permissions mode is one line in `SettingTiers`.
 5. Today only two readers use the settings: `visibility` `private` keeps Remote Control off (the old `background`), and `orch merge` reads `allowDefaults` on the session and its parents. S3 and S4 add the other readers.
 
-### Upgrade from version 2
+### Upgrade from version 1 or 2
 
-`orch store upgrade [--dry-run] [--force]` makes a store of version 2 a store of version 3. It runs only through the repositories.
+`orch store upgrade [--dry-run] [--force]` makes a store of version 1 or 2 a store of version 3. It runs only through the repositories. To upgrade the old store `<home>/store`, copy it first with `orch store migrate`, then run the upgrade on the copy.
 
 1. It refuses while a session has a heartbeat in the last 30 s (`--force` skips this check).
 2. For each session folder with `meta.json` or `control.json`, it makes the entry: the fields of `meta.json`, the phase of `control.json`, `background` as `behavior.visibility`, `allowDefaults` as `permissions.allowDefaults`. Parents come first, so each child copies the settings of its parent.
@@ -472,6 +487,8 @@ The full code is the codes from the root down, with a space between them: `O1 C2
 4. A meta with no `createdBy` gets `lifecycle.started: true`: version 2 made no new engine session for it.
 5. An entry that exists stays. It writes `version.json` last, so a stopped upgrade can run again.
 6. It deletes no file: `meta.json` and `control.json` stay as a backup.
+7. Version 1 only: the history mark. The `meta.json` and `control.json` of version 1 have the same fields, so steps 2 to 6 are the same. The envelopes of version 1 have no `thread`, no `needs` and no acks, and version 1 had no subscriptions. So each old envelope to a session looks undelivered, and each old `decision` of a child looks not relayed. The upgrade writes a cursor at the newest envelope, with the ids of the last 120 s in `recent`, for each subscription whose filter can match an old envelope: `session-<id>/deliver` and `supervisor/reports-<id>` of each session folder, `supervisor/relay` and `supervisor/meta`. A cursor that is newer stays.
+8. Version 1 only: the envelopes do not change. They stay readable as history (`orch events`, the timeline, the report of a session). A question of version 1 keeps its decision id in `refs.decision`, not in `thread`, so it is never open, never makes a card and never gets a default. The old kinds (`question.forward`, `report.forward`, `question.remind`, `question.close`) and the old parties (`plugin`, `composer`, `peer`) are only traces. The communication files of version 1 (`inbox/`, `answers/`, `decisions/`, `delivered/`, `reviews/`, `reports/`, `report.json`, `update.json`, `blocked.json`, `cursor.txt`, `forwarded*`) stay as a backup. No code reads them.
 
 ## Lifecycle state machine
 
@@ -691,7 +708,7 @@ A review of a default decision (`templates/review/render/<verdict>.md`):
 1. Write each file in one write: a temporary file, then a move.
 2. Only one writer has the lease. The plugin delivers only with holder `live`. With any other holder, the supervisor delivers with `claude -p`.
 3. A lease `live` counts as live while the heartbeat or the lease is less than 15 s old. After that, the session is `stale`. The supervisor releases the lease (`none`) only when the process in `lease.json` is gone. It never runs a turn while the holder is `live`. If the process is alive with no beat for `staleProcessSeconds`, the session is `not-responding`. The plugin takes a released lease back at its next beat.
-4. The supervisor and each `orch` command (except `doctor`, `template`, `process`, `supervisor` and `store`) refuse a store with another version. The plugin stays inactive in a store whose `version.json` is not version 3. A store of version 2 needs `orch store upgrade` (the section "Session registry"). There is no migration from version 1: move the old store to another folder and start with a new store.
+4. The supervisor and each `orch` command (except `doctor`, `template`, `process`, `supervisor` and `store`) refuse a store with another version. The plugin stays inactive in a store whose `version.json` is not version 3. A store of version 1 or 2 needs `orch store upgrade` (the section "Session registry").
 
 ## Recovery
 

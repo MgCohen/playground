@@ -80,6 +80,8 @@ public sealed class EventStream
     public Event Post(PostInput post)
     {
         post = post with { Body = post.Body.Where(f => f.Value is not null).ToDictionary(f => f.Key, f => f.Value) };
+        // An old question kind (decision, query) is stored as question, the kind that the readers use.
+        if (EventKinds.OldQuestions.Contains(post.Kind)) post = post with { Kind = EventKinds.Question };
         lock (gate)
         {
             Check(post);
@@ -91,7 +93,9 @@ public sealed class EventStream
             repos.Bodies.Save();
             var e = new Event(id, Times.Format(clock.GetUtcNow()), post.Session, post.Kind, post.From, post.To, Subjects.Of(post.Kind, post.Body), body, ToElements(post.Refs))
             {
-                Thread = post.Thread,
+                // A question or a plan with no thread starts its own thread: its id. The answer, the review and the
+                // card find it by the thread. ask_user gives the tool call id; a post of the API can give none (D, problem 3).
+                Thread = post.Thread ?? (StartsThread(post.Kind) ? id : null),
                 Needs = post.Needs,
                 Stream = post.Stream ?? StreamOf(post.Session ?? Parties.SessionId(post.From) ?? Parties.SessionId(post.To)),
             };
@@ -101,6 +105,9 @@ public sealed class EventStream
             return e;
         }
     }
+
+    /// <summary>A question (also of an old kind) or a plan: the first envelope of a conversation.</summary>
+    static bool StartsThread(string kind) => EventKinds.Questions.Contains(kind) || kind == EventKinds.Plan;
 
     /// <summary>
     /// The stream of a session in the registry. The registry sets the stream when it creates the entry and never

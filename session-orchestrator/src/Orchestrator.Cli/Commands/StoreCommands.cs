@@ -19,8 +19,8 @@ public static class StoreCommands
     }
 
     /// <summary>
-    /// Upgrades the store from version 2 to version 3: meta.json and control.json of each session become the registry
-    /// entry session.json. The old files stay as a backup.
+    /// Upgrades the store from version 1 or 2 to version 3: meta.json and control.json of each session become the registry
+    /// entry session.json. The old files stay as a backup. A store of version 1 also gets the history mark of its envelopes.
     /// </summary>
     static int Upgrade(CommandContext c)
     {
