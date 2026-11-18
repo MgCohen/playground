@@ -43,6 +43,12 @@ public static partial class Program
         var data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Orchestrator.Tray");
         Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", Path.Combine(data, (selfTest is null ? "WebView2" : "WebView2.selftest") + (named is null ? "" : "." + named)));
 
+        // V19: an unhandled exception goes to the log, with no dialog of Windows Forms. The tray keeps running.
+        Faults.Log = selfTest is not null ? Path.Combine(selfTest, "exceptions.log") : Path.Combine(data, named is null ? "tray.log" : $"tray.{named}.log");
+        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+        Application.ThreadException += (_, e) => Faults.Add(e.Exception, "UI thread");
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => Faults.Add(e.ExceptionObject as Exception, "process");
+        TaskScheduler.UnobservedTaskException += (_, e) => { Faults.Add(e.Exception, "task"); e.SetObserved(); };
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);

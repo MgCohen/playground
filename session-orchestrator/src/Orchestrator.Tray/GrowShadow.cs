@@ -40,6 +40,12 @@ public sealed class GrowShadow : LayeredForm
     /// <summary>The shown part of the widget: its bottom <paramref name="height"/> pixels.</summary>
     public void Track(Form owner, int height)
     {
+        // V20: no shadow for a widget that is hidden or minimized.
+        if (!owner.Visible || owner.WindowState == FormWindowState.Minimized)
+        {
+            Hide();
+            return;
+        }
         fade.Stop();
         strength = 1;
         shown = height;

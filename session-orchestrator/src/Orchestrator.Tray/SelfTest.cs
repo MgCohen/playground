@@ -42,7 +42,7 @@ public static partial class SelfTest
 
     /// <summary>
     /// Runs all checks, or with <paramref name="only"/> a list of groups: "notify" (the notice motion, V1 and V2) and "overlap"
-    /// (one form at a time, V4) and "ball" (one look of the home ball, V5), "drag" and "edge" (N1 and N2), "cards" (pictures of the cards, V7), "swipe" (a real drag on the top card, V17), "shadow" (one shadow, V10), "motion" (M5 to M7 and the ring draw, V12), "nav" (a card tap to its page, V13), "transitions" (T1, T2). The groups run with the test places of the widget and the edge tab.
+    /// (one form at a time, V4) and "ball" (one look of the home ball, V5), "drag" and "edge" (N1 and N2), "cards" (pictures of the cards, V7), "swipe" (a real drag on the top card, V17), "shadow" (one shadow, V10), "motion" (M5 to M7 and the ring draw, V12), "nav" (a card tap to its page, V13), "transitions" (T1, T2), "threads" (the home ball from two threads, V19), "shadow-life" (the shadow follows the widget, V20). The groups run with the test places of the widget and the edge tab.
     /// </summary>
     public static async Task<int> Run(TrayApp tray, string folder, string? only = null)
     {
@@ -71,6 +71,8 @@ public static partial class SelfTest
             if (groups.Contains("motion")) checks.AddRange(await Motion(web, folder));
             if (groups.Contains("nav")) checks.AddRange(await Nav(web, folder));
             if (groups.Contains("transitions")) checks.AddRange(await Transitions(web, folder));
+            if (groups.Contains("threads")) checks.AddRange(await Threads());
+            if (groups.Contains("shadow-life")) checks.AddRange(await ShadowLife(form));
             return Write(checks, folder);
         }
         foreach (var step in Steps)
@@ -150,11 +152,15 @@ public static partial class SelfTest
         checks.AddRange(await Swipe(form, web, folder));
         checks.AddRange(await Shadow(form, folder));
         checks.AddRange(await Nav(web, folder));
+        checks.AddRange(await Threads());
+        checks.AddRange(await ShadowLife(form));
         return Write(checks, folder);
     }
 
     static int Write(List<Check> checks, string folder)
     {
+        // V19: no unhandled exception in the run (each one is in exceptions.log).
+        checks.Add(new Check("no-exceptions", Faults.Count == 0, Faults.Count == 0 ? "no unhandled exception" : $"{Faults.Count} unhandled exceptions; first: {Faults.First}", ""));
         foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
         File.WriteAllText(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
         return checks.All(c => c.Pass) ? 0 : 1;

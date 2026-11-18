@@ -459,6 +459,28 @@ public sealed partial class WidgetForm : Form
         if (Visible && !Growing && shadow.Visible) shadow.Track(this, Height);
     }
 
+    // V20: the shadow window follows the state of the widget. It hides with the widget (hidden or minimized, for example by
+    // "Show desktop"), shows again when the widget comes back at rest, and goes right below the widget again when another
+    // window takes the focus, so it never covers another window.
+    protected override void OnVisibleChanged(EventArgs e)
+    {
+        base.OnVisibleChanged(e);
+        if (!Visible) shadow.Hide();
+    }
+
+    protected override void OnResize(EventArgs e)
+    {
+        base.OnResize(e);
+        if (WindowState == FormWindowState.Minimized) shadow.Hide();
+        else if (Visible && !Growing && !shadow.Visible && IsHandleCreated) shadow.Track(this, Height);
+    }
+
+    protected override void OnDeactivate(EventArgs e)
+    {
+        base.OnDeactivate(e);
+        if (Visible && !Growing && shadow.Visible) BeginInvoke(() => { if (shadow.Visible) shadow.Track(this, Height); });
+    }
+
     // V10: the widget comes to the front (a click, the pin): its shadow goes right below it again.
     protected override void OnActivated(EventArgs e)
     {

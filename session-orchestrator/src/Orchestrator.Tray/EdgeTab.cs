@@ -503,14 +503,16 @@ public sealed class EdgeTab : LayeredForm
         var state = g.Save();
         g.InterpolationMode = InterpolationMode.HighQualityBicubic;
         g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-        g.DrawImage(BallImage.Value, cx - box / 2, cy - box / 2, box, box);
+        g.DrawImage(BallImage.Value!, cx - box / 2, cy - box / 2, box, box);
         g.Restore(state);
     }
 
     /// <summary>The side of the image square for a ball of size 1: 100 CSS px for the 62 px ball.</summary>
     public const float BallBox = 100f / 62f;
 
-    static readonly Lazy<Bitmap> BallImage = new(() =>
+    // V19: one copy for each thread. The edge tab has its own UI thread, and the native ball draws on the widget thread; GDI+
+    // refuses one Bitmap in two draws at the same time ("Object is currently in use elsewhere").
+    static readonly ThreadLocal<Bitmap> BallImage = new(() =>
     {
         using var stream = typeof(EdgeTab).Assembly.GetManifestResourceStream("home-ball.png") ?? throw new InvalidOperationException("The resource home-ball.png is missing.");
         return new Bitmap(stream);
