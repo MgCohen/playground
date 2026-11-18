@@ -1,0 +1,3 @@
+@* Look "chips": one chip for each item. The marked item gets the default mark. *@
+@inherits LookBase
+<div class="chips">@foreach (var item in Value.Items) {<span class="chip @(item == Value.Marked ? "def" : "")">@item</span>}</div>

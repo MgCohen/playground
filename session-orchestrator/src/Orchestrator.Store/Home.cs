@@ -1,6 +1,7 @@
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Policy;
 using Orchestrator.Core.Storage;
+using Orchestrator.Core.Templates;
 
 namespace Orchestrator.Store;
 
@@ -21,6 +22,11 @@ public static class Home
     public static string Config(string name) => Path.Combine(Root(), "config", name);
 
     public static string Templates() => Path.Combine(Root(), "templates");
+
+    /// <summary>The template store of a store root: the core templates of the tool, and the templates of &lt;store&gt;/templates that add to them or replace them.</summary>
+    public static LocalTemplateStore TemplateStore(string storeRoot) => new(Templates(), Path.Combine(storeRoot, StoreFiles.Templates));
+
+    public static TemplateSet LoadTemplates(string storeRoot) => new(TemplateStore(storeRoot), Templates());
 
     public static Policy LoadPolicy(string storeRoot) => LoadPolicy(StoreBackends.Create(storeRoot));
 

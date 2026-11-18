@@ -54,6 +54,10 @@ public sealed class Renderer(FileStore store)
             case EventKinds.Notice:
                 render ??= data.GetValueOrDefault("kind") as string;
                 break;
+            default:
+                // An added kind: render/session.md for a session, if the template has it.
+                if (toSession && templates[e.Kind].HasRender("session")) render ??= "session";
+                break;
         }
         var template = templates[e.Kind];
         if (render is not null && template.HasRender(render)) return templates.Render(e.Kind, data, render);

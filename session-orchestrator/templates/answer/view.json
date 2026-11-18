@@ -2,6 +2,12 @@
   "label": "Answer",
   "icon": "pen",
   "tone": "accent",
+  "actions": [
+    { "id": "approve", "label": "Approve", "role": "main" },
+    { "id": "change", "label": "Request a change", "role": "other" },
+    { "id": "diff", "label": "Open the diff", "role": "other" },
+    { "id": "refuse", "label": "Refuse", "role": "danger" }
+  ],
   "document": {
     "title": ["{{text}}"],
     "subtitle": ["{{question}}"],

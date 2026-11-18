@@ -16,6 +16,8 @@ store/
   claims/answer/<thread>             the claim of the first answer in a thread: an exclusive create, the text is the sender
   sessions/<id>/                     the lifecycle files of one session (below)
   supervisor/log.txt                 one line for each turn, relay, default, nudge and blocked delivery
+  templates/<kind>/                  an added template, or a replacement of a core template (Types, below)
+  templates/.removed/<kind>-<time>/  the files of a removed or replaced store template
 ```
 
 A `<party>` in a file name has `-` in place of `:`, because Windows refuses `:` in a file name: `session:<id>` becomes `session-<id>`.
@@ -138,7 +140,18 @@ The views of a session are queries too: `Report` and `Update` are the newest pos
 
 ## Types
 
-Each message type has a folder `templates/<type>/` with `schema.json`, `meta.json` (purpose, from, to, needs, replies, card), `example.json` and `render/<name>.md`.
+Each message type has a folder `templates/<type>/` with `schema.json`, `meta.json` (purpose, from, to, needs, replies, card), `view.json`, `example.json`, and optional `render.md` and `render/<name>.md`.
+
+Two roots hold templates:
+
+| Root | Content | Changed by |
+|---|---|---|
+| `<home>/templates/` | The core templates of the tool, and `_spec/` (`meta.schema.json`, `view.schema.json`, `looks.json`) | A commit |
+| `<store>/templates/` | Added templates. A folder with a core name replaces that core template | `orch template add <folder> [--replace]`, `orch template remove <kind>` |
+
+The code reads templates only through `ITemplateStore` (`List`, `Get`, `Add`, `Remove`). `LocalTemplateStore` is the implementation for the two folders. `TemplateCheck` checks a template against `_spec/`: the name (`^[a-z][a-z0-9-]{1,31}$`, not `list`, `check`, `add` or `remove`), the meta and the view against their schemas, each view field in the schema, each look in `looks.json` and in an allowed place, and the example against the schema. `add` refuses a template that does not pass. A store template that does not load is skipped, and `orch template` and `orch doctor` show the error. A running supervisor reads the templates at start: restart it after a change.
+
+An added kind needs no code change. The stream checks its schema and meta, the UI shows it with its `view.json`, and a session gets `render/session.md` if it exists.
 
 | Type | From | To | Needs | Replies | Render for a session |
 |---|---|---|---|---|---|

@@ -1331,3 +1331,51 @@ C5 moves code behind the adapter and keeps the logic of today. No behavior chang
 Later: enforce the provider boundary. Options: `Orchestrator.Providers` as its own assembly that only the composition root references, and an NUnit architecture test that fails on `claude`, `CLAUDE_CODE_`, `Claude-Data` or a `ProcessStartInfo` of a provider outside `Providers/`. `plugin/` is out of the check.
 
 Open: a probe of `set_session_title` from a child and from the parent; the first engine after Claude Code; a team owner.
+
+## F1 result: template store and look catalog (2026-11-17)
+
+Branch `orch/session-09462c4b`, base `orch/session-662a3f1d` (PR #22). The decisions Q1 to Q6 are in `docs/decisions.md`. The design is on the render page, tabs How it works and Registry.
+
+### What is built
+
+| Part | Where | Result |
+|---|---|---|
+| Library contract | `Core/Templates/TemplateStore.cs`: `ITemplateStore`, `TemplateFiles`, `TemplateInfo` | The CLI, the stream and the UI read templates only through it |
+| Local implementation | `LocalTemplateStore`: `<home>/templates` (core) and `<store>/templates` (store) | A folder scan. A store folder with a core name replaces the core template. Remove moves the folder to `.removed/` |
+| Spec files | `templates/_spec/meta.schema.json`, `view.schema.json`, `looks.json` | The agreed format of `meta.json`, `view.json` and the look catalog |
+| One check | `Core/Templates/TemplateCheck.cs` | Name, schema, meta and view against the spec, each view field in the schema, each look known and in an allowed place, example against the schema |
+| CLI | `orch template [list]`, `check [<kind>] [--folder DIR]`, `add <folder> [--replace]`, `remove <kind>` | Calls only `ITemplateStore` |
+| Looks | `Web/Components/Ui/Looks/<Name>Look.razor` (9 files) | `DocBody` and `FactValue` pick the component by name |
+| Added kinds | `FileStore.IsDeliverable`, `Renderer`, `KindRing` | An added kind is checked, delivered (`meta.turn`), rendered (`render/session.md`) and shown with no C# change |
+
+### Test results
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 322 pass, 0 fail |
+| `TemplateStoreTests` | Each core template passes the spec. An added kind works end to end (post, schema check, document, turn, render). A replacement and its removal. Bad names, unknown looks, looks in a wrong place, unknown fields. A broken store folder. The CLI. Each look has one component and one page function |
+| `orch template check` on the 10 core kinds | 10 ok |
+| Tray self-test (`tray.ps1 -SelfTest`) | 22 of 23 PASS. Fail: `drag` landed 6 px from the target (the app shell, not F1) |
+| App and page parity (scratchpad store, port 5391, each `example.json` posted) | The same title, facts, blocks and looks for the 10 kinds |
+
+Screenshots: `docs/screens/f1-corner-open-question.png`, `f1-corner-open-report.png`, `f1-corner-open-notice.png`, `f1-corner-card-question.png`, `f1-corner-card-report.png`, `f1-corner-row-notice.png`.
+
+### Parity fixes (the app now matches the page)
+
+| Look | Before | Now |
+|---|---|---|
+| Block frame | Each block in a white card | Each look draws its own frame, as on the page: text, list, steps and links in a card; code and well in a sunken well; chips with no frame (X5) |
+| `progress` fact | Text only | A bar and the percent. The bar (`.pbar`) has the size and color of the page bar, also in the card and the row |
+| `links` | A bullet list; a branch in mono text | A link row with the link icon for each item |
+| Ring of a kind | `Ui.Look` (C#) | The `icon`, `tone` and `toneBy` of `view.json` (X2). Example: a working report has the pending color, an ack has the check icon |
+
+### Findings and notes
+
+- F1-1: the page and the app still have two copies of the look code: the `LOOKS` object of the page and the Razor files. The test checks the names and the places, not the HTML.
+- F1-2: `looks.json` has `values` (the field types of a look), but no code checks it yet.
+- F1-3: a running supervisor reads the templates at its start. After `orch template add`, restart it.
+- F1-4: an added kind with `needs` gets the report card (Got it, Reply). The actions of `meta.card` are not used yet.
+- F1-5: no plugin tool for an added kind, and no HTTP API for the templates (Q3: later).
+- F1-6: X3, X4, X6 to X10 stay proposals (Q4). The user reviews the looks later.
+- F1-7: a test store with a session that has no `claude` starts a supervisor turn. Use `ORCH_CLAUDE=<a name that does not exist>` for a parity test store.
+- F1-8: `view.json` `actions` (the content actions of E1) and `meta.json` `card.accept`/`card.refuse` overlap. The card keys are not read by code. Later: one list, with the behavior (post, verdict) in meta and the look (label, role) in the view.

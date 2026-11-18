@@ -3,6 +3,10 @@
   "icon": "doc",
   "tone": "done",
   "toneBy": { "field": "state", "values": { "blocked": "failed", "working": "pending" }, "icons": { "blocked": "alert" } },
+  "actions": [
+    { "id": "ack", "label": "Acknowledge", "role": "main" },
+    { "id": "reply", "label": "Reply", "role": "other" }
+  ],
   "document": {
     "title": ["{{summary}}"],
     "facts": [

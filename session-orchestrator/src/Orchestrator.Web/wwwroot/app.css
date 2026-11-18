@@ -241,9 +241,15 @@ code { font-family: var(--f-mono); font-size: .92em; }
 
 /* R2: blocks of the render model (view.json) */
 .facts { padding: 0; }
-.blk[style*="--st"] { border-left: 3px solid var(--st); }
+.blk[style*="--st"] > .crd { box-shadow: var(--sh-raise), inset 3px 0 0 var(--st); }
 .doc ol { margin: 0; padding-left: 20px; display: grid; gap: 3px; }
 .blk { overflow-wrap: anywhere; }
 .blk pre.pre { overflow-x: auto; overflow-wrap: normal; }
-.pbar { display: block; flex: 1; align-self: center; min-width: 40px; height: 5px; border-radius: 3px; background: var(--line-c); overflow: hidden; }
-.pbar > i { display: block; height: 100%; background: var(--pending); border-radius: 3px; }
+/* The same bar as .bar of docs/render-design/page.html. */
+.pbar { display: block; flex: 1; align-self: center; min-width: 60px; height: 8px; border-radius: 999px; background: var(--sunken); box-shadow: var(--sh-carve); overflow: hidden; }
+.pbar > i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.kv .look-progress { display: flex; flex: 1; gap: 10px; align-items: center; }
+a.lnk { color: var(--new); text-decoration: none; font: 12px var(--f-mono); display: inline-flex; gap: 5px; align-items: center; }
+a.lnk .ic { width: 14px; height: 14px; }
+.lnks { display: grid; gap: 6px; }
+.blk pre.mono { margin: 0; }

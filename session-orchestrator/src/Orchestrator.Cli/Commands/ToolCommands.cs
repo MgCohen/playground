@@ -10,12 +10,29 @@ public static class ToolCommands
     public static int Template(CommandContext c)
     {
         var set = c.Store.Templates;
-        if (c.Args.Positional.Count < 2)
+        var word = c.Args.Positional.Count < 2 ? "list" : c.Args.Positional[1];
+        switch (word)
         {
-            foreach (var t in set.All) c.Output.WriteLine($"{t.Kind,-9} {Description(t)}");
-            return 0;
+            case "list":
+                return TemplateList(c, set);
+            case "check":
+                return TemplateCheckCommand(c, set);
+            case "add":
+                var added = set.Store.Add(TemplateFiles.ReadFolder(c.Args.Required(2, "folder")), c.Args.Flag("replace"));
+                c.Output.WriteLine($"Added {added.Kind} to {added.Location}{(added.ReplacesCore ? ". It replaces the core template" : "")}. A running supervisor uses it after a restart.");
+                return 0;
+            case "remove":
+                var kind = c.Args.Required(2, "kind");
+                set.Store.Remove(kind);
+                c.Output.WriteLine($"Removed {kind} from the store. The old files are in {LocalTemplateStore.Removed}/. A running supervisor applies it after a restart.");
+                return 0;
         }
-        var template = set[c.Args.Required(1, "kind")];
+        if (!set.Has(word))
+        {
+            c.Output.WriteLine($"no template {word}. orch template lists the templates.");
+            return 1;
+        }
+        var template = set[word];
         if (c.Args.Option("check") is { } check)
         {
             var result = set.Validate(template.Kind, JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(check)));
@@ -38,6 +55,35 @@ public static class ToolCommands
         }
         if (template.RenderNames() is { Count: > 0 } names) c.Output.WriteLine($"  renders: {string.Join(", ", names)}");
         return 0;
+    }
+
+    static int TemplateList(CommandContext c, TemplateSet set)
+    {
+        foreach (var t in set.All.OrderBy(t => t.Kind, StringComparer.Ordinal))
+        {
+            var source = t.Source == TemplateSources.Store ? (t.ReplacesCore ? "store, replaces core" : "store") : "core";
+            c.Output.WriteLine($"{t.Kind,-9} {source,-21} {Description(t)}");
+        }
+        foreach (var e in set.LoadErrors) c.Output.WriteLine($"not loaded: {e}");
+        return set.LoadErrors.Count == 0 ? 0 : 1;
+    }
+
+    /// <summary>orch template check [&lt;kind&gt;] [--folder DIR]: the checks of the spec (templates/_spec) for one template, a folder, or all.</summary>
+    static int TemplateCheckCommand(CommandContext c, TemplateSet set)
+    {
+        var spec = TemplateSpec.Load(Home.Templates());
+        var targets = c.Args.Option("folder") is { } folder ? [TemplateFiles.ReadFolder(folder)]
+            : c.Args.Positional.Count > 2 ? [set.Store.Get(c.Args.Positional[2]) ?? throw new TemplateException($"no template {c.Args.Positional[2]}")]
+            : set.Store.List().Select(info => set.Store.Get(info.Kind)).OfType<TemplateFiles>().ToList();
+        var bad = 0;
+        foreach (var files in targets)
+        {
+            var errors = TemplateCheck.Check(files, spec);
+            if (errors.Count > 0) bad++;
+            c.Output.WriteLine(errors.Count == 0 ? $"{files.Kind}: ok" : files.Kind + ":" + string.Concat(errors.Select(e => Environment.NewLine + "  " + e)));
+        }
+        foreach (var e in set.LoadErrors) c.Output.WriteLine($"not loaded: {e}");
+        return bad == 0 && set.LoadErrors.Count == 0 ? 0 : 1;
     }
 
     static string Description(Template t) =>
@@ -71,8 +117,10 @@ public static class ToolCommands
         });
         Check("templates", () =>
         {
-            var bad = c.Store.Templates.All.Where(t => !c.Store.Templates.Validate(t.Kind, JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(t.Folder, "example.json")))).IsValid).ToList();
-            return (bad.Count == 0, bad.Count == 0 ? $"{c.Store.Templates.All.Count()} kinds, each example is valid" : $"invalid examples: {string.Join(", ", bad.Select(t => t.Kind))}");
+            var bad = c.Store.Templates.All.Where(t => !c.Store.Templates.Validate(t.Kind, JsonSerializer.Deserialize<JsonElement>(t.Example ?? "{}")).IsValid).ToList();
+            var loadErrors = c.Store.Templates.LoadErrors;
+            var ok = bad.Count == 0 && loadErrors.Count == 0;
+            return (ok, ok ? $"{c.Store.Templates.All.Count()} kinds, each example is valid" : string.Join("; ", bad.Select(t => $"invalid example: {t.Kind}").Concat(loadErrors.Select(e => $"not loaded: {e}"))));
         });
         Check("claude", () => shell.Run("claude", "--version") is var r && r.Ok ? (true, r.Text) : (false, "not on the PATH"));
         Check("gh", () => shell.Run("gh", "auth", "status") is var r && r.Ok ? (true, "signed in") : (false, "not signed in: run gh auth login"));
