@@ -18,7 +18,7 @@ else
             <p class="toast inline" role="status">@Message</p>
         }
         <div class="crd row hero">
-            <Ring P="p" Size="86" Th="10" Color="@($"var(--{color})")"><span class="disp ring-m">@((int)Math.Round(p * 100))%</span><span class="sub">@(node.Update?.Step ?? "progress")</span></Ring>
+            <Ring Key="@($"status:{node.Meta.Id}")" P="p" Size="86" Th="10" Color="@($"var(--{color})")"><span class="disp ring-m">@((int)Math.Round(p * 100))%</span><span class="sub">@(node.Update?.Step ?? "progress")</span></Ring>
             <span class="grow">
                 <span class="nm big-q">@Ui.Name(node)</span>
                 <span class="sub">@(parent is null ? "root session" : $"child of {Ui.Name(parent)}")</span>

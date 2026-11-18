@@ -1,11 +1,12 @@
 @* The deep ring of the home page: a carved channel, a carved fill in the bright colors, and a raised center. *@
-<span class="dring" style="width:@(Size)px;height:@(Size)px;--th:@(Th)px"><span class="fill" style="background:@Fill"></span><span class="hole">@ChildContent</span></span>
+<span class="dring" data-ring="@Key" style="width:@(Size)px;height:@(Size)px;--th:@(Th)px"><span class="fill" style="background:@Fill"></span><span class="hole">@ChildContent</span></span>
 
 @code {
     [Parameter] public IReadOnlyList<(int Count, string Color)> Segments { get; set; } = [];
     [Parameter] public int Size { get; set; } = 118;
     [Parameter] public int Th { get; set; } = 14;
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Key { get; set; } = "home";
 
     string Fill
     {

@@ -21,7 +21,7 @@ else
         }
         <div class="crd">
             <div class="row head">
-                <KindRing Kind="@e.Kind" State="@state" P="@(open ? .5 : 1)" />
+                <KindRing Key="@($"e:{e.Id}")" Kind="@e.Kind" State="@state" P="@(open ? .5 : 1)" />
                 <span class="grow"><span class="nm">@Ui.KindLabel(e.Kind, fields)</span><span class="sub ell">@Board.Party(e.From) → @Board.Party(e.To) · @Ui.Clock(Ui.Time(e))</span></span>
                 @* V7: the pill shows only while the document waits; the facts of a closed document tell its state. *@
                 @if (open)
@@ -46,7 +46,7 @@ else
                     var rf = Board.Fields(r);
                     var said = Ui.Text(rf.GetValueOrDefault("text")) is { Length: > 0 } t ? t : Ui.Text(rf.GetValueOrDefault("verdict")) is { Length: > 0 } v ? v : Ui.Text(rf.GetValueOrDefault("state"));
                     <a class="row @(i > 0 ? "sep" : "")" href="events/@r.Id">
-                        <KindRing Kind="@r.Kind" Size="28" />
+                        <KindRing Key="@($"e:{r.Id}")" Kind="@r.Kind" Size="28" />
                         <span class="grow"><span class="ell">@(said.Length > 0 ? said : r.Subject)</span><span class="sub">@Ui.KindLabel(r.Kind, Board.Fields(r)) · by @Board.Party(r.From)@(r.Via is { } via ? $" via {Board.Party(via)}" : "") · @Ui.Clock(Ui.Time(r))</span></span>
                     </a>
                 }

@@ -46,15 +46,22 @@ public static partial class SelfTest
             """);
         checks.Add(new Check("app-bar-on-top", context.Length == 0, $"ancestors of the app bar with a stacking context: {(context.Length == 0 ? "none" : context)}", ""));
 
-        // M7 ring draw and V6: the rings draw (900 ms) only at the first show. The end of that draw set "drawn" on the root;
-        // a tab change after it shows the full rings at once.
-        var drawn = await Eval<bool>(web, "document.documentElement.classList.contains('drawn')");
-        await Home(web, "stream");
-        var rows = await Eval<string>(web, "(f => f ? getComputedStyle(f).animationName : 'no ring')(document.querySelector('.ring .fill'))");
+        // M7 ring draw and V12: a ring draws only the first time its key shows. The first visit of the sessions page draws
+        // its rings; after a tab change back, the same rings show at once. A new key (a ring that never showed) still draws.
+        const string Anim = "(f => f ? getComputedStyle(f).animationName : 'no ring')(document.querySelector('{0} .fill'))";
+        await Home(web, "sessions");
+        var first = await Eval<string>(web, string.Format(Anim, ".srow .ring"));
+        await Home(web, "");
+        await Home(web, "sessions");
+        var again = await Eval<string>(web, string.Format(Anim, ".srow .ring"));
         var ringPng = await Snap(web, folder, "m7-ring-draw", $"{Go}('')", 330);
-        var sweep = await Eval<string>(web, "getComputedStyle(document.querySelector('.dring .fill')).animationName");
-        checks.Add(new Check("m7-ring-draw", drawn && sweep == "none" && rows == "none",
-            $"first draw ended (root class drawn) {drawn}; after a tab change: deep ring animation {sweep}, row ring animation {rows} (expect none)", ringPng));
+        var home = await Eval<string>(web, string.Format(Anim, ".dring"));
+        await web.ExecuteScriptAsync("(d => { const r = document.createElement('span'); r.className = 'ring'; r.dataset.ring = 'test:new'; r.innerHTML = '<span class=\"fill\"></span>'; r.id = 'v12'; d.body.appendChild(r); })(document)");
+        await Task.Delay(100);
+        var fresh = await Eval<string>(web, "getComputedStyle(document.querySelector('#v12 .fill')).animationName");
+        await web.ExecuteScriptAsync("document.getElementById('v12')?.remove()");
+        checks.Add(new Check("m7-ring-draw", again == "none" && home == "none" && fresh == "m-arc",
+            $"sessions visit {first} (m-arc only if it is the first visit), after a tab change back {again} (expect none); home deep ring again {home} (expect none); a new key {fresh} (expect m-arc)", ringPng));
 
         // M7 fold: the active sessions fold opens its height in 260 ms.
         var foldPng = await Snap(web, folder, "m7-fold", "document.querySelector('details.fold > summary').click()", 120);

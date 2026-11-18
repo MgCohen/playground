@@ -33,7 +33,7 @@
         var (label, color, p) = Ui.Look(first);
         <details class="crd fold">
             <summary class="foldh">
-                <Ring P="p" Size="40" Th="6"><span class="mono small">@Percent(p)</span></Ring>
+                <Ring Key="@($"s:{first.Meta.Id}")" P="p" Size="40" Th="6"><span class="mono small">@Percent(p)</span></Ring>
                 <span class="grow"><span class="sub">Active sessions · @active.Count of @total</span><span class="nm ell">@Ui.Name(first)</span><span class="sub ell">@Ui.Line(first)</span></span>
                 <span class="chev"><Icon Name="chevR" /></span>
             </summary>
@@ -74,7 +74,7 @@
             @foreach (var c in cards.AsEnumerable().Reverse())
             {
                 <a class="row sep" href="events/@c.Id" @key="c.Id">
-                    <KindRing Kind="@c.Kind" State="@Ui.Text(c.Fields.GetValueOrDefault("state"))" P="0.5" Size="28" />
+                    <KindRing Key="@($"e:{c.Id}")" Kind="@c.Kind" State="@Ui.Text(c.Fields.GetValueOrDefault("state"))" P="0.5" Size="28" />
                     <span class="grow"><span class="ell">@c.Title</span><span class="sub">@c.SessionTitle · @Ui.Ago(c.At, now)</span></span>
                     <span class="chev"><Icon Name="chevR" /></span>
                 </a>

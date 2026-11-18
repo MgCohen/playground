@@ -1,14 +1,27 @@
 // T2: a move to a deeper page pushes it in from the right; a move back plays it in reverse. The View Transitions API of
 // Chromium takes a picture of the old page, Blazor renders the new page, and CSS (app.css, "T2") moves the two pictures.
 // T1 (a tab change) is CSS only. This script only picks the direction and starts the transition.
-// V6: the rings draw only one time. The end of the first ring draw sets "drawn" on the root (app.css stops the draw then).
+// V12: a ring draws only the first time its key shows. A mutation observer runs before the next paint: a new ring element
+// with a key that was drawn before gets data-drawn (app.css stops its draw); a new key draws and goes into the list.
+// Blazor keeps an attribute that a script adds, so the mark stays when the ring renders again.
 (function () {
-  function done(e) {
-    if (e.animationName !== "m-sweep" && e.animationName !== "m-arc") return;
-    document.documentElement.classList.add("drawn");
-    document.removeEventListener("animationend", done, true);
+  var seen = new Set();
+  function mark(node) {
+    var rings = node.matches && node.matches("[data-ring]") ? [node] : [];
+    if (node.querySelectorAll) rings = rings.concat(Array.prototype.slice.call(node.querySelectorAll("[data-ring]")));
+    rings.forEach(function (r) {
+      var key = r.getAttribute("data-ring");
+      if (!key || r.hasAttribute("data-drawn")) return;
+      if (seen.has(key)) r.setAttribute("data-drawn", "");
+      else seen.add(key);
+    });
   }
-  document.addEventListener("animationend", done, true);
+  new MutationObserver(function (changes) {
+    changes.forEach(function (c) {
+      c.addedNodes.forEach(function (n) { if (n.nodeType === 1) mark(n); });
+    });
+  }).observe(document.documentElement, { childList: true, subtree: true });
+  mark(document.documentElement);
 })();
 
 (function () {

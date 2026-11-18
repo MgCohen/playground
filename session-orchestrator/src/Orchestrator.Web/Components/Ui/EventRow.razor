@@ -2,7 +2,7 @@
 @inject Board Board
 @{ var f = Board.Fields(Event); var state = Ui.Text(f.GetValueOrDefault("state")); var open = Board.IsOpen(Event); var p = Board.Preview(Event); }
 <div class="tli" data-kind="@Event.Kind">
-    <span class="node"><KindRing Kind="@Event.Kind" State="@state" P="@(open ? .5 : 1)" Size="30" /></span>
+    <span class="node"><KindRing Key="@($"e:{Event.Id}")" Kind="@Event.Kind" State="@state" P="@(open ? .5 : 1)" Size="30" /></span>
     <a class="crd row ev" href="events/@Event.Id">
         <span class="grow">
             <span class="l1"><b class="grow ell">@Ui.KindLabel(Event.Kind, f) · @Route</b><span class="mono sub">@Ui.Clock(Ui.Time(Event))</span></span>

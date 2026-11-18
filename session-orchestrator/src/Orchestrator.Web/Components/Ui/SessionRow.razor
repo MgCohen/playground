@@ -1,6 +1,6 @@
 @{ var (label, color, p) = Ui.Look(Node); var kids = Node.Children.Count > 0; }
 <a class="row srow @(First ? "" : "sep")" href="sessions/@Node.Meta.Id">
-    <Ring P="p" Size="@(kids ? 34 : 28)" Th="@(kids ? 5 : 4)" Color="@($"var(--{color})")">@if (kids) {<Icon Name="tree" />}</Ring>
+    <Ring Key="@($"s:{Node.Meta.Id}")" P="p" Size="@(kids ? 34 : 28)" Th="@(kids ? 5 : 4)" Color="@($"var(--{color})")">@if (kids) {<Icon Name="tree" />}</Ring>
     <span class="grow"><span class="ell @(kids ? "nm" : "")">@Ui.Name(Node)</span><span class="sub ell">@Ui.Line(Node)</span></span>
     @if (Node.Open > 0) {<span class="badge">@Node.Open</span>}
     <Pill Label="@label" State="@color" />

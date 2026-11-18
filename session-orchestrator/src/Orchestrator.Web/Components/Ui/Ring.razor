@@ -1,5 +1,5 @@
 @* An arc ring: a fill in a carved channel, with a raised center. *@
-<span class="ring" style="width:@(Size)px;height:@(Size)px;--p:@Ui.Num(Math.Clamp(P, 0, 1));--th:@(Th)px;--rc:@Color"><span class="fill"></span><span class="hole"></span><span class="rc">@ChildContent</span></span>
+<span class="ring" data-ring="@Key" style="width:@(Size)px;height:@(Size)px;--p:@Ui.Num(Math.Clamp(P, 0, 1));--th:@(Th)px;--rc:@Color"><span class="fill"></span><span class="hole"></span><span class="rc">@ChildContent</span></span>
 
 @code {
     [Parameter] public double P { get; set; } = 1;
@@ -7,4 +7,7 @@
     [Parameter] public int Th { get; set; } = 5;
     [Parameter] public string Color { get; set; } = "var(--accent)";
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>V12: the key of the ring (an event or a session). A ring draws only the first time its key shows (motion.js).</summary>
+    [Parameter] public string? Key { get; set; }
 }
