@@ -1,6 +1,7 @@
-// T2: a move to a deeper page pushes it in from the right; a move back plays it in reverse. The View Transitions API of
-// Chromium takes a picture of the old page, Blazor renders the new page, and CSS (app.css, "T2") moves the two pictures.
-// T1 (a tab change) is CSS only. This script only picks the direction and starts the transition.
+// V13: one navigation path for each link. The View Transitions API of Chromium takes a picture of the old page, Blazor renders
+// the new page, and CSS (app.css, "T1" and "T2") moves the two pictures. A move to a deeper page pushes it in from the right
+// (T2), a move back plays it in reverse, and a tab change fades and rises (T1). No page has an entrance animation of its own,
+// so nothing plays again after the transition. This script only picks the kind and starts the transition.
 // V12: a ring draws only the first time its key shows. A mutation observer runs before the next paint: a new ring element
 // with a key that was drawn before gets data-drawn (app.css stops its draw); a new key draws and goes into the list.
 // Blazor keeps an attribute that a script adds, so the mark stays when the ring renders again.
@@ -38,12 +39,15 @@
   }
 
   function rendered() {
-    // Resolve when Blazor changes the page, or after 600 ms.
+    // Resolve when Blazor changes the page, or after 600 ms. V13: watch the body, because Blazor replaces the .app element
+    // itself; a watch on the old element saw no change and always waited the 600 ms.
     return new Promise(function (resolve) {
-      var page = document.querySelector(".app") || document.body;
+      var page = document.body;
       var done = false;
       function end() { if (!done) { done = true; observer.disconnect(); resolve(); } }
-      var observer = new MutationObserver(function () { requestAnimationFrame(end); });
+      // V13: not requestAnimationFrame. The browser pauses the rendering during the update of a view transition, so a frame
+      // callback waits for the time limit. The next task comes after the Blazor batch of the render.
+      var observer = new MutationObserver(function () { setTimeout(end, 0); });
       observer.observe(page, { childList: true, subtree: true });
       setTimeout(end, 600);
     });
@@ -56,17 +60,21 @@
     var to = new URL(a.getAttribute("href"), document.baseURI);
     if (to.origin !== location.origin) return;
     var from = depth(location.href), next = depth(to.href);
-    // A tab change (both depth 0) is T1; the same depth is no move.
-    if (from === next || (from === 0 && next === 0)) return;
+    // The same page is no move. A tab change (both depth 0) is T1; another move at the same depth is no move.
+    var same = to.pathname + to.search === location.pathname + location.search;
+    var tab = from === 0 && next === 0;
+    if (same || (from === next && !tab)) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     var root = document.documentElement;
-    root.classList.toggle("vt-back", next < from);
+    root.classList.add("nav");
+    root.classList.toggle("vt-tab", tab);
+    root.classList.toggle("vt-back", !tab && next < from);
     root.classList.add("vt");
     var t = document.startViewTransition(function () {
       Blazor.navigateTo(to.pathname.replace(/^\//, "") + to.search);
       return rendered();
     });
-    t.finished.finally(function () { root.classList.remove("vt", "vt-back"); });
+    t.finished.finally(function () { root.classList.remove("vt", "vt-back", "vt-tab"); });
   }, true);
 })();

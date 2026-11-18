@@ -15,17 +15,20 @@ public static partial class SelfTest
     {
         var checks = new List<Check>();
 
-        // T1: a tap on the app bar. The body rises and each block starts 40 ms after the block above it.
+        // T1 and V13: a tap on the app bar is a view transition (vt-tab): the old page fades out and the new page rises. No
+        // block of the page has an entrance animation of its own.
         await Home(web);
         await web.ExecuteScriptAsync("document.querySelector('.nav2 a[href=stream]').click()");
+        await Task.Delay(40);
+        var tabClass = await Eval<string>(web, "document.documentElement.className");
         await Until(() => Found(web, ".tl"), TimeSpan.FromSeconds(10));
         var count = await Eval<int>(web, Hold(120));
         var t1 = await Snap(web, folder, "t1-tab-rise", "", 80);
-        var delays = await Eval<string>(web, "[...document.querySelectorAll('.page > header, .page > .stack > *')].map(e => getComputedStyle(e).animationName + '+' + getComputedStyle(e).animationDelay).join(' ')");
+        var blocks = await Eval<string>(web, "[...new Set([...document.querySelectorAll('.page > *, .page > .stack > *')].map(e => getComputedStyle(e).animationName))].join(' ')");
         await web.ExecuteScriptAsync(Play);
         await Task.Delay(500);
-        checks.Add(new Check("t1-tab-change", count > 0 && delays.Contains("m-rise+0s") && delays.Contains("m-rise+0.04s") && delays.StartsWith("none"),
-            $"{count} animations held at 120 ms; header and blocks: {delays}", t1));
+        checks.Add(new Check("t1-tab-change", tabClass.Contains("vt-tab") && count > 0 && blocks == "none",
+            $"classes at the tap \"{tabClass}\" (expect vt-tab); {count} animations held at 120 ms; block animations: {blocks} (expect none)", t1));
 
         // T2: a tap on a row pushes the document in from the right; a tap on the path goes back in reverse.
         await web.ExecuteScriptAsync("document.querySelector('.tli a.ev').click()");

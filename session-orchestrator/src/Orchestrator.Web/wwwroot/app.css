@@ -318,21 +318,20 @@ code { font-family: var(--f-mono); font-size: .92em; }
 /* The page fades, not .app: an animation on .app makes a stacking context, and the backdrop of the app bar then covers the bar. */
 .page { animation: m-fade .18s ease backwards; }
 
-/* ===== T1: a tab change. The page body rises 10 px and fades in; each block starts 40 ms after the block above it. =====
-   The header stays: each page has the same header in the same place. */
-.page > :not(header, .scrim, .sheet, .toast, .deck-screen, .sticky-acts, .pagebar), .page > .stack > * { animation: m-rise .3s var(--ease-out) backwards; animation-delay: calc(var(--n, 0) * 40ms); }
-.page > :nth-child(3), .page > .stack > :nth-child(2) { --n: 1; } .page > :nth-child(4), .page > .stack > :nth-child(3) { --n: 2; }
-.page > :nth-child(5), .page > .stack > :nth-child(4) { --n: 3; } .page > :nth-child(6), .page > .stack > :nth-child(5) { --n: 4; }
-.page > :nth-child(n+7), .page > .stack > :nth-child(n+6) { --n: 5; }
+/* ===== T1 and V13: a tab change is a view transition too (motion.js). The old page fades out in 120 ms; the new page rises
+   10 px and fades in, one time. No block of a page has an entrance animation of its own: the transition does all the motion,
+   so nothing plays again after it. After the first navigation, the page fade of the first load (M6) is off. ===== */
+html.nav .page { animation: none; }
+.vt-tab::view-transition-old(root) { animation: m-fade-out .12s ease both; }
+.vt-tab::view-transition-new(root) { animation: m-rise .26s var(--ease-out) both; }
 @keyframes m-rise { from { opacity: 0; transform: translateY(10px); } }
 
 /* ===== T2: open a document (push). The new page slides in from the right in 300 ms; the old page moves 30 % left and dims.
    Back plays it in reverse. The app bar is its own picture, so it stays. motion.js starts the view transition. ===== */
 .nav2 { view-transition-name: appbar; }
-.vt .page > *, .vt .page > .stack > * { animation: none; }
 ::view-transition-group(root) { animation-duration: .3s; animation-timing-function: var(--ease-out); }
-::view-transition-old(root) { animation: m-push-old .3s var(--ease-out) both; }
-::view-transition-new(root) { animation: m-push-new .3s var(--ease-out) both; }
+.vt:not(.vt-tab)::view-transition-old(root) { animation: m-push-old .3s var(--ease-out) both; }
+.vt:not(.vt-tab)::view-transition-new(root) { animation: m-push-new .3s var(--ease-out) both; }
 .vt-back::view-transition-old(root) { animation: m-pop-old .3s var(--ease-out) both; z-index: 2; }
 .vt-back::view-transition-new(root) { animation: m-pop-new .3s var(--ease-out) both; }
 @keyframes m-push-old { to { transform: translateX(-30%); filter: brightness(.8); } }
