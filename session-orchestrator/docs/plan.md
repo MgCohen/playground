@@ -1120,14 +1120,14 @@ Port map:
 
 | Data kind | Entity, id | Local folder | State | Version 2 | Part |
 |---|---|---|---|---|---|
-| Event stream | `Event`, envelope id | `events/<day>/` | Planned | Notion database | H2; Notion H6 |
-| Envelope bodies | `Body`, body path | `bodies/<day>/` | Planned | Page content | H2; Notion H6 |
+| Event stream | `Event`, envelope id | `events/<day>/` | Built (H2) | Notion database | H2; Notion H6 |
+| Envelope bodies | `Body`, body path | `bodies/<day>/` | Built (H2) | Page content | H2; Notion H6 |
 | Session registry | `SessionEntry`, session id | `sessions/<id>/session.json` | Designed (S1, PR #28) | Notion database | S2; Notion H6 |
 | Templates | `Template`, kind | `LocalTemplateStore` | Built (F1, PR #30) | Notion database | F2 |
-| Policy and settings | `Policy`, name | `policy.json` | Planned | Notion page | H2; Notion H6 |
+| Policy and settings | `Policy`, name | `policy.json` | Built (H2) | Notion page | H2; Notion H6 |
 | Work stream records | None: a `stream` field (C1, PR #29) | On sessions and events | Designed | A Notion relation | None |
-| Run state, claims, subscriptions | `Lease`, `Claim`, `Cursor` | `sessions/`, `claims/`, `subscriptions/` | Planned | Stays local (heartbeat every 3 s) | H2 |
-| Logs | None: `ILogSink` (append-only text) | `log.txt`, `log-*.txt`, `mirror/` | Planned | Stays local | H2 |
+| Run state, claims, subscriptions | `Lease`, `Claim`, `Cursor` | `sessions/`, `claims/`, `subscriptions/` | Built (H2) | Stays local (heartbeat every 3 s) | H2 |
+| Logs | None: `ILogSink` (append-only text) | `log.txt`, `log-*.txt`, `mirror/` | Built in C# (H2); hooks in H3 | Stays local | H2 |
 
 Rules for each implementation: (1) `SaveChangesAsync` fails on an `Add` with an id that exists (claims, first answer); (2) an entity has a version, and a save of an old version fails (cursor merge); (3) an architecture test refuses store IO outside the implementations; (4) one contract test suite runs against each implementation. In version 2 the supervisor is the only Notion writer, and the plugin hooks keep writing local files (10 s hook budget).
 
@@ -1144,3 +1144,38 @@ Rules for each implementation: (1) `SaveChangesAsync` fails on an `Add` with an 
 Callers that bypass the ports today: `Supervisor.cs`, `Supervisor.Lifecycle.cs`, `EventCommands.cs`, `StateReader.cs`, `Lifecycle.cs`, and the hooks `stream.ts`, `lease.ts`, `state.ts`, `register.ts`, `events.ts`.
 
 Measured on the main store (2026-11-17): 3,654 envelopes in 2 days; 2,350 on 11-17, of which 88 % are `session.tool`, `session.output` and `session.input`.
+
+## H2 result: core repositories (2026-11-18)
+
+All C# store IO goes through `IRepositories`. No store file and no behavior changed. Branch `orch/session-5cf03248`, base `orch/session-ff65da95` (H1).
+
+| Part | Where |
+|---|---|
+| `IRepository<T, TId>` and `Entity<TId>`: copies of the VSA contract. `Entity` has a `Version` | `src/Orchestrator.Core/Storage/` |
+| `Doc<T>`: the entity of each data kind. A change of `Value` enlists the document for the next save | `Core/Storage/Doc.cs` |
+| `IRepositories`: one repository for each data kind, `ILogSink`, `IStreamSignal` | `Core/Storage/IRepositories.cs` |
+| `RepositoryExtensions`: synchronous `Read`, `Put`, `TryCreate`, `Delete` | `Core/Storage/RepositoryExtensions.cs` |
+| Local folder implementation | `src/Orchestrator.Store/Local/` |
+| `StoreBackends.Create`: the only selection of the implementation | `src/Orchestrator.Store/StoreBackends.cs` |
+| Contract suite: 10 tests for each of 11 data kinds | `tests/Orchestrator.Tests/RepositoryContractTests.cs` |
+| Architecture test: no store IO outside `Store/Local/`, with a list of the other file IO and its reasons | `tests/Orchestrator.Tests/ArchitectureTests.cs` |
+
+Test results: `dotnet test --solution Orchestrator.slnx` passes: 413 tests, 406 pass, 7 skip (before H2: 298 tests). The demo seed skips as before. The contract suite skips the change tests for the envelopes and the session folders, because these do not change after their write.
+
+### Decisions in H2 (reversible, for review)
+
+| Question | Decision | Reason |
+|---|---|---|
+| One entity class for each data kind, or one generic class? | One generic `Doc<T>`, with the data kind in the repository name | The records (`Event`, `Lease`, `Policy`) stay as they are. The store files do not change |
+| Where does the version of a local file come from? | A 64-bit FNV-1a hash of the file text | The file format does not change, and the hooks keep their writes |
+| Sync or async callers? | The store code stays synchronous: `RepositoryExtensions` waits for the task | The local tasks complete at once. H6 (Notion) must examine the blocking waits |
+| How does a whole-file write (lease, meta, status) keep its behavior? | `Put` reads, sets and saves, and on a conflict it reads and saves again | Last writer wins, as with the old file write |
+| How does the cursor merge work? | Read, merge, save with the version check under `<name>.json.lock`; on `Stale`, merge again | Rule 2 of H1. The lock now covers only the check and the write |
+| Meta and the enabled marker | Run state files on `SessionFile<T>` for now | S2 replaces them with the `SessionEntry` repository |
+| `EventStream.Nudged` (a time) | Replaced by `IsNudged` (a flag) | An entity has no write time. Only tests used the time |
+
+### Findings
+
+- The plugin hooks still write the store directly. H3 moves them behind `backend.ts`.
+- `FileStore.PathOf` stays for tests that write a file as a hook does. It delegates to `LocalRepositories.PathOf`.
+- `SessionItems` of `stack/` lists only `*.json` files. Before H2 it read each name and dropped the names that were not JSON. The result is the same.
