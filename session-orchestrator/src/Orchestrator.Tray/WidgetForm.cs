@@ -52,6 +52,7 @@ public sealed partial class WidgetForm : Form
         dragTimer.Tick += (_, _) => DragStep();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += DisplayChanged;
         view.BlazorWebViewInitialized += (_, e) => e.WebView.CoreWebView2.NavigationCompleted += (_, _) => pageReady = true;
+        StartTrace();
     }
 
     /// <summary>Keeps the widget on top of the other windows (TopMost).</summary>
@@ -499,7 +500,15 @@ public sealed partial class WidgetForm : Form
     {
         base.OnHandleCreated(e);
         Frame(true);
+        // V21: the widget is an owned window of its shadow window. Windows always keeps an owned window in front of its
+        // owner, so the shadow can never come in front of the widget (a click once raised it, and its fill covered the widget).
+        _ = SetWindowLongPtr(Handle, GwlpHwndParent, shadow.Handle);
     }
+
+    const int GwlpHwndParent = -8;
+
+    [System.Runtime.InteropServices.LibraryImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
+    private static partial nint SetWindowLongPtr(nint hwnd, int index, nint value);
 
     /// <summary>
     /// The frame of the system: rounded corners and the shadow, with no border line. The frame always has the full window size,
@@ -528,6 +537,7 @@ public sealed partial class WidgetForm : Form
     protected override void WndProc(ref Message m)
     {
         if (m.Msg == WmSysCommand && ((int)m.WParam & 0xFFF0) == ScMaximize) return;
+        TraceMessage(ref m);
         base.WndProc(ref m);
     }
 

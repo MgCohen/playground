@@ -24,6 +24,17 @@ public sealed class GrowShadow : LayeredForm
     public Color Fill { get; set; } = Color.FromArgb(0xe6, 0xe3, 0xde);
     float strength = 1;
 
+    // V21: the mouse goes through the shadow window to the window below it.
+    protected override CreateParams CreateParams
+    {
+        get
+        {
+            var p = base.CreateParams;
+            p.ExStyle |= 0x20; // WS_EX_TRANSPARENT
+            return p;
+        }
+    }
+
     public GrowShadow()
     {
         Text = "Orchestrator shadow";
@@ -89,8 +100,20 @@ public sealed class GrowShadow : LayeredForm
             using var brush = new SolidBrush(Color.FromArgb((int)(4 * strength), 0, 0, 0));
             g.FillPath(brush, lp);
         }
+        // The page color only in the four corners, under the hard cut of the widget region: never a full cover of the widget.
         using var fill = new SolidBrush(Fill);
-        g.FillPath(fill, path);
+        var c = 12 * Dpi;
+        var state = g.Save();
+        using (var corners = new Region(RectangleF.Empty))
+        {
+            corners.Union(new RectangleF(rect.Left, rect.Top, c, c));
+            corners.Union(new RectangleF(rect.Right - c, rect.Top, c, c));
+            corners.Union(new RectangleF(rect.Left, rect.Bottom - c, c, c));
+            corners.Union(new RectangleF(rect.Right - c, rect.Bottom - c, c, c));
+            g.SetClip(corners, System.Drawing.Drawing2D.CombineMode.Replace);
+            g.FillPath(fill, path);
+        }
+        g.Restore(state);
     });
 
     protected override void OnVisibleChanged(EventArgs e)

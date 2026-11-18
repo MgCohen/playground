@@ -73,6 +73,7 @@ public static partial class SelfTest
             if (groups.Contains("transitions")) checks.AddRange(await Transitions(web, folder));
             if (groups.Contains("threads")) checks.AddRange(await Threads());
             if (groups.Contains("shadow-life")) checks.AddRange(await ShadowLife(form));
+            if (groups.Contains("click")) checks.AddRange(await Click(form, folder));
             return Write(checks, folder);
         }
         foreach (var step in Steps)
@@ -154,6 +155,7 @@ public static partial class SelfTest
         checks.AddRange(await Nav(web, folder));
         checks.AddRange(await Threads());
         checks.AddRange(await ShadowLife(form));
+        checks.AddRange(await Click(form, folder));
         return Write(checks, folder);
     }
 
