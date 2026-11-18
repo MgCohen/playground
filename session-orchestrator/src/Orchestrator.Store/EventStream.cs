@@ -20,7 +20,9 @@ public sealed record PostInput(string Kind, string From, string To, IReadOnlyDic
 /// <summary>
 /// The Stream API: post, subscribe, query, read and nudge on the store, through the repositories of
 /// <see cref="IRepositories"/>. The class keeps all envelopes in memory, with indexes, and adds only the new
-/// envelopes of the repository at each call.
+/// envelopes of the repository at each call. The index by session (<see cref="OfSession"/>) and the index by sender
+/// and kind (<see cref="LastFrom"/>, <see cref="PostsFrom"/>) let the snapshot of each tick read only the envelopes
+/// of one session (finding B2-9).
 /// </summary>
 public sealed class EventStream
 {
@@ -35,9 +37,11 @@ public sealed class EventStream
     readonly Dictionary<string, List<Event>> byReply = [];
     readonly Dictionary<string, List<Event>> byThread = [];
     readonly Dictionary<string, List<Event>> byKind = [];
-    readonly Dictionary<string, List<Event>> byFrom = [];
+    readonly Dictionary<string, List<Event>> bySession = [];
+    readonly Dictionary<(string From, string Kind), List<Event>> byPost = [];
     readonly Dictionary<string, JsonElement> bodies = [];
     long lastMs;
+    int feedPosition;
 
     public EventStream(string root, TimeProvider clock, string writer = Parties.Supervisor, TemplateSet? templates = null)
         : this(StoreBackends.Create(root), clock, writer, templates)
@@ -222,8 +226,8 @@ public sealed class EventStream
     /// <summary>The envelopes of one kind, in id order.</summary>
     public IReadOnlyList<Event> OfKind(string kind) => Index(byKind, kind);
 
-    /// <summary>The envelopes of one sender (the full party), in id order.</summary>
-    public IReadOnlyList<Event> FromParty(string party) => Index(byFrom, party);
+    /// <summary>The envelopes of one sender (the full party) and one kind that are not forwards, in id order.</summary>
+    public IReadOnlyList<Event> PostsFrom(string party, string kind) => Index(byPost, (party, kind));
 
     /// <summary>The newest envelope of one sender and one kind that is not a forward.</summary>
     public Event? LastFrom(string party, string kind)
@@ -231,10 +235,23 @@ public sealed class EventStream
         lock (gate)
         {
             Refresh();
-            if (!byFrom.TryGetValue(party, out var list)) return null;
-            for (var i = list.Count - 1; i >= 0; i--)
-                if (list[i].Kind == kind && !list[i].IsForward) return list[i];
-            return null;
+            return byPost.TryGetValue((party, kind), out var list) && list.Count > 0 ? list[^1] : null;
+        }
+    }
+
+    /// <summary>
+    /// The envelopes of one session, in id order: from the session, to the session, or with the session in their
+    /// <c>session</c> field. With <paramref name="since"/>: only the envelopes with an id time at or after it.
+    /// </summary>
+    public IReadOnlyList<Event> OfSession(string id, DateTimeOffset? since = null)
+    {
+        lock (gate)
+        {
+            Refresh();
+            if (!bySession.TryGetValue(id, out var list)) return [];
+            if (since is not { } time) return list.ToList();
+            var first = LowerBound(list, time.ToUnixTimeMilliseconds().ToString());
+            return list.GetRange(first, list.Count - first);
         }
     }
 
@@ -250,7 +267,7 @@ public sealed class EventStream
     /// <summary>The first answer in a thread that is not a forward.</summary>
     public Event? FirstAnswer(string thread) => Thread(thread).FirstOrDefault(e => e.Kind == EventKinds.Answer && !e.IsForward);
 
-    IReadOnlyList<Event> Index(Dictionary<string, List<Event>> index, string key)
+    IReadOnlyList<Event> Index<TKey>(Dictionary<TKey, List<Event>> index, TKey key) where TKey : notnull
     {
         lock (gate)
         {
@@ -292,6 +309,13 @@ public sealed class EventStream
 
     void Refresh()
     {
+        if (repos.Events is IAppendFeed<Doc<Event>> feed)
+        {
+            var docs = feed.ReadFrom(feedPosition);
+            feedPosition += docs.Count;
+            foreach (var doc in docs) Add(EventKinds.Current(doc.Value));
+            return;
+        }
         foreach (var doc in repos.Events.List(d => !byId.ContainsKey(d.Id))) Add(EventKinds.Current(doc.Value));
     }
 
@@ -303,11 +327,16 @@ public sealed class EventStream
         if (e.Reply is { } reply) Insert(Bucket(byReply, reply), e);
         if (e.Thread is { } thread) Insert(Bucket(byThread, thread), e);
         Insert(Bucket(byKind, e.Kind), e);
-        Insert(Bucket(byFrom, e.From), e);
+        if (!e.IsForward) Insert(Bucket(byPost, (e.From, e.Kind)), e);
+        foreach (var session in SessionsOf(e)) Insert(Bucket(bySession, session), e);
         if (long.TryParse(e.Id.Split('-')[0], out var ms) && e.Id.EndsWith($"-{writer}") && ms > lastMs) lastMs = ms;
     }
 
-    static List<Event> Bucket(Dictionary<string, List<Event>> index, string key)
+    /// <summary>The sessions of an envelope: the sender, the receiver and the session field, each one time.</summary>
+    static IEnumerable<string> SessionsOf(Event e) =>
+        new[] { Parties.SessionId(e.From), Parties.SessionId(e.To), e.Session }.OfType<string>().Where(s => s.Length > 0).Distinct();
+
+    static List<Event> Bucket<TKey>(Dictionary<TKey, List<Event>> index, TKey key) where TKey : notnull
     {
         if (!index.TryGetValue(key, out var list)) index[key] = list = [];
         return list;
@@ -320,13 +349,16 @@ public sealed class EventStream
         list.Insert(at, e);
     }
 
-    int LowerBound(string start)
+    int LowerBound(string start) => LowerBound(events, start);
+
+    /// <summary>The index of the first envelope with an id after <paramref name="start"/>.</summary>
+    static int LowerBound(List<Event> list, string start)
     {
-        int low = 0, high = events.Count;
+        int low = 0, high = list.Count;
         while (low < high)
         {
             var mid = (low + high) / 2;
-            if (Names.Order.Compare(events[mid].Id, start) <= 0) low = mid + 1;
+            if (Names.Order.Compare(list[mid].Id, start) <= 0) low = mid + 1;
             else high = mid;
         }
         return low;

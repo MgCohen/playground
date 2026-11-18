@@ -19,7 +19,7 @@ public sealed class Recovery(FileStore store)
     {
         var start = store.Events.Find(marker.Event);
         var since = (Times.Parse(marker.At) ?? DateTimeOffset.MinValue) - TimeSpan.FromSeconds(1);
-        var delivered = store.Events.Since(since).Any(e => e.Kind == EventKinds.SessionInput && e.Session == id && e.Ref("turnStart") == marker.Event);
+        var delivered = store.Events.OfSession(id, since).Any(e => e.Kind == EventKinds.SessionInput && e.Session == id && e.Ref("turnStart") == marker.Event);
         if (delivered)
         {
             store.MarkSent(id, start?.RefList("envelopes") ?? [], Holders.Supervisor);

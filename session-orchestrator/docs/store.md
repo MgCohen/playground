@@ -68,6 +68,19 @@ Rules of each implementation. The contract tests (`RepositoryContractTests`) run
 1. A save of an `Add` with an id that exists fails with `StoreConflictException` (`Exists`). The local folder writes a temp file and moves it with no overwrite. The claims and the envelopes use this rule.
 2. Each entity has a version. A save of a change or a remove fails when the stored version is newer (`Stale`). A put of a whole file (lease, meta, status) reads again and writes again: the last writer wins.
 
+### Reads of the envelopes
+
+The envelopes are append only. Two parts keep the reads of each tick small:
+
+| Part | Where | Rule |
+|---|---|---|
+| Append feed | `IAppendFeed<T>` (`Core/Storage`), on `LocalEventRepository` | `ReadFrom(position)` gives only the envelopes after the position. `EventStream` keeps its position, so a call does not scan the envelopes that it has |
+| Day cache | `LocalEventRepository` | A day folder with two newer day folders is closed and never listed again. An open day folder is listed again only when its write time changed, or when its write time is newer than 2 s (`Settle`) |
+| Index by session | `EventStream.OfSession(id, since)` | The envelopes from a session, to a session, or with the session in the `session` field, in id order |
+| Index by sender and kind | `EventStream.LastFrom`, `PostsFrom` | The posts (no forwards) of one sender and one kind. `FileStore.Report` and `FileStore.Decisions` use it |
+
+The day cache needs this rule of the file system: a create, a rename or a delete of a file in a folder changes the write time of the folder. NTFS and the Linux file systems follow it. A writer must create each envelope file in its day folder; a write to a file that exists does not change the folder write time.
+
 ### Version rule
 
 The version of a stored file is a 64-bit FNV-1a hash of its UTF-8 text, as a signed 64-bit number. A file that does not exist has version 0. A hash of 0 becomes 1. The C# side and the plugin hooks use this one rule:
