@@ -2088,6 +2088,7 @@ Four dummy sessions: a root and three children. The root and two children fail, 
 | D4 | One `delivery.blocked` card for each envelope and each try; one `blocked` for each try, because its reason had the count; a copy of `delivery.blocked` to the supervisor itself | Fixed: one `failure` thread for each session and reason |
 | D5 | Sessions D, L and V can conflict on the real supervisor, the tray, the app and the ports | Rules in `know-how.md` ("Test work next to the real sessions"). Environments: issue #47 |
 | D6 | The web tests started the app with the real provider: a test session could start a real `claude` turn | Fixed: the web tests use the fake provider |
+| D8 | After each retry, the restart sets the try count to 0. A failed root then flips from "does not respond" to "responds again" and back, and each change was a new card | Fixed: one thread `notice-<session>` for the lifecycle messages to the user. A new one closes the older one. The flip itself stays (stream B) |
 | D7 | The card setting (which kinds make a card) does not exist. The inbox view decides in code | Open: the user wants it as a filter (code, app setting or live page filter), later |
 
 ## Next tasks

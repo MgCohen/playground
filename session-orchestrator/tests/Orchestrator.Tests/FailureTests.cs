@@ -117,4 +117,20 @@ public sealed class FailureTests
         await Cycles(4);
         Assert.That(Cards().Count(c => c.Kind == EventKinds.Failure), Is.EqualTo(1), "a new try shows the card again");
     }
+
+    [Test]
+    public async Task A_root_that_fails_again_after_each_retry_has_one_notice_card()
+    {
+        var id = Session("root");
+        await Cycles(4);
+        for (var round = 0; round < 3; round++)
+        {
+            clock.Advance(TimeSpan.FromMinutes(25));
+            await Cycles(4);
+        }
+        var notices = Cards().Where(c => c.Kind == EventKinds.Message && c.Session == id).ToList();
+        Assert.That(notices, Has.Count.EqualTo(1), "a new lifecycle message closes the older one");
+        Assert.That(store.Events.Thread(Supervisor.Supervisor.UserThread(id)).Count(e => e.Kind == EventKinds.Message), Is.GreaterThan(1), "the state changed more than once");
+        Assert.That(Cards().Count(c => c.Kind == EventKinds.Failure && c.Session == id), Is.EqualTo(1));
+    }
 }

@@ -287,8 +287,20 @@ public sealed partial class Supervisor
 
     public const string UserPrefix = "user-";
 
-    void ToUser(string id, string text) =>
-        store.Events.Post(new PostInput(EventKinds.Message, Parties.Supervisor, Parties.User, Data.Of(("text", text))) { Session = id, Needs = Needs.Ack });
+    /// <summary>The thread of the lifecycle messages of one session to the user.</summary>
+    public static string UserThread(string id) => $"notice-{id}";
+
+    /// <summary>
+    /// A lifecycle message to the user. All of one session share one thread, and a new one closes the older open one
+    /// (ack superseded), so the user sees only the newest state of the session, not one card for each change (D).
+    /// </summary>
+    void ToUser(string id, string text)
+    {
+        var thread = UserThread(id);
+        foreach (var old in store.Events.Thread(thread).Where(e => e.Kind == EventKinds.Message && e.To == Parties.User && !store.Events.IsAcked(e.Id)).ToList())
+            store.Events.Ack(old, Parties.Supervisor, "superseded", "read");
+        store.Events.Post(new PostInput(EventKinds.Message, Parties.Supervisor, Parties.User, Data.Of(("text", text))) { Session = id, Thread = thread, Needs = Needs.Ack });
+    }
 
     static string FaultText(string? fault, Snapshot s) => fault switch
     {
