@@ -1141,3 +1141,7 @@ Design page: `docs/stream-design.html` (https://claude.ai/artifact/JErtGVNeiAxtU
 ### Findings
 
 - F2 again: chat text closed two `ask_user` questions of this design (Q7, Q8). The work moved to chat only.
+
+### Approval
+
+The user approved the C1 design in chat on 2026-11-18.

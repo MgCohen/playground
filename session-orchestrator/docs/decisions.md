@@ -100,3 +100,4 @@ The build session made these decisions while the user was away. The user reviews
 | 2026-11-18 | C1 T3d: can a session own one run and do a step in another run? | Yes. Nested workflows need it. While a session owns a run, its role is orchestrator | User decision in chat |
 | 2026-11-18 | C1 T3b: can a step ask for a type? | Yes. The runner looks for an existing session of that type in the work tree. If there is none, it starts one | User decision in chat |
 | 2026-11-18 | C1 T3e: names of the two session fields | **role** = orchestrator, worker or free (the relation to workflows). **type** = the custom agent, such as decider or reviewer, set at creation. This replaces "kind" | User decision in chat. "kind" also names the message kinds of the templates |
+| 2026-11-18 | C1: is the stream and workflow design approved? | Yes | User approval in chat |
