@@ -37,6 +37,8 @@ The default store root is out of the checkout, so a `git clean -fdx` cannot dele
   claims/answer/<thread>             the claim of the first answer in a thread: an exclusive create, the text is the sender
   sessions/<id>/session.json         the registry entry of one session (Session registry, below)
   sessions/<id>/                     the lifecycle files of one session (below)
+  runs/<id>.json                     the run state of one workflow run (Workflow runs, below)
+  runs/<id>.json.lock                the lock of the version check and the write of the run
   supervisor/log.txt                 one line for each turn, relay, default, nudge and blocked delivery
   templates/<kind>/                  an added template, or a replacement of a core template (Types, below)
   templates/modes/<name>/            an added mode, or a replacement of a core mode (Template system, below)
@@ -66,6 +68,7 @@ The C# code reads and writes the store only through `IRepositories` (`src/Orches
 | `SessionFile<T>(file)` | `Doc<T>` | session id | `sessions/<id>/<file>` |
 | `SessionItems<T>(id, folder)` | `Doc<T>` | item name | `sessions/<id>/<folder>/<name>.json` |
 | `Definitions(catalog)` | `Doc<Definition>` (the files of one folder) | definition name | `templates/<kind>/`, `templates/modes/<name>/`, `templates/workflows/<name>/` |
+| `WorkflowRuns` | `Doc<WorkflowRun>` | run id | `runs/<id>.json`. Only `WorkflowRunner` writes it (C2) |
 | `Log` (`ILogSink`) | none | none | `supervisor/log.txt` |
 
 The version of a `Definition` is the FNV-1a hash of each file path and text, in path order. A change and a remove of a definition move the old folder to `.removed/`.
@@ -269,6 +272,7 @@ A workflow (`workflow.json`): `name`, `version`, `purpose`, `entry` (the id of t
 | `id`, `title`, `instructions` | Required |
 | `executor` | `agent` (one turn of a session), `ask` (a human answers), `tool` (a deterministic call) |
 | `session` | Agent steps only: `owner` (default), `new`, `{ "session": id }` or `{ "type": name }` |
+| `tool` | Tool steps only, and required there: the name of the deterministic tool (`IWorkflowTool`) |
 | `when`, `exit` | The entry and exit conditions, as text |
 | `input`, `output`, `templates` | Lists. Each template is a message kind that must exist |
 | `approval` | `{ by, strategy }`, strategy `required`, `skippable` or `ignored` |
@@ -276,7 +280,43 @@ A workflow (`workflow.json`): `name`, `version`, `purpose`, `entry` (the id of t
 | `next` | `[{ step, when }]`. No `when`: always valid |
 | `done` | `true`: this step can end the work |
 
-`WorkflowDefinition.Check` refuses a repeated step id, an unknown entry step, a `next` to an unknown step, a session on a step that is not an agent step, an unknown message kind, a workflow with no `done` step, and a step that the entry step does not reach. `orch template check` checks each template, mode and workflow. `orch template modes` and `orch template workflows` list them.
+`WorkflowDefinition.Check` refuses a repeated step id, an unknown entry step, a `next` to an unknown step, a session on a step that is not an agent step, a tool step with no tool, a tool on a step that is not a tool step, an unknown message kind, a workflow with no `done` step, and a step that the entry step does not reach. `orch template check` checks each template, mode and workflow. `orch template modes` and `orch template workflows` list them.
+
+## Workflow runs
+
+The slice `WorkflowRunner` (`Orchestrator.Core/Workflows/`) is the only writer of `runs/<id>.json` (C2). The id is `<workflow>-<8 hex>`. `orch run` reads and writes runs through `WorkflowHost.Runner`.
+
+| Field | Content |
+|---|---|
+| `id`, `workflow`, `version`, `owner` | The run, the workflow name and version at the start, the owner session |
+| `status` | `running`, `waiting`, `stopped` or `done` |
+| `step` | The id of the current step |
+| `wait` | `{ kind, text, options, session, by, thread }`. Kind: `agent`, `ask`, `tool`, `exit`, `approval`, `pick` or `stuck` |
+| `input`, `outputs` | The run input (for example `goal`), and the outputs of all steps by name |
+| `history` | One entry for each step visit: `step`, `executor`, `started`, `ended`, `session`, `thread`, `holds`, `output`, `answer`, `approval`, `next` |
+| `reason`, `created`, `updated` | Why the run stopped or ended; stamps `{ at, by }` |
+
+How a run moves:
+
+```
+orch run start <workflow> --owner S   owner role → orchestrator, workflow → name; the entry step starts
+  executor.Start(step)
+    tool   IWorkflowTool.Run → a result at once, or wait "tool"
+    ask    a question (kind question, thread run-<hex>) to approval.by or the user → wait "ask"
+    agent  the step prompt to the session of the step → wait "agent"
+orch run step <run> [--holds "c1; c2"] [--pick S] [--answer T] [--verdict V] [--skip-approval] [--done]
+  1. the result: the input of the command, else executor.Poll (the answer of the question thread)
+  2. exit condition not in the holds → wait "exit"
+  3. approval: ignored → go on; else the verdict, a skip (skippable only), or a question to approval.by → wait "approval"; refuse → stopped
+  4. a done step and (the definition of done is in the holds, or --done) → done, a message to the owner
+  5. valid next steps: the next condition and the entry condition of the target are in the holds (no text: true)
+       one → go · many → the pick, else wait "pick" · none → a question to the user, wait "stuck"
+  6. more than 200 step visits → stopped
+```
+
+The conditions are text. A condition holds when the holds of the visit have the same text, with no case and no end period. An approval verdict adds the fact `the verdict is <verdict>`. The answer of an ask step meets its exit condition, and for a step with an approval it is also the verdict (its first word).
+
+An agent step names its session: `owner`, `new` (a child of the owner with role worker), `{ "session": id }`, or `{ "type": name }` (an active session of that type in the work tree of the owner, else a new child of that type). A step session that is not the owner gets the role worker, unless it owns a run. New sessions start through `Messages.NewSession`: the registry entry and the brief. The supervisor then runs the turn through `IProvider`.
 
 ## Subscriptions and delivery
 
@@ -388,7 +428,7 @@ Store version 3 keeps the data of each session in one registry entry, `sessions/
 | `parent` | The parent id. Null for a root. The children are a query (`SessionRegistry.Children`), not a field | Create |
 | `title`, `owner`, `tags`, `stream` | Labels. `owner` and `stream` are copies of the parent when the creator gives none | Create, `orch enable` |
 | `role` | `orchestrator`, `worker` or `free` (C1). At create: `orchestrator` for the orchestrator agent, `worker` for a child, else `free`. The workflow runner (C2) changes it | Create |
-| `type` | The custom agent: `agent` and `skills`. Only the provider reads it, to start the session | Create |
+| `type` | The custom agent: `agent` and `skills`. Only the provider reads it, to start the session. With no `type.agent`, a turn uses the default agent of the role: `orchestrator` or `worker` (C2). A `free` session has no agent | Create |
 | `workflow` | The workflow that the session runs or works in | Create |
 | `work` | `cwd`, and the git worktree: `worktree`, `repo`, `branch` | Create, the worktree step |
 | `settings` | The settings in tiers (below) | Create, `SessionRegistry.Configure` |
