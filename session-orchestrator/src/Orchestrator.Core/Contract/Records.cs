@@ -18,6 +18,15 @@ public sealed record Lease(string Holder, string Since, JsonElement? Reason = nu
     public string? Started { get; init; }
 }
 
+/// <summary>Where a session runs. A cloud session runs in a VM of the engine and uses the store API (H5).</summary>
+public static class Places
+{
+    public const string Local = "local";
+    public const string Cloud = "cloud";
+
+    public static bool IsCloud(string? where) => where == Cloud;
+}
+
 /// <summary>The policy form of a question. The envelope kind is always question.</summary>
 public static class DecisionKinds
 {

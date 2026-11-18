@@ -17,6 +17,7 @@
     "cwd": { "type": "string", "description": "The working folder. Default: the folder of the parent." },
     "worktree": { "type": "boolean", "description": "true: the supervisor makes a git worktree for this session." },
     "background": { "type": "boolean", "description": "true: a background session. Remote Control stays off. Default: Remote Control is on, so the user sees the session on the phone." },
+    "where": { "enum": ["local", "cloud"], "description": "Where the session runs. cloud: a cloud session of the engine, with the orch command in HTTP mode. Default: local." },
     "parent": { "type": "string", "description": "The full id of the parent session." },
     "allowDefaults": { "type": "boolean", "description": "true: a merge may carry default decisions that the user did not approve. Only the user sets it. Child sessions get it from their parent." }
   },

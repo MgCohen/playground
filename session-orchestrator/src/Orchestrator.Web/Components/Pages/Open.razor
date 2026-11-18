@@ -5,7 +5,7 @@
 
 <PageTitle>@(e?.Subject ?? "Event") · orch</PageTitle>
 
-<a class="back" href="@(card is null ? "stream" : "cards")"><Icon Name="chevL" />@(card is null ? "Stream" : "Cards")</a>
+<PageHeader Title="@(e is null ? "Event" : Ui.KindLabel(e.Kind, fields))" Tab="false" Parent="@(card is null ? new Crumb("Stream", "stream") : new Crumb("Cards", "cards"))" />
 
 @if (e is null)
 {
@@ -50,11 +50,7 @@ else
         }
     </div>
 
-    <div class="acts sticky-acts @(card is null ? "off" : "")">
-        @{ var (left, right) = card is { } c ? (c.Left, c.Right) : Closed2(e.Kind); }
-        <button type="button" class="btn" disabled="@(card is null)" @onclick="() => Do(left)"><Icon Name="@left.Icon" />@left.Label</button>
-        <button type="button" class="btn pri" disabled="@(card is null)" @onclick="() => Do(right)"><Icon Name="@right.Icon" />@right.Label</button>
-    </div>
+    <PageBar Page="PageActs" Content="ContentActs" OnAct="Run" HideAppBar="true" />
 
     @if (sheet is { } s && card is not null)
     {
@@ -75,12 +71,19 @@ else
 
     string Closed => results.LastOrDefault() is { } r ? r.Kind == EventKinds.Ack ? "seen" : r.Kind == EventKinds.Review ? "reviewed" : "answered" : "closed";
 
-    static (CardAction, CardAction) Closed2(string kind) => kind switch
-    {
-        EventKinds.Question => (new("Type", "pen", CardDo.Type), new("Speak", "mic", CardDo.Speak)),
-        EventKinds.Plan or EventKinds.Answer or EventKinds.Review => (new("Change", "pen", CardDo.Type), new("Approve", "check", CardDo.Accept)),
-        _ => (new("Reply", "pen", CardDo.Type), new("Got it", "check", CardDo.Accept)),
-    };
+    // E-1 page actions: the same on each document page.
+    IReadOnlyList<PageAct> PageActs => e?.Session is not { } session ? [] :
+    [
+        new("session", "Open session", PageAct.Main, "tree", $"sessions/{session}"),
+        new("stream", "Session stream", PageAct.Other, "stream", $"stream?session={session}"),
+    ];
+
+    // E-1 content actions: the actions of the document type (view.json), while the item waits. A diff act needs a pull request link.
+    IReadOnlyList<PageAct> ContentActs => card is null ? [] : doc.Actions
+        .Where(a => a.Id != "diff" || PullRequest is not null)
+        .Select(a => new PageAct(a.Id, a.Label, a.Role, Href: a.Id == "diff" ? PullRequest : null)).ToList();
+
+    string? PullRequest => fields.Values.Select(v => Ui.Text(v)).Select(t => System.Text.RegularExpressions.Regex.Match(t, @"https?://\S+/pull/\d+")).FirstOrDefault(m => m.Success)?.Value;
 
     protected override void OnParametersSet() => Load();
 
@@ -95,16 +98,26 @@ else
         results = Board.Results(e);
     }
 
-    void Do(CardAction action)
+    /// <summary>The behavior of each content action id. The id is the contract of view.json; the label is data.</summary>
+    void Run(string id)
     {
         if (card is not { } c) return;
-        switch (action.Do)
+        switch (id)
         {
-            case CardDo.Type: sheet = false; return;
-            case CardDo.Speak: sheet = true; return;
-            case CardDo.AcceptText: Done(Act(() => Board.Accept(c.Id, action.Text), $"{action.Label} · {c.SessionTitle}")); return;
-            case CardDo.RefuseText: Done(Act(() => Board.Refuse(c.Id, action.Text ?? ""), $"{action.Label} · {c.SessionTitle}")); return;
-            default: Done(Act(() => Board.Accept(c.Id), $"{action.Label} · {c.SessionTitle}")); return;
+            case "accept" or "approve" or "ack":
+                var main = c.Right.Do is CardDo.Accept or CardDo.AcceptText ? c.Right : new CardAction("Accept", "check", CardDo.Accept);
+                Done(main.Do == CardDo.AcceptText ? Act(() => Board.Accept(c.Id, main.Text), $"{main.Label} · {c.SessionTitle}") : Act(() => Board.Accept(c.Id), $"{main.Label} · {c.SessionTitle}"));
+                return;
+            case "refuse":
+                Done(Act(() => Board.Refuse(c.Id, ""), $"Refused · {c.SessionTitle}"));
+                return;
+            case "skip":
+                Nav.NavigateTo("cards");
+                return;
+            default:
+                // other, change, reply: the answer sheet.
+                sheet = false;
+                return;
         }
     }
 

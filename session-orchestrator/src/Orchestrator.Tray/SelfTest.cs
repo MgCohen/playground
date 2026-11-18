@@ -7,7 +7,7 @@ namespace Orchestrator.Tray;
 /// The self-test of the window (--selftest &lt;folder&gt;): it opens each A4 view with the mock data, examines the DOM,
 /// and writes a screenshot of each view. The exit code is 0 when all checks pass.
 /// </summary>
-public static class SelfTest
+public static partial class SelfTest
 {
     public sealed record Check(string View, bool Pass, string Message, string Screenshot);
 
@@ -26,19 +26,23 @@ public static class SelfTest
         new("stream", $"{Go}('stream')", ".tl"),
         new("sessions", $"{Go}('sessions')", "a.srow"),
         new("session-status", $"{Go}(([...document.querySelectorAll('a.srow')].find(a => a.textContent.includes('Plan the inbox')) ?? document.querySelector('a.srow')).getAttribute('href'))", ".hero"),
-        new("session-stream", $"{Go}(document.querySelector('.sticky-acts a.pri').getAttribute('href'))", ".lock"),
+        new("session-stream", $"{Go}(document.querySelector('.pagebar a.pri').getAttribute('href'))", ".lock"),
     ];
 
-    /// <summary>The place file of the self-test: a new file in the self-test folder, so the widget starts at its home location.</summary>
+    /// <summary>The place file of the self-test: a new file in the self-test folder, so the widget and the edge tab start at their home places.</summary>
     public static string FreshPlaceFile(string folder)
     {
         var file = Path.Combine(folder, "place.json");
         if (File.Exists(file)) File.Delete(file);
+        // The edge tab keeps its place next to the widget place.
+        var tab = Path.Combine(folder, "edge-tab.txt");
+        if (File.Exists(tab)) File.Delete(tab);
         return file;
     }
 
-    public static async Task<int> Run(WidgetForm form, string folder)
+    public static async Task<int> Run(TrayApp tray, string folder)
     {
+        var form = tray.Form;
         Directory.CreateDirectory(folder);
         var checks = new List<Check>();
         var web = await Until(() => Task.FromResult(form.Web), TimeSpan.FromSeconds(60)) ?? throw new TimeoutException("WebView2 did not start in 60 seconds.");
@@ -91,6 +95,10 @@ public static class SelfTest
         await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
         await Task.Delay(800);
         checks.AddRange(await RenderShots(form, web, folder));
+        checks.AddRange(await Motion(web, folder));
+        checks.AddRange(await Header(form, web, folder));
+        checks.AddRange(await Transitions(web, folder));
+        checks.AddRange(await Actions(web, folder));
         await web.ExecuteScriptAsync($"{Go}('')");
         await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
         await Task.Delay(800);
@@ -99,8 +107,11 @@ public static class SelfTest
         checks.Add(await Pin(form, web, folder));
         checks.Add(await Drag(form, web));
         checks.Add(await Toggle(form));
+        checks.Add(await PlaceClamp(form, folder));
         checks.Add(await Grow(form, folder));
+        checks.AddRange(await Ball(form, web, folder));
         checks.Add(await Video(form, folder));
+        checks.AddRange(await Edge(tray, web, folder));
         foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
         await File.WriteAllTextAsync(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
         return checks.All(c => c.Pass) ? 0 : 1;
@@ -184,25 +195,65 @@ public static class SelfTest
         return new Check("pin", start && off && on, $"pinned at start {start}, after click 1 off {off}, after click 2 on {on}", png);
     }
 
-    /// <summary>A real mouse drag of the header title: the widget moves, and the new place is saved.</summary>
+    /// <summary>
+    /// Two real mouse drags of the header title (up left, then back): the widget lands exactly on each target, and the new place is saved.
+    /// </summary>
     static async Task<Check> Drag(WidgetForm form, CoreWebView2 web)
     {
         var rect = JsonSerializer.Deserialize<double[]>(JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync(
             "JSON.stringify((r => [r.left + 20, r.top + r.height / 2])(document.querySelector('.hd.win .title').getBoundingClientRect()))"))!)!;
         var scale = form.DeviceDpi / 96f;
-        var client = form.PointToScreen(Point.Empty);
-        var from = new Point(client.X + form.Padding.Left + (int)(rect[0] * scale), client.Y + form.Padding.Top + (int)(rect[1] * scale));
         var by = new Size(-(int)(160 * scale), -(int)(120 * scale));
-        var before = form.Location;
         var back = Cursor.Position;
-        // The drag loop of Windows runs on the UI thread, so the mouse input comes from another thread.
-        await Task.Run(() => Mouse.Drag(from, from + by));
-        await Task.Delay(500);
+        var lines = new List<string>();
+        var pass = true;
+        foreach (var move in new[] { by, new Size(-by.Width, -by.Height) })
+        {
+            var client = form.PointToScreen(Point.Empty);
+            var from = new Point(client.X + (int)(rect[0] * scale), client.Y + (int)(rect[1] * scale));
+            var before = form.Location;
+            // The drag loop runs on the UI thread, so the mouse input comes from another thread.
+            await Task.Run(() => Mouse.Drag(from, from + move));
+            for (var i = 0; i < 50 && form.Dragging; i++) await Task.Delay(20);
+            await Task.Delay(200);
+            var target = before + move;
+            var saved = WidgetForm.LoadPlace(form.PlaceFile);
+            var ok = form.Location == target && form.Place == form.Location && saved == form.Location;
+            pass &= ok;
+            lines.Add($"from {before.X},{before.Y} to {form.Location.X},{form.Location.Y} (expect {target.X},{target.Y}, off by {form.Location.X - target.X},{form.Location.Y - target.Y}), place file {saved}");
+        }
         Cursor.Position = back;
-        var moved = form.Location == before + by;
-        var saved = WidgetForm.LoadPlace(form.PlaceFile);
-        return new Check("drag", moved && form.Place == form.Location && saved == form.Location,
-            $"from {before.X},{before.Y} to {form.Location.X},{form.Location.Y} (expect {before.X + by.Width},{before.Y + by.Height}), saved place {form.Place}, place file {saved}", "");
+        return new Check("drag", pass, string.Join("; ", lines), "");
+    }
+
+    /// <summary>
+    /// A saved place on a screen that is gone (right of all screens, as X 2001 on a 1707 px screen) comes back into a current work area.
+    /// </summary>
+    static async Task<Check> PlaceClamp(WidgetForm form, string folder)
+    {
+        var keep = form.Place;
+        var right = Screen.AllScreens.Max(s => s.Bounds.Right);
+        var gone = new Point(right + 300, form.Top);
+        form.HideWidget();
+        await Settle(form);
+        form.UsePlace(gone);
+        form.ShowWidget();
+        await Settle(form);
+        await Task.Delay(300);
+        var bounds = form.Bounds;
+        var inside = Screen.AllScreens.Any(s => s.WorkingArea.Contains(bounds));
+        var png = Path.Combine(folder, "tray-e2-place-clamp.png");
+        Corner(form, png);
+        var text = $"saved place {gone.X},{gone.Y} (right edge of all screens {right}); shown at {bounds.X},{bounds.Y} size {bounds.Width} × {bounds.Height}, inside a work area {inside}";
+        if (keep is { } k)
+        {
+            form.HideWidget();
+            await Settle(form);
+            form.UsePlace(k);
+            form.ShowWidget();
+            await Settle(form);
+        }
+        return new Check("place-clamp", inside, text, png);
     }
 
     /// <summary>The tray icon click: hide, then show again at the saved place. Each change waits for the shrink or the grow.</summary>
@@ -230,6 +281,8 @@ public static class SelfTest
         form.HideWidget();
         await Settle(form);
         form.ShowWidget();
+        // G1: the ball pops in first; the grow starts after the pop and the gap.
+        for (var i = 0; i < 100 && !form.Resizing; i++) await Task.Delay(5);
         var pngs = new List<string>();
         foreach (var at in new[] { 60, 140 })
         {
@@ -247,6 +300,45 @@ public static class SelfTest
         var small = form.GrowFrames.Count > 0 && form.GrowFrames[0] < form.Height / 4;
         return new Check("grow", grow.Up && full && small && form.GrowFrames.Count >= 5,
             $"{form.GrowFrames.Count} frames in {WidgetForm.GrowMs} ms, {grow.Text}; starts small {small}, ends at the full height {full}", string.Join(";", pngs));
+    }
+
+    /// <summary>
+    /// G1: the show and the hide with the home ball. Show: the ball pops in at the home button, then the widget grows out of it
+    /// with a shadow that grows too; at the end the home button of the page takes the place of the ball. Hide: the ball first.
+    /// </summary>
+    static async Task<IEnumerable<Check>> Ball(WidgetForm form, CoreWebView2 web, string folder)
+    {
+        var checks = new List<Check>();
+        await Settle(form);
+        form.HideWidget();
+        await Task.Delay(60);
+        var ballFirst = form.Ball.Visible && !form.Resizing;
+        var hidePng = Path.Combine(folder, "tray-e2-g1-hide.png");
+        Corner(form, hidePng);
+        await Settle(form);
+        checks.Add(new Check("g1-hide", ballFirst && !form.Visible && !form.Ball.Visible, $"ball first (the ball shows, the shrink waits) {ballFirst}; hidden after {!form.Visible}", hidePng));
+
+        form.ShowWidget();
+        await Task.Delay(BallWindow.InMs / 2);
+        var popping = form.Ball.Visible && !form.Resizing;
+        var popPng = Path.Combine(folder, "tray-e2-g1-ball-in.png");
+        Corner(form, popPng);
+        var homeHidden = await Eval<bool>(web, "document.documentElement.classList.contains('ball')");
+        for (var i = 0; i < 100 && !form.Resizing; i++) await Task.Delay(5);
+        await Task.Delay(110);
+        var shadow = form.GrowShadow.Visible;
+        var unfold = await Eval<string>(web, "getComputedStyle(document.querySelector('.nav2')).animationName");
+        var midPng = Path.Combine(folder, "tray-e2-g1-grow.png");
+        Corner(form, midPng);
+        await Settle(form);
+        await Task.Delay(300);
+        var handoff = !form.Ball.Visible && !form.GrowShadow.Visible && !await Eval<bool>(web, "document.documentElement.classList.contains('ball')");
+        var endPng = Path.Combine(folder, "tray-e2-g1-end.png");
+        Corner(form, endPng);
+        checks.Add(new Check("g1-show", popping && homeHidden && shadow && unfold == "g-unfold" && handoff,
+            $"ball pops in before the grow {popping}; page home button hidden {homeHidden}; grow shadow {shadow}; app bar {unfold}; ball, shadow and class gone at the end {handoff}",
+            $"{popPng};{midPng};{endPng}"));
+        return checks;
     }
 
     /// <summary>

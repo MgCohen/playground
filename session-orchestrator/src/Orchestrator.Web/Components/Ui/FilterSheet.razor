@@ -1,5 +1,5 @@
-<div class="scrim" @onclick="OnClose"></div>
-<div class="crd sheet" role="dialog" aria-label="Filter and order">
+<div class="scrim @(closing ? "closing" : "")" @onclick="Close"></div>
+<div class="crd sheet @(closing ? "closing" : "")" role="dialog" aria-label="Filter and order">
     <span class="grab"></span>
     <div class="row flat"><span class="grow nm big-q">Filter and order</span><button type="button" class="link" @onclick="Reset">Reset</button></div>
     <div class="fsec"><span class="gt">Order</span><Seg Items="Orders" Value="@Filter.Order" OnPick="v => Set(() => Filter.Order = v)" /></div>
@@ -30,10 +30,24 @@
             }
         </div>
     </div>
-    <div class="acts"><button type="button" class="btn pri" @onclick="OnClose">@Show</button></div>
+    <div class="acts"><button type="button" class="btn pri" @onclick="Close">@Show</button></div>
 </div>
 
 @code {
+    /// <summary>The time of the slide down at close (M5). The parent removes the sheet after it.</summary>
+    public const int CloseMs = 220;
+
+    bool closing;
+
+    async Task Close()
+    {
+        if (closing) return;
+        closing = true;
+        StateHasChanged();
+        await Task.Delay(CloseMs);
+        await OnClose.InvokeAsync();
+    }
+
     [Parameter, EditorRequired] public ViewFilter Filter { get; set; } = default!;
     [Parameter] public IReadOnlyList<string> Orders { get; set; } = ViewFilter.Orders;
     [Parameter] public IReadOnlyList<(string Id, string Name, string Sub)> Sessions { get; set; } = [];

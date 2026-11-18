@@ -22,10 +22,12 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Providers/ClaudeCode/AppRecords.cs", [], "the records of the desktop app, not the store"),
         ("src/Orchestrator.Providers/ClaudeCode/ClaudeCodeProvider.cs", ["File.ReadAllText(settings)", "plugin.json"], "the settings of Claude Code for orch doctor"),
         ("src/Orchestrator.Tray/SelfTest.cs", [], "the screenshots of the tray self test"),
+        ("src/Orchestrator.Tray/SelfTest.Motion.cs", [], "the screenshots of the motion checks of the tray self test"),
         ("src/Orchestrator.Tray/WidgetForm.cs", [], "the place of the tray widget on the screen"),
-        ("src/Orchestrator.Tray/Program.cs", ["\"templates\""], "the check of the home folder"),
+        ("src/Orchestrator.Tray/EdgeTab.cs", [], "the place of the edge tab on the screen"),
+        ("src/Orchestrator.Tray/Program.cs", ["\"templates\"", "selftest-error.txt"], "the check of the home folder, and the error file of the self test"),
         ("src/Orchestrator.Tray/MockStore.cs", ["CreateTempSubdirectory", "Directory.CreateDirectory(cwd)", "Directory.Delete(Folder"], "the mock store makes and deletes its own temp folder and the cwd of its sessions"),
-        ("src/Orchestrator.Store/Home.cs", ["Solution", "File.ReadAllText(source)"], "the home folder and config/policy.default.json of the repository"),
+        ("src/Orchestrator.Store/Home.cs", ["Solution", "File.ReadAllText(source)", "Directory.Exists(DefaultStoreRoot())"], "the home folder, config/policy.default.json of the repository, and the choice of the orch store (H5)"),
         ("src/Orchestrator.Store/Lifecycle.cs", ["worktree", "Directory.Exists(path)", "Path.GetDirectoryName(path)"], "the git worktree of a session"),
         ("src/Orchestrator.Store/FileStore.cs", ["(Local.LocalRepositories)Repositories).PathOf"], "the path helper for tests, which delegates to the implementation"),
         ("src/Orchestrator.Cli/Commands/EventCommands.cs", ["File.ReadAllText(json)"], "a JSON file of the user"),
@@ -76,7 +78,7 @@ public sealed class ArchitectureTests
     {
         var allowed = new Dictionary<string, string[]>
         {
-            ["SessionEntries"] = ["src/Orchestrator.Core/Storage/IRepositories.cs", "src/Orchestrator.Store/Local/LocalRepositories.cs", "src/Orchestrator.Store/FileStore.cs", "src/Orchestrator.Store/StoreUpgrade.cs"],
+            ["SessionEntries"] = ["src/Orchestrator.Core/Storage/IRepositories.cs", "src/Orchestrator.Store/Local/LocalRepositories.cs", "src/Orchestrator.Store/Remote/HttpRepositories.cs", "src/Orchestrator.Store/Remote/StoreService.cs", "src/Orchestrator.Store/Remote/StoreWire.cs", "src/Orchestrator.Store/FileStore.cs", "src/Orchestrator.Store/StoreUpgrade.cs"],
             ["StoreFiles.Meta"] = ["src/Orchestrator.Store/StoreUpgrade.cs"],
             ["StoreFiles.Control"] = ["src/Orchestrator.Store/StoreUpgrade.cs"],
         };

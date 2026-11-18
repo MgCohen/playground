@@ -49,12 +49,9 @@ public sealed partial class WidgetForm : Form
         Size = Scaled();
         Location = Start();
         grow.Tick += (_, _) => GrowStep();
-        // The first show waits for the page, so the widget does not grow over an empty web view.
-        view.BlazorWebViewInitialized += (_, e) => e.WebView.CoreWebView2.NavigationCompleted += (_, _) =>
-        {
-            pageReady = true;
-            if (growWaits) BeginGrow(open: true);
-        };
+        dragTimer.Tick += (_, _) => DragStep();
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged += DisplayChanged;
+        view.BlazorWebViewInitialized += (_, e) => e.WebView.CoreWebView2.NavigationCompleted += (_, _) => pageReady = true;
     }
 
     /// <summary>Keeps the widget on top of the other windows (TopMost).</summary>
@@ -81,33 +78,133 @@ public sealed partial class WidgetForm : Form
     [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
     public bool Exiting { get; set; }
 
-    /// <summary>Shows the widget at its home location in the corner above the tray.</summary>
+    /// <summary>
+    /// Shows the widget (G1). The home ball pops in at the place of the home button; after a short gap the widget grows out of
+    /// it, the page fades in and the app bar unfolds sideways. If the page is not ready, the ball pulses for 500 ms first and the
+    /// widget grows with the skeleton of the host page. At the end the home button of the page takes the place of the ball.
+    /// </summary>
     public void ShowWidget()
     {
         if (!Visible || closing)
         {
+            var run = ++sequence;
+            minimizing = false;
+            closing = false;
+            grow.Stop();
+            Showing?.Invoke();
             if (!Visible) Location = Start();
             Frame(false);
             Reveal(0);
             Show();
-            if (pageReady) BeginGrow(open: true);
-            else
+            Page("document.documentElement.classList.add('ball')");
+            ball.Place(HomeCenter(), BallSize);
+            starting = true;
+            ball.PopIn(() =>
             {
-                growWaits = true;
-                // A page that never reports its load still shows after 3 s.
-                _ = Task.Delay(3000).ContinueWith(_ => BeginInvoke(() => { if (growWaits) BeginGrow(open: true); }), TaskScheduler.Default);
-            }
+                if (run != sequence) return;
+                if (pageReady) After(GapMs, run, () => BeginGrow(open: true));
+                else
+                {
+                    ball.Pulse(true);
+                    After(PulseMs, run, () =>
+                    {
+                        ball.Pulse(false);
+                        BeginGrow(open: true);
+                    });
+                }
+            });
         }
         if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
         Activate();
+        // The widget takes the focus and comes to the top; the ball stays above it until the handoff.
+        if (ball.Visible) ball.ToTop();
     }
 
-    /// <summary>Hides the widget: it shrinks to the bottom edge, then it hides.</summary>
+    /// <summary>
+    /// Hides the widget (G1, "ball first"): the home ball takes the place of the home button and pops out, and the widget
+    /// shrinks to its bottom edge when the pop out is half done; then it hides.
+    /// </summary>
     public void HideWidget()
     {
         if (!Visible || closing) return;
-        BeginGrow(open: false);
+        var run = ++sequence;
+        closing = true;
+        starting = false;
+        grow.Stop();
+        Page("document.documentElement.classList.add('ball')");
+        ball.Place(HomeCenter(), BallSize);
+        ball.PopOut(null);
+        After(BallWindow.OutMs / 2, run, () => BeginGrow(open: false));
     }
+
+    // ===== G1: the ball, the gaps and the page =====
+
+    /// <summary>The gap from the ball in to the grow, and the pulse of a ball that waits for the page (G1 choices).</summary>
+    public const int GapMs = 60, PulseMs = 500;
+
+    readonly BallWindow ball = new();
+    readonly GrowShadow shadow = new();
+    int sequence;
+    bool starting;
+
+    /// <summary>The home ball of the show and the hide. The self-test reads it.</summary>
+    public BallWindow Ball => ball;
+
+    /// <summary>The shadow that grows with the widget. The self-test reads it.</summary>
+    public GrowShadow GrowShadow => shadow;
+
+    // The home button of the page: 62 CSS px, its center 54 CSS px above the bottom and in the middle of the page width less the
+    // 6 px scroll bar gutter (app.css .nav2 and .nav2 .home). The page measures it after each grow, so a layout change follows.
+    PointF homeCss = new(-1, -1);
+
+    float BallSize => 62 * DeviceDpi / 96f;
+
+    Point HomeCenter()
+    {
+        var scale = DeviceDpi / 96f;
+        var css = homeCss.X >= 0 ? homeCss : new PointF((ClientSize.Width / scale - 6) / 2, ClientSize.Height / scale - 54);
+        var client = PointToScreen(Point.Empty);
+        return new Point(client.X + (int)Math.Round(css.X * scale), client.Y + (int)Math.Round(css.Y * scale));
+    }
+
+    async void MeasureHome()
+    {
+        if (Web is not { } web) return;
+        try
+        {
+            var json = await web.ExecuteScriptAsync("(h => h ? (r => [r.left + r.width / 2, r.top + r.height / 2])(h.getBoundingClientRect()) : null)(document.querySelector('.nav2 .home'))");
+            if (System.Text.Json.JsonSerializer.Deserialize<float[]>(json) is [var x, var y]) homeCss = new PointF(x, y);
+        }
+        catch (Exception e) when (e is InvalidOperationException or System.Text.Json.JsonException or System.Runtime.InteropServices.COMException)
+        {
+        }
+    }
+
+    /// <summary>Runs a script in the page, if the page is there. The page ignores a class that it does not know.</summary>
+    void Page(string script)
+    {
+        if (pageReady && Web is { } web) _ = web.ExecuteScriptAsync(script);
+    }
+
+    /// <summary>Runs <paramref name="then"/> after <paramref name="ms"/>, if no later show or hide started.</summary>
+    void After(int ms, int run, Action then) =>
+        _ = Task.Delay(ms).ContinueWith(_ => BeginInvoke(() => { if (run == sequence) then(); }), TaskScheduler.Default);
+
+    /// <summary>T4: the widget shrinks and hides, then its minimized form (the edge tab, N1) slides in.</summary>
+    public void Minimize()
+    {
+        if (!Visible || closing) return;
+        minimizing = true;
+        HideWidget();
+    }
+
+    bool minimizing;
+
+    /// <summary>The widget is hidden after a minimize: the tray app shows the edge tab.</summary>
+    public event Action? Minimized;
+
+    /// <summary>The widget starts to show: the tray app hides the edge tab.</summary>
+    public event Action? Showing;
 
     public void Toggle()
     {
@@ -129,23 +226,27 @@ public sealed partial class WidgetForm : Form
     readonly System.Windows.Forms.Timer grow = new() { Interval = 10 };
     readonly System.Diagnostics.Stopwatch growClock = new();
     bool pageReady;
-    bool growWaits;
     bool closing;
 
     /// <summary>The shown height of each frame of the last grow or shrink, in pixels. The self-test reads it.</summary>
     public List<int> GrowFrames { get; } = [];
 
-    /// <summary>True while the widget grows or shrinks.</summary>
-    public bool Growing => grow.Enabled;
+    /// <summary>True while the widget shows or hides: the ball, the gap, the grow or the shrink.</summary>
+    public bool Growing => grow.Enabled || starting || closing;
+
+    /// <summary>True while the window region grows or shrinks.</summary>
+    public bool Resizing => grow.Enabled;
 
     void BeginGrow(bool open)
     {
-        growWaits = false;
         closing = !open;
         GrowFrames.Clear();
         Frame(false);
+        // G1: the page fades in with the grow, and the app bar unfolds sideways from the ball (tray.css, "grow-in").
+        if (open) Page("(d => { d.classList.add('grow-in'); setTimeout(() => d.classList.remove('grow-in'), 400); })(document.documentElement)");
         growClock.Restart();
         grow.Start();
+        if (ball.Visible) ball.ToTop();
         GrowStep();
     }
 
@@ -160,13 +261,30 @@ public sealed partial class WidgetForm : Form
         if (t < 1)
         {
             Reveal(shown);
+            shadow.Track(this, shown);
             return;
         }
         grow.Stop();
         if (closing)
         {
             closing = false;
+            shadow.Hide();
             Hide();
+            if (minimizing)
+            {
+                minimizing = false;
+                Minimized?.Invoke();
+            }
+        }
+        else
+        {
+            // The handoff: the home button of the page takes the place of the ball; the shadow of the system comes back.
+            starting = false;
+            shadow.Track(this, Height);
+            shadow.FadeOut();
+            Page("document.documentElement.classList.remove('ball')");
+            ball.HideNow();
+            MeasureHome();
         }
         // No region: the full window with the rounded corners, the border and the shadow of the system.
         _ = SetWindowRgn(Handle, 0, true);
@@ -182,15 +300,44 @@ public sealed partial class WidgetForm : Form
         _ = SetWindowRgn(Handle, region, true);
     }
 
-    /// <summary>Starts a drag of the window, as a drag of a title bar. The call returns when the mouse button is up.</summary>
-    public void BeginDrag()
+    // ===== Drag =====
+    // The widget follows the pointer with a fixed offset: the point under the pointer at the mouse down stays under the pointer.
+    // The system move loop (WM_NCLBUTTONDOWN with HTCAPTION) starts only after the drag threshold, so it landed some pixels off.
+
+    readonly System.Windows.Forms.Timer dragTimer = new() { Interval = 8 };
+    Size dragOffset;
+
+    /// <summary>True while a drag of the header moves the widget.</summary>
+    public bool Dragging => dragTimer.Enabled;
+
+    /// <summary>
+    /// Starts a drag of the window. <paramref name="x"/> and <paramref name="y"/> are the CSS pixels of the mouse down in the page,
+    /// so the drag keeps that point under the pointer also when the event comes late.
+    /// </summary>
+    public void BeginDrag(double x, double y)
     {
         // The mouse event comes from the page after a round trip: after a fast click the button is up again.
-        if (MouseButtons != MouseButtons.Left) return;
-        var before = Location;
-        ReleaseCapture();
-        _ = SendMessage(Handle, WmNcLButtonDown, HtCaption, 0);
-        if (Location == before) return;
+        if (MouseButtons != MouseButtons.Left || dragTimer.Enabled) return;
+        var scale = DeviceDpi / 96f;
+        var client = PointToScreen(Point.Empty);
+        var down = new Point(client.X + (int)Math.Round(x * scale), client.Y + (int)Math.Round(y * scale));
+        // A CSS pixel is more than one screen pixel at a high DPI. If the pointer did not move since the mouse down,
+        // its own position is exact; else the page point is the best value.
+        var now = Cursor.Position;
+        var still = Math.Abs(now.X - down.X) <= Math.Ceiling(scale) && Math.Abs(now.Y - down.Y) <= Math.Ceiling(scale);
+        dragOffset = (Size)(still ? now : down) - (Size)Location;
+        dragTimer.Start();
+    }
+
+    void DragStep()
+    {
+        if (MouseButtons == MouseButtons.Left)
+        {
+            Location = Cursor.Position - dragOffset;
+            return;
+        }
+        dragTimer.Stop();
+        Location = Cursor.Position - dragOffset;
         // A drop on the edge of the work area keeps the margin, so the widget never touches the taskbar.
         Location = Fit(Location);
         SavePlace(Location);
@@ -227,14 +374,37 @@ public sealed partial class WidgetForm : Form
 
     sealed record SavedPlace(int X, int Y);
 
-    // The saved place, if the full widget is on a screen. A place on a screen that is not there now gives the home location.
-    // The place moves in by the margin from the edges of its work area, so an old place on the taskbar edge gets the gap.
-    Point Start() =>
-        place is { } p && Screen.AllScreens.Any(s => s.WorkingArea.Contains(new Rectangle(p, Size))) ? Fit(p) : HomeLocation();
+    // The saved place, moved into the work area of the screen nearest to it. A place on a screen that is gone (a monitor
+    // that is off, or a smaller screen) comes back onto a current screen. The margin keeps a gap from each edge.
+    Point Start() => place is { } p ? Fit(p) : HomeLocation();
+
+    /// <summary>Sets the saved place without a drag. The self-test uses it for a place on a screen that is gone.</summary>
+    public void UsePlace(Point point) => SavePlace(point);
+
+    // A monitor that goes away while the widget shows: move the widget onto a current screen.
+    void DisplayChanged(object? sender, EventArgs e)
+    {
+        if (IsDisposed || !IsHandleCreated) return;
+        BeginInvoke(() =>
+        {
+            if (Visible && !Growing && !Dragging) Location = Fit(Location);
+        });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= DisplayChanged;
+            ball.Dispose();
+            shadow.Dispose();
+        }
+        base.Dispose(disposing);
+    }
 
     int Gap => (int)(12 * DeviceDpi / 96f);
 
-    /// <summary>The point moved into the work area of its screen, with the margin on each side.</summary>
+    /// <summary>The point moved into the work area of its screen (the nearest screen for a point off all screens), with the margin on each side.</summary>
     public Point Fit(Point point)
     {
         var area = Screen.FromRectangle(new Rectangle(point, Size)).WorkingArea;
@@ -305,8 +475,6 @@ public sealed partial class WidgetForm : Form
         return new Point(area.Right - Width - Gap, area.Bottom - Height - Gap);
     }
 
-    const int WmNcLButtonDown = 0xA1;
-    const int HtCaption = 2;
     const int WmSysCommand = 0x112;
     const int ScMaximize = 0xF030;
     const int DwmwaWindowCornerPreference = 33;
@@ -317,13 +485,6 @@ public sealed partial class WidgetForm : Form
     const int DwmwaNcRenderingPolicy = 2;
     const int DwmncrpUseWindowStyle = 0;
     const int DwmncrpDisabled = 1;
-
-    [LibraryImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool ReleaseCapture();
-
-    [LibraryImport("user32.dll", EntryPoint = "SendMessageW")]
-    private static partial nint SendMessage(nint hwnd, int msg, nint wParam, nint lParam);
 
     [LibraryImport("gdi32.dll")]
     private static partial nint CreateRoundRectRgn(int left, int top, int right, int bottom, int width, int height);

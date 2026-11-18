@@ -13,21 +13,29 @@
 
     @if (Top is { } top)
     {
+        @* M3: a real pile of up to three cards. Each card behind is 8 px lower and 4.5 % smaller (--i). The top card is first in the DOM. *@
         <div class="pile">
-            @if (visible.Count > 2) {<span class="ghost g2"></span>}
-            @if (visible.Count > 1) {<span class="ghost g1"></span>}
-            <article class="crd pcard" data-deck-card @key="top.Id">
-                <a class="card-link" href="events/@top.Id" aria-label="Open the full document"></a>
-                <CardPreview Card="top" Now="Board.Now" />
-                <span class="stamp s-r" aria-hidden="true">@top.Right.Label</span>
-                <span class="stamp s-l" aria-hidden="true">@top.Left.Label</span>
-                <span class="stamp s-d" aria-hidden="true">Skip</span>
-            </article>
+            @foreach (var (c, i) in visible.Take(3).Select((c, i) => (c, i)))
+            {
+                <article class="crd pcard @(i > 0 ? "behind" : Arrives(c) ? "arrive" : "")" style="--i:@i" data-deck-card="@(i == 0)" aria-hidden="@(i > 0 ? "true" : null)" @key="c.Id">
+                    @if (i == 0)
+                    {
+                        <a class="card-link" href="events/@c.Id" aria-label="Open the full document"></a>
+                    }
+                    <CardPreview Card="c" Now="Board.Now" />
+                    @if (i == 0)
+                    {
+                        <span class="stamp s-r" aria-hidden="true">@c.Right.Label</span>
+                        <span class="stamp s-l" aria-hidden="true">@c.Left.Label</span>
+                        <span class="stamp s-d" aria-hidden="true">Skip</span>
+                    }
+                </article>
+            }
         </div>
         <div class="acts">
-            <button type="button" class="btn" data-act="left" @onclick="() => Do(top, top.Left)"><Icon Name="@top.Left.Icon" />@top.Left.Label</button>
+            <button type="button" class="btn" data-act="left" data-throw="@Throws(top.Left)" @onclick="() => Do(top, top.Left)"><Icon Name="@top.Left.Icon" />@top.Left.Label</button>
             <button type="button" class="btn wl" data-act="skip" aria-label="Skip: move the card to the end" @onclick="() => Skip(top)"><Icon Name="down" /></button>
-            <button type="button" class="btn pri" data-act="right" @onclick="() => Do(top, top.Right)"><Icon Name="@top.Right.Icon" />@top.Right.Label</button>
+            <button type="button" class="btn pri" data-act="right" data-throw="@Throws(top.Right)" @onclick="() => Do(top, top.Right)"><Icon Name="@top.Right.Icon" />@top.Right.Label</button>
         </div>
     }
     else
@@ -41,7 +49,7 @@
 
 @if (toast is { } t)
 {
-    <div class="toast" role="status"><span class="grow">@t.Text</span>@if (t.Undo is not null) {<button type="button" @onclick="Undo">Undo</button>}</div>
+    <div class="toast" role="status" @key="t"><span class="grow">@t.Text</span>@if (t.Undo is not null) {<button type="button" @onclick="Undo">Undo</button>@if (pending is not null) {<i class="ubar" aria-hidden="true"></i>}}</div>
 }
 @if (sheet is { } s)
 {
@@ -73,6 +81,16 @@
     Pending? pending;
 
     CardView? Top => visible.Count > 0 ? visible[0] : null;
+
+    // M1: an act that sends the card away throws it out of the pile; an act that opens the answer sheet keeps it.
+    static string? Throws(CardAction action) => action.Do is CardDo.Type or CardDo.Speak ? null : "1";
+
+    // M3: a top card that was not in the pile of the last render drops in from the top (a new card, or an undo).
+    HashSet<string> lastPile = [];
+
+    bool Arrives(CardView card) => lastPile.Count > 0 && !lastPile.Contains(card.Id);
+
+    protected override void OnAfterRender(bool firstRender) => lastPile = visible.Take(3).Select(c => c.Id).ToHashSet();
 
     IReadOnlyDictionary<string, string> ChipLabels => new Dictionary<string, string>
     {

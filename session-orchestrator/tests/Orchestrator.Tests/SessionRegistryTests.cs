@@ -8,9 +8,11 @@ using Orchestrator.Store.Local;
 namespace Orchestrator.Tests;
 
 /// <summary>The contract of <see cref="IRepository{T, TId}"/> on the session registry (store version 3).</summary>
-public sealed class LocalSessionEntryContract : RepositoryContract<SessionEntry>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalSessionEntryContract(string backend) : RepositoryContract<SessionEntry>(backend)
 {
-    protected override IRepository<Doc<SessionEntry>, string> Open(string root) => new LocalRepositories(root).SessionEntries;
+    protected override IRepository<Doc<SessionEntry>, string> Open(string root) => Repos(root).SessionEntries;
 
     protected override string IdOf(int n) => $"session-{n}";
 

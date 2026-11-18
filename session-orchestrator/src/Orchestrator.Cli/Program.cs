@@ -13,7 +13,7 @@ namespace Orchestrator.Cli
             orch: the command of the session orchestrator. Each command reads or writes the store (ORCH_STORE).
 
             Sessions
-              orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--type A] [--stream S] [--workflow W] [--worktree] [--allow-defaults] [--background] [--parent ID]
+              orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--type A] [--stream S] [--workflow W] [--worktree] [--allow-defaults] [--background] [--where local|cloud] [--parent ID]
               orch enable [--title T] [--parent ID] [--id ID]
               orch send <session> <text> [--from P]
               orch tree [--stream S]
@@ -55,6 +55,7 @@ namespace Orchestrator.Cli
               orch template remove <kind>               move a store template to <store>/templates/.removed
               orch doctor
               orch store [root]                          the store root: ORCH_STORE, else %LOCALAPPDATA%\orch\store
+            HTTP mode: with ORCH_URL (or with no store folder and no ORCH_STORE), each store command calls the store API of the supervisor. ORCH_TOKEN is the token
               orch store migrate [--from DIR] [--to DIR] [--dry-run] [--force]   copy the old store (<home>/store) to the store root and check the copy. Deletes nothing
               orch store upgrade [--dry-run] [--force]   upgrade a store of version 2 to version 3: the session registry (session.json). Keeps meta.json and control.json
               orch supervisor start|stop|status [--port P] (the supervisor of ORCH_STORE: a published copy in ORCH_APP, else dotnet run of the source)
@@ -70,10 +71,11 @@ namespace Orchestrator.Cli
                 output.WriteLine(Usage);
                 return args.Positional.Count == 0 && !args.Flag("help") ? 2 : 0;
             }
-            var store = new FileStore(Home.StoreRoot(), writer: "cli");
-            var command = new CommandContext(store, args, output, cwd);
+            var word = args.Positional[0];
             try
             {
+                var store = new FileStore(Home.CliStoreRoot(local: word is "supervisor" or "process" or "store", fallback: word is not ("init" or "doctor" or "template")), writer: "cli");
+                var command = new CommandContext(store, args, output, cwd);
                 if (args.Positional[0] is not ("doctor" or "template" or "process" or "supervisor" or "store")) Home.CheckVersion(store.Repositories, store.Clock.GetUtcNow());
                 return args.Positional[0] switch
                 {

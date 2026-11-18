@@ -59,7 +59,8 @@ public sealed class ContractTests
     {
         var register = File.ReadAllText(Path.Combine(Hooks, "register.ts"));
         Assert.That(register, Does.Contain($"export const STORE_VERSION = {StoreVersion.Current}"));
-        Assert.That(register, Does.Contain("if (!(await versionOk($))) return"));
+        Assert.That(register, Does.Contain("if (!(await mayActivate($))) return"));
+        Assert.That(register, Does.Contain("return !(await storeApiMode($)) && (await versionOk($))"));
     }
 
     [Test]

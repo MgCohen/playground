@@ -167,6 +167,7 @@ export async function spawnChild($: any, e: any): Promise<any> {
   if (e.workflow) argv.push('--workflow', String(e.workflow))
   if (e.worktree === true) argv.push('--worktree')
   if (e.background === true) argv.push('--background')
+  if (e.where === 'cloud') argv.push('--where', 'cloud')
   const run = await orch($, argv)
   if (!run.ok) {
     await log($, `spawn_child failed: ${run.text.slice(0, 400)}`)

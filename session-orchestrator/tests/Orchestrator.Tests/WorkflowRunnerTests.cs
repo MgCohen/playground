@@ -599,9 +599,11 @@ public sealed class WorkflowRunnerTests
     }
 }
 
-public sealed class LocalWorkflowRunContract : RepositoryContract<WorkflowRun>
+[TestFixture(Backends.Local)]
+[TestFixture(Backends.Http)]
+public sealed class LocalWorkflowRunContract(string backend) : RepositoryContract<WorkflowRun>(backend)
 {
-    protected override IRepository<Doc<WorkflowRun>, string> Open(string root) => new LocalRepositories(root).WorkflowRuns;
+    protected override IRepository<Doc<WorkflowRun>, string> Open(string root) => Repos(root).WorkflowRuns;
 
     protected override string IdOf(int n) => $"planning-0000000{n}";
 

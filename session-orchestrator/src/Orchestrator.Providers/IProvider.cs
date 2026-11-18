@@ -50,9 +50,19 @@ public sealed record TurnRequest(string Id, string Cwd, string Prompt, bool IsNe
 {
     public string? Agent { get; init; }
     public string? Title { get; init; }
+
+    /// <summary>Where the session runs: null or <c>local</c> on this computer, <c>cloud</c> in a VM of the engine.</summary>
+    public string? Where { get; init; }
+
+    /// <summary>The id that the engine gave to the session at its start, for a session that the engine names (cloud).</summary>
+    public string? AppId { get; init; }
 }
 
-public sealed record TurnResult(bool Ok, string? Text, string? Error, double Seconds);
+/// <summary>The result of a turn. <c>AppId</c>: the id that the engine gave to a new session that it names (cloud).</summary>
+public sealed record TurnResult(bool Ok, string? Text, string? Error, double Seconds)
+{
+    public string? AppId { get; init; }
+}
 
 /// <summary>A one-shot model call. <c>Agent</c>: an agent of the orch plugin. <c>Plugin</c>: load the orch plugin as the turns do.</summary>
 public sealed record AskRequest(string Cwd, string Prompt, int MaxTurns)

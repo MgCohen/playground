@@ -1178,7 +1178,7 @@ Rules for each implementation: (1) `SaveChangesAsync` fails on an `Add` with an 
 | H4 store upkeep | H | Index by session (B2-9), day cache, store in `%LOCALAPPDATA%\orch\store` | After H2 |
 | S2 session registry | S | `SessionEntry` repository on H2, store version 3 | After P0 and H4 |
 | F2 template adapter | F | Templates on `IRepository`; modes and workflows as definitions; Notion implementation later | After I2 |
-| H5 remote access | H | Supervisor API for cloud workers, and the HTTP mode of `orch` (`ORCH_URL` and the API when no store folder exists; from G1) | In G2 |
+| H5 remote access | H | Supervisor API for cloud workers, and the HTTP mode of `orch` (`ORCH_URL` and the API when no store folder exists; from G1) | Built in G2: see "G2 result" |
 | H6 Notion store | H | Notion implementations, cache wrapper, supervisor as the only writer | Version 2 |
 
 Callers that bypass the ports today: `Supervisor.cs`, `Supervisor.Lifecycle.cs`, `EventCommands.cs`, `StateReader.cs`, `Lifecycle.cs`. The hooks use `backend.ts` since H3.
@@ -1540,10 +1540,89 @@ Findings:
 | E1-24 | User answer N1 and N2 (read from the page store): N1 edge tab A (full circle, 6 px from the edge; hover preview with the counts after 350 ms), right edge, ring spin at a new event, size 40, click opens the widget (the tab slides out to the right), drag moves it up and down. N2 peek bubble, hide after 5 s. All E1 round 1 choices are now decided; the build starts | Decided |
 | E1-25 | Build 1 (E-2, E-3, E-4): app.css: the skip button `.btn.wl` is raised with a muted icon; `html` and the sheet keep a stable scroll gutter; the scroll bar is a 4 px round thumb with 1 px space, 40 % muted, 70 % on hover, no track, only when the area overflows. tray.css no longer hides the scroll bar (E-3 and E-4 set the scroll bar). Self-test check `no-scroll-bar` becomes `scroll-gutter` (expect 6 px). Tray self-test 25 of 25 PASS. Proof: `docs/screens/tray-e1-s2-skip.png`, `docs/screens/tray-e1-s4-scroll.png` | Done |
 
-Next steps of E1, in order:
+The section "E2: App visuals and motion, round 2" has the build of the chosen items and spike E-5.
 
-1. User review of the three tabs. Build the chosen items, one commit each, with self-test proof.
-2. Spike E-5, last: composition hosting for the tray widget. Find what it gives (soft-edge shapes such as a ring with a transparent hole, part transparency, blur behind), what it costs (WebView2 `CoreWebView2CompositionController` and DirectComposition in place of the BlazorWebView HWND control), and if it is worth it. Discuss with the user before the build.
+## E2: App visuals and motion, round 2 (2026-11-18)
+
+E2 builds the E1 items that the user chose (E1-16, E1-18, E1-19, E1-24) and fixes two defects of the tray widget. Branch `orch/e2-visuals`, base `orch/integration-stack`. Tray self-test: 50 of 50 PASS. `dotnet test --solution Orchestrator.slnx`: 447 tests, 0 failed.
+
+### Built items
+
+| Item | Result | Proof (`docs/screens/`) |
+|---|---|---|
+| Defect: place off screen | The saved place goes through `Fit` on each show and on a display change: a place on a screen that is gone comes into the nearest work area | Check `place-clamp`: saved X 2860 on a 2560 px screen, shown inside the work area. `tray-e2-place-clamp.png` |
+| Defect: drag 6 px off | The widget follows the pointer with the offset of the mouse down. The system move loop starts after the drag threshold; the widget does not use it | Check `drag`: two drags, 0,0 px off each |
+| M1 A fly out | A swipe or a button act that sends the card away throws it out in the act direction (300 ms). An act that opens the answer sheet keeps the card | `tray-e2-m1-fly.png` |
+| M2 A tuck under | Skip drops the card 180 ms under the pile; it rises into the last slot | `tray-e2-m2-tuck.png`, `tray-e2-m2-lifted.png` |
+| M3 A real pile | Up to three real cards, each 8 px lower and 4.5 % smaller. A card that comes back drops in from the top | `tray-e2-m3-pile.png`, `tray-e2-m3-arrive.png` |
+| M5 A sheets and toast | Sheets slide up over a fading scrim and down at close. The undo toast drops in; a bar counts the 5 s | `tray-e2-m5-sheet-up.png`, `tray-e2-m5-sheet-down.png`, `tray-e2-m5-toast.png` |
+| M6 A skeleton | The tray host page has a skeleton until Blazor starts; the page then fades in | `tray-e2-m6-skeleton.png` |
+| M7 all | Press state (80 ms), ring draw on first show (900 ms), fold height motion (260 ms) | `tray-e2-m7-ring-draw.png`, `tray-e2-m7-fold.png`, `tray-e2-m7-fold-open.png` |
+| T1 C rise + stagger | A tab change: the body rises 10 px; each block starts 40 ms after the block above it. The header stays | `tray-e2-t1-tab-rise.png` |
+| T2 A push | A view transition pushes a deeper page in from the right; back plays it in reverse. The app bar stays | `tray-e2-t2-push.png`, `tray-e2-t2-back.png` |
+| T3 A full path | The header shows the path of a sub-page. With three or more parents, the first ones become one "…" link | `tray-e2-t3-path-session.png`, `tray-e2-t3-path-document.png` |
+| T4 A always | Pin, minimize and close are always in the widget header | `tray-e2-t4-window-buttons.png` |
+| E-1 A page actions | Page actions in a bar at the bottom; content actions of `view.json` in a corner speed dial. A document page hides the app bar | `tray-e2-e1-document.png`, `tray-e2-e1-speed-dial.png`, `tray-e2-e1-session.png` |
+| N1 edge tab A | Minimize puts the widget into an edge tab at the right screen edge (ring 6 px from the edge). A hover of 350 ms shows the counts; a drag moves it up and down; a click opens the widget | `tray-e2-n1-edge-tab.png`, `tray-e2-n1-hover.png`, `tray-e2-n1-drag.png` |
+| N2 peek bubble | A new waiting card while the widget is hidden spins the ring and shows a bubble for 5 s | `tray-e2-n2-peek.png` |
+| G1 ball and grow | The home ball pops in (240 ms); after 60 ms the widget grows out of it. The page fades in, the app bar unfolds sideways, and a shadow grows with the widget. Hide: the ball pops out first (180 ms) | `tray-e2-g1-ball-in.png`, `tray-e2-g1-grow.png`, `tray-e2-g1-end.png`, `tray-e2-g1-hide.png` |
+
+### The show, the minimize and the notice
+
+```mermaid
+flowchart LR
+    Tray[Tray click] --> Ball[Ball pops in]
+    Ball -->|60 ms, or 500 ms pulse| Grow[Widget and shadow grow]
+    Grow --> Page[Home button replaces ball]
+    Page -->|Minimize| Tab[Edge tab slides in]
+    Tab -->|Click| Ball
+    Tab -->|New card| Peek[Ring spin, peek bubble]
+```
+
+The edge tab, the ball and the grow shadow are native windows with per-pixel alpha (`LayeredForm`, `UpdateLayeredWindow`), drawn with GDI+. They show at once, with no web page. The web parts use CSS first. JavaScript is in `swipe.js` (throw and tuck) and `motion.js` (the direction of the view transition).
+
+### Spike E-5: a ring widget with a transparent hole
+
+Probe: `spikes/e5-ring` (not in the solution). WebView2 uses a composition controller on a DirectComposition visual. The top window has no redirection bitmap. The page draws a ring with soft edges on a transparent background. A striped window stands behind it. Result file: `spikes/e5-ring/result.json`.
+
+| Check | No window region | Ring window region |
+|---|---|---|
+| Hole shows the window behind | ✅ | ✅ |
+| Soft edge (5 px of mixed values) | ✅ | ✅ |
+| Click in the hole reaches the window behind | ❌ the ring window gets it | ✅ |
+| Click on the ring reaches the page | ✅ the host sends the input | ✅ |
+
+Screenshots: `docs/screens/e5-ring-alpha.png`, `docs/screens/e5-ring-region.png`.
+
+| Part | Cost of a web widget in composition mode |
+|---|---|
+| Blazor host | BlazorWebView for WinForms has no composition mode. A custom `WebViewManager` host is necessary |
+| Input | The host sends each mouse, wheel and pointer event (`SendMouseInput`), and moves the keyboard focus |
+| Other parts | Cursor changes, drag areas, UI Automation and DPI changes each need host code |
+
+Result: a shape with a hole and soft edges works with web content. The cost is a custom Blazor host. Recommendation: keep the BlazorWebView widget rectangular. The small forms (edge tab, ball, bubble) use the layered windows of E2, which give the same soft edges with no web page. Use composition hosting only for a web-drawn form with a hole.
+
+### UI drafts for the other streams
+
+Page: `docs/ui-drafts.html` (https://claude.ai/artifact/WSfAWg6otCmoRvpEg3h764). Drafts only, with sample data: no built code. Each draft is a widget frame in the look of the app, with options and open questions.
+
+| Draft | Plans used | Options | State |
+|---|---|---|---|
+| 1 Workflow run | C1 (graph, steps, executor, approval, entry checks), C2 | A step graph (recommended), B step bar | Open: user pick |
+| 2 Session | S1 registry entry, role and type (C1), settings and modes | A all fields in groups, B three lines and "show all" | Open: user pick |
+| Later | F1 and F2 templates, H1 and H4 storage, G1 and G2 setup, C1 streams | Listed on the tab "Later drafts" | Next |
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| E2-1 | An animation with `fill-mode: both` on `.app` made a stacking context; the backdrop of the app bar then covered the bar | Fixed: the entrance animations fill backwards only. Self-test check `app-bar-on-top` |
+| E2-2 | A thrown card made a side scroll bar | Fixed: `.app { overflow-x: clip }`. Clip makes no scroll container, so the sticky bars still work |
+| E2-3 | `CapturePreviewAsync` takes longer than a motion of 300 ms | The checks hold the animations (Web Animations `pause` and `currentTime`) for each screenshot |
+| E2-4 | The widget took the focus and covered the ball | Fixed: the ball goes on top again after `Activate` |
+| E2-5 | The native forms use the light colors only | Open: dark colors for the edge tab, the ball and the bubble |
+| E2-6 | The roadmap line for the workflow page is in "Next tasks", table "Later" (base commit `ec5cbf7`) | No change necessary |
+
 
 ## G1 result: install and start (2026-11-17)
 
@@ -1565,10 +1644,10 @@ The steps of the cloud plan (page, section Q6) have G-step codes. They are steps
 | Step | Content | Task |
 |---|---|---|
 | G-0 probe | One cloud session: .NET 10, plugin, `claude -p`, Quick Tunnel | Done 2026-11-17 |
-| G-1 HTTP mode | `orch` uses `ORCH_URL` and the API when no store folder exists | H5 (H1 plan) |
+| G-1 HTTP mode | `orch` uses `ORCH_URL` and the API when no store folder exists | H5 (H1 plan), built in G2 |
 | G-2 public address | Tunnel with a service token for the API | D2, after G2 |
-| G-3 cloud children | Brief field `where: cloud`; the provider starts with `--cloud` | G2 |
-| G-4 environment file | Setup script and environment variables, recipe in `know-how.md` | G2 |
+| G-3 cloud children | Brief field `where: cloud`; the provider starts with `--cloud` | G2, built; end-to-end test in D2 |
+| G-4 environment file | Setup script and environment variables, recipe in `know-how.md` | G2, built; first real run in D2 |
 | G-5 team probe | Supervisor, web interface, a root and three children in one VM | Done 2026-11-18 |
 
 ### Test (scratchpad store, port 7861, `ORCH_DATA` in the scratchpad, `-NoTool`)
@@ -1823,6 +1902,145 @@ new session
 - A migration of old envelopes: they keep no stream.
 - An `orch sessions` command: `orch tree --stream` is the list.
 
+
+## G2 result: cloud workers and orch HTTP mode (2026-11-18)
+
+Branch `orch/g2-cloud-workers`, base `orch/integration-i3` (PR #38). The choices are in `docs/decisions.md` (rows "G2").
+
+```mermaid
+flowchart LR
+    W[Cloud worker: orch] -->|ORCH_URL + ORCH_TOKEN| G[SignInMiddleware]
+    G --> A[/api/store: StoreService/]
+    A --> R[Local repositories]
+    S[Supervisor] -->|where: cloud| P[IProvider.Turn]
+    P --> C[claude --cloud]
+```
+
+| Part | Result |
+|---|---|
+| H5 store API | `/api/store/<kind>/get\|list\|save`, `events/feed`, `log`, `prepare`. Ids outside the store give 400. Spec: `docs/store.md`, "Store API" |
+| `orch` HTTP mode | `HttpRepositories`, one more `IRepositories` implementation. `StoreBackends.Create` selects it for an `http(s)` root. `ORCH_URL` first; no store folder: the API on 127.0.0.1 |
+| Token check | Local caller (loopback, no proxy header): no token. Remote: `ORCH_TOKEN`. No token set: `/api/store` gives 403 |
+| Plugin hooks | Off with `ORCH_URL` (C0-2). The worker uses `orch` |
+| G-3 cloud children | Field `where` in the brief, API, CLI, `spawn_child` and the form. The supervisor calls only `IProvider.Turn` with `Where` and `AppId`. `--cloud` is only in `Providers/ClaudeCode/` |
+| Cloud notice | `cloud-worker` with the first turn: the party and the `orch post` calls |
+| G-4 environment | `Providers/ClaudeCode/Cloud/setup.sh` and `environment.env`. Recipe: `know-how.md`, "Cloud environment". C0-3: auto mode and an allow list in the VM settings |
+
+### Test results
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | ✅ 665 tests: 652 pass, 13 skip, 0 fail (I3: 501, 7 skip). The 6 new skips are the HTTP copies of the contract tests for the kinds that never change |
+| `RepositoryContractTests` | ✅ Each data kind on the local folder and on the store API of a test server |
+| `StoreApiTests` | ✅ Token rules, refused ids, a stale save writes nothing, the feed, and `orch new`, `post report`, `events`, `status` through Kestrel with `ORCH_URL`; nothing in `ORCH_STORE` |
+| `CloudWorkerTests` | ✅ Fake provider: start with the notice, `appId` kept, the next turn sends to it; no id gives a failed turn; the flag forms; the environment file has no secret |
+| `node --test plugin/hooks/test/` | ✅ 17 of 17, with `store-api-mode.test.ts` |
+
+Not tested: a real cloud session, the setup script in a VM, the tunnel. The end-to-end cloud test waits for D2 (tunnel and service token).
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| G2-1 | Print mode refuses `--cloud` (`know-how.md`). A cloud start is `claude --cloud "<prompt>"`, with the id in its output | Built. Check the output form in D2 |
+| G2-2 | A cloud turn ends when the engine takes the prompt. The supervisor can send the next message while the worker still works | Open: D2 checks if the cloud session queues it |
+| G2-3 | The first `claude --cloud` in a folder asks for trust. The supervisor stops the start after 2 minutes | Recipe step 8 trusts the folder once |
+| G2-4 | `FileStore` loaded the store templates with a second store from its root. On HTTP this made a second client | Fixed: `Home.LoadTemplatesOf(repositories)` |
+| G2-5 | The HTTP mode has no push. `orch watch` polls every 2 s | Accepted. An SSE subscription can come later |
+| G2-6 | `docs/render-design.html` changed (field `where` in the brief view). The artifact is not published from this branch | Publish after the merge |
+
+## I4 result: final integration (2026-11-18)
+
+Branch `orch/integration-final`, from `orch/c4-stream-filters` (I3, S2, C2, C4). Merged: `orch/g2-cloud-workers` (G2) and `orch/e2-visuals` (E2).
+
+| Overlap | Fix |
+|---|---|
+| G2 field `where` in `meta.json` | Moved to the registry entry: `work.where` (`cloud`, else null). The cloud session id goes in `engine.appId`. The supervisor, the brief and the tests use the entry |
+| G2 store API and the S2, C2 repositories | Two new kinds on the wire: `session-entries` and `workflow-runs`. The `orch` HTTP mode now reads the registry and the runs, so `--stream` filters work over HTTP |
+| G2 store API and the C4 `stream` parameter | No code conflict. `POST /api/sessions` takes `stream` and `where` |
+| E2 UI and the C2 term rename | No change: E2 adds no UI text with "decision" |
+| `docs/plan.md`, `docs/decisions.md`, `docs/store.md` | Rows and sections of both sides kept. `docs/store.md` documents `work.where` |
+
+### Test results
+
+| Check | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 765 total, 752 passed, 13 skipped, 0 failed |
+| `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | 18 passed, 0 failed |
+| `.	ray.ps1 -SelfTest` | 50 views, 50 passed |
+
+## C3 live run (2026-11-18)
+
+One real stream with the planning workflow ran from entry to done on a scratch supervisor of the I4 branch. Stream `C3`, run `planning-7c9e7a96`, 13 minutes, 143 envelopes.
+
+```mermaid
+sequenceDiagram
+    participant U as User (orch answer)
+    participant O as O1 orchestrator
+    participant R as Runner (orch run)
+    participant W as O1 C1 worker
+    O->>R: orch run start planning
+    R-->>U: stuck question after read (F2)
+    O->>U: question (ask step)
+    R-->>U: question (answer step, F3)
+    U->>R: answer
+    O->>R: record, spec
+    R-->>U: approval question
+    U->>R: approve
+    O->>R: propose: done
+    O->>W: spawn_child (stream C3)
+    W-->>O: report done
+    O-->>U: report done (after the stale question closed)
+```
+
+### Setup
+
+| Item | Value |
+|---|---|
+| Build | `dotnet publish` of `Orchestrator.Web` and `Orchestrator.Cli` of the I4 branch into the scratchpad |
+| Supervisor | `ORCH_STORE=<scratchpad>/c3/store`, `ORCH_PORT=7791`, `ORCH_IMPORT=0`, `ORCH_PLUGIN_DIR=<I4 worktree>/plugin` |
+| `orch` | The I4 `orch.exe` first on `PATH`, so that the sessions and the plugin use it (C3-F5) |
+| Root | `orch new --type orchestrator --stream C3 --workflow planning`. Work folder: a scratch git repository with `AGENTS.md` |
+| User | Played with `orch answer` |
+
+### Checks
+
+| Check | Result |
+|---|---|
+| Entry to done through `orch run` | Pass. History: read, ask, answer, record, spec, approve, propose. Reason: "the definition of done is true" |
+| Registry: role, type, stream, codes | Pass. `O1`: role `orchestrator`, type `orchestrator`, stream `C3`, workflow `planning`. `O1 C1`: role `worker`, type `worker` with skills `orch:orch-ask` and `orch:orch-report`, stream `C3` from the parent |
+| Envelopes carry the stream | Pass. 143 of 143 envelopes have `stream: C3`, also the supervisor messages to the user |
+| `orch events --stream` | Pass. `C3` and `c3` show all 143 envelopes |
+| `orch tree --stream` | Pass. `C3` shows both sessions. `X` prints "No sessions in stream X." |
+| `/api/sessions?stream=` | Pass. `C3` gives the active root. `Z` gives none |
+| No write outside the scratch store | Pass. The real store has no envelope or session of the run. Its only matches are the `session.tool` events and the mirror of the I4 worker session, which typed the commands. The supervisor on port 7777 lists no run session. The engine kept its transcripts in `~/.claude/projects/<scratch folder key>`: engine data, not the store |
+| Stop | Both sessions archived, the scratch supervisor stopped, port 7791 closed |
+
+### Findings
+
+| Id | Finding | Proposal |
+|---|---|---|
+| C3-F1 | `POST /api/sessions` has no `type` and `workflow` fields. Only `orch new` and `spawn_child` take them | Add both fields to `NewSession` |
+| C3-F2 | The read step ended with no holds, so the runner asked a stuck question (high, to the user). The session then picked `ask` and the run moved on, but the stuck question stayed open. Later it refused the done report of the owner ("This session has an open question") | When a run moves on, close its own open stuck and pick questions (notice `question-closed`) |
+| C3-F3 | One question, two answers. The owner asked with `ask_user` in step `ask`. Then the ask step `answer` posted a second question with the step instructions as its text ("Answer: The user or the orchestrator answers the question.") | Let the answer step poll the thread of the owner question, or copy the output `question` into its question |
+| C3-F4 | The C2 term rename missed two CLI texts: `orch status` prints "open decision", and `orch questions` prints "No open decisions." | Rename both texts |
+| C3-F5 | The installed `orch` tool on `PATH` has no `run` command. The plugin and the sessions call `orch` by name, so a live test must put the `orch` of the branch first on `PATH` | Recorded in `docs/know-how.md`. Later: the supervisor puts its own `orch` first on the `PATH` of each turn |
+| C3-F6 | With `ORCH_IMPORT=0` no session is in the app. But the archive of the child sent the notice `archive-child` to the root, and 2 minutes later a message to the user: "Archive ... from the app sidebar" | Skip the app archive notice and its escalation when `engine.imported` is not true |
+| C3-F7 | The orchestrator ran `orch run start planning --goal` with no `--owner`, and the command found the owner | None: works as documented |
+
+### The session kind question: what does a type do?
+
+The run showed that a type does one thing: it selects the agent and the skills of the engine session at the start. The provider maps `type.agent` to `--agent orch:<name>`. No other code reads it.
+
+| Field | What the run showed |
+|---|---|
+| `type` | `orchestrator` on the root, `worker` with two skills on the child. It changed only the start arguments |
+| `role` | `orchestrator` from the type name at create (`Roles.Initial`), kept by `orch run start`. `worker` for the child, because it has a parent |
+| `workflow` | `planning` on the root. The child has none: `spawn_child` started it, not a run step |
+| `stream` | `C3` on the root. The child got it from the parent |
+
+So a "session kind" today is the pair of role and type. The role says what the session does in a run. The type says which agent runs it. The run did not use a step of a type (`{ "type": name }`), because the planning workflow uses only `owner`. A type with tool limits or its own behavior does not exist. Recommendation: keep the type as a start setting of the provider, and do not add a separate kind field.
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
@@ -1849,9 +2067,11 @@ flowchart LR
 | F2 | F | Templates on `IRepository`; modes and workflows as definitions. Done: see "F2 result" | After I2 |
 | E2 | E | Visuals: the next E1 items and spike E-5 | After I2 |
 | S2 | S | Session registry on `IRepository`, store version 3. Done: see "S2 result" | After P0 and H4 |
-| G2 | G | Cloud workers (G-3, G-4) and the supervisor API with the `orch` HTTP mode (H5) | In parallel with S2 |
+| G2 | G | Cloud workers (G-3, G-4) and the supervisor API with the `orch` HTTP mode (H5). Built: see "G2 result" | In parallel with S2 |
 | C2 | C | Workflow runner on `IRepository`, the planning workflow, the term rename in skills and tools. Done: see "C2 result". Then C3: one real stream | After S2 and F2 |
 | C4 | C | The stream id in each envelope, the `--stream` filters, the `stream` API parameter and field. Done: see "C4 result" | After C2 |
+| I4 | I | Final integration of C4, G2 and E2. Done: see "I4 result" | After C4, G2 and E2 |
+| C3 | C | One real stream with the planning workflow on a scratch supervisor. Done: see "C3 live run" | After I4 |
 | D2 | D | Named tunnel, service token for cloud workers | After G2, next month |
 
 Rules for these tasks:

@@ -12,6 +12,7 @@
       { "field": "cwd", "label": "Folder", "as": "code" },
       { "field": "worktree", "label": "Worktree" },
       { "field": "background", "label": "Background" },
+      { "field": "where", "label": "Where" },
       { "field": "allowDefaults", "label": "Allow defaults" }
     ],
     "blocks": [

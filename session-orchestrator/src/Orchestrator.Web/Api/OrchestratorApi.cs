@@ -15,6 +15,7 @@ public sealed record NewSession(string? Title, string? Cwd, string? Brief, strin
     public bool? Worktree { get; init; }
     public bool? AllowDefaults { get; init; }
     public bool? Background { get; init; }
+    public string? Where { get; init; }
 
     /// <summary>The work stream (C1). Null: the stream of the parent.</summary>
     public string? Stream { get; init; }
@@ -22,7 +23,7 @@ public sealed record NewSession(string? Title, string? Cwd, string? Brief, strin
     public BriefFields ToBrief() => new()
     {
         Title = Title, Goal = Goal ?? Brief, Scope = Scope, DoneWhen = DoneWhen, Skills = Skills,
-        Agent = Agent, Cwd = Cwd, Worktree = Worktree, Parent = Parent, AllowDefaults = AllowDefaults, Background = Background,
+        Agent = Agent, Cwd = Cwd, Worktree = Worktree, Parent = Parent, AllowDefaults = AllowDefaults, Background = Background, Where = Where,
         Stream = string.IsNullOrWhiteSpace(Stream) ? null : Stream,
     };
 }

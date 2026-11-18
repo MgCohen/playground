@@ -32,6 +32,9 @@ public sealed record BriefFields
 
     /// <summary>The workflow that the session runs or works in (C1).</summary>
     public string? Workflow { get; init; }
+
+    /// <summary>Where the session runs (G2): local (null) or cloud. The registry keeps it in <see cref="SessionWork.Where"/>.</summary>
+    public string? Where { get; init; }
 }
 
 /// <summary>An answer of the docs check or the policy: why it applies, and where it comes from.</summary>
@@ -50,14 +53,14 @@ public sealed class Messages(FileStore store)
     {
         var fields = Fields(("title", brief.Title), ("goal", brief.Goal), ("scope", brief.Scope), ("doneWhen", brief.DoneWhen),
             ("skills", brief.Skills), ("agent", brief.Agent), ("cwd", brief.Cwd), ("worktree", brief.Worktree), ("parent", brief.Parent), ("allowDefaults", brief.AllowDefaults), ("background", brief.Background),
-            ("stream", brief.Stream), ("type", brief.Type), ("workflow", brief.Workflow));
+            ("stream", brief.Stream), ("type", brief.Type), ("workflow", brief.Workflow), ("where", brief.Where));
         Check(Kinds.Brief, fields);
         if (string.IsNullOrEmpty(brief.Cwd)) throw new MessageException("brief: cwd is necessary");
         var id = store.Create(new SessionSpec
         {
             Title = brief.Title,
             Parent = brief.Parent,
-            Work = new SessionWork { Cwd = brief.Cwd, Worktree = brief.Worktree },
+            Work = new SessionWork { Cwd = brief.Cwd, Worktree = brief.Worktree, Where = Places.IsCloud(brief.Where) ? Places.Cloud : null },
             Type = (brief.Type ?? brief.Agent) is null && brief.Skills is null ? null : new SessionType { Agent = brief.Type ?? brief.Agent, Skills = brief.Skills?.ToList() },
             Stream = brief.Stream,
             Workflow = brief.Workflow,
