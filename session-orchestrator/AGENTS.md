@@ -23,6 +23,17 @@ Read these files before you change this project:
 
 C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the UI, NUnit for the tests. Do not add TypeScript or JavaScript, with two exceptions: the plugin hooks (the Claude Code engine runs only TypeScript) and small JavaScript parts of the Blazor UI. `spikes/supervisor-ts/` is the frozen TypeScript supervisor of the spikes. Do not change it.
 
+## Provider boundary
+
+Follow these rules for each change. The design is on the Engines tab of `docs/session-design.html`.
+
+1. A feature is a vertical slice. It holds its own logic (prompt, parse, rules) and no provider code.
+2. If a slice needs anything that depends on a provider (a model call, a session, an app fact, a CLI command, a configuration check), it calls `IProvider`.
+3. Only `Providers/<provider>/` knows the names of the provider: its executable, flags, files, tool names and environment variables.
+4. A call into our system needs no provider, whoever makes it: `orch`, the API, the tray, the records, the envelopes.
+5. The core contract and the store keep only references to a provider (`engine.kind`, `sessionId`, `appId`), and no provider facts.
+6. If the provider gives a function, use it through `IProvider` and do not make our own copy. When code moves behind `IProvider`, keep the logic of today.
+
 ## Commands
 
 | Job | Command |
