@@ -179,7 +179,7 @@ A flag key is true when it is present with no value, or with `true` or `1`. The 
 | `Thread(thread)` | `thread` | One conversation in order |
 | `Ledger` | `ledger` | The ledger |
 
-The views of a session are queries too: `Report` and `Update` are the newest post of the session, `Blocked` is the newest `blocked` envelope about the session, and `OpenDecisions` is the named query. The plugin posts `blocked` when a submit drops and when it goes through again (the stop latch); the supervisor (`SaveBlocked`) posts it when the reason of a failed turn changes. `Blocked.By` is `supervisor` for an envelope from the supervisor, else null (the stop latch). No session file holds the blocked state.
+The views of a session are queries too: `Report` and `Update` are the newest post of the session, `Blocked` is the newest `blocked` envelope about the session, and `OpenDecisions` is the named query. The plugin posts `blocked` when a submit drops and when it goes through again (the stop latch); the supervisor (`SaveBlocked`) posts it when the reason of a failed turn changes. The reason is `supervisor turns fail: <error>`, with no count and no time, so it changes only with the error. The count and the next try are in the `failure` envelope. `Blocked.By` is `supervisor` for an envelope from the supervisor, else null (the stop latch). No session file holds the blocked state.
 
 ## Post rules
 
@@ -221,8 +221,20 @@ An added kind needs no code change. The stream checks its schema and meta, the U
 | `review` | user | session | | | `render/<verdict>.md`, `render/plan.md` |
 | `notice` | supervisor | session | | | `render/<kind>.md`: `question-reminder`, `question-closed`, `archive-self`, `restart`, and the lifecycle notices (below) |
 | `ack` | session, user, supervisor | the sender | | | Not delivered |
+| `failure` | supervisor | user | | ack, message | Not delivered |
 
-Other kinds have no template: traces (`session.input`, `session.output`, `session.tool`, `turn.start`, `turn.end`, `turn.fail`), lifecycle names of stream B (`session.start`, `session.stop`, `session.resume`, `session.archive`, `session.import`, `session.end`, `session.state`, `state.conflict`, `meta.update`, `lease.take`, `lease.release`, `blocked`, `delivery.blocked`) and git (`branch.*`, `pr.*`, `merge.block`).
+A `failure` is a failure that the supervisor saw (D, problem 4). Fields: `text`, `session`, `reason` (`failed-turns` or `no-ack`), `state` (`open` or `recovered`), `error`, `tries`, `first`, `last`, `next`, `envelopes`. Each session and reason has one thread, `failure-<session>-<reason>` (`Failures.Thread`):
+
+| Moment | Post |
+|---|---|
+| `MaxFailures` failed supervisor turns, and each failed try after it | `failure` with `state: open`, the tries, the error, the next try and the waiting envelopes |
+| A live session does not take an envelope after the nudge | `delivery.blocked` (a trace) for the envelope, then `failure` `no-ack` with all stuck envelopes |
+| The same facts again | Nothing |
+| A good turn, or no stuck envelope | `failure` with `state: recovered` |
+
+The envelope has no `needs`: it knows nothing about cards. The inbox view decides (User inbox, below).
+
+Other kinds have no template: traces (`session.input`, `session.output`, `session.tool`, `turn.start`, `turn.end`, `turn.fail`), lifecycle names of stream B (`session.start`, `session.stop`, `session.resume`, `session.archive`, `session.import`, `session.end`, `session.state`, `state.conflict`, `meta.update`, `lease.take`, `lease.release`, `blocked`, `delivery.blocked`). `delivery.blocked` is a trace with no `needs`: to the user, and a copy to a sender session and git (`branch.*`, `pr.*`, `merge.block`).
 
 The lifecycle notices of the supervisor:
 
@@ -357,8 +369,8 @@ An agent step names its session: `owner`, `new` (a child of the owner with role 
 | Step | Receiver state | Action | Wait (`policy.json`, `delivery`) |
 |---|---|---|---|
 | 1 | Live and idle, no ack | `Nudge(session:<id>)`: `orch watch` looks at the stream again | `nudgeSeconds` (15) after the envelope or the last idle |
-| 2 | Still no ack | `delivery.blocked` to the user (`needs: ack`, a card) and to the sender | `peerSeconds` (60) more |
-| 3 | Not live | The turn runner delivers. After `MaxFailures` failed turns: `delivery.blocked` | |
+| 2 | Still no ack | `delivery.blocked` (a trace) to the user and to a sender session, and one `failure` `no-ack` for the session | `peerSeconds` (60) more |
+| 3 | Not live | The turn runner delivers. After `MaxFailures` failed turns: one `failure` `failed-turns` for the session | |
 
 The watchdog does not count the time while the live session runs a turn. A session sends a peer nudge (`$.session.send` with `[orch nudge]`) after a message to another session; the receiver consumes it in `session.receive`. The supervisor sends no peer nudge.
 
@@ -376,7 +388,7 @@ The watchdog does not count the time while the live session runs a turn. A sessi
 | Question follow | Supervisor | A closed notice when the question of a child closes; reminders while it waits with no default (10 min, then each hour) | notice |
 | Docs check, default | Supervisor (`docs`, `policy`) | An answer to the session, and a forward to the user with `needs: review` | answer, forward |
 | User inbox | UI, `orch inbox`, `GET /api/inbox` | Shows a card | answer, review, ack, message |
-| Watchdog | Supervisor | Nudge, then `delivery.blocked` | `delivery.blocked` |
+| Watchdog | Supervisor | Nudge, then `delivery.blocked` and `failure` | `delivery.blocked`, `failure` |
 
 ### User inbox
 
@@ -384,6 +396,7 @@ The watchdog does not count the time while the live session runs a turn. A sessi
 open cards = envelopes to = user with needs (or a question with no answer)
              minus envelopes with a reply (refs.reply) or an ack (refs.of)
              minus a report with needs ack whose forward has an ack (the parent got it)
+             plus the newest failure of each failure thread, while its state is open and it has no ack
              the newest envelope of each thread
 ```
 
@@ -391,7 +404,7 @@ open cards = envelopes to = user with needs (or a question with no answer)
 |---|---|---|
 | question | answer = `defaultOption` (or the text); with no default, the text is required | answer = the text |
 | answer by docs or policy | review approve | review refuse with the text |
-| report done or blocked, `delivery.blocked` | ack (`state: read`) | message with the text to the session, then ack |
+| report done or blocked, `failure` | ack (`state: read`): "Seen" | message with the text to the session, then ack |
 
 ## Session files
 

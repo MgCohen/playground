@@ -95,7 +95,7 @@ public static class Ui
             var plan = card.Kind == EventKinds.Plan;
             return new(card, plan ? "plan" : "review", CardGroup.Reviews, plan ? "Plan" : "Review · default", title, new("Approve", "check", CardDo.Accept), new("Change", "pen", CardDo.Type));
         }
-        var blocked = card.Kind is EventKinds.Blocked or EventKinds.DeliveryBlocked || Text(f.GetValueOrDefault("state")) == "blocked";
+        var blocked = card.Kind is EventKinds.Blocked or EventKinds.DeliveryBlocked or EventKinds.Failure || Text(f.GetValueOrDefault("state")) == "blocked";
         return blocked
             ? new(card, "blocked", CardGroup.Blocked, "Blocked", title, new("Seen", "check", CardDo.Accept), new("Reply", "pen", CardDo.Type))
             : new(card, "report", CardGroup.Reports, "Report", title, new("Got it", "check", CardDo.Accept), new("Reply", "pen", CardDo.Type));
@@ -109,7 +109,8 @@ public static class Ui
         EventKinds.Answer => ("pen", "accent"),
         EventKinds.Report when state == "blocked" => ("alert", "failed"),
         EventKinds.Report => ("doc", "done"),
-        EventKinds.Blocked or EventKinds.DeliveryBlocked or EventKinds.TurnFail => ("alert", "failed"),
+        EventKinds.Failure when state == "recovered" => ("check", "done"),
+        EventKinds.Blocked or EventKinds.DeliveryBlocked or EventKinds.TurnFail or EventKinds.Failure => ("alert", "failed"),
         EventKinds.Brief => ("brief", "muted"),
         EventKinds.Message => ("chat", "accent"),
         EventKinds.Update => ("stream", "muted"),

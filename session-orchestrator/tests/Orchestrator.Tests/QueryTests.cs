@@ -15,9 +15,12 @@ public sealed class QueryTests
     {
         var store = Directory.CreateTempSubdirectory("orch-query-").FullName;
         Environment.SetEnvironmentVariable("ORCH_STORE", store);
+        // The fake provider: the turns of the test sessions call no model (D, step 3).
+        Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, Providers.Fake.FakeProvider.ProviderName);
         var factory = new WebApplicationFactory<Program>();
         _ = factory.Server;
         Environment.SetEnvironmentVariable("ORCH_STORE", null);
+        Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, null);
         return (factory, store);
     }
 

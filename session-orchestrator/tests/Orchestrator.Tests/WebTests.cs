@@ -14,9 +14,11 @@ public sealed class WebTests
     {
         var store = Directory.CreateTempSubdirectory("orch-web-").FullName;
         Environment.SetEnvironmentVariable("ORCH_STORE", store);
+        Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, Providers.Fake.FakeProvider.ProviderName);
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(b => { if (token is not null) b.UseSetting("ORCH_TOKEN", token); });
         _ = factory.Server;
         Environment.SetEnvironmentVariable("ORCH_STORE", null);
+        Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, null);
         return (factory, store);
     }
 
