@@ -49,6 +49,8 @@ public sealed partial class WidgetForm : Form
         Size = Scaled();
         Location = Start();
         grow.Tick += (_, _) => GrowStep();
+        dragTimer.Tick += (_, _) => DragStep();
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged += DisplayChanged;
         // The first show waits for the page, so the widget does not grow over an empty web view.
         view.BlazorWebViewInitialized += (_, e) => e.WebView.CoreWebView2.NavigationCompleted += (_, _) =>
         {
@@ -182,15 +184,44 @@ public sealed partial class WidgetForm : Form
         _ = SetWindowRgn(Handle, region, true);
     }
 
-    /// <summary>Starts a drag of the window, as a drag of a title bar. The call returns when the mouse button is up.</summary>
-    public void BeginDrag()
+    // ===== Drag =====
+    // The widget follows the pointer with a fixed offset: the point under the pointer at the mouse down stays under the pointer.
+    // The system move loop (WM_NCLBUTTONDOWN with HTCAPTION) starts only after the drag threshold, so it landed some pixels off.
+
+    readonly System.Windows.Forms.Timer dragTimer = new() { Interval = 8 };
+    Size dragOffset;
+
+    /// <summary>True while a drag of the header moves the widget.</summary>
+    public bool Dragging => dragTimer.Enabled;
+
+    /// <summary>
+    /// Starts a drag of the window. <paramref name="x"/> and <paramref name="y"/> are the CSS pixels of the mouse down in the page,
+    /// so the drag keeps that point under the pointer also when the event comes late.
+    /// </summary>
+    public void BeginDrag(double x, double y)
     {
         // The mouse event comes from the page after a round trip: after a fast click the button is up again.
-        if (MouseButtons != MouseButtons.Left) return;
-        var before = Location;
-        ReleaseCapture();
-        _ = SendMessage(Handle, WmNcLButtonDown, HtCaption, 0);
-        if (Location == before) return;
+        if (MouseButtons != MouseButtons.Left || dragTimer.Enabled) return;
+        var scale = DeviceDpi / 96f;
+        var client = PointToScreen(Point.Empty);
+        var down = new Point(client.X + (int)Math.Round(x * scale), client.Y + (int)Math.Round(y * scale));
+        // A CSS pixel is more than one screen pixel at a high DPI. If the pointer did not move since the mouse down,
+        // its own position is exact; else the page point is the best value.
+        var now = Cursor.Position;
+        var still = Math.Abs(now.X - down.X) <= Math.Ceiling(scale) && Math.Abs(now.Y - down.Y) <= Math.Ceiling(scale);
+        dragOffset = (Size)(still ? now : down) - (Size)Location;
+        dragTimer.Start();
+    }
+
+    void DragStep()
+    {
+        if (MouseButtons == MouseButtons.Left)
+        {
+            Location = Cursor.Position - dragOffset;
+            return;
+        }
+        dragTimer.Stop();
+        Location = Cursor.Position - dragOffset;
         // A drop on the edge of the work area keeps the margin, so the widget never touches the taskbar.
         Location = Fit(Location);
         SavePlace(Location);
@@ -227,14 +258,32 @@ public sealed partial class WidgetForm : Form
 
     sealed record SavedPlace(int X, int Y);
 
-    // The saved place, if the full widget is on a screen. A place on a screen that is not there now gives the home location.
-    // The place moves in by the margin from the edges of its work area, so an old place on the taskbar edge gets the gap.
-    Point Start() =>
-        place is { } p && Screen.AllScreens.Any(s => s.WorkingArea.Contains(new Rectangle(p, Size))) ? Fit(p) : HomeLocation();
+    // The saved place, moved into the work area of the screen nearest to it. A place on a screen that is gone (a monitor
+    // that is off, or a smaller screen) comes back onto a current screen. The margin keeps a gap from each edge.
+    Point Start() => place is { } p ? Fit(p) : HomeLocation();
+
+    /// <summary>Sets the saved place without a drag. The self-test uses it for a place on a screen that is gone.</summary>
+    public void UsePlace(Point point) => SavePlace(point);
+
+    // A monitor that goes away while the widget shows: move the widget onto a current screen.
+    void DisplayChanged(object? sender, EventArgs e)
+    {
+        if (IsDisposed || !IsHandleCreated) return;
+        BeginInvoke(() =>
+        {
+            if (Visible && !Growing && !Dragging) Location = Fit(Location);
+        });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= DisplayChanged;
+        base.Dispose(disposing);
+    }
 
     int Gap => (int)(12 * DeviceDpi / 96f);
 
-    /// <summary>The point moved into the work area of its screen, with the margin on each side.</summary>
+    /// <summary>The point moved into the work area of its screen (the nearest screen for a point off all screens), with the margin on each side.</summary>
     public Point Fit(Point point)
     {
         var area = Screen.FromRectangle(new Rectangle(point, Size)).WorkingArea;
@@ -305,8 +354,6 @@ public sealed partial class WidgetForm : Form
         return new Point(area.Right - Width - Gap, area.Bottom - Height - Gap);
     }
 
-    const int WmNcLButtonDown = 0xA1;
-    const int HtCaption = 2;
     const int WmSysCommand = 0x112;
     const int ScMaximize = 0xF030;
     const int DwmwaWindowCornerPreference = 33;
@@ -317,13 +364,6 @@ public sealed partial class WidgetForm : Form
     const int DwmwaNcRenderingPolicy = 2;
     const int DwmncrpUseWindowStyle = 0;
     const int DwmncrpDisabled = 1;
-
-    [LibraryImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool ReleaseCapture();
-
-    [LibraryImport("user32.dll", EntryPoint = "SendMessageW")]
-    private static partial nint SendMessage(nint hwnd, int msg, nint wParam, nint lParam);
 
     [LibraryImport("gdi32.dll")]
     private static partial nint CreateRoundRectRgn(int left, int top, int right, int bottom, int width, int height);

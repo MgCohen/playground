@@ -99,6 +99,7 @@ public static class SelfTest
         checks.Add(await Pin(form, web, folder));
         checks.Add(await Drag(form, web));
         checks.Add(await Toggle(form));
+        checks.Add(await PlaceClamp(form, folder));
         checks.Add(await Grow(form, folder));
         checks.Add(await Video(form, folder));
         foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
@@ -184,25 +185,65 @@ public static class SelfTest
         return new Check("pin", start && off && on, $"pinned at start {start}, after click 1 off {off}, after click 2 on {on}", png);
     }
 
-    /// <summary>A real mouse drag of the header title: the widget moves, and the new place is saved.</summary>
+    /// <summary>
+    /// Two real mouse drags of the header title (up left, then back): the widget lands exactly on each target, and the new place is saved.
+    /// </summary>
     static async Task<Check> Drag(WidgetForm form, CoreWebView2 web)
     {
         var rect = JsonSerializer.Deserialize<double[]>(JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync(
             "JSON.stringify((r => [r.left + 20, r.top + r.height / 2])(document.querySelector('.hd.win .title').getBoundingClientRect()))"))!)!;
         var scale = form.DeviceDpi / 96f;
-        var client = form.PointToScreen(Point.Empty);
-        var from = new Point(client.X + form.Padding.Left + (int)(rect[0] * scale), client.Y + form.Padding.Top + (int)(rect[1] * scale));
         var by = new Size(-(int)(160 * scale), -(int)(120 * scale));
-        var before = form.Location;
         var back = Cursor.Position;
-        // The drag loop of Windows runs on the UI thread, so the mouse input comes from another thread.
-        await Task.Run(() => Mouse.Drag(from, from + by));
-        await Task.Delay(500);
+        var lines = new List<string>();
+        var pass = true;
+        foreach (var move in new[] { by, new Size(-by.Width, -by.Height) })
+        {
+            var client = form.PointToScreen(Point.Empty);
+            var from = new Point(client.X + (int)(rect[0] * scale), client.Y + (int)(rect[1] * scale));
+            var before = form.Location;
+            // The drag loop runs on the UI thread, so the mouse input comes from another thread.
+            await Task.Run(() => Mouse.Drag(from, from + move));
+            for (var i = 0; i < 50 && form.Dragging; i++) await Task.Delay(20);
+            await Task.Delay(200);
+            var target = before + move;
+            var saved = WidgetForm.LoadPlace(form.PlaceFile);
+            var ok = form.Location == target && form.Place == form.Location && saved == form.Location;
+            pass &= ok;
+            lines.Add($"from {before.X},{before.Y} to {form.Location.X},{form.Location.Y} (expect {target.X},{target.Y}, off by {form.Location.X - target.X},{form.Location.Y - target.Y}), place file {saved}");
+        }
         Cursor.Position = back;
-        var moved = form.Location == before + by;
-        var saved = WidgetForm.LoadPlace(form.PlaceFile);
-        return new Check("drag", moved && form.Place == form.Location && saved == form.Location,
-            $"from {before.X},{before.Y} to {form.Location.X},{form.Location.Y} (expect {before.X + by.Width},{before.Y + by.Height}), saved place {form.Place}, place file {saved}", "");
+        return new Check("drag", pass, string.Join("; ", lines), "");
+    }
+
+    /// <summary>
+    /// A saved place on a screen that is gone (right of all screens, as X 2001 on a 1707 px screen) comes back into a current work area.
+    /// </summary>
+    static async Task<Check> PlaceClamp(WidgetForm form, string folder)
+    {
+        var keep = form.Place;
+        var right = Screen.AllScreens.Max(s => s.Bounds.Right);
+        var gone = new Point(right + 300, form.Top);
+        form.HideWidget();
+        await Settle(form);
+        form.UsePlace(gone);
+        form.ShowWidget();
+        await Settle(form);
+        await Task.Delay(300);
+        var bounds = form.Bounds;
+        var inside = Screen.AllScreens.Any(s => s.WorkingArea.Contains(bounds));
+        var png = Path.Combine(folder, "tray-e2-place-clamp.png");
+        Corner(form, png);
+        var text = $"saved place {gone.X},{gone.Y} (right edge of all screens {right}); shown at {bounds.X},{bounds.Y} size {bounds.Width} × {bounds.Height}, inside a work area {inside}";
+        if (keep is { } k)
+        {
+            form.HideWidget();
+            await Settle(form);
+            form.UsePlace(k);
+            form.ShowWidget();
+            await Settle(form);
+        }
+        return new Check("place-clamp", inside, text, png);
     }
 
     /// <summary>The tray icon click: hide, then show again at the saved place. Each change waits for the shrink or the grow.</summary>

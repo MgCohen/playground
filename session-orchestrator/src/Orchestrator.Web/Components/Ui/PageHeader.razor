@@ -31,7 +31,7 @@ else
 
     void Drag(MouseEventArgs e)
     {
-        if (e.Button == 0) window?.BeginDrag();
+        if (e.Button == 0) window?.BeginDrag(e.ClientX, e.ClientY);
     }
 
     public void Dispose()

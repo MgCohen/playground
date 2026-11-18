@@ -12,6 +12,9 @@ public interface IWidgetWindow
 
     void SetPinned(bool pinned);
 
-    /// <summary>Starts a drag of the window with the mouse button that is down.</summary>
-    void BeginDrag();
+    /// <summary>
+    /// Starts a drag of the window with the mouse button that is down. <paramref name="x"/> and <paramref name="y"/> are the
+    /// CSS pixels of the mouse down in the page: that point stays under the pointer during the drag.
+    /// </summary>
+    void BeginDrag(double x, double y);
 }
