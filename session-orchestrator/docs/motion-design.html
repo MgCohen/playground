@@ -505,6 +505,7 @@ td:first-child { font: 500 12px var(--f-mono); color: var(--accent); white-space
 /* N1 edge tab v2: full circle or half hidden, hover, click to open, drag up and down */
 .nedge2 { display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px 0 0 999px; background: var(--surf); box-shadow: var(--sh-raise), 0 8px 18px -8px rgba(0,0,0,.4);
   overflow: hidden; max-width: var(--base); cursor: grab; touch-action: none; user-select: none; transition: max-width .28s cubic-bezier(.2,.8,.2,1), transform .28s cubic-bezier(.2,.8,.2,1); }
+.nedge2 .nshape { flex: none; }
 .nedge2 .einfo { display: grid; gap: 1px; white-space: nowrap; opacity: 0; transition: opacity .18s; font-size: 12px; color: var(--text); }
 .nedge2 .einfo b { font-weight: 600; }
 .nedge2[data-e="a"]:hover, .nedge2[data-e="a"].drag { max-width: 280px; }
@@ -1632,7 +1633,7 @@ var Saved = (function () {
       case "pill": return '<div class="npill">' + ringBall(Math.round(S * .9)) + "<span>" + summary() + "</span></div>";
       case "card": return '<div class="ncard">' + ringBall(44) + '<div class="tx"><b>' + EVT.q.t + '</b><span class="sub">' + summary() + "</span></div></div>";
       case "edge": var E = Math.round(S * 1.4), parts = summary().split(" · ");
-        return '<div class="nedge2" data-e="' + ns.edge + '" style="--base:' + (E + 20) + 'px">' + ringBall(E) + '<span class="einfo"><b>' + parts[0] + "</b>" + (parts.length > 1 ? '<span class="sub">' + parts.slice(1).join(" · ") + "</span>" : "") + "</span></div>";
+        return '<div class="nedge2" data-e="' + ns.edge + '" style="--base:' + (E + 16) + 'px">' + ringBall(E) + '<span class="einfo"><b>' + parts[0] + "</b>" + (parts.length > 1 ? '<span class="sub">' + parts.slice(1).join(" · ") + "</span>" : "") + "</span></div>";
     }
   }
   function renderMini() {
@@ -1662,14 +1663,18 @@ var Saved = (function () {
     var a = nwid.animate([{ clipPath: "inset(0% 0 0 0 round 12px)" }, { clipPath: "inset(100% 0 0 0 round 12px)" }], { duration: reduce ? 1 : 220, easing: "ease-in", fill: "forwards" });
     a.finished.then(function () {
       n1.hidden = false;
-      var b = n1.firstElementChild.animate(POP, { duration: reduce ? 1 : 240, easing: "ease-out" });
+      var el = n1.firstElementChild, rest = getComputedStyle(el).transform;
+      var b = ns.form === "edge"
+        ? el.animate([{ transform: "translateX(110%)" }, { transform: rest === "none" ? "none" : rest }], { duration: reduce ? 1 : 260, easing: "cubic-bezier(.2,.8,.2,1)" })
+        : el.animate(POP, { duration: reduce ? 1 : 240, easing: "ease-out" });
       b.finished.then(function () { if (done) done(); }, function () { });
     }, function () { });
   }
   function restore() {
     if (!minimized) return;
     minimized = false;
-    var a = n1.firstElementChild.animate(POP.slice().reverse().map(function (k) { var c = Object.assign({}, k); if (c.offset != null) c.offset = 1 - c.offset; return c; }), { duration: reduce ? 1 : 160, easing: "ease-in", fill: "forwards" });
+    var el1 = n1.firstElementChild, rest1 = getComputedStyle(el1).transform;
+    var a = ns.form === "edge" ? el1.animate([{ transform: rest1 === "none" ? "none" : rest1 }, { transform: "translateX(110%)" }], { duration: reduce ? 1 : 200, easing: "ease-in", fill: "forwards" }) : n1.firstElementChild.animate(POP.slice().reverse().map(function (k) { var c = Object.assign({}, k); if (c.offset != null) c.offset = 1 - c.offset; return c; }), { duration: reduce ? 1 : 160, easing: "ease-in", fill: "forwards" });
     a.finished.then(function () {
       n1.hidden = true; a.cancel();
       nwid.getAnimations().forEach(function (x) { x.cancel(); });
