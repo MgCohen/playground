@@ -46,6 +46,13 @@ public interface IRepositories
     /// <summary>The items of one folder of one session, for example the stack entries. Id: the item name with no <c>.json</c>.</summary>
     IRepository<Doc<T>, string> SessionItems<T>(string session, string folder);
 
+    /// <summary>
+    /// The definitions of one catalog of the template system in the store (<c>&lt;store&gt;/templates</c>): the
+    /// message templates, the modes or the workflows. Id: the definition name. The core definitions of the tool are a
+    /// second repository of the same type (<c>StoreBackends.Core</c>).
+    /// </summary>
+    IRepository<Doc<Definition>, string> Definitions(Catalog catalog);
+
     /// <summary>The supervisor log.</summary>
     ILogSink Log { get; }
 

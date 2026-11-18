@@ -46,6 +46,8 @@ public sealed class LocalRepositories : IRepositories
             () => Files.Names(Path.Combine(root, StoreFiles.Sessions)).Where(id => File.Exists(Path.Combine(root, StoreFiles.Sessions, id, file))),
             Codec<T>()));
 
+    public IRepository<Doc<Definition>, string> Definitions(Catalog catalog) => new LocalDefinitionRepository(Path.Combine(root, StoreFiles.Templates), catalog);
+
     public IRepository<Doc<T>, string> SessionItems<T>(string session, string folder)
     {
         var path = Path.Combine(root, StoreFiles.Sessions, session, folder);

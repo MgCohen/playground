@@ -43,7 +43,8 @@ namespace Orchestrator.Cli
               orch nudge <party> [id]
               orch template [list]                      the templates: core, or store (a store template can replace a core one)
               orch template <kind> [--check FILE] [--render FILE] [--name N]
-              orch template check [<kind>] [--folder DIR]   check against templates/_spec
+              orch template check [<kind>] [--folder DIR]   check against templates/_spec (no kind: also the modes and workflows)
+              orch template modes | workflows           the session modes and the workflow definitions: core, or store
               orch template add <folder> [--replace]    check, then copy to <store>/templates/<folder name>
               orch template remove <kind>               move a store template to <store>/templates/.removed
               orch doctor
