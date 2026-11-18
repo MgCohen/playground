@@ -75,6 +75,30 @@ flowchart TD
     X -->|pass| T[Assemble + trace]
 ```
 
+The flow above is the status decider (`engine.decider: status`: shapes, circuits). A pack with `engine.decider: compose` (topology) has a different decide phase. The compose and join steps are the same.
+
+```mermaid
+flowchart TD
+    RQ[Request] --> DC[["Decomposer: agent call"]]
+    DC -->|missing value| U2[Ask step]
+    U2 -->|answer| DC
+    DC --> SP[Spec anchor: pack code]
+    SP --> LP[["Compose loop: decider and grader"]]
+    LP --> CC[Code rubrics and set checks]
+    CC --> LP
+    LP -->|commit| WN[Work nodes: group, join or gap]
+    WN --> L2[Compose and join]
+```
+
+| Part | Kind | Where |
+|---|---|---|
+| Spec role (R2) | Agent | `agents/decomposer.md` + `<pack>/decomposer.md` |
+| Spec anchor, code rubrics, set checks (R1) | Code | `IComposeHooks` of the pack (`Domains/Topology/TopologyCompose.cs`) |
+| Loop, limits, stop (R3), cache (G1) | Code | `Features/Compose/Domain/ComposeLoop.cs` |
+| Decider and grader | Agent | `agents/composer-decider.md`, `agents/grader.md` + `<pack>/strategies/`, `<pack>/grading.md` |
+| Commit to work nodes (B3, B4) | Code | `Features/Engine/Domain/ComposeDecide.cs` |
+| Grader fixtures and stamp (G2) | Code | `<pack>/grader-fixtures.yaml`, `pe grader-check` |
+
 - **`partial_fit`:** a pattern is always complete, but it can cover only a part of the request. The decider names the remainder in `open`. Each remainder item goes back into the queue for the top-level patterns. A remainder is always in scope: code reads `outside` as a no-fit, and pattern-author fills the gap. The trace records each remainder item in `remainder`, and a case can expect them with `remainder: [no-fit]`.
 - **Solution:** after the compose step, code composes each remainder item and joins all patterns into one `solution` block (the join step). Code makes each wire whose type allows only one choice; the `joiner` agent call chooses the others, and code checks them. The trace tree then has a `solution` root.
 - **Needs input:** a pattern declares its inputs. If the request does not give a required input, the engine asks. It does not guess.

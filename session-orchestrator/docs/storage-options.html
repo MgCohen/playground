@@ -68,7 +68,7 @@ svg .arrow { fill: var(--muted); }
   <div class="eyebrow">Session orchestrator · H1 storage</div>
   <h1>Orchestrator Storage Options</h1>
   <div class="summary">
-    <p><strong>Decision:</strong> each store uses the VSA <code>IRepository&lt;T, TId&gt;</code>. Version 1 is a local folder implementation in <code>%LOCALAPPDATA%\orch\store</code>.</p>
+    <p><strong>Answer:</strong> each store uses the VSA <code>IRepository&lt;T, TId&gt;</code>. Version 1 is a local folder implementation in <code>%LOCALAPPDATA%\orch\store</code>.</p>
     <p>Version 2 is probably a Notion implementation: Notion is then the store, read through its API, with an in-memory cache for the life of the process.</p>
     <p>A change of store is one new implementation and one changed line in the composition root. No caller changes.</p>
   </div>
@@ -123,11 +123,11 @@ svg .arrow { fill: var(--muted); }
       </svg>
     </div>
 
-    <h3>Decisions</h3>
+    <h3>Answers</h3>
     <div class="scroll"><table>
       <tr><th>Question</th><th>Answer of the user</th></tr>
       <tr><td>Storage direction</td><td>VSA <code>IRepository</code> for each store. Local folder first, Notion probably second</td></tr>
-      <tr><td>Store location</td><td><code>%LOCALAPPDATA%\orch\store</code></td></tr>
+      <tr><td>Store location</td><td>One store root for all data kinds: <code>%LOCALAPPDATA%\orch\store</code>. H4 moves the store and changes the defaults of <code>backend.ts</code> and <code>install.ps1 -Store</code></td></tr>
       <tr><td>Backup</td><td>Definitions in git; no backup for instances now</td></tr>
       <tr><td>Notion mirror</td><td>Never. Notion is the store or is not used</td></tr>
     </table></div>
@@ -155,17 +155,22 @@ public static class StoreBackends
 
     <h3>Port map: each data kind is one entity in one repository</h3>
     <div class="scroll"><table>
-      <tr><th>Data kind</th><th>Entity, id</th><th>Local folder today</th><th>State</th><th>Version 2</th><th>Part</th></tr>
-      <tr><td>Event stream</td><td><code>Event</code>, envelope id</td><td><code>events/&lt;day&gt;/</code></td><td><span class="pill warn">Planned</span></td><td>Notion database</td><td>H2; Notion H6</td></tr>
-      <tr><td>Envelope bodies</td><td><code>Body</code>, body path</td><td><code>bodies/&lt;day&gt;/</code></td><td><span class="pill warn">Planned</span></td><td>Page content</td><td>H2; Notion H6</td></tr>
+      <tr><th>Data kind</th><th>Entity, id</th><th>Local folder today</th><th>State</th><th>Version 2</th><th>Task</th></tr>
+      <tr><td>Event stream</td><td><code>Event</code>, envelope id</td><td><code>events/&lt;day&gt;/</code></td><td><span class="pill good">Built (H2)</span></td><td>Notion database</td><td>H2; Notion H6</td></tr>
+      <tr><td>Envelope bodies</td><td><code>Body</code>, body path</td><td><code>bodies/&lt;day&gt;/</code></td><td><span class="pill good">Built (H2)</span></td><td>Page content</td><td>H2; Notion H6</td></tr>
       <tr><td>Session registry</td><td><code>SessionEntry</code>, session id</td><td><code>sessions/&lt;id&gt;/session.json</code></td><td><span class="pill warn">Designed (S1, PR #28)</span></td><td>Notion database</td><td>S2; Notion H6</td></tr>
-      <tr><td>Templates</td><td><code>Template</code>, kind</td><td><code>LocalTemplateStore</code></td><td><span class="pill good">Built (F1, PR #30)</span></td><td>Notion database</td><td>F2</td></tr>
-      <tr><td>Policy and settings</td><td><code>Policy</code>, name</td><td><code>policy.json</code></td><td><span class="pill warn">Planned</span></td><td>Notion page</td><td>H2; Notion H6</td></tr>
+      <tr><td>Templates</td><td><code>Template</code>, kind</td><td>F1 <code>ITemplateStore</code> → F2 <code>IRepository</code></td><td><span class="pill good">Built (F1, PR #30)</span></td><td>Notion database</td><td>F2</td></tr>
+      <tr><td>Session settings</td><td>Field <code>settings</code> of <code>SessionEntry</code></td><td><code>sessions/&lt;id&gt;/session.json</code></td><td><span class="pill warn">Designed (S1)</span></td><td>With the registry</td><td>S2</td></tr>
+      <tr><td>Modes</td><td><code>Mode</code>, name (definition)</td><td><code>templates/modes/</code></td><td><span class="pill warn">Designed (S1)</span></td><td>Notion database</td><td>F2</td></tr>
+      <tr><td>Workflow definitions</td><td><code>Workflow</code>, name (definition)</td><td><code>templates/</code> (F2 sets the folder)</td><td><span class="pill warn">Designed (C1)</span></td><td>Notion database</td><td>F2</td></tr>
+      <tr><td>Workflow runs</td><td><code>WorkflowRun</code>, run id</td><td>In the store (C2 sets the folder)</td><td><span class="pill warn">Designed (C1)</span></td><td>Notion database</td><td>C2</td></tr>
+      <tr><td>Policy</td><td><code>Policy</code>, name</td><td><code>policy.json</code></td><td><span class="pill good">Built (H2)</span></td><td>Notion page</td><td>H2; Notion H6</td></tr>
+      <tr><td>Store versions</td><td><code>StoreVersion</code>, <code>version</code> (repository <code>StoreVersions</code>)</td><td><code>version.json</code></td><td><span class="pill good">Built (H2)</span></td><td>Stays local</td><td>H2</td></tr>
       <tr><td>Work stream records</td><td>None: a <code>stream</code> field</td><td>On sessions and events</td><td><span class="pill good">Designed (C1, PR #29)</span></td><td>A Notion relation</td><td>None</td></tr>
-      <tr><td>Run state, claims, subscriptions</td><td><code>Lease</code>, <code>Claim</code>, <code>Cursor</code></td><td><code>sessions/</code>, <code>claims/</code>, <code>subscriptions/</code></td><td><span class="pill warn">Planned</span></td><td>Stays local</td><td>H2</td></tr>
-      <tr><td>Logs</td><td>None: <code>ILogSink</code></td><td><code>log.txt</code>, <code>log-*.txt</code>, <code>mirror/</code></td><td><span class="pill warn">Planned</span></td><td>Stays local</td><td>H2</td></tr>
+      <tr><td>Run state, claims, subscriptions</td><td><code>Lease</code>, <code>Claim</code>, <code>Cursor</code></td><td><code>sessions/</code>, <code>claims/</code>, <code>subscriptions/</code></td><td><span class="pill good">Built (H2)</span></td><td>Stays local</td><td>H2</td></tr>
+      <tr><td>Logs</td><td>None: <code>ILogSink</code></td><td><code>log.txt</code>, <code>log-*.txt</code>, <code>mirror/</code></td><td><span class="pill good">Built (H2, H3)</span></td><td>Stays local</td><td>H2</td></tr>
     </table></div>
-    <p>F1 built <code>ITemplateStore</code>. Part F2 puts it on <code>IRepository&lt;Template, string&gt;</code>, or adds a repository adapter under it. Logs are append-only text, not entities, so they keep their own small port.</p>
+    <p>F1 built <code>ITemplateStore</code>. Task F2 puts it on <code>IRepository&lt;Template, string&gt;</code>, or adds a repository adapter under it. Logs are append-only text, not entities, so they keep their own small port.</p>
 
     <h3>Four rules that each implementation must keep</h3>
     <ol>
@@ -219,15 +224,15 @@ public static class StoreBackends
 
   <!-- PLAN -->
   <section role="tabpanel" id="p-plan" aria-labelledby="tab-plan" hidden>
-    <h2>The repositories come first; each later part is behind them</h2>
+    <h2>The repositories come first; each later task is behind them</h2>
     <div class="scroll"><table>
-      <tr><th>Part</th><th>Work stream</th><th>Content</th><th>When</th></tr>
+      <tr><th>Task</th><th>Work stream</th><th>Content</th><th>When</th></tr>
       <tr><td>H2 core repositories</td><td>H (storage)</td><td><code>IRepository</code> copy, local folder implementation, <code>ILogSink</code>, <code>StoreBackends.Create</code>, architecture and contract tests</td><td>Now</td></tr>
       <tr><td>H3 plugin backend</td><td>H (storage)</td><td><code>backend.ts</code>: the only hook module with store IO</td><td>Now</td></tr>
       <tr><td>H4 store upkeep</td><td>H (storage)</td><td>Index by session (B2-9), day cache, store in <code>%LOCALAPPDATA%\orch\store</code></td><td>After H2</td></tr>
-      <tr><td>S2 registry adapter</td><td>S (sessions)</td><td><code>SessionEntry</code> repository on H2 (S1 code part C1)</td><td>After H2</td></tr>
-      <tr><td>F2 template adapter</td><td>F (templates)</td><td>Templates on <code>IRepository</code>; Notion implementation later</td><td>After H2</td></tr>
-      <tr><td>H5 remote access</td><td>H (storage)</td><td>Supervisor API for cloud workers (G1 HTTP mode)</td><td>With G1</td></tr>
+      <tr><td>S2 session registry</td><td>S (sessions)</td><td><code>SessionEntry</code> repository on H2, store version 3</td><td>After P0 and H4</td></tr>
+      <tr><td>F2 template adapter</td><td>F (templates)</td><td>Templates on <code>IRepository</code>; modes and workflows as definitions; Notion implementation later</td><td>After I2</td></tr>
+      <tr><td>H5 remote access</td><td>H (storage)</td><td>Supervisor API for cloud workers, and the HTTP mode of <code>orch</code> (<code>ORCH_URL</code>; from G1)</td><td>In G2</td></tr>
       <tr><td>H6 Notion store</td><td>H (storage)</td><td>Notion implementations, cache wrapper, supervisor as the only writer</td><td>Version 2</td></tr>
     </table></div>
     <p>H2 has no change of behavior: the local folder implementation takes the code of <code>FileStore</code>, <code>EventStream</code> and <code>StreamWatcher</code>. The existing tests must pass with no change.</p>
@@ -238,7 +243,7 @@ public static class StoreBackends
       <li>Instances (events, bodies, sessions, logs) get no backup now.</li>
     </ul>
 
-    <h3>Rules for each part</h3>
+    <h3>Rules for each task</h3>
     <ol>
       <li>Change <code>docs/store.md</code> in the same commit as a store file.</li>
       <li>Keep each cache one that the store can make again.</li>
@@ -292,7 +297,7 @@ public static class StoreBackends
       <span>session.input</span><span class="bar" style="width:18.3%"></span><span class="n">233</span>
       <span>All other kinds</span><span class="bar muted" style="width:23.1%"></span><span class="n">293</span>
     </div>
-    <p>B2-9: <code>FileStore.Report</code> and <code>FileStore.OpenDecisions</code> copy the full stream for each session at each tick. Part H4 fixes it with an index by session.</p>
+    <p>B2-9: <code>FileStore.Report</code> and <code>FileStore.OpenDecisions</code> copy the full stream for each session at each tick. Task H4 fixes it with an index by session.</p>
   </section>
 </div>
 

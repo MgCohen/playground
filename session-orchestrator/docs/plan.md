@@ -355,7 +355,7 @@ Findings:
 | Sessions view | ✅ The tree with state, lease, report, update, worktree, a message field, stop, resume and archive | Phone test |
 | Timeline view | ✅ The stream, newest first, with filters for time, kind group, session and tool calls. Each template event opens its fields | Phone test |
 | Sign-in | ✅ `ORCH_TOKEN`: a token in the link once (then a cookie), or the header `X-Orch-Token` for the API | `WebTests` |
-| Tunnel | ❌ Blocked: Cloudflare Tunnel and Access need an account of the user | `decisions.md` |
+| Tunnel | ❌ Blocked: Cloudflare Tunnel and Access need an account of the user. Plan: section "D1 plan" | `decisions.md`, `docs/tunnel-plan.html` |
 | Unit tests | ✅ 56 tests | `dotnet test --solution Orchestrator.slnx` |
 
 The phone test used the browser pane of the desktop app at 375 × 812, not a real phone.
@@ -478,6 +478,35 @@ Rules of the vsa-template work that the M5 stream must obey:
 - PR comments show the user (`MgCohen`) as author. Each orchestrator PR title, body and comment starts with `[orch]`, so a reader can tell them apart.
 - Supervisor sessions are not in the app sidebar. Open them with the app import (`docs/know-how.md`).
 
+## D1 plan: tunnel for the phone (2026-11-17)
+
+Plan page: https://claude.ai/artifact/XzLhuzJbLrDuD5rtWya3JD (source `docs/tunnel-plan.html`). Status: approved by the user, to build on the user's own PC. No account, DNS record, tunnel or install exists.
+
+```mermaid
+flowchart LR
+    P[Phone browser] -->|HTTPS| A[Cloudflare Access]
+    A -->|JWT| C[cloudflared service]
+    C --> T[Supervisor 127.0.0.1:7778]
+    L[Mod, orch, tray] --> S[Supervisor 127.0.0.1:7777]
+```
+
+| Item | Plan |
+|---|---|
+| Tunnel | Named, remote-managed Cloudflare Tunnel. `cloudflared` runs as a Windows service with the tunnel token |
+| Address | `https://orch.<domain>` → `http://127.0.0.1:7778` |
+| Sign-in | Cloudflare Access, Allow policy with one email, session 30 days |
+| Supervisor | Second listener on `ORCH_TUNNEL_PORT`. On that port, check `Cf-Access-Jwt-Assertion` (signature, `iss`, `aud`, `exp`) with `ORCH_ACCESS_TEAM` and `ORCH_ACCESS_AUD`. Port 7777 does not change |
+| Cost | US$0: the account, domain and sign-in of the runner and the inbox |
+| Order | The Access application before the tunnel route. A route with no Access application is public |
+
+Facts from the Cloudflare docs: Tunnel supports WebSockets, so Blazor Server works. `cloudflared` needs only outbound port 7844 and TCP 443. A Quick Tunnel needs no account (`--allowed-mail` adds an email PIN), but its address changes on each start. Tailscale Serve is the private alternative: no domain, but the phone needs the Tailscale app.
+
+Answers of the user (2026-11-17, `decisions.md`): Cloudflare Tunnel + Access, as for the runner and the inbox. No build on this borrowed PC: it has antivirus and IT management. The build runs on the user's own PC, next month. The phone can do the same as the tray app (full control). Each client (tray, web, Android) uses the same interfaces for data, so a local store or a remote server is only a swap of the implementation. One user only, no app accounts: Cloudflare Access is the only gate, with the maximum session length (1 month). Roadmap: the Android app through Access, then a cloud host for more users with their own sessions. Order of the clients: (1) tunnel + web UI in a computer browser, (2) tunnel + installable web app on Android, (3) native Android app, (4) cloud host. Now: plan only. The code is a later task.
+
+The plan uses the Cloudflare account, the domain and the Access sign-in of the runner and the inbox again (user, 2026-11-17). The cost is US$0.
+
+Gap: a cloud worker (G2) has no browser, so it cannot sign in to Cloudflare Access. It needs a service token for the API. D2 builds it after G2.
+
 ## Session management requirements (user, 2026-11-16)
 
 | # | Requirement | Weight |
@@ -590,6 +619,12 @@ The session "Orchestrator watch" (`dc99fc00`) gets the framework problems of the
 | # | Problem | Analysis | State |
 |---|---|---|---|
 | W1 | `orch enable` in the old build session (`dc99fc00`) wrote `enabled`, but the plugin did not activate: no lease, no heartbeat | The session started before the current plugin hooks. Hot reload did not run `activateIfEnabled` in it. With lease `none`, a message in its inbox would make the supervisor run `claude -p --resume` on a live app session: two writers | Mitigated: `orch stop dc99fc00`, so the supervisor never runs it. A watcher reads its inbox |
+| W2 | A chat answer in child `06ade234` (A4) recorded about 19 KB: an app `<system-reminder>` block (desktop app guidance) and then the user's words, as the answer to `toolu_01Pi143F86RUZPZaoh6e3Vie` | `promptText` in `plugin/hooks/tools.ts` joins all text parts of the composer message. The first prompt after an import has an extra text part with the app guidance. `answerFromChat` sends all of it to `orch answer`. The session got the correct words, because it reads the chat itself. The store answer, the close notice to the root and the UI show the noise. Possible fix: remove `<system-reminder>...</system-reminder>` blocks in `promptText`, or use only the last text part. Add a test | Fixed in PR #27: `chatAnswer` removes the `<system-reminder>` blocks before the prefix check |
+| W3 | Child `06ade234` (A4) lost the plugin at 00:34 UTC. The heartbeat stopped at 00:34:40, the supervisor set the lease to `none` at 00:34:55, and `status.json` stays `running`. The app session worked on until 02:04 and opened PR #15, but its done report never reached the root | Transcript: at 00:34:28 the app put a "This conversation is now continuing in the Claude desktop app" reminder in the prompt (this is also the W2 text), and at 00:34:32 an interrupt came. After that the session made no `mcp__orch__*` call in 1.5 h; before, it used them often. `log-live.txt` has no new `activate` line. The engine version also changed at 00:09:57 (2.1.312 to 2.1.321), and the plugin survived that. Conclusion: the app moved the session to a new engine host, and the plugin did not activate there. This is the same family as W1. Risk: with lease `none`, a new inbox message (for example from the root) makes the supervisor run `claude -p --resume` on a live app session: two writers. Possible fixes: activate the plugin on each host start, not only on `session.start`; mark a stale heartbeat of an imported session as `lost`, not `none`, so that the supervisor does not resume it; tell the parent when a child loses its heartbeat | Open: wait for the user |
+| W4 | At 03:36 UTC the app moved the watch session (`dc99fc00`) to a new engine host. The old host stopped its background tasks, so the supervisor (`sup6`) and the inbox watcher stopped too | In this move the plugin activated: `log-live.txt` has an `activate plugin holder=live` line with `session.start`, the lease is `live`, and the plugin sent the W2 inbox message as a prompt. So a host move can give `session.start` (here) or not (W3). This also closes W1 for this session. Problem: a supervisor that runs as a background task of a session stops when that session moves. Possible fix: run the supervisor as its own process, not as a task of a session On 2026-11-17 the restarted background task stopped again with exit code 127 and no shutdown line in the log (last start about 03:37, found down at 14:04) | Mitigated: the supervisor now runs as its own hidden process (`Start-Process`, log `sup7.log` in the scratchpad), not as a task of a session |
+| W5 | In child `72f859bc` (C1, design), the user typed a new question in the chat ("Before we even start - i realized something, Where is the event stream and event store stored?"). `answerFromChat` recorded it as the answer to decision `toolu_018eLJKjbcGZJXyLnwMCvEFn` (Q8, three options) and closed Q8 | `answerFromChat` treats each composer prompt as the answer to the latest open decision, with no check of the content. The child had 6 open decisions at that time, so the rule "latest open decision" is weak too: an answer to Q5 would close Q8. W2 is the same code path. Possible fixes: (a) the hook closes nothing; it adds a line "Open decisions: ... If this message answers one, call `mcp__orch__answer_own`" and the session decides; (b) close only when the text names the decision, for example "Q8: A"; (c) keep the automatic close only when exactly one decision is open and the text matches an option. Recommendation: (a), because the session reads the meaning. Also give a way to open a decision again. Second case, same child: "What do you mean by plan card? We don't have a card anywhere, do we?" closed Q7 (`toolu_01FSByYF8yD5WguzGvkVbTmz`). After each wrong close, the child asked the same question again as a new decision (Q7 and Q8 exist two times each), so the queue fills with copies. Third case, same child, 10 min later: `toolu_01PsXdiS7H18ckQ6x77FoLBq` (Q7 copy). Workaround of the root: C1 discusses in the chat with no open decision. Fourth case, a second child: `09462c4b`, `toolu_01Ps9xPV6krGuL1qsbUQHnS8`, a long request of the user. Fifth case, `09462c4b`, `toolu_016c5Af2XN5D3PSTkjLEgeQ9`: W5 and W2 together (a request with the app `<system-reminder>` text). Sixth case, a third child: `ff65da95`, `toolu_01KqH1usb51VG2XrkBCzR4oZ`, W5 and W2 together. Seventh case, a fourth child: `1c713ac8`, `toolu_012Rwg3B4mQsm5N4f9JcDww2`, risk **high**, closed by "Let's go one by one through the questions". The root suggests: turn the automatic chat answer off until it can tell an answer from a question. A high-risk decision must never close from this path. Eighth case: `09462c4b`, `toolu_01MfN2AyTr6UxkjyhZ4vMUEk` and 13 s later `toolu_013dpm9tK8rDE6LVCzxiAygY`. The root then relayed a request of the user: note the bug, and turn the automatic chat answer off or fix it | Fixed in PR #27: `answerFromChat` closes a decision only for a chat message that starts with `answer:` (any case). It removes the prefix and the `<system-reminder>` blocks. Any other chat message leaves the decision open, so questions and requests never close a decision, at any risk level. The `ask_user` result and the skills `orch-ask` and `orch-reply` tell the user: "In the chat, start the answer with `answer:`". Tests: `plugin/hooks/test/chat-answer.test.ts` (node, fake engine; `PluginLeaseTests` runs it in `dotnet test`) and `StreamTests.A_chat_line_answers_only_when_one_decision_is_open_and_the_answer_has_an_ack`. Option (a) of the analysis (the session decides) stays possible later. On the stream design (A2), `orch chat-answer` closes a question only when exactly one question is open, and its ack stops the echo |
+| W6 | Request of the user through the root: no hourly `question.remind` notices in the root. There is no setting for `FirstReminder` and `NextReminder` (`Runners.cs`, fixed 10 min and 1 h) | Workaround of the root: it wrote `remindedAt` in 2027 in the open `forwarded-questions` records. The records stay valid JSON, but a question that comes later still gets reminders, and a session that edits store files by hand is outside the store contract. Possible fix: a `reminders` block in `store/policy.json` (`firstSeconds`, `nextSeconds`, `null` = off), read by the supervisor on each tick, with a row in `docs/store.md`. Default: off in the root, because the root shows each question once when it arrives | Open: wait for the user |
+| W7 | The user sees chat text come back in the child as "The orch plugin sent a message" (reported as an echo, `09462c4b`) | It is not an echo of the chat answer. The child inbox has three `orch send` messages from the root (16:15 to 16:17), each one starts "Root: your ... question closed with a chat message of the user" and quotes the user text. These are the root's W5 repairs. The plugin submits each inbox file as a prompt, and the app shows all such prompts with the same header, "The orch plugin sent a message". So the user cannot see who sent it, and the quote looks like an echo. The inbox file has `from: user`, because `orch send` from a session does not set the sender. Possible fixes: `orch send` sets `from` to the sender session; the plugin starts the prompt with the sender, for example "From root (ab9acae5):". W5 removes the cause of these repairs | Analysis confirmed in PR #27: the plugin writes `delivered/<id>.json` (`by: chat`) before `orch answer`, so neither the inbox tick nor the supervisor sends a chat answer back to its session. A test covers it. With W5 fixed, the root has no wrong closes to repair, so these quotes stop. The sender header of plugin messages is not changed |
 
 ## A2 result: communication code (2026-11-17)
 
@@ -1103,42 +1138,47 @@ Screenshots (mock mode, desktop corner): `docs/screens/r2-corner-open-question.p
 - R2-3: the well block of Open is a well in a card. It shows a double frame. Accepted for the later block review.
 - R2-4: `Ui.Look` and the `icon` and `tone` of `view.json` overlap. The ring still uses `Ui.Look`, because it also covers kinds with no template. Open question for the block review.
 
-## H1 plan: storage options (2026-11-17, decided 2026-11-18)
+## H1 plan: storage options (2026-11-17, answered 2026-11-18)
 
 Page: `docs/storage-options.html` (https://claude.ai/artifact/Qs363bVsydmVxf7Tm1S6FA). Plan only: no code change, no database, no Notion page.
 
-Decisions of the user:
+Answers of the user:
 
 | Question | Answer |
 |---|---|
 | Storage direction | Each store uses the VSA `IRepository<T, TId>` (`vsa-template/packs/Vsa/Kernel/Infrastructure/IRepository.cs`, copied into the project). Version 1: a local folder implementation. Version 2: probably a Notion implementation, read through the API and parsed, with an in-memory cache with a timer for the life of the process |
-| Store location | `%LOCALAPPDATA%\orch\store` (default `ORCH_STORE`) |
+| Store location | One store root for all data kinds: `%LOCALAPPDATA%\orch\store` (default `ORCH_STORE`). H4 moves the store there and changes the defaults of `backend.ts` `storeRoot` (H3) and `install.ps1 -Store` (G1) |
 | Backup | Definitions (templates, policy defaults, mode presets) keep their source files in this repository; git is the backup. No backup for instances (events, bodies, sessions, logs) now |
 | Notion mirror | Never. Notion is the store or is not used. Reason: linked database views keep related documents in sync |
 
 Port map:
 
-| Data kind | Entity, id | Local folder | State | Version 2 | Part |
+| Data kind | Entity, id | Local folder | State | Version 2 | Task |
 |---|---|---|---|---|---|
 | Event stream | `Event`, envelope id | `events/<day>/` | Built (H2) | Notion database | H2; Notion H6 |
 | Envelope bodies | `Body`, body path | `bodies/<day>/` | Built (H2) | Page content | H2; Notion H6 |
 | Session registry | `SessionEntry`, session id | `sessions/<id>/session.json` | Designed (S1, PR #28) | Notion database | S2; Notion H6 |
-| Templates | `Template`, kind | `LocalTemplateStore` | Built (F1, PR #30) | Notion database | F2 |
-| Policy and settings | `Policy`, name | `policy.json` | Built (H2) | Notion page | H2; Notion H6 |
+| Templates | `Template`, kind | F1 `ITemplateStore` → F2 `IRepository` | Built (F1, PR #30) | Notion database | F2 |
+| Session settings | Field `settings` of `SessionEntry` | `sessions/<id>/session.json` | Designed (S1) | With the registry | S2 |
+| Modes | `Mode`, name (definition) | `templates/modes/` | Designed (S1) | Notion database | F2 |
+| Workflow definitions | `Workflow`, name (definition) | `templates/` (F2 sets the folder) | Designed (C1) | Notion database | F2 |
+| Workflow runs | `WorkflowRun`, run id | In the store (C2 sets the folder) | Designed (C1) | Notion database | C2 |
+| Policy | `Policy`, name | `policy.json` | Built (H2) | Notion page | H2; Notion H6 |
+| Store versions | `StoreVersion`, `version` (repository `StoreVersions`) | `version.json` | Built (H2) | Stays local | H2 |
 | Work stream records | None: a `stream` field (C1, PR #29) | On sessions and events | Designed | A Notion relation | None |
 | Run state, claims, subscriptions | `Lease`, `Claim`, `Cursor` | `sessions/`, `claims/`, `subscriptions/` | Built (H2) | Stays local (heartbeat every 3 s) | H2 |
 | Logs | None: `ILogSink` (append-only text) | `log.txt`, `log-*.txt`, `mirror/` | Built in C# (H2); hooks in H3 | Stays local | H2 |
 
 Rules for each implementation: (1) `SaveChangesAsync` fails on an `Add` with an id that exists (claims, first answer); (2) an entity has a version, and a save of an old version fails (cursor merge); (3) an architecture test refuses store IO outside the implementations; (4) one contract test suite runs against each implementation. In version 2 the supervisor is the only Notion writer, and the plugin hooks keep writing local files (10 s hook budget).
 
-| Part | Work stream | Content | When |
+| Task | Work stream | Content | When |
 |---|---|---|---|
 | H2 core repositories | H | `IRepository` copy, local folder implementation, `ILogSink`, `StoreBackends.Create`, architecture and contract tests. No change of behavior | Now |
 | H3 plugin backend | H | `backend.ts`: the only hook module with store IO | Now |
 | H4 store upkeep | H | Index by session (B2-9), day cache, store in `%LOCALAPPDATA%\orch\store` | After H2 |
-| S2 registry adapter | S | `SessionEntry` repository on H2 (S1 code part C1) | After H2 |
-| F2 template adapter | F | Templates on `IRepository`; Notion implementation later | After H2 |
-| H5 remote access | H | Supervisor API for cloud workers (G1 HTTP mode) | With G1 |
+| S2 session registry | S | `SessionEntry` repository on H2, store version 3 | After P0 and H4 |
+| F2 template adapter | F | Templates on `IRepository`; modes and workflows as definitions; Notion implementation later | After I2 |
+| H5 remote access | H | Supervisor API for cloud workers, and the HTTP mode of `orch` (`ORCH_URL` and the API when no store folder exists; from G1) | In G2 |
 | H6 Notion store | H | Notion implementations, cache wrapper, supervisor as the only writer | Version 2 |
 
 Callers that bypass the ports today: `Supervisor.cs`, `Supervisor.Lifecycle.cs`, `EventCommands.cs`, `StateReader.cs`, `Lifecycle.cs`. The hooks use `backend.ts` since H3.
@@ -1149,7 +1189,7 @@ Measured on the main store (2026-11-17): 3,654 envelopes in 2 days; 2,350 on 11-
 
 All C# store IO goes through `IRepositories`. No store file and no behavior changed. Branch `orch/session-5cf03248`, base `orch/session-ff65da95` (H1).
 
-| Part | Where |
+| Item | Where |
 |---|---|
 | `IRepository<T, TId>` and `Entity<TId>`: copies of the VSA contract. `Entity` has a `Version` | `src/Orchestrator.Core/Storage/` |
 | `Doc<T>`: the entity of each data kind. A change of `Value` enlists the document for the next save | `Core/Storage/Doc.cs` |
@@ -1162,9 +1202,9 @@ All C# store IO goes through `IRepositories`. No store file and no behavior chan
 
 Test results: `dotnet test --solution Orchestrator.slnx` passes: 413 tests, 406 pass, 7 skip (before H2: 298 tests). The demo seed skips as before. The contract suite skips the change tests for the envelopes and the session folders, because these do not change after their write.
 
-### Decisions in H2 (reversible, for review)
+### Questions that H2 answered (reversible, for review)
 
-| Question | Decision | Reason |
+| Question | Answer | Reason |
 |---|---|---|
 | One entity class for each data kind, or one generic class? | One generic `Doc<T>`, with the data kind in the repository name | The records (`Event`, `Lease`, `Policy`) stay as they are. The store files do not change |
 | Where does the version of a local file come from? | A 64-bit FNV-1a hash of the file text | The file format does not change, and the hooks keep their writes |
@@ -1229,3 +1269,322 @@ Branch `orch/integration-h2-h3`, base `orch/session-ff65da95` (H1). It merges H2
 | Cursor merge | `StreamSubscription.Done` holds a lock on the repository. Without it, `Two_writers_of_one_cursor_lose_no_done_id` failed on H2 |
 
 Tests: `dotnet test --solution Orchestrator.slnx` passes 410, skips 7. `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` passes 8 of 8.
+
+## C1 design: streams (2026-11-17)
+
+Design page: `docs/stream-design.html` (https://claude.ai/artifact/JErtGVNeiAxtUqxVvvMxA7). Vocabulary: `docs/vocabulary.html` (https://claude.ai/artifact/R22wQC78trvXokgDcp7Fvk). The user answered all questions in chat. The rows are in `docs/decisions.md`.
+
+### Result
+
+- A **stream** is a group of work: a `stream` id on sessions and events. There is no store record.
+- A **task** is one unit of work in a stream, done by one session.
+- Each session decides if it starts children, and how deep. There is no top root.
+- Each session has a **role** and an optional **type**. The role is its relation to workflows: `orchestrator` (owns a run), `worker` (does steps of a run that another session owns) or `free` (no workflow). It is one value and it can change. The type is a custom agent, such as `decider`, set at creation.
+- A step can ask for a type. The runner uses an existing session of that type in the work tree, or starts one.
+- Scope: orchestration only (create, communicate, control, split). The kinds of work, the review workflow and the PR workflow are on the roadmap.
+- A **workflow** is a graph of steps. It has one entry step and a definition of done, but no fixed exit step. Loops are allowed. The work ends when a step finds that the definition of done is true.
+- Each **step** is a node with its own configuration: entry and exit conditions, instructions, input, output, templates, actor (agent or human), messages, approval (who, and the strategy: required, skippable, ignored) and the next steps with their conditions. Workflows are made by configuration.
+- The runner starts each session through the session registry (S2) and `IProvider` (P0). No runner code names a provider.
+- A deterministic **runner** moves the work. Each next step checks its own entry requirements. If one step is valid, the runner goes there. If many are valid, the agent picks. If none is valid, the run stops and asks.
+- Each step has an **executor**: `tool` (deterministic), `ask` (a human) or `agent` (one turn of a session). An agent step runs in the owner session, in an existing session, or in a new session. So a workflow can run across sessions.
+- For now a workflow is a Markdown file or a skill. Later the template store holds it, and a session gets it on demand.
+- The brief names the workflow, or the session finds it in the catalog in the middle of a chat.
+- The first workflow is **planning**.
+
+### Follow-up tasks
+
+C2 and C3 are in the section "Next tasks" at the end of this file.
+
+### Roadmap
+
+- Review workflow: reviewers, verdicts, approval events, gates.
+- PR workflow: integration branches, merge order, merge rules.
+- More workflows: review, code change, probe, orchestration.
+- Template store: workflows and their related templates, got on demand.
+- Watcher: a session that finds stuck or broken sessions and supervisors, and alerts the phone.
+
+### Findings
+
+- F2 again: chat text closed two `ask_user` questions of this design (Q7, Q8). The work moved to chat only.
+
+### Approval
+
+The user approved the C1 design in chat on 2026-11-18.
+
+## S1 design: session registry (2026-11-17)
+
+Page: `docs/session-design.html` (https://claude.ai/artifact/QKh7x9SkrnUp8q5E4rbYTs). Design only: no code change.
+
+Each session is one entry in a session registry, `store/sessions/<id>/session.json`. The registry is a slice (`SessionRegistry`) on a generic `IRepository<SessionEntry>`; the infrastructure decides the place (files, a database, an API). Each run state type is also an `IRepository<T>`. The shape of the event stream on the generic repository is an H1 question for the root session. Only the slice writes the entry; a plugin posts `session.update`. The run state (lease, heartbeat, status, turn, `state.json`) stays in its own files.
+
+| Topic | Design |
+|---|---|
+| Names | Id (today the Claude Code id, behind the engine adapter), code (`S1`), title. The full code is the codes from the root down; the app title is `[O2 C1 S1] <title>` |
+| Entry | `id`, `code`, `engine` (kind, `sessionId`, `appId`: references only), `parent`, `title`, `owner`, `tags`, `stream`, `work`, `role`, `type`, `workflow`, `settings`, `lifecycle` (phase and a copy of the B2 state), `created`, `updated`. Children are a query |
+| Role and type | The C1 model. `role`: `orchestrator`, `worker` or `free` (the relation to workflows; the run sets it). `type`: an optional custom agent, `{ agent, skills }`; only the provider reads it to start the session. `workflow`: the workflow that the session runs or works in |
+| Replaces | `meta.json` and `control.json` (store version 3) |
+| Engine first | If the engine gives a function (attach, title, Remote Control, archive, transcript), the adapter uses it. The registry keeps no copy of an engine fact; `adapter.Read` gets it on demand |
+| Provider boundary | Features are vertical slices with no provider code (Sessions, DocsCheck, StateCheck, Doctor). Each piece of code that depends on a provider goes through one interface, `IProvider` (task P0, stream S), in `Orchestrator.Providers`, with one folder for each provider (`Providers/ClaudeCode`). Methods: `Ask` (one-shot model call), `Create`, `Open`, `Turn`, `Set`, `Archive`, `Read` (facts with no model: app files, CLI), `CallerSessionId`, `Doctor`. A call into our system (start the tray, write a record, post an envelope) needs no provider |
+| Start | One start path: the chat (`spawn_child`), our app (UI, tray) and `orch new` call `SessionRegistry.Create`, which calls adapter `Create` and `Open`. No official attach (`start_session`): F1 permits it only in a turn that the user started, and the app tree is not needed. A session started by hand joins with `orch enable` (a call into our system, no adapter). If the app adds a parent flag to the import (#106214), `Open` uses it |
+| Set, Archive | Claude Code gives these only as model tools in a live app session. The adapter posts its own notice (`archive-self`, `archive-child`, `remote-control-child`), the model calls the tool, and `Read` confirms within a time limit. Result: `done`, `waiting` or `failed`. No code outside the adapter names an app tool |
+| Store root | The registry, the run state and the event stream stay under one store root: `%LOCALAPPDATA%\orch\store` (H1; `ORCH_STORE` overrides it; H4 moves the store). The composition root gives each repository its place under that root. Engine data stays in the engine |
+| Permissions | Setting `permissions`: `auto` (default) or `bypass`. The adapter maps it to the engine flag (`--permission-mode auto` or `bypassPermissions`). It is copied at create like each setting, and a change to `bypass` is a high-risk event. It does not permit `start_session` in a program turn |
+| Settings | Each setting can be set at create and updated by the parent or the user. A setting not set at create is a copy of the parent value; a root copies `policy.json` `sessionDefaults` |
+| Modes | A mode is a preset of four axes: `interaction` (task: one report at the end; stepwise: a report after each step, no confirmation; conversation: ends when somebody says done), `autonomy` (auto, ask, approve), `route` (parent, user), `visibility` (public: import and Remote Control at the earliest point; private: neither). `visibility` replaces `background`. Presets in `templates/modes/`: `auto`, `chat`, `ask`, `approve` (the sum test modes) |
+| Report rules | `reportOn` (done, blocked, asked). The plugin changes a `working` report with no status request into an `update` (sum test F5) |
+| Loop | The table of who sends what is on the Loop tab. A chat line closes a question only with `answer:` (F2, PR #27) |
+| Other engines | `IProvider` with capabilities. A tool joins with `orch session join`, takes the lease, and uses `orch watch` and `orch post` with the same envelopes |
+
+Tasks of stream S (owner: S). The order is in the section "Next tasks".
+
+| Task | Content | Size |
+|---|---|---|
+| P0 | `IProvider` in `Orchestrator.Providers` with `Providers/ClaudeCode`. `ClaudeDocsChecker` and `ClaudeStateChecker` become the neutral slices `DocsCheck` and `StateCheck` that call `Ask`. Logic of today, no behavior change | Medium |
+| S2 | The slice `SessionRegistry` on the `SessionEntry` repository of H2, contract tests. Store version 3: `meta.json` and `control.json` into `session.json` | Medium |
+| S3 | Settings schema, copy at create, `mcp__orch__configure`, the settings block in the brief | Medium |
+| S4 | The readers of the four mode axes (F2 keeps the mode definitions) | Medium |
+| S5 | `orch session` CLI, `/api/sessions` fields, codes and app titles (`set_session_title`) | Small |
+| S6 | `orch session join` for other engines, with lease and heartbeat | Small |
+
+P0 scope: the Claude Code coupling in the code today (review of 2026-11-17).
+
+P0 moves code behind the adapter and keeps the logic of today. No behavior changes: for example `Read` reads the app record files as `AppRecords.cs` does today (risk: an internal format).
+
+| Place | Coupling | Move to |
+|---|---|---|
+| `Store/Lifecycle.cs` | `OpenCommand` (`claude.exe --desktop --resume`), `Import` (`local_<id>`), the archive wait | Adapter `Open`, `Archive` |
+| `Store/AppRecords.cs`, `StateReader.cs` | Reads the internal app files (`Claude-Data/*/claude-code-sessions/*.json`, `isArchived`) | Adapter `Read`. It stays a file read: the supervisor process has no app tool |
+| `Core/Contract/Records.cs`, `States.cs`, `Policy.cs` | `Imported`, `RemoteControl`, `AppId`, `Background`, `RemoteControlAsked`, `RemoteControlSeconds` in the core contract | `engine` references and adapter facts; the policy value goes to the adapter options |
+| `Cli` `SessionCommands`, `EventCommands`, `ToolCommands` | `CLAUDE_CODE_SESSION_ID`, the `doctor` checks of `claude` and `~/.claude/settings.json` | An adapter method `CurrentSessionId()`, a doctor check for each adapter |
+| `Supervisor/ClaudeRunner.cs` | `ClaudeRunner`, `ClaudeDocsChecker`, `ClaudeStateChecker` call `claude -p` directly | `Claude.Run` and the flags go to `Providers/ClaudeCode`. `ClaudeRunner` becomes `Turn`; the prompts and parses stay in the slices `DocsCheck` and `StateCheck`, which call `Ask` |
+| `templates/*/render/*.md` | The text names `mcp__orch__*` tools and `orch:` skills | A render for each engine, or tool names from the adapter |
+| `plugin/` | The live side in Claude Code | Stays: it is the Claude Code side of the adapter |
+
+Later: enforce the provider boundary. Options: `Orchestrator.Providers` as its own assembly that only the composition root references, and an NUnit architecture test that fails on `claude`, `CLAUDE_CODE_`, `Claude-Data` or a `ProcessStartInfo` of a provider outside `Providers/`. `plugin/` is out of the check.
+
+Open: a probe of `set_session_title` from a child and from the parent; the first engine after Claude Code; a team owner.
+
+## F1 result: template store and look catalog (2026-11-17)
+
+Branch `orch/session-09462c4b`, base `orch/session-662a3f1d` (PR #22). The answers to Q1 to Q6 are in `docs/decisions.md`. The design is on the render page, tabs How it works and Registry.
+
+### What is built
+
+| Item | Where | Result |
+|---|---|---|
+| Library contract | `Core/Templates/TemplateStore.cs`: `ITemplateStore`, `TemplateFiles`, `TemplateInfo` | The CLI, the stream and the UI read templates only through it |
+| Local implementation | `LocalTemplateStore`: `<home>/templates` (core) and `<store>/templates` (store) | A folder scan. A store folder with a core name replaces the core template. Remove moves the folder to `.removed/` |
+| Spec files | `templates/_spec/meta.schema.json`, `view.schema.json`, `looks.json` | The agreed format of `meta.json`, `view.json` and the look catalog |
+| One check | `Core/Templates/TemplateCheck.cs` | Name, schema, meta and view against the spec, each view field in the schema, each look known and in an allowed place, example against the schema |
+| CLI | `orch template [list]`, `check [<kind>] [--folder DIR]`, `add <folder> [--replace]`, `remove <kind>` | Calls only `ITemplateStore` |
+| Looks | `Web/Components/Ui/Looks/<Name>Look.razor` (9 files) | `DocBody` and `FactValue` pick the component by name |
+| Added kinds | `FileStore.IsDeliverable`, `Renderer`, `KindRing` | An added kind is checked, delivered (`meta.turn`), rendered (`render/session.md`) and shown with no C# change |
+
+### Test results
+
+| Test | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 322 pass, 0 fail |
+| `TemplateStoreTests` | Each core template passes the spec. An added kind works end to end (post, schema check, document, turn, render). A replacement and its removal. Bad names, unknown looks, looks in a wrong place, unknown fields. A broken store folder. The CLI. Each look has one component and one page function |
+| `orch template check` on the 10 core kinds | 10 ok |
+| Tray self-test (`tray.ps1 -SelfTest`) | 22 of 23 PASS. Fail: `drag` landed 6 px from the target (the app shell, not F1) |
+| App and page parity (scratchpad store, port 5391, each `example.json` posted) | The same title, facts, blocks and looks for the 10 kinds |
+
+Screenshots: `docs/screens/f1-corner-open-question.png`, `f1-corner-open-report.png`, `f1-corner-open-notice.png`, `f1-corner-card-question.png`, `f1-corner-card-report.png`, `f1-corner-row-notice.png`.
+
+### Parity fixes (the app now matches the page)
+
+| Look | Before | Now |
+|---|---|---|
+| Block frame | Each block in a white card | Each look draws its own frame, as on the page: text, list, steps and links in a card; code and well in a sunken well; chips with no frame (X5) |
+| `progress` fact | Text only | A bar and the percent. The bar (`.pbar`) has the size and color of the page bar, also in the card and the row |
+| `links` | A bullet list; a branch in mono text | A link row with the link icon for each item |
+| Ring of a kind | `Ui.Look` (C#) | The `icon`, `tone` and `toneBy` of `view.json` (X2). Example: a working report has the pending color, an ack has the check icon |
+
+### Findings and notes
+
+- F1-1: the page and the app still have two copies of the look code: the `LOOKS` object of the page and the Razor files. The test checks the names and the places, not the HTML.
+- F1-2: `looks.json` has `values` (the field types of a look), but no code checks it yet.
+- F1-3: a running supervisor reads the templates at its start. After `orch template add`, restart it.
+- F1-4: an added kind with `needs` gets the report card (Got it, Reply). The actions of `meta.card` are not used yet.
+- F1-5: no plugin tool for an added kind, and no HTTP API for the templates (Q3: later).
+- F1-6: X3, X4, X6 to X10 stay proposals (Q4). The user reviews the looks later.
+- F1-7: a test store with a session that has no `claude` starts a supervisor turn. Use `ORCH_CLAUDE=<a name that does not exist>` for a parity test store.
+- F1-8: `view.json` `actions` (the content actions of E1) and `meta.json` `card.accept`/`card.refuse` overlap. The card keys are not read by code. Later: one list, with the behavior (post, verdict) in meta and the look (label, role) in the view.
+
+## E1: App visuals and motion, round 1 (2026-11-17)
+
+Proposal page with live samples: `docs/motion-design.html` (https://claude.ai/artifact/Lh22V5vXKs8SsWSuAUFVKh). The user reviews each item (M1 to M7, E-1, E-2) one by one. The items E-1 to E-5 have the labels S1 to S4 and spike S1 on the page. The user asked first for the tray grow.
+
+| Item | Result | Evidence |
+|---|---|---|
+| Tray grow at show | ✅ The widget grows from height 0 at its bottom edge to its full height in 280 ms (ease out). A window region shows the bottom part; the window keeps its size, so the page does not lay out again on each frame. The first show waits for the page load (3 s maximum) | Self-test `grow`: 16 frames, heights go up, end at 1080 px. `docs/screens/tray-grow-1.png` (60 ms), `tray-grow-3.png` (end) |
+| Tray shrink at hide | ✅ A tray click or Close shrinks the widget to its bottom edge in 200 ms (ease in), then hides it | Self-test `toggle`: 14 frames, heights go down to 0 |
+| Tray self-test | 24 of 24 PASS | `.\tray.ps1 -SelfTest` |
+
+Findings:
+
+| # | Finding | State |
+|---|---|---|
+| E1-1 | The system frame (rounded corners, border, shadow) has the full window size, also with a window region. During the grow it showed a full-height border around an empty area | Fixed: the grow turns the frame off (no rounding, no border color, no non-client rendering) and turns it on again at the end |
+| E1-2 | Transparent parts of the widget: a window region or a color key gives any shape with hard edges, and the cut parts let clicks through. Soft edges and part transparency (alpha) need WebView2 composition hosting, which BlazorWebView for WinForms does not give | Open: spike E-5, last item of the stream |
+| E1-4 | The user asked if the outline is necessary. It is not: the widget had a 1-pixel form padding and a system border color | Done: no outline. The rounded corners and the shadow of the system mark the edge. Self-test 25 of 25 PASS; `docs/screens/tray-grow-1.png`, `tray-grow-3.png` |
+| E1-3 | The proposal page has three tabs: Components (M1 to M3, M5 to M7, E-1, E-2), Screen transitions (T1 tab change, T2 open a document) and Tray grow (G1, with live controls for mode, curve and times). The user tweaks the grow there | Open: user review |
+| E1-5 | User feedback: the shadow pops on at the end of the grow. The user also wants a load flow: if the page is ready, only grow. If not, the home button floats and pulses (about 500 ms), the widget grows behind it with a placeholder, and the content fades in after the grow. The Windows shadow cannot fade, so a fade needs a second see-through window that draws the shadow. Page version 4 has clickable picks and these controls | Open: user tweaks in the Tray grow tab |
+| E1-6 | User feedback: the home button becomes a ball with its own motion. It comes in first (pop, scale, drop or fade, with a time), and the widget grows out of it. The app bar unfolds sideways from a circle behind the ball, and ends when the grow ends. At hide, a yo-yo: the widget shrinks into the ball, the ball stays (hold time), then goes. Page version 5 has these controls | Open: user tweaks in the Tray grow tab |
+| E1-7 | New tab "Minimize and notify". N1: the minimized form (ball, ball + ring, ring only with a hole, ball + badge, pill, compact card, edge tab), its place, attention motion and size. N2: the notification (Windows toast, toast + buttons, toast + reply, reminder, peek bubble, mini card, form only). The Windows toast has a fixed layout; our own forms are one native window that the app draws, so soft edges and a hole are possible. Also fixed: the component switch handler threw an error on the switches of other tabs | Open: user picks in the tab |
+| E1-8 | User request: the header keeps the path of the sub-pages (Sessions › orch-bad3 › Stream), and gets minimize and close next to the pin. Today the sub-pages (Open, SessionStatus, the locked Stream) have no header, only a back link in the body. Page version 8 adds T3 (path: full path, back + title, two lines) and T4 (window buttons: always, on hover, menu) to the Screen transitions tab | Open: user picks |
+| E1-9 | User feedback: E-1 and E-2 were not clear and not interactive, and the ball looked flat and changed at the handoff to the app button. Page version 11: E-1 and E-2 are two items with live Now / Fix samples. The ball, the app bar button and the N1 and T4 balls now use the look of the real home button (app.css .nav2 .home: gradient, inner light, drop shadow, home icon), so the floating ball and the button in the widget are the same | Open: user check |
+| E1-10 | User feedback: E-1 "put the buttons in the page" does not scale, because each document type can have its own set of buttons. E-2 fix is accepted. Page version 12: E-1 is now "Page actions", one rule for 1 to 6 acts. Each act has a role (main, other, danger) and the role sets the place. Four layouts: A dock, B app bar becomes the actions (recommended), C header menu + main button, D in the page | Open: user pick for E-1 |
+| E1-11 | User answer on page actions: a corner button holds the acts of the document type (question, plan, report, review), and opens them as a speed dial, a sheet or a menu. The page defaults (the same for all types of a page, for example Open session and Archive) are at the end of the page, in the page flow. Each page sets if it shows the app bar; a page that needs the full height hides it. Page version 13 has this as E-1 with these controls | Open: user picks the open style and the app bar rule |
+| E1-12 | User refinement: page actions (the same on each Document page: Open session, Archive) are in a fixed bar at the bottom of the screen, not in the page flow. Content actions (they change with the content) are in a corner speed dial that floats above the page bar. The corner button shows only when the content has actions, and any page can use it. Sheet and menu styles are removed. Page version 14 | Open: user check of the sample |
+| E1-13 | User feedback: the page bar buttons did not match the app buttons, and a scroll bar took space and moved the content. Page version 15: the page bar uses the app button style (app.css `.btn`, `.btn.pri`), and a danger action is a square red icon button, like the skip button. Each scroll area keeps a fixed gutter on the right (`scrollbar-gutter: stable`) with a thin, quiet scroll bar that gets darker on hover. Build item E-3: the same scroll bar rules in app.css for each scroll area of the app | Open: user check |
+| E1-14 | User check: the E-1 page bar and buttons are accepted. The scroll gutter works and is accepted. The scroll bar style is not good yet: it is a separate item for later (E-4: scroll bar style) | E-3 gutter: accepted. E-4: open |
+| E1-15 | User feedback: the choices on the page were lost on a reload; the ball snapped to its place at the end of the grow; the app bar moved up and down during the unfold. Fixes in page version 16: (1) the page saves all choices in its db (collection `choices`: picks, g1, notify, s1, header), with this browser as the fallback, so Claude can read them. (2) The ball and the app bar button are now one element, placed by the same CSS variables as the widget (one source of truth, no measure, no sync). In the app the same rule applies: the native ball window takes its place from the same layout constants as the CSS. (3) The app bar unfold changes only the width; its height and place are fixed | Open: user check |
+| E1-16 | The owner choices, read from the page store on 2026-11-17 and made the start values of the page (version 19). Components: M1 A, M2 A, M3 A, M5 A, M6 A, M7 all, E-1 A (page bar + corner speed dial, app bar hidden on document pages), E-2 A. Transitions: T1 C (rise + stagger), T2 A (push), T3 A (full path, first parts collapse), T4 A (window buttons always). G1: reveal + fade, cubic out, show 280 ms, hide 200 ms, shadow grows with the widget; load: pulse 500 ms, skeleton, content fade 180 ms; ball always, pop in 240 ms, gap 60 ms; hide: ball first, out 180 ms; app bar unfold sideways, lag 0 % | Decided. Open: N1 and N2 |
+| E1-17 | New tab "Scroll bar" (E-4) in page version 20: style A quiet, B only on scroll, C accent, D carved track, or now; with width, space around the thumb and strength. The page saves the values (`choices_scroll`) | Open: user pick, with N1 and N2 |
+| E1-18 | User answer E-4: A quiet, width 4 px, space 1 px, strength 40 %. The thumb shows only when the area has more content than fits (`overflow-y: auto`); the gutter stays fixed (E-3). Thin and very subtle. Made the start value of the page (version 21) | Decided |
+| E1-19 | User answers on the cross-stream items: (1) E-1 content actions come from the document schema. A request went to stream F1 to add an optional "actions" list (id, label, role main/other/danger) to each document type. If a type has no actions, the corner button hides itself; nothing breaks. No local copy of the list. (2) N2 uses no Windows toast: its layout is fixed. All notifications are our own window and motion (peek bubble, mini card, form only), so no install step is needed from stream G. Page version 22 removes the toast kinds. Build waits for the N1 and N2 picks | Decided |
+| E1-20 | F1 added the content actions (PR #30, branch orch/session-09462c4b, commit 6f7ecd0): optional key "actions" in templates/<kind>/view.json, spec in templates/_spec/view.schema.json. Read in C# with Board.Document(e).Actions (IReadOnlyList<ActionSpec(Id, Label, Role)>, main first, danger last; empty = hide the corner button). The id is the contract: E1 maps each id to a behavior; labels are data. Kinds with actions: question, plan, report, answer. The "review" of the E-1 sample is the kind "answer"; the kind "review" (the user verdict) has no actions. E1 builds on this after PR #30 merges into the base | Input ready |
+| E1-21 | User feedback on N1: the edge tab is the pick (right edge, ring spin). The circle must be fully visible. Page version 23 adds two edge tab options: A full circle, and hover extends the tab to the left with the counts; B half hidden, and hover slides it out to the full circle. A click on any form opens the widget. A drag moves the form (the edge tab only up and down) and the page saves the place | Open: user picks A or B |
+| E1-22 | User feedback on the edge tab: the open must slide the tab out to the right, off the screen; the home ball was off center in the ring (cause: the flex row squeezed the ring box to 30 px); the ring was too far from the edge. Page version 24: the tab slides out right on open and slides in from the right on minimize; the ring box does not shrink, so the ball is exactly on the ring center (measured); the gap from the ring to the screen edge is 10 px (measured 9.7 px) | Open: user check, A or B |
+| E1-23 | User feedback: a quick click or a tap started the hover preview before the open. Page version 25: the hover preview waits 350 ms (CSS transition-delay), so a quick click or a tap opens the widget with no preview first; a drag shows the preview at once. The gap from the ring to the screen edge is now 6 px (measured 5.7 px) | Open: user check, A or B |
+| E1-24 | User answer N1 and N2 (read from the page store): N1 edge tab A (full circle, 6 px from the edge; hover preview with the counts after 350 ms), right edge, ring spin at a new event, size 40, click opens the widget (the tab slides out to the right), drag moves it up and down. N2 peek bubble, hide after 5 s. All E1 round 1 choices are now decided; the build starts | Decided |
+| E1-25 | Build 1 (E-2, E-3, E-4): app.css: the skip button `.btn.wl` is raised with a muted icon; `html` and the sheet keep a stable scroll gutter; the scroll bar is a 4 px round thumb with 1 px space, 40 % muted, 70 % on hover, no track, only when the area overflows. tray.css no longer hides the scroll bar (E-3 and E-4 set the scroll bar). Self-test check `no-scroll-bar` becomes `scroll-gutter` (expect 6 px). Tray self-test 25 of 25 PASS. Proof: `docs/screens/tray-e1-s2-skip.png`, `docs/screens/tray-e1-s4-scroll.png` | Done |
+
+Next steps of E1, in order:
+
+1. User review of the three tabs. Build the chosen items, one commit each, with self-test proof.
+2. Spike E-5, last: composition hosting for the tray widget. Find what it gives (soft-edge shapes such as a ring with a transparent hole, part transparency, blur behind), what it costs (WebView2 `CoreWebView2CompositionController` and DirectComposition in place of the BlazorWebView HWND control), and if it is worth it. Discuss with the user before the build.
+
+## G1 result: install and start (2026-11-17)
+
+Options page: https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX (source `docs/setup-options.html`). The recipe is in `docs/know-how.md`, section "Install and start".
+
+| Choice | Decision |
+|---|---|
+| Install mode | Published copies in `%USERPROFILE%\Apps\Orchestrator` (user, Q1) |
+| Store | The one store root of H1, `%LOCALAPPDATA%\orch\store` (user, Q2). H4 moves the live store and changes the default of `install.ps1 -Store` |
+| Supervisor start | The tray, in its own process, if no supervisor answers on the port (user, Q3) |
+| Login | Startup folder shortcut, tray hidden (user, Q4) |
+| Update | `install.ps1` again by hand; `orch doctor` check `app` (user, Q5) |
+| Cloud | Plan on the page, section Q6. Q6a: cloud workers, supervisor and store on this PC (user). Q6b (G-0 probe): approved by the user; run, see below. The `--cloud` start flag lives only in `Providers/` (P0) |
+
+### Cloud steps
+
+The steps of the cloud plan (page, section Q6) have G-step codes. They are steps, not tasks.
+
+| Step | Content | Task |
+|---|---|---|
+| G-0 probe | One cloud session: .NET 10, plugin, `claude -p`, Quick Tunnel | Done 2026-11-17 |
+| G-1 HTTP mode | `orch` uses `ORCH_URL` and the API when no store folder exists | H5 (H1 plan) |
+| G-2 public address | Tunnel with a service token for the API | D2, after G2 |
+| G-3 cloud children | Brief field `where: cloud`; the provider starts with `--cloud` | G2 |
+| G-4 environment file | Setup script and environment variables, recipe in `know-how.md` | G2 |
+| G-5 team probe | Supervisor, web interface, a root and three children in one VM | Done 2026-11-18 |
+
+### Test (scratchpad store, port 7861, `ORCH_DATA` in the scratchpad, `-NoTool`)
+
+| Check | Result |
+|---|---|
+| Install | ✅ Tray and supervisor published, `install.json`, two shortcuts with `--live <store> --port 7861` (the login one with `--hidden`) |
+| Tray starts the supervisor | ✅ Record `supervisor-7861.json`, `/api/sessions` 200 |
+| Tray exit | ✅ The supervisor still answers |
+| Update while both run | ✅ The script stopped the tray, `cmd` and `dotnet`, swapped the folders, started the tray; a new supervisor answers. `-NoStartup` removed the login shortcut |
+| `orch supervisor status/stop/start` | ✅ status 0 with the record; stop; status 1; start 0; a second start reports the running one |
+| `orch doctor` | ✅ `app: built from 1db5718f, store ..., port 7861` |
+| Unit tests | ✅ `dotnet test --solution Orchestrator.slnx`: 301 passed, 1 skipped (`Seed_a_demo_store`, explicit) |
+
+### G-0 probe: run (2026-11-17)
+
+Full result: `docs/c0-probe.md` (cloud session `session_01Y7UMGXQGcsekzz7bDemKjq`, source commit `0e83e17`).
+
+Start method: `start_session` with `target: cloud` refuses in a Remote Control turn. `claude --cloud "<brief>"` in a terminal tab works. It is interactive only (no `--print`), and the first run asks the user to trust the folder. The script is in `docs/know-how.md`.
+
+| Check | Result | Expected? |
+|---|---|---|
+| .NET 10 install, no root | ✅ 16 s, SDK 10.0.404 | Yes |
+| Build Web and Cli | ✅ 0 errors | Yes |
+| Supervisor `/api/sessions` | ✅ 200 after about 3 s | Yes |
+| `claude -p` signed in | ✅ through the host, no API key; $0.32 for one small call | Yes. The cost is high |
+| Plugin load, both forms | ✅ 6 `orch:` skills | Yes |
+| Plugin hooks module in a child `claude -p` | ❌ not loaded (rollout switch) | No. See G-0.2 |
+| `orch doctor` | 3 FAIL: `gh`, `settings.json`, supervisor on 7777 | Yes: a fresh VM has none of them |
+| GitHub, Cloudflare | ✅ 200 | Yes |
+| Quick Tunnel host `*.trycloudflare.com` | ❌ proxy 502 | No. See G-0.1 |
+| `claude.ai` with `curl` | 403 | Yes |
+| Tool prompts | The user approved each command in the cloud session | Yes: default permission mode |
+
+| # | Finding | Owner |
+|---|---|---|
+| G-0.1 | The cloud proxy refuses `*.trycloudflare.com`. A cloud worker cannot reach a Quick Tunnel. Use a named tunnel on an own domain, and add that host to the environment network list | Stream D |
+| G-0.2 | The plugin hooks module does not load in a child `claude -p` in the VM. The skills load. A cloud worker must not depend on the hooks until the rollout reaches it | Stream B |
+| G-0.3 | Each command asked the user for approval. A cloud worker needs a permission mode or an allow list in its brief or environment | Stream B |
+
+### G-5 probe: a team in one VM (2026-11-18)
+
+Answer: **yes**. Supervisor, web interface, one root and three children ran in one cloud VM. All four sessions used the orch tools and reached `done` in 31 s. Condition: `orch` must be on `PATH`. Full result: `docs/c5-probe.md` and `docs/c5-probe/`.
+
+| # | Finding | Owner |
+|---|---|---|
+| G-5.1 | The plugin hooks start `orch` from `PATH`. The VM setup must install `orch` and put `~/.dotnet/tools` on `PATH`, with `DOTNET_ROOT` | G-4 (environment file), in G2 |
+| G-5.2 | The hooks module loaded in each child. G-0.2 was a temporary rollout state | Closes G-0.2 |
+| G-5.3 | `orch process` fails on Linux: process snapshot is Windows only. The lease gets no `pid` | Stream B |
+| G-5.4 | A failed orch tool leaves the session `idle`, not `blocked`, and the report is lost | Stream B |
+| G-5.6 | Children get the `CLAUDE_CODE_*` environment of the host session | Stream B |
+| G-5.7 | The supervisor does not record `total_cost_usd` of each turn | Stream B |
+
+Start lesson: the first C5 brief had double quotes. PowerShell cut the argument at the first quote, so the cloud session got only one line. Send a brief from bash with `"$(cat brief.txt)"`, or remove the double quotes.
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| G1-1 | The tray publish failed with NETSDK1151: the tray references the executable `Orchestrator.Web`. The earlier `install.ps1` had the same error | Fixed: `-p:ValidateExecutableReferencesMatchSelfContained=false` |
+| G1-2 | `taskkill /T` on `cmd` also stops its `dotnet` child; a second `taskkill` failed and PowerShell 5.1 stopped the script | Fixed: each stop runs in `cmd /c ... >nul 2>&1` |
+| G1-3 | The supervisor log had one line for each HTTP request | Fixed: the started process gets `Logging__LogLevel__Microsoft.AspNetCore=Warning` |
+| G1-4 | The tray starts the supervisor only at its own start | Accepted. Start it again with `orch supervisor start` |
+| G1-5 | The supervisor that runs today on port 7777 was started by hand. `install.ps1` does not stop it, and the tray uses it | Note for the real install |
+
+## Next tasks
+
+These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
+
+```mermaid
+flowchart LR
+    I2[I2 integration] --> P0[P0 IProvider]
+    I2 --> H4[H4 store move]
+    I2 --> F2[F2 templates on IRepository]
+    I2 --> E2[E2 visuals]
+    H4 -.->|merge first| P0
+    P0 --> S2[S2 session registry]
+    H4 --> S2
+    I2 --> G2[G2 cloud workers]
+    S2 --> C2[C2 workflow runner]
+    F2 --> C2
+    G2 --> D2[D2 tunnel, token]
+```
+
+| Task | Stream | Content | Start |
+|---|---|---|---|
+| P0 | S (owner S) | `IProvider` in `Orchestrator.Providers`, `Providers/ClaudeCode`. Logic of today | After I2 |
+| H4 | H | Store move to `%LOCALAPPDATA%\orch\store`, index by session, day cache, migration | After I2. Merge before P0 if both touch `Home` or `Lifecycle.cs` |
+| F2 | F | Templates on `IRepository`; modes and workflows as definitions | After I2 |
+| E2 | E | Visuals: the next E1 items and spike E-5 | After I2 |
+| S2 | S | Session registry on `IRepository`, store version 3 | After P0 and H4 |
+| G2 | G | Cloud workers (G-3, G-4) and the supervisor API with the `orch` HTTP mode (H5) | In parallel with S2 |
+| C2 | C | Workflow runner on `IRepository`, the planning workflow, the term rename in skills and tools. Then C3: one real stream | After S2 and F2 |
+| D2 | D | Named tunnel, service token for cloud workers | After G2, next month |
+
+Rules for these tasks:
+
+- One store root: `%LOCALAPPDATA%\orch\store` (H1).
+- One role model (C1): `role` (orchestrator, worker, free), `type` (optional custom agent), `workflow`.
+- Only `Providers/` names a provider: the `claude` CLI, its flags (also `--cloud`) and the app files.
+- Task codes are only for tasks. Steps and items use a dash: G-0, E-1.
+
+Later (not in the graph):
+
+| Item | Owner | Content | Start |
+|---|---|---|---|
+| Workflow page | E (UI), with C | A UI page for one workflow run: progress, the graph, the history, the current step on the graph and the possible next steps | Plan and design after C2 |

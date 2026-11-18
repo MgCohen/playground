@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using PatternEngine.Features.Cases.Domain;
+using PatternEngine.Features.Compose.Domain;
+using PatternEngine.Features.Engine.Domain;
 using PatternEngine.Features.Catalog.Slices.BuildCatalog;
 using PatternEngine.Features.Catalog.Slices.Lifecycle;
 using PatternEngine.Features.Report.Slices.Trials;
@@ -32,6 +34,12 @@ public sealed class Cli(IServiceProvider services)
         pe remove <id> [--domain d]               final call: the pattern leaves the catalog
         pe trials [domain]                        metrics of each trial pattern; notifications at the thresholds
         pe review <result.json> [...] [--title t]  build the review page: one card for each run
+        pe compose eval [--rung r | --only a,b] [--strategy s] [--mode smoke|dev] [--k n] [--model m] [--label t] [--dry]
+                        [--spec decompose|given] [--lore on|off]   (prose cases)
+                                                  run party cases with the compose loop; the oracle grades each run
+        pe compose grader-check [--mode dev] [--model m]   grade the fixed pairs; compare each verdict with the oracle
+        pe grader-check <domain|party> [--mode dev] [--model m]
+                                                  run the grader fixtures with known answers; write the stamp of the grader files
         """;
 
     private readonly ISender sender = services.GetRequiredService<ISender>();
@@ -61,6 +69,8 @@ public sealed class Cli(IServiceProvider services)
                 "stable" => await Print(sender.SendAsync(new LifecycleCommand(LifecycleAction.Stable, a.Positional(0)!, a.Value("domain")))),
                 "remove" => await Print(sender.SendAsync(new LifecycleCommand(LifecycleAction.Remove, a.Positional(0)!, a.Value("domain")))),
                 "trials" => await TrialsAsync(a),
+                "compose" => await ComposeAsync(a),
+                "grader-check" => a.Positional(0) == "party" ? await ComposeAsync(new Args(["grader-check", .. args.Skip(2)])) : await GraderCheckAsync(a),
                 "review" => await Print(sender.SendAsync(new Features.Review.Slices.BuildReview.BuildReviewCommand(a.All, a.Value("title")))),
                 _ => Fail($"unknown command \"{args[0]}\"\n\n{Usage}"),
             };
@@ -160,6 +170,7 @@ public sealed class Cli(IServiceProvider services)
             return 0;
         }
 
+        WarnOldStamp(pack.Pack.Name, options.Model, StampFiles(pack), EngineSettings.From(pack.Settings).Decider == EngineSettings.ComposeDecider);
         var r = (await sender.SendAsync(new RunEvalCommand(pack.Pack.Name, options, Console.WriteLine))).Value;
         Console.WriteLine();
         Console.WriteLine(r.Report);
@@ -199,6 +210,111 @@ public sealed class Cli(IServiceProvider services)
         }
 
         return 0;
+    }
+
+    private async Task<int> ComposeAsync(Args a)
+    {
+        var root = services.GetRequiredService<EngineRoot>();
+        var settings = services.GetRequiredService<Plugins.Settings.Settings>();
+        var pack = Domains.Party.PartyPack.Load(Path.Combine(root.Path(settings.Section("paths").Text("domains")), "Party"), Path.Combine(root.Dir, EngineRoot.SettingsFile));
+        if (pack.Errors.Count > 0)
+        {
+            return Fail($"the party pack has errors:\n{string.Join('\n', pack.Errors)}");
+        }
+
+        var mode = a.Value("mode") ?? "dev";
+        var m = pack.Settings.Section("eval", "modes", mode);
+        var rung = a.Value("rung");
+        var cases = a.List("only").Count > 0 ? a.List("only") : pack.Cases.Where(c => rung is null || c.Rung == rung).Select(c => c.Id).ToList();
+        var decomposer = pack.Settings.Section("party", "decomposer");
+        var options = new Domains.Party.PartyRunOptions(
+            mode,
+            a.Value("model") ?? m.Text("model"),
+            a.Int("k") ?? m.Int("k"),
+            cases,
+            a.Value("strategy") ?? pack.Settings.Section("compose").Text("strategy"),
+            a.Value("label"),
+            a.Value("spec") ?? decomposer.Text("spec"),
+            (a.Value("lore") ?? decomposer.Text("lore")) is "on" or "true" or "True");
+        if (a.Flag("dry"))
+        {
+            Console.WriteLine($"Mode {mode}: model {options.Model}, k={options.K}, strategy {options.Strategy}, cases {string.Join(", ", cases)}");
+            return 0;
+        }
+
+        var judge = pack.Settings.Section("judge", "cli");
+        var agents = new Plugins.Agents.AgentCatalog([root.Path(pack.Settings.Section("paths").Text("agents"))]);
+        var cli = new Plugins.Agents.CliJudgeSettings(judge.Text("executable"), options.Model, judge.Int("retries"), judge.Int("timeout_seconds"));
+        var limits = pack.Settings.Section("engine", "limits", "run");
+        var runner = new Domains.Party.PartyRunner(
+            pack,
+            () => new Plugins.Agents.CliJudge(agents, cli),
+            new Features.Engine.Domain.RunLimits(limits.Int("agent_calls"), limits.Number("cost_usd"), limits.Int("seconds")),
+            Path.Combine(Path.GetTempPath(), "pattern-engine-runs"));
+        if (a.Positional(0) == "eval")
+        {
+            WarnOldStamp("party", options.Model, (root.Path(pack.Settings.Section("paths").Text("results")), GraderStamp.Hashes(root.Dir, [Path.Combine(root.Path(pack.Settings.Section("paths").Text("agents")), "grader.md"), Path.Combine(pack.Dir, "grading.md")])), true);
+        }
+
+        var result = a.Positional(0) switch
+        {
+            "eval" => await runner.RunAsync(options, Console.WriteLine, CancellationToken.None),
+            "grader-check" => await runner.GraderCheckAsync(options, Console.WriteLine, CancellationToken.None),
+            _ => throw new InvalidOperationException("use pe compose eval or pe compose grader-check"),
+        };
+        var results = root.Path(pack.Settings.Section("paths").Text("results"));
+        var graderFiles = GraderStamp.Hashes(root.Dir, [Path.Combine(root.Path(pack.Settings.Section("paths").Text("agents")), "grader.md"), Path.Combine(pack.Dir, "grading.md")]);
+        if (a.Positional(0) == "grader-check")
+        {
+            var right = result.GraderCheck.Sum(l => l.Right);
+            new GraderStamp("party", options.Model, graderFiles, right, result.GraderCheck.Sum(l => l.Total), DateTime.UtcNow.ToString("s", System.Globalization.CultureInfo.InvariantCulture)).Write(results);
+        }
+
+        var file = Domains.Party.PartyRunner.Write(result, results);
+        Console.WriteLine();
+        Console.WriteLine(result.Report);
+        Console.WriteLine($"Result: {Path.GetRelativePath(root.Dir, file)}");
+        return 0;
+    }
+
+    /// <summary>Runs the grader fixtures of an engine pack with compose hooks, and writes the stamp (G2, B8).</summary>
+    private async Task<int> GraderCheckAsync(Args a)
+    {
+        var packs = services.GetRequiredService<PackRegistry>();
+        var pack = packs.Load(a.Positional(0));
+        var mode = a.Value("mode") ?? "dev";
+        var model = a.Value("model") ?? pack.Settings.Section("eval", "modes", mode).Text("model");
+        var work = Path.Combine(Path.GetTempPath(), "pattern-engine-runs", $"grader-check-{pack.Pack.Name}-{DateTime.UtcNow:yyyyMMddHHmmss}");
+        Directory.CreateDirectory(work);
+        var gateway = new Features.Engine.Domain.AgentGateway(services.GetRequiredService<IJudgeFactory>().Create(pack, model), work, Features.Engine.Domain.EngineSettings.From(pack.Settings).Run);
+        var lines = await GraderCheck.RunAsync(pack, gateway, CancellationToken.None);
+        foreach (var l in lines)
+        {
+            Console.WriteLine($"  {l.Fixture,-32} [{string.Join(", ", l.Set)}]: {l.Right} of {l.Total}{(l.Wrong.Count > 0 ? " - " + string.Join("; ", l.Wrong) : string.Empty)}{(l.Error is null ? string.Empty : " error: " + l.Error)}");
+        }
+
+        var (results, files) = StampFiles(pack);
+        var right = lines.Sum(l => l.Right);
+        var total = lines.Sum(l => l.Total);
+        new GraderStamp(pack.Pack.Name, model, files, right, total, DateTime.UtcNow.ToString("s", System.Globalization.CultureInfo.InvariantCulture)).Write(results);
+        Console.WriteLine($"\nGrader fixtures of {pack.Pack.Name}: {right} of {total} verdicts as known, model {model}. {gateway.Calls} agent calls, ${gateway.Cost:0.000}. Stamp: {Path.GetRelativePath(packs.Root.Dir, GraderStamp.FileOf(results, pack.Pack.Name))}");
+        return right == total ? 0 : 1;
+    }
+
+    private (string Results, IReadOnlyDictionary<string, string> Files) StampFiles(PackContext pack)
+    {
+        var root = services.GetRequiredService<PackRegistry>().Root;
+        var files = GraderCheck.GraderFiles(pack, root.Path(pack.Settings.Section("paths").Text("agents")));
+        return (root.Path(pack.Settings.Section("paths").Text("results")), GraderStamp.Hashes(root.Dir, files));
+    }
+
+    /// <summary>Warns when the grader fixtures of a pack did not run with this model and these grader files (B8). It does not stop the run.</summary>
+    private static void WarnOldStamp(string pack, string model, (string Results, IReadOnlyDictionary<string, string> Files) stamp, bool usesGrader)
+    {
+        if (usesGrader && GraderStamp.Old(stamp.Results, pack, model, stamp.Files) is { } reason)
+        {
+            Console.Error.WriteLine($"warning: {reason}");
+        }
     }
 
     private static EvalOptions Options(Args a, PackContext pack, string mode)

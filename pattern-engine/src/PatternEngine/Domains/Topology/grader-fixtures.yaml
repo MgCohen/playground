@@ -1,0 +1,37 @@
+# Grader fixtures of topology (G2): a spec, a set and the known verdict of each grader rubric.
+# Run them when the model or a grader file changes: pe grader-check topology --model haiku
+- id: save-with-pipeline-and-store
+  request: Design a query handler that also saves the changes that the user sends.
+  needs: [ { kind: input, name: Request }, { kind: output, name: Saved }, { kind: job, name: save the changes that the user sends } ]
+  set: [command_pipeline.plain, store.plain]
+  expect: { job-1: true }
+- id: save-with-query-handler
+  request: Design a query handler that also saves the changes that the user sends.
+  needs: [ { kind: input, name: Request }, { kind: output, name: Saved }, { kind: job, name: save the changes that the user sends } ]
+  set: [query_handler.plain]
+  expect: { job-1: false }
+- id: email-with-observer
+  request: Design a part that sends an email each time an order is placed.
+  needs: [ { kind: input, name: Event }, { kind: output, name: Effect }, { kind: job, name: send an email each time an order is placed } ]
+  set: [observer.plain]
+  expect: { job-1: true }
+- id: list-with-query-handler
+  request: Design a pipeline that shows a customer the list of their orders.
+  needs: [ { kind: input, name: Request }, { kind: output, name: View }, { kind: job, name: show a customer the list of their orders } ]
+  set: [query_handler.plain]
+  expect: { job-1: true }
+- id: retry-with-pipeline
+  request: Design a part that tries a failed payment again three times, with a delay between the tries.
+  needs: [ { kind: input, name: Request }, { kind: output, name: Event }, { kind: job, name: run the payment }, { kind: job, name: wait a delay between the tries } ]
+  set: [command_pipeline.plain]
+  expect: { job-1: true, job-2: false }
+- id: check-with-plain-pipeline
+  request: Design a pipeline that checks the input before it changes the data.
+  needs: [ { kind: input, name: Request }, { kind: output, name: Event }, { kind: job, name: check the input before the change } ]
+  set: [command_pipeline.plain]
+  expect: { job-1: false }
+- id: check-with-validated-pipeline
+  request: Design a pipeline that checks the input before it changes the data.
+  needs: [ { kind: input, name: Request }, { kind: output, name: Event }, { kind: job, name: check the input before the change } ]
+  set: [command_pipeline.validated]
+  expect: { job-1: true }

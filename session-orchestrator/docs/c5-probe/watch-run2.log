@@ -1,0 +1,12 @@
+=== minute 1 00:08:26
+count 4
+  05319f21 A parent= ed3b908a state= done status= idle running= False
+  550482d6 B parent= ed3b908a state= done status= idle running= False
+  d25e2594 C parent= ed3b908a state= done status= idle running= False
+  ed3b908a C5 root parent= - state= done status= idle running= False
+store: bodies events nudges policy.json sessions subscriptions supervisor version.json 
+sessions: 05319f21-b401-4e63-b6bf-bcb6561bd353 550482d6-3edd-48e6-8b57-33cd3dd57d7a d25e2594-9518-40cd-8e6c-d61fa82b6fef ed3b908a-e345-40d5-8ca9-607cb1af4c2d 
+6bbf979 Add C.txt
+d6481c0 Add B.txt
+062d7b0 Add A.txt
+afee2fe init

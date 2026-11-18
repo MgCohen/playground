@@ -77,13 +77,14 @@ public sealed class TopologyTests
         var pack = new PackContext(Pack, Dir, settings, Catalog);
         var judge = new ScriptedJudge(call =>
         {
-            var request = call.Input.Split('\n')[0];
             return call.Agent switch
             {
-                // The remainder: the decider says "outside", and code reads it as a no-fit, because a remainder is in scope.
-                "decider" when request.Contains("delay", StringComparison.Ordinal) && call.Input.Contains("remainder of a partial fit", StringComparison.Ordinal)
-                    => new { status = "outside", pattern = "observer", reason = "no pattern waits" },
-                "decider" => new { status = "partial_fit", pattern = "command_pipeline", variant = "plain", open = new[] { "wait a delay between the tries" }, reason = "the pipeline runs the payment" },
+                "decomposer" => Needs(["Request"], ["Effect"], "try a failed payment again three times", "wait a delay between the tries"),
+
+                // The pipeline does the payment; no entry waits. The remainder (io and the delay) becomes a gap.
+                "composer-decider" when !call.Input.Contains("Remainder:", StringComparison.Ordinal) => GradeTurn("command_pipeline.plain"),
+                "composer-decider" => new { action = "commit", commit = new[] { new { spec = "request", set = new[] { "command_pipeline.plain" }, reason = "no entry waits", gap = new { new_id = "delay", nearest = "observer.plain" } } }, note = "gap" },
+                "grader" => Grade(call, "job-2"),
                 "pattern-author" => new
                 {
                     kind = "object",
@@ -187,12 +188,12 @@ public sealed class TopologyTests
         var pack = new PackContext(Pack, Dir, settings, Catalog);
         var judge = new ScriptedJudge(call =>
         {
-            var request = call.Input.Split('\n')[0];
             return call.Agent switch
             {
-                "decider" when request.Contains("system", StringComparison.Ordinal) => new { status = "solved", pattern = "cqrs_system", variant = "plain", children = new[] { "users place orders", "an email for each order" }, reason = "two jobs" },
-                "decider" when request.Contains("orders", StringComparison.Ordinal) => new { status = "solved", pattern = "command_pipeline", variant = "plain", reason = "changes data" },
-                "decider" => new { status = "solved", pattern = "observer", variant = "plain", reason = "reacts" },
+                "decomposer" => Needs(["Request"], ["Effect"], "users place orders", "an email for each order"),
+                "composer-decider" when !call.Input.Contains("Remainder:", StringComparison.Ordinal) => GradeTurn("command_pipeline.plain", "observer.plain"),
+                "composer-decider" => new { action = "commit", commit = new[] { new { spec = "request", set = new[] { "command_pipeline.plain", "observer.plain" }, reason = "both jobs" } }, note = "commit" },
+                "grader" => Grade(call),
                 "composer" => new { fragment = TopologyReference.Block(call.Input.Contains("Pattern: observer", StringComparison.Ordinal) ? "observer" : "command_pipeline", "plain")!.ToJsonString() },
                 _ => null,
             };
@@ -205,5 +206,25 @@ public sealed class TopologyTests
         var grades = RunGrading.Grade(c, Pack, run.Catalog, run.Trace, File.ReadAllText(run.OutputFile), GraderSet.Default.Plan(settings.Section("grading"), Pack));
         Assert.That(grades.Verdicts.Where(v => !v.Value.Ok).Select(v => $"{v.Key}: {v.Value.Failures[0]}"), Is.Empty);
         Assert.That(grades.Consistent, Is.True);
+        Assert.That(run.Trace.Compose!.Scores.Single(), Does.StartWith("request: score 5 of 5"));
+    }
+
+    /// <summary>A decomposer answer in the generic schema: input types, output types and jobs.</summary>
+    public static object Needs(string[] inputs, string[] outputs, params string[] jobs) => new
+    {
+        needs = inputs.Select(i => new { kind = "input", name = i, amount = (int?)null })
+            .Concat(outputs.Select(o => new { kind = "output", name = o, amount = (int?)null }))
+            .Concat(jobs.Select(j => new { kind = "job", name = j, amount = (int?)null })).ToArray(),
+        missing = Array.Empty<string>(),
+        note = "test",
+    };
+
+    public static object GradeTurn(params string[] set) => new { action = "grade", grade = new[] { new { spec = "request", set } }, note = "test" };
+
+    /// <summary>A grader that says true for each rubric in its input, except the ids in no.</summary>
+    public static object Grade(AgentCall call, params string[] no)
+    {
+        var rubrics = call.Input[call.Input.IndexOf("# Rubrics", StringComparison.Ordinal)..].Split('\n').Where(l => l.StartsWith("- ", StringComparison.Ordinal)).Select(l => l[2..l.IndexOf(':')]);
+        return new { verdicts = rubrics.Select(r => new { rubric = r, verdict = !no.Contains(r), reason = "script" }).ToArray() };
     }
 }

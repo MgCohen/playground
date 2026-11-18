@@ -1,0 +1,406 @@
+{
+  "run_id": "2026-11-16T23-16-28-p4-pool",
+  "kind": "compose",
+  "mode": "dev",
+  "model": "haiku",
+  "strategy": "pool",
+  "calls": 13,
+  "cost": 0.00828598,
+  "runs": [
+    {
+      "case": "m1",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-total",
+          "Ok": true,
+          "Reason": "cost 12, best 12"
+        }
+      ],
+      "measures": {
+        "cost": "12",
+        "best cost": "12"
+      },
+      "grader_accuracy": "7 of 7",
+      "trace": {
+        "task": "m1",
+        "strategy": "pool",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "m1-q1",
+            "set": [
+              "druid"
+            ],
+            "reason": "Graded: healer, lore, and budget (7 of 8) all yes, remainder none. Pool rubric also yes with m1-q2, so no heroes are double-booked."
+          },
+          {
+            "spec": "m1-q2",
+            "set": [
+              "cleric",
+              "guard"
+            ],
+            "reason": "Graded: healer, tank, and budget (5 of 6) all yes, remainder none. Cheapest healer-plus-tank pair, and no hero overlaps with m1-q1."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Druid is the only healer that can cover m1-q1 within 8 gold without cleric, and cleric plus guard is the only way to fill m1-q2\u0027s healer and tank within 6 gold, so I\u0027m grading this split (druid 7; cleric 3 \u002B guard 2 = 5; total 12) before committing.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "m1-q1",
+                "set": [
+                  "druid"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The only hero, druid, has the tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "lore",
+                    "ok": true,
+                    "reason": "druid has the tag lore, so the party has lore."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "The party is just druid with cost 7, and 7 is 8 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "m1-q2",
+                "set": [
+                  "cleric",
+                  "guard"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The party is the set of two heroes. The cleric has tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The guard has tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 3 (cleric) \u002B 2 (guard) = 5, which is 6 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "m1",
+                "set": [
+                  "druid",
+                  "cleric",
+                  "guard"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "pool",
+                    "ok": true,
+                    "reason": "Each hero appears in exactly one party. druid is only in m1-q1. cleric and guard are only in m1-q2. No hero is in two parties, so each hero is in one party at most."
+                  }
+                ],
+                "remainder": [],
+                "cached": false,
+                "parts": [
+                  {
+                    "spec": "m1-q1",
+                    "set": [
+                      "druid"
+                    ]
+                  },
+                  {
+                    "spec": "m1-q2",
+                    "set": [
+                      "cleric",
+                      "guard"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "I\u0027m committing the already-graded assignment because it has empty remainders and is the cheapest feasible option: cleric is the only healer under 6 gold, so m1-q2 must be cleric plus guard, and druid is then the cheapest healer-and-lore option for m1-q1 at 7 gold, for a total of 12.",
+            "refused": [
+              "unknown spec \u0022pool\u0022"
+            ],
+            "grades": []
+          },
+          {
+            "turn": 3,
+            "action": "commit",
+            "note": "I\u0027m committing the already-graded assignment, since every rubric passed and the total cost of 12 is the lowest, because the only cheap healer (cleric) is needed for m1-q2 and druid is the cheapest healer-lore option for m1-q1.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 3,
+        "cache_hits": 0,
+        "calls": 6,
+        "cost": 0.00430747,
+        "ms": 33394
+      }
+    },
+    {
+      "case": "m2",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-total",
+          "Ok": true,
+          "Reason": "cost 11, best 11"
+        }
+      ],
+      "measures": {
+        "cost": "11",
+        "best cost": "11"
+      },
+      "grader_accuracy": "10 of 10",
+      "trace": {
+        "task": "m2",
+        "strategy": "pool",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "m2-q1",
+            "set": [
+              "ranger"
+            ],
+            "reason": "Ranger covers scout and tracker at cost 4, within the budget of 5; the graded remainder is empty."
+          },
+          {
+            "spec": "m2-q2",
+            "set": [
+              "thief"
+            ],
+            "reason": "Thief is the only lockpick and also covers scout at cost 3, within the budget of 4; the graded remainder is empty."
+          },
+          {
+            "spec": "m2-q3",
+            "set": [
+              "bard"
+            ],
+            "reason": "Bard covers scout and lore at cost 4, within the budget of 5; the graded remainder is empty."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "I\u0027m grading the scarce-hero plan first: thief for the lockpick in m2-q2, ranger for the scout and tracker in m2-q1, and bard for the scout and lore in m2-q3, each within budget, plus the full assignment for the pool rule.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "m2-q1",
+                "set": [
+                  "ranger"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "scout",
+                    "ok": true,
+                    "reason": "The only hero, ranger, has the tag scout, so the party has a scout."
+                  },
+                  {
+                    "rubric": "tracker",
+                    "ok": true,
+                    "reason": "The only hero, ranger, has the tag tracker, so the party has a tracker."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "The party is just ranger with cost 4, and 4 is 5 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "m2-q2",
+                "set": [
+                  "thief"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "scout",
+                    "ok": true,
+                    "reason": "The party is the single hero thief, whose tags include scout, so the party has a scout."
+                  },
+                  {
+                    "rubric": "lockpick",
+                    "ok": true,
+                    "reason": "thief has the tag lockpick, so the party has a lockpick."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "The party\u0027s total cost is the sum of its heroes\u0027 costs: thief costs 3, so the total is 3, which is 4 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "m2-q3",
+                "set": [
+                  "bard"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "scout",
+                    "ok": true,
+                    "reason": "The only hero, bard, has the tag scout, so the party has a scout."
+                  },
+                  {
+                    "rubric": "lore",
+                    "ok": true,
+                    "reason": "The only hero, bard, has the tag lore, so the party has a lore."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "The party is just bard with cost 4, and 4 is 5 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "m2",
+                "set": [
+                  "ranger",
+                  "thief",
+                  "bard"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "pool",
+                    "ok": true,
+                    "reason": "Each hero appears in exactly one quest\u0027s party: m2-q1 has only ranger, m2-q2 has only thief, m2-q3 has only bard. No hero is repeated across parties, so each hero is in at most one party."
+                  }
+                ],
+                "remainder": [],
+                "cached": false,
+                "parts": [
+                  {
+                    "spec": "m2-q1",
+                    "set": [
+                      "ranger"
+                    ]
+                  },
+                  {
+                    "spec": "m2-q2",
+                    "set": [
+                      "thief"
+                    ]
+                  },
+                  {
+                    "spec": "m2-q3",
+                    "set": [
+                      "bard"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "I\u0027m committing the already-graded assignment (ranger, thief, bard), since every rubric was yes with an empty remainder and its total cost of 11 is the minimum: thief is the only lockpick, a scout is needed for each quest, and no cheaper combination fits the budgets.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 4,
+        "cache_hits": 0,
+        "calls": 6,
+        "cost": 0.00322355,
+        "ms": 23931
+      }
+    },
+    {
+      "case": "m3",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "none is correct"
+        },
+        {
+          "Rubric": "best-total",
+          "Ok": true,
+          "Reason": "none is correct"
+        }
+      ],
+      "measures": {
+        "cost": "none",
+        "best cost": "none"
+      },
+      "grader_accuracy": "0 of 0",
+      "trace": {
+        "task": "m3",
+        "strategy": "pool",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "m3-q1",
+            "reason": "The only healer costing 3 or less is cleric (cost 3), and the other healers cost 7 or more. The second quest then has no healer it can afford, so no party can meet both rubrics."
+          },
+          {
+            "spec": "m3-q2",
+            "reason": "The only healer costing 3 or less is cleric (cost 3), and only one cleric exists. The other quest cannot get a healer within a 3-gold budget, so no party can meet both rubrics."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "commit",
+            "note": "No assignment can satisfy both quests, since only one healer (cleric, cost 3) fits the 3-gold budget and each hero can serve only one quest, so I commit \u0022none\u0022 for both quests without spending grades.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 0,
+        "cache_hits": 0,
+        "calls": 1,
+        "cost": 0.00075496,
+        "ms": 7114
+      }
+    }
+  ],
+  "grader_check": [],
+  "report": "Pass: 3 of 3. best-total: 3 of 3. 13 agent calls, $0.008."
+}

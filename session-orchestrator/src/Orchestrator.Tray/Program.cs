@@ -7,9 +7,10 @@ using Orchestrator.Web;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The start of the tray app. Usage: Orchestrator.Tray.exe [--hidden] [--pin] [--selftest &lt;folder&gt;] [--live &lt;store&gt; [--port &lt;port&gt;]].
+/// The start of the tray app. Usage: Orchestrator.Tray.exe [--hidden] [--pin] [--selftest &lt;folder&gt;] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
 /// Mock mode (the default): the window shows mock data from a temporary store.
 /// Live mode: the window shows a real store. The supervisor process of that store (on the port) does the ticks; the tray only reads and posts.
+/// If no supervisor answers on the port, the tray starts one in its own process, unless --no-supervisor.
 /// </summary>
 public static partial class Program
 {
@@ -43,8 +44,7 @@ public static partial class Program
         var store = live is null ? mock!.Store : new FileStore(live, writer: TrayWriter);
         var port = int.TryParse(Value(args, "--port") ?? Environment.GetEnvironmentVariable("ORCH_PORT"), out var p) ? p : 7777;
         var label = live is null ? "mock data" : $"live: {store.Root}, port {port}";
-        if (live is not null && !SupervisorAnswers(port))
-            Console.Error.WriteLine($"No supervisor answers on port {port}. The tray shows the store, but no tick delivers the answers. Start: ORCH_STORE={store.Root} ORCH_PORT={port} orch supervisor");
+        if (live is not null) StartSupervisor(store.Root, port, start: !args.Contains("--no-supervisor"));
         Console.WriteLine($"orch tray: {label}");
         using var services = Services(store, live is null ? MockStore.MockPolicy : store.Policy, ticks: live is null);
         tray = new TrayApp(services, label, show: selfTest is not null || !args.Contains("--hidden"), pinned: selfTest is not null || args.Contains("--pin"),
@@ -80,17 +80,31 @@ public static partial class Program
         return at >= 0 && at + 1 < args.Length ? args[at + 1] : null;
     }
 
-    static bool SupervisorAnswers(int port)
+    /// <summary>
+    /// Live mode: if no supervisor answers on the port, start one for the store in its own process, in the background.
+    /// The published copy next to the tray (..\supervisor) comes first. The supervisor stays when the tray exits.
+    /// </summary>
+    static void StartSupervisor(string store, int port, bool start)
     {
-        try
+        if (!start)
         {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
-            return http.GetAsync($"http://127.0.0.1:{port}/api/sessions").Result.IsSuccessStatusCode;
+            if (!SupervisorHost.Answers(port))
+                Console.Error.WriteLine($"No supervisor answers on port {port}. The tray shows the store, but no tick delivers the answers. Start: ORCH_STORE={store} orch supervisor start --port {port}");
+            return;
         }
-        catch (AggregateException)
+        var sibling = Path.Combine(AppContext.BaseDirectory, "..", "supervisor");
+        _ = Task.Run(() =>
         {
-            return false;
-        }
+            try
+            {
+                var (started, record) = SupervisorHost.Start(store, port, TimeSpan.FromSeconds(120), sibling);
+                Console.WriteLine(started ? $"orch tray: started the supervisor (pid {record!.Pid}, log {record.Log})" : $"orch tray: a supervisor answers on port {port}");
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine($"orch tray: could not start the supervisor: {e.Message}");
+            }
+        });
     }
 
     static ServiceProvider Services(FileStore store, Core.Policy.Policy policy, bool ticks)

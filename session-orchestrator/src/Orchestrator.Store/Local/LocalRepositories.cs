@@ -21,7 +21,7 @@ public sealed class LocalRepositories : IRepositories
         Events = new LocalEventRepository(this.root);
         Bodies = Repository(id => Path.Combine(this.root, id), () => Nested(StoreFiles.Bodies).Select(name => $"{StoreFiles.Bodies}/{name}"), JsonCodec<JsonElement>.Instance);
         Policies = Repository(id => Path.Combine(this.root, StoreFiles.Json(id)), () => Single(StoreIds.Policy), PolicyCodec.Instance);
-        Settings = Repository(id => Path.Combine(this.root, StoreFiles.Json(id)), () => Single(StoreIds.Version), JsonCodec<StoreVersion>.Instance);
+        StoreVersions = Repository(id => Path.Combine(this.root, StoreFiles.Json(id)), () => Single(StoreIds.Version), JsonCodec<StoreVersion>.Instance);
         Claims = Repository(id => Path.Combine(this.root, StoreFiles.Claims, id), () => Nested(StoreFiles.Claims, json: false), TextCodec.Instance);
         Cursors = Repository(id => Path.Combine(this.root, StoreFiles.Subscriptions, StoreFiles.Json(id)), () => Nested(StoreFiles.Subscriptions), JsonCodec<CursorState>.Instance, lockFiles: true);
         Nudges = Repository(id => Path.Combine(this.root, StoreFiles.Nudges, id), () => Files.Names(Path.Combine(this.root, StoreFiles.Nudges)), TextCodec.Instance);
@@ -33,7 +33,7 @@ public sealed class LocalRepositories : IRepositories
     public IRepository<Doc<Event>, string> Events { get; }
     public IRepository<Doc<JsonElement>, string> Bodies { get; }
     public IRepository<Doc<Core.Policy.Policy>, string> Policies { get; }
-    public IRepository<Doc<StoreVersion>, string> Settings { get; }
+    public IRepository<Doc<StoreVersion>, string> StoreVersions { get; }
     public IRepository<Doc<string>, string> Claims { get; }
     public IRepository<Doc<CursorState>, string> Cursors { get; }
     public IRepository<Doc<string>, string> Nudges { get; }

@@ -13,3 +13,18 @@ eval:
 grader_trust:
   case_sets:
     - { count: 8, seed: 7, max_children: 3 }
+# The engine uses the decomposer, the compose loop and the grader (B1). Shapes and circuits keep the status decider.
+engine:
+  decider: compose
+compose:
+  strategy: cover               # a file in strategies/
+  limits:
+    turns: 6
+    grades_per_turn: 4
+    grades: 16
+    set_size: 4
+  cache: true
+  code_checks: true             # R1: code answers io and checks each set (ports connect, each loop has an entry)
+  gaps: true                    # B4: a commit can keep a remainder; the author step writes the new pattern
+  decomposer:
+    retries: 1                  # more decomposer calls when code refuses the spec

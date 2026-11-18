@@ -1,0 +1,10 @@
+@* Look "text": plain text. Line breaks stay. A block is a card. *@
+@inherits LookBase
+@if (IsFact)
+{
+    <span class="ell">@Value.Text</span>
+}
+else
+{
+    <div class="crd pad doc"><p class="pre">@Value.Text</p></div>
+}

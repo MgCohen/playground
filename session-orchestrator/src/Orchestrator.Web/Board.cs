@@ -149,6 +149,14 @@ public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
         HasView(kind) ? Views.Preview(store.Templates, kind, fields)
         : new PreviewModel(kind, Ui.KindLabel(kind, fields), Ui.Look(kind).Icon, Ui.Look(kind).Color, subject, null, null, [], null, [], null, null);
 
+    /// <summary>The icon and the color token of the ring of a kind: from its view.json, or the fixed look of a kind with no template.</summary>
+    public (string Icon, string Color) Look(string kind, string? state)
+    {
+        if (!HasView(kind)) return Ui.Look(kind, state);
+        var (tone, icon) = Views.Look(store.Templates, kind, new Dictionary<string, object?> { ["state"] = state });
+        return (icon, tone);
+    }
+
     bool HasView(string kind) => store.Templates.Has(kind) && store.Templates[kind].View is not null;
 
     /// <summary>Accept a card: the default, a fixed text (yes), an approve, or an ack.</summary>

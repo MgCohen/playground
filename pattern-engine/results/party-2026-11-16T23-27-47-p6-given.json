@@ -1,0 +1,710 @@
+{
+  "run_id": "2026-11-16T23-27-47-p6-given",
+  "kind": "compose",
+  "mode": "dev",
+  "model": "haiku",
+  "strategy": "compare",
+  "calls": 24,
+  "cost": 0.01390531,
+  "runs": [
+    {
+      "case": "p1",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "cost 7, best 7"
+        }
+      ],
+      "measures": {
+        "cost": "7",
+        "best cost": "7"
+      },
+      "grader_accuracy": "20 of 20",
+      "trace": {
+        "task": "p1",
+        "strategy": "compare",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "p1",
+            "set": [
+              "squire",
+              "cleric",
+              "barbarian"
+            ],
+            "reason": "Already graded with an empty remainder (fighter, healer, strength 15, budget 7). It is the cheapest valid party: no healer costs less than cleric (3), and no fighter pair with cleric reaches 15 strength for less than 7 gold."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "I\u0027m building five cheap candidate parties, each starting from a different hero, all within the 12-gold budget, and grading them together to compare their remainders before committing the cheapest valid one.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "p1",
+                "set": [
+                  "squire",
+                  "cleric",
+                  "barbarian"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "squire and barbarian are tagged fighter, so the party (all three heroes) has a fighter."
+                  },
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "cleric is tagged healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 3 (squire) \u002B 3 (cleric) \u002B 9 (barbarian) = 15, which is 15 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 1 (squire) \u002B 3 (cleric) \u002B 3 (barbarian) = 7, which is 12 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "p1",
+                "set": [
+                  "barbarian",
+                  "cleric",
+                  "guard"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "barbarian has tag fighter, and the party is all three heroes."
+                  },
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "cleric has tag healer."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 9 (barbarian) \u002B 3 (cleric) \u002B 5 (guard) = 17, which is 15 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 3 (barbarian) \u002B 3 (cleric) \u002B 2 (guard) = 8, which is 12 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "p1",
+                "set": [
+                  "knight",
+                  "cleric",
+                  "guard"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "The party is knight, cleric, guard. Knight has the tag fighter, so the party has a fighter."
+                  },
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "Cleric has the tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 7 (knight) \u002B 3 (cleric) \u002B 5 (guard) = 15, which is 15 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 5 (knight) \u002B 3 (cleric) \u002B 2 (guard) = 10, which is 12 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "p1",
+                "set": [
+                  "paladin",
+                  "squire",
+                  "guard"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "paladin and squire both have the fighter tag, so the party has a fighter."
+                  },
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "paladin has the healer tag, so the party has a healer."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 8 (paladin) \u002B 3 (squire) \u002B 5 (guard) = 16, which is 15 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 9 (paladin) \u002B 1 (squire) \u002B 2 (guard) = 12, which is 12 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "p1",
+                "set": [
+                  "druid",
+                  "barbarian",
+                  "squire"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "barbarian (tags fighter) and squire (tags fighter) are in the party."
+                  },
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "druid has the tag healer, and druid is in the party."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 3 (druid) \u002B 9 (barbarian) \u002B 3 (squire) = 15, which is 15 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 7 (druid) \u002B 3 (barbarian) \u002B 1 (squire) = 11, which is 12 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "I committed the cheapest party already graded with an empty remainder, [squire, cleric, barbarian] at 7 gold, because no cheaper set can reach 15 strength with a fighter and a healer.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 5,
+        "cache_hits": 0,
+        "calls": 7,
+        "cost": 0.00413118,
+        "ms": 28743
+      }
+    },
+    {
+      "case": "p2",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "cost 7, best 7"
+        }
+      ],
+      "measures": {
+        "cost": "7",
+        "best cost": "7"
+      },
+      "grader_accuracy": "8 of 8",
+      "trace": {
+        "task": "p2",
+        "strategy": "compare",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "p2",
+            "set": [
+              "thief",
+              "apprentice",
+              "sage"
+            ],
+            "reason": "Covers lockpick, mage, and lore at total cost 7, within the 9-gold budget. Graded earlier with all rubrics yes and an empty remainder. It is the cheapest feasible party, since the cheapest lockpick is thief (3), the cheapest mage is apprentice (2), and the cheapest lore is sage (2)."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "I\u0027m grading two budget-valid parties that each cover lockpick (thief), mage (apprentice), and lore (sage or bard), since the lockpick must be the thief and the cheapest lore and mage options fit under 9 gold.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "p2",
+                "set": [
+                  "thief",
+                  "apprentice",
+                  "sage"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "lockpick",
+                    "ok": true,
+                    "reason": "The thief hero has the tag lockpick, so the party has a lockpick."
+                  },
+                  {
+                    "rubric": "mage",
+                    "ok": true,
+                    "reason": "The apprentice hero has the tag mage, so the party has a mage."
+                  },
+                  {
+                    "rubric": "lore",
+                    "ok": true,
+                    "reason": "The sage hero has the tag lore, so the party has a lore."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 3 (thief) \u002B 2 (apprentice) \u002B 2 (sage) = 7, which is 9 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "p2",
+                "set": [
+                  "thief",
+                  "apprentice",
+                  "bard"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "lockpick",
+                    "ok": true,
+                    "reason": "The set is one party of thief, apprentice, and bard. The thief line has the tag lockpick, so the party has a lockpick."
+                  },
+                  {
+                    "rubric": "mage",
+                    "ok": true,
+                    "reason": "The apprentice line has the tag mage, so the party has a mage."
+                  },
+                  {
+                    "rubric": "lore",
+                    "ok": true,
+                    "reason": "The bard line has the tag lore, so the party has a lore."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "The party cost is 3 (thief) \u002B 2 (apprentice) \u002B 4 (bard) = 9, which is 9 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "The cheapest possible party is thief (lockpick, 3) \u002B apprentice (mage, 2) \u002B sage (lore, 2) for 7 gold, which was already graded with an empty remainder, so I commit it without spending another grade.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 2,
+        "cache_hits": 0,
+        "calls": 4,
+        "cost": 0.00257108,
+        "ms": 19471
+      }
+    },
+    {
+      "case": "p3",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "cost 7, best 7"
+        }
+      ],
+      "measures": {
+        "cost": "7",
+        "best cost": "7"
+      },
+      "grader_accuracy": "12 of 12",
+      "trace": {
+        "task": "p3",
+        "strategy": "compare",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "p3",
+            "set": [
+              "ranger",
+              "cleric"
+            ],
+            "reason": "Graded earlier with an empty remainder: tracker, scout and healer are all yes, and the total cost of 7 is within the budget of 9. It is the cheapest valid party."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "I\u0027m building three cheap candidate parties within the 9-gold budget, each covering tracker, scout, and healer, and grading them together to compare costs (7, 8, and 9).",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "p3",
+                "set": [
+                  "ranger",
+                  "cleric"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "tracker",
+                    "ok": true,
+                    "reason": "The ranger hero has the tag tracker, so the party has a tracker."
+                  },
+                  {
+                    "rubric": "scout",
+                    "ok": true,
+                    "reason": "The ranger hero has the tag scout, so the party has a scout."
+                  },
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The cleric hero has the tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is ranger 4 \u002B cleric 3 = 7, which is 9 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "p3",
+                "set": [
+                  "hunter",
+                  "thief",
+                  "cleric"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "tracker",
+                    "ok": true,
+                    "reason": "The hunter hero has the tag tracker, and the party consists of all three heroes, so the party has a tracker."
+                  },
+                  {
+                    "rubric": "scout",
+                    "ok": true,
+                    "reason": "The thief hero has the tag scout, so the party has a scout."
+                  },
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The cleric hero has the tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 2 (hunter) \u002B 3 (thief) \u002B 3 (cleric) = 8, which is 9 or less. No hero is marked not free."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "p3",
+                "set": [
+                  "hunter",
+                  "bard",
+                  "cleric"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "tracker",
+                    "ok": true,
+                    "reason": "The hunter hero has the tag \u0027tracker\u0027 (cost 2), so the party has a tracker."
+                  },
+                  {
+                    "rubric": "scout",
+                    "ok": true,
+                    "reason": "The bard hero has the tag \u0027scout\u0027 (tags: lore, scout), so the party has a scout."
+                  },
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The cleric hero has the tag \u0027healer\u0027, so the party has a healer."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 2 (hunter) \u002B 4 (bard) \u002B 3 (cleric) = 9, which is 9 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "I\u0027m committing [ranger, cleric] without a new grade because it already passed all four rubrics, and at cost 7 it is the cheapest possible party: the only healer at 3 or less is cleric, and no tracker-and-scout combination costs 3 or less beside it.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 3,
+        "cache_hits": 0,
+        "calls": 5,
+        "cost": 0.00292339,
+        "ms": 23190
+      }
+    },
+    {
+      "case": "p4",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "cost 3, best 3"
+        }
+      ],
+      "measures": {
+        "cost": "3",
+        "best cost": "3"
+      },
+      "grader_accuracy": "15 of 15",
+      "trace": {
+        "task": "p4",
+        "strategy": "compare",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "p4",
+            "set": [
+              "guard",
+              "squire"
+            ],
+            "reason": "Cost 3 (guard 2 \u002B squire 1), which is within the 5-gold budget. Guard is the tank, and total strength is 5 \u002B 3 = 8. The graded verdicts are all yes with an empty remainder. No cheaper party can contain a tank and reach strength 8."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "I\u0027m grading four candidate parties at or under the 5-gold budget, each with a tank (guard) and different starting heroes, to compare which can reach total strength 8 or more.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "p4",
+                "set": [
+                  "guard",
+                  "barbarian"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The party is the full set (guard, barbarian). guard has the tag \u0027tank\u0027, so the party has a tank."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 5 (guard) \u002B 9 (barbarian) = 14, which is 8 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 2 (guard) \u002B 3 (barbarian) = 5, which is 5 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "p4",
+                "set": [
+                  "squire",
+                  "guard",
+                  "hunter"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The guard hero has tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is squire 3 \u002B guard 5 \u002B hunter 4 = 12, which is 8 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is squire 1 \u002B guard 2 \u002B hunter 2 = 5, which is 5 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "p4",
+                "set": [
+                  "guard",
+                  "cleric"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The party is guard and cleric. guard has the tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is guard 5 \u002B cleric 3 = 8, which is 8 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is guard 2 \u002B cleric 3 = 5, which is 5 or less. Neither hero is marked not free."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "p4",
+                "set": [
+                  "guard",
+                  "sage",
+                  "squire"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The party is guard, sage, squire. The guard hero has the tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is guard 5 \u002B sage 1 \u002B squire 3 = 9, which is 8 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is guard 2 \u002B sage 2 \u002B squire 1 = 5, which is 5 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "grade",
+            "note": "Guard plus squire costs 3 and gives strength 8 with a tank, which is the cheapest possible party, so I\u0027m grading it before committing.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "p4",
+                "set": [
+                  "guard",
+                  "squire"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The guard hero has the tag tank, so the party (guard \u002B squire) has a tank."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is guard 5 \u002B squire 3 = 8, which is 8 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is guard 2 \u002B squire 1 = 3, which is 5 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 3,
+            "action": "commit",
+            "note": "The set [guard, squire] already graded with an empty remainder (tank, strength 8, budget 3), and no cheaper party can have a tank and strength 8 or more, so I commit it without another grade.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 5,
+        "cache_hits": 0,
+        "calls": 8,
+        "cost": 0.00427966,
+        "ms": 33792
+      }
+    }
+  ],
+  "grader_check": [],
+  "report": "Pass: 4 of 4. best-cost: 4 of 4. 24 agent calls, $0.014."
+}

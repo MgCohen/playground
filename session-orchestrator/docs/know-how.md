@@ -71,6 +71,42 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - At the end of a `claude -p` process, `session.end` fires, so the mod sets the lease to `none`.
 - The process inherits `ORCH_HOLDER` and `ORCH_STORE` from the runner, so the mod writes to the test store.
 
+## Install and start
+
+`install.ps1` installs or updates the orchestrator for this user. Run it again after each merge. Plan and options: `docs/setup-options.html` (https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX).
+
+| Item | Place or rule |
+|---|---|
+| Tray | `%USERPROFILE%\Apps\Orchestrator\tray\Orchestrator.Tray.exe`, one file |
+| Supervisor | `%USERPROFILE%\Apps\Orchestrator\supervisor\Orchestrator.Web.dll` |
+| Install record | `install.json` in the install root: commit, store, port. `orch doctor` (check `app`) compares the commit with `src/` |
+| Shortcuts | Desktop `Orchestrator.lnk`, Startup `Orchestrator (login).lnk` with `--hidden`. Both start `--live <store> --port <port>` |
+| Store and port | The repository `store/`, port 7777 (defaults of `-Store` and `-Port`) |
+| Supervisor start | The tray in live mode, if no supervisor answers on the port. Else `orch supervisor start` |
+| Supervisor record and log | `%LOCALAPPDATA%\Orchestrator\supervisor-<port>.json` and `.log`. `ORCH_DATA` moves the folder |
+| Update | `install.ps1` stops each process that runs from the install root (`taskkill /T`), swaps the folders, updates `orch` and starts the tray |
+
+- The supervisor runs in its own process (`cmd /c dotnet ... >> log`). It stays when the tray exits, so a turn continues.
+- The tray starts the supervisor only at its own start. If the supervisor stops later, run `orch supervisor start` or start the tray again.
+- `orch supervisor stop` stops only a supervisor that the tray or `orch` started (it has a record). A supervisor started by hand keeps running.
+- `orch supervisor start` uses the published copy in `ORCH_APP` (default: the install root). With no copy, it runs `dotnet run` of the source.
+- The tray publish needs `-p:ValidateExecutableReferencesMatchSelfContained=false`, because the tray references `Orchestrator.Web` (NETSDK1151).
+- `tray.ps1` stays for development: mock mode, the self-test and `-Live` from the source.
+- Test install: `install.ps1 -Root <scratch>pp -Store <scratch>\store -Port <port> -Shortcuts <scratch>\links -NoTool`, with `ORCH_DATA=<scratch>\data`. It does not change the real profile, except the WebView2 data and the place file of the tray in `%LOCALAPPDATA%\Orchestrator.Tray`.
+
+### Start a cloud session from a session
+
+- `start_session` with `target: cloud` refuses in a Remote Control turn. A turn that comes from an orch plugin message is such a turn.
+- `claude -p --cloud` refuses: "--cloud cannot be combined with --print".
+- Use `claude --cloud "<brief>"` in a terminal tab (`run_in_terminal`). Run it from a trusted folder; the brief names the branch. It prints the session id and the view URL, then exits.
+- The first run in a folder asks the user to trust the folder. A session cannot answer this prompt and must not change the trust flag in `~/.claude.json`. After the first answer, it does not ask again.
+- The cloud session runs in the default permission mode, so the user approves each command. Put the permission rules in the brief or the environment.
+- A brief must not contain double quotes when PowerShell starts `claude --cloud`. PowerShell cuts the argument at the first quote. From bash, use `claude --cloud "$(cat brief.txt)"`.
+- `claude -p "<text>" --cloud <session id>` sends one more message to a cloud session.
+- To read a cloud session, open `https://claude.ai/code/<session id>` in the browser pane. `list_events` reads only local sessions.
+- A full team runs in one VM if `orch` is on `PATH`: `dotnet pack src/Orchestrator.Cli` and `dotnet tool update -g`, then `~/.dotnet/tools` on `PATH` and `DOTNET_ROOT` set. Start the supervisor with `ORCH_PLUGIN_DIR=$PWD/plugin`.
+- Results: `docs/c0-probe.md`, `docs/c5-probe.md`, and the findings C0 and C5 in `docs/plan.md`.
+
 ## The orch tool
 
 - Install or update it after a change of `src/Orchestrator.Cli`: `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` (`install` the first time).

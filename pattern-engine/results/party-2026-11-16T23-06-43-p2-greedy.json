@@ -1,0 +1,406 @@
+{
+  "run_id": "2026-11-16T23-06-43-p2-greedy",
+  "kind": "compose",
+  "mode": "dev",
+  "model": "haiku",
+  "strategy": "greedy",
+  "calls": 14,
+  "cost": 0.00840124,
+  "runs": [
+    {
+      "case": "b1",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": false,
+          "Reason": "cost 9, best 6"
+        }
+      ],
+      "measures": {
+        "cost": "9",
+        "best cost": "6"
+      },
+      "grader_accuracy": "4 of 4",
+      "trace": {
+        "task": "b1",
+        "strategy": "greedy",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "b1",
+            "set": [
+              "paladin"
+            ],
+            "reason": "The graded set [paladin] has an empty remainder: it covers healer, tank and fighter, and costs 9, which is within the 12 gold budget."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Paladin is the single hero that covers healer, tank, and fighter at cost 9, within the 12-gold budget, so I\u0027m grading it alone first.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "b1",
+                "set": [
+                  "paladin"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The only hero, paladin, has the tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "paladin has the tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "paladin has the tag fighter, so the party has a fighter."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "The party is only paladin with cost 9, and 9 is 12 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "I committed the already-graded party [paladin] for b1, since its remainder is empty and it covers healer, tank, fighter and budget (cost 9 of 12), so no new grade is needed.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 1,
+        "cache_hits": 0,
+        "calls": 3,
+        "cost": 0.0015091500000000001,
+        "ms": 16475
+      }
+    },
+    {
+      "case": "b2",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "cost 8, best 8"
+        }
+      ],
+      "measures": {
+        "cost": "8",
+        "best cost": "8"
+      },
+      "grader_accuracy": "4 of 4",
+      "trace": {
+        "task": "b2",
+        "strategy": "greedy",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "b2",
+            "set": [
+              "cleric",
+              "guard",
+              "thief"
+            ],
+            "reason": "The graded set passed all four rubrics: healer (cleric), tank (guard), scout (thief), and budget (total cost 8, which is 10 or less). Its remainder is empty."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Greedy starting with champion would fail the budget and adding heroes can\u0027t fix that, so I\u0027m grading a cheaper party that covers healer, tank, and scout within 10 gold (cleric, guard, thief = 8).",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "b2",
+                "set": [
+                  "cleric",
+                  "guard",
+                  "thief"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "cleric has tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "guard has tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "scout",
+                    "ok": true,
+                    "reason": "thief has tag scout, so the party has a scout."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Costs sum to 3 \u002B 2 \u002B 3 = 8, which is 10 or less. No hero is marked not free."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "I committed the already-graded party [cleric, guard, thief] for b2 because its remainder is empty and it totals 8 gold, so no further grades are needed.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 1,
+        "cache_hits": 0,
+        "calls": 3,
+        "cost": 0.0015744,
+        "ms": 18052
+      }
+    },
+    {
+      "case": "b3",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "cost 4, best 4"
+        }
+      ],
+      "measures": {
+        "cost": "4",
+        "best cost": "4"
+      },
+      "grader_accuracy": "6 of 6",
+      "trace": {
+        "task": "b3",
+        "strategy": "greedy",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "b3",
+            "set": [
+              "apprentice",
+              "sage"
+            ],
+            "reason": "Graded earlier with an empty remainder: apprentice gives mage, sage gives lore, and the total cost is 2 \u002B 2 = 4, which is within the 5 gold budget."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "I\u0027m starting with apprentice, a cheap mage that already makes the mage and budget rubrics true, so I can then add a lore hero within the 5-gold budget.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "b3",
+                "set": [
+                  "apprentice"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "mage",
+                    "ok": true,
+                    "reason": "The party is just apprentice, and apprentice has the tag mage."
+                  },
+                  {
+                    "rubric": "lore",
+                    "ok": false,
+                    "reason": "The party is just apprentice, whose only listed tag is mage. No hero has the lore tag."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "The party\u0027s total cost is apprentice\u0027s cost of 2, which is 5 or less."
+                  }
+                ],
+                "remainder": [
+                  "lore"
+                ],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "grade",
+            "note": "The remainder for [apprentice] is lore, and sage is the cheapest lore hero (cost 2), so adding it keeps the party at 4 gold, within budget 5.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "b3",
+                "set": [
+                  "apprentice",
+                  "sage"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "mage",
+                    "ok": true,
+                    "reason": "The party is apprentice and sage. apprentice has the tag mage, so the party has a mage."
+                  },
+                  {
+                    "rubric": "lore",
+                    "ok": true,
+                    "reason": "The party is apprentice and sage. sage has the tag lore, so the party has a lore."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "The party cost is 2 \u002B 2 = 4, which is 5 or less. Neither hero is marked not free."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 3,
+            "action": "commit",
+            "note": "The earlier grade of [apprentice, sage] already returned an empty remainder (mage, lore, and budget all yes, total cost 4), so I commit that party without spending another grade.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 2,
+        "cache_hits": 0,
+        "calls": 5,
+        "cost": 0.00286454,
+        "ms": 32826
+      }
+    },
+    {
+      "case": "b4",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "none is correct"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "none is correct"
+        }
+      ],
+      "measures": {
+        "cost": "none",
+        "best cost": "none"
+      },
+      "grader_accuracy": "5 of 5",
+      "trace": {
+        "task": "b4",
+        "strategy": "greedy",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "b4",
+            "reason": "No set can satisfy all five rubrics. Healer, tank and scout need at least 3 \u002B 2 \u002B 3 = 8 gold even with the cheapest heroes (cleric, guard, thief), and the only overlapping options (paladin 9, champion 14, archmage 10) cost more. The budget rubric therefore cannot be true for any party that covers healer, tank and scout, and adding heroes to the champion party only raises its cost."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "Following the greedy strategy, I start with champion, which makes the most rubrics true (healer, tank, scout), and grade it to see the remainder.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "b4",
+                "set": [
+                  "champion"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The only hero is champion, which has the tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "champion has the tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "scout",
+                    "ok": true,
+                    "reason": "champion has the tag scout, so the party has a scout."
+                  },
+                  {
+                    "rubric": "mage",
+                    "ok": false,
+                    "reason": "No hero has the tag mage. champion\u0027s tags are fighter, tank, scout, healer."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": false,
+                    "reason": "The party\u0027s total cost is champion\u0027s cost of 14, which is more than 6."
+                  }
+                ],
+                "remainder": [
+                  "mage",
+                  "budget"
+                ],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "I committed \u0022none\u0022 for b4 because the budget of 6 is unreachable: the cheapest healer, tank and scout together cost 8, and the champion party is already over budget at 14, so no grade could fix it.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 1,
+        "cache_hits": 0,
+        "calls": 3,
+        "cost": 0.0024531500000000003,
+        "ms": 32502
+      }
+    }
+  ],
+  "grader_check": [],
+  "report": "Pass: 4 of 4. best-cost: 3 of 4. 14 agent calls, $0.008."
+}

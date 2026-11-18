@@ -1,4 +1,5 @@
-@{ var (icon, color) = Ui.Look(Kind, State); }
+@inject Board Board
+@{ var (icon, color) = Board.Look(Kind, State); }
 <Ring P="P" Size="Size" Th="@Math.Max(3, Size / 7)" Color="@($"var(--{color})")"><Icon Name="@icon" /></Ring>
 
 @code {

@@ -22,7 +22,7 @@ public sealed class FileStore
         Repositories = StoreBackends.Create(root);
         Root = Repositories.Location;
         Clock = clock ?? TimeProvider.System;
-        Texts = new Texts(templates ?? new TemplateSet(Home.Templates()));
+        Texts = new Texts(templates ?? Home.LoadTemplates(Root));
         Events = new EventStream(Repositories, Clock, writer, Texts.Templates);
         Renderer = new Renderer(this);
     }
@@ -222,8 +222,10 @@ public sealed class FileStore
         return Events.Subscribe(to, "deliver", e => e.To == to && IsDeliverable(e), "to = self, message kinds, no ack");
     }
 
-    public static bool IsDeliverable(Event e) =>
-        EventKinds.Deliverable.Contains(e.Kind) && (e.Kind != EventKinds.Report || e.Needs is not null || e.IsForward);
+    /// <summary>A core message kind of <see cref="EventKinds.Deliverable"/>, or an added kind whose meta.json says it is a turn.</summary>
+    public bool IsDeliverable(Event e) =>
+        EventKinds.Deliverable.Contains(e.Kind) ? e.Kind != EventKinds.Report || e.Needs is not null || e.IsForward
+        : !Kinds.All.Contains(e.Kind) && Templates.Has(e.Kind) && Templates[e.Kind].Meta?.IsTurn == true;
 
     /// <summary>
     /// The envelopes to the session with no ack, in order. The shared cursor moves only over the acknowledged envelopes

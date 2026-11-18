@@ -22,8 +22,8 @@ public interface IRepositories
     /// <summary>The policy. Id: <see cref="StoreIds.Policy"/>.</summary>
     IRepository<Doc<Policy.Policy>, string> Policies { get; }
 
-    /// <summary>The store settings. Id: <see cref="StoreIds.Version"/>.</summary>
-    IRepository<Doc<StoreVersion>, string> Settings { get; }
+    /// <summary>The store contract version (version.json). Id: <see cref="StoreIds.Version"/>.</summary>
+    IRepository<Doc<StoreVersion>, string> StoreVersions { get; }
 
     /// <summary>The claims: the first writer wins. Id: <c>&lt;kind&gt;/&lt;key&gt;</c>, for example <c>answer/&lt;thread&gt;</c>. Value: the writer.</summary>
     IRepository<Doc<string>, string> Claims { get; }

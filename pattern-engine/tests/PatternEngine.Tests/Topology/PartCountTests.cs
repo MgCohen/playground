@@ -27,7 +27,7 @@ public sealed class PartCountTests
         });
         var work = Path.Combine(Path.GetTempPath(), "pe-tests", Guid.NewGuid().ToString("N")[..8]);
         EngineRun.Prepare(pack, work);
-        var run = await EngineRun.RunAsync(pack, "Design a system to read orders and send an email for each order.", work, EngineSettings.From(settings), judge, new NoUser(), CancellationToken.None);
+        var run = await EngineRun.RunAsync(pack, "Design a system to read orders and send an email for each order.", work, EngineSettings.From(settings) with { Decider = EngineSettings.StatusDecider }, judge, new NoUser(), CancellationToken.None);
         Assert.That(run.Trace.Tree!.ToString(), Is.EqualTo("cqrs_system(plain)[query_handler(plain), observer(plain)]"));
         Assert.That(run.Trace.Notes, Has.Some.Contains("allows at most"));
     }

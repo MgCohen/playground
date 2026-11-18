@@ -1,6 +1,7 @@
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Policy;
 using Orchestrator.Core.Storage;
+using Orchestrator.Core.Templates;
 
 namespace Orchestrator.Store;
 
@@ -22,6 +23,11 @@ public static class Home
 
     public static string Templates() => Path.Combine(Root(), "templates");
 
+    /// <summary>The template store of a store root: the core templates of the tool, and the templates of &lt;store&gt;/templates that add to them or replace them.</summary>
+    public static LocalTemplateStore TemplateStore(string storeRoot) => new(Templates(), Path.Combine(storeRoot, StoreFiles.Templates));
+
+    public static TemplateSet LoadTemplates(string storeRoot) => new(TemplateStore(storeRoot), Templates());
+
     public static Policy LoadPolicy(string storeRoot) => LoadPolicy(StoreBackends.Create(storeRoot));
 
     /// <summary>The policy of the store. A store with no policy gets a copy of config/policy.default.json.</summary>
@@ -39,7 +45,7 @@ public static class Home
     public static StoreVersion CheckVersion(IRepositories repos, DateTimeOffset now)
     {
         var storeRoot = repos.Location;
-        if (repos.Settings.Read(StoreIds.Version) is { } found)
+        if (repos.StoreVersions.Read(StoreIds.Version) is { } found)
         {
             if (found.Version > StoreVersion.Current)
                 throw new InvalidDataException($"store {storeRoot} has version {found.Version}, newer than this supervisor ({StoreVersion.Current}). Update the orchestrator.");
@@ -48,7 +54,7 @@ public static class Home
             return found;
         }
         var version = new StoreVersion(StoreVersion.Current, Core.Leases.Times.Format(now));
-        repos.Settings.Put(StoreIds.Version, version);
+        repos.StoreVersions.Put(StoreIds.Version, version);
         return version;
     }
 

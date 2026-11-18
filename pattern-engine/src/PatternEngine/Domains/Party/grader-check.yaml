@@ -1,0 +1,23 @@
+# Fixed quest and party pairs for the grader check. The oracle gives the true verdicts.
+# Each pair uses the fields of the rung of its case (party.fields).
+pairs:
+  - { quest: c1, party: [paladin] }
+  - { quest: c1, party: [cleric] }
+  - { quest: c2, party: [thief] }
+  - { quest: c2, party: [ranger] }
+  - { quest: c3, party: [paladin, ranger] }
+  - { quest: c3, party: [champion] }
+  - { quest: c4, party: [archmage, thief, hunter] }
+  - { quest: c4, party: [druid, thief] }
+  - { quest: b1, party: [cleric, guard, squire] }
+  - { quest: b1, party: [paladin, cleric] }
+  - { quest: b1, party: [paladin, knight] }
+  - { quest: b2, party: [cleric, guard, thief] }
+  - { quest: b3, party: [archmage] }
+  - { quest: b4, party: [cleric, guard, thief, apprentice] }
+  - { quest: a1, party: [paladin] }
+  - { quest: a1, party: [cleric, guard, squire] }
+  - { quest: a2, party: [sage, spellblade] }
+  - { quest: s1, party: [guard, barbarian, squire] }
+  - { quest: s1, party: [barbarian, squire] }
+  - { quest: s3, party: [cleric, guard, hunter, squire] }

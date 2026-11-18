@@ -208,9 +208,9 @@ public sealed class LocalPolicyContract : RepositoryContract<Policy>
     protected override int Ids => 1;
 }
 
-public sealed class LocalSettingsContract : RepositoryContract<StoreVersion>
+public sealed class LocalStoreVersionsContract : RepositoryContract<StoreVersion>
 {
-    protected override IRepository<Doc<StoreVersion>, string> Open(string root) => new LocalRepositories(root).Settings;
+    protected override IRepository<Doc<StoreVersion>, string> Open(string root) => new LocalRepositories(root).StoreVersions;
 
     protected override string IdOf(int n) => StoreIds.Version;
 

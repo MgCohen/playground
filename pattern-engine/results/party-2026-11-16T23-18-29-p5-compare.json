@@ -1,0 +1,452 @@
+{
+  "run_id": "2026-11-16T23-18-29-p5-compare",
+  "kind": "compose",
+  "mode": "dev",
+  "model": "haiku",
+  "strategy": "compare",
+  "calls": 14,
+  "cost": 0.0111025,
+  "runs": [
+    {
+      "case": "s1",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "cost 6, best 6"
+        }
+      ],
+      "measures": {
+        "cost": "6",
+        "best cost": "6"
+      },
+      "grader_accuracy": "9 of 9",
+      "trace": {
+        "task": "s1",
+        "strategy": "compare",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "s1",
+            "set": [
+              "barbarian",
+              "guard",
+              "squire"
+            ],
+            "reason": "Cost 6 (budget 8 ok), includes fighter barbarian and squire, strength 9\u002B5\u002B3=17 (15 or more). Graded earlier with empty remainder. No cheaper party works: any fighter party costing 5 or less tops out at strength 14, so cost 6 is the minimum."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "I\u0027m grading three candidate parties from different starting heroes, each computed as fighter, strength 15\u002B, and cost 8 or less, so I can compare them before committing the cheapest one that passes.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "s1",
+                "set": [
+                  "barbarian",
+                  "guard",
+                  "squire"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "The party is all three heroes. barbarian and squire both have the tag fighter."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 9 (barbarian) \u002B 5 (guard) \u002B 3 (squire) = 17, which is 15 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 3 (barbarian) \u002B 2 (guard) \u002B 1 (squire) = 6, which is 8 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "s1",
+                "set": [
+                  "knight",
+                  "barbarian"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "The party is knight and barbarian. Both carry the fighter tag (knight: tags tank, fighter; barbarian: tags fighter), so the party has a fighter."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 7 (knight) \u002B 9 (barbarian) = 16, which is 15 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 5 (knight) \u002B 3 (barbarian) = 8, which is 8 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "s1",
+                "set": [
+                  "squire",
+                  "barbarian",
+                  "hunter"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "fighter",
+                    "ok": true,
+                    "reason": "squire and barbarian both have the tag fighter, so the party has a fighter."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 3 \u002B 9 \u002B 4 = 16, which is 15 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 1 \u002B 3 \u002B 2 = 6, which is 8 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "I committed the already-graded set [barbarian, guard, squire] because it has an empty remainder and I checked that no party costing 5 or less can reach strength 15 with a fighter, so it is the cheapest valid option.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 3,
+        "cache_hits": 0,
+        "calls": 5,
+        "cost": 0.0035117099999999995,
+        "ms": 25564
+      }
+    },
+    {
+      "case": "s2",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "cost 6, best 6"
+        }
+      ],
+      "measures": {
+        "cost": "6",
+        "best cost": "6"
+      },
+      "grader_accuracy": "3 of 3",
+      "trace": {
+        "task": "s2",
+        "strategy": "compare",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "s2",
+            "set": [
+              "apprentice",
+              "sage",
+              "hunter"
+            ],
+            "reason": "Graded earlier with an empty remainder: mage yes, intelligence 14 (yes), budget 6 (yes). Other candidates like apprentice\u002Bsage\u002Bguard (intelligence 13) or apprentice\u002Bsage\u002Bcleric (cost 7) fail a rubric."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "I\u0027m grading the only budget-feasible party with a mage and total intelligence of 14 or more (apprentice 2 \u002B sage 2 \u002B hunter 2 = cost 6, intelligence 14), since every other mage option either exceeds the budget or falls short on intelligence.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "s2",
+                "set": [
+                  "apprentice",
+                  "sage",
+                  "hunter"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "mage",
+                    "ok": true,
+                    "reason": "The party is the whole set. apprentice has the tag mage, so the party has a mage."
+                  },
+                  {
+                    "rubric": "intelligence",
+                    "ok": true,
+                    "reason": "Total intelligence is 6 (apprentice) \u002B 6 (sage) \u002B 2 (hunter) = 14, which is 14 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 2 (apprentice) \u002B 2 (sage) \u002B 2 (hunter) = 6, which is 6 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "I\u0027m committing the already-graded set [apprentice, sage, hunter], which passed all three rubrics with an empty remainder (cost 6, intelligence 14, has a mage), and no cheaper valid party exists since other mage combinations either exceed 6 gold or fall short of 14 intelligence.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 1,
+        "cache_hits": 0,
+        "calls": 3,
+        "cost": 0.00235875,
+        "ms": 22898
+      }
+    },
+    {
+      "case": "s3",
+      "trial": 1,
+      "pass": true,
+      "verdicts": [
+        {
+          "Rubric": "valid",
+          "Ok": true,
+          "Reason": "each rubric is true"
+        },
+        {
+          "Rubric": "best-cost",
+          "Ok": true,
+          "Reason": "cost 8, best 8"
+        }
+      ],
+      "measures": {
+        "cost": "8",
+        "best cost": "8"
+      },
+      "grader_accuracy": "20 of 20",
+      "trace": {
+        "task": "s3",
+        "strategy": "compare",
+        "outcome": "committed",
+        "commits": [
+          {
+            "spec": "s3",
+            "set": [
+              "cleric",
+              "guard",
+              "sage",
+              "squire"
+            ],
+            "reason": "Graded earlier with an empty remainder (healer, tank, strength 12, knowledge 17, cost 8 within 12). It is the cheapest graded set that passes; I checked cheaper combinations by hand and none can meet the strength and knowledge needs within budget."
+          }
+        ],
+        "turns": [
+          {
+            "turn": 1,
+            "action": "grade",
+            "note": "I\u0027m building four candidate parties from different first heroes (cleric, druid, knight, paladin), each within the 12-gold budget, and grading them together to compare costs before committing the cheapest valid one.",
+            "refused": [],
+            "grades": [
+              {
+                "spec": "s3",
+                "set": [
+                  "cleric",
+                  "guard",
+                  "sage",
+                  "squire"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The set is the party. cleric has tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "guard has tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 3 (cleric) \u002B 5 (guard) \u002B 1 (sage) \u002B 3 (squire) = 12, which is 12 or more."
+                  },
+                  {
+                    "rubric": "knowledge",
+                    "ok": true,
+                    "reason": "Total knowledge is 6 (cleric) \u002B 1 (guard) \u002B 9 (sage) \u002B 1 (squire) = 17, which is 10 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 3 (cleric) \u002B 2 (guard) \u002B 2 (sage) \u002B 1 (squire) = 8, which is 12 or less. No hero is marked not free."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "s3",
+                "set": [
+                  "druid",
+                  "guard",
+                  "squire",
+                  "hunter"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The druid hero has the tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "The guard hero has the tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength of all four heroes is 3 \u002B 5 \u002B 3 \u002B 4 = 15, which is 12 or more."
+                  },
+                  {
+                    "rubric": "knowledge",
+                    "ok": true,
+                    "reason": "Total knowledge is 7 \u002B 1 \u002B 1 \u002B 2 = 11, which is 10 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 7 \u002B 2 \u002B 1 \u002B 2 = 12, which is 12 or less. No hero is marked not free."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "s3",
+                "set": [
+                  "knight",
+                  "cleric",
+                  "sage",
+                  "squire"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "The party is all four heroes. cleric has the tag healer, so the party has a healer."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "knight has the tag tank, so the party has a tank."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 7 (knight) \u002B 3 (cleric) \u002B 1 (sage) \u002B 3 (squire) = 14, which is 12 or more."
+                  },
+                  {
+                    "rubric": "knowledge",
+                    "ok": true,
+                    "reason": "Total knowledge is 3 (knight) \u002B 6 (cleric) \u002B 9 (sage) \u002B 1 (squire) = 19, which is 10 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 5 (knight) \u002B 3 (cleric) \u002B 2 (sage) \u002B 1 (squire) = 11, which is 12 or less. No hero is marked not free."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              },
+              {
+                "spec": "s3",
+                "set": [
+                  "paladin",
+                  "sage",
+                  "squire"
+                ],
+                "verdicts": [
+                  {
+                    "rubric": "healer",
+                    "ok": true,
+                    "reason": "paladin has the tag healer, and the party includes paladin."
+                  },
+                  {
+                    "rubric": "tank",
+                    "ok": true,
+                    "reason": "paladin has the tag tank, and the party includes paladin."
+                  },
+                  {
+                    "rubric": "strength",
+                    "ok": true,
+                    "reason": "Total strength is 8 (paladin) \u002B 1 (sage) \u002B 3 (squire) = 12, which is 12 or more."
+                  },
+                  {
+                    "rubric": "knowledge",
+                    "ok": true,
+                    "reason": "Total knowledge is 5 (paladin) \u002B 9 (sage) \u002B 1 (squire) = 15, which is 10 or more."
+                  },
+                  {
+                    "rubric": "budget",
+                    "ok": true,
+                    "reason": "Total cost is 9 (paladin) \u002B 2 (sage) \u002B 1 (squire) = 12, which is 12 or less."
+                  }
+                ],
+                "remainder": [],
+                "cached": false
+              }
+            ]
+          },
+          {
+            "turn": 2,
+            "action": "commit",
+            "note": "The cheapest already-graded set with an empty remainder is [cleric, guard, sage, squire] at cost 8, so I commit it without spending another grade.",
+            "refused": [],
+            "grades": []
+          }
+        ],
+        "grades": 4,
+        "cache_hits": 0,
+        "calls": 6,
+        "cost": 0.00523204,
+        "ms": 33010
+      }
+    }
+  ],
+  "grader_check": [],
+  "report": "Pass: 3 of 3. best-cost: 3 of 3. 14 agent calls, $0.011."
+}
