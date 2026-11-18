@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M-1 dictation test</title>
+<style>
+  :root { --bg: #f6f7f8; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3; --accent: #0f6e78; --bad: #b0322b; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #12171b; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e; --accent: #5cc3cc; --bad: #ef7d74; color-scheme: dark; } }
+  body { background: var(--bg); color: var(--fg); font: 16px/1.5 "Segoe UI", system-ui, sans-serif; margin: 0; padding: 24px 16px; }
+  main { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-size: 22px; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  button, label.file { font: 600 16px inherit; padding: 12px 20px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--bg); cursor: pointer; }
+  button.rec { background: var(--bad); border-color: var(--bad); }
+  label.file { background: transparent; color: var(--accent); }
+  label.file input { display: none; }
+  #state { font-family: ui-monospace, Consolas, monospace; color: var(--muted); }
+  textarea { width: 100%; box-sizing: border-box; min-height: 220px; font: inherit; padding: 12px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--fg); }
+  table { border-collapse: collapse; font-size: 14px; }
+  td, th { padding: 4px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+</style>
+</head>
+<body>
+<main>
+  <h1>M-1 dictation test: Parakeet TDT v3 on this PC</h1>
+  <p>Push Record, speak, then push Stop. The text shows after stop. A phone can send a recording with "Send a recording".</p>
+  <div class="row">
+    <button id="rec" type="button">Record</button>
+    <label class="file">Send a recording<input id="file" type="file" accept="audio/*"></label>
+    <span id="state">ready</span>
+  </div>
+  <textarea id="text" placeholder="The text shows here"></textarea>
+  <table id="log"><tr><th>Audio</th><th>Model time</th><th>Total after stop</th></tr></table>
+</main>
+<script>
+// Records with MediaRecorder, changes the audio to 16 kHz mono float32 in the browser, and sends the samples.
+const rec = document.getElementById("rec"), state = document.getElementById("state");
+const text = document.getElementById("text"), log = document.getElementById("log");
+let recorder = null, chunks = [], timer = null, started = 0;
+
+async function toSamples(blob) {
+  const data = await blob.arrayBuffer();
+  const decoded = await new AudioContext().decodeAudioData(data);
+  const offline = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
+  const source = offline.createBufferSource();
+  source.buffer = decoded; source.connect(offline.destination); source.start();
+  return (await offline.startRendering()).getChannelData(0);
+}
+
+async function send(blob, stopAt) {
+  state.textContent = "transcribing…";
+  try {
+    const samples = await toSamples(blob);
+    const response = await fetch("transcribe", { method: "POST", body: samples.buffer });
+    const result = await response.json();
+    const total = ((performance.now() - stopAt) / 1000).toFixed(1);
+    text.value = (text.value ? text.value.trimEnd() + " " : "") + result.text;
+    const row = log.insertRow(1);
+    row.innerHTML = `<td>${result.audioSeconds} s</td><td>${(result.decodeMs / 1000).toFixed(1)} s</td><td>${total} s</td>`;
+    state.textContent = "ready";
+  } catch (e) {
+    state.textContent = "error: " + e.message;
+  }
+}
+
+rec.addEventListener("click", async () => {
+  if (recorder) { recorder.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recorder = new MediaRecorder(stream); chunks = [];
+    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.onstop = () => {
+      const stopAt = performance.now();
+      stream.getTracks().forEach(t => t.stop());
+      clearInterval(timer); recorder = null;
+      rec.textContent = "Record"; rec.classList.remove("rec");
+      send(new Blob(chunks, { type: chunks[0]?.type }), stopAt);
+    };
+    recorder.start();
+    started = performance.now();
+    rec.textContent = "Stop"; rec.classList.add("rec");
+    timer = setInterval(() => state.textContent = "recording " + Math.floor((performance.now() - started) / 1000) + " s", 250);
+  } catch (e) {
+    state.textContent = "no microphone: " + e.message;
+  }
+});
+
+document.getElementById("file").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (file) send(file, performance.now());
+  e.target.value = "";
+});
+</script>
+</body>
+</html>

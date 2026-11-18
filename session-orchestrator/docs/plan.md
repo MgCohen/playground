@@ -649,3 +649,21 @@ Android app (later)
 - The model download is about 0.5 to 1.5 GB. The first use waits for it.
 - The GPU is also used by other work. M-1 measures the memory.
 - The CUDA build of `sherpa-onnx` for .NET can need extra runtime files. M-1 finds this. The CPU build is the fallback.
+
+### M-1 first result (2026-11-18): Parakeet TDT v3 on the CPU
+
+Spike: `spikes/m1-dictation` (not in the solution). Start it with `dotnet run --project spikes/m1-dictation`, then open http://127.0.0.1:7830. The model is in `%LOCALAPPDATA%\orch\models\sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8` (int8, 670 MB on disk, 487 MB download).
+
+| Check | Result |
+|---|---|
+| Model load | 4.5 s, once at the start |
+| 12.9 s of audio (Windows text to speech) | 0.46 s model time, 0.65 s total |
+| 77.5 s of audio | 3.3 s model time, 3.5 s total |
+| Text quality | Correct, with two small errors: "work tree" for "worktree", "Pleve" for "Please approve" at one place |
+| Expected for 5 min | About 13 s on the CPU (8 threads) |
+
+Findings:
+
+- The NuGet package `org.k2fsa.sherpa.onnx` 2.0.1 has only a CPU build for Windows. The GPU needs a CUDA build of sherpa-onnx.
+- 13 s after stop is too slow for a 5-minute dictation. Two fixes: the GPU, or a decode of each part while the user still speaks (cut at pauses), so that only the last part waits after stop.
+- The test voice is synthetic. The user's own voice is the next test.
