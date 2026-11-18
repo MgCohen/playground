@@ -1,0 +1,44 @@
+@* The window frame as a component: a header that drags the window, the minimize and close buttons, and a body.
+   Open and close are CSS classes. C# only shows and hides the window. *@
+@implements IDisposable
+@inject Shell Shell
+
+<div class="win @state">
+    <header class="win-hd">
+        <span class="title">@Title</span>
+        <button type="button" title="Minimize" @onclick="Close">–</button>
+        <button type="button" title="Close" @onclick="Close">×</button>
+    </header>
+    <section class="win-body">@ChildContent</section>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    string state = "closed";
+
+    protected override void OnInitialized() => Shell.Opened += Open;
+
+    void Open() => _ = InvokeAsync(async () =>
+    {
+        state = "opening";
+        StateHasChanged();
+        await Task.Delay(600);
+        if (state == "opening") state = "";
+        StateHasChanged();
+    });
+
+    async Task Close()
+    {
+        state = "closing";
+        await Task.Delay(170);
+        state = "closed";
+        StateHasChanged();
+        // One frame with no content on the screen, then the window hides.
+        await Task.Delay(20);
+        Shell.Hide();
+    }
+
+    public void Dispose() => Shell.Opened -= Open;
+}

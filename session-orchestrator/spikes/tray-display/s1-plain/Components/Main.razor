@@ -1,0 +1,12 @@
+@* The content of the spike: simple shapes in the window component. *@
+<Window Title="S1 plain window">
+    @for (var i = 0; i < 6; i++)
+    {
+        var n = i;
+        <div class="row" style="--i: @n">
+            <Circle Size="@(28 + n * 4)" />
+            <span>Row @(n + 1)</span>
+        </div>
+    }
+    <FrameMeter />
+</Window>

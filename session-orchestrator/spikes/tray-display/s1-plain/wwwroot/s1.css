@@ -1,0 +1,24 @@
+:root { --canvas: #e6e3de; --surf: #fdfdfc; --ink: #1b1a18; --muted: #5f5b55; --accent: #ff6a1a; --ease-out: cubic-bezier(.33, 1, .68, 1); }
+@media (prefers-color-scheme: dark) { :root { --canvas: #161618; --surf: #222225; --ink: #f2f1ee; --muted: #a29e98; } }
+html, body { margin: 0; height: 100%; background: var(--canvas); color: var(--ink); font: 14px "Segoe UI", sans-serif; overflow: hidden; }
+
+/* The window component: a header that drags the window (app-region), and a body. */
+.win { display: flex; flex-direction: column; height: 100%; }
+.win-hd { app-region: drag; -webkit-app-region: drag; display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 16px; font-weight: 600; user-select: none; }
+.win-hd .title { flex: 1; }
+.win-hd button { app-region: no-drag; -webkit-app-region: no-drag; width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 16px; cursor: pointer; }
+.win-hd button:hover { background: var(--surf); color: var(--ink); }
+.win-body { flex: 1; overflow: auto; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+/* Open and close: only the content moves. The window itself shows or hides at once. */
+.win.opening .win-body > * { animation: rise .28s var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 30ms); }
+.win.opening .win-hd { animation: fade .2s ease backwards; }
+.win.closing { animation: fade-out .16s ease forwards; }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; transform: scale(.98); } }
+
+/* Simple shapes. */
+.row { display: flex; align-items: center; gap: 12px; background: var(--surf); border-radius: 14px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.circle { flex: none; border-radius: 50%; background: var(--accent); box-shadow: 0 4px 12px rgba(255, 106, 26, .35); }
+.meter { font: 12px Consolas, monospace; color: var(--muted); }
