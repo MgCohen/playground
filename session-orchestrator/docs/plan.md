@@ -1167,6 +1167,21 @@ Full result: `docs/c5-probe.md`. Answer: yes, if `orch` is on `PATH`. One root a
 | C5-6 | Child sessions get the host `CLAUDE_CODE_*` environment and its commit trailers | Stream B |
 | C5-7 | The supervisor does not record the cost of a turn | Stream B |
 
+### C5 probe: a team in one VM (2026-11-18)
+
+Answer: **yes**. Supervisor, web interface, one root and three children ran in one cloud VM. All four sessions used the orch tools and reached `done` in 31 s. Condition: `orch` must be on `PATH`. Full result: `docs/c5-probe.md` and `docs/c5-probe/`.
+
+| # | Finding | Owner |
+|---|---|---|
+| C5-1 | The plugin hooks start `orch` from `PATH`. The VM setup must install `orch` and put `~/.dotnet/tools` on `PATH`, with `DOTNET_ROOT` | G1 C4 (environment file) |
+| C5-2 | The hooks module loaded in each child. C0-2 was a temporary rollout state | Closes C0-2 |
+| C5-3 | `orch process` fails on Linux: process snapshot is Windows only. The lease gets no `pid` | Stream B |
+| C5-4 | A failed orch tool leaves the session `idle`, not `blocked`, and the report is lost | Stream B |
+| C5-6 | Children get the `CLAUDE_CODE_*` environment of the host session | Stream B |
+| C5-7 | The supervisor does not record `total_cost_usd` of each turn | Stream B |
+
+Start lesson: the first C5 brief had double quotes. PowerShell cut the argument at the first quote, so the cloud session got only one line. Send a brief from bash with `"$(cat brief.txt)"`, or remove the double quotes.
+
 ### Findings
 
 | # | Finding | State |

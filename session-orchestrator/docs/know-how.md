@@ -101,7 +101,11 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - Use `claude --cloud "<brief>"` in a terminal tab (`run_in_terminal`). Run it from a trusted folder; the brief names the branch. It prints the session id and the view URL, then exits.
 - The first run in a folder asks the user to trust the folder. A session cannot answer this prompt and must not change the trust flag in `~/.claude.json`. After the first answer, it does not ask again.
 - The cloud session runs in the default permission mode, so the user approves each command. Put the permission rules in the brief or the environment.
-- Results of the first run: `docs/c0-probe.md`, and the findings C0-1 to C0-3 in `docs/plan.md`.
+- A brief must not contain double quotes when PowerShell starts `claude --cloud`. PowerShell cuts the argument at the first quote. From bash, use `claude --cloud "$(cat brief.txt)"`.
+- `claude -p "<text>" --cloud <session id>` sends one more message to a cloud session.
+- To read a cloud session, open `https://claude.ai/code/<session id>` in the browser pane. `list_events` reads only local sessions.
+- A full team runs in one VM if `orch` is on `PATH`: `dotnet pack src/Orchestrator.Cli` and `dotnet tool update -g`, then `~/.dotnet/tools` on `PATH` and `DOTNET_ROOT` set. Start the supervisor with `ORCH_PLUGIN_DIR=$PWD/plugin`.
+- Results: `docs/c0-probe.md`, `docs/c5-probe.md`, and the findings C0 and C5 in `docs/plan.md`.
 
 ## The orch tool
 
