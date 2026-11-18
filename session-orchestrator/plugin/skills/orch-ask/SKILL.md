@@ -35,7 +35,7 @@ The user answers in free text or by voice, often from the phone. A good question
 
 1. If the result is PENDING, write the question in your reply. End the reply with "In the chat, start the answer with `answer:`." Then end your turn. Do not continue with a guess.
 2. If the user writes a chat message that starts with `answer:`, that message is the answer. The plugin records it, and no other message comes.
-3. If the user writes a chat message without `answer:`, it is not an answer. The decision stays open. Reply to the message, and remind the user of the prefix.
-4. An answer from the parent session or from the policy arrives as a new message: "Answer to decision <id> (<question>): <text>".
+3. If the user writes a chat message without `answer:`, it is not an answer. The question stays open. Reply to the message, and remind the user of the prefix.
+4. An answer from the parent session or from the policy arrives as a new message: "Answer to question <id> (<question>): <text>".
 5. If the answer has more instructions (a default decision), do each step in order. The skill `orch:orch-stack` explains the steps.
 6. If the answer is not one of the options, follow the answer and say so in your next report.

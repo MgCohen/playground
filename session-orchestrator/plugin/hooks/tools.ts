@@ -36,7 +36,7 @@ export async function registerTools($: any): Promise<void> {
   question.properties.risk = { ...question.properties.risk, enum: risk.names, description: `Pick the level that fits. Required with a defaultOption. ${risk.text}` }
   await $.tool.register({
     name: 'ask_user',
-    description: `${await purpose($, 'question')} Put one question in the user queue (the question template). The skill orch:orch-ask tells how to fill it. Only question is required. For a choice, give options, a recommendation, a risk and a defaultOption: if no answer comes in time, the orchestrator can apply the default, by the risk level. For facts, give only the question and the context: there is no default. The user answers in free text. With waitSeconds 0 it returns PENDING at once: end your turn, and the answer arrives later as a new message that starts with "Answer to decision". With waitSeconds more than 0 it blocks up to that time (580 maximum) and returns ANSWER: <text>, or PENDING when no answer came.`,
+    description: `${await purpose($, 'question')} Put one question in the user queue (the question template). The skill orch:orch-ask tells how to fill it. Only question is required. For a choice, give options, a recommendation, a risk and a defaultOption: if no answer comes in time, the orchestrator can apply the default, by the risk level. For facts, give only the question and the context: there is no default. The user answers in free text. With waitSeconds 0 it returns PENDING at once: end your turn, and the answer arrives later as a new message that starts with "Answer to question". With waitSeconds more than 0 it blocks up to that time (580 maximum) and returns ANSWER: <text>, or PENDING when no answer came.`,
     inputSchema: question,
     isDeferred: false,
   })
@@ -73,14 +73,18 @@ export async function registerTools($: any): Promise<void> {
       'Answer an open question of a child for the user (a question that arrived as "Question from child"). Use only the words of the user, never your own choice. The child gets the answer as a new message.',
     inputSchema: {
       type: 'object',
-      properties: { decision: { type: 'string', description: 'The decision id of the question.' }, text: { type: 'string', description: 'The answer of the user, in the words of the user.' } },
-      required: ['decision', 'text'],
+      properties: {
+        question: { type: 'string', description: 'The id of the question.' },
+        decision: { type: 'string', description: 'Old name of question. It stays valid.' },
+        text: { type: 'string', description: 'The answer of the user, in the words of the user.' },
+      },
+      required: ['text'],
     },
     isDeferred: false,
   })
   await $.tool.register({
     name: 'questions',
-    description: 'List all open questions in the orchestrator queue: decision id, risk, default, session and question. Use it when the user asks which questions are open.',
+    description: 'List all open questions in the orchestrator queue: question id, risk, default, session and question. Use it when the user asks which questions are open.',
     inputSchema: { type: 'object', properties: {} },
     isDeferred: false,
   })
@@ -105,7 +109,7 @@ async function parentId($: any): Promise<string | undefined> {
 }
 
 export const EARLY_DONE =
-  'orch: the report was not recorded. This session has an open decision, so the work is not done. The end of a step is an update: call mcp__orch__update. Report done after the answer arrives.'
+  'orch: the report was not recorded. This session has an open question, so the work is not done. The end of a step is an update: call mcp__orch__update. Report done after the answer arrives.'
 
 export async function report($: any, e: any): Promise<any> {
   if (!S.dir) return { deny: 'orch: this session is not enabled' }
@@ -158,6 +162,9 @@ export async function spawnChild($: any, e: any): Promise<any> {
   if (e.doneWhen) argv.push('--done-when', String(e.doneWhen))
   if (Array.isArray(e.skills) && e.skills.length > 0) argv.push('--skills', e.skills.join(','))
   if (e.agent) argv.push('--agent', String(e.agent))
+  if (e.type) argv.push('--type', String(e.type))
+  if (e.stream) argv.push('--stream', String(e.stream))
+  if (e.workflow) argv.push('--workflow', String(e.workflow))
   if (e.worktree === true) argv.push('--worktree')
   if (e.background === true) argv.push('--background')
   const run = await orch($, argv)
@@ -172,8 +179,11 @@ export async function spawnChild($: any, e: any): Promise<any> {
 
 export async function answerChild($: any, e: any): Promise<any> {
   if (!S.dir) return { deny: 'orch: this session is not enabled' }
-  const run = await orch($, ['answer', String(e.decision), String(e.text), '--via', self()])
-  await log($, `answer ${e.decision}: ${run.text.slice(0, 200)}`)
+  // The input field question is the new name; decision is the old name, kept for live sessions (C2).
+  const id = e.question ?? e.decision
+  if (!id) return { result: 'orch: give the question id in the field question.' }
+  const run = await orch($, ['answer', String(id), String(e.text), '--via', self()])
+  await log($, `answer ${id}: ${run.text.slice(0, 200)}`)
   return { result: run.ok ? `${run.text} The child gets the answer as a new message.` : `orch: the answer was not recorded: ${run.text.slice(0, 400)}` }
 }
 
@@ -222,7 +232,7 @@ export async function askUser($: any, e: any): Promise<any> {
   } catch (error) {
     return { result: `orch: the question was not recorded: ${error instanceof Error ? error.message : String(error)}. Fix the fields and call the tool again.` }
   }
-  const later = `Question ${id} is in the user queue. If you have a parent session, it sees the question too. Write the question in your reply text with the "Question" template of the skill orch:orch-reply, so that the user can read it here. Tell the user: "In the chat, start the answer with \`answer:\`." A chat message without \`answer:\` does not close the question. The user can also answer in the parent session. End your turn now. A chat message that starts with \`answer:\` is your answer. An answer from elsewhere arrives as a new message that starts with "Answer to decision ${id}".`
+  const later = `Question ${id} is in the user queue. If you have a parent session, it sees the question too. Write the question in your reply text with the "Question" template of the skill orch:orch-reply, so that the user can read it here. Tell the user: "In the chat, start the answer with \`answer:\`." A chat message without \`answer:\` does not close the question. The user can also answer in the parent session. End your turn now. A chat message that starts with \`answer:\` is your answer. An answer from elsewhere arrives as a new message that starts with "Answer to question ${id}".`
   if (wait === 0) {
     await log($, `ask_user ${id} pending`)
     return { result: `PENDING: ${later}` }

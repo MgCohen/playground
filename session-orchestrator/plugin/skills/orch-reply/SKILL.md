@@ -84,10 +84,10 @@ Answer here. I send your words to the child.
 
 A child that asks in its own chat uses the same template, with the title "⏳ Question" and the last line "In the chat, start the answer with `answer:`. You can also answer in the root session."
 
-In a child chat, only a message that starts with `answer:` closes the decision. A message without `answer:` is a normal message: the decision stays open.
+In a child chat, only a message that starts with `answer:` closes the question. A message without `answer:` is a normal message: the question stays open.
 
 ## Answers of the user
 
-1. If the user answers a question, call `mcp__orch__answer` with the decision id and the words of the user.
-2. If `mcp__orch__answer` says that the decision already has an answer, tell the user who answered it and the answer. Then move it to "Done".
+1. If the user answers a question, call `mcp__orch__answer` with the question id and the words of the user.
+2. If `mcp__orch__answer` says that the question already has an answer, tell the user who answered it and the answer. Then move it to "Done".
 3. If the user asks which questions are open, call `mcp__orch__questions`, then reply with the status block.

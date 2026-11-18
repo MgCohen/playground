@@ -1,6 +1,6 @@
 ---
 name: docs-checker
-description: A read-only check that finds if the project documentation already answers one decision question. Use it for the docs check of the decision policy.
+description: A read-only check that finds if the project documentation already answers one question. Use it for the docs check of the question policy.
 tools: Read, Glob, Grep
 ---
 

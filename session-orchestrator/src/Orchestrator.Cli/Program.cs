@@ -29,8 +29,8 @@ namespace Orchestrator.Cli
               orch run step <run> [--holds "c1; c2"] [--output-<name> text] [--pick STEP] [--answer T] [--verdict approve|change|refuse] [--skip-approval] [--done]
               orch run stop <run> [--reason R]
             Questions (old name: decisions; the command names stay)
-              orch decisions [--session ID]
-              orch answer <decision> <text> [--via P]
+              orch questions [--session ID]              (old name, kept: orch decisions)
+              orch answer <question> <text> [--via P]
               orch chat-answer <session> <text>
               orch inbox [accept|refuse <id> [text]]
               orch review <decision> approve|change|refuse [text]
@@ -86,7 +86,7 @@ namespace Orchestrator.Cli
                     "resume" => LifecycleCommands.Resume(command),
                     "archive" => LifecycleCommands.Archive(command),
                     "open" => LifecycleCommands.Open(command),
-                    "decisions" => DecisionCommands.List(command),
+                    "decisions" or "questions" => DecisionCommands.List(command),
                     "answer" => DecisionCommands.Answer(command),
                     "chat-answer" => DecisionCommands.ChatAnswer(command),
                     "inbox" => DecisionCommands.Inbox(command),

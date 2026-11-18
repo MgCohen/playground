@@ -62,7 +62,7 @@ var decisions = store.Decisions(id);
 Check("two decisions", decisions.Count == 2, string.Join(", ", decisions.Select(d => $"{d.Risk} {d.Question}")));
 Check("each decision has an answer", decisions.All(d => store.IsAnswered(id, d.Id)), "");
 Check("each answer has an ack", decisions.All(d => store.Events.FirstAnswer(d.Id) is { } a && store.Events.IsAcked(a.Id)), "");
-var deliveries = events.Count(e => e.Kind == EventKinds.SessionInput && e.Subject.StartsWith($"Answer to decision {first.Id}"));
+var deliveries = events.Count(e => e.Kind == EventKinds.SessionInput && e.Subject.StartsWith($"Answer to question {first.Id}"));
 Check("the answer GREEN reached the session once", deliveries == 1, $"{deliveries} deliveries");
 Check("the default of the medium decision applied", decisions.Any(d => store.Answer(id, d.Id)?.By == Parties.Policy), "");
 var starts = events.Where(e => e.Kind == EventKinds.TurnStart).Select(e => e.Id).ToList();

@@ -17,7 +17,7 @@ description: When and how a session under the orchestrator sends a report (mcp__
 | Field | Content |
 |---|---|
 | `summary` | One or two sentences: the result first |
-| `done` | The finished parts, one item each |
+| `done` | The finished items, one item each |
 | `next` | The next steps |
 | `blockers` | What stops the work, and what you need |
 | `links` | Branches, PR links and files |
@@ -25,7 +25,7 @@ description: When and how a session under the orchestrator sends a report (mcp__
 ## Rules
 
 - Send `done` only when the "done when" check of the brief passes.
-- The end of a step is an update, not a report. The report tool refuses `done` while you have an open decision.
+- The end of a step is an update, not a report. The report tool refuses `done` while you have an open question.
 - The supervisor sends your report to your parent at the end of your turn. If you send two reports in one turn, the parent gets only the last one.
 - If your turn ends with no final report, the supervisor sends you a "no final report" notice after some time. Then report `done` or `blocked`, or continue the work.
 - Send one report for each state change. Do not repeat a report with no change.

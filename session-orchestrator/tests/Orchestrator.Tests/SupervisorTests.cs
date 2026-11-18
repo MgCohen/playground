@@ -75,7 +75,7 @@ public sealed class SupervisorTests
         await t.Cycle();
         await t.Cycle();
         Assert.That(t.Turns, Has.Count.EqualTo(2));
-        Assert.That(t.Turns[1].Prompt, Is.EqualTo("Answer to decision d1 (Pick): LIME"));
+        Assert.That(t.Turns[1].Prompt, Is.EqualTo("Answer to question d1 (Pick): LIME"));
         Assert.That(t.Store.IsDelivered(id, "d1"), Is.True);
     }
 
@@ -105,7 +105,7 @@ public sealed class SupervisorTests
         await t.Cycle();
         var toParent = t.Turns.Where(turn => turn.Id == parent).Select(turn => turn.Prompt).ToList();
         Assert.That(toParent, Has.Count.EqualTo(2));
-        Assert.That(toParent[1], Does.StartWith($"Question from child \"child\" ({child}), decision d1: Q d1"));
+        Assert.That(toParent[1], Does.StartWith($"Question from child \"child\" ({child}), question d1: Q d1"));
         Assert.That(toParent[1], Does.Contain("Options: A; B"));
         Assert.That(toParent[1], Does.Contain("If nobody answers in 60 s, the policy answers \"A\"."));
         Assert.That(toParent[1], Does.Contain("mcp__orch__answer"));
@@ -125,7 +125,7 @@ public sealed class SupervisorTests
         await t.Cycle();
         await t.Cycle();
         var toParent = string.Join(" | ", t.Turns.Where(turn => turn.Id == parent).Select(turn => turn.Prompt));
-        var closed = $"Question closed: child \"child\" ({child}), decision d1: Q d1 Answer: B (from user).";
+        var closed = $"Question closed: child \"child\" ({child}), question d1: Q d1 Answer: B (from user).";
         Assert.That(toParent.Split(closed).Length - 1, Is.EqualTo(1));
     }
 

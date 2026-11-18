@@ -238,7 +238,7 @@ public sealed class StreamTests
         t.Decide(id, "d1", "low", "A");
         var answer = new Messages(t.Store).Answer(id, "d1", "A", Parties.Policy, source: new AnswerSource(Parties.Policy) { Reason = "level low", OnDefault = "commit" });
         var text = t.Store.Renderer.Text(answer);
-        Assert.That(text, Does.StartWith("Answer to decision d1 (Q d1): A"));
+        Assert.That(text, Does.StartWith("Answer to question d1 (Q d1): A"));
         Assert.That(text, Does.Contain("This is a default decision (level low)").And.Contain("its own commit"));
         Assert.That(t.Store.Renderer.Text(answer, "tool"), Does.StartWith("ANSWER: A"));
         var other = t.Create("start", "other");
