@@ -1,0 +1,450 @@
+<title>Stream Audit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one topic for each tab, the visual first. Same tokens as how-it-works.html. */
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --fg: #1b2126;
+  --muted: #5b6670;
+  --line: #d9dee3;
+  --accent: #0f6e78;
+  --accent-soft: #e2f1f2;
+  --warn: #9a6200;
+  --warn-soft: #fbf1df;
+  --bad: #a3322a;
+  --bad-soft: #f8e6e4;
+  --ok: #2f7a3a;
+  --ok-soft: #e4f2e6;
+  --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --warn-soft: #34291a;
+    --bad: #ec8a80; --bad-soft: #3a2220; --ok: #7fcf8a; --ok-soft: #1d3322; --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --warn-soft: #34291a;
+  --bad: #ec8a80; --bad-soft: #3a2220; --ok: #7fcf8a; --ok-soft: #1d3322; --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px; margin: 0;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ul, ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.lead { color: var(--muted); font-size: 16px; }
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-block: 8px 0; }
+.tabs button { font: 500 14px var(--font-body); color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px; cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+section[role="tabpanel"] { display: flex; flex-direction: column; gap: 18px; }
+.block { display: flex; flex-direction: column; gap: 10px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 11.5px; padding: 1px 8px; border-radius: 99px; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.info { background: var(--accent-soft); color: var(--accent); }
+.status { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.pair > * { min-width: 0; }
+@media (max-width: 720px) { .pair { grid-template-columns: 1fr; } }
+.tag { font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+.tag.bad { color: var(--bad); }
+.tag.ok { color: var(--ok); }
+.q { border-left: 3px solid var(--accent); }
+.q dl { margin: 0; display: grid; grid-template-columns: 120px 1fr; gap: 6px 14px; font-size: 14px; }
+.q dt { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+.q dd { margin: 0; min-width: 0; }
+@media (max-width: 560px) { .q dl { grid-template-columns: 1fr; } .q dt { padding-top: 6px; } }
+svg text { font-family: var(--font-body); fill: var(--fg); }
+svg .muted { fill: var(--muted); }
+svg .box { fill: var(--panel); stroke: var(--line); }
+svg .core { fill: var(--accent-soft); stroke: var(--accent); }
+svg .plumb { fill: var(--code-bg); stroke: var(--line); stroke-dasharray: 4 3; }
+svg .edge { stroke: var(--accent); stroke-width: 1.6; fill: none; }
+svg .edge.ret { stroke: var(--muted); }
+svg .arrow { fill: var(--accent); }
+svg .arrow.ret { fill: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { section[role="tabpanel"] { animation: in .18s ease-out; } }
+@keyframes in { from { opacity: .4; } to { opacity: 1; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Session orchestrator · audit W</div>
+    <h1>Stream Audit</h1>
+    <p class="lead">Does each feature read from and write to the event stream, or does it bypass it? This page holds the context, the rules of the audit, the open questions and the plan. The audit result goes on a fifth tab after the rules are agreed.</p>
+    <div class="status"><span class="pill warn">Draft</span> Rules proposed, not agreed. Branch <code>orch/d-data-upgrade</code>.</div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="t-context" data-tab="context" aria-selected="true">Context</button>
+    <button role="tab" id="t-rules" data-tab="rules" aria-selected="false">Guidelines</button>
+    <button role="tab" id="t-questions" data-tab="questions" aria-selected="false">Open questions</button>
+    <button role="tab" id="t-plan" data-tab="plan" aria-selected="false">Action plan</button>
+  </nav>
+
+  <!-- CONTEXT -->
+  <section role="tabpanel" id="context" aria-labelledby="t-context">
+    <div class="block">
+      <h2>The stream is the pillar</h2>
+      <p>The store contract (<code>docs/store.md</code>) says that all communication goes through one event stream. A sender posts a body and an envelope. Each party gets a push, then queries and reads what it needs. The target app is reactive: pages only read the stream, and actions only write to it.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Why an audit</h3>
+      <p>A session can understand an idea and build it wrong. Example: the provider rule asked for one <code>IProvider</code>, and a session made one adapter for each feature. The same risk applies to the stream. A feature can post envelopes and still keep its own files or its own state.</p>
+    </div>
+
+    <div class="block">
+      <h3>The Stream API today</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Primitive</th><th>C#</th><th>Plugin</th><th>HTTP</th></tr></thead>
+        <tbody>
+          <tr><td>Post</td><td><code>EventStream.Post</code>, <code>Forward</code>, <code>Ack</code></td><td><code>stream.ts</code> <code>post</code></td><td><code>POST /api/stream</code></td></tr>
+          <tr><td>Subscribe</td><td><code>Subscribe</code>, <code>StreamWatcher</code></td><td>A child <code>orch watch</code></td><td><code>GET /api/stream/live</code></td></tr>
+          <tr><td>Query</td><td><code>StreamQuery</code>, indexes</td><td><code>orch watch --list</code></td><td><code>GET /api/stream</code></td></tr>
+          <tr><td>Read</td><td><code>Body</code>, <code>Fields</code>, <code>Renderer</code></td><td><code>text</code> of a watch line</td><td><code>GET /api/events/&lt;id&gt;</code></td></tr>
+          <tr><td>Nudge</td><td><code>Nudge</code></td><td>Peer nudge</td><td><code>POST /api/nudge</code></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="block">
+      <h3>State outside the stream</h3>
+      <p>The store also holds files that are not envelopes. Some are plumbing of the stream. Others hold session state that a page shows.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>File</th><th>Writer</th><th>Reader</th><th>Kind</th></tr></thead>
+        <tbody>
+          <tr><td><code>subscriptions/</code>, <code>nudges/</code>, <code>claims/</code></td><td>Stream API</td><td>Stream API</td><td><span class="pill info">Plumbing</span></td></tr>
+          <tr><td><code>session.json</code></td><td><code>SessionRegistry</code></td><td>Board, supervisor</td><td><span class="pill warn">Registry</span></td></tr>
+          <tr><td><code>status.json</code>, <code>heartbeat.txt</code></td><td>Plugin <code>register.ts</code></td><td><code>StateReader</code></td><td><span class="pill warn">Session state</span></td></tr>
+          <tr><td><code>lease.json</code>, <code>turn.json</code></td><td>Plugin <code>lease.ts</code>, supervisor</td><td><code>StateReader</code>, plugin</td><td><span class="pill warn">Session state</span></td></tr>
+          <tr><td><code>state.json</code>, <code>state-check.json</code>, <code>forgotten.json</code></td><td>Supervisor</td><td><code>StateReader</code></td><td><span class="pill warn">Derived state</span></td></tr>
+          <tr><td><code>mirror/</code>, <code>last-output.json</code></td><td>Plugin, supervisor</td><td>To examine</td><td><span class="pill warn">Side file</span></td></tr>
+          <tr><td><code>stack/</code>, <code>runs/</code>, <code>docs-checks/</code></td><td>Git slice, workflows, docs check</td><td>Board, supervisor</td><td><span class="pill warn">Side file</span></td></tr>
+          <tr><td><code>policy.json</code>, <code>templates/</code></td><td>CLI</td><td>All parts</td><td><span class="pill info">Config</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="block">
+      <h3>First signals</h3>
+      <p>These are signals from a first read. They are not audit findings yet.</p>
+      <ul>
+        <li><code>StateReader.Read</code> builds the session snapshot from <code>status.json</code>, <code>lease.json</code>, <code>heartbeat.txt</code>, <code>turn.json</code> and the envelopes together.</li>
+        <li><code>LiveView</code> loads the full page again on each file change, and also on a 10 s timer.</li>
+        <li><code>LiveView.Act</code> runs the action, then calls <code>Load()</code> at once. It does not wait for the envelope.</li>
+        <li><code>Board</code> is one large read model for all pages. It calls <code>FileStore</code>, the lifecycle and the inbox directly.</li>
+        <li><code>TickService</code> runs the supervisor tick on each push and at least each 5 s for the time rules.</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h3>Purpose of this session</h3>
+      <ol>
+        <li>Agree the rules of the audit (tab Guidelines).</li>
+        <li>Audit each feature: its read source, its write target and its update trigger.</li>
+        <li>List each bypass with a fix plan. Publish it on this page and save it in <code>docs/</code>.</li>
+        <li>Add the fix tasks to <code>docs/plan.md</code>.</li>
+      </ol>
+      <p>Out of scope: app code changes, the architecture definition (session K), the event store research (session N), merges.</p>
+    </div>
+  </section>
+
+  <!-- GUIDELINES -->
+  <section role="tabpanel" id="rules" aria-labelledby="t-rules" hidden>
+    <div class="status"><span class="pill warn">Proposed</span> The open questions can change these rules.</div>
+
+    <div class="block">
+      <h2>Target topology: one loop</h2>
+      <p>Each action posts. The stream pushes. Each view folds the stream into a projection and shows it. No arrow goes from an action to a view.</p>
+      <div class="panel scroll">
+        <svg viewBox="0 0 860 330" width="100%" style="min-width:640px" role="img" aria-label="Actions post to the event stream. The stream pushes to projections. Views read the projections.">
+          <defs>
+            <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="arrow" d="M0,0 L10,5 L0,10 z"/></marker>
+            <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="arrow ret" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <!-- writers -->
+          <rect class="box" x="10" y="20" width="170" height="210" rx="10"/>
+          <text x="95" y="44" text-anchor="middle" font-weight="600" font-size="14">Writers</text>
+          <text x="95" y="76" text-anchor="middle" font-size="13">UI actions</text>
+          <text x="95" y="104" text-anchor="middle" font-size="13">orch CLI</text>
+          <text x="95" y="132" text-anchor="middle" font-size="13">Plugin hooks</text>
+          <text x="95" y="160" text-anchor="middle" font-size="13">Supervisor tick</text>
+          <text x="95" y="188" text-anchor="middle" font-size="13">Tray</text>
+          <text x="95" y="216" text-anchor="middle" class="muted" font-size="11.5">write only</text>
+          <!-- stream -->
+          <rect class="core" x="290" y="60" width="200" height="130" rx="10"/>
+          <text x="390" y="98" text-anchor="middle" font-weight="600" font-size="15">Event stream</text>
+          <text x="390" y="122" text-anchor="middle" font-size="12.5">envelopes + bodies</text>
+          <text x="390" y="142" text-anchor="middle" font-size="12.5">append only</text>
+          <text x="390" y="168" text-anchor="middle" class="muted" font-size="11.5">the one source of truth</text>
+          <!-- projections -->
+          <rect class="box" x="600" y="20" width="250" height="88" rx="10"/>
+          <text x="725" y="44" text-anchor="middle" font-weight="600" font-size="14">Projections</text>
+          <text x="725" y="68" text-anchor="middle" font-size="12.5">inbox · session state · tree</text>
+          <text x="725" y="88" text-anchor="middle" class="muted" font-size="11.5">rebuilt from the stream</text>
+          <!-- views -->
+          <rect class="box" x="600" y="142" width="250" height="88" rx="10"/>
+          <text x="725" y="166" text-anchor="middle" font-weight="600" font-size="14">Views</text>
+          <text x="725" y="190" text-anchor="middle" font-size="12.5">Cards · Stream · Sessions · Output</text>
+          <text x="725" y="210" text-anchor="middle" class="muted" font-size="11.5">read only</text>
+          <!-- plumbing -->
+          <rect class="plumb" x="290" y="250" width="200" height="66" rx="10"/>
+          <text x="390" y="276" text-anchor="middle" font-weight="600" font-size="13">Plumbing</text>
+          <text x="390" y="298" text-anchor="middle" class="muted" font-size="11.5">cursors · claims · nudges</text>
+          <!-- edges -->
+          <path class="edge" d="M180,125 L286,125" marker-end="url(#a)"/>
+          <text x="233" y="116" text-anchor="middle" font-size="12">posts</text>
+          <path class="edge" d="M490,100 L596,66" marker-end="url(#a)"/>
+          <text x="545" y="72" text-anchor="middle" font-size="12">pushes</text>
+          <path class="edge" d="M725,108 L725,138" marker-end="url(#a)"/>
+          <text x="760" y="128" text-anchor="middle" font-size="12">feeds</text>
+          <path class="edge ret" d="M600,214 C470,300 260,300 150,234" marker-end="url(#r)"/>
+          <text x="235" y="282" text-anchor="middle" class="muted" font-size="12">user acts</text>
+          <path class="edge ret" d="M390,190 L390,246" marker-end="url(#r)" stroke-dasharray="4 3"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2>Rules</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>#</th><th>Rule</th><th>Check</th></tr></thead>
+        <tbody>
+          <tr><td>R1</td><td>Each domain fact is an envelope</td><td>No fact lives only in a file</td></tr>
+          <tr><td>R2</td><td>A view reads only projections of the stream</td><td>No view reads a side file</td></tr>
+          <tr><td>R3</td><td>An action only posts</td><td>No action writes a file or a field</td></tr>
+          <tr><td>R4</td><td>A projection is a cache</td><td>Delete it, rebuild it, same result</td></tr>
+          <tr><td>R5</td><td>A view updates on a push</td><td>No poll timer for data</td></tr>
+          <tr><td>R6</td><td>Plumbing serves only the stream</td><td>No page shows a plumbing file</td></tr>
+          <tr><td>R7</td><td>One writer for each projection</td><td>One fold function, one owner</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="block">
+      <h2>Four classes of state</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>Class</th><th>Where</th><th>Example</th><th>Audit result</th></tr></thead>
+        <tbody>
+          <tr><td>Domain fact</td><td>Envelope</td><td>Question, answer, report, state change</td><td><span class="pill ok">Required</span></td></tr>
+          <tr><td>Projection</td><td>Memory or cache file</td><td>Inbox, session tree, <code>docs-checks/</code></td><td><span class="pill ok">Allowed</span> if rebuildable</td></tr>
+          <tr><td>Plumbing</td><td>Small file</td><td>Cursor, claim, nudge</td><td><span class="pill ok">Allowed</span></td></tr>
+          <tr><td>Config</td><td>File</td><td><code>policy.json</code>, <code>templates/</code></td><td><span class="pill warn">Open question 6</span></td></tr>
+        </tbody>
+      </table></div>
+      <p>A bypass is a domain fact outside the stream, a view that reads a side file, an action that writes a side file, or a projection that the stream cannot rebuild.</p>
+    </div>
+
+    <div class="block">
+      <h2>Example: bad and good</h2>
+      <div class="pair">
+        <div class="panel">
+          <span class="tag bad">Bypass</span>
+          <pre><code>// Plugin: the turn state goes to a file.
+await writeSession($, 'status.json',
+  { state: 'running', turnId, at })
+
+// Page: the view reads the file
+// and polls each 10 s.
+var status = store.Status(id);
+timer = new Timer(_ =&gt; Reload(), …);</code></pre>
+          <p>The fact "turn started" is only in a file. No other party sees the change as a push. A rebuild of the stream does not give the state back.</p>
+        </div>
+        <div class="panel">
+          <span class="tag ok">Through the stream</span>
+          <pre><code>// Plugin: post the fact.
+await post($, { kind: 'turn.start',
+  from: self, to: 'supervisor', turnId })
+
+// Projection: fold the envelopes.
+SessionState Fold(SessionState s, Event e) =&gt;
+  e.Kind switch {
+    "turn.start" =&gt; s with { Running = true },
+    "turn.end"   =&gt; s with { Running = false },
+    _ =&gt; s };
+
+// Page: render on each push.
+Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
+          <p>The fact is an envelope. Each party sees it. The view state is a fold that a replay can rebuild.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2>Restrictions of this session</h2>
+      <ul>
+        <li>Read the code only. Change no app code, unless the user asks.</li>
+        <li>Never touch the live store or port 7777.</li>
+        <li>Do not define the architecture. Session K owns it. Send findings to K through the root.</li>
+        <li>Do not select an event store product. Session N owns it.</li>
+        <li>Ask questions in the chat only.</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <h2>Expectations of the result</h2>
+      <ul>
+        <li>One row for each feature: read source, write target, update trigger, verdict.</li>
+        <li>Each bypass has a file and line, the rule that it breaks and a fix.</li>
+        <li>Each fix names the event kind, the projection and the test.</li>
+        <li>The fix tasks are in <code>docs/plan.md</code>, in an order that keeps the app working.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- OPEN QUESTIONS -->
+  <section role="tabpanel" id="questions" aria-labelledby="t-questions" hidden>
+    <p>Each answer changes a rule on the Guidelines tab. Answer in the chat, in free text.</p>
+
+    <div class="panel q">
+      <h3>Q1. How strict is the rule for session state?</h3>
+      <dl>
+        <dt>Context</dt><dd>A3-2 kept <code>status.json</code>, <code>lease.json</code>, <code>heartbeat.txt</code> and <code>stack/</code> as files: "Stream B owns them". A strict rule makes each of them a bypass.</dd>
+        <dt>Options</dt><dd>(a) Strict: all state is a projection; files are caches only. (b) Messages only: lifecycle files are allowed. (c) Mixed: lifecycle facts are envelopes; plumbing stays in files.</dd>
+        <dt>Recommend</dt><dd>(c). Cursors, claims and nudges are mechanics of the stream. A turn start or a lease change is a fact that a page shows.</dd>
+      </dl>
+    </div>
+
+    <div class="panel q">
+      <h3>Q2. Is a poll timer a bypass?</h3>
+      <dl>
+        <dt>Context</dt><dd><code>LiveView</code> reloads on a push and also each 10 s. <code>TickService</code> runs at least each 5 s.</dd>
+        <dt>Options</dt><dd>(a) Yes: a data poll is a bypass. (b) No: the audit checks only the data source.</dd>
+        <dt>Recommend</dt><dd>(a). A poll hides a fact that has no envelope.</dd>
+      </dl>
+    </div>
+
+    <div class="panel q">
+      <h3>Q3. Are time rules events?</h3>
+      <dl>
+        <dt>Context</dt><dd>Default timeouts, reminders, the watchdog and the stale lease depend on the clock, not on an envelope.</dd>
+        <dt>Options</dt><dd>(a) The supervisor posts a timer event (for example <code>default.due</code>) when a time passes. (b) A sweep over the projection is allowed for time only.</dd>
+        <dt>Recommend</dt><dd>(b) for the audit, with one rule: the sweep reads only projections and writes only envelopes.</dd>
+      </dl>
+    </div>
+
+    <div class="panel q">
+      <h3>Q4. How deep is the audit?</h3>
+      <dl>
+        <dt>Context</dt><dd>The brief names the Web pages, the store and the plugin hooks.</dd>
+        <dt>Options</dt><dd>(a) Web, Store, Supervisor and the hooks. (b) Also the CLI, the tray and the providers.</dd>
+        <dt>Recommend</dt><dd>(b). The CLI and the tray also write state.</dd>
+      </dl>
+    </div>
+
+    <div class="panel q">
+      <h3>Q5. Do you know a bypass to examine first?</h3>
+      <dl>
+        <dt>Context</dt><dd>A known example helps to calibrate the audit, as the provider case did.</dd>
+        <dt>Options</dt><dd>(a) Yes: name it. (b) No: start from the code.</dd>
+        <dt>Recommend</dt><dd>(a), if you have one.</dd>
+      </dl>
+    </div>
+
+    <div class="panel q">
+      <h3>Q6. Is config a domain fact?</h3>
+      <dl>
+        <dt>Context</dt><dd><code>policy.json</code> and <code>templates/</code> change the behavior of all parts. A running supervisor reads templates only at start.</dd>
+        <dt>Options</dt><dd>(a) Config changes are envelopes (for example <code>policy.change</code>). (b) Config stays in files, outside the audit.</dd>
+        <dt>Recommend</dt><dd>(b) for this audit. Record a note for session K.</dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ACTION PLAN -->
+  <section role="tabpanel" id="plan" aria-labelledby="t-plan" hidden>
+    <div class="block">
+      <h2>Steps</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>#</th><th>Step</th><th>Output</th><th>State</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Agree the rules and the open questions</td><td>Guidelines tab, final</td><td><span class="pill warn">Now</span></td></tr>
+          <tr><td>2</td><td>Make the feature inventory</td><td>Pages, actions, commands, hooks, loops</td><td><span class="pill info">Next</span></td></tr>
+          <tr><td>3</td><td>Trace each feature</td><td>Read source, write target, trigger</td><td><span class="pill info">Next</span></td></tr>
+          <tr><td>4</td><td>Give each feature a verdict</td><td>Through the stream, bypass, allowed</td><td><span class="pill info">Next</span></td></tr>
+          <tr><td>5</td><td>Write a fix for each bypass</td><td>Event kind, projection, test</td><td><span class="pill info">Next</span></td></tr>
+          <tr><td>6</td><td>Review with the user</td><td>Approved audit and fix plan</td><td><span class="pill info">Next</span></td></tr>
+          <tr><td>7</td><td>Record and publish</td><td>Audit tab, <code>docs/plan.md</code> tasks</td><td><span class="pill info">Next</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="block">
+      <h2>How to trace a feature</h2>
+      <ol>
+        <li>Start at the entry point: a page, a button, a CLI command, a hook or a tick step.</li>
+        <li>Follow each read to its source. Note each call to <code>IRepositories</code> other than <code>Events</code> and <code>Bodies</code>.</li>
+        <li>Follow each write to its target. Note each <code>WriteJson</code>, <code>Put</code> and <code>writeSession</code>.</li>
+        <li>Find the update trigger: a push, a timer or a direct reload.</li>
+        <li>Ask: if the stream is replayed into an empty store, does this feature show the same state?</li>
+      </ol>
+    </div>
+
+    <div class="block">
+      <h3>Audit row shape</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Feature</th><th>Reads</th><th>Writes</th><th>Trigger</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>Example: Sessions page, running dot</td><td><code>status.json</code>, <code>heartbeat.txt</code></td><td>None</td><td>Push and 10 s timer</td><td><span class="pill bad">Bypass R2, R5</span></td></tr>
+        </tbody>
+      </table></div>
+      <p>The example row uses the first signals. The audit confirms or corrects it.</p>
+    </div>
+
+    <div class="block">
+      <h2>Order of the fix tasks</h2>
+      <ol>
+        <li>Facts first: post an envelope for each fact that lives only in a file. Keep the file as a cache.</li>
+        <li>Projections next: fold the envelopes into one projection for each view. Add a rebuild test.</li>
+        <li>Views last: move each page to its projection. Remove the poll timers and the side file reads.</li>
+        <li>Clean up: remove the side files that no reader uses. Change <code>docs/store.md</code> in the same commit.</li>
+      </ol>
+      <p>This order keeps the app working after each task.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+  const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+  function show(name) {
+    if (!panels.some(p => p.id === name)) name = 'context';
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+    panels.forEach(p => { p.hidden = p.id !== name; });
+  }
+  tabs.forEach(t => t.addEventListener('click', () => { location.hash = t.dataset.tab; show(t.dataset.tab); }));
+  window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+  show(location.hash.slice(1));
+})();
+</script>
