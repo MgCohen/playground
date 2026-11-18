@@ -63,6 +63,7 @@ public sealed partial class WidgetForm : Form
         {
             if (TopMost == value) return;
             TopMost = value;
+            if (Visible && !Growing && shadow.Visible) shadow.Track(this, Height);
             PinnedChanged?.Invoke();
         }
     }
@@ -197,6 +198,16 @@ public sealed partial class WidgetForm : Form
             {
             }
             await LayeredForm.NextFrames(2);
+            try
+            {
+                // V10: the shadow window fills the corners with the canvas color of the page (light or dark).
+                var rgb = System.Text.Json.JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync("getComputedStyle(document.body).backgroundColor")) ?? "";
+                var parts = rgb.Split('(', ')', ',').Skip(1).Take(3).Select(p => int.TryParse(p.Trim(), out var v) ? v : -1).ToArray();
+                if (parts is [>= 0 and <= 255, >= 0 and <= 255, >= 0 and <= 255]) shadow.Fill = Color.FromArgb(parts[0], parts[1], parts[2]);
+            }
+            catch (Exception e) when (e is InvalidOperationException or System.Text.Json.JsonException or System.Runtime.InteropServices.COMException)
+            {
+            }
         }
         if (run == sequence) ball.HideNow();
     }
@@ -306,15 +317,15 @@ public sealed partial class WidgetForm : Form
         }
         else
         {
-            // The handoff: the home button of the page takes the place of the ball; the shadow of the system comes back.
+            // The handoff: the home button of the page takes the place of the ball. V10: the shadow window stays, at full
+            // height; it is the only shadow of the widget, so no other shadow comes in or goes out.
             starting = false;
             shadow.Track(this, Height);
-            shadow.FadeOut();
             HandOver(sequence);
             MeasureHome();
         }
-        // No region: the full window with the rounded corners, the border and the shadow of the system.
-        _ = SetWindowRgn(Handle, 0, true);
+        // V10: the rounded region stays at rest too, and the shadow window under it is the one shadow and the soft corner.
+        if (Visible) Reveal(Height);
         Frame(true);
     }
 
@@ -441,6 +452,20 @@ public sealed partial class WidgetForm : Form
             Math.Clamp(point.Y, area.Top + m, Math.Max(area.Top + m, area.Bottom - Height - m)));
     }
 
+    // V10: the shadow window follows the widget at rest (a drag, a fit to the work area, a display change).
+    protected override void OnLocationChanged(EventArgs e)
+    {
+        base.OnLocationChanged(e);
+        if (Visible && !Growing && shadow.Visible) shadow.Track(this, Height);
+    }
+
+    // V10: the widget comes to the front (a click, the pin): its shadow goes right below it again.
+    protected override void OnActivated(EventArgs e)
+    {
+        base.OnActivated(e);
+        if (Visible && !Growing && shadow.Visible) shadow.Track(this, Height);
+    }
+
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
@@ -453,11 +478,13 @@ public sealed partial class WidgetForm : Form
     /// </summary>
     void Frame(bool on)
     {
-        var round = on ? DwmwcpRound : DwmwcpDoNotRound;
+        // V10: no round corners of the system either: with them, the system draws its own shadow. The window region rounds.
+        var round = DwmwcpDoNotRound;
         _ = DwmSetWindowAttribute(Handle, DwmwaWindowCornerPreference, ref round, sizeof(int));
         var color = DwmwaColorNone;
         _ = DwmSetWindowAttribute(Handle, DwmwaBorderColor, ref color, sizeof(int));
-        var policy = on ? DwmncrpUseWindowStyle : DwmncrpDisabled;
+        // V10: no non-client rendering, so the system draws no shadow. The shadow window (GrowShadow) is the one shadow.
+        var policy = DwmncrpDisabled;
         _ = DwmSetWindowAttribute(Handle, DwmwaNcRenderingPolicy, ref policy, sizeof(int));
     }
 

@@ -1,9 +1,10 @@
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// G1: the shadow grows with the widget. The shadow of the system is on or off, and it has the full window size, so the grow
-/// turns it off. This see-through window right below the widget draws a soft shadow around the shown part during the grow
-/// and the shrink. At the end of the grow it fades out while the shadow of the system comes back.
+/// G1 and V10: the one shadow of the widget. This see-through window right below the widget draws a soft shadow around the
+/// shown part during the grow, at rest and during the shrink, so the shadow never changes. The system draws no shadow and no
+/// round corners for the widget: the window region rounds it, and this window fills the corners with the page color, so the
+/// hard cut of the region shows a soft edge.
 /// </summary>
 public sealed class GrowShadow : LayeredForm
 {
@@ -14,6 +15,13 @@ public sealed class GrowShadow : LayeredForm
     readonly System.Diagnostics.Stopwatch clock = new();
     Rectangle widget;
     int shown;
+
+    /// <summary>
+    /// V10: the color of the page canvas. The window draws a smooth rounded fill of it under the widget, so the hard cut of the
+    /// window region at the corners shows a soft edge.
+    /// </summary>
+    [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+    public Color Fill { get; set; } = Color.FromArgb(0xe6, 0xe3, 0xde);
     float strength = 1;
 
     public GrowShadow()
@@ -36,6 +44,8 @@ public sealed class GrowShadow : LayeredForm
         strength = 1;
         shown = height;
         var m = (int)(Spread * Dpi);
+        // The shadow is on top only when the widget is (the pin), so it never covers another window.
+        if (TopMost != owner.TopMost) TopMost = owner.TopMost;
         if (owner.Bounds != widget || !Visible)
         {
             widget = owner.Bounds;
@@ -60,7 +70,20 @@ public sealed class GrowShadow : LayeredForm
         var m = Spread * Dpi;
         var rect = new RectangleF(m, m + widget.Height - shown, widget.Width, shown);
         using var path = Round(rect, 8 * Dpi);
-        SoftShadow(g, path, Dpi, 1.3f * strength, 10, 5);
+        // An even soft shadow: thin fill layers that grow outward, moved down a little. No pen ring, so no dark band at the edge.
+        const int Layers = 24;
+        for (var i = Layers; i >= 1; i--)
+        {
+            var grow = i * (Spread - 6) * Dpi / Layers;
+            var layer = RectangleF.Inflate(rect, grow, grow);
+            layer.Offset(0, 3 * Dpi);
+            using var lp = Round(layer, 8 * Dpi + grow);
+            // Black: a warm color at an alpha of 4 rounds to pure red in the premultiplied bitmap, and the layers add it up.
+            using var brush = new SolidBrush(Color.FromArgb((int)(4 * strength), 0, 0, 0));
+            g.FillPath(brush, lp);
+        }
+        using var fill = new SolidBrush(Fill);
+        g.FillPath(fill, path);
     });
 
     protected override void Dispose(bool disposing)

@@ -42,7 +42,7 @@ public static partial class SelfTest
 
     /// <summary>
     /// Runs all checks, or with <paramref name="only"/> a list of groups: "notify" (the notice motion, V1 and V2) and "overlap"
-    /// (one form at a time, V4) and "ball" (one look of the home ball, V5), "drag" and "edge" (N1 and N2), "cards" (pictures of the cards, V7), "swipe" (a real drag on the top card, V17). The groups run with the test places of the widget and the edge tab.
+    /// (one form at a time, V4) and "ball" (one look of the home ball, V5), "drag" and "edge" (N1 and N2), "cards" (pictures of the cards, V7), "swipe" (a real drag on the top card, V17), "shadow" (one shadow, V10). The groups run with the test places of the widget and the edge tab.
     /// </summary>
     public static async Task<int> Run(TrayApp tray, string folder, string? only = null)
     {
@@ -67,6 +67,7 @@ public static partial class SelfTest
             if (groups.Contains("edge")) checks.AddRange(await Edge(tray, web, folder));
             if (groups.Contains("cards")) checks.AddRange(await Cards(web, folder));
             if (groups.Contains("swipe")) checks.AddRange(await Swipe(form, web, folder));
+            if (groups.Contains("shadow")) checks.AddRange(await Shadow(form, folder));
             return Write(checks, folder);
         }
         foreach (var step in Steps)
@@ -144,6 +145,7 @@ public static partial class SelfTest
         checks.AddRange(await Overlap(tray, folder));
         checks.AddRange(await HomeBall(form, folder));
         checks.AddRange(await Swipe(form, web, folder));
+        checks.AddRange(await Shadow(form, folder));
         return Write(checks, folder);
     }
 
@@ -369,11 +371,12 @@ public static partial class SelfTest
         Corner(form, midPng);
         await Settle(form);
         await Task.Delay(300);
-        var handoff = !form.Ball.Visible && !form.GrowShadow.Visible && !await Eval<bool>(web, "document.documentElement.classList.contains('ball')");
+        // V10: the shadow window stays after the grow; it is the one shadow of the widget.
+        var handoff = !form.Ball.Visible && form.GrowShadow.Visible && !await Eval<bool>(web, "document.documentElement.classList.contains('ball')");
         var endPng = Path.Combine(folder, "tray-e2-g1-end.png");
         Corner(form, endPng);
         checks.Add(new Check("g1-show", popping && homeHidden && shadow && unfold == "g-unfold" && handoff,
-            $"ball pops in before the grow {popping}; page home button hidden {homeHidden}; grow shadow {shadow}; app bar {unfold}; ball, shadow and class gone at the end {handoff}",
+            $"ball pops in before the grow {popping}; page home button hidden {homeHidden}; grow shadow {shadow}; app bar {unfold}; ball and class gone and the shadow kept at the end {handoff}",
             $"{popPng};{midPng};{endPng}"));
         return checks;
     }
