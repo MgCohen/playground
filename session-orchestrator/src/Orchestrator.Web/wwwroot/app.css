@@ -270,11 +270,11 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .primary:disabled { opacity: .4; }
 
 /* ===== M5: sheets and toast ===== */
-.scrim { animation: m-fade .22s ease both; }
-.sheet { animation: m-up .34s var(--ease-out) both; }
+.scrim { animation: m-fade .22s ease backwards; }
+.sheet { animation: m-up .34s var(--ease-out) backwards; }
 .closing > .scrim, .scrim.closing { animation: m-fade-out .2s ease both; }
 .closing > .sheet, .sheet.closing { animation: m-down .22s ease-in both; }
-.toast:not(.inline) { overflow: hidden; animation: m-drop .32s var(--ease-spring) both; }
+.toast:not(.inline) { overflow: hidden; animation: m-drop .32s var(--ease-spring) backwards; }
 .toast .ubar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--accent); transform-origin: left; animation: m-count 5s linear both; }
 @keyframes m-fade { from { opacity: 0; } }
 @keyframes m-fade-out { to { opacity: 0; } }
@@ -291,8 +291,8 @@ code { font-family: var(--f-mono); font-size: .92em; }
 /* Ring draw: the arcs draw on first show in 900 ms. The deep ring sweeps, so each type starts after the type before it. */
 @property --draw { syntax: "<angle>"; inherits: false; initial-value: 360deg; }
 @property --p { syntax: "<number>"; inherits: true; initial-value: 0; }
-.dring .fill { mask: conic-gradient(#000 var(--draw), transparent 0); animation: m-sweep .9s var(--ease-out) both; }
-.ring .fill { animation: m-arc .9s var(--ease-out) both; }
+.dring .fill { mask: conic-gradient(#000 var(--draw), transparent 0); animation: m-sweep .9s var(--ease-out) backwards; }
+.ring .fill { animation: m-arc .9s var(--ease-out) backwards; }
 @keyframes m-sweep { from { --draw: 0deg; } }
 @keyframes m-arc { from { --p: 0; } }
 
@@ -304,7 +304,29 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .boot .b-bar { margin: auto 4px 10px; height: 58px; border-radius: 999px; }
 @keyframes m-shine { to { transform: translateX(100%); } }
 /* The page fades, not .app: an animation on .app makes a stacking context, and the backdrop of the app bar then covers the bar. */
-.page { animation: m-fade .18s ease both; }
+.page { animation: m-fade .18s ease backwards; }
+
+/* ===== T1: a tab change. The page body rises 10 px and fades in; each block starts 40 ms after the block above it. =====
+   The header stays: each page has the same header in the same place. */
+.page > :not(header, .scrim, .sheet, .toast, .deck-screen, .sticky-acts, .pagebar), .page > .stack > * { animation: m-rise .3s var(--ease-out) backwards; animation-delay: calc(var(--n, 0) * 40ms); }
+.page > :nth-child(3), .page > .stack > :nth-child(2) { --n: 1; } .page > :nth-child(4), .page > .stack > :nth-child(3) { --n: 2; }
+.page > :nth-child(5), .page > .stack > :nth-child(4) { --n: 3; } .page > :nth-child(6), .page > .stack > :nth-child(5) { --n: 4; }
+.page > :nth-child(n+7), .page > .stack > :nth-child(n+6) { --n: 5; }
+@keyframes m-rise { from { opacity: 0; transform: translateY(10px); } }
+
+/* ===== T2: open a document (push). The new page slides in from the right in 300 ms; the old page moves 30 % left and dims.
+   Back plays it in reverse. The app bar is its own picture, so it stays. motion.js starts the view transition. ===== */
+.nav2 { view-transition-name: appbar; }
+.vt .page > *, .vt .page > .stack > * { animation: none; }
+::view-transition-group(root) { animation-duration: .3s; animation-timing-function: var(--ease-out); }
+::view-transition-old(root) { animation: m-push-old .3s var(--ease-out) both; }
+::view-transition-new(root) { animation: m-push-new .3s var(--ease-out) both; }
+.vt-back::view-transition-old(root) { animation: m-pop-old .3s var(--ease-out) both; z-index: 2; }
+.vt-back::view-transition-new(root) { animation: m-pop-new .3s var(--ease-out) both; }
+@keyframes m-push-old { to { transform: translateX(-30%); filter: brightness(.8); } }
+@keyframes m-push-new { from { transform: translateX(100%); } }
+@keyframes m-pop-old { to { transform: translateX(100%); } }
+@keyframes m-pop-new { from { transform: translateX(-30%); filter: brightness(.8); } }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
