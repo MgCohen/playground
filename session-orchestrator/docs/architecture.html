@@ -1,0 +1,415 @@
+<title>Orchestrator Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one topic for each tab, the visual first. Same tokens as the design page. */
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --fg: #1b2126;
+  --muted: #5b6670;
+  --line: #d9dee3;
+  --accent: #0f6e78;
+  --accent-soft: #e2f1f2;
+  --warn: #9a6200;
+  --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 70ch; }
+nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap;
+}
+nav button {
+  font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 24px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 12px; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+td code { white-space: nowrap; }
+pre.stack, pre.cmd {
+  margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; background: var(--code-bg);
+  border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg); white-space: pre;
+}
+pre .c { color: var(--muted); }
+pre .k { color: var(--accent); }
+.tree { font-family: var(--font-mono); font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+.tree details { margin-left: 16px; }
+.tree > details { margin-left: 0; }
+.tree summary { cursor: pointer; padding: 2px 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
+.tree summary::-webkit-details-marker { display: none; }
+.tree summary::before { content: "▸"; color: var(--muted); width: 10px; flex: none; }
+.tree details[open] > summary::before { content: "▾"; }
+.tree details.leaf > summary::before { content: "·"; }
+.tree .n { color: var(--fg); font-weight: 500; }
+.tree .d { color: var(--muted); font-family: var(--font-body); font-size: 13px; }
+.tree .more { margin: 2px 0 6px 20px; font-family: var(--font-body); font-size: 13px; color: var(--muted); max-width: 70ch; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.grid2 > * { min-width: 0; }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 70ch; }
+.tag { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.code { color: var(--accent); border-color: var(--accent); }
+.tag.prompt { color: var(--warn); border-color: var(--warn); }
+details.example { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+details.example > summary {
+  cursor: pointer; padding: 12px 14px; font-family: var(--font-display); font-weight: 500; font-size: 17px;
+  display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+}
+details.example > summary .d { font-family: var(--font-body); font-size: 14px; font-weight: 400; color: var(--muted); }
+details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+.step > * { min-width: 0; }
+.num {
+  font-family: var(--font-mono); font-size: 12px; width: 24px; height: 24px; border-radius: 50%;
+  border: 1px solid var(--accent); color: var(--accent); display: grid; place-items: center; margin-top: 1px;
+}
+.step .what { display: flex; flex-direction: column; gap: 6px; }
+.where { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.pill { font-family: var(--font-mono); font-size: 11px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--line); white-space: nowrap; }
+.pill.open { color: var(--warn); border-color: var(--warn); }
+.pill.draft { color: var(--accent); border-color: var(--accent); }
+.pill.done { color: var(--fg); background: var(--accent-soft); border-color: var(--accent); }
+.q { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.q h3 { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.q .lbl { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-right: 6px; }
+.rec { border-left: 3px solid var(--accent); padding: 6px 10px; background: var(--accent-soft); border-radius: 0 6px 6px 0; max-width: 70ch; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Task K · architecture definition · draft for review</div>
+  <h1>Orchestrator architecture</h1>
+  <p class="summary">The orchestrator is a set of vertical slices around one event stream. Each state change is an event, each read model is a projection, and each external system has one port. Architecture tests in NUnit make the code obey these rules.</p>
+</header>
+
+<nav role="tablist" aria-label="Tabs">
+  <button data-tab="context" role="tab">Context</button>
+  <button data-tab="topology" role="tab">Topology</button>
+  <button data-tab="current" role="tab">Current state</button>
+  <button data-tab="questions" role="tab">Questions</button>
+</nav>
+
+<!-- ============ CONTEXT ============ -->
+<div class="panel" id="context">
+<section>
+  <h2>Why this page exists</h2>
+  <p>The code follows an architecture that is not written down in one place. The rules are in <code>AGENTS.md</code>, <code>docs/plan.md</code> and <code>docs/decisions.md</code>. The tests cover only some of them.</p>
+  <div class="note"><b>Example of the risk.</b> The plan said: each provider call goes through one interface, <code>IProvider</code>. The sessions made an adapter interface for each feature: <code>ITurnRunner</code>, <code>IDocsChecker</code>, <code>IStateChecker</code>. No test refused it.</div>
+</section>
+
+<section>
+  <h2>Expected output of task K</h2>
+  <p>Each row is one deliverable. The status changes when the user approves it.</p>
+  <div class="scroll"><table>
+    <tr><th>Deliverable</th><th>Place</th><th>Status</th></tr>
+    <tr><td>Architecture style, event stream at the center</td><td>Topology tab</td><td><span class="pill draft">draft</span></td></tr>
+    <tr><td>Project topology and dependency rules</td><td>Topology tab</td><td><span class="pill draft">draft</span></td></tr>
+    <tr><td>Guidelines for each slice</td><td>Topology tab</td><td><span class="pill draft">draft</span></td></tr>
+    <tr><td>Review of the current code</td><td>Current state tab</td><td><span class="pill draft">draft</span></td></tr>
+    <tr><td>Plan for architecture tests</td><td>Topology tab, rules table</td><td><span class="pill draft">draft</span></td></tr>
+    <tr><td>Answers to the open questions</td><td>Questions tab</td><td><span class="pill open">open</span></td></tr>
+    <tr><td>Next tasks in the roadmap</td><td><code>docs/plan.md</code></td><td><span class="pill open">open</span></td></tr>
+    <tr><td>Approval of the user</td><td>Chat of task K</td><td><span class="pill open">open</span></td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Scope</h2>
+  <div class="grid2">
+    <div class="box"><h3>In scope</h3><ul><li>Architecture style and topology</li><li>Guidelines for slices, ports and hosts</li><li>A plan for architecture tests</li><li>Roadmap tasks for the move</li></ul></div>
+    <div class="box"><h3>Out of scope</h3><ul><li>App code changes, unless the user asks</li><li>The audit of the stream use (task W)</li><li>The event store product research (task N)</li><li>Merges</li></ul></div>
+  </div>
+</section>
+
+<section>
+  <h2>Sources</h2>
+  <div class="scroll"><table>
+    <tr><th>Source</th><th>Content used</th></tr>
+    <tr><td><code>AGENTS.md</code></td><td>Provider boundary rules 1 to 6</td></tr>
+    <tr><td><code>docs/plan.md</code></td><td>Storage direction, provider boundary, P0 and S2</td></tr>
+    <tr><td><code>docs/store.md</code></td><td>Store layout, envelope, repositories</td></tr>
+    <tr><td><code>docs/how-it-works.html</code></td><td>Topology, project references, call stacks</td></tr>
+    <tr><td><code>ArchitectureTests.cs</code></td><td>Store IO and registry checks</td></tr>
+    <tr><td><code>src/</code></td><td>Project references, interfaces, file sizes</td></tr>
+  </table></div>
+</section>
+</div>
+
+<!-- ============ TOPOLOGY ============ -->
+<div class="panel off" id="topology">
+<section>
+  <h2>Proposal: vertical slices around the event stream</h2>
+  <p>A modular monolith. The kernel holds the event stream and the ports. Each feature is one slice. The hosts only compose the parts and map input to slice commands.</p>
+  <div class="box"><pre class="mermaid">
+flowchart TB
+  subgraph Hosts["Hosts: composition roots"]
+    Web["Orchestrator.Web<br/>supervisor, API, UI"]
+    Cli["Orchestrator.Cli"]
+    Tray["Orchestrator.Tray"]
+  end
+  Features["Orchestrator.Features<br/>one folder for each slice"]
+  Kernel["Orchestrator.Kernel<br/>event stream, ports"]
+  Store["Orchestrator.Store<br/>stream and repository code"]
+  Prov["Orchestrator.Providers<br/>IProvider code"]
+  Web --> Features
+  Cli --> Features
+  Tray --> Features
+  Features --> Kernel
+  Store --> Kernel
+  Prov --> Kernel
+  Hosts -. composes .-> Store
+  Hosts -. composes .-> Prov
+  </pre></div>
+  <p>Only the hosts reference <code>Store</code> and <code>Providers</code>. A slice cannot see an implementation, so it cannot make its own adapter.</p>
+</section>
+
+<section>
+  <h2>The event stream is the center</h2>
+  <div class="box"><pre class="mermaid">
+flowchart LR
+  In["Input<br/>CLI, API, MCP tool"] --> Cmd["Command handler"]
+  Cmd -->|reads| Proj["Projection"]
+  Cmd -->|appends| Stream[("Event stream")]
+  Stream -->|feeds| Proj
+  Stream -->|feeds| React["Reactor"]
+  React -->|sends| Cmd
+  Cmd -->|calls| Port["IProvider port"]
+  </pre></div>
+  <div class="scroll"><table>
+    <tr><th>Part</th><th>Job</th><th>Writes</th></tr>
+    <tr><td>Command handler</td><td>Checks a request, appends events</td><td>Events only</td></tr>
+    <tr><td>Projection</td><td>Builds a read model from events</td><td>Its own read model</td></tr>
+    <tr><td>Reactor</td><td>Starts a command after an event</td><td>Nothing directly</td></tr>
+    <tr><td>Query</td><td>Reads a projection for a host</td><td>Nothing</td></tr>
+  </table></div>
+  <p>You can delete a projection and build it again from the stream. Run state with a high rate (lease heartbeat, cursors) is on an exception list. Question Q1 decides that list.</p>
+</section>
+
+<section>
+  <h2>Folder layout</h2>
+  <div class="tree">
+    <details open><summary><span class="n">src/</span><span class="d">four projects and three hosts</span></summary>
+      <details><summary><span class="n">Orchestrator.Kernel/</span><span class="d">no feature logic</span></summary>
+        <details class="leaf"><summary><span class="n">Events/</span><span class="d">envelope, kinds, IEventStream</span></summary><div class="more">Append with an expected version, read by query, subscribe. One write path for all slices.</div></details>
+        <details class="leaf"><summary><span class="n">Projections/</span><span class="d">projection base, rebuild</span></summary><div class="more">A projection gets each event one time, in order, and keeps a checkpoint.</div></details>
+        <details class="leaf"><summary><span class="n">Ports/</span><span class="d">IProvider, IRepository, ILogSink, IClock</span></summary><div class="more">One port for each external system. The provider port is here, not in Orchestrator.Providers.</div></details>
+      </details>
+      <details open><summary><span class="n">Orchestrator.Features/</span><span class="d">one folder for each slice</span></summary>
+        <details class="leaf"><summary><span class="n">Sessions/</span><span class="d">registry, create, open, archive</span></summary><div class="more">Today: Core/Sessions, Store/Lifecycle.cs, parts of Supervisor.</div></details>
+        <details class="leaf"><summary><span class="n">Lifecycle/</span><span class="d">state machine, state check</span></summary><div class="more">Today: Core/Lifecycle, Supervisor.Lifecycle.cs, StateChecker.</div></details>
+        <details class="leaf"><summary><span class="n">Decisions/</span><span class="d">question, answer, default, policy, docs check</span></summary><div class="more">Today: Core/Policy, DocsChecker, parts of Supervisor.</div></details>
+        <details class="leaf"><summary><span class="n">Messages/</span><span class="d">inbox, notices, delivery</span></summary><div class="more">Today: Store/Messages.cs, Store/Inbox.cs, Store/Renderer.cs.</div></details>
+        <details class="leaf"><summary><span class="n">Stack/</span><span class="d">reviews, PRs, merge guard</span></summary><div class="more">Today: Core/Stack, Cli/Git.</div></details>
+        <details class="leaf"><summary><span class="n">Workflows/</span><span class="d">runs, steps, executors</span></summary><div class="more">Today: Core/Workflows, Store/WorkflowHost.cs.</div></details>
+        <details class="leaf"><summary><span class="n">Templates/</span><span class="d">definitions, render, checks</span></summary><div class="more">Today: Core/Templates.</div></details>
+        <details class="leaf"><summary><span class="n">Runs/</span><span class="d">leases, turns, recovery, watchdog</span></summary><div class="more">Today: Core/Leases, Supervisor/Recovery.cs, Supervisor.cs.</div></details>
+      </details>
+      <details><summary><span class="n">Orchestrator.Store/</span><span class="d">implementations of the kernel ports</span></summary><div class="more">Local/ and Remote/ only. No feature logic.</div></details>
+      <details><summary><span class="n">Orchestrator.Providers/</span><span class="d">IProvider implementations</span></summary><div class="more">ClaudeCode/, Fake/, Processes/. Only this folder knows engine names.</div></details>
+      <details><summary><span class="n">Orchestrator.Web, .Cli, .Tray/</span><span class="d">hosts</span></summary><div class="more">Composition, input mapping, UI. No event kinds, no appends, no rules.</div></details>
+    </details>
+  </div>
+</section>
+
+<section>
+  <h2>One slice holds all its parts</h2>
+<pre class="stack"><span class="c">Features/Decisions/</span>
+  Events.cs          <span class="c">// QuestionAsked, AnswerGiven, DefaultApplied</span>
+  Ask.cs             <span class="c">// command handler: check, append QuestionAsked</span>
+  Answer.cs          <span class="c">// command handler: check, append AnswerGiven</span>
+  OpenQuestions.cs   <span class="c">// projection: the open questions</span>
+  ApplyDefault.cs    <span class="c">// reactor: timer event -> DefaultApplied</span>
+  DocsCheck.cs       <span class="c">// prompt and parse, calls IProvider.Ask directly</span>
+  Contract.cs        <span class="c">// public queries for other slices and hosts</span></pre>
+</section>
+
+<section>
+  <h2>Guidelines and their checks</h2>
+  <div class="scroll"><table>
+    <tr><th>Id</th><th>Rule</th><th>Check</th></tr>
+    <tr><td>A1</td><td>Each state change is one event in the stream</td><td>Only the stream port appends; allow list for run state</td></tr>
+    <tr><td>A2</td><td>Read models are projections of the stream</td><td>Replay test for each projection</td></tr>
+    <tr><td>A3</td><td>One port for each external system</td><td>No interface in Features outside an allow list</td></tr>
+    <tr><td>A4</td><td>A slice calls a port directly, with no wrapper</td><td>No Features class that only forwards to a port</td></tr>
+    <tr><td>A5</td><td>Slices meet only through events and Contract.cs</td><td>Namespace rule: no types of other slices</td></tr>
+    <tr><td>A6</td><td>Projects obey the dependency graph</td><td>Reference test on the csproj files</td></tr>
+    <tr><td>A7</td><td>Hosts compose the parts and map input only</td><td>Hosts declare no events, do no appends</td></tr>
+    <tr><td>A8</td><td>Engine names only in Providers/&lt;name&gt;</td><td><code>ProviderBoundaryTests</code> (exists)</td></tr>
+    <tr><td>A9</td><td>Store IO only in Store/Local</td><td><code>ArchitectureTests</code> (exists)</td></tr>
+  </table></div>
+</section>
+</div>
+
+<!-- ============ CURRENT ============ -->
+<div class="panel off" id="current">
+<section>
+  <h2>The projects are technical layers</h2>
+  <div class="box"><pre class="mermaid">
+flowchart LR
+  Tray --> Web --> Supervisor --> Store --> Core
+  Cli --> Store
+  Store --> Providers --> Core
+  </pre></div>
+  <p>One feature is in three or four projects. Example: the lifecycle is in <code>Core/Lifecycle/Machine.cs</code>, <code>Store/Lifecycle.cs</code> and <code>Supervisor/Supervisor.Lifecycle.cs</code>.</p>
+</section>
+
+<section>
+  <h2>Findings</h2>
+  <div class="scroll"><table>
+    <tr><th>Id</th><th>Finding</th><th>Rule</th></tr>
+    <tr><td>C1</td><td>An adapter interface for each feature around IProvider</td><td>A3, A4</td></tr>
+    <tr><td>C2</td><td>The Store project holds feature logic</td><td>A6</td></tr>
+    <tr><td>C3</td><td>Store and Supervisor reference Providers</td><td>A6</td></tr>
+    <tr><td>C4</td><td>One Supervisor class runs many features</td><td>A5, A7</td></tr>
+    <tr><td>C5</td><td>Event appends in about 12 files</td><td>A1</td></tr>
+    <tr><td>C6</td><td>Registry, leases, claims are mutable files</td><td>A1, A2</td></tr>
+    <tr><td>C7</td><td>Rules in three documents</td><td>All</td></tr>
+    <tr><td>C8</td><td>Tests scan text, not references</td><td>A5, A6</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Evidence</h2>
+  <details class="example"><summary>C1 · Runners.cs <span class="d">three interfaces, one only forwards</span></summary><div class="body">
+<pre class="stack"><span class="c">// src/Orchestrator.Supervisor/Runners.cs</span>
+public interface ITurnRunner { Task&lt;TurnResult&gt; Run(TurnRequest r, CancellationToken c); }
+public sealed class ProviderTurns(IProvider provider) : ITurnRunner
+{
+    public Task&lt;TurnResult&gt; Run(TurnRequest r, CancellationToken c) =&gt; provider.Turn(r, c);
+}
+public interface IDocsChecker  { ... }
+public interface IStateChecker { ... }</pre>
+  </div></details>
+  <details class="example"><summary>C2 · Orchestrator.Store <span class="d">feature files next to storage</span></summary><div class="body">
+    <p>Feature logic: <code>Lifecycle.cs</code>, <code>Messages.cs</code>, <code>Inbox.cs</code>, <code>Renderer.cs</code>, <code>WorkflowHost.cs</code>, <code>SupervisorHost.cs</code>, <code>StateReader.cs</code>, <code>Failures.cs</code>.</p>
+    <p>Storage: <code>Local/</code>, <code>Remote/</code>, <code>EventStream.cs</code>, <code>FileStore.cs</code>, <code>StoreUpgrade.cs</code>.</p>
+  </div></details>
+  <details class="example"><summary>C3 · SupervisorOptions <span class="d">a default implementation in the options</span></summary><div class="body">
+<pre class="stack">public IProvider Provider { get; init; } = ProviderFactory.Default;</pre>
+    <p>The options record selects an implementation. Only the composition root must do that.</p>
+  </div></details>
+  <details class="example"><summary>C4 · Supervisor.cs <span class="d">about 800 lines in two files</span></summary><div class="body">
+    <p>One tick does turns, decisions, defaults, reminders, imports, archive and recovery. Each feature adds code to the same class.</p>
+  </div></details>
+  <details class="example"><summary>C5 · event appends <span class="d">files with Post or Append calls</span></summary><div class="body">
+    <p>Supervisor.cs (7), Store/Lifecycle.cs (7), Cli/Git/StackOps.cs (5), Store/Messages.cs (4), Supervisor.Lifecycle.cs (4), and 7 more files. Task W audits this.</p>
+  </div></details>
+</section>
+
+<section>
+  <h2>Architecture tests in the code</h2>
+  <div class="scroll"><table>
+    <tr><th>Test</th><th>Covers</th><th>Misses</th></tr>
+    <tr><td><code>ArchitectureTests</code></td><td>Store IO, registry access</td><td>References, slices</td></tr>
+    <tr><td><code>ProviderBoundaryTests</code></td><td>Engine names in text</td><td>Wrapper interfaces</td></tr>
+  </table></div>
+</section>
+</div>
+
+<!-- ============ QUESTIONS ============ -->
+<div class="panel off" id="questions">
+<section>
+  <h2>Open questions</h2>
+  <p>Answer in free text. Each answer goes into the Topology tab, and its question leaves this tab.</p>
+
+  <div class="q"><h3>Q1 · How much of the state comes from the stream? <span class="pill open">open</span></h3>
+    <p><span class="lbl">Context</span>The registry, leases, claims and cursors are mutable files next to the stream. Tasks W and N affect this answer.</p>
+    <p><span class="lbl">Options</span>(a) All state is a projection, with an exception list for run state. (b) The stream holds facts; repositories keep the registry and run state. (c) All state, also leases and heartbeats.</p>
+    <div class="rec">Recommendation: (a). The stream is the single source of truth. Heartbeats stay out because of their rate.</div></div>
+
+  <div class="q"><h3>Q2 · How are the slices packaged? <span class="pill open">open</span></h3>
+    <p><span class="lbl">Options</span>(a) One <code>Orchestrator.Features</code> project, one folder for each slice. (b) One project for each slice. (c) Keep the projects, add slice folders in them.</p>
+    <div class="rec">Recommendation: (a). One project is simple to build. A test makes the folder limits strict.</div></div>
+
+  <div class="q"><h3>Q3 · Where is the IProvider port? <span class="pill open">open</span></h3>
+    <p><span class="lbl">Context</span>It is in <code>Orchestrator.Providers</code>, with the implementations.</p>
+    <p><span class="lbl">Options</span>(a) In the kernel, <code>Kernel/Ports</code>. (b) In a <code>Providers.Abstractions</code> project. (c) Where it is.</p>
+    <div class="rec">Recommendation: (a). Then Features never references the provider project.</div></div>
+
+  <div class="q"><h3>Q4 · How does one slice use another? <span class="pill open">open</span></h3>
+    <p><span class="lbl">Options</span>(a) Events only. (b) Events, and the queries in <code>Contract.cs</code>. (c) No limit.</p>
+    <div class="rec">Recommendation: (b). Some commands must read the state of another slice before they append.</div></div>
+
+  <div class="q"><h3>Q5 · Is the supervisor a host of reactors? <span class="pill open">open</span></h3>
+    <p><span class="lbl">Options</span>(a) Each slice registers its reactors; the tick only sends events to them. (b) Keep one central supervisor class.</p>
+    <div class="rec">Recommendation: (a). A feature then adds a reactor, not lines in Supervisor.cs.</div></div>
+
+  <div class="q"><h3>Q6 · Which tool runs the architecture tests? <span class="pill open">open</span></h3>
+    <p><span class="lbl">Options</span>(a) ArchUnitNET with NUnit. (b) NetArchTest.Rules. (c) Our own reflection and text scans only.</p>
+    <div class="rec">Recommendation: (a). It has a slice rule: no dependency between slices. Keep the text scans for engine names and store IO.</div></div>
+
+  <div class="q"><h3>Q7 · Plain .NET or the VSA framework? <span class="pill open">open</span></h3>
+    <p><span class="lbl">Context</span><code>docs/plan.md</code> says: plain .NET until 1.0, decide after the VSA 0.1.0 release. The kernel copies <code>IRepository</code> from vsa-template.</p>
+    <p><span class="lbl">Options</span>(a) Plain .NET, with copied kernel parts. (b) Use the vsa-template packs.</p>
+    <div class="rec">Recommendation: (a). The plan decision stays. This page uses only the VSA ideas.</div></div>
+
+  <div class="q"><h3>Q8 · How do we move the code? <span class="pill open">open</span></h3>
+    <p><span class="lbl">Options</span>(a) One large move. (b) Slice by slice. The tests start with an allow list of known breaks, and each move removes items from it.</p>
+    <div class="rec">Recommendation: (b). Each step is small, and the allow list shows the progress.</div></div>
+
+  <div class="q"><h3>Q9 · Where is the plugin in the topology? <span class="pill open">open</span></h3>
+    <p><span class="lbl">Context</span>The plugin hooks (TypeScript) write store files from inside Claude Code.</p>
+    <p><span class="lbl">Options</span>(a) The live side of <code>Providers/ClaudeCode</code>. It writes only events, through the store contract. (b) A separate host with its own rules.</p>
+    <div class="rec">Recommendation: (a). Then rule A1 also covers the plugin.</div></div>
+</section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["context", "topology", "current", "questions"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "context";
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
+    document.querySelectorAll("nav button").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
+    });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>
