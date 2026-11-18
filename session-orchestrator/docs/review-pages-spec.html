@@ -70,6 +70,8 @@ section { display: flex; flex-direction: column; gap: 12px; }
 table { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--panel); }
 th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
 th { font: 500 12px var(--font-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--code-bg); }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 code, .mono { font-family: var(--font-mono); font-size: 13px; }
 code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
 pre { margin: 0; }
@@ -102,7 +104,7 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
     <button role="tab" data-tab="run">F2 Workflow run</button>
     <button role="tab" data-tab="stack">F3 PR stack</button>
     <button role="tab" data-tab="pr">F4 PR</button>
-    <button role="tab" data-tab="backlog">Backlog F5–F13</button>
+    <button role="tab" data-tab="backlog">Backlog F5–F14</button>
     <span class="sep" aria-hidden="true"></span>
     <button role="tab" data-tab="flows">User workflows</button>
     <button role="tab" data-tab="gaps">Data gaps</button>
@@ -116,7 +118,7 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
       <option value="run">F2 Workflow run</option>
       <option value="stack">F3 PR stack</option>
       <option value="pr">F4 PR</option>
-      <option value="backlog">Backlog F5–F13</option>
+      <option value="backlog">Backlog F5–F14</option>
     </optgroup>
     <optgroup label="Across features">
       <option value="flows">User workflows</option>
@@ -148,15 +150,25 @@ flowchart LR
   </section>
 
   <section>
-    <h2>Features</h2>
+    <h2>All features</h2>
+    <p class="summary">The full list. One row for each feature. Tap an id to open its tab or its card. "First set" is the work of now; "Backlog" is tracked here, and we work on one item at a time.</p>
     <div class="scroll"><table>
-      <tr><th>Id</th><th>Feature</th><th>What it does for the user</th><th>Data</th></tr>
-      <tr><td class="mono">F1</td><td>Stream bar</td><td>Shows the stream of the page and moves between its sessions, runs and PRs</td><td><span class="chip part">part</span></td></tr>
-      <tr><td class="mono">F2</td><td>Workflow run page</td><td>Shows where a run is, why it waits and where it can go. You act on the wait</td><td><span class="chip have">most</span></td></tr>
-      <tr><td class="mono">F3</td><td>PR stack page</td><td>Shows the PRs of a stream in their merge order and what waits for you. You review and merge here</td><td><span class="chip part">part</span></td></tr>
-      <tr><td class="mono">F4</td><td>PR page</td><td>Shows one PR with its task, session, diff, tests and defaults. You give the verdict here</td><td><span class="chip part">part</span></td></tr>
-      <tr><td class="mono">F5–F13</td><td>Backlog</td><td>Later features: status and analytics, projects, reminders, multi-project work, and more. Tracked here, built one at a time</td><td>—</td></tr>
-      <tr><td class="mono">W1–W3</td><td>User workflows</td><td>The paths across the pages: answer a run, review a stream, review a default</td><td>—</td></tr>
+      <tr><th>Id</th><th>Feature</th><th>Group</th><th>What it does for the user</th><th>Data</th><th>State</th></tr>
+      <tr><td class="mono"><a href="#stream">F1</a></td><td>Stream bar</td><td>First set</td><td>Shows the stream of the page and moves between its sessions, runs and PRs</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
+      <tr><td class="mono"><a href="#run">F2</a></td><td>Workflow run page</td><td>First set</td><td>Shows where a run is, why it waits and where it can go. You act on the wait</td><td><span class="chip have">most</span></td><td><span class="chip">spec</span></td></tr>
+      <tr><td class="mono"><a href="#stack">F3</a></td><td>PR stack page</td><td>First set</td><td>Shows the PRs of a stream in their merge order and what waits for you. You review and merge here</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
+      <tr><td class="mono"><a href="#pr">F4</a></td><td>PR page</td><td>First set</td><td>Shows one PR with its task, session, diff, tests and defaults. You give the verdict here</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F5</a></td><td>Status and analytics</td><td>Backlog</td><td>The health of the system and how it changes in time: open sessions, waits, errors</td><td><span class="chip have">most</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F6</a></td><td>Projects</td><td>Backlog</td><td>Groups the work by project (one repository), and by feature inside a project</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F7</a></td><td>Timers and stale reminders</td><td>Backlog</td><td>Tells you about items that nobody touched for a long time. Your own timers</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F8</a></td><td>Multi-project work</td><td>Backlog</td><td>Connects the work of one feature across more than one repository</td><td><span class="chip gap">gap</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F9</a></td><td>Stream page</td><td>Backlog</td><td>One page for a stream: its sessions, runs and PRs together</td><td><span class="chip have">most</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F10</a></td><td>Templates catalog</td><td>Backlog</td><td>Lists the message kinds, modes and workflows. Shows one with its view and fields</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F11</a></td><td>Storage and store</td><td>Backlog</td><td>The store root, version, size and repository health in Settings</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F12</a></td><td>Setup and supervisor</td><td>Backlog</td><td>The supervisor state, the app version, the update check and the cloud workers</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F13</a></td><td>Session status page</td><td>Backlog (Q10: first set?)</td><td>Completes the page of one session: registry, work tree, runs, PRs, questions, state reason</td><td><span class="chip have">most</span></td><td><span class="chip part">built in part</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F14</a></td><td>GitHub overview</td><td>Backlog</td><td>Issues, open PRs, merges, and the commit and CI status of each repository</td><td><span class="chip gap">gap</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#flows">W1–W3</a></td><td>User workflows</td><td>Across features</td><td>The paths across the pages: answer a run, review a stream, review a default</td><td>—</td><td><span class="chip">spec</span></td></tr>
     </table></div>
   </section>
 
@@ -165,7 +177,7 @@ flowchart LR
     <ul>
       <li>Each page shows first what waits for you, then the state, then the history.</li>
       <li>Each act on a page calls an existing command or API: <code>orch run step</code>, <code>/api/decisions/…/review</code>, <code>orch merge</code>. The page adds no new logic.</li>
-      <li>The store is the source. A page never reads GitHub or git as its source of truth. A live read is only a detail.</li>
+      <li>The store is the source. A page never reads GitHub or git as its source of truth. A live read is only a detail. The one exception is F14: its subject is GitHub (Q11).</li>
       <li>Each page works in the 350 px widget frame. A wide frame shows more columns.</li>
     </ul>
   </section>
@@ -487,6 +499,7 @@ sequenceDiagram
       <tr><td class="mono">F10</td><td>Templates catalog</td><td>Lists the message kinds, modes and workflows. Shows one with its view and fields</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
       <tr><td class="mono">F11</td><td>Storage and store</td><td>Shows the store root, version, size and repository health in Settings</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
       <tr><td class="mono">F12</td><td>Setup and supervisor</td><td>Shows the supervisor state, the app version, the update check and the cloud workers</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F14</td><td>GitHub overview</td><td>Issues, open PRs, merges, and the commit and CI status of each repository</td><td><span class="chip gap">gap</span></td><td><span class="chip">idea</span></td></tr>
       <tr><td class="mono">F13</td><td>Session status page</td><td>The page of one session. It exists, but it shows little. F13 completes it: registry, work tree, runs, PRs, questions, state reason</td><td><span class="chip have">most</span></td><td><span class="chip part">built in part</span></td></tr>
     </table></div>
   </section>
@@ -636,6 +649,34 @@ flowchart LR
       </ul></div>
     </div>
   </section>
+
+  <section>
+    <span class="kicker">F14 · GitHub overview</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>One page with the GitHub state of each repository that the sessions work in: open issues, open PRs, recent merges, and the commit and CI status of each branch. It shows also the GitHub work that no session made.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>Issues: open, new this week, with labels and the session that works on it</li>
+        <li>PRs: open, draft, ready, review asked, with the <code>[orch]</code> tag</li>
+        <li>Merges: the last merges into the base branch</li>
+        <li>Commit status: the CI result of the head of each open branch (pass, fail, running)</li>
+        <li>Filter by project (F6) and by stream</li>
+        <li>Link each item to its session or its PR page (F4) when one exists</li>
+        <li>Start a session for an issue</li>
+      </ul></div>
+      <div class="box"><h3>Logic</h3><ul>
+        <li>The repositories come from <code>work.repo</code> of the registry entries, and later from the project records (F6)</li>
+        <li>A PR in the store and the same PR on GitHub show as one row. The store gives the session and the review state; GitHub gives the CI and the comments</li>
+        <li>GitHub is a call into another system, not a model provider. So it needs no <code>IProvider</code></li>
+        <li>A cache with a short age keeps the GitHub calls few</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> <code>pr.open</code>, <code>pr.merge</code> envelopes, the PR URL in reports</li>
+        <li><span class="chip gap">gap</span> issues, CI status and comments: only on GitHub</li>
+        <li><span class="chip gap">gap</span> a GitHub reader with a cache (Q11)</li>
+      </ul></div>
+    </div>
+  </section>
 </div>
 
 <!-- USER WORKFLOWS -->
@@ -766,6 +807,10 @@ flowchart TD
       <p>The run page and the PR page link to the session page. Today that page does not show runs, PRs or the registry.</p>
       <p>Options: (a) yes: sketch it with F2–F4; (b) no: keep it in the backlog.</p>
       <p class="rec">Recommendation: (a). Without it, the links from the new pages open a page with little data.</p></div>
+    <div class="q"><b>Q11. Where does the GitHub data of F14 come from?</b>
+      <p>Issues and CI status are only on GitHub. The design rule says that the store is the source.</p>
+      <p>Options: (a) a live read with <code>gh</code> and a short cache, at page open; (b) the supervisor copies the GitHub state into envelopes on a timer; (c) GitHub webhooks through the tunnel (D1).</p>
+      <p class="rec">Recommendation: (a) first. It needs no new store kind. (b) can follow when F5 and F7 need GitHub history.</p></div>
   </section>
 </div>
 </div>
