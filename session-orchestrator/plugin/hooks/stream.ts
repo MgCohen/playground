@@ -1,9 +1,9 @@
 // The TypeScript binding of the Stream API: post, ack and nudge. The C# binding (EventStream.cs) is the reference.
 // Only C# renders: the plugin gets the text for the model from orch watch or orch read --for.
 import { S, newId } from './state.ts'
-import { bodyPath, createEnvelope, readTemplate } from './backend.ts'
+import { bodyPath, createEnvelope, readSession, readTemplate } from './backend.ts'
 
-export type Envelope = { id: string; kind: string; from: string; to: string; thread?: string; needs?: string; subject?: string; refs?: Record<string, unknown>; text?: string }
+export type Envelope = { id: string; kind: string; from: string; to: string; stream?: string; thread?: string; needs?: string; subject?: string; refs?: Record<string, unknown>; text?: string }
 
 export type PostOptions = { thread?: string; needs?: string; refs?: Record<string, unknown> }
 
@@ -71,6 +71,13 @@ function clean(data: Record<string, unknown>): Record<string, unknown> {
   return out
 }
 
+// The work stream of this session: the stream field of its registry entry (session.json). The C# rule is EventStream.StreamOf.
+export async function streamOf($: any): Promise<string | undefined> {
+  if (!S.dir) return undefined
+  const entry = await readSession($, 'session.json')
+  return typeof entry?.stream === 'string' && entry.stream.length > 0 ? entry.stream : undefined
+}
+
 // Post: the body first, then the envelope. The envelope is the commit point.
 export async function post($: any, kind: string, from: string, to: string, data: Record<string, unknown>, options: PostOptions = {}): Promise<string> {
   if (!S.store) return ''
@@ -86,6 +93,8 @@ export async function post($: any, kind: string, from: string, to: string, data:
   const envelope: Record<string, unknown> = { id, at, session: S.id, kind, from, to, subject: subject(kind, body), body: path, refs: clean(options.refs ?? {}) }
   if (options.thread) envelope.thread = options.thread
   if (options.needs) envelope.needs = options.needs
+  const stream = await streamOf($)
+  if (stream) envelope.stream = stream
   await createEnvelope($, day, id, body, envelope)
   return id
 }

@@ -15,6 +15,9 @@ public sealed record PostInput(string Kind, string From, string To, IReadOnlyDic
     public string? Thread { get; init; }
     public string? Needs { get; init; }
     public IReadOnlyDictionary<string, object?>? Refs { get; init; }
+
+    /// <summary>The work stream. Null: the stream of the session of the post in the registry (<see cref="EventStream.StreamOf"/>).</summary>
+    public string? Stream { get; init; }
 }
 
 /// <summary>
@@ -40,6 +43,7 @@ public sealed class EventStream
     readonly Dictionary<string, List<Event>> bySession = [];
     readonly Dictionary<(string From, string Kind), List<Event>> byPost = [];
     readonly Dictionary<string, JsonElement> bodies = [];
+    readonly Dictionary<string, string?> streams = [];
     long lastMs;
     int feedPosition;
 
@@ -85,11 +89,28 @@ public sealed class EventStream
             {
                 Thread = post.Thread,
                 Needs = post.Needs,
+                Stream = post.Stream ?? StreamOf(post.Session ?? Parties.SessionId(post.From) ?? Parties.SessionId(post.To)),
             };
             Write(e);
             bodies[e.Body] = element;
             Add(e);
             return e;
+        }
+    }
+
+    /// <summary>
+    /// The stream of a session in the registry. The registry sets the stream when it creates the entry and never
+    /// changes it, so the result of an entry is kept. A session with no entry yet is read again at the next post.
+    /// </summary>
+    public string? StreamOf(string? session)
+    {
+        if (session is null) return null;
+        lock (gate)
+        {
+            if (streams.TryGetValue(session, out var known)) return known;
+            if (repos.SessionEntries.Read(session) is not { } entry) return null;
+            streams[session] = entry.Stream;
+            return entry.Stream;
         }
     }
 

@@ -48,7 +48,7 @@ public static class EventQuery
 public static class StreamQueryText
 {
     public static readonly IReadOnlyList<string> Keys =
-        ["view", "since", "until", "after", "kind", "session", "party", "from", "to", "thread", "needs", "open", "ledger", "forwards", "heads", "newest", "limit"];
+        ["view", "since", "until", "after", "kind", "session", "party", "from", "to", "thread", "stream", "needs", "open", "ledger", "forwards", "heads", "newest", "limit"];
 
     /// <summary>
     /// Makes the query from the values of the keys. <c>view</c> names a named query; the other keys add to it.
@@ -74,6 +74,7 @@ public static class StreamQueryText
             From = Text("from") ?? query.From,
             To = Text("to") ?? query.To,
             Thread = Text("thread") ?? query.Thread,
+            Stream = Text("stream") ?? query.Stream,
             Needs = needs,
             Open = Flag("open") ?? query.Open,
             Ledger = Flag("ledger") ?? query.Ledger,

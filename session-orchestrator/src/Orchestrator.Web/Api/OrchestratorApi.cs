@@ -16,10 +16,14 @@ public sealed record NewSession(string? Title, string? Cwd, string? Brief, strin
     public bool? AllowDefaults { get; init; }
     public bool? Background { get; init; }
 
+    /// <summary>The work stream (C1). Null: the stream of the parent.</summary>
+    public string? Stream { get; init; }
+
     public BriefFields ToBrief() => new()
     {
         Title = Title, Goal = Goal ?? Brief, Scope = Scope, DoneWhen = DoneWhen, Skills = Skills,
         Agent = Agent, Cwd = Cwd, Worktree = Worktree, Parent = Parent, AllowDefaults = AllowDefaults, Background = Background,
+        Stream = string.IsNullOrWhiteSpace(Stream) ? null : Stream,
     };
 }
 
@@ -70,20 +74,24 @@ public static class OrchestratorApi
         };
     }
 
+    static bool InStream(FileStore store, string id, string? stream) =>
+        string.IsNullOrEmpty(stream) || string.Equals(store.Session(id).Stream, stream, StringComparison.OrdinalIgnoreCase);
+
     public static void MapOrchestratorApi(this IEndpointRouteBuilder app)
     {
         var api = app.MapGroup("/api");
 
-        api.MapGet("/sessions", (Supervisor.Supervisor s, FileStore store) =>
+        // A stream parameter keeps only the sessions of that work stream (the registry entry).
+        api.MapGet("/sessions", (Supervisor.Supervisor s, FileStore store, string? stream) =>
         {
             var now = store.Clock.GetUtcNow();
-            return store.Sessions().Select(id => View(s, id, now));
+            return store.Sessions().Where(id => InStream(store, id, stream)).Select(id => View(s, id, now));
         });
 
-        api.MapGet("/decisions", (FileStore store) =>
+        api.MapGet("/decisions", (FileStore store, string? stream) =>
         {
             var enabled = store.Sessions().ToHashSet();
-            return store.OpenDecisions().Where(d => enabled.Contains(d.Session));
+            return store.OpenDecisions().Where(d => enabled.Contains(d.Session) && InStream(store, d.Session, stream));
         });
 
         api.MapPost("/sessions", (NewSession input, Board board) => Guard(() =>

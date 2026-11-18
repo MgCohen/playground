@@ -107,7 +107,7 @@ Both tests check the same three known values. The files have no `version` field.
 ```json
 {
   "id": "1763300000000-a1b2c3d4-cli", "at": "2026-11-16T10:00:00.000Z", "session": "<session id>",
-  "kind": "decision", "from": "session:<id>", "to": "user",
+  "stream": "C", "kind": "decision", "from": "session:<id>", "to": "user",
   "subject": "Which color do we use in color.txt?", "body": "bodies/2026-11-16/1763300000000-a1b2c3d4-cli.json",
   "thread": "toolu_01RAQ", "needs": "answer",
   "refs": { "reply": "<id>", "of": "<id>", "via": "session:<root> | chat" }
@@ -118,6 +118,7 @@ Both tests check the same three known values. The files have no `version` field.
 |---|---|
 | `id` | `<ms>-<8 hex>-<writer>`. The ids of one writer always grow. The writer is `supervisor` (the supervisor, or the plugin in a supervisor turn), `cli`, `live` or `tray` (the tray app in live mode) |
 | `session` | The session that the envelope is about |
+| `stream` | The work stream (C1) of the session of the envelope. Rules below the table |
 | `from`, `to` | `user`, `supervisor`, `docs`, `policy` or `session:<full id>`. One receiver for each envelope |
 | `subject` | One line of 80 characters maximum. One rule in `Subjects.Of` (C#) and `subject` (`stream.ts`); the contract tests check both |
 | `body` | The path of the body. A forward points to the body of the original |
@@ -127,6 +128,14 @@ Both tests check the same three known values. The files have no `version` field.
 | `refs.of` | A forward (same body, new receiver) or an ack: the original envelope |
 | `refs.via` | The relay that typed the words of the user: `session:<root>` for `mcp__orch__answer`, `chat` for a chat line |
 | other `refs` | Traces: `turnStart`, `envelopes`, `row`, `tool`, `output`, `parent`, `envelope` (of `delivery.blocked`) |
+
+Rules of the `stream` field (C4):
+
+1. The writer copies `stream` from the registry entry of the session. The session is `session`, else the session of `from`, else the session of `to`. C#: `EventStream.StreamOf`. Plugin: `streamOf` (`stream.ts`) reads the entry of its own session.
+2. A `stream` in `PostInput` wins over the registry.
+3. A forward keeps the `stream` of the original.
+4. A session with no stream gives an envelope with no `stream` field. An envelope from before C4 has no `stream` field too. A reader treats both as "no stream". No migration adds the field.
+5. The registry sets the stream when it creates the entry and never changes it. So `EventStream` keeps the stream of each entry that it read.
 
 ## Primitives
 
@@ -152,6 +161,7 @@ Each reader asks the stream with one typed record: `StreamQuery` (`Orchestrator.
 | `Party` | `party` | `from` or `to`. A prefix is enough |
 | `From`, `To` | `from`, `to` | A prefix of the party |
 | `Thread` | `thread` | The exact thread |
+| `Stream` | `stream` | The `stream` field, exact, no case. An envelope with no stream never matches |
 | `Needs` | `needs` | `answer`, `review`, `ack`, or `any` (`needs`, `needs=true`) |
 | `Open` | `open` | The envelope waits for an act (the inbox rule below) |
 | `Ledger` | `ledger` | The answers by docs or policy, and the reviews |

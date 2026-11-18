@@ -8,8 +8,9 @@ public static class DecisionCommands
     {
         var any = false;
         var only = c.Args.Option("session") is { } prefix ? c.Messages.RequireSession(prefix) : null;
+        var stream = c.Args.Option("stream");
         var enabled = c.Store.Sessions().ToHashSet();
-        foreach (var d in c.Store.OpenDecisions().Where(d => enabled.Contains(d.Session) && (only is null || d.Session == only)))
+        foreach (var d in c.Store.OpenDecisions().Where(d => enabled.Contains(d.Session) && (only is null || d.Session == only) && SessionCommands.InStream(c.Store.Session(d.Session), stream)))
         {
             any = true;
             var title = c.Store.Session(d.Session).Title ?? SessionCommands.Short(d.Session);

@@ -127,3 +127,14 @@ test('a mode and a workflow read from the same two roots, with the marker file o
   assert.equal(await readDefinition($, 'modes', '../chat', 'mode.json'), undefined, 'a name outside the C# rule is never read')
   assert.equal(await readDefinition($, 'templates', '_spec', 'meta.schema.json'), undefined)
 })
+
+test('an envelope has the stream of the registry entry of its session, and no stream when the entry has none', async () => {
+  reset()
+  const $ = fake({ 'store/sessions/s1/session.json': JSON.stringify({ id: 's1', stream: 'C' }) })
+  const id = await post($, 'session.output', 'session:s1', 'user', { text: 'a' })
+  const envelope = JSON.parse($.files[`store/events/2026-11-18/${id}.json`])
+  assert.equal(envelope.stream, 'C')
+  $.files['store/sessions/s1/session.json'] = JSON.stringify({ id: 's1' })
+  const old = await post($, 'session.output', 'session:s1', 'user', { text: 'b' })
+  assert.equal('stream' in JSON.parse($.files[`store/events/2026-11-18/${old}.json`]), false)
+})

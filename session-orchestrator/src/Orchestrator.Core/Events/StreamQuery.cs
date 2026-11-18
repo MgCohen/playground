@@ -32,6 +32,9 @@ public sealed record StreamQuery
     public string? To { get; init; }
     public string? Thread { get; init; }
 
+    /// <summary>The work stream of the envelope (exact, no case). An envelope with no stream never matches.</summary>
+    public string? Stream { get; init; }
+
     /// <summary><c>answer</c>, <c>review</c>, <c>ack</c>, or <see cref="AnyNeeds"/>.</summary>
     public string? Needs { get; init; }
 
@@ -62,6 +65,7 @@ public sealed record StreamQuery
         if (From is { Length: > 0 } from && !Starts(e.From, from)) return false;
         if (To is { Length: > 0 } to && !Starts(e.To, to)) return false;
         if (Thread is { Length: > 0 } thread && e.Thread != thread) return false;
+        if (Stream is { Length: > 0 } stream && !string.Equals(e.Stream, stream, StringComparison.OrdinalIgnoreCase)) return false;
         if (Needs is { Length: > 0 } needs && (e.Needs is null || (needs != AnyNeeds && e.Needs != needs))) return false;
         if (!Forwards && e.IsForward) return false;
         if (Ledger && !IsLedger(e)) return false;
