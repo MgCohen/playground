@@ -1,5 +1,6 @@
-@* The facts and the blocks of a full document, in the order of the view.json of its kind. *@
+@* The facts and the blocks of a full document, in the order of the view.json of its kind. Each look draws its own frame (Ui/Looks). *@
 @using Orchestrator.Core.Templates
+@using Orchestrator.Web.Components.Ui.Looks
 @if (Doc.Facts.Count > 0)
 {
     <div class="crd facts">
@@ -12,31 +13,8 @@
 @foreach (var block in Doc.Blocks)
 {
     <h2 class="gt">@block.Label</h2>
-    <div class="crd pad doc blk @block.As" data-field="@block.Field" style="@(block.Tone is { } t ? $"--st:var(--{t})" : null)">
-        @switch (block.As)
-        {
-            case Looks.Code:
-                <pre class="mono pre">@block.Text</pre>
-                break;
-            case Looks.Well:
-                <div class="well rec pre">@block.Text</div>
-                break;
-            case Looks.List:
-                <ul>@foreach (var item in block.Items) {<li>@item</li>}</ul>
-                break;
-            case Looks.Steps:
-                <ol>@foreach (var item in block.Items) {<li>@item</li>}</ol>
-                break;
-            case Looks.Chips:
-                <div class="chips">@foreach (var item in block.Items) {<span class="chip @(item == block.Marked ? "def" : "")">@item</span>}</div>
-                break;
-            case Looks.Links:
-                <ul>@foreach (var item in block.Items) {<li>@if (Uri.TryCreate(item, UriKind.Absolute, out var u) && u.Scheme.StartsWith("http")) {<a href="@item" target="_blank" rel="noopener">@item</a>} else {<span class="mono">@item</span>}</li>}</ul>
-                break;
-            default:
-                <p class="pre">@block.Text</p>
-                break;
-        }
+    <div class="blk @block.As" data-field="@block.Field" style="@(block.Tone is { } t ? $"--st:var(--{t})" : null)">
+        <DynamicComponent Type="LookComponents.Of(block.As)" Parameters="LookComponents.Parameters(LookValue.Of(block))" />
     </div>
 }
 

@@ -15,13 +15,6 @@
     "message"
   ],
   "card": {
-    "title": "summary",
-    "quick": [
-      "state",
-      "done",
-      "blockers",
-      "links"
-    ],
     "accept": {
       "post": "ack"
     },

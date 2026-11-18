@@ -1,0 +1,15 @@
+@* Look "links": one link row for each item, with the link icon. An http URL opens in a new tab; another value (a branch, a path) has no target. *@
+@inherits LookBase
+<div class="crd pad doc lnks">
+    @foreach (var item in Value.Items)
+    {
+        @if (Uri.TryCreate(item, UriKind.Absolute, out var u) && u.Scheme.StartsWith("http"))
+        {
+            <a class="lnk" href="@item" target="_blank" rel="noopener"><Icon Name="link" />@item</a>
+        }
+        else
+        {
+            <a class="lnk"><Icon Name="link" />@item</a>
+        }
+    }
+</div>

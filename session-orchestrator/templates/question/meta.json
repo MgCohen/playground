@@ -14,13 +14,6 @@
     "answer"
   ],
   "card": {
-    "title": "question",
-    "quick": [
-      "recommendation",
-      "defaultOption",
-      "risk",
-      "context"
-    ],
     "accept": {
       "post": "answer",
       "text": "defaultOption"

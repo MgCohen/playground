@@ -9,6 +9,17 @@ public sealed record ViewSpec(string Label, string Icon, string Tone, DocumentSp
 {
     /// <summary>Optional: a field whose value changes the tone and the icon, for example a blocked report.</summary>
     public ToneBySpec? ToneBy { get; init; }
+
+    /// <summary>Optional: the content actions of the document page. The app maps each id to a behavior.</summary>
+    public IReadOnlyList<ActionSpec>? Actions { get; init; }
+}
+
+/// <summary>One content action of a document page. Role: main (one at most, shown first), other, or danger (last, red, asks to confirm).</summary>
+public sealed record ActionSpec(string Id, string Label, string Role)
+{
+    public const string Main = "main";
+    public const string Other = "other";
+    public const string Danger = "danger";
 }
 
 public sealed record ToneBySpec(string Field, IReadOnlyDictionary<string, string> Values)
@@ -83,7 +94,11 @@ public sealed record Block(string Field, string Label, string As, string Text, I
     public string? Marked { get; init; }
 }
 
-public sealed record DocumentModel(string Kind, string Label, string Icon, string Tone, string Title, string? Subtitle, IReadOnlyList<Fact> Facts, IReadOnlyList<Block> Blocks);
+public sealed record DocumentModel(string Kind, string Label, string Icon, string Tone, string Title, string? Subtitle, IReadOnlyList<Fact> Facts, IReadOnlyList<Block> Blocks)
+{
+    /// <summary>The content actions of the view, in order: main first, danger last. Empty: no corner button.</summary>
+    public IReadOnlyList<ActionSpec> Actions { get; init; } = [];
+}
 
 public sealed record Well(string Label, string Text);
 
@@ -103,7 +118,10 @@ public static partial class Views
             First(set, kind, d.Title, fields) ?? view.Label,
             d.Subtitle is null ? null : First(set, kind, d.Subtitle, fields),
             d.Facts.Select(f => ToFact(f, fields)).OfType<Fact>().ToList(),
-            d.Blocks.Select(b => ToBlock(set, kind, b, fields)).OfType<Block>().ToList());
+            d.Blocks.Select(b => ToBlock(set, kind, b, fields)).OfType<Block>().ToList())
+        {
+            Actions = (view.Actions ?? []).OrderBy(a => a.Role switch { ActionSpec.Main => 0, ActionSpec.Danger => 2, _ => 1 }).ToList(),
+        };
     }
 
     public static PreviewModel Preview(TemplateSet set, string kind, IReadOnlyDictionary<string, object?> fields)
@@ -125,6 +143,9 @@ public static partial class Views
     }
 
     static ViewSpec Spec(TemplateSet set, string kind) => set[kind].View ?? throw new InvalidOperationException($"template {kind} has no view.json");
+
+    /// <summary>The tone and the icon of a message of this kind: the view, changed by toneBy.</summary>
+    public static (string Tone, string Icon) Look(TemplateSet set, string kind, IReadOnlyDictionary<string, object?> fields) => Look(Spec(set, kind), fields);
 
     static (string Tone, string Icon) Look(ViewSpec view, IReadOnlyDictionary<string, object?> fields)
     {

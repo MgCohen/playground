@@ -14,11 +14,6 @@
     "review"
   ],
   "card": {
-    "title": "title",
-    "quick": [
-      "steps",
-      "context"
-    ],
     "accept": {
       "post": "review",
       "verdict": "approve"
