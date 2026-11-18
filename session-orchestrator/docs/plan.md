@@ -2113,12 +2113,17 @@ Test setup: scratchpad folder `spike/s1`, test store `spike/store`, port 7840. T
 | R-6 | `--bg --remote-control` | Remote Control on from turn 1, not in the app. Own id |
 | R-7 | `--desktop --resume <live --bg id>` | Exit 1: stop the job first |
 | R-8 | `--desktop --settings <file> --resume <known>` | Exit 1, refused |
+| R-9 | `-p --remote-control` with `--debug-file`, a 20 s turn, CLI 2.1.312 | No bridge in the debug log |
+| R-10 | R-9 with the app CLI 2.1.325 | No bridge in the debug log |
+| R-11 | `--bg --remote-control <name> --resume <known>` | Same session id. Remote Control on. The job stays idle after the turn until `claude stop` |
 
 Findings:
 
 - R-F1: `--desktop` takes no flag other than `--resume` or `--continue`. So the first import of a new session needs a transcript, and the opening turn stays headless.
 - R-F2: the app turns on Remote Control by default (`ccRemoteControlDefaultEnabled`) only for sessions that it makes. An imported session never gets it.
 - R-F3: a `--bg --remote-control` job has Remote Control from turn 1, but the app cannot import it while it runs, and Remote Control stops with the job.
+- R-F5: `-p` ignores `--remote-control` in 2.1.312 and 2.1.325. The help text says the flag starts an interactive session.
+- R-F6: `--bg --remote-control --resume <id>` keeps the id. So a known session can run a turn with Remote Control on, but as a background job, not as an app session.
 - R-F4: so a session started by the supervisor needs `set_remote_control`. Only a live app session has that tool.
 
 ## Next tasks

@@ -96,8 +96,9 @@ No CLI command starts or imports a session into the desktop app with Remote Cont
 | `--desktop --settings <file> --resume <known>` | Exit 1: "... can't be combined with `--settings`." |
 | `--desktop --resume <known>` | Exit 0. The app imports the session. Remote Control stays off |
 | `--desktop` | Exit 0. The app opens. No new session |
-| `-p --remote-control <name>` | Exit 0. The flag has no effect: no bridge, no link |
+| `-p --remote-control <name>` | Exit 0. The flag has no effect: no bridge in the debug log, no link (2.1.312 and the app CLI 2.1.325) |
 | `--bg --remote-control <name>` | Remote Control is on from the first turn (phone, claude.ai). Not in the app sidebar. `--bg` ignores `--session-id` and gives its own id |
+| `--bg --remote-control <name> --resume <known>` | Same id, Remote Control on. The job stays idle after the turn until `claude stop` |
 | `--desktop --resume <id of a live --bg job>` | Exit 1: "That session is running in the background ... `claude stop` first" |
 
 - `--desktop` refuses redirected output. To read its error text, run it in a console and read the console buffer.
