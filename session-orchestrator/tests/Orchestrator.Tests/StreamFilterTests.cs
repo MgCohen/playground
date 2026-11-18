@@ -96,7 +96,10 @@ public sealed class StreamFilterTests
         var questions = Run(rig, "questions", "--stream", "C");
         Assert.That(questions, Does.Contain("Question of C").And.Not.Contain("Question of other"));
 
+        Assert.That(Run(rig, "questions", "--stream", "Z"), Does.Contain("No open questions."), "C3-F4: the term is question");
+
         var status = Run(rig, "status", "--stream", "C");
+        Assert.That(status, Does.Contain("open question toolu_c").And.Not.Contain("open decision"), "C3-F4: the term is question");
         Assert.That(status, Does.Contain($"id: {parent}").And.Contain($"id: {child}").And.Contain("stream: C").And.Not.Contain(other));
 
         var events = Run(rig, "events", "--stream", "C", "--kind", "question");

@@ -34,7 +34,7 @@ public sealed class Lifecycle(FileStore store, IProvider? provider = null)
     {
         var blockers = new List<string>();
         var open = store.OpenDecisions(id);
-        if (open.Count > 0) blockers.Add($"{open.Count} open decision(s) wait for the user");
+        if (open.Count > 0) blockers.Add($"{open.Count} open question(s) wait for the user");
         var prs = store.Stacks(id).SelectMany(e => e.Versions).Where(v => v.State is VersionStates.Open or VersionStates.Ready && v.Pr is not null).Select(v => $"#{v.Pr}").ToList();
         if (prs.Count > 0) blockers.Add($"open PRs: {string.Join(", ", prs)}");
         return blockers;

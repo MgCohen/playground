@@ -182,7 +182,7 @@ public sealed class EventStream
         if (post.Kind == EventKinds.Answer && post.Thread is { } thread && FirstAnswer(thread) is { } first)
         {
             var text = Fields(first).TryGetValue("text", out var t) ? t : "";
-            throw new MessageException($"decision {thread} already has an answer from {first.From}: {text}. The session has this answer. Nothing changed.");
+            throw new MessageException($"question {thread} already has an answer from {first.From}: {text}. The session has this answer. Nothing changed.");
         }
     }
 
@@ -198,7 +198,7 @@ public sealed class EventStream
         for (var attempt = 0; attempt < 20 && FirstAnswer(thread) is null; attempt++) System.Threading.Thread.Sleep(50);
         var first = FirstAnswer(thread);
         var text = first is null ? "(the answer is not written yet)" : Fields(first).GetValueOrDefault("text");
-        throw new MessageException($"decision {thread} already has an answer from {first?.From ?? repos.Claims.Read(claim) ?? "another writer"}: {text}. The session has this answer. Nothing changed.");
+        throw new MessageException($"question {thread} already has an answer from {first?.From ?? repos.Claims.Read(claim) ?? "another writer"}: {text}. The session has this answer. Nothing changed.");
     }
 
     (string Id, long Ms) NewId()

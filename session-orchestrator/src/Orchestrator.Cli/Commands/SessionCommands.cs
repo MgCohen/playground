@@ -103,7 +103,7 @@ public static class SessionCommands
         c.Output.WriteLine($"  lease: {lease.Holder} since {lease.Since}{(store.IsLive(id, now) ? " (live)" : "")}");
         if (store.Report(id) is { } report) c.Output.WriteLine($"  report: {report.State}: {report.Summary}");
         if (store.Blocked(id)?.Reason is { } blocked) c.Output.WriteLine($"  blocked: {blocked}");
-        foreach (var d in store.OpenDecisions(id)) c.Output.WriteLine($"  open decision {d.Id} ({d.Risk}): {d.Question}");
+        foreach (var d in store.OpenDecisions(id)) c.Output.WriteLine($"  open question {d.Id} ({d.Risk}): {d.Question}");
         foreach (var entry in store.Stacks(id))
             foreach (var v in entry.Versions)
                 c.Output.WriteLine($"  stack {v.Branch} on {v.Base}: {v.State}{(v.Pr is { } pr ? $", PR #{pr}" : "")}");
