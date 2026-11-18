@@ -291,25 +291,36 @@ executor of the step
   </section>
 
   <section>
-    <h2>Two base kinds</h2>
+    <h2>Each session has a role and an optional type</h2>
     <div class="scroll"><table>
-      <tr><th>Kind</th><th>When</th><th>Effect today</th></tr>
-      <tr><td><code>general</code></td><td>The default for each new conversation</td><td>None</td></tr>
-      <tr><td><code>orchestrator</code></td><td>The user or a parent asks for it</td><td>Metadata only. The session can load the skill <code>orch:orch-brief</code></td></tr>
+      <tr><th>Field</th><th>Values</th><th>Meaning</th><th>Set by</th></tr>
+      <tr><td><code>role</code></td><td><code>orchestrator</code>, <code>worker</code>, <code>free</code></td><td>The relation of the session to workflows. One value, and it can change</td><td>The run: owner, step or none</td></tr>
+      <tr><td><code>type</code></td><td><code>decider</code>, <code>reviewer</code>, … or none</td><td>A custom agent: its context and instructions</td><td>The creator, when it creates the session</td></tr>
     </table></div>
-    <div class="note">Open point: what a kind does. The options are metadata only, a skill with the expected behavior, or a custom agent. C2 makes the kind metadata only. C3 shows which behaviors repeat. Then the user decides.</div>
+    <div class="scroll"><table>
+      <tr><th>Role</th><th>Meaning</th></tr>
+      <tr><td><code>orchestrator</code></td><td>Owns a workflow run. It is the central point</td></tr>
+      <tr><td><code>worker</code></td><td>Does steps of a run that another session owns</td></tr>
+      <tr><td><code>free</code></td><td>Has no workflow</td></tr>
+    </table></div>
+    <ul>
+      <li>The role does not come from the tree. An orchestrator can have a parent. A worker can send messages to any session.</li>
+      <li>A session can own one run and do a step in another run. Nested workflows need this. While it owns a run, its role is <code>orchestrator</code>.</li>
+      <li>The agents <code>orchestrator</code> and <code>worker</code> of the plugin become the default agents of those roles. A type replaces the default agent.</li>
+    </ul>
   </section>
 
   <section>
     <h2>New fields of a session</h2>
 <pre class="cmd">{
-  <span class="k">"title"</span>: "C2a: Does the app import a background child?",
-  <span class="k">"goal"</span>: "Answer the question with a test in the scratchpad.",
-  <span class="k">"doneWhen"</span>: "The report gives the answer and the evidence.",
+  <span class="k">"title"</span>: "C2a: Decide the merge order",
+  <span class="k">"goal"</span>: "Pick the merge order of the stream PRs.",
+  <span class="k">"doneWhen"</span>: "The report gives the order and the reason.",
   <span class="k">"stream"</span>: "C",            <span class="c">// new, optional. Default: the stream of the parent</span>
-  <span class="k">"kind"</span>: "general"           <span class="c">// new, optional. Default: general</span>
+  <span class="k">"type"</span>: "decider",         <span class="c">// new, optional. The custom agent</span>
+  <span class="k">"workflow"</span>: "planning"     <span class="c">// new, optional. The run gives the role</span>
 }</pre>
-    <p>C2 adds the two fields to the brief template, the session record and each envelope. The other brief fields do not change.</p>
+    <p>C2 adds these fields to the brief template, the session record and each envelope. The other brief fields do not change.</p>
   </section>
 </div>
 
