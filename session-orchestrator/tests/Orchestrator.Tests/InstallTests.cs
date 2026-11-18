@@ -1,5 +1,6 @@
 using Orchestrator.Cli;
 using Orchestrator.Store;
+using Orchestrator.Store.Local;
 
 namespace Orchestrator.Tests;
 
