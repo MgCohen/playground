@@ -20,6 +20,24 @@ public static class Home
     public static string StoreRoot() =>
         Environment.GetEnvironmentVariable("ORCH_STORE") is { Length: > 0 } store ? Path.GetFullPath(store) : DefaultStoreRoot();
 
+    /// <summary>The default port of the supervisor.</summary>
+    public const int DefaultPort = 7777;
+
+    /// <summary>
+    /// The store of the <c>orch</c> command (H5). <c>ORCH_URL</c>: the store API of that supervisor (HTTP mode). With no
+    /// <c>ORCH_URL</c>, no <c>ORCH_STORE</c> and no folder at the default store root, the store API on 127.0.0.1
+    /// (<c>ORCH_PORT</c>, else 7777), if <paramref name="fallback"/>. Else the local folder. A <paramref name="local"/>
+    /// command (the supervisor start, the store migration) always uses the local folder.
+    /// </summary>
+    public static string CliStoreRoot(bool local = false, bool fallback = true)
+    {
+        if (local) return StoreRoot();
+        if (Environment.GetEnvironmentVariable("ORCH_URL") is { Length: > 0 } url) return url.TrimEnd('/');
+        if (!fallback || Environment.GetEnvironmentVariable("ORCH_STORE") is { Length: > 0 } || Directory.Exists(DefaultStoreRoot())) return StoreRoot();
+        var port = int.TryParse(Environment.GetEnvironmentVariable("ORCH_PORT"), out var p) ? p : DefaultPort;
+        return $"http://127.0.0.1:{port}";
+    }
+
     /// <summary>
     /// The default store root (H1): <c>%LOCALAPPDATA%\orch\store</c>. It is out of the checkout, so a <c>git clean -fdx</c>
     /// cannot delete it. The plugin (<c>backend.ts</c> <c>storeRoot</c>) and <c>install.ps1 -Store</c> use the same default.
@@ -42,12 +60,19 @@ public static class Home
     /// to them or replace them. No store root: the core definitions only.
     /// </summary>
     public static LayeredDefinitions Definitions(Catalog catalog, string? storeRoot) =>
-        new(catalog, StoreBackends.Core(Templates(), catalog), storeRoot is null ? null : StoreBackends.Store(StoreBackends.Create(storeRoot), catalog));
+        DefinitionsOf(catalog, storeRoot is null ? null : StoreBackends.Create(storeRoot));
+
+    /// <summary>One catalog of the template system on the repositories of a store (a local folder or the store API).</summary>
+    public static LayeredDefinitions DefinitionsOf(Catalog catalog, IRepositories? store) =>
+        new(catalog, StoreBackends.Core(Templates(), catalog), store is null ? null : StoreBackends.Store(store, catalog));
 
     /// <summary>The message templates of a store root.</summary>
     public static TemplateStore TemplateStore(string? storeRoot) => new(Definitions(Catalog.Templates, storeRoot), Spec);
 
     public static TemplateSet LoadTemplates(string? storeRoot) => new(TemplateStore(storeRoot), Templates());
+
+    /// <summary>The message templates of the repositories of a store.</summary>
+    public static TemplateSet LoadTemplatesOf(IRepositories store) => new(new TemplateStore(DefinitionsOf(Catalog.Templates, store), Spec), Templates());
 
     /// <summary>The session modes (S1) of a store root.</summary>
     public static DefinitionCatalog<ModeDefinition> Modes(string? storeRoot)

@@ -62,5 +62,33 @@ public static class Claude
         return new ClaudeOutput(error is null, result, error, lines);
     }
 
+    /// <summary>
+    /// Runs the claude CLI with these arguments only (no print mode, nothing on standard input) and gives its exit code
+    /// and its output. The process tree stops after <paramref name="limit"/>, for example at a prompt that waits for a person.
+    /// </summary>
+    public static async Task<(int Exit, string Output, string Error)> Plain(string cwd, IReadOnlyList<string> arguments, TimeSpan limit, CancellationToken cancel)
+    {
+        var info = new ProcessStartInfo(Executable)
+        {
+            WorkingDirectory = cwd,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardOutputEncoding = System.Text.Encoding.UTF8,
+        };
+        foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        using var process = Process.Start(info) ?? throw new InvalidOperationException($"cannot start {Executable}");
+        using var tree = new ProcessTree(process, ProcessTree.DefaultInterval);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancel);
+        timeout.CancelAfter(limit);
+        using var kill = timeout.Token.Register(tree.KillAll);
+        process.StandardInput.Close();
+        var output = process.StandardOutput.ReadToEndAsync(CancellationToken.None);
+        var errors = process.StandardError.ReadToEndAsync(CancellationToken.None);
+        await process.WaitForExitAsync(CancellationToken.None);
+        if (timeout.IsCancellationRequested && !cancel.IsCancellationRequested) return (-1, await output, $"no end after {limit.TotalSeconds:0} s: {Last(await errors, 400)}");
+        return (process.ExitCode, await output, await errors);
+    }
+
     static string Last(string text, int length) => text.Length > length ? text[^length..] : text;
 }

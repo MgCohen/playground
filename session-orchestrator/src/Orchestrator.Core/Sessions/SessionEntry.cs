@@ -91,6 +91,9 @@ public sealed record SessionWork
 
     /// <summary>True: the first turn makes a git worktree. Then <see cref="Cwd"/> is the worktree folder.</summary>
     public bool? Worktree { get; init; }
+
+    /// <summary>Where the session runs (G2): <see cref="Places.Local"/> (null) or <see cref="Places.Cloud"/>.</summary>
+    public string? Where { get; init; }
 }
 
 /// <summary>A custom agent: the agent name and the skills to load first.</summary>

@@ -52,7 +52,7 @@ There is no other communication file. The inbox, the answers, the reviews, the r
 
 ## Repositories (C#)
 
-The C# code reads and writes the store only through `IRepositories` (`src/Orchestrator.Core/Storage/`). `StoreBackends.Create` selects the implementation. Only the local folder implementation (`src/Orchestrator.Store/Local/`) touches the files above. The test `ArchitectureTests` refuses store IO in other C# files. The plugin hooks write the same files only through `plugin/hooks/backend.ts`.
+The C# code reads and writes the store only through `IRepositories` (`src/Orchestrator.Core/Storage/`). `StoreBackends.Create` selects the implementation: an `http` or `https` root gives `HttpRepositories` (the store API of a supervisor, section "Store API"), each other root the local folder. Only the local folder implementation (`src/Orchestrator.Store/Local/`) touches the files above. The test `ArchitectureTests` refuses store IO in other C# files. The plugin hooks write the same files only through `plugin/hooks/backend.ts`.
 
 | Repository | Entity | Id | Files |
 |---|---|---|---|
@@ -73,7 +73,7 @@ The C# code reads and writes the store only through `IRepositories` (`src/Orches
 
 The version of a `Definition` is the FNV-1a hash of each file path and text, in path order. A change and a remove of a definition move the old folder to `.removed/`.
 
-Rules of each implementation. The contract tests (`RepositoryContractTests`) run them against each data kind:
+Rules of each implementation. The contract tests (`RepositoryContractTests`) run them against each data kind, on the local folder and on the store API of a test server:
 
 1. A save of an `Add` with an id that exists fails with `StoreConflictException` (`Exists`). The local folder writes a temp file and moves it with no overwrite. The claims and the envelopes use this rule.
 2. Each entity has a version. A save of a change or a remove fails when the stored version is newer (`Stale`). A put of a whole file (lease, meta, status) reads again and writes again: the last writer wins.
@@ -423,7 +423,7 @@ Store version 3 keeps the data of each session in one registry entry, `sessions/
   "engine": { "kind": "Claude Code", "sessionId": "6f1c2a90-…", "appId": "local_6f1c2a90-…", "imported": true, "remoteControl": true },
   "parent": "ca72efff-…", "title": "Session registry", "owner": "user", "tags": ["orch"], "stream": "S",
   "role": "worker", "type": { "agent": "worker", "skills": ["orch:orch-report"] }, "workflow": "planning",
-  "work": { "cwd": "…", "repo": "…", "branch": "orch/session-6f1c2a90", "worktree": true },
+  "work": { "cwd": "…", "repo": "…", "branch": "orch/session-6f1c2a90", "worktree": true, "where": null },
   "settings": { "behavior": { "mode": "auto", "visibility": "public" }, "permissions": { "mode": "auto", "allowDefaults": false } },
   "lifecycle": { "phase": "active", "at": "…", "by": "user", "reason": null, "started": true },
   "created": { "at": "…", "by": "session:ca72efff-…" }, "updated": { "at": "…", "by": "supervisor" }
@@ -440,7 +440,7 @@ Store version 3 keeps the data of each session in one registry entry, `sessions/
 | `role` | `orchestrator`, `worker` or `free` (C1). At create: `orchestrator` for the orchestrator agent, `worker` for a child, else `free`. The workflow runner (C2) changes it | Create |
 | `type` | The custom agent: `agent` and `skills`. Only the provider reads it, to start the session. With no `type.agent`, a turn uses the default agent of the role: `orchestrator` or `worker` (C2). A `free` session has no agent | Create |
 | `workflow` | The workflow that the session runs or works in | Create |
-| `work` | `cwd`, and the git worktree: `worktree`, `repo`, `branch` | Create, the worktree step |
+| `work` | `cwd`, and the git worktree: `worktree`, `repo`, `branch`. `where`: `cloud` for a cloud session (G2), else null. A cloud session has no worktree, and `engine.appId` is its cloud session id | Create, the worktree step, the first cloud turn (`engine.appId`) |
 | `settings` | The settings in tiers (below) | Create, `SessionRegistry.Configure` |
 | `lifecycle` | `phase` (`active`, `stopped`, `archived`) with `at`, `by` and `reason`; `started` (the engine session exists) | `orch stop`, `resume`, `archive`, the API, the supervisor |
 | `created`, `updated` | A time and a party | Each write |
@@ -579,12 +579,55 @@ A version id is the decision id for version 1 and `<decision>-v<n>` after it. A 
 | `POST /api/inbox/<id>/refuse` | `{ text }` | The posted envelope |
 | `GET /api/sessions` | | Each enabled session: title, parent, holder, live, running, status, report, blocked, open decisions, and from `state.json`: `state`, `waitReason`, `requested`, `fault`, `inferred` |
 | `GET /api/decisions` | | All open decisions |
-| `POST /api/sessions` | `{ title, cwd, brief, parent?, background? }` | `{ id }`. A brief to the new session |
+| `POST /api/sessions` | `{ title, cwd, brief, parent?, background?, where? }` | `{ id }`. A brief to the new session. `where: cloud` starts a cloud session |
 | `POST /api/sessions/<id>/send` | `{ text }` | `{ event }`. A message from the user |
 | `POST /api/decisions/<session>/<id>` | `{ answer }` | `{ answered }`. An answer from the user |
 | `POST /api/decisions/<session>/<id>/review` | `{ verdict: approve \| change \| refuse, text }` | `{ event }`. A review to the session |
 | `GET /api/ledger` | | The answers by docs or policy, and each review |
 | `POST /api/sessions/<id>/stop`, `/resume`, `/archive?force=true` | | Lifecycle (stream B) |
+
+### Token check
+
+| Caller | Rule |
+|---|---|
+| Local: address `127.0.0.1` or `::1`, no proxy header | No token |
+| Remote, `ORCH_TOKEN` set | Header `X-Orch-Token`, `Authorization: Bearer`, or the sign-in cookie. Else 401 |
+| Remote, no `ORCH_TOKEN` | Pages and `/api/*` open; `/api/store` gives 403 |
+
+Proxy headers: `X-Forwarded-For`, `Forwarded`, `X-Real-IP`, `Cf-Connecting-Ip`, `Cf-Access-Jwt-Assertion`. A tunnel connects from `127.0.0.1`, so these headers make a request remote.
+
+## Store API (H5, `/api/store`)
+
+The store API gives each repository of `IRepositories` to a remote caller: `orch` in HTTP mode (`HttpRepositories`). `StoreService` applies each call to the local repositories of the supervisor. A document goes as its file text, so its version is the same on both sides (Version rule).
+
+```mermaid
+flowchart LR
+    W[Cloud worker: orch] -->|HTTPS + token| A[/api/store]
+    A --> S[StoreService]
+    S --> R[Local repositories]
+    R --> F[(Store folder)]
+```
+
+| Call | Body or query | Result |
+|---|---|---|
+| `GET /api/store` | | `{ location, exists, version }` |
+| `POST /api/store/prepare` | | Makes the stream folders |
+| `POST /api/store/log` | `{ line }` | 204. One line in the supervisor log |
+| `GET /api/store/<kind>/get` | `id` and the scope keys | `{ id, version, text }`, or 404 |
+| `GET /api/store/<kind>/list` | The scope keys | All documents of the kind |
+| `POST /api/store/<kind>/save` | `{ adds, changes, removes }`: `{ id, version, text }` each | `{ versions }`. 409 `{ conflict, id, message }` on a store rule |
+| `GET /api/store/events/feed` | `from` | `{ epoch, position, docs }`: the envelopes after `from`. A new supervisor process has a new `epoch` |
+
+| Kind | Scope keys |
+|---|---|
+| `events`, `bodies`, `policies`, `versions`, `claims`, `cursors`, `nudges`, `sessions` | None |
+| `session-file` | `file`, for example `lease.json` |
+| `session-items` | `session`, `folder` |
+| `definitions` | `catalog`: `templates`, `modes` or `workflows` |
+
+- An id is one or more parts with `/` between them. The API refuses an empty part, `.`, `..`, `\`, `:` and control characters (400). A scope key is one part.
+- A save checks the version of each change and remove before the first write. A refused save writes nothing.
+- The HTTP mode has no push: `Watch()` polls every 2 s.
 
 ## Questions to the user
 

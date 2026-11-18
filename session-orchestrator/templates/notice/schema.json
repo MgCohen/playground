@@ -26,7 +26,8 @@
         "remote-control-child",
         "archive-child",
         "state-inferred",
-        "open-in-app"
+        "open-in-app",
+        "cloud-worker"
       ]
     },
     "decision": {
@@ -71,6 +72,10 @@
       "type": "string"
     },
     "state": {
+      "type": "string"
+    },
+    "session": {
+      "description": "The full id of the session that gets the notice.",
       "type": "string"
     }
   },
