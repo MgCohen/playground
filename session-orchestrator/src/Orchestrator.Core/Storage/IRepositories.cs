@@ -44,6 +44,9 @@ public interface IRepositories
     /// </summary>
     IRepository<Doc<SessionEntry>, string> SessionEntries { get; }
 
+    /// <summary>The workflow runs (C2). Id: the run id. Only <see cref="Workflows.WorkflowRunner"/> writes them.</summary>
+    IRepository<Doc<Workflows.WorkflowRun>, string> WorkflowRuns { get; }
+
     /// <summary>
     /// One run state file of each session, for example the lease (<see cref="StoreFiles.Lease"/>). Id: the session id.
     /// A <see cref="string"/> value is the text of the file. Any other value is JSON.

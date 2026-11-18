@@ -3,6 +3,7 @@ using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
 using Orchestrator.Core.Policy;
+using Orchestrator.Core.Sessions;
 using Orchestrator.Store;
 
 namespace Orchestrator.Supervisor;
@@ -275,7 +276,7 @@ public sealed partial class Supervisor
             return;
         }
         var meta = store.Session(id);
-        var request = new TurnRequest(id, cwd, pending.Text, meta.IsNew()) { Agent = meta.Type?.Agent, Title = meta.Title };
+        var request = new TurnRequest(id, cwd, pending.Text, meta.IsNew()) { Agent = Roles.AgentOf(meta), Title = meta.Title };
         var stop = new CancellationTokenSource();
         stops[id] = stop;
         Track(running, id, () => RunTurn(request, pending, stop.Token));
