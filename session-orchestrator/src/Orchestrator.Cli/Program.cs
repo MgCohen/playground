@@ -13,7 +13,7 @@ namespace Orchestrator.Cli
             orch: the command of the session orchestrator. Each command reads or writes the store (ORCH_STORE).
 
             Sessions
-              orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--agent A] [--worktree] [--allow-defaults] [--background] [--parent ID]
+              orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--agent A] [--worktree] [--allow-defaults] [--background] [--where local|cloud] [--parent ID]
               orch enable [--title T] [--parent ID] [--id ID]
               orch send <session> <text> [--from P]
               orch tree

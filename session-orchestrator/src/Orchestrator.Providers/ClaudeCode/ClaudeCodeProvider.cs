@@ -30,6 +30,7 @@ public sealed class ClaudeCodeProvider(ProviderOptions options) : IProvider
 
     public async Task<TurnResult> Turn(TurnRequest request, CancellationToken cancel)
     {
+        if (request.Where == Places.Cloud) return await CloudTurn(request, cancel);
         var watch = Stopwatch.StartNew();
         var session = request.IsNew ? "--session-id" : "--resume";
         List<string> arguments = [.. SettingArguments(options.PluginDir), session, request.Id];
@@ -44,6 +45,35 @@ public sealed class ClaudeCodeProvider(ProviderOptions options) : IProvider
             });
         var output = await Claude.Run(call, null, cancel);
         return new TurnResult(output.Ok, output.Result, output.Error, Math.Round(watch.Elapsed.TotalSeconds));
+    }
+
+    /// <summary>
+    /// The arguments of a cloud turn: <c>--cloud</c> starts a cloud session, <c>--cloud &lt;id&gt;</c> sends the prompt to
+    /// it. The cloud session gets the plugin, the permissions and <c>ORCH_URL</c> from its cloud environment (G-4), not
+    /// from this process. Not checked against a real cloud session yet: the end-to-end test comes with D2.
+    /// </summary>
+    public static IReadOnlyList<string> CloudArguments(TurnRequest request)
+    {
+        List<string> arguments = request.IsNew || request.AppId is null ? ["--cloud"] : ["--cloud", request.AppId];
+        if (request.IsNew && request.Title is { Length: > 0 } title) arguments.AddRange(["-n", title]);
+        if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", Agent(agent)]);
+        return arguments;
+    }
+
+    /// <summary>The cloud session id in the output of a cloud start: the first <c>session_id</c> of the stream.</summary>
+    public static string? CloudSessionId(IEnumerable<JsonElement> lines) =>
+        lines.Select(l => l.ValueKind == JsonValueKind.Object && l.TryGetProperty("session_id", out var id) && id.ValueKind == JsonValueKind.String ? id.GetString() : null)
+            .FirstOrDefault(id => id is { Length: > 0 });
+
+    async Task<TurnResult> CloudTurn(TurnRequest request, CancellationToken cancel)
+    {
+        var watch = Stopwatch.StartNew();
+        if (!request.IsNew && request.AppId is null) return new TurnResult(false, null, "the cloud session has no id", 0);
+        var output = await Claude.Run(new ClaudeCall(request.Cwd, request.Prompt, CloudArguments(request), new Dictionary<string, string>()), null, cancel);
+        return new TurnResult(output.Ok, output.Result, output.Error, Math.Round(watch.Elapsed.TotalSeconds))
+        {
+            AppId = request.IsNew ? CloudSessionId(output.Lines) : request.AppId,
+        };
     }
 
     public async Task<AskResult> Ask(AskRequest request, CancellationToken cancel)

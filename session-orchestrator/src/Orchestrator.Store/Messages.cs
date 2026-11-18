@@ -22,6 +22,7 @@ public sealed record BriefFields
     public string? Parent { get; init; }
     public bool? AllowDefaults { get; init; }
     public bool? Background { get; init; }
+    public string? Where { get; init; }
 }
 
 /// <summary>An answer of the docs check or the policy: why it applies, and where it comes from.</summary>
@@ -38,11 +39,11 @@ public sealed class Messages(FileStore store)
     public string NewSession(BriefFields brief, string createdBy, string from = Parties.User)
     {
         var fields = Fields(("title", brief.Title), ("goal", brief.Goal), ("scope", brief.Scope), ("doneWhen", brief.DoneWhen),
-            ("skills", brief.Skills), ("agent", brief.Agent), ("cwd", brief.Cwd), ("worktree", brief.Worktree), ("parent", brief.Parent), ("allowDefaults", brief.AllowDefaults), ("background", brief.Background));
+            ("skills", brief.Skills), ("agent", brief.Agent), ("cwd", brief.Cwd), ("worktree", brief.Worktree), ("parent", brief.Parent), ("allowDefaults", brief.AllowDefaults), ("background", brief.Background), ("where", brief.Where));
         Check(Kinds.Brief, fields);
         if (string.IsNullOrEmpty(brief.Cwd)) throw new MessageException("brief: cwd is necessary");
         var id = Guid.NewGuid().ToString();
-        store.Create(new Meta(id) { Title = brief.Title, Cwd = brief.Cwd, Parent = brief.Parent, CreatedBy = createdBy, Worktree = brief.Worktree, Agent = brief.Agent, Skills = brief.Skills?.ToList(), AllowDefaults = brief.AllowDefaults, Background = brief.Background });
+        store.Create(new Meta(id) { Title = brief.Title, Cwd = brief.Cwd, Parent = brief.Parent, CreatedBy = createdBy, Worktree = brief.Worktree, Agent = brief.Agent, Skills = brief.Skills?.ToList(), AllowDefaults = brief.AllowDefaults, Background = brief.Background, Where = Places.IsCloud(brief.Where) ? Places.Cloud : null });
         store.Events.Post(new PostInput(EventKinds.Brief, from, Parties.Session(id), Clean(fields)) { Session = id, Refs = brief.Parent is { } p ? Fields(("parent", p)) : null });
         return id;
     }

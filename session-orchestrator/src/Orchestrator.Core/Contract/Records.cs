@@ -40,6 +40,18 @@ public sealed record Meta(string Id)
 
     /// <summary>True after the session turned Remote Control on for itself; false after it turned it off.</summary>
     public bool? RemoteControl { get; init; }
+
+    /// <summary>Where the session runs: <see cref="Places.Local"/> (null) or <see cref="Places.Cloud"/>.</summary>
+    public string? Where { get; init; }
+}
+
+/// <summary>Where a session runs. A cloud session runs in a VM of the engine and uses the store API (H5).</summary>
+public static class Places
+{
+    public const string Local = "local";
+    public const string Cloud = "cloud";
+
+    public static bool IsCloud(string? where) => where == Cloud;
 }
 
 /// <summary>The policy form of a question. The envelope kind is always question.</summary>

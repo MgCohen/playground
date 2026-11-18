@@ -264,6 +264,7 @@ public sealed partial class Supervisor
             recovery.Recover(id, marker);
         }
         if (!CanRun(id, now)) return;
+        CloudNotice(id);
         var pending = store.Pending(id);
         if (pending.IsEmpty) return;
         if (OpeningTurn(id) is { } opening) pending = opening;
@@ -274,7 +275,11 @@ public sealed partial class Supervisor
             return;
         }
         var meta = store.Meta(id);
-        var request = new TurnRequest(id, cwd, pending.Text, meta.CreatedBy is not null && meta.Started != true) { Agent = meta.Agent, Title = meta.Title };
+        var cloud = Places.IsCloud(meta.Where);
+        var request = new TurnRequest(id, cwd, pending.Text, cloud ? meta.AppId is null : meta.CreatedBy is not null && meta.Started != true)
+        {
+            Agent = meta.Agent, Title = meta.Title, Where = cloud ? Places.Cloud : null, AppId = cloud ? meta.AppId : null,
+        };
         var stop = new CancellationTokenSource();
         stops[id] = stop;
         Track(running, id, () => RunTurn(request, pending, stop.Token));
@@ -288,7 +293,7 @@ public sealed partial class Supervisor
     Pending? OpeningTurn(string id)
     {
         var meta = store.Meta(id);
-        if (options.Import is null || meta.Imported == true || meta.CreatedBy is null) return null;
+        if (options.Import is null || meta.Imported == true || meta.CreatedBy is null || Places.IsCloud(meta.Where)) return null;
         var self = Parties.Session(id);
         var waiting = store.Undelivered(id).FirstOrDefault(e => e.Kind == EventKinds.Notice && store.Events.Fields(e).GetValueOrDefault("kind") as string == "open-in-app");
         // A stopped opening turn keeps Started and leaves its notice with no ack: the next turn is the opening turn again,
@@ -296,6 +301,18 @@ public sealed partial class Supervisor
         if (meta.Started == true && waiting is null) return null;
         var notice = waiting ?? Notify(self, null, store.Texts.Notice("open-in-app"));
         return new Pending(store.Renderer.Join([notice]), [notice.Id]) { Senders = [Parties.Supervisor] };
+    }
+
+    /// <summary>
+    /// The first turn of a cloud session gets the notice cloud-worker with its brief: the plugin tools do not work in the
+    /// cloud, so the session calls the store API with the orch command (H5, C0-2).
+    /// </summary>
+    void CloudNotice(string id)
+    {
+        var meta = store.Meta(id);
+        if (!Places.IsCloud(meta.Where) || meta.AppId is not null) return;
+        if (store.Undelivered(id).Any(e => e.Kind == EventKinds.Notice && store.Events.Fields(e).GetValueOrDefault("kind") as string == "cloud-worker")) return;
+        Notify(Parties.Session(id), null, store.Texts.Notice("cloud-worker", ("session", id)));
     }
 
     void Track(ConcurrentDictionary<string, Task> tasks, string key, Func<Task> work)
@@ -312,7 +329,7 @@ public sealed partial class Supervisor
         var id = request.Id;
         try
         {
-            if (request.IsNew) request = request with { Cwd = lifecycle.MakeWorktree(id).Cwd ?? request.Cwd };
+            if (request.IsNew && !Places.IsCloud(request.Where)) request = request with { Cwd = lifecycle.MakeWorktree(id).Cwd ?? request.Cwd };
         }
         catch (Exception e) when (e is ShellException or IOException)
         {
@@ -341,6 +358,11 @@ public sealed partial class Supervisor
             EndMarker(id, start);
             return;
         }
+        if (result.Ok && Places.IsCloud(request.Where) && request.AppId is null)
+        {
+            if (result.AppId is not { Length: > 0 } appId) result = result with { Ok = false, Error = "the cloud start gave no session id" };
+            else store.SaveMeta(store.Meta(id) with { AppId = appId });
+        }
         if (result.Ok)
         {
             lock (gate) store.MarkSent(id, pending.Envelopes, Holders.Supervisor);
@@ -360,7 +382,7 @@ public sealed partial class Supervisor
 
     void ImportOnce(string id)
     {
-        if (options.Import is not { } import || store.Meta(id).Imported == true) return;
+        if (options.Import is not { } import || store.Meta(id).Imported == true || Places.IsCloud(store.Meta(id).Where)) return;
         try
         {
             import(id);
