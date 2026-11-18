@@ -11,7 +11,7 @@ public static class Holders
 
 public sealed record Lease(string Holder, string Since, JsonElement? Reason = null)
 {
-    /// <summary>The id of the process that holds the lease (the claude process of the session). Null: unknown.</summary>
+    /// <summary>The id of the process that holds the lease (the engine process of the session). Null: unknown.</summary>
     public int? Pid { get; init; }
 
     /// <summary>The start time of that process, so that a reused process id does not count as alive.</summary>

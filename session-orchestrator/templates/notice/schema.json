@@ -62,6 +62,14 @@
     "appId": {
       "type": "string"
     },
+    "remoteControlTool": {
+      "description": "The app tool that turns Remote Control on or off. The provider gives it.",
+      "type": "string"
+    },
+    "archiveTool": {
+      "description": "The app tool that archives a session. The provider gives it.",
+      "type": "string"
+    },
     "state": {
       "type": "string"
     }

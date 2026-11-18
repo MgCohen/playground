@@ -240,7 +240,7 @@ public sealed partial class Supervisor
         store.Log($"{id} delivery blocked: {e.Kind} {e.Id}: {reason}");
     }
 
-    // Turn runner: a session that is not live gets its envelopes with no ack as one claude -p turn.
+    // Turn runner: a session that is not live gets its envelopes with no ack as one engine turn.
 
     bool CanRun(string id, DateTimeOffset now)
     {
@@ -368,7 +368,7 @@ public sealed partial class Supervisor
             store.Log($"{id} imported into the desktop app");
             var meta = store.Meta(id);
             if (meta.Imported == true && meta.Background != true)
-                Notify(Parties.Session(id), RemoteControlThread(id), store.Texts.Notice("remote-control-self"));
+                Notify(Parties.Session(id), RemoteControlThread(id), store.Texts.Notice("remote-control-self", [.. options.Provider.AppTools]));
         }
         catch (Exception e) when (e is ShellException or IOException or InvalidOperationException)
         {

@@ -1,7 +1,6 @@
 using System.Diagnostics;
-using Orchestrator.Store;
 
-namespace Orchestrator.Supervisor;
+namespace Orchestrator.Providers;
 
 /// <summary>One open handle to a process. While it is open, the id of the process is not given to another process.</summary>
 public interface IProcessHandle : IDisposable

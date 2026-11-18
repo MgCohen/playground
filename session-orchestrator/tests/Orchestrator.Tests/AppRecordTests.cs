@@ -1,3 +1,4 @@
+using Orchestrator.Providers.ClaudeCode;
 using Orchestrator.Store;
 
 namespace Orchestrator.Tests;
@@ -70,7 +71,7 @@ public sealed class AppRecordTests
         using var rig = new Rig();
         foreach (var kind in new[] { "archive-self", "archive-child" })
         {
-            var text = rig.Store.Templates.Render(Core.Templates.Kinds.Notice, rig.Store.Texts.Notice(kind, ("title", "t"), ("child", "c"), ("appId", "local_c")), kind);
+            var text = rig.Store.Templates.Render(Core.Templates.Kinds.Notice, rig.Store.Texts.Notice(kind, [("title", "t"), ("child", "c"), ("appId", "local_c"), .. ProviderFactory.Default.AppTools]), kind);
             Assert.That(text.IndexOf("set_remote_control", StringComparison.Ordinal), Is.LessThan(text.IndexOf("archive_session", StringComparison.Ordinal)), kind);
             Assert.That(text, Does.Contain("enabled false"), kind);
         }
