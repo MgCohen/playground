@@ -25,7 +25,10 @@ export function subject(kind: string, data: Record<string, unknown>): string {
   else if (kind === 'ack' && data.state !== undefined) text = `${data.state} (${data.by ?? ''})`
   else if (kind === 'notice' && data.kind !== undefined) text = `${data.kind}${typeof data.question === 'string' && data.question.length > 0 ? `: ${data.question}` : ''}`
   else text = String(data.question ?? data.summary ?? data.title ?? data.text ?? '')
-  return text.replace(/\s+/g, ' ').trim().slice(0, 80)
+  // One line: the first sentence, cut at 80 characters (D9). A sentence ends with . ! or ? and a space.
+  const line = text.replace(/\s+/g, ' ').trim()
+  const end = line.search(/[.!?](?= )/)
+  return (end >= 0 ? line.slice(0, end + 1) : line).slice(0, 80)
 }
 
 export function classOf(party: string): string {

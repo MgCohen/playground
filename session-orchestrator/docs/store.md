@@ -120,7 +120,7 @@ Both tests check the same three known values. The files have no `version` field.
 | `session` | The session that the envelope is about |
 | `stream` | The work stream (C1) of the session of the envelope. Rules below the table |
 | `from`, `to` | `user`, `supervisor`, `docs`, `policy` or `session:<full id>`. One receiver for each envelope |
-| `subject` | One line of 80 characters maximum. One rule in `Subjects.Of` (C#) and `subject` (`stream.ts`); the contract tests check both |
+| `subject` | One line: the first sentence (it ends with `.`, `!` or `?` and a space), cut at 80 characters. One rule in `Subjects.Of` (C#) and `subject` (`stream.ts`); the contract tests check both |
 | `body` | The path of the body. A forward points to the body of the original |
 | `thread` | Groups one conversation. For a question or a plan it is the tool call id; the answer, the review and the notices use the same thread |
 | `needs` | `answer`, `review` or `ack`: the receiver must act. Absent: nothing to do |
@@ -255,7 +255,7 @@ The lifecycle notices of the supervisor:
 
 The provider gives the app tool names: `remoteControlTool` and `archiveTool` (`IProvider.AppTools`). The supervisor adds them to `remote-control-self`, `remote-control-child`, `archive-child` and `archive-self`. No template names an app tool.
 
-A root session has no parent: each notice to the parent goes to the user as a `message` from `supervisor` with `needs: ack`. The same applies to a child whose parent is not enabled. Its text is the user render of the notice, `render/user-<kind>.md`: it names a "session", not a "child", and gives the acts of the user. Each notice kind to the parent has a user render (test `Each_notice_to_the_parent_has_a_render_for_the_user`). A user render is not a notice kind.
+A root session has no parent: each notice to the parent goes to the user as a `message` from `supervisor` with `needs: ack`. The same applies to a child whose parent is not enabled. Its text is the user render of the notice, `render/user-<kind>.md`: it names a "session", not a "child", and gives the acts of the user. Each notice kind to the parent has a user render (test `Each_notice_to_the_parent_has_a_render_for_the_user`). A user render is not a notice kind. All lifecycle messages of one session to the user share the thread `notice-<session>`. A new one gets the older open ones an ack from the supervisor (`by: superseded`, `state: read`), so the inbox shows one card for each session: its newest state.
 
 ## Template system
 

@@ -2116,6 +2116,8 @@ Four dummy sessions: a root and three children. The root and two children fail, 
 | Question card | ✅ "Which color goes in color.txt?", with the options and the recommendation |
 | Failure cards | ✅ one for each failed session: "Shot: root: its supervisor turns fail (3 tries)", with the error and the state `open` |
 | Root notice | ✅ "Session "Shot: root" (...) does not respond", with "stop it, or send it new input" |
+| Recovery | ✅ "Shot: recovers" works again at its next try: the thread gets `recovered`, and its card goes. The inbox keeps 4 cards: the question, two failures, one root notice |
+| Tray self-test on the same store | ✅ Home: 5 waiting (1 question, 1 report, 3 blocked), one row for each failed session. Cards: the API question with its options. `docs/screens/d-tray-home.png`, `d-tray-cards.png`, `d-web-failure-card.jpg`. Six motion and document checks of the self-test fail, because they expect the content of the mock data |
 
 ### Findings
 
@@ -2130,6 +2132,11 @@ Four dummy sessions: a root and three children. The root and two children fail, 
 | D4 | One `delivery.blocked` card for each envelope and each try; one `blocked` for each try, because its reason had the count; a copy of `delivery.blocked` to the supervisor itself | Fixed: one `failure` thread for each session and reason |
 | D5 | Sessions D, L and V can conflict on the real supervisor, the tray, the app and the ports | Rules in `know-how.md` ("Test work next to the real sessions"). Environments: issue #47 |
 | D6 | The web tests started the app with the real provider: a test session could start a real `claude` turn | Fixed: the web tests use the fake provider |
+| D8 | After each retry, the restart sets the try count to 0. A failed root then flips from "does not respond" to "responds again" and back, and each change was a new card | Fixed: one thread `notice-<session>` for the lifecycle messages to the user. A new one closes the older one. The flip itself stays (stream B) |
+| D9 | Report summaries and answers were too long for a title: one summary had 4 sentences and 2 URLs, one answer was a raw voice transcript (seen by V on a copy of the real store) | Fixed in the data: the subject is the first sentence, cut at 80 characters (C# and plugin, contract cases). The report `summary` has 300 characters maximum and no URL. The answer view shows the question as title and the answer text below it. V fixes the layout side |
+| D10 | Root messages start with "Root:", a copy of the sender | No render fix: old messages stay as history, and a strip rule could remove real words. The root stops the prefix; the `orch-report` skill says "do not start a text with your own name or role" |
+| D11 | A report Done item held a raw tool id (`toolu_01Gq...`) | Rule in `orch-report` and in the report schema: name a decision by its question. Open, later task: a render step that shows the question in place of a decision id in old texts |
+| D12 | Report Done items were paragraphs | `done`, `next` and `blockers`: one fact for each item, 200 characters and 12 items maximum (schema and skill). A post over the limit is refused, so the session writes it again shorter |
 | D7 | The card setting (which kinds make a card) does not exist. The inbox view decides in code | Open: the user wants it as a filter (code, app setting or live page filter), later |
 
 ## V: Visual fixes in the tray and web UI (2026-11-18)

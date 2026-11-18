@@ -78,13 +78,13 @@ public sealed class ViewTests
     public void Answer()
     {
         var d = Doc(Kinds.Answer);
-        Assert.That(d.Title, Is.EqualTo("GREEN"));
-        Assert.That(d.Subtitle, Is.EqualTo("Which color do we use in color.txt?"));
+        Assert.That(d.Title, Is.EqualTo("Which color do we use in color.txt?"), "the question is the title; the answer can be a long voice text (D9)");
+        Assert.That(d.Subtitle, Is.EqualTo("GREEN"));
         Assert.That(FactLabels(d), Is.EqualTo(new[] { "By", "Then" }));
         Assert.That(Labels(d), Is.EqualTo(new[] { "Reason", "Source" }));
 
         var p = Pre(Kinds.Answer);
-        Assert.That(p.Line, Is.EqualTo("Which color do we use in color.txt?"));
+        Assert.That((p.Title, p.Line), Is.EqualTo(("Which color do we use in color.txt?", "GREEN")));
         Assert.That(p.Well?.Label, Is.EqualTo("Reason"));
         Assert.That(p.Pill?.Tone, Is.EqualTo("pending"));
     }

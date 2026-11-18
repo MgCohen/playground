@@ -16,13 +16,16 @@ description: When and how a session under the orchestrator sends a report (mcp__
 
 | Field | Content |
 |---|---|
-| `summary` | One or two sentences: the result first |
-| `done` | The finished items, one item each |
-| `next` | The next steps |
-| `blockers` | What stops the work, and what you need |
-| `links` | Branches, PR links and files |
+| `summary` | One or two short sentences, 300 characters maximum: the result first. The first sentence is the title of the card, so it must stand alone |
+| `done` | The finished items: one fact for each item, 200 characters maximum, 12 items maximum |
+| `next` | The next steps, one step for each item, 200 characters maximum |
+| `blockers` | What stops the work, and what you need, one problem for each item |
+| `links` | Branches, PR links and files. Each URL goes here, not in the other fields |
 
 ## Rules
+
+- Name a decision by its question in quotes, for example "Which color goes in color.txt?". Never write a decision id (`toolu_...`): the reader cannot read it.
+- Do not start a text with your own name or role (for example "Root:"). The card already shows the sender.
 
 - Send `done` only when the "done when" check of the brief passes.
 - The end of a step is an update, not a report. The report tool refuses `done` while you have an open question.
