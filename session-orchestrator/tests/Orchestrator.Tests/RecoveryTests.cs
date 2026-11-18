@@ -2,6 +2,7 @@ using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
 using Orchestrator.Store;
+using Orchestrator.Store.Local;
 using Orchestrator.Supervisor;
 
 namespace Orchestrator.Tests;

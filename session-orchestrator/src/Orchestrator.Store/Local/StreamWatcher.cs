@@ -1,15 +1,16 @@
 using Orchestrator.Core.Contract;
+using Orchestrator.Core.Storage;
 
-namespace Orchestrator.Store;
+namespace Orchestrator.Store.Local;
 
 /// <summary>
-/// The push of a subscription: a file watcher on events/ and nudges/. It only wakes the subscriber, which then
+/// The local folder implementation of <see cref="IStreamSignal"/>: a file watcher on events/ and nudges/. It only wakes the subscriber, which then
 /// queries from its cursor. A watcher can drop file events when its buffer is full, so each subscriber also sweeps
 /// from its cursor after a time with no push.
 /// </summary>
-public sealed class StreamWatcher : IDisposable
+public sealed class StreamWatcher : IStreamSignal
 {
-    public static readonly TimeSpan DefaultSweep = TimeSpan.FromSeconds(60);
+    public static readonly TimeSpan DefaultSweep = StreamSignal.DefaultSweep;
 
     readonly List<FileSystemWatcher> watchers = [];
     readonly SemaphoreSlim signal = new(0, 1);

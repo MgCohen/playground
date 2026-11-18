@@ -11,7 +11,7 @@ store/
   events/<day>/<id>.json             envelopes, append only, one file each
   bodies/<day>/<id>.json             bodies, write once
   subscriptions/<party>/<name>.json  { party, name, cursor, recent, at, filter } of one subscriber
-  subscriptions/<party>/<name>.json.lock  the lock of the read, merge and write of the cursor
+  subscriptions/<party>/<name>.json.lock  the lock of the version check and the write of the cursor
   nudges/<party>                     a nudge: the write time is the signal, the text is an envelope id or empty
   claims/answer/<thread>             the claim of the first answer in a thread: an exclusive create, the text is the sender
   sessions/<id>/                     the lifecycle files of one session (below)
@@ -21,6 +21,29 @@ store/
 A `<party>` in a file name has `-` in place of `:`, because Windows refuses `:` in a file name: `session:<id>` becomes `session-<id>`.
 
 There is no other communication file. The inbox, the answers, the reviews, the reports and the open decisions are queries of the stream. A reactor can keep a cache if it can make the cache again from the stream (for example `docs-checks/`).
+
+## Repositories (C#)
+
+The C# code reads and writes the store only through `IRepositories` (`src/Orchestrator.Core/Storage/`). `StoreBackends.Create` selects the implementation. Only the local folder implementation (`src/Orchestrator.Store/Local/`) touches the files above. The test `ArchitectureTests` refuses store IO in other C# files. The plugin hooks write the same files directly (H3 moves them to `backend.ts`).
+
+| Repository | Entity | Id | Files |
+|---|---|---|---|
+| `Events` | `Doc<Event>` | envelope id | `events/<day>/<id>.json` |
+| `Bodies` | `Doc<JsonElement>` | body path | `bodies/<day>/<id>.json` |
+| `Policies` | `Doc<Policy>` | `policy` | `policy.json` |
+| `Settings` | `Doc<StoreVersion>` | `version` | `version.json` |
+| `Claims` | `Doc<string>` (the writer) | `answer/<thread>` | `claims/answer/<thread>` |
+| `Cursors` | `Doc<CursorState>` | `<party>/<name>` | `subscriptions/<party>/<name>.json` |
+| `Nudges` | `Doc<string>` | `<party>` | `nudges/<party>` |
+| `Sessions` | `Doc<string>` (the id) | session id | `sessions/<id>/` |
+| `SessionFile<T>(file)` | `Doc<T>` | session id | `sessions/<id>/<file>` |
+| `SessionItems<T>(id, folder)` | `Doc<T>` | item name | `sessions/<id>/<folder>/<name>.json` |
+| `Log` (`ILogSink`) | none | none | `supervisor/log.txt` |
+
+Rules of each implementation. The contract tests (`RepositoryContractTests`) run them against each data kind:
+
+1. A save of an `Add` with an id that exists fails with `StoreConflictException` (`Exists`). The local folder writes a temp file and moves it with no overwrite. The claims and the envelopes use this rule.
+2. Each entity has a version. A save of a change or a remove fails when the stored version is newer (`Stale`). The version of a local file is a hash of its text. A put of a whole file (lease, meta, status) reads again and writes again: the last writer wins, as before.
 
 ## Envelope
 
@@ -98,7 +121,7 @@ The views of a session are queries too: `Report` and `Update` are the newest pos
 3. A message kind must match `templates/<kind>/schema.json`. Its `from` and `to` must be in `meta.json`. A `refs.reply` must name an envelope whose type takes this reply type. An error names the type and each wrong field.
 4. Post refuses a second answer in one thread, and gives the first answer in the error text. A forward is not a second answer.
 5. A forward is a new envelope with a new `to`, the same body, the same `from` and `thread`, and `refs.of`.
-6. Before an answer, the writer creates `claims/answer/<thread>` with an exclusive create. If the file exists, the post is refused with the first answer. So the first answer wins also between processes (the supervisor, `orch`, the UI).
+6. Before an answer, the writer adds the claim `answer/<thread>` (file `claims/answer/<thread>`). A second add of the claim fails, so the post is refused with the first answer. So the first answer wins also between processes (the supervisor, `orch`, the UI).
 7. The plugin refuses an unknown kind, a message kind with no `meta.json`, missing `required` or `dependentRequired` fields of `schema.json`, and a `from` or `to` that `meta.json` does not allow. The engine checks the full schema before the tool call. The plugin never posts an answer or a review: these go through `orch`, so the reply-type and first-answer checks are in C# only.
 8. The envelope file holds only the fields in the table above. The C# record has computed helpers (`Of`, `Reply`, `Via`, `IsForward`); they are not in the file.
 
@@ -147,10 +170,10 @@ A root session has no parent: each notice to the parent goes to the user as a `m
 | `subscriptions/session-<id>/deliver.json` | The session | `to = self`, a deliverable kind | The supervisor and `orch watch`, after each ack |
 | `subscriptions/supervisor/relay.json` | The supervisor | question, plan, and a report with `needs` from a session | The supervisor, after the forward |
 
-- A subscriber waits for a push of `StreamWatcher` (a file watcher on `events/` and `nudges/`). It also queries from its cursor after `delivery.sweepSeconds` with no push, because a file watcher can drop events.
+- A subscriber waits for a push of `IRepositories.Watch()` (local folder: `StreamWatcher`, a file watcher on `events/` and `nudges/`). It also queries from its cursor after `delivery.sweepSeconds` with no push, because a file watcher can drop events.
 - `Next()` gives the matching envelopes after the cursor that the subscriber did not mark done. Envelopes of other writers can arrive a little late, so the scan starts 120 s before the cursor, and the file keeps the done ids of these 120 s in `recent`. Limit: an envelope that appears more than 120 s after its id time can be missed by a subscription.
 - The delivery cursor moves only over acknowledged envelopes before the first open one. It never passes an envelope that waits for its ack.
-- `Done` reads, merges and writes the file under the lock `<name>.json.lock`. So two writers of one cursor (the supervisor and `orch watch`) lose no done id.
+- `Done` reads the cursor, merges the done ids and saves it. The save checks the version under the lock `<name>.json.lock`. If another writer saved first, the save fails and `Done` reads and merges again. So two writers of one cursor (the supervisor and `orch watch`) lose no done id.
 - The deliverable kinds are brief, message, question, plan, answer, review, report and notice. A report is deliverable only with `needs` or as a forward.
 - Each delivered envelope gets an ack: `{ kind: ack, from: <receiver>, to: <sender>, refs.of, body: { state: delivered | read, by } }`. `by` is `live`, `supervisor`, `tool-result`, `chat` or `user`.
 - The envelopes to a session with no ack are its pending deliveries. The ack is the truth; the cursor only marks where the scan starts.

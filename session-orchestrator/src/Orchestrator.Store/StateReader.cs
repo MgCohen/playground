@@ -12,9 +12,8 @@ public sealed class StateReader(FileStore store)
     /// <summary>The state file. <c>Invalid</c> is true when the file exists but is not valid JSON or names no known state.</summary>
     public (StateFile? File, bool Invalid) State(string id)
     {
-        var path = store.PathOf(id, StoreFiles.State);
-        if (!File.Exists(path)) return (null, false);
-        var file = Files.ReadJson<StateFile>(path);
+        if (!store.Has(id, StoreFiles.State)) return (null, false);
+        var file = store.ReadJson<StateFile>(id, StoreFiles.State);
         if (file is null || file.State is null) return (null, true);
         return (file, file.State != States.Unknown && !States.IsKnown(file.State));
     }
@@ -59,7 +58,7 @@ public sealed class StateReader(FileStore store)
         {
             Timers = policy.Lifecycle,
             AutoArchive = policy.AutoArchive,
-            Enabled = File.Exists(store.PathOf(id, StoreFiles.Enabled)),
+            Enabled = store.IsEnabled(id),
             Control = new Lifecycle(store).Control(id).State,
             Started = meta.Started == true,
             Running = running,
