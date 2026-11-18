@@ -1114,19 +1114,24 @@ Design page: `docs/stream-design.html` (https://claude.ai/artifact/JErtGVNeiAxtU
 - Each session decides if it starts children, and how deep. There is no top root.
 - The creator sets the **kind** of a session: `general` (default) or `orchestrator`. Its effect is open.
 - Scope: orchestration only (create, communicate, control, split). The kinds of work, the review workflow and the PR workflow are on the roadmap.
+- A **workflow** is a sequence of steps, with loops. Each step defines its instructions, input, output, actor (agent or human), messages and approval (who, and the strategy: required, skippable, ignored). Workflows are made by configuration.
+- For now a workflow is a Markdown file or a skill. Later the template store holds it, and a session gets it on demand.
+- The brief names the workflow, or the session finds it in the catalog in the middle of a chat.
+- The first workflow is **planning**.
 
 ### Next tasks
 
 | Task | Content |
 |---|---|
-| C2 (code) | Add `stream` and `kind` to the brief template, the session record and the envelope. A child gets the `stream` of its parent by default. Add `orch events --stream` and `orch sessions --stream`. Update `orch:orch-brief` for the split steps. Change `docs/store.md` in the same commit |
-| C3 (real use) | Run one full stream with the new fields. Record which behaviors repeat, as input for the kind decision. Needs a new store or a migration (the live store is version 1) |
+| C2 (code) | Add `stream` and `kind` to the brief template, the session record and the envelope. A child gets the `stream` of its parent by default. Add `orch events --stream` and `orch sessions --stream`. Update `orch:orch-brief` for the split steps. Write the planning workflow as the first configuration, and add a `workflow` brief field. Change `docs/store.md` in the same commit |
+| C3 (real use) | Run one full stream that uses the planning workflow and the new fields. Record which behaviors repeat, as input for the kind decision. Needs a new store or a migration (the live store is version 1) |
 
 ### Roadmap
 
 - Review workflow: reviewers, verdicts, approval events, gates.
 - PR workflow: integration branches, merge order, merge rules.
-- Kinds of work: design, code, probe, review, integration.
+- More workflows: review, code change, probe, orchestration.
+- Template store: workflows and their related templates, got on demand.
 - Watcher: a session that finds stuck or broken sessions and supervisors, and alerts the phone.
 
 ### Findings
