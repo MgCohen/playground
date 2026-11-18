@@ -1,6 +1,5 @@
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 
 namespace Orchestrator.Tray;
 
@@ -19,7 +18,7 @@ public sealed record WaitCounts(int Questions, int Reviews, int Reports, int Blo
 /// The window is a layered window with per-pixel alpha (UpdateLayeredWindow), drawn with GDI+: soft edges, and the clear parts
 /// let the clicks through. The web page is not used, so the tab shows at once.
 /// </summary>
-public sealed partial class EdgeTab : Form
+public sealed class EdgeTab : LayeredForm
 {
     // Logical pixels (96 DPI). The ring size: ball size 40 (N1 choice) × 1.4, as on the motion page.
     const int RingD = 56;
@@ -68,10 +67,6 @@ public sealed partial class EdgeTab : Form
     public EdgeTab(string? placeFile)
     {
         this.placeFile = placeFile;
-        FormBorderStyle = FormBorderStyle.None;
-        ShowInTaskbar = false;
-        StartPosition = FormStartPosition.Manual;
-        TopMost = true;
         Text = "Orchestrator tab";
         clock.Tick += (_, _) => Step();
     }
@@ -105,19 +100,6 @@ public sealed partial class EdgeTab : Form
         }
     }
 
-    protected override CreateParams CreateParams
-    {
-        get
-        {
-            var p = base.CreateParams;
-            p.ExStyle |= WsExLayered | WsExToolWindow | WsExNoActivate | WsExTopmost;
-            return p;
-        }
-    }
-
-    protected override bool ShowWithoutActivation => true;
-
-    float Dpi => DeviceDpi / 96f;
 
     double Target => hoverSince >= 0 && (dragging || time.ElapsedMilliseconds - hoverSince >= HoverMs) ? 1 : 0;
 
@@ -338,19 +320,10 @@ public sealed partial class EdgeTab : Form
     string Detail => string.Join(" · ", new[] { (counts.Questions, "question"), (counts.Reviews, "review"), (counts.Reports, "report"), (counts.Blocked, "blocked") }
         .Where(p => p.Item1 > 0).Select(p => $"{p.Item1} {p.Item2}{(p.Item1 > 1 && p.Item2 != "blocked" ? "s" : "")}")) is { Length: > 0 } d ? d : "The inbox is clear";
 
-    void Render()
+    void Render() => Frame(g =>
     {
-        if (!IsHandleCreated || Width <= 0 || Height <= 0) return;
-        using var bitmap = new Bitmap(Width, Height, PixelFormat.Format32bppArgb);
-        using (var g = Graphics.FromImage(bitmap))
-        {
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
-            g.Clear(Color.Transparent);
-            if (slide > 0) Draw(g);
-        }
-        Blit(bitmap);
-    }
+        if (slide > 0) Draw(g);
+    });
 
     void Draw(Graphics g)
     {
@@ -469,34 +442,6 @@ public sealed partial class EdgeTab : Form
     static Color Mix(Color a, Color b, double k) =>
         Color.FromArgb((int)(a.R + (b.R - a.R) * k), (int)(a.G + (b.G - a.G) * k), (int)(a.B + (b.B - a.B) * k));
 
-    static GraphicsPath Round(RectangleF r, float radius)
-    {
-        var p = new GraphicsPath();
-        var d = Math.Min(2 * radius, Math.Min(r.Width, r.Height));
-        p.AddArc(r.Left, r.Top, d, d, 180, 90);
-        p.AddArc(r.Right - d, r.Top, d, d, 270, 90);
-        p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
-        p.AddArc(r.Left, r.Bottom - d, d, d, 90, 90);
-        p.CloseFigure();
-        return p;
-    }
-
-    /// <summary>A soft shadow below a shape: rings of a low alpha that get wider, moved down a little.</summary>
-    static void SoftShadow(Graphics g, GraphicsPath shape, float s, float strength = 1)
-    {
-        var state = g.Save();
-        for (var i = 8; i >= 1; i--)
-        {
-            using var copy = (GraphicsPath)shape.Clone();
-            using var m = new Matrix();
-            m.Translate(0, 4 * s);
-            copy.Transform(m);
-            using var pen = new Pen(Color.FromArgb((int)(9 * strength), 60, 40, 20), i * 2 * s) { LineJoin = LineJoin.Round };
-            g.DrawPath(pen, copy);
-        }
-        g.Restore(state);
-    }
-
     // ===== The saved place (only the top: the tab is always at the right edge) =====
 
     int? LoadTop()
@@ -527,31 +472,6 @@ public sealed partial class EdgeTab : Form
     /// <summary>The saved top of the tab, or null.</summary>
     public int? SavedTop => LoadTop();
 
-    // ===== The layered window =====
-
-    void Blit(Bitmap bitmap)
-    {
-        var screen = GetDC(0);
-        var memory = CreateCompatibleDC(screen);
-        var handle = bitmap.GetHbitmap(Color.FromArgb(0));
-        var old = SelectObject(memory, handle);
-        try
-        {
-            var size = new NativeSize(bitmap.Width, bitmap.Height);
-            var source = new NativePoint(0, 0);
-            var top = new NativePoint(Left, Top);
-            var blend = new BlendFunction { Op = 0, Flags = 0, Alpha = 255, Format = 1 };
-            _ = UpdateLayeredWindow(Handle, screen, ref top, ref size, memory, ref source, 0, ref blend, UlwAlpha);
-        }
-        finally
-        {
-            _ = SelectObject(memory, old);
-            _ = DeleteObject(handle);
-            _ = DeleteDC(memory);
-            _ = ReleaseDC(0, screen);
-        }
-    }
-
     protected override void OnDpiChanged(DpiChangedEventArgs e)
     {
         base.OnDpiChanged(e);
@@ -563,57 +483,4 @@ public sealed partial class EdgeTab : Form
         if (disposing) clock.Dispose();
         base.Dispose(disposing);
     }
-
-    const int WsExLayered = 0x80000;
-    const int WsExToolWindow = 0x80;
-    const int WsExNoActivate = 0x8000000;
-    const int WsExTopmost = 0x8;
-    const int UlwAlpha = 2;
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct NativePoint(int x, int y)
-    {
-        public int X = x;
-        public int Y = y;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct NativeSize(int cx, int cy)
-    {
-        public int Cx = cx;
-        public int Cy = cy;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    struct BlendFunction
-    {
-        public byte Op;
-        public byte Flags;
-        public byte Alpha;
-        public byte Format;
-    }
-
-    [LibraryImport("user32.dll")]
-    private static partial nint GetDC(nint hwnd);
-
-    [LibraryImport("user32.dll")]
-    private static partial int ReleaseDC(nint hwnd, nint hdc);
-
-    [LibraryImport("gdi32.dll")]
-    private static partial nint CreateCompatibleDC(nint hdc);
-
-    [LibraryImport("gdi32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool DeleteDC(nint hdc);
-
-    [LibraryImport("gdi32.dll")]
-    private static partial nint SelectObject(nint hdc, nint obj);
-
-    [LibraryImport("gdi32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool DeleteObject(nint obj);
-
-    [LibraryImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool UpdateLayeredWindow(nint hwnd, nint hdcDst, ref NativePoint pptDst, ref NativeSize psize, nint hdcSrc, ref NativePoint pptSrc, int crKey, ref BlendFunction pblend, int dwFlags);
 }

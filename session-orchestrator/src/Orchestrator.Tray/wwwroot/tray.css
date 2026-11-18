@@ -16,3 +16,11 @@
    It stays below the app bar (z-index 10), the sheets (20, 21) and the toast (15), and it lets clicks through. */
 body::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 92px; z-index: 9; pointer-events: none;
   background: linear-gradient(to bottom, transparent, var(--canvas) 55%); }
+
+/* G1: the show of the widget. The native home ball covers the home button until the grow ends ("ball"); during the grow the
+   page fades in and the app bar unfolds sideways from the ball ("grow-in"). The fill is backwards only: no stacking context stays. */
+html.ball .nav2 .home { visibility: hidden; }
+html.grow-in body { animation: g-fade .28s cubic-bezier(.33, 1, .68, 1) backwards; }
+html.grow-in .nav2 { animation: g-unfold .28s cubic-bezier(.33, 1, .68, 1) backwards; }
+@keyframes g-fade { from { opacity: 0; } }
+@keyframes g-unfold { from { clip-path: inset(-40px calc(50% - 31px) -12px calc(50% - 31px) round 999px); } to { clip-path: inset(-40px 0 -12px 0 round 999px); } }

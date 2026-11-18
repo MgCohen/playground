@@ -109,6 +109,7 @@ public static partial class SelfTest
         checks.Add(await Toggle(form));
         checks.Add(await PlaceClamp(form, folder));
         checks.Add(await Grow(form, folder));
+        checks.AddRange(await Ball(form, web, folder));
         checks.Add(await Video(form, folder));
         checks.AddRange(await Edge(tray, web, folder));
         foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
@@ -280,6 +281,8 @@ public static partial class SelfTest
         form.HideWidget();
         await Settle(form);
         form.ShowWidget();
+        // G1: the ball pops in first; the grow starts after the pop and the gap.
+        for (var i = 0; i < 100 && !form.Resizing; i++) await Task.Delay(5);
         var pngs = new List<string>();
         foreach (var at in new[] { 60, 140 })
         {
@@ -297,6 +300,45 @@ public static partial class SelfTest
         var small = form.GrowFrames.Count > 0 && form.GrowFrames[0] < form.Height / 4;
         return new Check("grow", grow.Up && full && small && form.GrowFrames.Count >= 5,
             $"{form.GrowFrames.Count} frames in {WidgetForm.GrowMs} ms, {grow.Text}; starts small {small}, ends at the full height {full}", string.Join(";", pngs));
+    }
+
+    /// <summary>
+    /// G1: the show and the hide with the home ball. Show: the ball pops in at the home button, then the widget grows out of it
+    /// with a shadow that grows too; at the end the home button of the page takes the place of the ball. Hide: the ball first.
+    /// </summary>
+    static async Task<IEnumerable<Check>> Ball(WidgetForm form, CoreWebView2 web, string folder)
+    {
+        var checks = new List<Check>();
+        await Settle(form);
+        form.HideWidget();
+        await Task.Delay(60);
+        var ballFirst = form.Ball.Visible && !form.Resizing;
+        var hidePng = Path.Combine(folder, "tray-e2-g1-hide.png");
+        Corner(form, hidePng);
+        await Settle(form);
+        checks.Add(new Check("g1-hide", ballFirst && !form.Visible && !form.Ball.Visible, $"ball first (the ball shows, the shrink waits) {ballFirst}; hidden after {!form.Visible}", hidePng));
+
+        form.ShowWidget();
+        await Task.Delay(BallWindow.InMs / 2);
+        var popping = form.Ball.Visible && !form.Resizing;
+        var popPng = Path.Combine(folder, "tray-e2-g1-ball-in.png");
+        Corner(form, popPng);
+        var homeHidden = await Eval<bool>(web, "document.documentElement.classList.contains('ball')");
+        for (var i = 0; i < 100 && !form.Resizing; i++) await Task.Delay(5);
+        await Task.Delay(110);
+        var shadow = form.GrowShadow.Visible;
+        var unfold = await Eval<string>(web, "getComputedStyle(document.querySelector('.nav2')).animationName");
+        var midPng = Path.Combine(folder, "tray-e2-g1-grow.png");
+        Corner(form, midPng);
+        await Settle(form);
+        await Task.Delay(300);
+        var handoff = !form.Ball.Visible && !form.GrowShadow.Visible && !await Eval<bool>(web, "document.documentElement.classList.contains('ball')");
+        var endPng = Path.Combine(folder, "tray-e2-g1-end.png");
+        Corner(form, endPng);
+        checks.Add(new Check("g1-show", popping && homeHidden && shadow && unfold == "g-unfold" && handoff,
+            $"ball pops in before the grow {popping}; page home button hidden {homeHidden}; grow shadow {shadow}; app bar {unfold}; ball, shadow and class gone at the end {handoff}",
+            $"{popPng};{midPng};{endPng}"));
+        return checks;
     }
 
     /// <summary>
