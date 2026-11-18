@@ -42,7 +42,7 @@ public static partial class SelfTest
 
     /// <summary>
     /// Runs all checks, or with <paramref name="only"/> a list of groups: "notify" (the notice motion, V1 and V2) and "overlap"
-    /// (one form at a time, V4) and "ball" (one look of the home ball, V5), "drag" and "edge" (N1 and N2). The groups run with the test places of the widget and the edge tab.
+    /// (one form at a time, V4) and "ball" (one look of the home ball, V5), "drag" and "edge" (N1 and N2), "cards" (pictures of the cards, V7). The groups run with the test places of the widget and the edge tab.
     /// </summary>
     public static async Task<int> Run(TrayApp tray, string folder, string? only = null)
     {
@@ -65,6 +65,7 @@ public static partial class SelfTest
             if (groups.Contains("ball")) checks.AddRange(await HomeBall(form, folder));
             if (groups.Contains("drag")) checks.Add(await Drag(form, web));
             if (groups.Contains("edge")) checks.AddRange(await Edge(tray, web, folder));
+            if (groups.Contains("cards")) checks.AddRange(await Cards(web, folder));
             return Write(checks, folder);
         }
         foreach (var step in Steps)

@@ -116,6 +116,8 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .badge { font: 700 10px/1 var(--f-body); background: var(--accent); color: var(--on-accent); border-radius: 999px; padding: 3px 6px; flex: none; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .chip { padding: 7px 12px; border-radius: 999px; background: var(--surf); box-shadow: var(--sh-raise-sm); font-weight: 500; border: 0; }
+/* V7: a chip with two or more lines keeps round corners, not a pill shape. */
+.blk .chip { border-radius: 16px; }
 .chip.def { outline: 2px solid var(--accent); outline-offset: -2px; font-weight: 600; }
 .chip.pick { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .bar { display: flex; gap: 8px; align-items: stretch; }
@@ -366,6 +368,17 @@ body:has(.pagebar.no-app-bar)::after { height: 84px; }
 .blk[style*="--st"] > .crd { box-shadow: var(--sh-raise), inset 3px 0 0 var(--st); }
 .doc ol { margin: 0; padding-left: 20px; display: grid; gap: 3px; }
 .blk { overflow-wrap: anywhere; }
+/* V7: a fact value wraps; a path or a long default is not cut. The label stays at the top of its row. */
+.kv:has(.fv) { align-items: baseline; }
+.kv .fv { min-width: 0; overflow-wrap: anywhere; }
+/* V7: the Markdown part of a text block (Markdown.cs). */
+.md > * { margin: 0; }
+.md > * + * { margin-top: 8px; }
+.md ul, .md ol { padding-left: 20px; }
+.md li + li { margin-top: 2px; }
+.md code, .doc li code { font: .92em var(--f-mono); background: var(--sunken); border-radius: 4px; padding: 0 4px; overflow-wrap: anywhere; }
+/* V7: the second line of a title block (for example the question under an answer) has a gap. */
+.pad .subtitle { margin-top: 8px; }
 .blk pre.pre { overflow-x: auto; overflow-wrap: normal; }
 /* The same bar as .bar of docs/render-design/page.html. */
 .pbar { display: block; flex: 1; align-self: center; min-width: 60px; height: 8px; border-radius: 999px; background: var(--sunken); box-shadow: var(--sh-carve); overflow: hidden; }
