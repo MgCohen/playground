@@ -1,30 +1,61 @@
 @using Microsoft.Extensions.DependencyInjection
 @implements IDisposable
 @inject IServiceProvider Services
+@inject NavigationManager Nav
 
-@* The page header. In the desktop widget, a drag of the header moves the window, and the pin keeps the widget on top. *@
-@if (window is null)
-{
-    <header class="crd hd"><h1 class="title disp">@Title</h1></header>
-}
-else
-{
-    <header class="crd hd win" @onmousedown="Drag">
+@* The page header. A tab page shows its title. A sub-page shows its path (T3): the parents as small links with "›", and the
+   current page in bold. In the desktop widget, a drag of the header moves the window, and the window buttons (T4) are always
+   there: pin, minimize, close. *@
+<header class="crd hd @(window is null ? "" : "win") @(parents.Count > 0 ? "sub" : "")" @onmousedown="Drag">
+    @if (parents.Count == 0)
+    {
         <h1 class="title disp">@Title</h1>
-        <button type="button" class="pin @(window.Pinned ? "on" : "")" aria-pressed="@(window.Pinned ? "true" : "false")" aria-label="Pin on screen" title="Pin on screen"
-                @onclick="() => window.SetPinned(!window.Pinned)" @onmousedown:stopPropagation><Icon Name="pin" /></button>
-    </header>
-}
+    }
+    else
+    {
+        <nav class="path" aria-label="Path">
+            @foreach (var p in PathTrail.Shown(parents))
+            {
+                <a class="cr" href="@p.Href" @onmousedown:stopPropagation>@p.Title</a><span class="psep" aria-hidden="true">›</span>
+            }
+            <h1 class="cur">@Title</h1>
+        </nav>
+    }
+    @if (window is not null)
+    {
+        <span class="wb" @onmousedown:stopPropagation>
+            <button type="button" class="wbtn pin @(window.Pinned ? "on" : "")" aria-pressed="@(window.Pinned ? "true" : "false")" aria-label="Pin on screen" title="Pin on screen"
+                    @onclick="() => window.SetPinned(!window.Pinned)"><Icon Name="pin" /></button>
+            <button type="button" class="wbtn min" aria-label="Minimize" title="Minimize" @onclick="() => window.Minimize()"><Icon Name="min" /></button>
+            <button type="button" class="wbtn x" aria-label="Close" title="Close" @onclick="() => window.Close()"><Icon Name="x" /></button>
+        </span>
+    }
+</header>
 
 @code {
     [Parameter, EditorRequired] public string Title { get; set; } = "";
 
+    /// <summary>True for a tab page of the app bar: the path starts again. False for a sub-page.</summary>
+    [Parameter] public bool Tab { get; set; } = true;
+
+    /// <summary>The default parent of a sub-page, for a direct open.</summary>
+    [Parameter] public Crumb? Parent { get; set; }
+
     IWidgetWindow? window;
+    PathTrail trail = new();
+    IReadOnlyList<Crumb> parents = [];
 
     protected override void OnInitialized()
     {
         window = Services.GetService<IWidgetWindow>();
+        trail = Services.GetService<PathTrail>() ?? trail;
         if (window is not null) window.PinnedChanged += Changed;
+    }
+
+    protected override void OnParametersSet()
+    {
+        var here = Nav.ToBaseRelativePath(Nav.Uri);
+        parents = trail.Enter(new Crumb(Title, here), Tab, Parent);
     }
 
     void Changed() => InvokeAsync(StateHasChanged);

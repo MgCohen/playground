@@ -3,7 +3,7 @@
 
 <PageTitle>@(node is null ? "Session" : Ui.Name(node)) · orch</PageTitle>
 
-<a class="back" href="sessions"><Icon Name="chevL" />Sessions</a>
+<PageHeader Title="@(node is null ? "Session" : Ui.Name(node))" Tab="false" Parent="@(new Crumb("Sessions", "sessions"))" />
 
 @if (node is null)
 {

@@ -92,6 +92,7 @@ public static partial class SelfTest
         await Task.Delay(800);
         checks.AddRange(await RenderShots(form, web, folder));
         checks.AddRange(await Motion(web, folder));
+        checks.AddRange(await Header(form, web, folder));
         await web.ExecuteScriptAsync($"{Go}('')");
         await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
         await Task.Delay(800);

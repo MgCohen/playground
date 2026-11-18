@@ -5,7 +5,7 @@
 
 <PageTitle>@(e?.Subject ?? "Event") · orch</PageTitle>
 
-<a class="back" href="@(card is null ? "stream" : "cards")"><Icon Name="chevL" />@(card is null ? "Stream" : "Cards")</a>
+<PageHeader Title="@(e is null ? "Event" : Ui.KindLabel(e.Kind, fields))" Tab="false" Parent="@(card is null ? new Crumb("Stream", "stream") : new Crumb("Cards", "cards"))" />
 
 @if (e is null)
 {

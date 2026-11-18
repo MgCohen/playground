@@ -111,6 +111,9 @@ public sealed partial class WidgetForm : Form
         BeginGrow(open: false);
     }
 
+    /// <summary>T4: the widget shrinks and hides, and its minimized form shows. Until the edge tab exists, it hides to the tray.</summary>
+    public void Minimize() => HideWidget();
+
     public void Toggle()
     {
         if (Visible && !closing) HideWidget();

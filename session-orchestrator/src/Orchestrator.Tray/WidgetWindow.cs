@@ -26,5 +26,9 @@ public sealed class WidgetWindow : IWidgetWindow
         if (Form is { } f) f.Pinned = pinned;
     }
 
+    public void Minimize() => Form?.Minimize();
+
+    public void Close() => Form?.HideWidget();
+
     public void BeginDrag(double x, double y) => Form?.BeginDrag(x, y);
 }

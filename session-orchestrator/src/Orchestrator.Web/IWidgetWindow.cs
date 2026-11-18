@@ -12,6 +12,12 @@ public interface IWidgetWindow
 
     void SetPinned(bool pinned);
 
+    /// <summary>T4: the widget goes into its minimized form (the edge tab), which stays on the screen.</summary>
+    void Minimize();
+
+    /// <summary>T4: the widget hides. The tray icon opens it again.</summary>
+    void Close();
+
     /// <summary>
     /// Starts a drag of the window with the mouse button that is down. <paramref name="x"/> and <paramref name="y"/> are the
     /// CSS pixels of the mouse down in the page: that point stays under the pointer during the drag.

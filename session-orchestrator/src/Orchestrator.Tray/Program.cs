@@ -121,6 +121,7 @@ public static partial class Program
         services.AddSingleton<IDocsChecker, NoDocs>();
         services.AddSingleton<Supervisor.Supervisor>();
         services.AddSingleton<Board>();
+        services.AddScoped<PathTrail>();
         services.AddSingleton<StreamHub>();
         services.AddSingleton<WidgetWindow>();
         services.AddSingleton<IWidgetWindow>(p => p.GetRequiredService<WidgetWindow>());

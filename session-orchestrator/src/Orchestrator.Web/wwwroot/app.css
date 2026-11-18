@@ -67,6 +67,13 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .crd { background: var(--surf); box-shadow: var(--sh-raise); border-radius: var(--r); position: relative; min-width: 0; display: block; }
 .well { background: var(--sunken); box-shadow: var(--sh-carve); color: var(--sunken-tx); border-radius: var(--r-sm); }
 .hd { padding: 11px 16px; }
+/* T3: the path of a sub-page. The parents are small links with "›"; the current page is the last part, bold and darker. */
+.hd.sub { min-height: 50px; display: flex; align-items: center; }
+.path { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 4px; overflow: hidden; white-space: nowrap; }
+.path .cr { font: 500 12px var(--f-body); color: var(--muted); flex: 0 1 auto; min-width: 1.6em; overflow: hidden; text-overflow: ellipsis; padding: 1px 2px; border-radius: 4px; }
+.path .cr:hover { color: var(--text); text-decoration: underline; }
+.path .psep { color: var(--muted); font-size: 12px; flex: none; }
+.path .cur { margin: 0; font: 700 15px/1.2 var(--f-body); color: var(--text); flex: 0 0 auto; max-width: 62%; overflow: hidden; text-overflow: ellipsis; }
 .title { font-size: 19px; line-height: 1.1; margin: 0; font-weight: 800; }
 .disp { font-family: var(--f-disp); font-weight: 800; letter-spacing: .02em; }
 .gt { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--canvas-tx); margin: 4px 6px -4px; }
