@@ -105,7 +105,7 @@ pre.mermaid { margin: 0; background: transparent; text-align: center; font-famil
 <nav role="tablist" aria-label="Sections">
   <button role="tab" data-tab="context" aria-selected="true">Context</button>
   <button role="tab" data-tab="engines" aria-selected="false">Engine options</button>
-  <button role="tab" data-tab="questions" aria-selected="false">Open questions <span class="count">3</span></button>
+  <button role="tab" data-tab="questions" aria-selected="false">Open questions <span class="count">1</span></button>
 </nav>
 
 <!-- ============ CONTEXT ============ -->
@@ -390,39 +390,40 @@ flowchart LR
 <!-- ============ OPEN QUESTIONS ============ -->
 <div class="panel off" id="questions">
 
-<p class="summary">Answer in the chat, in your own words, for example "Q5: E". When a question has an answer, it moves to the end of this tab with the answer.</p>
+<p class="summary">Answer in the chat, in your own words, for example "Q8: approve". When a question has an answer, it moves to the end of this tab with the answer.</p>
 
 <details class="fold" open>
-  <summary><h2>Q5. Which engine do we build first?</h2><span class="pill">open</span></summary>
+  <summary><h2>Q8. Do you approve the plan?</h2><span class="pill">open</span></summary>
   <div class="body q"><dl>
-    <dt>Question</dt><dd>For the tray: a local model on this GPU, a cloud service with your own key, or both behind one setting?</dd>
-    <dt>Context</dt><dd>Anthropic gives no speech service (tab Engine options). Orca recommends the local model Parakeet TDT v3, which knows English and Portuguese. This PC has an RTX 5080, so a local model is free, private and fast. A cloud service needs a key and a payment.</dd>
-    <dt>Options</dt><dd>Local Parakeet TDT v3 · local Whisper Large v3 Turbo · one cloud service only · a local model first, with a setting for a cloud service later</dd>
-    <dt>Recommendation</dt><dd><span class="pill rec">local Parakeet TDT v3 first</span> A first test compares it with Whisper Large v3 Turbo on your own voice, then we keep the better one. Add a cloud setting later only if a need comes.</dd>
-  </dl></div>
-</details>
-
-<details class="fold" open>
-  <summary><h2>Q6. Do you need to see the text while you speak?</h2><span class="pill">open</span></summary>
-  <div class="body q"><dl>
-    <dt>Question</dt><dd>Must the words show while you speak, as in Claude Code, or is all the text a few seconds after stop acceptable?</dd>
-    <dt>Context</dt><dd>Text after stop is simple and has the best quality. Orca shows text phrase by phrase: a voice detector cuts the audio at each pause, and the model decodes each phrase. That is more work.</dd>
-    <dt>Options</dt><dd>Text after stop · text phrase by phrase, as Orca · text after stop first, phrase by phrase later</dd>
-    <dt>Recommendation</dt><dd><span class="pill rec">after stop first</span> With this GPU the wait is a few seconds. Phrase by phrase can come in a second step.</dd>
-  </dl></div>
-</details>
-
-<details class="fold" open>
-  <summary><h2>Q7. Which engine does the Android app use?</h2><span class="pill">open</span></summary>
-  <div class="body q"><dl>
-    <dt>Question</dt><dd>Does the Android app use only the engine of the phone, or the phone first with the PC as a fallback?</dd>
-    <dt>Context</dt><dd>You prefer that the phone does not send a voice note to the PC. Orca has three settings: Automatic, This phone, Computer. The Android app is later, so this decision only goes into the plan now. Until then, the mic key of the phone keyboard covers the phone browser.</dd>
-    <dt>Options</dt><dd>This phone only · Automatic: the phone, and the PC if the phone fails · a setting with the three choices, as Orca</dd>
-    <dt>Recommendation</dt><dd><span class="pill rec">This phone only</span> It is what you asked for, and it is the simplest. Add the PC fallback only if a phone engine is too weak.</dd>
+    <dt>Question</dt><dd>Do you approve the plan in <code>docs/plan.md</code>, section "M plan: voice dictation"?</dd>
+    <dt>Context</dt><dd>Six steps. M-1 tests Parakeet TDT v3 and Whisper Large v3 Turbo on 5 of your recordings, and you pick the model. M-2 adds the transcription service to the supervisor. M-3 changes the mic in the UI to record audio. M-4 is a live test in the tray. M-5 puts the phone engine into the Android plan. M-6 (phrase by phrase, cloud engine) comes only if you ask.</dd>
+    <dt>Options</dt><dd>Approve · approve with changes · do not approve</dd>
+    <dt>Recommendation</dt><dd><span class="pill rec">approve</span> Then M-1 starts. M-1 needs 5 recordings from you: 30 s, 2 min and 5 min in English, and one in Portuguese.</dd>
   </dl></div>
 </details>
 
 <h2>Answered</h2>
+
+<details class="fold closed">
+  <summary><h2>Q5. Which engine does the tray use first?</h2><span class="pill ok">answered</span></summary>
+  <div class="body q"><dl>
+    <dt>Answer</dt><dd>"Whatever we need to use." Decision by the recommendation: a local model on the GPU. Parakeet TDT v3 first, Whisper Large v3 Turbo second. Step M-1 picks one.</dd>
+  </dl></div>
+</details>
+
+<details class="fold closed">
+  <summary><h2>Q6. Do you need to see the text while you speak?</h2><span class="pill ok">answered</span></summary>
+  <div class="body q"><dl>
+    <dt>Answer</dt><dd>Good to have, not necessary. If text after stop gives better quality and less cost, use it.</dd>
+  </dl></div>
+</details>
+
+<details class="fold closed">
+  <summary><h2>Q7. Which engine does the Android app use?</h2><span class="pill ok">answered</span></summary>
+  <div class="body q"><dl>
+    <dt>Answer</dt><dd>Not defined yet. The Android app is the next step. Decision by the recommendation: the engine of the phone, and the audio stays on the phone. It goes into the Android plan.</dd>
+  </dl></div>
+</details>
 
 <details class="fold closed">
   <summary><h2>Q1. Which app did "the Siri app" mean?</h2><span class="pill ok">answered</span></summary>
