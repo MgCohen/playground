@@ -51,7 +51,7 @@ public sealed class ProcessTreeTests
     {
         using var t = new Rig();
         var id = WorktreeSession(t);
-        var worktree = t.Store.Meta(id).Cwd!;
+        var worktree = t.Store.Session(id).Work.Cwd!;
         using var root = StartOrphanMaker(worktree);
         using var tree = new ProcessTree(root, TimeSpan.FromMilliseconds(100));
         WaitForOrphan(worktree);
@@ -68,7 +68,7 @@ public sealed class ProcessTreeTests
     {
         using var t = new Rig();
         var id = WorktreeSession(t);
-        var worktree = t.Store.Meta(id).Cwd!;
+        var worktree = t.Store.Session(id).Work.Cwd!;
         File.WriteAllText(Path.Combine(worktree, "held.txt"), "held");
         new Shell(worktree).MustGit("add", "held.txt");
         new Shell(worktree).MustGit("-c", "user.email=t@t", "-c", "user.name=t", "commit", "--quiet", "-m", "held");
@@ -95,7 +95,7 @@ public sealed class ProcessTreeTests
         var shell = new Shell(repo);
         shell.MustGit("init", "--quiet", "-b", "main");
         shell.MustGit("-c", "user.email=t@t", "-c", "user.name=t", "commit", "--quiet", "--allow-empty", "-m", "init");
-        var id = t.Store.Create(new Meta("") { Cwd = repo, CreatedBy = "supervisor", Worktree = true }, "a");
+        var id = t.Store.Create(new Seed { Cwd = repo, CreatedBy = "supervisor", Worktree = true }, "a");
         new Lifecycle(t.Store).MakeWorktree(id);
         return id;
     }

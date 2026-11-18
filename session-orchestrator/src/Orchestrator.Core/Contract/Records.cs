@@ -18,30 +18,6 @@ public sealed record Lease(string Holder, string Since, JsonElement? Reason = nu
     public string? Started { get; init; }
 }
 
-public sealed record Meta(string Id)
-{
-    public string? Parent { get; init; }
-    public string? Title { get; init; }
-    public string? Cwd { get; init; }
-    public string? CreatedBy { get; init; }
-    public string? CreatedAt { get; init; }
-    public bool? Started { get; init; }
-    public bool? Worktree { get; init; }
-    public string? Agent { get; init; }
-    public List<string>? Skills { get; init; }
-    public string? Repo { get; init; }
-    public string? Branch { get; init; }
-    public bool? AllowDefaults { get; init; }
-    public bool? Imported { get; init; }
-    public string? AppId { get; init; }
-
-    /// <summary>True: the brief asked for a background session, so Remote Control stays off.</summary>
-    public bool? Background { get; init; }
-
-    /// <summary>True after the session turned Remote Control on for itself; false after it turned it off.</summary>
-    public bool? RemoteControl { get; init; }
-}
-
 /// <summary>The policy form of a question. The envelope kind is always question.</summary>
 public static class DecisionKinds
 {
@@ -158,7 +134,7 @@ public sealed record TurnMarker(string Event, string From, string At)
 
 public sealed record StoreVersion(int Version, string At)
 {
-    public const int Current = 2;
+    public const int Current = 3;
 }
 
 public sealed record LastOutput(string Event, string At);
@@ -173,11 +149,6 @@ public static class ControlStates
 public sealed record Subscription(string Party, string Name, string? Cursor, string At)
 {
     public string? Filter { get; init; }
-}
-
-public sealed record Control(string State, string At, string By)
-{
-    public string? Reason { get; init; }
 }
 
 /// <summary>

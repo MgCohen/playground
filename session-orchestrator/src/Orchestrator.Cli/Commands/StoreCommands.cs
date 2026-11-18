@@ -13,8 +13,33 @@ public static class StoreCommands
         {
             "root" => Root(c),
             "migrate" => Migrate(c),
-            _ => throw new UsageException($"unknown store command {word}: use root or migrate"),
+            "upgrade" => Upgrade(c),
+            _ => throw new UsageException($"unknown store command {word}: use root, migrate or upgrade"),
         };
+    }
+
+    /// <summary>
+    /// Upgrades the store from version 2 to version 3: meta.json and control.json of each session become the registry
+    /// entry session.json. The old files stay as a backup.
+    /// </summary>
+    static int Upgrade(CommandContext c)
+    {
+        var repos = c.Store.Repositories;
+        var now = DateTimeOffset.UtcNow;
+        var live = StoreUpgrade.LiveSessions(repos, now);
+        if (live.Count > 0 && !c.Args.Flag("force"))
+        {
+            c.Output.WriteLine($"No upgrade: {live.Count} session(s) have a heartbeat in the last {StoreUpgrade.LiveWindow.TotalSeconds:0} s ({string.Join(", ", live.Take(5))}). Stop the supervisor, the tray and these sessions, then run the upgrade again (--force skips this check). Nothing changed.");
+            return 1;
+        }
+        var dry = c.Args.Flag("dry-run");
+        var result = StoreUpgrade.ToVersion3(repos, now, c.Provider.Name, dry);
+        foreach (var line in result.Lines) c.Output.WriteLine($"  {line}");
+        if (result.From == 3) return 0;
+        c.Output.WriteLine(dry
+            ? $"Dry run: the upgrade makes {result.Entries} registry entries in {repos.Location}. Nothing changed."
+            : $"Upgraded {repos.Location} to version 3: {result.Entries} registry entries. meta.json and control.json stay as a backup. Restart the supervisor.");
+        return 0;
     }
 
     static int Root(CommandContext c)

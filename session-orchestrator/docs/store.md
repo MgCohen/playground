@@ -27,7 +27,7 @@ The default store root is out of the checkout, so a `git clean -fdx` cannot dele
 
 ```
 <store root>/
-  version.json                       { version: 2, at }
+  version.json                       { version: 3, at }
   policy.json                        the policy in use
   events/<day>/<id>.json             envelopes, append only, one file each
   bodies/<day>/<id>.json             bodies, write once
@@ -35,6 +35,7 @@ The default store root is out of the checkout, so a `git clean -fdx` cannot dele
   subscriptions/<party>/<name>.json.lock  the lock of the version check and the write of the cursor
   nudges/<party>                     a nudge: the write time is the signal, the text is an envelope id or empty
   claims/answer/<thread>             the claim of the first answer in a thread: an exclusive create, the text is the sender
+  sessions/<id>/session.json         the registry entry of one session (Session registry, below)
   sessions/<id>/                     the lifecycle files of one session (below)
   supervisor/log.txt                 one line for each turn, relay, default, nudge and blocked delivery
   templates/<kind>/                  an added template, or a replacement of a core template (Types, below)
@@ -61,6 +62,7 @@ The C# code reads and writes the store only through `IRepositories` (`src/Orches
 | `Cursors` | `Doc<CursorState>` | `<party>/<name>` | `subscriptions/<party>/<name>.json` |
 | `Nudges` | `Doc<string>` | `<party>` | `nudges/<party>` |
 | `Sessions` | `Doc<string>` (the id) | session id | `sessions/<id>/` |
+| `SessionEntries` | `Doc<SessionEntry>` | session id | `sessions/<id>/session.json`. Only `SessionRegistry` reads and writes it (S2) |
 | `SessionFile<T>(file)` | `Doc<T>` | session id | `sessions/<id>/<file>` |
 | `SessionItems<T>(id, folder)` | `Doc<T>` | item name | `sessions/<id>/<folder>/<name>.json` |
 | `Definitions(catalog)` | `Doc<Definition>` (the files of one folder) | definition name | `templates/<kind>/`, `templates/modes/<name>/`, `templates/workflows/<name>/` |
@@ -219,8 +221,8 @@ The lifecycle notices of the supervisor:
 | `child-archived-in-app` | Parent | The user archived the session in the app sidebar, and the store side is not archived |
 | `archive-reminder` | Parent | Done for `reminderMinutes`, no open PR, not archived. One time |
 | `open-in-app` | Session | The only input of the first turn of a new session when the supervisor imports sessions (`ORCH_IMPORT`). The turn makes the transcript, the import follows, and the brief waits for the live app session |
-| `remote-control-self` | Session | After the import into the app, unless `meta.background` (F4). Field `remoteControlTool` |
-| `remote-control-child` | Parent | `remoteControlSeconds` after `remote-control-self`, and `meta.remoteControl` is not set. Fields `appId`, `remoteControlTool` |
+| `remote-control-self` | Session | After the import into the app, unless the setting `behavior.visibility` is `private` (F4). Field `remoteControlTool` |
+| `remote-control-child` | Parent | `remoteControlSeconds` after `remote-control-self`, and `engine.remoteControl` of the entry is not set. Fields `appId`, `remoteControlTool` |
 | `archive-child` | Parent | F8, path 2: the app still shows a session that is archived in the store. At once when the session is not live (it cannot archive itself), else at the deadline of the request. The parent turns Remote Control off, then archives it in the app (probes 2a to 2c). Fields `appId`, `remoteControlTool`, `archiveTool` |
 | `state-inferred` | Parent | The fallback agent inferred the state. Fields `state`, `text` |
 
@@ -318,7 +320,7 @@ The watchdog does not count the time while the live session runs a turn. A sessi
 | Question relay | Supervisor | Forwards each question and plan of a child to its parent at once | forward |
 | Report relay | Supervisor (subscription `reports-<id>` for each session) | At the end of a turn, forwards the newest done or blocked report of a child to its parent. A turn is open while the supervisor turn runs, or while `status.json` says running and the lease is `live` (an old heartbeat does not end it). An older report of the same turn gets an ack `{ state: read, by: superseded }` from the supervisor (F5). An ack of the user does not stop the forward | forward, ack |
 | Lifecycle | Supervisor | One step of the state machine for each session at each tick (below) | `session.state`, `state.conflict`, `lease.release`, notices |
-| Meta writer | Supervisor (subscription `meta`) | Applies each `meta.update { session, field, value }` from a plugin: `appId` of the sender itself, `remoteControl` of the sender or of its child. Other updates are refused and logged | `meta.json` |
+| Meta writer | Supervisor (subscription `meta`) | Applies each `meta.update { session, field, value }` from a plugin: `appId` of the sender itself, `remoteControl` of the sender or of its child. Other updates are refused and logged. The registry writes the field in `engine` | `session.json` |
 | Question follow | Supervisor | A closed notice when the question of a child closes; reminders while it waits with no default (10 min, then each hour) | notice |
 | Docs check, default | Supervisor (`docs`, `policy`) | An answer to the session, and a forward to the user with `needs: review` | answer, forward |
 | User inbox | UI, `orch inbox`, `GET /api/inbox` | Shows a card | answer, review, ack, message |
@@ -351,7 +353,8 @@ The plugin and the supervisor share one folder for each session: `store/sessions
 | `status.json` | Plugin | `{ state: running \| idle, turnId, at }` for the main loop |
 | `mirror/<ms>-<uuid>.json` | Plugin | `{ door, origin, uuid, message }` for the doors `prompt`, `response` and `tool-result`. `message` is JSON, cut to 4000 characters |
 | `log-<holder>.txt` | Plugin | Log lines of one holder (`live` or `supervisor`), cut to the last 100 000 characters |
-| `meta.json` | Supervisor, `spawn_child`, `orch new`, `orch enable`, `/orch-enable` (creation only). A plugin never changes it: it posts `meta.update`, and the supervisor writes the field | `{ id, parent, title, cwd, createdBy, createdAt, started, worktree, agent, skills, repo, branch, allowDefaults, imported, appId, background, remoteControl }`. `imported: true` after the app confirmed an import. `appId` is the id of the session in the app. `background: true` (from the brief) keeps Remote Control off. `remoteControl` is `true` or `false` after a `set_remote_control` call on the session: by the session itself, or by its parent with the app id `local_<id>`. The plugin of the caller posts `meta.update`. `allowDefaults: true` (only from the user) lets `orch merge` carry unapproved defaults. With `worktree: true`, the first turn makes a git worktree: `cwd` becomes the worktree folder, `repo` the repository and `branch` its branch. A session with `createdBy` and no `started` gets a new `claude -p` session with this id |
+| `session.json` | `SessionRegistry` (in the supervisor and in `orch`), and `/orch-enable` (create, or a new title of its own entry, with the version of the read). A plugin never changes another field: it posts `meta.update`, and the registry writes the field | The registry entry: the section "Session registry" below. The supervisor runs no turn of a stopped or archived session (`lifecycle.phase`), and ends its running turn. The plugin delivers no envelope while the phase is not `active` |
+| `meta.json`, `control.json` | Store version 2 only | `orch store upgrade` reads them, and keeps them as a backup. No other code reads them |
 | `state.json` | Supervisor | The lifecycle state: `{ state, since, requested, inferred, guard, fault, waitReason, reminded, remoteControlAsked, history }` (below) |
 | `state-check.json` | Supervisor | `{ state, reason, at, error }`: the last answer of the fallback agent `orch:state-checker` |
 | `forgotten.json` | Supervisor | `{ report, nudged, notified }`: one forgotten episode. `report` is `<last report id>|<last input id>` (an input from another party than the supervisor). A new report or a new input starts a new episode: one nudge, then one notice to the parent. The file is deleted when the session goes from forgotten to done, stopped or archived |
@@ -359,7 +362,66 @@ The plugin and the supervisor share one folder for each session: `store/sessions
 | `turn.json` | Supervisor | `{ event, from, at, ended }`: the `turn.start` of the last supervisor turn, its senders, and the end time. The plugin uses `from` as the sender of `session.input` |
 | `last-output.json` | Plugin | `{ event, at }`: the last `session.output`. `turn.end` links it in `refs.output` |
 | `stack/<decision>.json` | `orch decision`, `orch stack` | The versions of one decision on the stack (below) |
-| `control.json` | `orch stop`, `orch resume`, `orch archive`, the API, the supervisor (auto-archive) | `{ state: active \| stopped \| archived, at, by, reason }`. The supervisor runs no turn of a stopped or archived session, and ends its running turn. The plugin delivers no envelope while the state is not `active` |
+
+## Session registry
+
+Store version 3 keeps the data of each session in one registry entry, `sessions/<id>/session.json`. The slice `SessionRegistry` (`Orchestrator.Core/Sessions/`) is the only writer, on the repository `SessionEntries`. `orch`, the supervisor, the API and the UI read and write sessions through `FileStore.Registry`. The test `ArchitectureTests` refuses other uses. The run state (lease, heartbeat, status, turn, `state.json`) stays in its own files.
+
+```json
+{
+  "id": "6f1c2a90-…", "code": "C2",
+  "engine": { "kind": "Claude Code", "sessionId": "6f1c2a90-…", "appId": "local_6f1c2a90-…", "imported": true, "remoteControl": true },
+  "parent": "ca72efff-…", "title": "Session registry", "owner": "user", "tags": ["orch"], "stream": "S",
+  "role": "worker", "type": { "agent": "worker", "skills": ["orch:orch-report"] }, "workflow": "planning",
+  "work": { "cwd": "…", "repo": "…", "branch": "orch/session-6f1c2a90", "worktree": true },
+  "settings": { "behavior": { "mode": "auto", "visibility": "public" }, "permissions": { "mode": "auto", "allowDefaults": false } },
+  "lifecycle": { "phase": "active", "at": "…", "by": "user", "reason": null, "started": true },
+  "created": { "at": "…", "by": "session:ca72efff-…" }, "updated": { "at": "…", "by": "supervisor" }
+}
+```
+
+| Field | Content | Written by |
+|---|---|---|
+| `id` | The registry id. Today it is the engine session id | Create |
+| `code` | The own code, unique among the siblings. The registry gives `O<n>` to a root and `C<n>` to a child when the creator gives none | Create; the supervisor tick for an entry of `/orch-enable` |
+| `engine` | References to the engine only: `kind` (`IProvider.Name`), `sessionId`, `appId`. Two records of our own actions: `imported` (the import is confirmed) and `remoteControl` (a session reported a change) | Create, the import, `meta.update` |
+| `parent` | The parent id. Null for a root. The children are a query (`SessionRegistry.Children`), not a field | Create |
+| `title`, `owner`, `tags`, `stream` | Labels. `owner` and `stream` are copies of the parent when the creator gives none | Create, `orch enable` |
+| `role` | `orchestrator`, `worker` or `free` (C1). At create: `orchestrator` for the orchestrator agent, `worker` for a child, else `free`. The workflow runner (C2) changes it | Create |
+| `type` | The custom agent: `agent` and `skills`. Only the provider reads it, to start the session | Create |
+| `workflow` | The workflow that the session runs or works in | Create |
+| `work` | `cwd`, and the git worktree: `worktree`, `repo`, `branch` | Create, the worktree step |
+| `settings` | The settings in tiers (below) | Create, `SessionRegistry.Configure` |
+| `lifecycle` | `phase` (`active`, `stopped`, `archived`) with `at`, `by` and `reason`; `started` (the engine session exists) | `orch stop`, `resume`, `archive`, the API, the supervisor |
+| `created`, `updated` | A time and a party | Each write |
+
+The full code is the codes from the root down, with a space between them: `O1 C2 C1`. The app title is `[<full code>] <title>` (`SessionRegistry.AppTitle`). The registry does not store the full code, so a changed code of a parent cannot make it old. A code has no space.
+
+### Settings
+
+| Tier | Key | Values | Root default |
+|---|---|---|---|
+| `behavior` | `mode` | A mode of the mode catalog (`templates/modes/`): `auto`, `chat`, `ask`, `approve`, or an added mode | `auto` |
+| `behavior` | `visibility` and the other axes of a mode | An axis value that changes one value of the mode | `public` |
+| `permissions` | `mode` | `auto`, `bypass` | `auto` |
+| `permissions` | `allowDefaults` | `true`: `orch merge` can carry unapproved defaults | `false` |
+
+1. At create, each value that the creator sets comes first. Each other value is a copy of the value of the direct parent at that time. A root copies the defaults (`SettingTiers`).
+2. Only the user and the parent change a setting of a session (`SessionRegistry.Configure`). The change does not go to the children.
+3. A read (`SessionRegistry.Resolve`) takes the own value, then the value of the parent chain, then the default. So a key that a later version adds has a value in an old entry.
+4. A new behavior mode is a folder in `templates/modes/`. A new tier, key or permissions mode is one line in `SettingTiers`.
+5. Today only two readers use the settings: `visibility` `private` keeps Remote Control off (the old `background`), and `orch merge` reads `allowDefaults` on the session and its parents. S3 and S4 add the other readers.
+
+### Upgrade from version 2
+
+`orch store upgrade [--dry-run] [--force]` makes a store of version 2 a store of version 3. It runs only through the repositories.
+
+1. It refuses while a session has a heartbeat in the last 30 s (`--force` skips this check).
+2. For each session folder with `meta.json` or `control.json`, it makes the entry: the fields of `meta.json`, the phase of `control.json`, `background` as `behavior.visibility`, `allowDefaults` as `permissions.allowDefaults`. Parents come first, so each child copies the settings of its parent.
+3. Codes: `O<n>` for each root and `C<n>` under each parent, oldest first.
+4. A meta with no `createdBy` gets `lifecycle.started: true`: version 2 made no new engine session for it.
+5. An entry that exists stays. It writes `version.json` last, so a stopped upgrade can run again.
+6. It deletes no file: `meta.json` and `control.json` stay as a backup.
 
 ## Lifecycle state machine
 
@@ -367,11 +429,11 @@ The code is in `Orchestrator.Core/Lifecycle` (no IO) and `Supervisor.Lifecycle.c
 
 | State | Detect check (no `state.json`) |
 |---|---|
-| `archived` | `control.json` archived, or no `enabled` |
-| `stopped` | `control.json` stopped |
+| `archived` | `lifecycle.phase` archived, or no `enabled` |
+| `stopped` | `lifecycle.phase` stopped |
 | `stale` | Lease `live`, heartbeat and lease older than `staleSeconds` |
 | `not-responding` | One fault: failed turns, stop latch, input not taken, hung turn, hung process |
-| `start` | `meta.started` is not true, and no turn runs |
+| `start` | `lifecycle.started` is not true, and no turn runs |
 | `running` | A supervisor turn, or `status.json` running with a fresh heartbeat |
 | `done` | The last report is done, and no input arrived after it |
 | `forgotten` | Idle for `forgottenMinutes`, last report not done or blocked, no wait reason, no input after the turn |
@@ -415,7 +477,7 @@ A question is the envelope `question` from a session, with `thread` = the tool c
 | Choice (`Decision.Kind` = `ask_user`) | A `risk`, often `options` and a `defaultOption` | Docs check and default by the level of `risk` |
 | Facts (`Decision.Kind` = `query`) | No `risk` and no `defaultOption` | None: only a party answers. The risk reads as `high` |
 
-Old stores have the kinds `decision` and `query`. The stream reads them as `question` (`EventKinds.Current`), so the store version stays 2.
+Old stores have the kinds `decision` and `query`. The stream reads them as `question` (`EventKinds.Current`), so these kinds need no store version change.
 
 | Read | Query |
 |---|---|
@@ -536,7 +598,7 @@ A review of a default decision (`templates/review/render/<verdict>.md`):
 1. Write each file in one write: a temporary file, then a move.
 2. Only one writer has the lease. The plugin delivers only with holder `live`. With any other holder, the supervisor delivers with `claude -p`.
 3. A lease `live` counts as live while the heartbeat or the lease is less than 15 s old. After that, the session is `stale`. The supervisor releases the lease (`none`) only when the process in `lease.json` is gone. It never runs a turn while the holder is `live`. If the process is alive with no beat for `staleProcessSeconds`, the session is `not-responding`. The plugin takes a released lease back at its next beat.
-4. The supervisor and each `orch` command (except `doctor` and `template`) refuse a store with another version. The plugin stays inactive in a store whose `version.json` is not version 2. There is no migration from version 1: move the old store to another folder and start with a new store.
+4. The supervisor and each `orch` command (except `doctor`, `template`, `process`, `supervisor` and `store`) refuse a store with another version. The plugin stays inactive in a store whose `version.json` is not version 3. A store of version 2 needs `orch store upgrade` (the section "Session registry"). There is no migration from version 1: move the old store to another folder and start with a new store.
 
 ## Recovery
 

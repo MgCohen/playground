@@ -58,7 +58,7 @@ public sealed class LifecycleTests
         Assert.That(refused.Message, Does.Contain("#7"));
         lifecycle.Archive(id, Parties.User, true);
         Assert.That(t.Store.Sessions(), Does.Not.Contain(id));
-        Assert.That(lifecycle.Control(id).State, Is.EqualTo(ControlStates.Archived));
+        Assert.That(lifecycle.Control(id).Phase, Is.EqualTo(ControlStates.Archived));
     }
 
     [Test]
@@ -69,22 +69,22 @@ public sealed class LifecycleTests
         var shell = new Shell(repo);
         shell.MustGit("init", "--quiet", "-b", "main");
         shell.MustGit("-c", "user.email=t@t", "-c", "user.name=t", "commit", "--quiet", "--allow-empty", "-m", "init");
-        var a = t.Store.Create(new Meta("") { Cwd = repo, CreatedBy = "supervisor", Worktree = true }, "a");
-        var b = t.Store.Create(new Meta("") { Cwd = repo, CreatedBy = "supervisor", Worktree = true }, "b");
+        var a = t.Store.Create(new Seed { Cwd = repo, CreatedBy = "supervisor", Worktree = true }, "a");
+        var b = t.Store.Create(new Seed { Cwd = repo, CreatedBy = "supervisor", Worktree = true }, "b");
         await t.Cycle();
         var cwds = t.Turns.Select(turn => turn.Cwd).ToList();
         Assert.That(cwds.Distinct().Count(), Is.EqualTo(2));
         foreach (var id in new[] { a, b })
         {
-            var meta = t.Store.Meta(id);
-            Assert.That(Directory.Exists(meta.Cwd), Is.True);
-            Assert.That(new Shell(meta.Cwd!).CurrentBranch(), Is.EqualTo(meta.Branch));
-            Assert.That(meta.Repo, Is.EqualTo(repo.Replace('\\', '/')).IgnoreCase);
+            var meta = t.Store.Session(id);
+            Assert.That(Directory.Exists(meta.Work.Cwd), Is.True);
+            Assert.That(new Shell(meta.Work.Cwd!).CurrentBranch(), Is.EqualTo(meta.Work.Branch));
+            Assert.That(meta.Work.Repo, Is.EqualTo(repo.Replace('\\', '/')).IgnoreCase);
         }
         var lines = new Lifecycle(t.Store).Archive(a, Parties.User, false);
         Assert.That(lines[^1], Does.StartWith("Removed the worktree"));
-        Assert.That(Directory.Exists(t.Store.Meta(a).Cwd), Is.False);
-        Assert.That(shell.BranchExists(t.Store.Meta(a).Branch!), Is.True);
+        Assert.That(Directory.Exists(t.Store.Session(a).Work.Cwd), Is.False);
+        Assert.That(shell.BranchExists(t.Store.Session(a).Work.Branch!), Is.True);
     }
 
     [Test]
@@ -97,7 +97,7 @@ public sealed class LifecycleTests
         File.WriteAllText(Path.Combine(repo, "keep.txt"), "keep");
         shell.MustGit("add", "keep.txt");
         shell.MustGit("-c", "user.email=t@t", "-c", "user.name=t", "commit", "--quiet", "-m", "init");
-        var id = t.Store.Create(new Meta("") { Cwd = repo.Replace('\\', '/'), Repo = repo, Branch = "main", CreatedBy = "user" }, "a");
+        var id = t.Store.Create(new Seed { Cwd = repo.Replace('\\', '/'), Repo = repo, Branch = "main", CreatedBy = "user" }, "a");
         var lines = new Lifecycle(t.Store).Archive(id, Parties.User, false);
         Assert.That(lines[^1], Does.Contain("is the repository root"));
         Assert.That(File.Exists(Path.Combine(repo, "keep.txt")), Is.True);
@@ -112,7 +112,7 @@ public sealed class LifecycleTests
         new Shell(repo).MustGit("init", "--quiet", "-b", "main");
         var plain = Directory.CreateTempSubdirectory("orch-plain-").FullName;
         File.WriteAllText(Path.Combine(plain, "keep.txt"), "keep");
-        var id = t.Store.Create(new Meta("") { Cwd = plain, Repo = repo, Branch = "main", CreatedBy = "user" }, "a");
+        var id = t.Store.Create(new Seed { Cwd = plain, Repo = repo, Branch = "main", CreatedBy = "user" }, "a");
         var lines = new Lifecycle(t.Store).Archive(id, Parties.User, false);
         Assert.That(lines[^1], Does.Contain("has no .git file"));
         Assert.That(File.Exists(Path.Combine(plain, "keep.txt")), Is.True);

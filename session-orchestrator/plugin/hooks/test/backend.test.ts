@@ -48,14 +48,14 @@ test('a second create of an envelope id fails and keeps the first envelope', asy
 
 test('a save of an old version fails, a save of the current version passes', async () => {
   reset()
-  const $ = fake({ 'store/sessions/s1/meta.json': JSON.stringify({ title: 'a' }) })
-  const read = await readSessionVersioned($, 'meta.json')
+  const $ = fake({ 'store/sessions/s1/session.json': JSON.stringify({ title: 'a' }) })
+  const read = await readSessionVersioned($, 'session.json')
   assert.equal(read.version, versionOf(JSON.stringify({ title: 'a' })))
-  await writeSession($, 'meta.json', { title: 'b' }, S.dir, read.version)
-  await assert.rejects(writeSession($, 'meta.json', { title: 'c' }, S.dir, read.version), StoreConflict)
-  assert.equal((await readSession($, 'meta.json')).title, 'b')
-  await writeSession($, 'meta.json', { title: 'd' })
-  assert.equal((await readSession($, 'meta.json')).title, 'd', 'with no expected version the save replaces the file')
+  await writeSession($, 'session.json', { title: 'b' }, S.dir, read.version)
+  await assert.rejects(writeSession($, 'session.json', { title: 'c' }, S.dir, read.version), StoreConflict)
+  assert.equal((await readSession($, 'session.json')).title, 'b')
+  await writeSession($, 'session.json', { title: 'd' })
+  assert.equal((await readSession($, 'session.json')).title, 'd', 'with no expected version the save replaces the file')
 })
 
 // The same values are in VersionRuleTests (C#): both sides compute one version for one text.

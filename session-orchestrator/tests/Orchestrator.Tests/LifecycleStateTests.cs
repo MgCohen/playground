@@ -352,7 +352,7 @@ public sealed class LifecycleStateTests
     {
         using var t = new Rig(import: true);
         var id = t.Create("work", "visible");
-        var quiet = t.Store.Create(new Meta("") { Title = "quiet", Cwd = "C:/x", CreatedBy = "supervisor", Background = true }, "work");
+        var quiet = t.Store.Create(new Seed { Title = "quiet", Cwd = "C:/x", CreatedBy = "supervisor", Background = true }, "work");
         await t.Cycle();
         Assert.That(NoticesTo(t, id), Is.EqualTo(new[] { "open-in-app", "remote-control-self" }));
         Assert.That(NoticesTo(t, quiet), Is.EqualTo(new[] { "open-in-app" }), "a background session is in the app too, with Remote Control off");
@@ -374,11 +374,11 @@ public sealed class LifecycleStateTests
         Update(parent, child, "appId", "local_wrong");
         Update(child, child, "title", "renamed");
         await t.Cycle();
-        var meta = t.Store.Meta(child);
-        Assert.That((meta.RemoteControl, meta.AppId, meta.Title), Is.EqualTo(((bool?)true, "local_host-1", "child")));
+        var meta = t.Store.Session(child);
+        Assert.That((meta.Engine.RemoteControl, meta.Engine.AppId, meta.Title), Is.EqualTo(((bool?)true, "local_host-1", "child")));
         Update(child, child, "remoteControl", false);
         await t.Cycle();
-        Assert.That(t.Store.Meta(child).RemoteControl, Is.False, "a session may change its own remoteControl");
+        Assert.That(t.Store.Session(child).Engine.RemoteControl, Is.False, "a session may change its own remoteControl");
     }
 
     [Test]
@@ -386,7 +386,7 @@ public sealed class LifecycleStateTests
     {
         using var t = new Rig();
         var id = new Messages(t.Store).NewSession(new BriefFields { Title = "bg", Goal = "g", Cwd = "C:/x", Background = true }, "test");
-        Assert.That(t.Store.Meta(id).Background, Is.True);
+        Assert.That(t.Store.Session(id).IsPrivate(), Is.True);
         Assert.That(t.Store.Events.Fields(t.Store.Events.All().Single(e => e.Kind == EventKinds.Brief)).GetValueOrDefault("background"), Is.EqualTo(true));
     }
 

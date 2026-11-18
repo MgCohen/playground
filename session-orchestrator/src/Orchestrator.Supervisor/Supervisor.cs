@@ -63,6 +63,7 @@ public sealed partial class Supervisor
             StopRunningTurns();
             Relay();
             ApplyMetaUpdates();
+            AssignCodes();
             StepStates(now);
             var sessions = store.Sessions().Where(id => !lifecycle.IsStopped(id)).ToList();
             foreach (var id in sessions) ApplyPolicy(id, now);
@@ -85,7 +86,7 @@ public sealed partial class Supervisor
         foreach (var id in running.Keys)
             if (lifecycle.IsStopped(id) && stops.TryGetValue(id, out var stop) && !stop.IsCancellationRequested)
             {
-                store.Log($"{id} turn stopped: {lifecycle.Control(id).State}");
+                store.Log($"{id} turn stopped: {lifecycle.Control(id).Phase}");
                 stop.Cancel();
             }
     }
@@ -101,7 +102,7 @@ public sealed partial class Supervisor
         foreach (var e in subscription.Next())
         {
             var child = Parties.SessionId(e.From)!;
-            if (store.Meta(child).Parent is { } parent)
+            if (store.Session(child).Parent is { } parent)
             {
                 var to = Parties.Session(parent);
                 if (!store.Events.ForwardsOf(e.Id).Any(f => f.To == to))
@@ -124,7 +125,7 @@ public sealed partial class Supervisor
             var notices = store.Events.Thread(thread).Where(n => n.Kind == EventKinds.Notice && n.To == forward.To).Select(n => (Event: n, Kind: store.Events.Fields(n).GetValueOrDefault("kind") as string)).ToList();
             if (notices.Any(n => n.Kind == "question-closed")) continue;
             var child = Parties.SessionId(forward.From) ?? "";
-            var title = store.Meta(child).Title ?? child;
+            var title = store.Session(child).Title ?? child;
             if (store.Decision(thread) is not { } decision) continue;
             if (store.Answer(child, thread) is { } answer)
             {
@@ -232,7 +233,7 @@ public sealed partial class Supervisor
 
     void PostBlocked(string id, Event e, string reason)
     {
-        var body = Data.Of(("text", $"{e.Kind} to {store.Meta(id).Title ?? id} is not delivered: {reason}"), ("session", id), ("envelope", e.Id), ("reason", reason));
+        var body = Data.Of(("text", $"{e.Kind} to {store.Session(id).Title ?? id} is not delivered: {reason}"), ("session", id), ("envelope", e.Id), ("reason", reason));
         var refs = Data.Of(("envelope", e.Id));
         store.Events.Post(new PostInput(EventKinds.DeliveryBlocked, Parties.Supervisor, Parties.User, body) { Session = id, Thread = e.Thread, Needs = Needs.Ack, Refs = refs });
         if (e.From != Parties.User && e.From != Parties.Session(id))
@@ -273,8 +274,8 @@ public sealed partial class Supervisor
             failures[id] = new Failure(options.MaxFailures, 0, null, "no cwd");
             return;
         }
-        var meta = store.Meta(id);
-        var request = new TurnRequest(id, cwd, pending.Text, meta.CreatedBy is not null && meta.Started != true) { Agent = meta.Agent, Title = meta.Title };
+        var meta = store.Session(id);
+        var request = new TurnRequest(id, cwd, pending.Text, meta.IsNew()) { Agent = meta.Type?.Agent, Title = meta.Title };
         var stop = new CancellationTokenSource();
         stops[id] = stop;
         Track(running, id, () => RunTurn(request, pending, stop.Token));
@@ -287,13 +288,13 @@ public sealed partial class Supervisor
     /// </summary>
     Pending? OpeningTurn(string id)
     {
-        var meta = store.Meta(id);
-        if (options.Import is null || meta.Imported == true || meta.CreatedBy is null) return null;
+        var meta = store.Session(id);
+        if (options.Import is null || meta.Engine.Imported == true || meta.Created is null) return null;
         var self = Parties.Session(id);
         var waiting = store.Undelivered(id).FirstOrDefault(e => e.Kind == EventKinds.Notice && store.Events.Fields(e).GetValueOrDefault("kind") as string == "open-in-app");
         // A stopped opening turn keeps Started and leaves its notice with no ack: the next turn is the opening turn again,
         // as a resume, so the import still comes before the brief (review of PR #14, item 7).
-        if (meta.Started == true && waiting is null) return null;
+        if (meta.Lifecycle.Started == true && waiting is null) return null;
         var notice = waiting ?? Notify(self, null, store.Texts.Notice("open-in-app"));
         return new Pending(store.Renderer.Join([notice]), [notice.Id]) { Senders = [Parties.Supervisor] };
     }
@@ -312,7 +313,7 @@ public sealed partial class Supervisor
         var id = request.Id;
         try
         {
-            if (request.IsNew) request = request with { Cwd = lifecycle.MakeWorktree(id).Cwd ?? request.Cwd };
+            if (request.IsNew) request = request with { Cwd = lifecycle.MakeWorktree(id).Work.Cwd ?? request.Cwd };
         }
         catch (Exception e) when (e is ShellException or IOException)
         {
@@ -320,7 +321,7 @@ public sealed partial class Supervisor
             return;
         }
         store.Log($"{id} turn start new={request.IsNew} cwd={request.Cwd} envelopes={string.Join(',', pending.Envelopes)}");
-        if (request.IsNew) store.SaveMeta(store.Meta(id) with { Started = true });
+        if (request.IsNew) store.SetStarted(id, true);
         var from = string.Join(',', pending.Senders.DefaultIfEmpty(Parties.Supervisor));
         var start = store.Events.Append(EventKinds.TurnStart, Parties.Supervisor, Parties.Session(id), Data.Of(("isNew", request.IsNew), ("senders", pending.Senders), ("count", (double)pending.Envelopes.Count)),
             Data.Of(("envelopes", pending.Envelopes)), id);
@@ -353,21 +354,21 @@ public sealed partial class Supervisor
             ImportOnce(id);
             return;
         }
-        if (request.IsNew) store.SaveMeta(store.Meta(id) with { Started = false });
+        if (request.IsNew) store.SetStarted(id, false);
         Fail(request, result.Error ?? "unknown", start.Id);
         EndMarker(id, start);
     }
 
     void ImportOnce(string id)
     {
-        if (options.Import is not { } import || store.Meta(id).Imported == true) return;
+        if (options.Import is not { } import || store.Session(id).Engine.Imported == true) return;
         try
         {
             import(id);
             imports[id] = Now;
             store.Log($"{id} imported into the desktop app");
-            var meta = store.Meta(id);
-            if (meta.Imported == true && meta.Background != true)
+            var meta = store.Session(id);
+            if (meta.Engine.Imported == true && !meta.IsPrivate())
                 Notify(Parties.Session(id), RemoteControlThread(id), store.Texts.Notice("remote-control-self", [.. options.Provider.AppTools]));
         }
         catch (Exception e) when (e is ShellException or IOException or InvalidOperationException)

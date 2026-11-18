@@ -30,7 +30,7 @@ public sealed class StateReader(FileStore store, IProvider? provider = null)
     public Snapshot Read(string id, DateTimeOffset now, bool supervisorTurn, bool failedTurns)
     {
         var policy = store.Policy;
-        var meta = store.Meta(id);
+        var meta = store.Session(id);
         var lease = store.Lease(id);
         var beat = store.Heartbeat(id);
         var leaseSince = Times.Parse(lease.Since);
@@ -56,7 +56,7 @@ public sealed class StateReader(FileStore store, IProvider? provider = null)
         var undelivered = store.Undelivered(id);
         var openDecisions = store.OpenDecisions(id).Count;
         var blocked = store.Blocked(id);
-        var appId = meta.AppId;
+        var appId = meta.Engine.AppId;
         var app = appId is not null ? provider.Read(appId) : new AppFacts(false, false);
         var inApp = app.InApp;
         return new Snapshot(now)
@@ -64,8 +64,8 @@ public sealed class StateReader(FileStore store, IProvider? provider = null)
             Timers = policy.Lifecycle,
             AutoArchive = policy.AutoArchive,
             Enabled = store.IsEnabled(id),
-            Control = new Lifecycle(store).Control(id).State,
-            Started = meta.Started == true,
+            Control = meta.Lifecycle.Phase,
+            Started = meta.Lifecycle.Started == true,
             Running = running,
             StatusRunning = status?.State == "running",
             SupervisorTurn = supervisorTurn,
@@ -92,7 +92,7 @@ public sealed class StateReader(FileStore store, IProvider? provider = null)
     string WaitReason(string id, int openDecisions, string? report)
     {
         if (openDecisions > 0) return WaitReasons.Decision;
-        var children = store.Sessions().Where(s => store.Meta(s).Parent == id);
+        var children = store.Sessions().Where(s => store.Session(s).Parent == id);
         if (children.Any(c => State(c).File?.State is not (States.Done or States.Archived))) return WaitReasons.Child;
         if (report == ReportStates.Blocked) return WaitReasons.Blocked;
         return WaitReasons.None;

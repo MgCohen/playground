@@ -50,6 +50,7 @@ namespace Orchestrator.Cli
               orch doctor
               orch store [root]                          the store root: ORCH_STORE, else %LOCALAPPDATA%\orch\store
               orch store migrate [--from DIR] [--to DIR] [--dry-run] [--force]   copy the old store (<home>/store) to the store root and check the copy. Deletes nothing
+              orch store upgrade [--dry-run] [--force]   upgrade a store of version 2 to version 3: the session registry (session.json). Keeps meta.json and control.json
               orch supervisor start|stop|status [--port P] (the supervisor of ORCH_STORE: a published copy in ORCH_APP, else dotnet run of the source)
               orch process (the id and start time of the process that runs orch: the plugin puts them in lease.json)
             A <session> can be the first characters of its id.
@@ -107,7 +108,7 @@ namespace Orchestrator.Cli
                 error.WriteLine("Run orch --help for the commands.");
                 return 2;
             }
-            catch (Exception e) when (e is MessageException or ShellException or FormatException or IOException or InvalidDataException or Core.Templates.TemplateException or TimeoutException)
+            catch (Exception e) when (e is MessageException or RegistryException or ShellException or FormatException or IOException or InvalidDataException or Core.Templates.TemplateException or TimeoutException)
             {
                 error.WriteLine($"orch: {e.Message}");
                 return 1;

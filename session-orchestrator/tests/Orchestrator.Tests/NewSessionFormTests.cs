@@ -76,14 +76,14 @@ public sealed class NewSessionFormTests
         page.Find("form").Submit();
 
         var id = rig.Store.AllSessions().Single();
-        var meta = rig.Store.Meta(id);
+        var meta = rig.Store.Session(id);
         Assert.That(meta.Title, Is.EqualTo("Color child"));
-        Assert.That(meta.Cwd, Is.EqualTo("C:/work"));
-        Assert.That(meta.Agent, Is.EqualTo("worker"));
-        Assert.That(meta.Skills, Is.EqualTo(new[] { "orch:orch-ask", "orch:orch-report" }));
-        Assert.That(meta.Worktree, Is.True);
+        Assert.That(meta.Work.Cwd, Is.EqualTo("C:/work"));
+        Assert.That(meta.Type?.Agent, Is.EqualTo("worker"));
+        Assert.That(meta.Type?.Skills, Is.EqualTo(new[] { "orch:orch-ask", "orch:orch-report" }));
+        Assert.That(meta.Work.Worktree, Is.True);
         Assert.That(meta.Parent, Is.Null);
-        Assert.That(meta.AllowDefaults, Is.Null);
+        Assert.That(meta.Settings.Flag(SettingTiers.Permissions, SettingTiers.AllowDefaults), Is.False, "a root copies the default");
         var brief = BriefEvent(rig, id);
         Assert.That(brief.GetProperty("goal").GetString(), Is.EqualTo("Write RED in color.txt."));
         Assert.That(brief.GetProperty("scope").GetString(), Is.EqualTo("Only color.txt."));
@@ -94,10 +94,10 @@ public sealed class NewSessionFormTests
     }
 
     [Test]
-    public void A_child_from_the_form_gets_the_parent_and_its_folder_but_not_allowDefaults()
+    public void A_child_from_the_form_gets_the_parent_its_folder_and_a_copy_of_allowDefaults()
     {
         using var rig = new Rig();
-        var parent = rig.Store.Create(new Meta("") { Title = "Root", Cwd = "C:/root", AllowDefaults = true }, "start");
+        var parent = rig.Store.Create(new Seed { Title = "Root", Cwd = "C:/root", AllowDefaults = true }, "start");
         using var context = Context(rig);
         var page = context.Render<Sessions>();
         page.Find("#new-title").Input("Child");
@@ -106,10 +106,10 @@ public sealed class NewSessionFormTests
         Assert.That(page.Find("#new-cwd").GetAttribute("placeholder"), Is.EqualTo("Default: C:/root"));
         page.Find("form").Submit();
 
-        var meta = rig.Store.Meta(rig.Store.AllSessions().Single(s => s != parent));
+        var meta = rig.Store.Session(rig.Store.AllSessions().Single(s => s != parent));
         Assert.That(meta.Parent, Is.EqualTo(parent));
-        Assert.That(meta.Cwd, Is.EqualTo("C:/root"));
-        Assert.That(meta.AllowDefaults, Is.Null);
+        Assert.That(meta.Work.Cwd, Is.EqualTo("C:/root"));
+        Assert.That(meta.Settings.Flag(SettingTiers.Permissions, SettingTiers.AllowDefaults), Is.True, "the brief has no allowDefaults; the registry copies the parent value at create");
     }
 
     [Test]

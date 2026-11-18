@@ -29,7 +29,7 @@ public sealed class InboxUiTests
         { Session = session, Thread = "q-" + question.GetHashCode().ToString("x"), Needs = Needs.Answer });
 
     static string Session(Rig rig, string title, string? parent = null) =>
-        rig.Store.Create(new Meta("") { Title = title, Cwd = "C:/x", Parent = parent }, "start");
+        rig.Store.Create(new Seed { Title = title, Cwd = "C:/x", Parent = parent }, "start");
 
     [Test]
     public void Each_card_type_has_its_own_actions()

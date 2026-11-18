@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
+using Orchestrator.Core.Sessions;
 
 namespace Orchestrator.Core.Storage;
 
@@ -36,6 +37,12 @@ public interface IRepositories
 
     /// <summary>The sessions that have run state. Id and value: the session id.</summary>
     IRepository<Doc<string>, string> Sessions { get; }
+
+    /// <summary>
+    /// The session registry (store version 3): one <see cref="SessionEntry"/> for each session. Id: the session id. Only
+    /// <see cref="SessionRegistry"/> writes it.
+    /// </summary>
+    IRepository<Doc<SessionEntry>, string> SessionEntries { get; }
 
     /// <summary>
     /// One run state file of each session, for example the lease (<see cref="StoreFiles.Lease"/>). Id: the session id.

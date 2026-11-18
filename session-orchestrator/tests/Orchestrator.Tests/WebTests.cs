@@ -26,7 +26,7 @@ public sealed class WebTests
         var (factory, root) = Start();
         using var _ = factory;
         var store = new FileStore(root);
-        var id = store.Create(new Meta("") { Title = "Color child", Cwd = "C:/x" }, "start");
+        var id = store.Create(new Seed { Title = "Color child", Cwd = "C:/x" }, "start");
         store.SaveDecision(new Decision("toolu_9", id) { Question = "Which color goes in color.txt?", Context = "Step 3", Options = ["RED", "BLUE"], Risk = "high", Asked = Times.Format(DateTimeOffset.UtcNow) });
         var page = await factory.CreateClient().GetStringAsync("/cards");
         Assert.That(page, Does.Contain("Which color goes in color.txt?"));

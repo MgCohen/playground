@@ -17,7 +17,7 @@ public sealed class MergeGuardTests
         shell.MustGit("config", "user.name", "test");
         Commit(shell, "init.txt", "init");
         var session = rig.Create("start");
-        if (allowDefaults) rig.Store.SaveMeta(rig.Store.Meta(session) with { AllowDefaults = true });
+        if (allowDefaults) rig.Store.Change(session, e => e with { Settings = e.Settings.With(SettingTiers.Permissions, SettingTiers.AllowDefaults, true) });
         return (rig, shell, new StackOps(rig.Store, shell, TextWriter.Null), new MergeGuard(rig.Store, shell, TextWriter.Null), session);
     }
 

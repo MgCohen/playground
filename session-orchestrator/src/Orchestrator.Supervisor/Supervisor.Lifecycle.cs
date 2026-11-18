@@ -83,13 +83,13 @@ public sealed partial class Supervisor
 
     void Escalate(string id, Request request, int level, Snapshot s)
     {
-        var meta = store.Meta(id);
+        var meta = store.Session(id);
         if (request.To == States.Stopped)
         {
             NotifyParent(id, "child-not-responding", ("fault", "stop"), ("text", $"The stop did not end its turn in {s.Timers.StopSeconds:0} s."));
             return;
         }
-        if (level == 1 && HasLiveParent(meta) && meta.AppId is { } appId && s.InApp && !s.AppArchived)
+        if (level == 1 && HasLiveParent(meta) && meta.Engine.AppId is { } appId && s.InApp && !s.AppArchived)
         {
             NotifyParent(id, "archive-child", [("appId", appId), .. options.Provider.AppTools]);
             return;
@@ -115,7 +115,7 @@ public sealed partial class Supervisor
         file = ParentArchivePath(id, file, s);
         if (file.State == States.Forgotten) Forgotten(id, now);
         if (file.State == States.Done && file.Reminded is null && s.Enabled && s.OpenPrs == 0 && s.ReportAge is { } age && age.TotalMinutes >= s.Timers.ReminderMinutes
-            && store.Meta(id).Parent is not null)
+            && store.Session(id).Parent is not null)
         {
             NotifyParent(id, "archive-reminder", ("waited", Minutes(age)));
             file = file with { Reminded = Times.Format(now) };
@@ -130,8 +130,8 @@ public sealed partial class Supervisor
     StateFile ParentArchivePath(string id, StateFile file, Snapshot s)
     {
         if (file.Requested is not { To: States.Archived, Escalations: 0 } request || s.Enabled || !s.InApp || s.AppArchived || store.IsLive(id, s.Now)) return file;
-        var meta = store.Meta(id);
-        if (!HasLiveParent(meta) || meta.AppId is not { } appId) return file;
+        var meta = store.Session(id);
+        if (!HasLiveParent(meta) || meta.Engine.AppId is not { } appId) return file;
         NotifyParent(id, "archive-child", [("appId", appId), .. options.Provider.AppTools]);
         return file with { Requested = request with { Escalations = 1 } };
     }
@@ -162,8 +162,8 @@ public sealed partial class Supervisor
     /// <summary>F4: an imported session that did not turn on its Remote Control after the self notice gets the parent path.</summary>
     StateFile RemoteControlCheck(string id, StateFile file, Snapshot s, DateTimeOffset now)
     {
-        var meta = store.Meta(id);
-        if (file.RemoteControlAsked is not null || !s.InApp || s.AppArchived || meta.Background == true || meta.RemoteControl is not null || meta.AppId is not { } appId) return file;
+        var meta = store.Session(id);
+        if (file.RemoteControlAsked is not null || !s.InApp || s.AppArchived || meta.IsPrivate() || meta.Engine.RemoteControl is not null || meta.Engine.AppId is not { } appId) return file;
         var self = Parties.Session(id);
         var asked = store.Events.Thread(RemoteControlThread(id)).LastOrDefault(e => e.Kind == EventKinds.Notice && e.To == self);
         if (asked is null || Times.Parse(asked.At) is not { } at || (now - at).TotalSeconds < s.Timers.RemoteControlSeconds) return file;
@@ -188,6 +188,19 @@ public sealed partial class Supervisor
 
     public const string MetaSubscription = "meta";
 
+    /// <summary>An entry that the plugin made with /orch-enable has no code: the registry gives it the next free code.</summary>
+    void AssignCodes()
+    {
+        try
+        {
+            if (store.Registry.AssignCodes(Parties.Supervisor) is var count and > 0) store.Log($"codes given to {count} session(s)");
+        }
+        catch (Exception e) when (e is RegistryException or Core.Storage.StoreConflictException or IOException)
+        {
+            store.Log($"codes not given: {e.Message}");
+        }
+    }
+
     void ApplyMetaUpdates()
     {
         var subscription = store.Events.Subscribe(Parties.Supervisor, MetaSubscription, e => e.Kind == EventKinds.MetaUpdate, "meta.update from a plugin");
@@ -198,16 +211,15 @@ public sealed partial class Supervisor
             var target = f.GetValueOrDefault("session") as string ?? from;
             var field = f.GetValueOrDefault("field") as string;
             var value = f.GetValueOrDefault("value");
-            var allowed = from is not null && target is not null && store.Has(target, StoreFiles.Meta) && field switch
+            var allowed = from is not null && target is not null && store.Registry.Exists(target) && field switch
             {
                 "appId" => target == from && value is string,
-                "remoteControl" => value is bool && (target == from || store.Meta(target).Parent == from),
+                "remoteControl" => value is bool && (target == from || store.Session(target).Parent == from),
                 _ => false,
             };
             if (allowed)
             {
-                var meta = store.Meta(target!);
-                store.SaveMeta(field == "appId" ? meta with { AppId = (string)value! } : meta with { RemoteControl = (bool)value! });
+                store.Registry.Update(target!, x => x with { Engine = field == "appId" ? x.Engine with { AppId = (string)value! } : x.Engine with { RemoteControl = (bool)value! } }, e.From);
                 store.Log($"{target} meta {field} = {value} (from {e.From})");
             }
             else store.Log($"meta.update {e.Id} refused: {field} of {target} from {e.From}");
@@ -234,7 +246,7 @@ public sealed partial class Supervisor
             e => e.Kind == EventKinds.Report && !e.IsForward && e.From == self && e.Needs is not null, $"done or blocked reports of {id}");
         var open = subscription.Next();
         if (open.Count == 0 || TurnOpen(s)) return;
-        if (store.Meta(id).Parent is { } parent)
+        if (store.Session(id).Parent is { } parent)
         {
             var to = Parties.Session(parent);
             var waiting = open.Where(e => !store.Events.ForwardsOf(e.Id).Any(f => f.To == to)).ToList();
@@ -254,11 +266,11 @@ public sealed partial class Supervisor
 
     // Notices to the parent. A root has no parent: its notices go to the user queue as a message that needs an ack.
 
-    bool HasLiveParent(Meta meta) => meta.Parent is { } parent && store.IsEnabled(parent);
+    bool HasLiveParent(SessionEntry meta) => meta.Parent is { } parent && store.IsEnabled(parent);
 
     void NotifyParent(string id, string kind, params (string Key, object? Value)[] fields)
     {
-        var meta = store.Meta(id);
+        var meta = store.Session(id);
         var data = store.Texts.Notice(kind, [("title", meta.Title ?? Short(id)), ("child", id), .. fields]);
         if (HasLiveParent(meta)) Notify(Parties.Session(meta.Parent!), null, data);
         else ToUser(id, store.Templates.Render(Kinds.Notice, data, kind));
@@ -295,7 +307,7 @@ public sealed partial class Supervisor
         store.Log($"{id} FINDING: fallback for state {r.File.State}{(r.Conflict.Count > 0 ? $", conflict {string.Join(", ", r.Conflict)}" : ", no valid state.json")}");
         if (options.StateChecker is not { } checker)
         {
-            ToUser(id, $"The supervisor cannot calculate the state of \"{store.Meta(id).Title ?? id}\" ({id}), and no state checker is set. Look at it with orch status {Short(id)}.");
+            ToUser(id, $"The supervisor cannot calculate the state of \"{store.Session(id).Title ?? id}\" ({id}), and no state checker is set. Look at it with orch status {Short(id)}.");
             return;
         }
         var request = new StateCheckRequest(id, store.Cwd(id) ?? store.Root, StoreJson.Write(s), r.File.State, r.Conflict);
@@ -321,7 +333,7 @@ public sealed partial class Supervisor
             store.WriteJson(id, new { state = result.State, reason = result.Reason, at = store.Now, error }, StoreFiles.StateCheck);
             if (!States.IsKnown(result.State))
             {
-                ToUser(id, $"The state of \"{store.Meta(id).Title ?? id}\" ({id}) is unknown: the state checker gave no valid state ({error ?? result.Reason}).");
+                ToUser(id, $"The state of \"{store.Session(id).Title ?? id}\" ({id}) is unknown: the state checker gave no valid state ({error ?? result.Reason}).");
                 return;
             }
             var (file, invalid) = states.State(id);

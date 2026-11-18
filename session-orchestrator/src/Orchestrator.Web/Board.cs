@@ -15,7 +15,7 @@ public sealed record UpdateView(string? Step, double? Progress, string Summary, 
 
 public sealed record ParentOption(string Id, string Name, string? Cwd);
 
-public sealed record SessionNode(Meta Meta, string Holder, bool Live, bool Running, string State, string Control, Report? Report, UpdateView? Update, string? Blocked, int Open, IReadOnlyList<SessionNode> Children);
+public sealed record SessionNode(SessionEntry Meta, string Holder, bool Live, bool Running, string State, string Control, Report? Report, UpdateView? Update, string? Blocked, int Open, IReadOnlyList<SessionNode> Children);
 
 public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
 {
@@ -25,7 +25,7 @@ public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
     readonly Inbox inbox = new(store);
     readonly Lifecycle lifecycle = new(store);
 
-    public string Title(string session) => store.Meta(session).Title ?? session[..Math.Min(8, session.Length)];
+    public string Title(string session) => store.Session(session).Title ?? session[..Math.Min(8, session.Length)];
 
     /// <summary>The named query <see cref="StreamQueries.OpenDecisions"/>, for the enabled sessions.</summary>
     public IReadOnlyList<OpenDecision> OpenDecisions()
@@ -56,21 +56,21 @@ public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)
     {
         var now = store.Clock.GetUtcNow();
         var ids = store.AllSessions();
-        var metas = ids.Select(store.Meta).ToList();
+        var metas = ids.Select(store.Session).ToList();
         var known = ids.ToHashSet();
-        SessionNode Node(Meta meta) => new(
+        SessionNode Node(SessionEntry meta) => new(
             meta,
             store.Lease(meta.Id).Holder,
             store.IsLive(meta.Id, now),
             supervisor.IsRunning(meta.Id),
             store.Status(meta.Id)?.State ?? "new",
-            lifecycle.Control(meta.Id).State,
+            lifecycle.Control(meta.Id).Phase,
             store.Report(meta.Id),
             Update(meta.Id),
             store.Blocked(meta.Id)?.Reason,
             store.OpenDecisions(meta.Id).Count,
-            metas.Where(m => m.Parent == meta.Id).OrderBy(m => m.CreatedAt, StringComparer.Ordinal).Select(Node).ToList());
-        return metas.Where(m => m.Parent is null || !known.Contains(m.Parent)).OrderByDescending(m => m.CreatedAt, StringComparer.Ordinal).Select(Node).ToList();
+            metas.Where(m => m.Parent == meta.Id).OrderBy(m => m.Created?.At, StringComparer.Ordinal).Select(Node).ToList());
+        return metas.Where(m => m.Parent is null || !known.Contains(m.Parent)).OrderByDescending(m => m.Created?.At, StringComparer.Ordinal).Select(Node).ToList();
     }
 
     UpdateView? Update(string id)

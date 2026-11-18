@@ -12,7 +12,7 @@ public static class DecisionCommands
         foreach (var d in c.Store.OpenDecisions().Where(d => enabled.Contains(d.Session) && (only is null || d.Session == only)))
         {
             any = true;
-            var title = c.Store.Meta(d.Session).Title ?? SessionCommands.Short(d.Session);
+            var title = c.Store.Session(d.Session).Title ?? SessionCommands.Short(d.Session);
             c.Output.WriteLine($"{d.Id} [{d.Risk}{(d.DefaultOption is { } o ? $", default {o}" : "")}] {title}: {d.Question}");
             if (d.Options is { Length: > 0 } options) c.Output.WriteLine($"  options: {string.Join(", ", options)}");
         }

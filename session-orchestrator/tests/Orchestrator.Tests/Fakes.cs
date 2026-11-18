@@ -71,7 +71,7 @@ public sealed class Rig : IDisposable
         Docs = new FakeDocs(docs ?? new DocsResult(false));
         Supervisor = new Supervisor.Supervisor(Store, Runner, Docs, new SupervisorOptions(2, 2, 2, policy ?? TestPolicy)
         {
-            Import = import ? id => { Imports.Add(id); Store.SaveMeta(Store.Meta(id) with { Imported = true }); } : null,
+            Import = import ? id => { Imports.Add(id); Store.Change(id, e => e with { Engine = e.Engine with { Imported = true } }); } : null,
             StateChecker = checker,
         });
     }
@@ -85,7 +85,7 @@ public sealed class Rig : IDisposable
     public List<TurnRequest> Turns => Runner.Turns;
 
     public string Create(string text, string? title = null, string? parent = null, string createdBy = "supervisor") =>
-        Store.Create(new Meta("") { Title = title, Cwd = "C:/x", Parent = parent, CreatedBy = createdBy }, text);
+        Store.Create(new Seed { Title = title, Cwd = "C:/x", Parent = parent, CreatedBy = createdBy }, text);
 
     public async Task Cycle()
     {

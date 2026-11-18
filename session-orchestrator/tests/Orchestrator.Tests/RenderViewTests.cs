@@ -34,7 +34,7 @@ public sealed class RenderViewTests
             Context.JSInterop.Mode = JSRuntimeMode.Loose;
             Context.Services.AddSingleton(Board);
             Context.Services.AddSingleton(new StreamHub(Rig.Store));
-            var session = Rig.Store.Create(new Meta("") { Title = "Render " + kind, Cwd = "C:/x" }, "start");
+            var session = Rig.Store.Create(new Seed { Title = "Render " + kind, Cwd = "C:/x" }, "start");
             Fields = Example(Rig.Store.Templates, kind);
             var meta = Rig.Store.Templates[kind].Meta!;
             string Party(string cls) => cls == "session" ? Parties.Session(session) : cls == "*" ? Parties.User : cls;

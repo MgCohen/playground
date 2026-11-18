@@ -155,7 +155,7 @@ public sealed class QueryTests
         var (factory, root) = Start();
         using var _ = factory;
         var store = new FileStore(root);
-        var id = store.Create(new Meta("") { Title = "child", Cwd = "C:/x" }, "start");
+        var id = store.Create(new Seed { Title = "child", Cwd = "C:/x" }, "start");
         var asked = store.SaveDecision(new Decision("toolu_7", id) { Question = "Q7" });
         var client = factory.CreateClient();
         async Task<List<string>> Ids(string path)

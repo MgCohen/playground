@@ -157,7 +157,7 @@ public static class EventCommands
     static string PartyName(CommandContext c, string party, Dictionary<string, string> titles)
     {
         if (Parties.SessionId(party) is not { } id) return party;
-        if (!titles.TryGetValue(id, out var title)) titles[id] = title = c.Store.Meta(id).Title ?? SessionCommands.Short(id);
+        if (!titles.TryGetValue(id, out var title)) titles[id] = title = c.Store.Session(id).Title ?? SessionCommands.Short(id);
         return $"\"{title}\"";
     }
 }

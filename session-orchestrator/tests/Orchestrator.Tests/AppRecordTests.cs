@@ -40,7 +40,7 @@ public sealed class AppRecordTests
             await rig.Cycle();
             await rig.Cycle();
             var appId = $"local_{child}";
-            rig.Store.SaveMeta(rig.Store.Meta(child) with { AppId = appId, Imported = true });
+            rig.Store.Change(child, e => e with { Engine = e.Engine with { AppId = appId, Imported = true } });
             var folder = Path.Combine(root, "claude_x", "claude-code-sessions", "account", "org");
             Directory.CreateDirectory(folder);
             var record = Path.Combine(folder, $"{appId}.json");
@@ -86,7 +86,7 @@ public sealed class AppRecordTests
         var grandchild = rig.Create("grandchild", "grandchild", parent: child);
         var lifecycle = new Lifecycle(rig.Store);
         lifecycle.ArchiveTree(root, "user", force: false);
-        Assert.That(new[] { root, child, grandchild }.Select(id => lifecycle.Control(id).State), Is.All.EqualTo(Core.Contract.ControlStates.Archived));
+        Assert.That(new[] { root, child, grandchild }.Select(id => lifecycle.Control(id).Phase), Is.All.EqualTo(Core.Contract.ControlStates.Archived));
     }
 
     [Test]
@@ -101,7 +101,7 @@ public sealed class AppRecordTests
             var live = rig.Create("live", "live");
             var gone = rig.Create("gone", "gone");
             var notLive = rig.Create("not live", "not live");
-            foreach (var id in new[] { live, gone, notLive }) rig.Store.SaveMeta(rig.Store.Meta(id) with { Imported = true, AppId = $"local_{id}" });
+            foreach (var id in new[] { live, gone, notLive }) rig.Store.Change(id, e => e with { Engine = e.Engine with { Imported = true, AppId = $"local_{id}" } });
             rig.MakeLive(live, TimeSpan.Zero, TimeSpan.Zero);
             rig.MakeLive(gone, TimeSpan.Zero, TimeSpan.Zero);
             var folder = Path.Combine(root, "claude_x", "claude-code-sessions", "account", "org");

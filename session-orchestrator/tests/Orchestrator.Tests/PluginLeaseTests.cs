@@ -88,9 +88,9 @@ public sealed class PluginLeaseTests
     [Test]
     public void The_plugin_writes_no_meta_of_another_session_and_names_the_target_of_a_remote_control_call()
     {
-        // Review of PR #14, item 2: the parent plugin wrote the meta.json of the child. Now it posts meta.update.
+        // Review of PR #14, item 2: the parent plugin wrote the meta.json of the child. Now it posts meta.update, and the registry writes session.json.
         var register = File.ReadAllText(Path.Combine(Hooks, "register.ts"));
-        Assert.That(System.Text.RegularExpressions.Regex.Matches(register, @"writeSession\(\$, 'meta\.json'").Count, Is.EqualTo(1), "only /orch-enable creates the meta of its own session");
+        Assert.That(System.Text.RegularExpressions.Regex.Matches(register, @"writeSession\(\$, 'session\.json'").Count, Is.EqualTo(2), "only /orch-enable writes the entry of its own session: the create and a new title");
         Assert.That(register, Does.Contain("postMetaUpdate($, S.id!, 'appId', host)"));
         var output = Node($$"""
             import { remoteControlTarget } from '{{Url("register.ts")}}';
