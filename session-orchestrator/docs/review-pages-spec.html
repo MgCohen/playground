@@ -1,4 +1,4 @@
-<title>Run and PR Pages</title>
+<title>Advanced Features</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
@@ -44,9 +44,16 @@ ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; g
 .status { align-self: flex-start; font: 500 12px var(--font-mono); color: var(--warn); background: var(--warn-soft); border: 1px solid var(--warn); border-radius: 999px; padding: 2px 10px; }
 nav {
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
-  padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap;
+  padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; min-width: 0;
 }
-nav button {
+/* One row of tabs that scrolls to the side. It never wraps, so the header keeps one height when features are added. */
+.tabs { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; min-width: 0; flex: 1;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); padding-right: 28px; }
+.tabs .sep { flex: none; width: 1px; align-self: stretch; background: var(--line); margin: 4px 4px; }
+nav select { display: none; font: 500 14px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; width: 100%; }
+nav select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 600px) { .tabs { display: none; } nav select { display: block; } }
+nav button { flex: none; white-space: nowrap;
   font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent;
   border-radius: 6px; padding: 6px 12px; cursor: pointer;
 }
@@ -82,20 +89,39 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
 <div class="wrap">
 <header>
   <div class="eyebrow">Session orchestrator · task P · 2026-11-18</div>
-  <h1>Run and PR Pages</h1>
-  <p class="summary">Three new UI pages: a workflow run, the PR stack of a stream, and one PR. The pages connect through the stream: a stream has sessions, workflow runs and PRs. This page defines each feature: what it is, its logic, its capabilities and its workflow. The sketches come after the approval.</p>
+  <h1>Advanced Features</h1>
+  <p class="summary">The advanced features of the orchestrator UI: the features after the basic sessions, cards and event stream. The first set is three pages: a workflow run, the PR stack of a stream, and one PR. They connect through the stream: a stream has sessions, workflow runs and PRs. Each feature has the same parts: what it is, its logic, its capabilities and its workflow. More features come later as new tabs. The sketches come after the approval.</p>
   <span class="status">Draft for discussion · not approved</span>
 </header>
 
-<nav role="tablist" aria-label="Sections">
-  <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
-  <button role="tab" data-tab="stream">F1 Stream bar</button>
-  <button role="tab" data-tab="run">F2 Workflow run</button>
-  <button role="tab" data-tab="stack">F3 PR stack</button>
-  <button role="tab" data-tab="pr">F4 PR</button>
-  <button role="tab" data-tab="flows">User workflows</button>
-  <button role="tab" data-tab="gaps">Data gaps</button>
-  <button role="tab" data-tab="questions">Open questions</button>
+<nav aria-label="Sections">
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button role="tab" data-tab="stream">F1 Stream bar</button>
+    <button role="tab" data-tab="run">F2 Workflow run</button>
+    <button role="tab" data-tab="stack">F3 PR stack</button>
+    <button role="tab" data-tab="pr">F4 PR</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button role="tab" data-tab="flows">User workflows</button>
+    <button role="tab" data-tab="gaps">Data gaps</button>
+    <button role="tab" data-tab="questions">Open questions</button>
+  </div>
+  <label class="mono" for="tab-select" hidden>Section</label>
+  <select id="tab-select" aria-label="Section">
+    <option value="overview">Overview</option>
+    <optgroup label="Features">
+      <option value="stream">F1 Stream bar</option>
+      <option value="run">F2 Workflow run</option>
+      <option value="stack">F3 PR stack</option>
+      <option value="pr">F4 PR</option>
+    </optgroup>
+    <optgroup label="Across features">
+      <option value="flows">User workflows</option>
+      <option value="gaps">Data gaps</option>
+      <option value="questions">Open questions</option>
+    </optgroup>
+  </select>
 </nav>
 
 <!-- OVERVIEW -->
@@ -566,6 +592,7 @@ flowchart TD
 <script>
 (function () {
   var tabs = document.querySelectorAll('nav button[data-tab]');
+  var sel = document.getElementById('tab-select');
   function show(id) {
     var found = false;
     tabs.forEach(function (b) { if (b.dataset.tab === id) found = true; });
@@ -574,10 +601,14 @@ flowchart TD
       var on = b.dataset.tab === id;
       b.setAttribute('aria-selected', on ? 'true' : 'false');
       document.getElementById(b.dataset.tab).hidden = !on;
+      if (on) b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     });
+    sel.value = id;
   }
+  function go(id) { show(id); try { history.replaceState(null, '', '#' + id); } catch (e) {} }
+  sel.addEventListener('change', function () { go(sel.value); });
   tabs.forEach(function (b) {
-    b.addEventListener('click', function () { show(b.dataset.tab); try { history.replaceState(null, '', '#' + b.dataset.tab); } catch (e) {} });
+    b.addEventListener('click', function () { go(b.dataset.tab); });
   });
   window.addEventListener('hashchange', function () { show(location.hash.slice(1)); });
   show(location.hash.slice(1));
