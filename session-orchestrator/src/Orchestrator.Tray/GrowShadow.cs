@@ -71,8 +71,15 @@ public sealed class GrowShadow : LayeredForm
         }
         if (!Visible) Show();
         Below(owner);
+        // V23: a move (a drag) only moves the window. The frame is drawn again only when its size, the shown height or the
+        // fill color changes; a full draw for each step of a drag made the drag slow.
+        var key = (widget.Size, shown, strength, Fill, Dpi);
+        if (Visible && key.Equals(drawn)) return;
+        drawn = key;
         Draw();
     }
+
+    object? drawn;
 
     /// <summary>Fades the shadow out and hides it.</summary>
     public void FadeOut()
@@ -89,15 +96,16 @@ public sealed class GrowShadow : LayeredForm
         var rect = new RectangleF(m, m + widget.Height - shown, widget.Width, shown);
         using var path = Round(rect, 8 * Dpi);
         // An even soft shadow: thin fill layers that grow outward, moved down a little. No pen ring, so no dark band at the edge.
-        const int Layers = 24;
+        // V22: a light shadow, close to the shadow of the system: about 17 % black at the edge, 18 px wide.
+        const int Layers = 16;
         for (var i = Layers; i >= 1; i--)
         {
-            var grow = i * (Spread - 6) * Dpi / Layers;
+            var grow = i * (Spread - 10) * Dpi / Layers;
             var layer = RectangleF.Inflate(rect, grow, grow);
-            layer.Offset(0, 3 * Dpi);
+            layer.Offset(0, 2 * Dpi);
             using var lp = Round(layer, 8 * Dpi + grow);
             // Black: a warm color at an alpha of 4 rounds to pure red in the premultiplied bitmap, and the layers add it up.
-            using var brush = new SolidBrush(Color.FromArgb((int)(4 * strength), 0, 0, 0));
+            using var brush = new SolidBrush(Color.FromArgb((int)(3 * strength), 0, 0, 0));
             g.FillPath(brush, lp);
         }
         // The page color only in the four corners, under the hard cut of the widget region: never a full cover of the widget.
