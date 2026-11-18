@@ -124,7 +124,7 @@ Dummy data (questions, reports, messages) goes in with `POST /api/stream` or `or
 - `orch supervisor start` uses the published copy in `ORCH_APP` (default: the install root). With no copy, it runs `dotnet run` of the source.
 - The tray publish needs `-p:ValidateExecutableReferencesMatchSelfContained=false`, because the tray references `Orchestrator.Web` (NETSDK1151).
 - `tray.ps1` stays for development: mock mode, the self-test and `-Live` from the source.
-- Test install: `install.ps1 -Root <scratch>pp -Store <scratch>\store -Port <port> -Shortcuts <scratch>\links -NoTool`, with `ORCH_DATA=<scratch>\data`. It does not change the real profile, except the WebView2 data and the place file of the tray in `%LOCALAPPDATA%\Orchestrator.Tray`.
+- Test install: `install.ps1 -Root <scratch>\app -Store <scratch>\store -Port <port> -Shortcuts <scratch>\links -NoTool`, with `ORCH_DATA=<scratch>\data`. It does not change the real profile, except the WebView2 data and the place file of the tray in `%LOCALAPPDATA%\Orchestrator.Tray`.
 
 ### Start a cloud session from a session
 
@@ -200,38 +200,62 @@ Known limits:
 
 ## The demo
 
-`tools/demo/demo.ps1` starts a live demo with real `claude` sessions on its own store and port. Run it again after each build: it stops the old demo and starts from a new store.
+`tools/demo/demo.ps1` starts a demo on its own store and port. Run it again after each build: it stops the old demo and starts from a new store.
 
 | Command | Effect |
 |---|---|
-| `.	ools\demo\demo.ps1` | Build, make a new store, start the supervisor, the sessions and the tray |
-| `.	ools\demo\demo.ps1 -Status` | Show the processes, the URL and the session tree |
-| `.	ools\demo\demo.ps1 -Stop` | Stop the tray, the supervisor and its `claude` turns. The files stay |
+| `.\tools\demo\demo.ps1` | Build, make a new store, start the supervisor, a small tree with the real `claude`, and the tray |
+| `.\tools\demo\demo.ps1 -Fake` | The same tree with the fake provider of D: no model call. The script posts the cards |
+| `.\tools\demo\demo.ps1 -FromLive` | A copy of the live store, upgraded to version 3, with the fake provider |
+| `.\tools\demo\demo.ps1 -Status` | Show the processes, the URL and the session tree |
+| `.\tools\demo\demo.ps1 -Stop` | Stop the tray, the supervisor and its turns. The files stay |
+
+Give `-Root` and `-Port` to `-Status` and `-Stop` when the demo does not use the defaults.
 
 | Item | Default | Option |
 |---|---|---|
-| Demo folder | `%LOCALAPPDATA%\orch\demo-store` (`store\`, `app\`, `work\`, `logs\`, `demo.json`) | `-Root` |
-| Port and URL | 7791, `http://127.0.0.1:7791/`. The script refuses a port outside 7790-7799 (the range of L while L, V and D run in parallel, issue #47) | `-Port`, `-AnyPort` |
-| Model and effort | `haiku`, `low` (`ANTHROPIC_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`) | `-Model`, `-Effort` |
+| Demo folder | `%LOCALAPPDATA%\orch\demo-store` (`store\`, `app\`, `work\`, `logs\`, `demo.json`). With `-FromLive`: `%LOCALAPPDATA%\orch\demo-live` | `-Root` |
+| Port and URL | 7791, `http://127.0.0.1:7791/`. With `-FromLive`: 7792. The script refuses a port outside 7790-7799 (the range of L while L, V and D run in parallel, issue #47) | `-Port`, `-AnyPort` |
+| Model and effort | `haiku`, `low` (`ANTHROPIC_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`). Not used with `-Fake` | `-Model`, `-Effort` |
+| Provider | The real `claude`. `-Fake` and `-FromLive` set `ORCH_PROVIDER=fake` and `ORCH_FAKE=<root>\fake.json` | `-Fake` |
+| Live store | `session-orchestrator\store` of the main checkout (the first entry of `git worktree list`) | `-LiveStore` |
 | Tray | Started with `--live <store> --port <port> --no-supervisor --pin` | `-NoTray` |
 | Build | `dotnet publish` of the supervisor, `orch` and the tray into `app\` | `-NoBuild` |
 
-The tree that the script starts, all in stream `DEMO`:
+### The demo tree
 
-- Root `Demo root: plan greeting.txt`: type `orchestrator`, workflow `planning`. It starts the run, does the step `read`, and asks one question in the step `ask`. The run then waits at the step `answer`.
-- `Demo child: ask a question`: one `ask_user` question.
-- `Demo child: report done`: writes `report.txt`, then a `done` report.
+All sessions are in stream `DEMO`:
+
+- Root `Demo root: plan greeting.txt`: type `orchestrator`, workflow `planning`. The run does the steps `read` and `ask`, then waits at the step `answer` on the root question.
+- `Demo child: ask a question`: one question.
+- `Demo child: report done`: one `done` report.
 - `Demo child: send an update`: one update at 50 %.
 
-Rules of the script:
+With the real `claude`, the sessions do this with the plugin tools. With `-Fake`, no session calls a tool, so the script posts the same messages (`orch post question|report|update`) and moves the run (`orch run start`, `orch run step`).
 
-- It refuses the real store (`%LOCALAPPDATA%\orch\store`, `store\`) and the port 7777.
+### The fake provider
+
+The behavior file `fake.json` makes each turn good after 500 ms. Each model call (`Ask`) returns `{"answered": false, "state": "idle", "reason": "fake provider"}`. The docs check reads it as "not answered", and the state check reads it as `idle`. To change the behavior while the demo runs, edit `fake.json`: the provider reads it at each call.
+
+### The copy of the live store
+
+1. `robocopy` copies the live store into `<root>\store`. It only reads the live store.
+2. `orch store upgrade --force` upgrades the copy from version 1 to 3.
+3. The script points `work.cwd` and `work.repo` of each copied session to `<root>\work\<id8>`.
+
+- `orch store migrate` cannot make this copy: the live sessions write new files during the copy, so its check fails (L-F8).
+- Step 3 is necessary: an archive in the demo UI runs `git worktree remove` on the folder of the session (L-F6).
+
+### Rules of the script
+
+- It refuses the real store (`%LOCALAPPDATA%\orch\store`, `store\`, the `-LiveStore` folder) as its target, and the port 7777.
+- A copy of real data runs with the fake provider and `ORCH_IMPORT=0`: `-FromLive` always sets `-Fake`.
 - The demo policy has no timeout on each level, so no default decision closes a card.
 - It removes each `CLAUDE*`, `ORCH_*`, `AI_AGENT` and `BAGGAGE` variable before it starts the supervisor. A start from a Claude session gives these variables to each turn (L-F1).
-- The goals go in files (`--goal-file`): Windows PowerShell 5.1 breaks a native argument with quotes or line breaks.
+- The goals and the message bodies go in files (`--goal-file`, `--json`): Windows PowerShell 5.1 breaks a native argument with quotes or line breaks.
 - The root goal names each `orch run` command. With only the agent text, Haiku started the run and ended its turn at the step `read` (L-F2).
-- One normal tray runs for each user. If another normal tray runs, the script prints the tray command and does not start it. A self-test tray does not block.
-- To play the user: `$env:ORCH_STORE='<store>'; & '<root>pp\cli\orch.exe' answer <decision> <text>`.
+- One normal tray runs for each user (L-F4). If another normal tray runs, the script prints the tray command and does not start it. Use the web UI of the second demo. A self-test tray does not block.
+- To play the user: `$env:ORCH_STORE='<store>'; & '<root>\app\cli\orch.exe' answer <decision> <text>`.
 
 ## The end-to-end script
 
