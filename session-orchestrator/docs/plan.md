@@ -2116,6 +2116,9 @@ Test setup: scratchpad folder `spike/s1`, test store `spike/store`, port 7840. T
 | R-9 | `-p --remote-control` with `--debug-file`, a 20 s turn, CLI 2.1.312 | No bridge in the debug log |
 | R-10 | R-9 with the app CLI 2.1.325 | No bridge in the debug log |
 | R-11 | `--bg --remote-control <name> --resume <known>` | Same session id. Remote Control on. The job stays idle after the turn until `claude stop` |
+| R-12 | `claude --remote-control <name> --session-id <new> "<prompt>"` (interactive, in a console) | Same id. Remote Control on from turn 1 ("/remote-control is active"). The process stays open after the turn |
+| R-13 | `--desktop --resume <id>` while R-12 runs | Exit 1: "Session ... is open in another terminal. Run /desktop there instead." |
+| R-14 | `claude --remote-control <name> --resume <id> "/desktop"` | The CLI exits and the app imports the session. App state: `remoteControlState: off` |
 
 Findings:
 
@@ -2124,6 +2127,7 @@ Findings:
 - R-F3: a `--bg --remote-control` job has Remote Control from turn 1, but the app cannot import it while it runs, and Remote Control stops with the job.
 - R-F5: `-p` ignores `--remote-control` in 2.1.312 and 2.1.325. The help text says the flag starts an interactive session.
 - R-F6: `--bg --remote-control --resume <id>` keeps the id. So a known session can run a turn with Remote Control on, but as a background job, not as an app session.
+- R-F7: an interactive `claude --remote-control` keeps the id and has Remote Control from turn 1, but needs a console and stays open. Each move to the app (`/desktop` or `--desktop --resume`) gives Remote Control off in the app.
 - R-F4: so a session started by the supervisor needs `set_remote_control`. Only a live app session has that tool.
 
 ## Next tasks
