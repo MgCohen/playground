@@ -124,7 +124,7 @@ public sealed class MockStore : IDisposable
     }
 }
 
-/// <summary>A runner with no claude process: each turn ends at once. The tray window never starts a session.</summary>
+/// <summary>A runner with no engine process: each turn ends at once. The tray window never starts a session.</summary>
 public sealed class NoRunner : ITurnRunner
 {
     public Task<TurnResult> Run(TurnRequest request, CancellationToken cancel) => Task.FromResult(new TurnResult(true, "mock", null, 0));

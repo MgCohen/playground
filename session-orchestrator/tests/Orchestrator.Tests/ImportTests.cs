@@ -93,7 +93,7 @@ public sealed class ImportTests
     [Test]
     public void The_import_command_sets_the_working_folder_and_hides_the_window()
     {
-        var command = string.Join(' ', Lifecycle.OpenCommand("abc", "C:/work/repo"));
+        var command = string.Join(' ', ProviderFactory.Default.OpenCommand("abc", "C:/work/repo"));
         Assert.That(command, Does.Contain(@"-WorkingDirectory 'C:\work\repo'").And.Contain("-WindowStyle Hidden").And.Contain("'--resume','abc'"));
     }
 }

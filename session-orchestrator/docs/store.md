@@ -214,10 +214,12 @@ The lifecycle notices of the supervisor:
 | `child-archived-in-app` | Parent | The user archived the session in the app sidebar, and the store side is not archived |
 | `archive-reminder` | Parent | Done for `reminderMinutes`, no open PR, not archived. One time |
 | `open-in-app` | Session | The only input of the first turn of a new session when the supervisor imports sessions (`ORCH_IMPORT`). The turn makes the transcript, the import follows, and the brief waits for the live app session |
-| `remote-control-self` | Session | After the import into the app, unless `meta.background` (F4) |
-| `remote-control-child` | Parent | `remoteControlSeconds` after `remote-control-self`, and `meta.remoteControl` is not set. Field `appId` |
-| `archive-child` | Parent | F8, path 2: the app still shows a session that is archived in the store. At once when the session is not live (it cannot archive itself), else at the deadline of the request. The parent turns Remote Control off, then calls `archive_session` (probes 2a to 2c). Field `appId` |
+| `remote-control-self` | Session | After the import into the app, unless `meta.background` (F4). Field `remoteControlTool` |
+| `remote-control-child` | Parent | `remoteControlSeconds` after `remote-control-self`, and `meta.remoteControl` is not set. Fields `appId`, `remoteControlTool` |
+| `archive-child` | Parent | F8, path 2: the app still shows a session that is archived in the store. At once when the session is not live (it cannot archive itself), else at the deadline of the request. The parent turns Remote Control off, then archives it in the app (probes 2a to 2c). Fields `appId`, `remoteControlTool`, `archiveTool` |
 | `state-inferred` | Parent | The fallback agent inferred the state. Fields `state`, `text` |
+
+The provider gives the app tool names: `remoteControlTool` and `archiveTool` (`IProvider.AppTools`). The supervisor adds them to `remote-control-self`, `remote-control-child`, `archive-child` and `archive-self`. No template names an app tool.
 
 A root session has no parent: each notice to the parent goes to the user as a `message` from `supervisor` with `needs: ack`. Its text is the render of the notice.
 

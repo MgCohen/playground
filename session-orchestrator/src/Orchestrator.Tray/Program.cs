@@ -112,7 +112,7 @@ public static partial class Program
         var services = new ServiceCollection();
         services.AddWindowsFormsBlazorWebView();
         services.AddSingleton(store);
-        // Mock mode: a tick after an action relays and applies the policy on the mock store (NoRunner starts no claude process).
+        // Mock mode: a tick after an action relays and applies the policy on the mock store (NoRunner starts no engine process).
         // Live mode: no tick. The supervisor process of the store does it, so the tray never takes a lease or applies a default.
         services.AddSingleton(new SupervisorOptions(1, 1, 1, policy) { Ticks = ticks });
         services.AddSingleton<ITurnRunner, NoRunner>();

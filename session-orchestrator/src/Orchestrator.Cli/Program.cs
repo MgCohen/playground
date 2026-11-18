@@ -116,6 +116,8 @@ namespace Orchestrator.Cli
 
     public sealed record CommandContext(FileStore Store, Args Args, TextWriter Output, string Cwd)
     {
+        /// <summary>The engine of the sessions: the caller session id, the app open and the doctor checks.</summary>
+        public IProvider Provider { get; init; } = ProviderFactory.Default;
         public Messages Messages => new(Store);
         public Shell Shell => new(Cwd);
         public StackOps Stack => new(Store, Shell, Output);

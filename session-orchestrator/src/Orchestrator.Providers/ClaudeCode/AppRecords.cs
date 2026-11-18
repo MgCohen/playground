@@ -1,4 +1,4 @@
-namespace Orchestrator.Store;
+namespace Orchestrator.Providers.ClaudeCode;
 
 public static class AppRecords
 {

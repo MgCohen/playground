@@ -20,7 +20,8 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Core/Templates/TemplateStore.cs", [], "known exception: the F1 template store reads <home>/templates and <store>/templates directly. It moves to IRepository in F2"),
         ("src/Orchestrator.Core/Templates/TemplateCheck.cs", [], "the spec files of the core templates in the repository (meta.schema.json, view.schema.json, looks.json)"),
         ("src/Orchestrator.Store/SupervisorHost.cs", [], "the supervisor process records and the install record of the app, not the store"),
-        ("src/Orchestrator.Store/AppRecords.cs", [], "the records of the desktop app, not the store"),
+        ("src/Orchestrator.Providers/ClaudeCode/AppRecords.cs", [], "the records of the desktop app, not the store"),
+        ("src/Orchestrator.Providers/ClaudeCode/ClaudeCodeProvider.cs", ["File.ReadAllText(settings)", "plugin.json"], "the settings of Claude Code for orch doctor"),
         ("src/Orchestrator.Tray/SelfTest.cs", [], "the screenshots of the tray self test"),
         ("src/Orchestrator.Tray/WidgetForm.cs", [], "the place of the tray widget on the screen"),
         ("src/Orchestrator.Tray/Program.cs", ["\"templates\""], "the check of the home folder"),
@@ -31,7 +32,7 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Store/FileStore.cs", ["(Local.LocalRepositories)Repositories).PathOf"], "the path helper for tests, which delegates to the implementation"),
         ("src/Orchestrator.Cli/Commands/EventCommands.cs", ["File.ReadAllText(json)"], "a JSON file of the user"),
         ("src/Orchestrator.Cli/Commands/SessionCommands.cs", ["File.ReadAllText(file)"], "the goal file of the user"),
-        ("src/Orchestrator.Cli/Commands/ToolCommands.cs", ["File.ReadAllText(check)", "File.ReadAllText(render)", "Home.Solution", "example.json", "File.ReadAllText(settings)", "plugin.json"], "the files of the user, the templates and the settings of Claude Code"),
+        ("src/Orchestrator.Cli/Commands/ToolCommands.cs", ["File.ReadAllText(check)", "File.ReadAllText(render)", "Home.Solution", "example.json"], "the files of the user and the templates"),
         ("src/Orchestrator.Cli/Git/StackOps.cs", ["bodyFile"], "the temp file of a PR body for gh"),
     ];
 

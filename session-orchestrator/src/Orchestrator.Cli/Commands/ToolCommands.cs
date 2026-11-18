@@ -124,16 +124,11 @@ public static class ToolCommands
             var ok = bad.Count == 0 && loadErrors.Count == 0;
             return (ok, ok ? $"{c.Store.Templates.All.Count()} kinds, each example is valid" : string.Join("; ", bad.Select(t => $"invalid example: {t.Kind}").Concat(loadErrors.Select(e => $"not loaded: {e}"))));
         });
-        Check("claude", () => shell.Run("claude", "--version") is var r && r.Ok ? (true, r.Text) : (false, "not on the PATH"));
+        // The first engine check comes before gh and the others after it, in the order of the checks before the provider boundary.
+        var engine = c.Provider.Doctor((program, arguments) => shell.Run(program, arguments) is var r ? (r.Ok, r.Text) : default);
+        foreach (var check in engine.Take(1)) Check(check.Name, check.Test);
         Check("gh", () => shell.Run("gh", "auth", "status") is var r && r.Ok ? (true, "signed in") : (false, "not signed in: run gh auth login"));
-        Check("plugin", () =>
-        {
-            var settings = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude", "settings.json");
-            var json = JsonDocument.Parse(File.ReadAllText(settings)).RootElement;
-            if (!json.TryGetProperty("env", out var env) || !env.TryGetProperty("CLAUDE_CODE_PLUGIN_DIRS", out var dirs)) return (false, "CLAUDE_CODE_PLUGIN_DIRS is not in the env block of ~/.claude/settings.json");
-            var path = dirs.GetString() ?? "";
-            return (File.Exists(Path.Combine(path, ".claude-plugin", "plugin.json")), path);
-        });
+        foreach (var check in engine.Skip(1)) Check(check.Name, check.Test);
         Check("supervisor", () =>
         {
             var port = Environment.GetEnvironmentVariable("ORCH_PORT") ?? "7777";
@@ -176,7 +171,7 @@ public static class ToolCommands
     }
 
     /// <summary>
-    /// Prints the id and the start time of the parent process: the process that ran orch. In a session, that is the claude
+    /// Prints the id and the start time of the parent process: the process that ran orch. In a session, that is the engine
     /// process, so the plugin writes them in lease.json and the supervisor can check if the holder of a live lease is alive.
     /// </summary>
     public static int Process(CommandContext c)

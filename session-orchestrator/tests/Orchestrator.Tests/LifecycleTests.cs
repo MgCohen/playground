@@ -121,7 +121,7 @@ public sealed class LifecycleTests
     [Test]
     public void The_open_command_starts_the_desktop_app_with_the_session()
     {
-        var command = Lifecycle.OpenCommand("abc");
+        var command = ProviderFactory.Default.OpenCommand("abc");
         Assert.That(command[^1], Is.EqualTo("Start-Process -FilePath 'claude.exe' -ArgumentList '--desktop','--resume','abc' -WindowStyle Hidden"));
     }
 }
