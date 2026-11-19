@@ -101,7 +101,7 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
     <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
     <span class="sep" aria-hidden="true"></span>
     <button role="tab" data-tab="stream">F1 Stream bar</button>
-    <button role="tab" data-tab="run">F2 Workflow run</button>
+    <button role="tab" data-tab="run">F2 Workflows</button>
     <button role="tab" data-tab="stack">F3 PR stack</button>
     <button role="tab" data-tab="pr">F4 PR</button>
     <button role="tab" data-tab="backlog">Backlog F5–F14</button>
@@ -115,7 +115,7 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
     <option value="overview">Overview</option>
     <optgroup label="Features">
       <option value="stream">F1 Stream bar</option>
-      <option value="run">F2 Workflow run</option>
+      <option value="run">F2 Workflows</option>
       <option value="stack">F3 PR stack</option>
       <option value="pr">F4 PR</option>
       <option value="backlog">Backlog F5–F14</option>
@@ -137,7 +137,7 @@ flowchart LR
   S["Stream C<br/>F1 stream bar"] --> SE["Sessions<br/>(page exists)"]
   S --> R["Runs"]
   S --> P["PRs"]
-  R --> RP["F2 Workflow run page"]
+  R --> RP["F2 Run page"]
   P --> PS["F3 PR stack page"]
   PS --> PR["F4 PR page"]
   RP -->|step session| SE
@@ -155,7 +155,7 @@ flowchart LR
     <div class="scroll"><table>
       <tr><th>Id</th><th>Feature</th><th>Group</th><th>What it does for the user</th><th>Data</th><th>State</th></tr>
       <tr><td class="mono"><a href="#stream">F1</a></td><td>Stream bar</td><td>First set</td><td>Shows the stream of the page and moves between its sessions, runs and PRs</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
-      <tr><td class="mono"><a href="#run">F2</a></td><td>Workflow run page</td><td>First set</td><td>Shows where a run is, why it waits and where it can go. You act on the wait</td><td><span class="chip have">most</span></td><td><span class="chip">spec</span></td></tr>
+      <tr><td class="mono"><a href="#run">F2</a></td><td>Workflows</td><td>First set</td><td>The workflow definitions and their runs: catalog, definition, runs, run, step run. You act on the wait of a run</td><td><span class="chip have">most</span></td><td><span class="chip">spec</span></td></tr>
       <tr><td class="mono"><a href="#stack">F3</a></td><td>PR stack page</td><td>First set</td><td>Shows the PRs of a stream in their merge order and what waits for you. You review and merge here</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
       <tr><td class="mono"><a href="#pr">F4</a></td><td>PR page</td><td>First set</td><td>Shows one PR with its task, session, diff, tests and defaults. You give the verdict here</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
       <tr><td class="mono"><a href="#backlog">F5</a></td><td>Status and analytics</td><td>Backlog</td><td>The health of the system and how it changes in time: open sessions, waits, errors</td><td><span class="chip have">most</span></td><td><span class="chip">idea</span></td></tr>
@@ -219,8 +219,59 @@ flowchart LR
 <div class="panel" id="run" hidden>
   <section>
     <span class="kicker">F2 · summary</span>
-    <h2>Workflow run page</h2>
-    <p>One page for one run of a workflow, for example a run of <code>planning</code>. It shows the progress, the graph with the current step, the step details, the possible next steps and the history. When the run waits for you, the page shows the wait first and lets you act on it.</p>
+    <h2>Workflows</h2>
+    <p>The workflow definitions and their runs. A definition is a graph of steps. A run is one execution of a definition, with an owner session and a goal. A step run is one pass of a run through one step. The main page is the run page: it shows the progress, the graph with the current step, the next steps and the history. When the run waits for you, the page shows the wait first and lets you act on it.</p>
+  </section>
+
+  <section>
+    <span class="kicker">Terms</span>
+    <div class="scroll"><table>
+      <tr><th>Term</th><th>Meaning</th><th>Store</th></tr>
+      <tr><td>Definition</td><td>A workflow: its steps, conditions, approvals and definition of done. It has a version</td><td><code>templates/workflows/&lt;name&gt;/workflow.json</code></td></tr>
+      <tr><td>Step</td><td>One node of a definition, with its own settings</td><td><code>steps[]</code></td></tr>
+      <tr><td>Run</td><td>One execution of a definition, with an owner session and a goal</td><td><code>runs/&lt;id&gt;.json</code></td></tr>
+      <tr><td>Step run</td><td>One pass of a run through one step: input, output, session, answer, time. A loop makes a new step run of the same step</td><td><code>run.history[]</code></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <span class="kicker">Inventory · pages and components</span>
+<pre class="mermaid">
+flowchart LR
+  C["Workflows"] --> D["Workflow definition"]
+  D --> SD["Step definition"]
+  C --> RL["Runs"]
+  D --> RL
+  RL --> R["Run"]
+  R --> SR["Step run"]
+  S["Session page, stream bar"] -->|run row| R
+</pre>
+    <div class="scroll"><table>
+      <tr><th>Code</th><th>Name</th><th>Kind</th><th>What you see</th><th>What you do</th><th>When</th></tr>
+      <tr><td class="mono">W-1</td><td>Workflows</td><td>Page</td><td>Each definition: name, purpose, version, number of steps, active runs</td><td>Open a definition</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-2</td><td>Workflow definition</td><td>Page</td><td>One definition in three views: <b>Graph</b> (a node graph, read only), <b>Outline</b> (rows with indents for branches and loops), <b>Definition</b> (the fields of each step). Also the definition of done, the versions and the runs</td><td>Switch the view. Click a node or a row: open its step definition</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-2a</td><td>Step definition</td><td>Sheet on W-2</td><td>The settings of one step: executor, session, instructions, input, output, approval, next conditions</td><td>Later: edit the fields (W-6)</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-3</td><td>Runs</td><td>Page</td><td>All runs: workflow, goal, owner, state, current step, wait, age</td><td>Filter by state, stream, project, workflow. Open a run</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-4</td><td>Run</td><td>Page</td><td>Two modes (B1) and the eight parts below</td><td>Answer, approve, pick, force a next step, go back, stop</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-5</td><td>Step run</td><td>Page or sheet</td><td>One step run: why the run came here, input, output, session, question and answer, time</td><td>Open the output document or the session</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-C1</td><td>Run row</td><td>Component</td><td>One line: workflow, goal, state, current step, wait. Same idea as the session row</td><td>Click: open the run page</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-C2</td><td>Wait card</td><td>Component</td><td>The wait of a run, with its acts. On the run page and in Cards</td><td>Answer, approve, pick</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-6</td><td>Definition editor</td><td>Mode of W-2</td><td>The step fields as a form. No drag on the graph</td><td>Change a step or a condition, check, save as a new version</td><td><span class="chip">later</span></td></tr>
+      <tr><td class="mono">W-7</td><td>New session with a workflow</td><td>Field of the new session form</td><td>A workflow field, as <code>orch new --workflow</code></td><td>Start a session that owns a new run</td><td><span class="chip">later</span></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <span class="kicker">Decisions · Workflows feature, 2026-11-19</span>
+    <div class="scroll"><table>
+      <tr><th>Question</th><th>Answer</th></tr>
+      <tr><td>Name of one pass through a step</td><td>"Step run". A step is the node of the definition</td></tr>
+      <tr><td>Can you start a run from the UI?</td><td>Not in version 1: a run starts from a session. Later: a workflow field on the new session form (W-7)</td></tr>
+      <tr><td>Who owns a run that starts from the UI?</td><td>The new session of the form. It gets the role orchestrator, as <code>orch new --workflow</code> does today</td></tr>
+      <tr><td>Can you edit a definition in the UI?</td><td>Later (W-6). A simple form on the step fields. No drag on the graph</td></tr>
+      <tr><td>How does a definition show?</td><td>Three views: node graph, outline rows with indents, and the step fields. A click on a node opens its step definition</td></tr>
+      <tr><td>How do other pages show runs?</td><td>A one-line run row (W-C1) that opens the run page, as a session row opens the session page</td></tr>
+    </table></div>
   </section>
 
   <section>
@@ -233,7 +284,7 @@ stateDiagram-v2
   waiting --> running: answer, verdict, pick, step done
   running --> done: a done step and the definition of done holds
   waiting --> stopped: orch run stop, refuse
-  running --> stopped: 200 visits
+  running --> stopped: 200 step runs
   done --> [*]
   stopped --> [*]
 </pre>
@@ -247,7 +298,7 @@ stateDiagram-v2
       <tr><td class="mono">exit</td><td>The exit condition does not hold</td><td>The step session</td><td>Open the session</td><td>—</td></tr>
       <tr><td class="mono">tool</td><td>A tool runs</td><td>Nobody</td><td>None</td><td>—</td></tr>
     </table></div>
-    <p><b>Next steps rule (C1 T2).</b> Each next step checks its own <code>when</code> and the entry condition of its target against the holds of the last visit. One valid: go. Many valid: pick. None: stuck. The page shows each candidate with ✓ or ✕ and the condition text.</p>
+    <p><b>Next steps rule (C1 T2).</b> Each next step checks its own <code>when</code> and the entry condition of its target against the holds of the last step run. One valid: go. Many valid: pick. None: stuck. The page shows each candidate with ✓ or ✕ and the condition text.</p>
   </section>
 
   <section>
@@ -256,7 +307,7 @@ stateDiagram-v2
       <tr><th>#</th><th>Question</th><th>Answer</th></tr>
       <tr><td class="mono">B1</td><td>Which moment comes first: the wait or the check?</td><td>Two modes that change with the run state. The run waits for you: the wait card is on top and the graph is small. Else: the graph is on top</td></tr>
       <tr><td class="mono">B2</td><td>Do we add control acts to the runner?</td><td>Yes: "force a next step" and "go back to step X"</td></tr>
-      <tr><td class="mono">Q12</td><td>When a run goes back to step X, what happens to the outputs of the later steps?</td><td>Keep them. A loop is a normal part of the work, not an error: some results need many passes. Each visit is a new node in the history, with its own outputs. Nothing is marked old or removed</td></tr>
+      <tr><td class="mono">Q12</td><td>When a run goes back to step X, what happens to the outputs of the later steps?</td><td>Keep them. A loop is a normal part of the work, not an error: some results need many passes. Each step run is a new node in the history, with its own outputs. Nothing is marked old or removed</td></tr>
       <tr><td class="mono">B3</td><td>Which parts go into the sketches?</td><td>All parts below go on the F2 view. The ones that need runner work have a mark</td></tr>
     </table></div>
   </section>
@@ -275,7 +326,7 @@ stateDiagram-v2
       <tr><td class="mono">8</td><td>Changed definition</td><td>"The run uses v1, the current definition is v2"</td><td><span class="chip have">have</span></td></tr>
     </table></div>
 
-    <p><b>Progress.</b> Proposal: the done steps on the shortest path from the current step to a done step, plus a loop count. "Visited of total" is not correct after a loop. See Q3.</p>
+    <p><b>Progress.</b> Proposal: the passes so far, plus the steps left on the shortest path to a done step. A pass is normal work, not a step back. See Q3.</p>
   </section>
 
   <section>
@@ -296,7 +347,7 @@ stateDiagram-v2
         <li>Pick a next step</li>
         <li>Stop the run (danger act)</li>
         <li>Open the owner or a step session</li>
-        <li>Tap a node: show the visits of that step</li>
+        <li>Tap a node: show the step runs of that step</li>
       </ul></div>
     </div>
   </section>
