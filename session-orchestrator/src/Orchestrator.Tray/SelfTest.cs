@@ -69,8 +69,8 @@ public static partial class SelfTest
               h = document.querySelector('.tray-view .nav2 .home').getBoundingClientRect();
               return [h.left + h.width / 2 - p.left, h.top + h.height / 2 - p.top, parseFloat(s.style.getPropertyValue('--hx')), parseFloat(s.style.getPropertyValue('--hy'))].map(Math.round); })()
             """);
-        var b = Ints(ball);
-        Add("home-ball", b.Length == 4 && b[0] == b[2] && b[1] == b[3] && b[0] > 0, $"home center and clip center [x, y, hx, hy] = {ball}");
+        var hb = Ints(ball);
+        Add("home-ball", hb.Length == 4 && hb[0] == hb[2] && hb[1] == hb[3] && hb[0] > 0, $"home center and clip center [x, y, hx, hy] = {ball}");
 
         // 3. A sheet is fixed to the panel, not to the window with its margin.
         await Js(w, $"{Go}('cards')");
@@ -158,21 +158,23 @@ public static partial class SelfTest
         await frames;
         // ExecuteScriptAsync does not wait for the promise of the meter: wait for its result.
         await Until(async () => await Js(w, "!!window.__frames") == "true", 3000);
-        var area = Screen.FromRectangle(w.Bounds).WorkingArea;
-        var tab = await Js(w, "getComputedStyle(document.querySelector('.tb-tab')).translate");
-        (await Picture(w)).Save(Path.Combine(folder, "3-badge.png"));
-        Add("dock", docked && w.Bounds == w.BadgeBounds() && w.Right == area.Right && tab is "none" or "0px" or "0px 0px",
-            $"phase {w.Phase}, window {w.Bounds} (expect {w.BadgeBounds()}), right edge {w.Right} = {area.Right}, tab translate {tab}, click area {w.HitArea}; frames {await Frames(w)}");
+        var b = tray.Badge;
+        var area = Screen.FromRectangle(b.Bounds).WorkingArea;
+        await Task.Delay(400);
+        var tab = await Js(b, "getComputedStyle(document.querySelector('.tb-tab')).translate");
+        (await Picture(b)).Save(Path.Combine(folder, "3-badge.png"));
+        Add("dock", docked && !w.Visible && b.Visible && b.Bounds == b.PlaceBounds() && b.Right == area.Right && tab is "none" or "0px" or "0px 0px",
+            $"phase {w.Phase}, panel window shows {w.Visible}, badge window {b.Bounds} (expect {b.PlaceBounds()}), right edge {b.Right} = {area.Right}, tab translate {tab}, click area {b.HitArea}; frames of the fold {await Frames(w)}");
 
         // 5b. The wide tab of the hover fits in the click area of the hover (the window region clips the drawing too). The hover
         // width is the width of the tab with "width: auto", the same rule as :hover.
-        var fit = await Js(w, """
+        var fit = await Js(b, """
             (e => { const old = e.style.width; e.style.transition = 'none'; e.style.width = 'auto';
               const v = Math.round(e.getBoundingClientRect().width); e.style.width = old; e.style.transition = ''; return v; })(document.querySelector('.tb-tab'))
             """);
-        var counts = await Js(w, "document.querySelector('.tb-txt small')?.textContent ?? ''");
-        Add("badge-hover-fits", int.TryParse(fit, out var wideTab) && wideTab <= TrayWindow.TabWide,
-            $"tab width at the hover {fit} CSS px, click area of the hover {TrayWindow.TabWide} (+ {TrayWindow.TabMargin} margin), window {TrayWindow.BadgeWidth}; text \"{counts}\"");
+        var counts = await Js(b, "document.querySelector('.tb-txt small')?.textContent ?? ''");
+        Add("badge-hover-fits", int.TryParse(fit, out var wideTab) && wideTab <= BadgeWindow.TabWide,
+            $"tab width at the hover {fit} CSS px, click area of the hover {BadgeWindow.TabWide} (+ {BadgeWindow.TabMargin} margin), window {BadgeWindow.BadgeWidth}; text \"{counts}\"");
 
         // 6. Open from the badge: back at the panel place.
         w.Request(TrayRequest.Open);
@@ -181,12 +183,12 @@ public static partial class SelfTest
         await Task.Delay(330);
         (await Picture(w)).Save(Path.Combine(folder, "5-grow-middle.png"));
         await Task.Delay(600);
-        Add("open-from-badge", back && w.Bounds == w.PanelBounds() && w.BadgeMode == false, $"phase {w.Phase}, window {w.Bounds} (expect {w.PanelBounds()})");
+        Add("open-from-badge", back && w.Visible && !b.Visible && w.Bounds == w.PanelBounds(), $"phase {w.Phase}, panel window shows {w.Visible} at {w.Bounds} (expect {w.PanelBounds()}), badge window shows {b.Visible}");
 
         // 7. Close: the tray hides, with no badge.
         w.Request(TrayRequest.Hide);
-        var hidden = await Until(() => w.Phase == TrayPhase.Hidden && !w.Visible, 3000);
-        Add("hide", hidden, $"phase {w.Phase}, visible {w.Visible}");
+        var hidden = await Until(() => w.Phase == TrayPhase.Hidden && !w.Visible && !b.Visible, 3000);
+        Add("hide", hidden, $"phase {w.Phase}, panel window shows {w.Visible}, badge window shows {b.Visible}");
 
         // 8. A new card while the tray is hidden: the badge comes in, the ring spins, the bubble peeks and goes after 5 s.
         var session = tray.Store.Sessions().FirstOrDefault();
@@ -196,13 +198,13 @@ public static partial class SelfTest
                 new Dictionary<string, object?> { ["state"] = ReportStates.Blocked, ["summary"] = "The self-test is blocked on purpose" }) { Session = session, Needs = Needs.Ack });
         var noticed = await Until(() => w.Phase == TrayPhase.Badge, 5000);
         await Task.Delay(400);
-        var peek = await Js(w, "!!document.querySelector('.tb-peek.on')");
-        (await Picture(w)).Save(Path.Combine(folder, "4-peek.png"));
-        var wideArea = w.HitArea.Width;
-        var peekGone = await Until(async () => await Js(w, "!!document.querySelector('.tb-peek.on')") == "false", 7000);
+        var peek = await Js(b, "!!document.querySelector('.tb-peek.on')");
+        (await Picture(b)).Save(Path.Combine(folder, "4-peek.png"));
+        var wideArea = b.HitArea.Width;
+        var peekGone = await Until(async () => await Js(b, "!!document.querySelector('.tb-peek.on')") == "false", 7000);
         await Task.Delay(800);
-        Add("notice", session is not null && noticed && peek == "true" && wideArea == w.Width && peekGone && w.HitArea.Width < w.Width,
-            $"session {session}, phase {w.Phase}, peek {peek}, click area at the peek {wideArea} (window {w.Width}), peek gone {peekGone}, click area after {w.HitArea.Width}");
+        Add("notice", session is not null && noticed && b.Visible && peek == "true" && wideArea == b.Width && peekGone && b.HitArea.Width < b.Width,
+            $"session {session}, phase {w.Phase}, badge window shows {b.Visible}, peek {peek}, click area at the peek {wideArea} (window {b.Width}), peek gone {peekGone}, click area after {b.HitArea.Width}");
 
         // 9. A saved place of the panel: the next open is there.
         var place = new Point(area.Left + 200, area.Top + 120);
@@ -219,7 +221,27 @@ public static partial class SelfTest
         w.Pinned = false;
         Add("pin", pinnedTop && !w.TopMost, $"pinned top {pinnedTop}, unpinned top {w.TopMost}");
 
-        if (mouse) await Mouse(w, Add);
+        // 11. The input of the badge window, with window messages (the real pointer does not move): a move on the tab makes the
+        // click area wide (the hover), a press and a release with no move open the panel.
+        w.Request(TrayRequest.Dock);
+        await Until(() => w.Phase == TrayPhase.Badge, 4000);
+        await Task.Delay(500);
+        var ds = b.DeviceDpi / 96f;
+        var client = new Point(b.Width - (int)(34 * ds), (int)((BadgeWindow.TabMargin + 34) * ds));
+        var lp = (nint)((client.Y << 16) | (client.X & 0xffff));
+        var atRest = b.HitArea.Width;
+        _ = PostMessageBadge(b.Handle, 0x200, 0, lp);
+        await Task.Delay(200);
+        var hover = b.HitArea.Width;
+        _ = PostMessageBadge(b.Handle, 0x201, 1, lp);
+        await Task.Delay(60);
+        _ = PostMessageBadge(b.Handle, 0x202, 0, lp);
+        var opened = await Until(() => w.Phase == TrayPhase.Open, 4000);
+        await Task.Delay(600);
+        Add("badge-input", atRest == (int)((BadgeWindow.TabRest + BadgeWindow.TabMargin) * ds) && hover == (int)((BadgeWindow.TabWide + BadgeWindow.TabMargin) * ds) && opened && w.Visible && !b.Visible,
+            $"click area at rest {atRest}, at the hover {hover}; after the click: phase {w.Phase}, panel window shows {w.Visible}, badge window shows {b.Visible}");
+
+        if (mouse) await Mouse(w, b, Add);
 
         Add("exceptions", Faults.Count == 0, Faults.First ?? "no unhandled exception");
         File.WriteAllText(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
@@ -227,7 +249,7 @@ public static partial class SelfTest
     }
 
     /// <summary>The checks with real mouse input. Each press first makes sure that the point is on the tray window.</summary>
-    static async Task Mouse(TrayWindow w, Action<string, bool, string> add)
+    static async Task Mouse(TrayWindow w, BadgeWindow b, Action<string, bool, string> add)
     {
         var s = w.DeviceDpi / 96f;
         // The header drag: the system move loop moves the window with the pointer.
@@ -240,34 +262,34 @@ public static partial class SelfTest
         w.Request(TrayRequest.Dock);
         await Until(() => w.Phase == TrayPhase.Badge, 4000);
         await Task.Delay(500);
-        var ring = new Point(w.Right - (int)(34 * s), w.Top + (int)((TrayWindow.TabMargin + 34) * s));
-        var on = Own(w, ring);
+        var ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
+        var on = Own(b, ring);
         SetCursorPos(ring.X, ring.Y);
         await Task.Delay(600);
-        var wide = await Js(w, "Math.round(document.querySelector('.tb-tab').getBoundingClientRect().width)");
-        var area = w.HitArea.Width;
+        var wide = await Js(b, "Math.round(document.querySelector('.tb-tab').getBoundingClientRect().width)");
+        var area = b.HitArea.Width;
         SetCursorPos(ring.X - (int)(500 * s), ring.Y);
         await Task.Delay(700);
-        var rest = await Js(w, "Math.round(document.querySelector('.tb-tab').getBoundingClientRect().width)");
-        add("mouse-badge-hover", on && int.TryParse(wide, out var a) && a > TrayWindow.TabRest && rest == TrayWindow.TabRest.ToString() && area > w.HitArea.Width,
-            $"tab width at the hover {wide}, after {rest}; click area at the hover {area}, after {w.HitArea.Width}; pointer on the window {on}");
+        var rest = await Js(b, "Math.round(document.querySelector('.tb-tab').getBoundingClientRect().width)");
+        add("mouse-badge-hover", on && int.TryParse(wide, out var a) && a > BadgeWindow.TabRest && rest == BadgeWindow.TabRest.ToString() && area > b.HitArea.Width,
+            $"tab width at the hover {wide}, after {rest}; click area at the hover {area}, after {b.HitArea.Width}; pointer on the window {on}");
 
-        var top = w.Top;
-        var moved = await Drag(w, ring, 0, -150);
+        var top = b.Top;
+        var moved = await Drag(b, ring, 0, -150);
         await Task.Delay(300);
-        add("mouse-badge-drag", moved && w.Top - top == -150 && w.Right == Screen.FromRectangle(w.Bounds).WorkingArea.Right && w.Phase == TrayPhase.Badge,
-            $"moved {w.Top - top} (expect -150), right edge {w.Right}, phase {w.Phase}");
+        add("mouse-badge-drag", moved && b.Top - top == -150 && b.Right == Screen.FromRectangle(b.Bounds).WorkingArea.Right && w.Phase == TrayPhase.Badge,
+            $"moved {b.Top - top} (expect -150), right edge {b.Right}, phase {w.Phase}");
 
-        ring = new Point(w.Right - (int)(34 * s), w.Top + (int)((TrayWindow.TabMargin + 34) * s));
-        var clicked = await Drag(w, ring, 0, 0);
+        ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
+        var clicked = await Drag(b, ring, 0, 0);
         var opened = await Until(() => w.Phase == TrayPhase.Open, 4000);
         add("mouse-badge-click", clicked && opened, $"phase {w.Phase}; press on the window {clicked}");
     }
 
-    static bool Own(TrayWindow w, Point at) => WindowFromPoint(new Pt(at.X, at.Y)) == w.Handle;
+    static bool Own(ClearHost w, Point at) => WindowFromPoint(new Pt(at.X, at.Y)) == w.Handle;
 
     /// <summary>A press, a move in steps, a release; only on the tray window. A move of 0, 0 is a click.</summary>
-    static async Task<bool> Drag(TrayWindow w, Point from, int dx, int dy)
+    static async Task<bool> Drag(ClearHost w, Point from, int dx, int dy)
     {
         if (!Own(w, from)) return false;
         SetCursorPos(from.X, from.Y);
@@ -289,14 +311,14 @@ public static partial class SelfTest
           requestAnimationFrame(f); })
         """;
 
-    static async Task<string> Frames(TrayWindow w)
+    static async Task<string> Frames(ClearHost w)
     {
         var t = JsonSerializer.Deserialize<double[]>(await w.Web!.ExecuteScriptAsync("window.__frames || []")) ?? [];
         return t.Length == 0 ? "none" : $"{t.Length} frames, longest {t.Max():0.0} ms, late {t.Count(x => x > 20)}";
     }
 
     /// <summary>A picture of the page only (WebView2 preview), with no other window over it.</summary>
-    static async Task<Bitmap> Picture(TrayWindow w)
+    static async Task<Bitmap> Picture(ClearHost w)
     {
         var stream = new MemoryStream();
         await w.Web!.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, stream);
@@ -305,7 +327,7 @@ public static partial class SelfTest
     }
 
     /// <summary>The highest alpha in the left margin of the window, at the middle height (6 px from the edge, 10 rows).</summary>
-    static int Edge(Bitmap picture, TrayWindow w)
+    static int Edge(Bitmap picture, ClearHost w)
     {
         using (picture)
         {
@@ -316,7 +338,7 @@ public static partial class SelfTest
     }
 
     /// <summary>The alpha of the shadow 8 px left of the panel edge, at the middle height (the mean of 10 rows).</summary>
-    static int Shadow(Bitmap picture, TrayWindow w)
+    static int Shadow(Bitmap picture, ClearHost w)
     {
         using (picture)
         {
@@ -338,7 +360,7 @@ public static partial class SelfTest
         }
     }
 
-    static async Task<string> Js(TrayWindow w, string script)
+    static async Task<string> Js(ClearHost w, string script)
     {
         var json = await w.Web!.ExecuteScriptAsync(script);
         return json.StartsWith('"') ? JsonSerializer.Deserialize<string>(json) ?? "" : json;
@@ -382,4 +404,8 @@ public static partial class SelfTest
 
     [LibraryImport("user32.dll")]
     private static partial void mouse_event(uint flags, int dx, int dy, uint data, nint extra);
+
+    [LibraryImport("user32.dll", EntryPoint = "PostMessageW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool PostMessageBadge(nint hwnd, int message, nint wparam, nint lparam);
 }

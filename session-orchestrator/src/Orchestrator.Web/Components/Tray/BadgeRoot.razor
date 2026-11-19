@@ -1,0 +1,101 @@
+@* The root of the badge window (N1, N2): the tab at the right screen edge with the ring of the waiting cards. Two phases
+   (badge-out, badge), as the class "is-<phase>" (tray.css). A new card brings the badge in when the tray is hidden; at the
+   badge it spins the ring and shows the peek bubble. The tray flow (TrayFlow) orders the windows and calls In and Out. *@
+@using Microsoft.Extensions.DependencyInjection
+@inherits LiveView
+@implements TrayFlow.IBadge
+@inject IJSRuntime JS
+@inject IServiceProvider Services
+
+<div class="tray-stage is-@phase">
+    <div class="tray-badge-layer">
+        <TrayBadge Counts="counts" Spin="spin" Peek="peek" PeekTitle="@peekTitle" PeekSub="@peekSub" />
+    </div>
+</div>
+
+@code {
+    /// <summary>The time that the peek bubble shows (N2).</summary>
+    public static readonly TimeSpan PeekTime = TimeSpan.FromSeconds(5);
+
+    TrayFlow? flow;
+    IWidgetWindow? window;
+    string phase = TrayPhase.BadgeOut;
+    bool started, spin, peek;
+    string peekTitle = "", peekSub = "";
+    TrayCounts counts = TrayCounts.None;
+    int notice;
+
+    protected override void OnInitialized()
+    {
+        window = Services.GetService<IWidgetWindow>();
+        flow = Services.GetService<TrayFlow>();
+        base.OnInitialized();
+        flow?.Attach(this);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender) started = true;
+    }
+
+    // The counts of the badge. A new card brings the badge in when the tray is hidden; at the badge it spins the ring and peeks.
+    protected override void Load()
+    {
+        var cards = Board.Cards();
+        var next = TrayCounts.Of(cards);
+        var more = started && next.Total > counts.Total;
+        counts = next;
+        if (!more || flow is null) return;
+        var newest = cards.MaxBy(c => c.Id, StringComparer.Ordinal);
+        _ = InvokeAsync(() => Notice(newest is null ? "" : $"{newest.Label} · {newest.SessionTitle}", newest?.Title ?? ""));
+    }
+
+    // The window shows with the tab out of view; two frames later the tab slides in.
+    public Task In() => InvokeAsync(async () =>
+    {
+        Set(TrayPhase.BadgeOut);
+        await JS.InvokeVoidAsync("orchTray.frames", 2);
+        Set(TrayPhase.Badge);
+    });
+
+    public Task Out() => InvokeAsync(async () =>
+    {
+        Set(TrayPhase.BadgeOut);
+        await JS.InvokeVoidAsync("orchTray.end", ".tb-tab", "translate", 500);
+    });
+
+    async Task Notice(string title, string sub)
+    {
+        try
+        {
+            if (counts.Total == 0 || !await flow!.BringBadge()) return;
+            var mine = ++notice;
+            spin = true;
+            peekTitle = title;
+            peekSub = sub;
+            window!.Peek(true);
+            peek = true;
+            StateHasChanged();
+            var shown = Task.Delay(PeekTime);
+            await JS.InvokeVoidAsync("orchTray.end", ".tb-ring", "tb-spin", 1500);
+            if (mine != notice) return;
+            spin = false;
+            StateHasChanged();
+            await shown;
+            if (mine != notice) return;
+            peek = false;
+            StateHasChanged();
+            await JS.InvokeVoidAsync("orchTray.end", ".tb-peek", "opacity", 400);
+            if (mine == notice && !peek) window.Peek(false);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
+        {
+        }
+    }
+
+    void Set(string next)
+    {
+        phase = next;
+        StateHasChanged();
+    }
+}

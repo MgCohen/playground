@@ -2391,3 +2391,16 @@ The user answered Q3: yes, spike first. `spikes/tray-display/s7-two-windows`: th
 | GPU process private memory after 10 cycles | not measured | 72 to 202 MB |
 
 Frames: the dock and the open are correct after the first cycle, with no blank or stale frame. Finding, reproduced one time, cause not examined: after the start, the panel does not show on the screen until the first dock and open (two recorder runs); the first dock is also faster (340 ms). Not checked: one-window mode with the recorder. Open question Q4: move the tray to two windows after the two open points.
+
+## Tray: two windows (2026-11-19)
+
+The user answered Q4: move. The panel and the badge are now two windows in one process with one shared WebView2 environment. `ClearHost` takes the root component, has no badge mode, and lets a window keep input (`HostInput`). `TrayWindow` is the panel only; new `BadgeWindow` has the badge place, click areas and input; new `TrayFlow` (web) orders the windows and calls the page motion (`TrayStage`: Prepare, Grow, Fold; new `BadgeRoot`: In, Out, the notice).
+
+| Check | Result |
+|---|---|
+| Self-test | 27 of 28; the fail is `badge-hover-fits` (I7, known). New check `badge-input` (hover and click with window messages) |
+| Tests | 809 pass, 13 skipped. `ArchitectureTests` allows the badge height file in `BadgeWindow.cs` |
+| Start and dock on the screen | Correct in the recorded frames. The S7 start fault does not occur: the panel window shows only after its page is ready |
+| GPU memory | One window before: 269 to 297 MB private during 10 cycles; S7 two windows: 72 to 202 MB. No sign of more |
+
+Found: I14, the browser status bubble ("https://0.0.0.1/") at a link hover. The demo run moved the real pointer again (I8).

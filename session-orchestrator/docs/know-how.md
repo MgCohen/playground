@@ -200,20 +200,21 @@ Known limits:
 
 ## The tray display
 
-The tray is one transparent window (`ClearHost`) that hosts the views with WebView2 in composition mode. Design: `docs/tray-redesign-plan.md`.
+The tray has two transparent windows (`ClearHost`) that host the views with WebView2 in composition mode: the panel (`TrayWindow`, root `TrayRoot`) and the badge (`BadgeWindow`, root `BadgeRoot`). They share one WebView2 environment, so one browser process serves both. Only one shows at a time. `TrayFlow` (web) orders them. Design: `docs/tray-redesign-plan.md`; architecture: `docs/ui-architecture.html`.
 
 | Job | Command or rule |
 |---|---|
 | Run the tray from the source | `dotnet run --project src/Orchestrator.Tray -- --instance <name>` (mock data); a named instance has its own lock, WebView2 folder and place files |
-| Self-test, no mouse | `Orchestrator.Tray.exe --selftest <folder>`: 13 checks of the window state and the page, `selftest.json` and pictures from the page (`CapturePreviewAsync`) |
-| Self-test with the mouse | Add `--mouse`. It moves the real pointer: run it only on a free screen. Each press first makes sure that the point is on the tray window |
+| Self-test, no mouse | `Orchestrator.Tray.exe --selftest <folder>`: 13 checks of the window state and the page, `selftest.json` and pictures from the pages (`CapturePreviewAsync`). The badge input is checked with window messages (`badge-input`) |
+| Self-test with the mouse | Add `--mouse`. It moves the real pointer: run it only on a free screen. The `--demo` run also moves it in 4 steps (issue I8). Each press first makes sure that the point is on the tray window |
 | Run the web server from the source | Set `ASPNETCORE_ENVIRONMENT=Development`. With no `launchSettings.json`, a source run is Production and sends each static file with 0 bytes |
 
 Rules of the display:
 
 - All visuals and all motion are Razor and CSS. Times and curves are tokens in `motion.css`. C# controls only the place of the window, its click area and its input.
 - The phases are classes with the prefix `is-` on the stage. A phase name must not match a component class (spike S6: the phase `badge` matched `.badge`).
-- State of one place (for example the hover flag of the badge) resets at each place change.
+- Split windows by what shows at the same time. Parts that show together must be one window (the old four-window tray failed on this); the panel and the badge never show together, so each has its own window.
+- A window keeps its input state only while it shows: the badge window resets its press and hover state at each show.
 - A view-transition name makes a stacking context. A fixed block outside the view (the app bar backdrop) lay over all of the view, so the backdrop is in the view.
 - A tray rule that overrides a rule of `motion.css` needs the same or a higher specificity (the root rules of a push are `.vt:not(.vt-tab)`).
 - A hidden page draws no frames: a wait for a motion has a time limit that starts at once.

@@ -117,6 +117,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i11">I11 · Motion times outside the tokens  (Detected)</option>
     <option value="i12">I12 · Two wait rules for "the motion ended"  (Detected)</option>
     <option value="i13">I13 · Reduced motion makes the tray waits run to their limit  (Detected)</option>
+    <option value="i14">I14 · A browser status bubble shows the link address  (Detected)</option>
     <option value="f1">F1 · A blink at the end of the open  (Fixed)</option>
     <option value="f2">F2 · A bigger, darker shadow and an overlap at a tab change  (Fixed)</option>
     <option value="f3">F3 · The tab change was not the spec (T1 C)  (Fixed)</option>
@@ -174,6 +175,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i11">I11</a></td><td>Motion times outside the tokens</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i12">I12</a></td><td>Two wait rules for "the motion ended"</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
+        <tr><td><a href="#i14">I14</a></td><td>A browser status bubble shows the link address</td><td><span class="pill det">Detected</span></td><td>Your decision: turn off</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f3">F3</a></td><td>The tab change was not the spec (T1 C)</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -206,7 +208,7 @@ Decision     the question for you</pre>
       <thead><tr><th>ID</th><th>Question</th><th>Where</th><th>Recommendation</th></tr></thead>
       <tbody>
         <tr><td>Q1</td><td>How do we build the motion contract: A (step by step), B (motion registry), or A first and B later?</td><td>Architecture, motion contract</td><td>A first, then B</td></tr>
-        <tr><td>Q4</td><td>After S7: do we move the tray to two windows (option B)? First: find why the panel does not show after the start, and compare the GPU memory with one window</td><td>Architecture, two windows</td><td>Yes, after the two open points</td></tr>
+        <tr><td>I14</td><td>Do we turn off the browser status bubble in the tray windows?</td><td><a href="#i14">I14</a></td><td>Yes</td></tr>
         <tr><td>Q2</td><td>Do we keep the visual-issue skill in this project, or move it to the orch plugin?</td><td>Skill</td><td>This project for now</td></tr>
         <tr><td>I1</td><td>Do we close I1 after the new detector (I2) gives 0?</td><td><a href="#i1">I1</a></td><td>Yes</td></tr>
         <tr><td>I2</td><td>Do I change the detector to the pixel share rule?</td><td><a href="#i2">I2</a></td><td>Yes</td></tr>
@@ -402,7 +404,7 @@ record = that share for each frame, in place of the mean</pre>
 15:09:39.818 hover the badge: tab width 68  <span class="c">Glide() = SetCursorPos; measured before the 350 ms wait</span>
 15:09:43.507 drag the badge up: True
 15:09:51.238 click the badge: True</pre></div></div>
-    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. Only <code>Press</code> reads <code>NoPointer</code>. <code>Drag</code> and <code>Glide</code> do not.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. Only <code>Press</code> reads <code>NoPointer</code>. <code>Drag</code> and <code>Glide</code> do not.</p><p>Replicated: the demo of 2026-11-19 (two windows) moved the pointer again in the same 4 steps.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>Send the drag and hover as window messages too, or skip these steps with no pointer.</li><li>Measure the hover width after the 350 ms wait.</li></ol></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do I change the 4 steps to window messages?</p></div></div></div>
   </section>
@@ -434,7 +436,7 @@ record = that share for each frame, in place of the mean</pre>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p>Some sizes of the tray are C# constants and also CSS values. Nothing keeps them equal.</p></div></div>
-    <div class="field"><span class="k">Proof</span><div class="v"><p>Fact of the code, from the review on the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">view architecture page</a> (Findings tab). No reproduction needed.</p><pre class="stack">C#  TrayWindow   ShadowMargin 24   TabRest 68   TabMargin 14   TabWide 280   BadgeWidth 332
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Fact of the code, from the review on the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">view architecture page</a> (Findings tab). No reproduction needed.</p><pre class="stack">C#  TrayWindow   ShadowMargin 24   BadgeWindow   TabRest 68   TabMargin 14   TabWide 280   BadgeWidth 332
 CSS tray.css     inset: 24px       width: 68px  top: 14px      width: auto   (none)</pre></div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. C# needs the sizes for the window and the click area. CSS needs them for the drawing.</p></div></div>
     <div class="field"><span class="k">Possible effect</span><div class="v"><p>The click area and the drawing disagree. I7 is one known result.</p></div></div>
@@ -495,6 +497,26 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known from the code. <code>orchMotion.settle</code> is safe: with no animation it ends at once. <code>orchTray.end</code> is not.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>Prior art (Fluent, Shoelace): set the duration tokens to 1 ms in place of <code>none</code>, so the end events still come. Or use one wait helper (I12).</p></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Part of the motion flow design (I9)?</p></div></div></div>
+  </section>
+</div>
+
+<!-- I14 -->
+<div class="panel off" id="i14" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill det">Detected</span><span class="k">source: demo recording · I14</span></div>
+    <h2>I14 · A browser status bubble shows the link address</h2>
+    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>When the pointer is on a link, a small grey bubble with "https://0.0.0.1/" shows at the bottom left of the panel. It is the status bubble of the browser, with the internal address of the app.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+      <figure><div class="img"><img src="issues/status-bubble.jpg" alt="Two frames of the panel at a dock. A grey bubble with the text https://0.0.0.1/ is at the bottom left."></div>
+        <figcaption>Run <code>tw-demo</code>, the start of the dock: the pointer is on the header. The bubble is at the bottom left.</figcaption></figure>
+    </div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><p>Not tried again. One recording shows it.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Probable: the WebView2 setting <code>IsStatusBarEnabled</code> is on (the default). <code>ClearHost</code> does not set it. Not tested.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p><code>web.Settings.IsStatusBarEnabled = false</code> in <code>ClearHost.Start</code>, for both windows. Check: a frame strip of a link hover shows no bubble.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do we turn off the status bubble?</p></div></div></div>
   </section>
 </div>
 

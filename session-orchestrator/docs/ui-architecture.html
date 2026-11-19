@@ -141,7 +141,7 @@ flowchart TB
       <tbody>
         <tr><td>Data</td><td><span class="q mixed">Mixed</span></td><td>Cards, actions and page depth are data. Motion and sizes are not</td><td>I10, I11</td></tr>
         <tr><td>Structure</td><td><span class="q good">Good</span></td><td>One set of views in two hosts. Clear layers</td><td>-</td></tr>
-        <tr><td>Places</td><td><span class="q weak">Weak</span></td><td>Sizes in C# and CSS. The badge hover is cut</td><td>I7, I10</td></tr>
+        <tr><td>Places</td><td><span class="q mixed">Mixed</span></td><td>Two windows, each with one place and one input rule. Sizes in C# and CSS. The badge hover is cut</td><td>I7, I10</td></tr>
         <tr><td>Start and stop</td><td><span class="q mixed">Mixed</span></td><td>The chain works and has checks. Own wait helper with fixed limits. Grow not reviewed</td><td>I6, I11, I12</td></tr>
         <tr><td>Page moves</td><td><span class="q good">Good</span></td><td>One rule (page depth). Checks for each tab and the push</td><td>I11 (JS limits)</td></tr>
         <tr><td>Component motion</td><td><span class="q mixed">Mixed</span></td><td>Presence is one way for come and go. The deck has its own script</td><td>I9, I11</td></tr>
@@ -168,7 +168,7 @@ flowchart TB
         <tr><td>A message look</td><td>A render kind maps to a Look component (pill, list, steps ...)</td><td><code>Components/Ui/Looks</code>, <code>docs/render-design.html</code></td></tr>
         <tr><td>A tray phase</td><td>A string constant, and a CSS class with the same name</td><td><code>TrayPhase</code>, <code>tray.css</code></td></tr>
         <tr><td>A motion time</td><td>A CSS token</td><td><code>motion.css</code></td></tr>
-        <tr><td>A size of the tray</td><td>A C# constant and a CSS value, not linked</td><td><code>TrayWindow.cs</code>, <code>tray.css</code></td></tr>
+        <tr><td>A size of the tray</td><td>A C# constant and a CSS value, not linked</td><td><code>TrayWindow.cs</code>, <code>BadgeWindow.cs</code>, <code>tray.css</code></td></tr>
       </tbody>
     </table></div>
   </section>
@@ -214,8 +214,11 @@ flowchart TB
     A1["App.razor<br/>Blazor Server"] --> R1["Routes"]
   end
   subgraph Tray["Tray app · Orchestrator.Tray"]
-    W["TrayWindow : ClearHost"] --> M["Manager : WebViewManager"]
+    W["TrayWindow : ClearHost<br/>panel window"] --> M["Manager"]
     M --> TR["TrayRoot"] --> TS["TrayStage"] --> R2["Routes"]
+    BW["BadgeWindow : ClearHost<br/>badge window"] --> M2["Manager"] --> BR["BadgeRoot"]
+    TS -.-> FL["TrayFlow<br/>order of the windows"]
+    BR -.-> FL
   end
   R1 --> L["MainLayout<br/>.page, AppBar, MotionHost"]
   R2 --> L
@@ -225,9 +228,9 @@ flowchart TB
     <div class="scroll"><table>
       <thead><tr><th>Layer</th><th>Files</th><th>Owns</th><th>Kind</th></tr></thead>
       <tbody>
-        <tr><td>Window</td><td><code>ClearHost.cs</code>, <code>TrayWindow.cs</code></td><td>Place, size, click area, mouse input</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Windows</td><td><code>ClearHost.cs</code>, <code>TrayWindow.cs</code> (panel), <code>BadgeWindow.cs</code> (badge)</td><td>Place, size, click area, mouse input; one shared WebView2 environment</td><td><span class="tag cs">C#</span></td></tr>
         <tr><td>Window contract</td><td><code>IWidgetWindow.cs</code></td><td>Requests, <code>Enter(phase)</code>, <code>Peek</code></td><td><span class="tag cs">C#</span></td></tr>
-        <tr><td>Stage</td><td><code>TrayStage.razor</code>, <code>tray.css</code>, <code>tray.js</code></td><td>Phase order, badge, notice</td><td><span class="tag cs">C#</span> <span class="tag css">CSS</span> <span class="tag js">JS</span></td></tr>
+        <tr><td>Flow and pages</td><td><code>TrayFlow.cs</code>, <code>TrayStage.razor</code>, <code>BadgeRoot.razor</code>, <code>tray.css</code>, <code>tray.js</code></td><td>The order of the windows; the panel motion; the badge motion and the notice</td><td><span class="tag cs">C#</span> <span class="tag css">CSS</span> <span class="tag js">JS</span></td></tr>
         <tr><td>Layout</td><td><code>MainLayout</code>, <code>AppBar</code>, <code>MotionHost</code></td><td>Page frame, tab change, push and back</td><td><span class="tag cs">C#</span> <span class="tag js">JS</span></td></tr>
         <tr><td>Pages</td><td><code>Components/Pages/*</code></td><td>Data (<code>Load</code>), blocks, sheets</td><td><span class="tag cs">C#</span></td></tr>
       </tbody>
@@ -259,11 +262,11 @@ flowchart TB
 
 <!-- PLACES -->
 <div class="panel off" id="places" role="tabpanel">
-  <section><h2>Places: the window, its sizes and its click area</h2>
+  <section><h2>Places: the two windows, their sizes and click areas</h2>
     <h3>Defined as</h3>
     <div class="grid2">
-      <div class="card"><span class="where">panel place</span><span class="big">350 × 720 + 24 px margin</span><p>A free point. A header drag moves it. Phases: start, open, folded.</p></div>
-      <div class="card"><span class="where">badge place</span><span class="big">332 × 96 at the right edge</span><p>A saved height. A drag moves it up and down. Phases: badge-out, badge.</p></div>
+      <div class="card"><span class="where">panel window</span><span class="big">350 × 720 + 24 px margin</span><p>A free point. A header drag moves it. Phases: start, open, folded.</p></div>
+      <div class="card"><span class="where">badge window</span><span class="big">332 × 96 at the right edge</span><p>A saved height. A drag moves it up and down. Always on top. Phases: badge-out, badge.</p></div>
       <div class="card"><span class="where">hidden</span><span class="big">no window</span><p>The tray icon opens it again.</p></div>
     </div>
   </section>
@@ -278,20 +281,20 @@ flowchart LR
     <div class="scroll"><table>
       <thead><tr><th>State</th><th>Click area</th><th>Set by</th></tr></thead>
       <tbody>
-        <tr><td>Panel place</td><td>The full window, cut to the work area</td><td><code>Hits()</code></td></tr>
-        <tr><td>Badge at rest</td><td>68 + 14 px from the right edge</td><td><code>Hits()</code></td></tr>
-        <tr><td>Badge hover</td><td>280 + 14 px; back to rest 300 ms after the leave</td><td><code>BadgeHover</code>, <code>Task.Delay(300)</code></td></tr>
+        <tr><td>Panel window</td><td>The full window, cut to the work area</td><td><code>TrayWindow.Hits()</code></td></tr>
+        <tr><td>Badge window at rest</td><td>68 + 14 px from the right edge</td><td><code>BadgeWindow.Hits()</code></td></tr>
+        <tr><td>Badge hover</td><td>280 + 14 px; back to rest 300 ms after the leave</td><td><code>BadgeWindow.Hover</code>, <code>Task.Delay(300)</code></td></tr>
         <tr><td>Badge peek</td><td>The full window (332 px)</td><td><code>Peek(true)</code></td></tr>
       </tbody>
     </table></div>
   </section>
   <section><h3>Guide</h3>
-    <ol><li>A new size: change the C# constant in <code>TrayWindow</code> and the CSS value in <code>tray.css</code>. Both, by hand.</li><li>Add a self-test check that compares the drawn size with the click area (as <code>badge-hover-fits</code>).</li></ol>
+    <ol><li>A new size: change the C# constant in <code>TrayWindow</code> or <code>BadgeWindow</code> and the CSS value in <code>tray.css</code>. Both, by hand.</li><li>Add a self-test check that compares the drawn size with the click area (as <code>badge-hover-fits</code>).</li></ol>
     <p class="note">The click area is also the visible area. A part outside the region does not show.</p>
   </section>
   <section><h3>Proposals</h3>
     <details class="example prop"><summary>P-P1 · Sizes from C# as CSS variables <span class="d">I7, I10 · contract step 4</span></summary><div class="body">
-      <p><code>TrayWindow</code> writes its constants on the stage as custom properties (<code>--tab-rest</code>, <code>--tab-wide</code>, <code>--shadow</code>). <code>tray.css</code> uses only these. The hover width is fixed at <code>--tab-wide</code> (I7 option A).</p>
+      <p><code>TrayWindow</code> and <code>BadgeWindow</code> write their constants on their pages as custom properties (<code>--tab-rest</code>, <code>--tab-wide</code>, <code>--shadow</code>). <code>tray.css</code> uses only these. The hover width is fixed at <code>--tab-wide</code> (I7 option A).</p>
       <p><strong>Check:</strong> <code>badge-hover-fits</code> passes.</p>
     </div></details>
     <details class="example prop"><summary>P-P2 · A check for each size pair <span class="d">I10 · contract step 6</span></summary><div class="body">
@@ -300,8 +303,8 @@ flowchart LR
     </div></details>
     <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
-  <section><h3>Quality <span class="q weak">Weak</span></h3>
-    <ul><li>I7: the badge hover is 333 px wide, the click area is 294 px. The ring is cut.</li><li>I10: five sizes have two owners.</li></ul>
+  <section><h3>Quality <span class="q mixed">Mixed</span></h3>
+    <ul><li>Better since the two windows: each window has one place, one size and one input rule. No window moves between places.</li><li>I7: the badge hover is 333 px wide, the click area is 294 px. The ring is cut.</li><li>I10: five sizes have two owners.</li></ul>
   </section>
 </div>
 
@@ -309,47 +312,44 @@ flowchart LR
 <div class="panel off" id="startstop" role="tabpanel">
   <section><h2>Start and stop: open, fold, dock, hide</h2>
     <h3>Defined as</h3>
-    <p>C# methods in <code>TrayStage</code> (<code>Open</code>, <code>Fold</code>, <code>Dock</code>, <code>Hide</code>, <code>Notice</code>). Each one sets phase classes. CSS orders the steps inside one place with transition delays.</p>
+    <p><code>TrayFlow</code> (<code>Open</code>, <code>Dock</code>, <code>Hide</code>, <code>BringBadge</code>) orders the two windows. The pages play the motion: <code>TrayStage</code> (<code>Prepare</code>, <code>Grow</code>, <code>Fold</code>) and <code>BadgeRoot</code> (<code>In</code>, <code>Out</code>, the notice). Each one sets phase classes; CSS orders the steps inside one window with transition delays.</p>
   </section>
   <section><h3>Architecture: open</h3>
     <div class="box"><pre class="mermaid">
 sequenceDiagram
-  participant S as TrayStage (C#)
-  participant W as TrayWindow (C#)
-  participant C as tray.css
-  participant J as tray.js
-  S->>W: Enter(start): window to the panel place, Show()
-  S->>C: is-start (ball place only, scale 0)
-  S->>J: home(): ball center (--hx, --hy)
-  S->>J: frames(2)
-  S->>C: is-open
-  Note over C: ball pops 0.30 s, clip grows 0.34 s after 0.21 s, content fades 0.20 s
-  S->>W: Enter(open): Activate()
-  S->>J: end(".tray-panel", "clip-path", 900)
-  S->>C: is-ready: the rings draw
+  participant F as TrayFlow (C#)
+  participant W as WidgetWindow (C#)
+  participant S as TrayStage (panel page)
+  participant B as BadgeRoot (badge page)
+  opt from the badge
+    F->>B: Out(): the tab slides out
+  end
+  F->>W: Enter(start): badge window hides, panel window shows
+  F->>S: Prepare(): is-start, ball center, 2 frames
+  F->>W: Enter(open): Activate()
+  F->>S: Grow(): is-open, wait for the clip, is-ready
+  Note over S: ball pops 0.30 s, clip grows 0.34 s after 0.21 s, content fades 0.20 s
 </pre></div>
-    <h3>Architecture: fold, then dock or hide</h3>
+    <h3>Architecture: dock and hide</h3>
     <div class="box"><pre class="mermaid">
 sequenceDiagram
-  participant S as TrayStage (C#)
-  participant W as TrayWindow (C#)
-  participant C as tray.css
-  participant J as tray.js
-  S->>J: home()
-  S->>C: is-folded
-  Note over C: content fades 0.10 s, clip folds 0.24 s, ball out 0.18 s
-  S->>J: end(".nav2 .home", "scale", 900)
+  participant F as TrayFlow (C#)
+  participant W as WidgetWindow (C#)
+  participant S as TrayStage (panel page)
+  participant B as BadgeRoot (badge page)
+  F->>S: Fold(): is-folded, wait for the ball
+  Note over S: content fades 0.10 s, clip folds 0.24 s, ball out 0.18 s
   alt dock
-    S->>W: Enter(badge-out): window to the badge place
-    S->>C: is-badge-out, frames(2), is-badge: tab slides in 0.26 s
-    S->>W: Enter(badge)
+    F->>W: Enter(badge-out): panel window hides, badge window shows
+    F->>B: In(): is-badge-out, 2 frames, is-badge (tab slides in 0.26 s)
+    F->>W: Enter(badge)
   else hide
-    S->>W: Enter(hidden): Hide()
+    F->>W: Enter(hidden): both windows hide
   end
 </pre></div>
   </section>
   <section><h3>Guide</h3>
-    <ol><li>One request runs at a time (<code>Run</code>). A request during a run waits; only the last one runs.</li><li>A new step inside one place: a CSS transition with a delay token in <code>tray.css</code>.</li><li>A new step between places: a call to <code>window.Enter(phase)</code> after a wait for the last motion.</li></ol>
+    <ol><li>One request runs at a time (<code>TrayFlow.Request</code>). A request during a run waits; only the last one runs.</li><li>A new step inside one window: a CSS transition with a delay token in <code>tray.css</code>.</li><li>A new step between the windows: a call to <code>window.Enter(phase)</code> in <code>TrayFlow</code>, after the page motion ends.</li></ol>
   </section>
   <section><h3>Proposals</h3>
     <details class="example prop"><summary>P-SS1 · One wait helper for the stage <span class="d">I12, I13 · contract step 3</span></summary><div class="body">
@@ -454,7 +454,7 @@ flowchart LR
       <tbody>
         <tr><td>Mouse on the page</td><td><code>ClearHost</code> forwards WM_MOUSE* to WebView2</td><td><span class="tag cs">C#</span></td></tr>
         <tr><td>Header drag</td><td><code>app-region: drag</code> → HTCAPTION → system move loop</td><td><span class="tag css">CSS</span> <span class="tag cs">C#</span></td></tr>
-        <tr><td>Badge click, drag, hover</td><td><code>ClearHost</code> badge mode (the page gets no click); 5 px drag start</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Badge click, drag, hover</td><td><code>BadgeWindow.HostInput</code> (the page gets no click); 5 px drag start</td><td><span class="tag cs">C#</span></td></tr>
         <tr><td>Badge hover look</td><td>CSS <code>:hover</code> with waits</td><td><span class="tag css">CSS</span></td></tr>
         <tr><td>Card swipe</td><td><code>swipe.js</code> pointer events; it clicks the action buttons</td><td><span class="tag js">JS</span></td></tr>
         <tr><td>Buttons, links</td><td>Blazor events; the router</td><td><span class="tag cs">C#</span></td></tr>
@@ -466,8 +466,8 @@ flowchart LR
     <div class="box"><pre class="mermaid">
 flowchart LR
   OS["Windows input"] --> CH["ClearHost.WndProc"]
-  CH -->|"panel place"| WV["WebView2.SendMouseInput"] --> PG["Page events"]
-  CH -->|"badge place"| BM["Badge mode<br/>click, drag, hover"] --> TW["TrayWindow<br/>Request(Open), save height"]
+  CH -->|"panel window"| WV["WebView2.SendMouseInput"] --> PG["Page events"]
+  CH -->|"badge window"| BM["BadgeWindow.HostInput<br/>click, drag, hover"] --> TW["Request(Open), save height"]
   PG --> SW["swipe.js<br/>card drag"] --> BT["Action button click"] --> BZ["Blazor"]
 </pre></div>
   </section>
@@ -569,8 +569,8 @@ flowchart LR
 <!-- PROPOSAL: TWO WINDOWS -->
 <div class="panel off" id="twowin" role="tabpanel">
   <section><h2>Proposal: the panel and the badge as two windows</h2>
-    <p class="summary">From your question: do some problems come from one window that is both the panel and the badge? Q3 answered: yes, spike S7 first. The S7 result is below. No change to the tray code.</p>
-    <h3>Today: one window, two jobs</h3>
+    <p class="summary">From your question: do some problems come from one window that is both the panel and the badge? Q3 answered: yes, spike S7 first. Q4 answered: yes, move. The tray has two windows since 2026-11-19 (result at the end of this tab).</p>
+    <h3>Before: one window, two jobs</h3>
     <div class="scroll"><table>
       <thead><tr><th>Shared part</th><th>How</th><th>Problem that came from it</th></tr></thead>
       <tbody>
@@ -589,7 +589,7 @@ flowchart LR
     <div class="scroll"><table>
       <thead><tr><th>Option</th><th>What</th><th>For</th><th>Against</th></tr></thead>
       <tbody>
-        <tr><td>A. One window (today)</td><td>No change</td><td>Works; tested</td><td>The shared input, click area and phases stay</td></tr>
+        <tr><td>A. One window (before)</td><td>No change</td><td>Works; tested</td><td>The shared input, click area and phases stay</td></tr>
         <tr><td>B. Two windows, one process</td><td>A panel window and a badge window. Each has its own WebView2 controller from one shared <code>CoreWebView2Environment</code>, and its own Blazor root (<code>TrayRoot</code>, <code>BadgeRoot</code>). One coordinator in C# orders them</td><td>Each window has one place, one size, one input rule. No badge mode in <code>ClearHost</code>. The same store and <code>Board</code>, so the counts are equal</td><td>A second WebView2 (memory, start time: not measured). The badge must paint before it slides in</td></tr>
         <tr><td>C. Two processes</td><td>The badge is its own app</td><td>Full isolation</td><td>Two starts, two tray icons or a link between them. Too much for this need</td></tr>
         <tr><td>D. A native badge</td><td>GDI or composition drawing in C#, no WebView</td><td>Small and fast</td><td>Custom drawing code, which you did not want; a second style system</td></tr>
@@ -644,7 +644,31 @@ sequenceDiagram
     <p class="note">Found, reproduced one time, cause not examined: after the app start, the panel did not show on the screen in two-window mode. The recorder saw no change until the first dock (two runs). The first dock is also faster (340 ms, not 820 ms). After the first dock and open, all cycles are correct. Not checked: the one-window mode with the recorder.</p>
     <p class="summary">Decision Q4 on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page</a>.</p>
   </section>
-  <section><h3>Next step if you agree</h3>
+  <section><h3>The move (2026-11-19)</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Now</th></tr></thead>
+      <tbody>
+        <tr><td><code>ClearHost</code></td><td>One shared WebView2 environment; a root component for each window; no badge mode. A window can keep input for itself (<code>HostInput</code>)</td></tr>
+        <tr><td><code>TrayWindow</code></td><td>The panel window only: its place, its click area, the pin</td></tr>
+        <tr><td><code>BadgeWindow</code></td><td>New: the badge place, its click areas (rest, hover, peek), click, drag and hover</td></tr>
+        <tr><td><code>TrayFlow</code></td><td>New (web): one request at a time; it orders the windows and calls the page motion</td></tr>
+        <tr><td><code>TrayStage</code></td><td>The panel phases only (start, open, folded)</td></tr>
+        <tr><td><code>BadgeRoot</code></td><td>New: the root of the badge window; the counts, the slide, the spin and the peek</td></tr>
+      </tbody>
+    </table></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Check</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Self-test</td><td>27 of 28 pass. The one fail is <code>badge-hover-fits</code> (I7, known, not fixed). New check <code>badge-input</code>: hover and click on the badge window with window messages</td></tr>
+        <tr><td>The start on the screen (S7 open point)</td><td>Correct: the ball pops in and the panel grows. The panel window shows only after its page is ready</td></tr>
+        <tr><td>The dock on the screen</td><td>Correct: fold, ball out, then the badge slides in</td></tr>
+        <tr><td>GPU memory (S7 open point)</td><td>One window before: 269 to 297 MB private in the cycles. Two windows in S7: 72 to 202 MB. No sign that two windows use more</td></tr>
+        <tr><td>Found in the frames</td><td>I14: a browser status bubble ("https://0.0.0.1/") at a link hover</td></tr>
+      </tbody>
+    </table></div>
+    <figure class="card"><img src="s7/two-windows-start.jpg" alt="Six frames of the tray start with two windows: the ball pops in, the panel grows, the content shows."><figcaption>The start of the tray with two windows.</figcaption></figure>
+  </section>
+  <section><h3>The spike plan</h3>
     <p>Done: see the S7 result above. The plan was a spike (S7) before a decision: two composition windows in one process with one shared environment. It measures the memory of the second WebView2, the time to the first paint of the badge, the frames of the dock and the open, and empty frames with the new detector. Then we compare it with today.</p>
     <p class="summary">Question Q4 on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page</a>. This proposal also changes the Places, Start and stop, and Interactions tabs. Their proposals P-P1 and P-SS1 become smaller with option B.</p>
   </section>

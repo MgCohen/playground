@@ -1,9 +1,9 @@
 namespace Orchestrator.Web;
 
 /// <summary>
-/// The desktop window of the tray app (Orchestrator.Tray). The web server has none: then the header shows no window buttons and
-/// no tray stage renders. The stage (Components/Tray/TrayStage) owns the phases and all motion; the window only goes to the place
-/// of each phase, sets its click area and reports the requests of the user.
+/// The desktop windows of the tray app (Orchestrator.Tray): the panel window and the badge window. The web server has none: then
+/// the header shows no window buttons and no tray stage renders. The tray flow (Components/Tray/TrayFlow) orders the phases; the
+/// pages play all motion; the windows only show or hide for each phase, set their click areas and report the requests of the user.
 /// </summary>
 public interface IWidgetWindow
 {
@@ -29,7 +29,7 @@ public interface IWidgetWindow
     /// <summary>The close button of the header: the tray hides. The tray icon opens it again.</summary>
     void Close();
 
-    /// <summary>The stage enters a phase (<see cref="TrayPhase"/>). The task ends when the window is at the place of the phase.</summary>
+    /// <summary>The flow enters a phase (<see cref="TrayPhase"/>). The task ends when the window of the phase shows and the other hides.</summary>
     Task Enter(string phase);
 
     /// <summary>The badge shows its peek bubble (true) or hides it (false): the click area takes the bubble in or out.</summary>
@@ -43,8 +43,8 @@ public static class TrayRequest
 }
 
 /// <summary>
-/// The phases of the tray stage. Start, open and folded are at the panel place; badge-out and badge at the badge place; hidden
-/// has no window. Each phase is also a CSS class with the prefix "is-" (tray.css).
+/// The phases of the tray. Start, open and folded show the panel window; badge-out and badge show the badge window; hidden shows
+/// no window. Each phase is also a CSS class with the prefix "is-" (tray.css).
 /// </summary>
 public static class TrayPhase
 {

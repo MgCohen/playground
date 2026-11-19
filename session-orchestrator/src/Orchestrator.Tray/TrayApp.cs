@@ -7,8 +7,9 @@ namespace Orchestrator.Tray;
 
 /// <summary>
 /// The tray icon and the tray window. A left click on the icon opens the panel, or hides the tray when the panel is open.
-/// Right click: the menu (Show, Pin on top, Exit). Exit closes the window and the icon. The stage of the views (TrayStage) does
-/// the phases, the motion, the badge and its notices; this class only sends the requests of the user.
+/// Right click: the menu (Show, Pin on top, Exit). Exit closes the windows and the icon. The tray has two windows: the panel
+/// (<see cref="TrayWindow"/>) and the badge (<see cref="BadgeWindow"/>). The tray flow of the views (TrayFlow) orders them; this
+/// class only makes them and sends the requests of the user.
 /// </summary>
 public sealed partial class TrayApp : ApplicationContext
 {
@@ -22,9 +23,13 @@ public sealed partial class TrayApp : ApplicationContext
     {
         dot = Dot(Accent);
         Window = new TrayWindow(services, dot, pinned, placeFile);
+        var badgeFile = placeFile is null ? null : Path.Combine(Path.GetDirectoryName(placeFile)!, Path.GetFileNameWithoutExtension(placeFile).Replace("place", "badge") + ".txt");
+        Badge = new BadgeWindow(services, dot, Window.PanelScreen, badgeFile);
+        Badge.Clicked += () => Window.Request(TrayRequest.Open);
         var contract = services.GetRequiredService<WidgetWindow>();
         contract.OpenAtStart = show;
         contract.Window = Window;
+        contract.Badge = Badge;
         var pin = new ToolStripMenuItem("Pin on top") { CheckOnClick = true, Checked = pinned };
         pin.CheckedChanged += (_, _) => Window.Pinned = pin.Checked;
         Window.PinnedChanged += () => pin.Checked = Window.Pinned;
@@ -40,11 +45,14 @@ public sealed partial class TrayApp : ApplicationContext
             Window.Request(Window.Phase == TrayPhase.Open ? TrayRequest.Hide : TrayRequest.Open);
         };
         Store = services.GetRequiredService<Orchestrator.Store.FileStore>();
-        // The window handle exists from here, so the page starts and a second start of the app can marshal to the UI thread.
+        // The window handles exist from here, so the pages start and a second start of the app can marshal to the UI thread.
         _ = Window.Handle;
+        _ = Badge.Handle;
     }
 
     public TrayWindow Window { get; }
+
+    public BadgeWindow Badge { get; }
 
     /// <summary>The store that the tray shows. The self-test writes to it.</summary>
     public Orchestrator.Store.FileStore Store { get; }
@@ -61,6 +69,8 @@ public sealed partial class TrayApp : ApplicationContext
         if (exiting) return;
         exiting = true;
         Window.Exiting = true;
+        Badge.Exiting = true;
+        Badge.Close();
         Window.Close();
         icon.Visible = false;
         ExitThread();
@@ -71,6 +81,7 @@ public sealed partial class TrayApp : ApplicationContext
         if (disposing)
         {
             icon.Dispose();
+            Badge.Dispose();
             Window.Dispose();
             dot.Dispose();
         }

@@ -142,16 +142,17 @@ public static partial class SelfTest
 
         // The hover of the badge: the white tab and its ring slide to the left; the pointer away folds it.
         var s = w.DeviceDpi / 96f;
-        var ring = new Point(w.Right - (int)(34 * s), w.Top + (int)((TrayWindow.TabMargin + 34) * s));
+        var b = tray.Badge;
+        var ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
         await Glide(ring);
-        Step($"hover the badge: tab width {await Js(w, "Math.round(document.querySelector('.tb-tab').getBoundingClientRect().width)")}");
+        Step($"hover the badge: tab width {await Js(b, "Math.round(document.querySelector('.tb-tab').getBoundingClientRect().width)")}");
         await Task.Delay(1800);
         await Glide(new Point(ring.X - (int)(260 * s), ring.Y + (int)(80 * s)));
         await Task.Delay(900);
 
         // A drag of the badge: up and down only, on the right edge.
-        ring = new Point(w.Right - (int)(34 * s), w.Top + (int)((TrayWindow.TabMargin + 34) * s));
-        Step($"drag the badge up: {await Drag(w, ring, 0, -220)}");
+        ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
+        Step($"drag the badge up: {await Drag(b, ring, 0, -220)}");
         await Task.Delay(1000);
 
         // A new card: the ring spins and the peek bubble shows the card.
@@ -164,8 +165,8 @@ public static partial class SelfTest
         }
 
         // A click on the badge: it slides out, and the panel opens at the place of the header drag.
-        ring = new Point(w.Right - (int)(34 * s), w.Top + (int)((TrayWindow.TabMargin + 34) * s));
-        Step($"click the badge: {await Drag(w, ring, 0, 0)}");
+        ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
+        Step($"click the badge: {await Drag(b, ring, 0, 0)}");
         await Until(() => w.Phase == TrayPhase.Open, 4000);
         await Task.Delay(1500);
 

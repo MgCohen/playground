@@ -76,7 +76,7 @@ public static partial class Program
         {
             // The self-test starts when the page is there. --mouse adds the checks with real mouse input on the tray window; --demo runs
             // the flow with the real pointer for a screen recording.
-            tray.Window.Ready.Task.ContinueWith(_ => tray.Window.BeginInvoke(async () =>
+            Task.WhenAll(tray.Window.Ready.Task, tray.Badge.Ready.Task).ContinueWith(_ => tray.Window.BeginInvoke(async () =>
             {
                 try
                 {
@@ -150,6 +150,7 @@ public static partial class Program
         services.AddSingleton<StreamHub>();
         services.AddSingleton<WidgetWindow>();
         services.AddSingleton<IWidgetWindow>(p => p.GetRequiredService<WidgetWindow>());
+        services.AddSingleton<Orchestrator.Web.Components.Tray.TrayFlow>();
         return services.BuildServiceProvider();
     }
 

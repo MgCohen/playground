@@ -12,11 +12,13 @@ namespace Orchestrator.Tray;
 /// screen with per-pixel alpha, so the empty parts of the page show the desktop. The window region sets where the window takes
 /// the clicks (and what it shows); outside the region the clicks go to the window below. The host sends the mouse input to the
 /// page, and an <c>app-region: drag</c> part of the page (the header) moves the window with the system move loop.
-/// In the badge mode the left button is for the host: a click is <see cref="BadgeClicked"/>, a drag moves the window up and down.
+/// The tray has two of these windows: the panel (<see cref="TrayWindow"/>) and the badge (<see cref="BadgeWindow"/>). They share one
+/// WebView2 environment, so one browser process serves both. Each window has its own root component.
 /// </summary>
 public partial class ClearHost : Form
 {
     readonly IServiceProvider services;
+    readonly Type root;
     CoreWebView2CompositionController? controller;
     Manager? manager;
     nint device, target, visual;
@@ -27,9 +29,16 @@ public partial class ClearHost : Form
     /// <summary>The WebView2 control after its start. The self-test uses it for the page checks and the pictures.</summary>
     public CoreWebView2? Web => controller?.CoreWebView2;
 
-    public ClearHost(IServiceProvider services)
+    // One environment for all windows of the process. The user data folder comes from WEBVIEW2_USER_DATA_FOLDER (Program.cs),
+    // one for each tray instance.
+    static Task<CoreWebView2Environment>? shared;
+
+    static Task<CoreWebView2Environment> Environment() => shared ??= CoreWebView2Environment.CreateAsync();
+
+    public ClearHost(IServiceProvider services, Type root)
     {
         this.services = services;
+        this.root = root;
         FormBorderStyle = FormBorderStyle.None;
         StartPosition = FormStartPosition.Manual;
         ShowInTaskbar = false;
@@ -67,8 +76,7 @@ public partial class ClearHost : Form
         target = Dcomp.CreateTarget(device, Handle);
         visual = Dcomp.CreateVisual(device);
         Dcomp.SetRoot(target, visual);
-        // The user data folder comes from WEBVIEW2_USER_DATA_FOLDER (Program.cs), one for each tray instance.
-        var env = await CoreWebView2Environment.CreateAsync();
+        var env = await Environment();
         controller = await env.CreateCoreWebView2CompositionControllerAsync(Handle);
         controller.DefaultBackgroundColor = Color.Transparent;
         controller.Bounds = new Rectangle(Point.Empty, ClientSize);
@@ -88,7 +96,7 @@ public partial class ClearHost : Form
             };
             """);
         manager = new Manager(web, env, services, new FormDispatcher(this), StaticFiles.Provider());
-        await manager.AddRootComponentAsync(typeof(Orchestrator.Web.Components.Tray.TrayRoot), "#app", ParameterView.Empty);
+        await manager.AddRootComponentAsync(root, "#app", ParameterView.Empty);
         await manager.AddRootComponentAsync(typeof(HeadOutlet), "head::after", ParameterView.Empty);
         manager.Navigate("/");
     }
@@ -125,8 +133,8 @@ public partial class ClearHost : Form
         const int WmNcHitTest = 0x84, WmSetCursor = 0x20, WmMouseLeave = 0x2A3, WmSysCommand = 0x112, ScMaximize = 0xF030;
         if (m.Msg == WmSysCommand && ((int)m.WParam & 0xFFF0) == ScMaximize) return;
         if (m.Msg == 0x232) Faults.Trace("move loop end");
-        if (m.Msg == 0x232 && !BadgeMode) PanelMoved?.Invoke(); // WM_EXITSIZEMOVE: the end of a drag of the header.
-        if (controller is not null && BadgeMode && Badge(ref m)) return;
+        if (m.Msg == 0x232) MoveEnded?.Invoke(); // WM_EXITSIZEMOVE: the end of a drag of the header.
+        if (controller is not null && HostInput(ref m)) return;
         if (controller is not null)
         {
             switch (m.Msg)
@@ -193,77 +201,11 @@ public partial class ClearHost : Form
         controller!.SendMouseInput(k, keys, data, p);
     }
 
-    // ===== The badge mode =====
+    /// <summary>The end of a drag of the window with the system move loop (a header drag).</summary>
+    public event Action? MoveEnded;
 
-    /// <summary>True while the window is the badge. The left button is then for the host: a click opens, a drag moves up and down.</summary>
-    [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
-    public bool BadgeMode { get; set; }
-
-    /// <summary>A click on the badge (no drag).</summary>
-    public event Action? BadgeClicked;
-
-    /// <summary>The end of a vertical drag of the badge.</summary>
-    public event Action? BadgeMoved;
-
-    /// <summary>The pointer comes onto the badge (true) or leaves it (false).</summary>
-    public event Action<bool>? BadgeHover;
-
-    /// <summary>The end of a drag of the panel (the system move loop of the header).</summary>
-    public event Action? PanelMoved;
-
-    Point? down;
-    int downTop;
-    bool dragging, over;
-
-    /// <summary>
-    /// A new place starts with no badge input: no hover, no press, no drag. The hover flag must not carry over from the last
-    /// time at the badge place: its leave can come while the window is at the panel place, where the badge code does not see it.
-    /// </summary>
-    public void ResetBadgeInput()
-    {
-        over = false;
-        down = null;
-        dragging = false;
-    }
-
-    bool Badge(ref Message m)
-    {
-        switch (m.Msg)
-        {
-            case 0x201: // WM_LBUTTONDOWN: the host keeps it; the page gets no click.
-                down = Cursor.Position;
-                downTop = Top;
-                dragging = false;
-                Capture = true;
-                return true;
-            case 0x200 when down is { } d && MouseButtons == MouseButtons.Left:
-                {
-                    var dy = Cursor.Position.Y - d.Y;
-                    // N1: a move of 5 px starts the drag; a smaller move is still a click.
-                    if (!dragging && Math.Abs(dy) < 5 * DeviceDpi / 96) return true;
-                    dragging = true;
-                    var area = Screen.FromHandle(Handle).WorkingArea;
-                    Top = Math.Clamp(downTop + dy, area.Top, Math.Max(area.Top, area.Bottom - Height));
-                    return true;
-                }
-            case 0x200 when !over:
-                over = true;
-                BadgeHover?.Invoke(true);
-                return false;
-            case 0x2A3: // WM_MOUSELEAVE
-                over = false;
-                BadgeHover?.Invoke(false);
-                return false;
-            case 0x202 when down is not null: // WM_LBUTTONUP
-                Capture = false;
-                down = null;
-                if (dragging) BadgeMoved?.Invoke();
-                else BadgeClicked?.Invoke();
-                dragging = false;
-                return true;
-        }
-        return false;
-    }
+    /// <summary>The input that the window keeps for itself (true): the page does not get it. The badge window uses it.</summary>
+    protected virtual bool HostInput(ref Message m) => false;
 
     protected override void Dispose(bool disposing)
     {
