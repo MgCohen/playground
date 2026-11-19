@@ -255,7 +255,8 @@ stateDiagram-v2
     <div class="scroll"><table>
       <tr><th>#</th><th>Question</th><th>Answer</th></tr>
       <tr><td class="mono">B1</td><td>Which moment comes first: the wait or the check?</td><td>Two modes that change with the run state. The run waits for you: the wait card is on top and the graph is small. Else: the graph is on top</td></tr>
-      <tr><td class="mono">B2</td><td>Do we add control acts to the runner?</td><td>Yes: "force a next step" and "go back to step X". "Go back" needs a rule for the outputs of the later steps (Q12)</td></tr>
+      <tr><td class="mono">B2</td><td>Do we add control acts to the runner?</td><td>Yes: "force a next step" and "go back to step X"</td></tr>
+      <tr><td class="mono">Q12</td><td>When a run goes back to step X, what happens to the outputs of the later steps?</td><td>Keep them. A loop is a normal part of the work, not an error: some results need many passes. Each visit is a new node in the history, with its own outputs. Nothing is marked old or removed</td></tr>
       <tr><td class="mono">B3</td><td>Which parts go into the sketches?</td><td>All parts below go on the F2 view. The ones that need runner work have a mark</td></tr>
     </table></div>
   </section>
@@ -264,7 +265,7 @@ stateDiagram-v2
     <span class="kicker">Parts of the F2 view</span>
     <div class="scroll"><table>
       <tr><th>#</th><th>Part</th><th>What it shows</th><th>Data</th></tr>
-      <tr><td class="mono">1</td><td>Path on the graph</td><td>The path of this run on the definition graph. A loop edge has a count, for example "change ×2"</td><td><span class="chip have">have</span></td></tr>
+      <tr><td class="mono">1</td><td>Path on the graph</td><td>The path of this run on the definition graph. A loop edge has a neutral pass count, for example "pass 2". A loop is normal, so it has no warning color</td><td><span class="chip have">have</span></td></tr>
       <tr><td class="mono">2</td><td>Why here</td><td>The conditions that moved the run to the current step, for example "the verdict is change"</td><td><span class="chip have">have</span></td></tr>
       <tr><td class="mono">3</td><td>What if</td><td>Each next step with ✓ or ✕ and its condition. The likely next step has a mark</td><td><span class="chip have">have</span></td></tr>
       <tr><td class="mono">4</td><td>Time per step</td><td>Agent time and the time that waited for you, for each step and for the run</td><td><span class="chip have">have</span></td></tr>
@@ -840,10 +841,6 @@ flowchart TD
       <p>Issues and CI status are only on GitHub. The design rule says that the store is the source.</p>
       <p>Options: (a) a live read with <code>gh</code> and a short cache, at page open; (b) the supervisor copies the GitHub state into envelopes on a timer; (c) GitHub webhooks through the tunnel (D1).</p>
       <p class="rec">Recommendation: (a) first. It needs no new store kind. (b) can follow when F5 and F7 need GitHub history.</p></div>
-    <div class="q"><b>Q12. When a run goes back to step X, what happens to the outputs of the later steps?</b>
-      <p>B2 adds "go back to step X". The steps after X made outputs, for example a spec v2.</p>
-      <p>Options: (a) keep them, marked as old, and the new visit makes new versions; (b) remove them from <code>outputs</code>, and keep them only in the history.</p>
-      <p class="rec">Recommendation: (a). Nothing is lost, and the history shows each version.</p></div>
   </section>
 </div>
 </div>
