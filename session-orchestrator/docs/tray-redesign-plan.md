@@ -2,7 +2,7 @@
 
 The tray widget is one transparent window that hosts the Blazor views of `Orchestrator.Web` with WebView2 in composition mode. All visuals and all motion are Razor components and CSS. C# controls only the window: its place, its click area and its input. One motion layer in `Orchestrator.Web` gives each view the same way to enter, leave and navigate, in the browser and in the tray.
 
-Proof: spikes S1 to S6 in `spikes/tray-display/`, results in `docs/plan.md` (section "Tray display spikes").
+Goal of this plan: parity. The tray and the browser look and work as before, on this structure. Proof: spikes S1 to S6 in `spikes/tray-display/`, results in `docs/plan.md` (section "Tray display spikes").
 
 ## Target structure
 
@@ -108,7 +108,13 @@ public interface ITrayWindow
 }
 ```
 
-The browser host has no `ITrayWindow`. Then the views show no window buttons and no `TrayStage`.
+The browser host has no `ITrayWindow`. Then the views show no window buttons and no `TrayStage`. The browser uses the same motion layer, because it shows the same components.
+
+| Window button | Action |
+|---|---|
+| Pin | Keeps the window on top, in both places |
+| Minimize | Docks the panel to the badge |
+| Close | Hides the tray; the tray icon opens it again |
 
 ## Work order
 
@@ -155,9 +161,5 @@ The browser host has no `ITrayWindow`. Then the views show no window buttons and
 - No second window for the shadow, the ball or the badge. Reason: windows need sync of order and frames.
 - No change to the store, the supervisor or the data code. Reason: this work is about the display only.
 - No exact shape for the click area of the badge. Reason: a box around the badge is simple and enough.
-
-## Open questions
-
-1. Window buttons: keep pin, minimize and close? If close stays, does it hide all, with no badge?
-2. Step 1 in the browser: do the page moves of the web server also change, or only the tray?
-3. Swipe of the card deck (`swipe.js`): move it into the motion layer in step 1, or keep it as it is?
+- No change to the swipe of the card deck (`swipe.js`). Reason: parity first; the deck moves to the motion layer after parity.
+- No change to the data flow into the views. Reason: a review of the internals for a data-driven UI comes after parity.
