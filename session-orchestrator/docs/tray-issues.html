@@ -1,0 +1,325 @@
+<title>Tray Issue Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one issue for each tab, the same template in each. Same tokens as the test guide. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --warn: #9a6200; --code-bg: #eef1f3;
+  --s-rep: #9a6200; --s-det: #2f5fb3; --s-rpl: #7a3fa0; --s-fix: #2b7a3d; --s-no: #6b7480;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f;
+    --s-rep: #e0a548; --s-det: #7fa8ee; --s-rpl: #c99be6; --s-fix: #6cc483; --s-no: #9aa6b0; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f;
+  --s-rep: #e0a548; --s-det: #7fa8ee; --s-rpl: #c99be6; --s-fix: #6cc483; --s-no: #9aa6b0; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 70ch; }
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap; }
+nav button { font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 10px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.panel { display: flex; flex-direction: column; gap: 20px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 10px; }
+section + section { border-top: 1px solid var(--line); padding-top: 20px; }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+pre.stack { margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg); white-space: pre; }
+pre .c { color: var(--muted); }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 70ch; }
+.pill { font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; border: 1px solid currentColor; white-space: nowrap; }
+.rep { color: var(--s-rep); } .det { color: var(--s-det); } .rpl { color: var(--s-rpl); } .fix { color: var(--s-fix); } .no { color: var(--s-no); }
+.bg-rep { background: var(--s-rep); } .bg-det { background: var(--s-det); } .bg-rpl { background: var(--s-rpl); } .bg-fix { background: var(--s-fix); } .bg-no { background: var(--s-no); }
+.track { display: flex; gap: 0; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12px; }
+.track span { padding: 4px 12px; border: 1px solid var(--line); color: var(--muted); background: var(--panel); }
+.track span:first-child { border-radius: 6px 0 0 6px; } .track span:last-child { border-radius: 0 6px 6px 0; }
+.track span + span { border-left: none; }
+.track span.done { color: var(--fg); background: var(--accent-soft); }
+.track span.now { color: var(--accent); border-color: var(--accent); font-weight: 500; }
+.track span.x { text-decoration: line-through; }
+.meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.meta .k { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.field { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding-block: 10px; border-bottom: 1px solid var(--line); }
+.field > * { min-width: 0; }
+.field > .k { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+.field > .v { display: flex; flex-direction: column; gap: 8px; }
+@media (max-width: 600px) { .field { grid-template-columns: 1fr; gap: 4px; } }
+figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+figure .img { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+figure img { display: block; max-width: none; height: 240px; }
+figcaption { font-size: 13px; color: var(--muted); max-width: 70ch; }
+details.more { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+details.more > summary { cursor: pointer; padding: 10px 14px; font-family: var(--font-display); font-weight: 500; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.ask { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+.ask .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · orch/visual-review</div>
+  <h1>Tray Issue Tracker</h1>
+  <p class="summary">The known problems of the tray, one tab for each. We discuss one issue at a time. No fix starts before the issue is replicated with data.</p>
+</header>
+
+<nav role="tablist" aria-label="Issues">
+  <button role="tab" data-tab="about" aria-selected="true">About</button>
+  <button role="tab" data-tab="i1" aria-selected="false"><span class="dot bg-no"></span>I1 Sheet blink</button>
+  <button role="tab" data-tab="i2" aria-selected="false"><span class="dot bg-rpl"></span>I2 Detector</button>
+  <button role="tab" data-tab="i3" aria-selected="false"><span class="dot bg-rpl"></span>I3 Silent misses</button>
+  <button role="tab" data-tab="i4" aria-selected="false"><span class="dot bg-rep"></span>I4 Sizing</button>
+  <button role="tab" data-tab="i5" aria-selected="false"><span class="dot bg-det"></span>I5 Keyboard</button>
+  <button role="tab" data-tab="i6" aria-selected="false"><span class="dot bg-rep"></span>I6 Grow review</button>
+  <button role="tab" data-tab="fixed" aria-selected="false"><span class="dot bg-fix"></span>Fixed</button>
+</nav>
+
+<!-- ABOUT -->
+<div class="panel" id="about" role="tabpanel">
+  <section>
+    <h2>What this page is for</h2>
+    <p>One record for each problem. Each record shows the proof, the cause and the proposed fix. We stop at each issue and decide together. This stops the loop of fixes for problems that nobody proved.</p>
+  </section>
+  <section>
+    <h2>Status flow</h2>
+    <div class="track"><span class="rep">Reported</span><span class="det">Detected</span><span class="rpl">Replicated</span><span class="fix">Fixed</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Status</th><th>Meaning</th><th>Needed to go to the next status</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill rep">Reported</span></td><td>You saw it, or the agent saw it once</td><td>A test or a picture that shows it</td></tr>
+        <tr><td><span class="pill det">Detected</span></td><td>A test or a review found it</td><td>A run that shows it again, with a number</td></tr>
+        <tr><td><span class="pill rpl">Replicated</span></td><td>It comes back on each run. We know the cause, or we test causes one at a time</td><td>A fix, and the same run shows the number is correct</td></tr>
+        <tr><td><span class="pill fix">Fixed</span></td><td>The same test passes. A check stops a return</td><td>-</td></tr>
+        <tr><td><span class="pill no">Not real</span></td><td>The proof was wrong. The record stays, as a lesson</td><td>-</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>Summary</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>ID</th><th>Issue</th><th>Status</th><th>Next step</th></tr></thead>
+      <tbody>
+        <tr><td>I1</td><td>Empty frames at the sheet open</td><td><span class="pill no">Not real</span></td><td>Close it, after I2 confirms</td></tr>
+        <tr><td>I2</td><td>The empty frame detector gives false alarms</td><td><span class="pill rpl">Replicated</span></td><td>Your decision: new rule</td></tr>
+        <tr><td>I3</td><td>A stress step that misses does not fail the run</td><td><span class="pill rpl">Replicated</span></td><td>Your decision: fail or count</td></tr>
+        <tr><td>I4</td><td>Sizing issues on the screen</td><td><span class="pill rep">Reported</span></td><td>Your picture or description</td></tr>
+        <tr><td>I5</td><td>Keyboard and screen reader not tested</td><td><span class="pill det">Detected</span></td><td>Your decision: priority</td></tr>
+        <tr><td>I6</td><td>The tray grow (G1) is not reviewed</td><td><span class="pill rep">Reported</span></td><td>Review with you</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>Record template</h2>
+<pre class="stack">ID and title
+Status       Reported | Detected | Replicated | Fixed | Not real
+Source       you | self-test | stress run | review
+What         one sentence: what is wrong, where
+Proof        picture, video or data, with the run name
+Replicate    the command, and the number it gives
+Cause        known (with the data) | not known (what we tested)
+Proposal     the fix, and the check that proves it
+Decision     the question for you</pre>
+  </section>
+</div>
+
+<!-- I1 -->
+<div class="panel off" id="i1" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill no">Not real</span><span class="k">source: stress run · I1</span></div>
+    <h2>I1 · Empty frames at the sheet open</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done x">Replicated</span><span class="now">Not real</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>The detector counted 5 to 6 empty frames in 60 s of sheet opens and closes. Each one was 70 to 110 ms after a sheet open or close.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+      <figure><div class="img"><img src="issues/sheet-open-false-empty.jpg" alt="Five frames of a sheet open. The frame marked EMPTY shows the tray with the sheet."></div>
+        <figcaption>Run <code>base-now</code>, sheet open. The frame marked EMPTY shows the tray. It is not empty.</figcaption></figure>
+      <figure><div class="img"><img src="issues/sheet-close-false-empty.jpg" alt="Five frames of a sheet close. The frame marked EMPTY shows the tray."></div>
+        <figcaption>Run <code>base-now</code>, sheet close. The same: the tray is on the screen.</figcaption></figure>
+    </div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v">
+<pre class="stack">sheets.sh base-now
+<span class="c"># base-now: 5 empty frames in 60 s
+# backdrop mean 204.09; the marked frames 203.95 and 203.77</span></pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. The scrim fade makes the tray area darker or lighter in steps. One step has a mean near the backdrop mean (204), so the detector marks it. See I2.</p>
+      <p>This also explains the old test: with no scrim fade, the mean jumps past 204, so the count went to about 1.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>No change to the tray. Keep the scrim fade as the spec says. Close I1 when the new detector (I2) gives 0 on the same run.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do we close I1 after the I2 check gives 0?</p></div></div></div>
+  </section>
+</div>
+
+<!-- I2 -->
+<div class="panel off" id="i2" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rpl">Replicated</span><span class="k">source: review of the proof · I2</span></div>
+    <h2>I2 · The empty frame detector gives false alarms</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="now">Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p><code>empty.py</code> marks a frame as empty when its mean color is within 0.6 of the backdrop mean. A frame with the tray can have the same mean.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>The two strips on I1: both marked frames show the tray. 5 of 5 marks in <code>base-now</code> are near a sheet motion.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">strip.ps1 -Gif base-now.gif -Times base-now.gif.times.txt -Nth 1..5</pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. One mean value for the full frame cannot tell "no tray" from "tray with a different shade".</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v">
+      <p>Change the rule: a frame is empty when almost all pixels in the tray area have the backdrop color.</p>
+<pre class="stack">empty  = share of pixels with color #CCCCCC (±3) in the panel area &gt; 98 %
+record = that share for each frame, in place of the mean</pre>
+      <p>Proof that the new rule works:</p>
+      <ol><li>The old open blink (the real one, see Fixed) still gives an empty frame.</li><li>The <code>base-now</code> run gives 0.</li></ol>
+    </div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do I change the detector to the pixel share rule, and test it on the old and new runs?</p></div></div></div>
+  </section>
+</div>
+
+<!-- I3 -->
+<div class="panel off" id="i3" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rpl">Replicated</span><span class="k">source: stress log · I3</span></div>
+    <h2>I3 · A stress step that misses does not fail the run</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="now">Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>If a press finds no element, the run logs "no element" and continues. The frame count then covers steps that did not occur.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+<pre class="stack"><span class="c"># base-now/stress.txt, cycle 1</span>
+14:59:05.670 .acts [data-act="left"]: no element .acts [data-act="left"]
+14:59:06.573 .presence .scrim: no element .presence .scrim
+<span class="c"># 46 presses clicked, 2 missed. Run h-sheet: the same misses in cycle 1.</span></pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. <code>Act</code> writes the result but has no pass rule. In cycle 1 the Cards page is not ready 700 ms after the tab click.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>Wait for the element with <code>Until</code> before the press, up to 3 s.</li><li>Count the misses. Exit 1 if one press misses.</li></ol></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do I make a missed press fail the run?</p></div></div></div>
+  </section>
+</div>
+
+<!-- I4 -->
+<div class="panel off" id="i4" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rep">Reported</span><span class="k">source: you · I4</span></div>
+    <h2>I4 · Sizing issues on the screen</h2>
+    <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>You saw sizing issues on the screen that I showed. We do not know which screen or which part yet.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>None yet.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v">
+      <p>Not known. Possible causes, not tested:</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Possible cause</th><th>What it looks like</th></tr></thead>
+        <tbody>
+          <tr><td>Test CSS of the runs <code>h-noscroll</code> and <code>h-nocontain</code></td><td>Content cut at the bottom; the dark scrim larger than the panel</td></tr>
+          <tr><td>The recorder backdrop</td><td>A plain grey rectangle, 920 × 1368 px, at the right side of the screen</td></tr>
+          <tr><td>A real fault in the tray</td><td>Wrong size in a normal run</td></tr>
+        </tbody>
+      </table></div>
+    </div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>Send a screenshot, or say the page, the part and what is wrong. Then I add a size check for that part to the self-test.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Which screen and which part showed the sizing issue?</p></div></div></div>
+  </section>
+</div>
+
+<!-- I5 -->
+<div class="panel off" id="i5" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill det">Detected</span><span class="k">source: review · I5</span></div>
+    <h2>I5 · Keyboard and screen reader not tested</h2>
+    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>The tray window uses composition mode. The host forwards mouse input to the page. No test checks key input or the screen reader.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>No check in <code>SelfTest.cs</code> sends a key. Not tried by hand.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>A check: focus the reply box, send key messages, read the box value.</li><li>A check: Tab key moves the focus to the next button.</li><li>A manual test with Narrator, once.</li></ol></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Is keyboard input in the tray a need now, or later?</p></div></div></div>
+  </section>
+</div>
+
+<!-- I6 -->
+<div class="panel off" id="i6" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rep">Reported</span><span class="k">source: you · I6</span></div>
+    <h2>I6 · The tray grow (G1) is not reviewed</h2>
+    <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>All motion follows <code>docs/motion-design.html</code>, except the grow from the ball to the panel (G1 and M6). You asked to review it together later.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Not a fault. An open review item.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>I send an MP4 of the grow, frame by frame next to the spec. We then pick the changes.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>When do we review the grow: now, or after I1 to I4?</p></div></div></div>
+  </section>
+</div>
+
+<!-- FIXED -->
+<div class="panel off" id="fixed" role="tabpanel">
+  <section>
+    <h2>Fixed issues</h2>
+    <p class="summary">Each one has a self-test check or a stress run that proves the fix. Open a row for the detail.</p>
+    <details class="more" open><summary><span class="pill fix">Fixed</span> A blink at the end of the open</summary><div class="body">
+      <figure><div class="img"><img src="issues/open-real-empty.jpg" alt="Frames 14 to 20 of an open. Frame 18 shows only the grey backdrop."></div>
+        <figcaption>Frame 18 is really empty: only the backdrop, no tray. This is a true detector hit.</figcaption></figure>
+      <p>Cause: <code>filter: drop-shadow</code> on the panel wrapper. Fix: the shadow is its own element (<code>.tray-frame</code>). Proof: open stress 20 empty frames → 0.</p>
+      <p class="note">This is a real empty frame. Check it again with the new detector of I2.</p>
+    </div></details>
+    <details class="more"><summary><span class="pill fix">Fixed</span> A bigger, darker shadow and an overlap at a tab change</summary><div class="body">
+      <p>Cause: two pictures of the page in the view transition, each with a shadow. Fix: one shadow; a tab change uses no view transition. Check: <code>tab-*-to-*</code> (shadow alpha in the move ≤ rest + 6).</p>
+    </div></details>
+    <details class="more"><summary><span class="pill fix">Fixed</span> The tab change was not the spec (T1 C)</summary><div class="body">
+      <p>The tray did a fade-through of the full page. Fix: each block rises 10 px in 0.3 s, 40 ms after the block above; one nav dot. Checks: <code>dot-*</code>.</p>
+    </div></details>
+    <details class="more"><summary><span class="pill fix">Fixed</span> Page text in the ball circle at the start</summary><div class="body">
+      <p>Cause: the first-load fade of the page won over the start phase. Fix: no first-load fade in the tray.</p>
+    </div></details>
+    <details class="more"><summary><span class="pill fix">Fixed</span> Sheets lost their place after the shadow fix</summary><div class="body">
+      <p>Cause: without the filter, the fixed blocks had no containing block. Fix: <code>contain: layout</code> on the panel. Check: <code>sheet-in-panel</code>.</p>
+    </div></details>
+    <details class="more"><summary><span class="pill fix">Fixed</span> The ring draw and the count-up did not run</summary><div class="body">
+      <p>Cause: the draw-once code saw one element two times; in the tray the first show was hidden in the start. Fix: a WeakSet, and the <code>is-ready</code> pause. Check: <code>ring-count-up</code>.</p>
+    </div></details>
+  </section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["about", "i1", "i2", "i3", "i4", "i5", "i6", "fixed"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "about";
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
+    document.querySelectorAll("nav button").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false"); });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>

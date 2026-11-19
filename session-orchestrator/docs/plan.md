@@ -2355,3 +2355,12 @@ Audit of the motion spec (`docs/motion-design.html`; G1 and M6, the grow, stay f
 
 Findings of the audit: the draw-once code of the rings marked a ring as drawn when it saw the same element two times, so the first draw never ran (it now remembers each element); in the tray the first show of a ring was in the hidden start, so the ring animations wait for the end of the grow (`is-ready`). Self-test: 26 of 26.
 
+
+### Test guide and issue tracker (2026-11-19)
+
+Two pages: `docs/tray-testing.html` (how the tests work, https://claude.ai/artifact/RLKUe4bnMJj4mDBVLFPcEK) and `docs/tray-issues.html` (one record for each known issue, https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s). The tracker is the source for the status of each tray issue.
+
+| Finding | Data | Result |
+|---|---|---|
+| The empty frames at the sheet open are not real | Run `base-now` (current code, 12 sheet cycles): 5 marks. The strips of the frames around marks 1 and 3 show the tray in the marked frame. Backdrop mean 204.09, marked frames 203.95 and 203.77 | The detector (frame mean = backdrop mean) gives a false alarm when the scrim fade moves the mean through 204. The scrim tests (fade off, about 1 mark) measured the detector, not the tray. Issue I1 "not real", I2 open |
+| A missed stress press does not fail the run | `base-now/stress.txt`: 2 of 48 presses "no element" in cycle 1 | Issue I3 open |
