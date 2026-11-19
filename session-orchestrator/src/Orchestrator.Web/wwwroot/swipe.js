@@ -38,8 +38,15 @@
 
   function fly(card, dir, dx, dy, b) {
     card.classList.remove("drag", "back-in");
-    card.style.setProperty("--fx", (dx + dir * card.offsetWidth * 1.2) + "px");
-    card.style.setProperty("--fy", (Math.max(0, dy) + 30) + "px");
+    // M1 A: from a drag, the card flies on 360 px past the release point and 60 px down; a button throw (no drag) uses the
+    // keyframe defaults of app.css (120 % to the side, 30 px down).
+    if (dx || dy) {
+      card.style.setProperty("--fx", (dx + dir * 360) + "px");
+      card.style.setProperty("--fy", (Math.max(0, dy) + 60) + "px");
+    } else {
+      card.style.removeProperty("--fx");
+      card.style.removeProperty("--fy");
+    }
     card.style.setProperty(dir > 0 ? "--sr" : "--sl", 1);
     card.classList.add(dir > 0 ? "out-r" : "out-l");
     after(card, "animationend", 300, function () { go(b); });

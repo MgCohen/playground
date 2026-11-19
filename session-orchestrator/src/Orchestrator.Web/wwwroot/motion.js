@@ -4,13 +4,16 @@
   // V12: a ring draws only the first time its key shows. A mutation observer runs before the next paint: a new ring element
   // with a key that was drawn before gets data-drawn (motion.css stops its draw); a new key draws and goes into the list.
   // Blazor keeps an attribute that a script adds, so the mark stays when the ring renders again.
-  var seen = new Set();
+  // The same element can come in two changes (Blazor adds a node, then its parent moves): only a different element with a key
+  // that was drawn before is a repeat.
+  var seen = new Set(), handled = new WeakSet();
   function mark(node) {
     var rings = node.matches && node.matches("[data-ring]") ? [node] : [];
     if (node.querySelectorAll) rings = rings.concat(Array.prototype.slice.call(node.querySelectorAll("[data-ring]")));
     rings.forEach(function (r) {
       var key = r.getAttribute("data-ring");
-      if (!key || r.hasAttribute("data-drawn")) return;
+      if (!key || r.hasAttribute("data-drawn") || handled.has(r)) return;
+      handled.add(r);
       if (seen.has(key)) r.setAttribute("data-drawn", "");
       else seen.add(key);
     });

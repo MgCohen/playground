@@ -138,7 +138,7 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 46px; padding: 0 14px; border: 0; border-radius: var(--r-sm); background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); font-weight: 600; flex: 1; }
 .btn.pri { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow); }
 /* S2: the skip button is raised like the other buttons, with a muted icon, so it does not look disabled. */
-.btn.wl { background: var(--surf); box-shadow: var(--sh-raise); color: var(--muted); flex: 0 0 64px; }
+.btn.wl { background: var(--surf); box-shadow: var(--sh-raise); color: var(--muted); flex: 0 0 56px; }
 .btn:disabled, .acts.off .btn { opacity: .38; box-shadow: none; cursor: default; }
 .acts.small .btn { min-height: 38px; flex: 0 1 auto; font-size: 13px; }
 .sticky-acts { position: sticky; bottom: 92px; z-index: 3; margin-top: 4px; }
@@ -192,8 +192,8 @@ code { font-family: var(--f-mono); font-size: .92em; }
 /* M3: a real pile. Each card behind is 8 px lower and 4.5 % smaller; when the top card leaves, each card moves up one slot. */
 /* V17: a drag on the card (or on its link) is a swipe, never a native drag of a link or an image. */
 .pcard, .pcard a, .pcard img { -webkit-user-drag: none; }
-.pcard { position: absolute; inset: 0 0 14px; display: flex; flex-direction: column; touch-action: pan-y; user-select: none; will-change: transform; overflow: hidden;
-  transform: translateY(calc(var(--i, 0) * 8px)) scale(calc(1 - var(--i, 0) * .045)); transform-origin: 50% 100%; z-index: calc(10 - var(--i, 0));
+.pcard { position: absolute; inset: 0 0 18px; display: flex; flex-direction: column; touch-action: pan-y; user-select: none; will-change: transform; overflow: hidden;
+  transform: translateY(calc(var(--i, 0) * 8px)) scale(calc(1 - var(--i, 0) * .045)); transform-origin: 50% 100%; z-index: calc(10 - var(--i, 0)); opacity: calc(1 - var(--i, 0) * .22);
   transition: transform .32s var(--ease-out), opacity .32s var(--ease-out); }
 .pcard.behind { pointer-events: none; }
 .pcard.drag { transition: none; }
@@ -252,7 +252,7 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .nav2 .it { width: 46px; height: 46px; display: grid; place-items: center; color: var(--muted); position: relative; }
 .nav2 .ic { width: 22px; height: 22px; }
 .nav2 .it.on { color: var(--text); }
-.nav2 .ndot { position: absolute; left: var(--dx, 50%); bottom: 7px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--accent); pointer-events: none; }
+.nav2 .ndot { position: absolute; left: var(--dx, 50%); bottom: 4px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--accent); pointer-events: none; }
 .nav2 .ndot.off { opacity: 0; }
 /* V5: the home ball is one image (home-ball.png: a 100 px square with the 62 px ball, its icon and its shadow). The native ball
    of the tray and the edge tab draw the same file. */
@@ -293,11 +293,11 @@ body:has(.pagebar.no-app-bar) .nav2 { display: none; }
 .pagebar.no-app-bar { bottom: max(10px, env(safe-area-inset-bottom, 0px)); margin-bottom: 10px; }
 body:has(.pagebar.no-app-bar)::after { height: 84px; }
 /* The corner button floats 10 px above the page bar, at the right. A tap opens the content actions as a speed dial. */
-.cfab { position: absolute; right: 6px; bottom: calc(100% + 10px); z-index: 2; width: 52px; height: 52px; border: 0; border-radius: 50%; display: grid; place-items: center; padding: 0;
+.cfab { position: absolute; right: 6px; bottom: calc(100% + 10px); transition: transform var(--t-fab) var(--ease-fab); z-index: 2; width: 52px; height: 52px; border: 0; border-radius: 50%; display: grid; place-items: center; padding: 0;
   background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow), 0 10px 20px -8px rgba(0,0,0,.45); }
 .cfab .ic { width: 22px; height: 22px; }
 .cfab.open .ic { transform: rotate(45deg); }
-.dscrim { position: fixed; inset: 0; z-index: 1; background: color-mix(in srgb, var(--scrim) 45%, transparent); }
+.dscrim { position: fixed; inset: 0; z-index: 1; background: rgba(0, 0, 0, .18); }
 .dial { position: absolute; right: 6px; bottom: calc(100% + 72px); z-index: 2; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 8px; }
 .dial .btn { flex: none; min-height: 40px; border-radius: 999px; padding: 0 16px; box-shadow: var(--sh-raise), 0 8px 16px -8px rgba(0,0,0,.4); white-space: nowrap; }
 .dial .btn.dg { flex: none; padding: 0 16px; background: var(--surf); }

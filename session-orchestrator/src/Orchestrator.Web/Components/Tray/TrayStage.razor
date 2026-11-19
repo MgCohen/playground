@@ -14,7 +14,7 @@
 }
 else
 {
-    <div class="tray-stage is-@phase" @ref="stage">
+    <div class="tray-stage is-@phase @(ready ? "is-ready" : "")" @ref="stage">
         <div class="tray-shadow">
             <div class="tray-frame"></div>
             <div class="tray-panel">
@@ -37,7 +37,7 @@ else
     ElementReference stage;
     string phase = TrayPhase.Hidden;
     string? pending;
-    bool busy, started, spin, peek;
+    bool busy, started, spin, peek, ready;
     string peekTitle = "", peekSub = "";
     TrayCounts counts = TrayCounts.None;
     int notice;
@@ -112,6 +112,10 @@ else
         }
         await Set(TrayPhase.Open);
         await window!.Enter(TrayPhase.Open);
+        // The grow ends: the first draw of the rings in the view starts now, with the content fade (tray.css, is-ready).
+        await JS.InvokeVoidAsync("orchTray.end", ".tray-panel", "clip-path", 900);
+        ready = true;
+        StateHasChanged();
     }
 
     async Task Dock()
@@ -198,6 +202,7 @@ else
 
     Task Set(string next)
     {
+        if (next != TrayPhase.Open) ready = false;
         phase = next;
         StateHasChanged();
         return Task.CompletedTask;

@@ -52,6 +52,16 @@ public static partial class SelfTest
         Add("start", open && w.Visible && w.Bounds == w.PanelBounds() && stage.Contains("is-open"),
             $"phase {w.Phase}, visible {w.Visible}, window {w.Bounds} (expect {w.PanelBounds()}), stage \"{stage}\", panel {size} CSS px");
 
+        // 1b. The number of the Home ring counts up on its first show: the rule is valid (an invalid steps() drops the animation).
+        var count = await Js(w, "(e => e ? [getComputedStyle(e, '::after').animationName, getComputedStyle(e, '::after').animationTimingFunction, e.textContent].join(' | ') : 'none')(document.querySelector('.ring-n[data-count]'))");
+        var probe = await Js(w, """
+            (() => { const e = document.createElement('i'); e.style.cssText = '--to: 5; animation: m-count-up 1s steps(var(--to), end)'; document.body.appendChild(e);
+              const v = getComputedStyle(e).animationName + ' / ' + getComputedStyle(e).animationTimingFunction; e.remove();
+              const d = document.querySelector('.dring'); return 'drawn ' + (d ? d.hasAttribute('data-drawn') : 'no ring') + '; steps(var) test: ' + v; })()
+            """);
+        var stageReady = await Js(w, "document.querySelector('.tray-stage').classList.contains('is-ready')");
+        Add("ring-count-up", count.StartsWith("m-count-up | steps(") && probe.StartsWith("drawn false") && stageReady == "true", $"after part: {count}; {probe}; stage ready {stageReady}");
+
         // 2. The home button is the ball: the clip circle of the fold is centered on it.
         await Js(w, "orchTray.home(document.querySelector('.tray-stage'))");
         var ball = await Js(w, """
@@ -88,6 +98,8 @@ public static partial class SelfTest
             shot.Save(Path.Combine(folder, "push-middle.png"));
             var mid = Edge(shot, w);
             var classes = await Js(w, "document.documentElement.className");
+            var path = await Js(w, "(e => e ? getComputedStyle(e).animationName + ' | ' + getComputedStyle(document.querySelector('.hd')).viewTransitionName : 'no title')(document.querySelector('.hd .cur'))");
+            Add("header-path-motion", path == "m-path-cur | header", $"current title animation | header name: {path}");
             var group = await Js(w, "(s => [s.overflow, s.borderRadius, s.width, s.height, s.left, s.top].join(' '))(getComputedStyle(document.documentElement, '::view-transition-group(page)'))");
             var named = await Js(w, "getComputedStyle(document.querySelector('.tray-view')).viewTransitionName");
             Console.WriteLine($"push: group {group}, name {named}");

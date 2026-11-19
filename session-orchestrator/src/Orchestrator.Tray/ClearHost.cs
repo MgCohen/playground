@@ -239,7 +239,8 @@ public partial class ClearHost : Form
             case 0x200 when down is { } d && MouseButtons == MouseButtons.Left:
                 {
                     var dy = Cursor.Position.Y - d.Y;
-                    if (!dragging && Math.Abs(dy) < 4 * DeviceDpi / 96) return true;
+                    // N1: a move of 5 px starts the drag; a smaller move is still a click.
+                    if (!dragging && Math.Abs(dy) < 5 * DeviceDpi / 96) return true;
                     dragging = true;
                     var area = Screen.FromHandle(Handle).WorkingArea;
                     Top = Math.Clamp(downTop + dy, area.Top, Math.Max(area.Top, area.Bottom - Height));

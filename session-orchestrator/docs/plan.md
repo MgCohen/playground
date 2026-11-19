@@ -2337,3 +2337,21 @@ User check of the redesigned tray, round 2 (video):
 
 Faults found by the new self-test checks: without the filter, the fixed blocks lost their containing block (`contain: layout` on the panel); the content-fade rule of the tray hid the dot motion and showed the dot on Home (the dot keeps its own rules). Self-test: 24 of 24.
 
+Audit of the motion spec (`docs/motion-design.html`; G1 and M6, the grow, stay for a later review with the user):
+
+| Item | Difference in the build | Fix |
+|---|---|---|
+| M1 | A drag throw went to 1.2 x the card width and 30 px down | 360 px past the release point and 60 px down; a button throw keeps 120 % and 30 px |
+| M3 | No opacity for the cards behind; bottom inset 14 px | Opacity 1 - i x 0.22; inset 18 px |
+| M5 | The toast went at once | It lifts out in 200 ms `ease-in` (in a `Presence`); a new toast takes the place of the old one at once |
+| M7 | Chevron 260 ms; no count-up of the ring number | Chevron 200 ms; the Home number counts up, one step each 90 ms, on its first show |
+| N1 | Hover with no wait; flat ring with no gaps; 13 px text; flat shadow; middle place; 280 / 180 ms slide; other spin curve; 4 px drag start | Width after 350 ms in 280 ms, text after 430 ms in 180 ms; SVG arcs with 2.4 px gaps; 12 px text; raised shadow; tab top at 42 %; 260 / 200 ms; spin `(.4,0,.2,1)`; 5 px |
+| N2 | Peek 240 px, uniform scale with a spring | 230 px, `scaleX` from 0.2, in 260 ms `ease-out`, out 200 ms `ease-in` |
+| S1, S2 | Corner button curve, dial scrim, press, skip button width | `(.3,1.4,.5,1)` 250 ms, scrim `rgba(0,0,0,.18)`, press `scale(.96)`, 56 px |
+| T1 | Nav dot 7 px from the bottom | 4 px |
+| T2 | The old page dimmed with brightness; back 300 ms | Opacity 0.5; back 280 ms |
+| T3 | The header moved with the page; only the last parent showed | The header is its own still picture; the title slides 28 px and the links 14 px; the last two parents show |
+| T4 | Window buttons 32 px, 17 px icons, pin on as an orange fill | 30 px, 15 px icons, pin on as the accent color |
+
+Findings of the audit: the draw-once code of the rings marked a ring as drawn when it saw the same element two times, so the first draw never ran (it now remembers each element); in the tray the first show of a ring was in the hidden start, so the ring animations wait for the end of the grow (`is-ready`). Self-test: 26 of 26.
+

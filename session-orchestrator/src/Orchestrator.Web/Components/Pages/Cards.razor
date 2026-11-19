@@ -48,9 +48,12 @@
     }
 </div>
 
-@if (toast is { } t)
+@if (toastView is { } t)
 {
+    @* M5: a new toast takes the place of the old one at once (@key); the last toast lifts out when it goes. *@
+    <Presence Shown="toast is not null" OnGone="() => toastView = null">
     <div class="toast" role="status" @key="t"><span class="grow">@t.Text</span>@if (t.Undo is not null) {<button type="button" @onclick="Undo">Undo</button>@if (pending is not null) {<i class="ubar" aria-hidden="true"></i>}}</div>
+    </Presence>
 }
 @if (sheet is { } s)
 {
@@ -78,7 +81,18 @@
     string group = "All";
     bool filterOpen;
     (CardView Card, bool Voice)? sheet;
-    Toast? toast;
+    // The toast of the page: setting it shows it, null starts its leave. The toast on the screen stays until its leave ends.
+    Toast? toast
+    {
+        get => toastNow;
+        set
+        {
+            toastNow = value;
+            if (value is not null) toastView = value;
+        }
+    }
+
+    Toast? toastNow, toastView;
     Pending? pending;
 
     CardView? Top => visible.Count > 0 ? visible[0] : null;

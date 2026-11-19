@@ -14,7 +14,7 @@ public sealed class TrayWindow : ClearHost
     public const int PanelWidth = 350, PanelHeight = 720, ShadowMargin = 24, Gap = 12;
 
     /// <summary>The badge window: the bubble, the gap and the tab at its hover width, with a margin for the shadow (tray.css).</summary>
-    public const int BadgeWidth = 332, BadgeHeight = 96, TabRest = 68, TabWide = 316, TabMargin = 14;
+    public const int BadgeWidth = 332, BadgeHeight = 96, TabRest = 68, TabWide = 280, TabMargin = 14;
 
     readonly string? placeFile, badgeFile;
     Point? panel;
@@ -39,7 +39,7 @@ public sealed class TrayWindow : ClearHost
             hover = on;
             if (on) Hits();
             // The fold of the hover ends before the click area gets small again.
-            else _ = Task.Delay(260).ContinueWith(_ => BeginInvoke(() => { if (!hover) Hits(); }), TaskScheduler.Default);
+            else _ = Task.Delay(300).ContinueWith(_ => BeginInvoke(() => { if (!hover) Hits(); }), TaskScheduler.Default);
         };
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += DisplayChanged;
     }
@@ -167,12 +167,12 @@ public sealed class TrayWindow : ClearHost
         return new Rectangle(p.X - m, p.Y - m, size.Width, size.Height);
     }
 
-    /// <summary>The badge window: at the right edge of the work area of the panel screen, at the saved height (or the middle).</summary>
+    /// <summary>The badge window: at the right edge of the work area of the panel screen, at the saved height (N1: else the tab top at 42 % of the height).</summary>
     public Rectangle BadgeBounds()
     {
         var area = PanelScreen().WorkingArea;
         var size = new Size((int)(BadgeWidth * Dpi), (int)(BadgeHeight * Dpi));
-        var top = Math.Clamp(badgeTop ?? area.Top + area.Height / 2 - size.Height / 2, area.Top, Math.Max(area.Top, area.Bottom - size.Height));
+        var top = Math.Clamp(badgeTop ?? area.Top + (int)(area.Height * .42) - (int)(TabMargin * Dpi), area.Top, Math.Max(area.Top, area.Bottom - size.Height));
         return new Rectangle(area.Right - size.Width, top, size.Width, size.Height);
     }
 

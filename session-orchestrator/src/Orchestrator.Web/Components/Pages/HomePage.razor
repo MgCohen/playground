@@ -9,7 +9,7 @@
     @if (cards.Count > 0)
     {
         <a class="crd row wait-block" href="cards" aria-label="@cards.Count cards wait for you. Open the cards.">
-            <DeepRing Segments="Segments"><span><span class="disp ring-n">@cards.Count</span><br /><span class="sub">wait</span></span></DeepRing>
+            <DeepRing Segments="Segments"><span><span class="disp ring-n" data-count style="--to:@cards.Count">@cards.Count</span><br /><span class="sub">wait</span></span></DeepRing>
             <span class="grow lg">
                 @foreach (var (name, count, color) in Groups)
                 {
