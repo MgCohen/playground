@@ -70,13 +70,23 @@ sealed class Places(ClearForm form)
     {
         IsBadge = place == Shell.BadgePlace;
         form.BadgeMode = IsBadge;
+        form.ResetBadgeInput();
+        form.Trace($"go to the {place} place: {(IsBadge ? Badge() : Panel())} (saved panel {panel?.ToString() ?? "none"}, saved badge top {badgeTop?.ToString() ?? "none"})");
         form.Bounds = IsBadge ? Badge() : Panel();
         form.SetHitArea([IsBadge ? BadgeHits(false) : new Rectangle(Point.Empty, form.Size)]);
     }
 
-    public void SavePanel() => panel = form.Location;
+    public void SavePanel()
+    {
+        panel = form.Location;
+        form.Trace($"panel drag end: {form.Location}");
+    }
 
-    public void SaveBadge() => badgeTop = form.Top;
+    public void SaveBadge()
+    {
+        badgeTop = form.Top;
+        form.Trace($"badge drag end: top {form.Top}");
+    }
 }
 
 /// <summary>
@@ -117,6 +127,7 @@ static partial class Program
         form.BadgeHover += on =>
         {
             var mine = ++hoverRun;
+            form.Trace($"hover {(on ? "on: click area to the hover width" : "off: click area to rest in 260 ms")}");
             if (on) form.SetHitArea([places.BadgeHits(true)]);
             // The fold of the hover ends before the click area gets small again.
             else _ = Task.Delay(260).ContinueWith(_ => form.BeginInvoke(() =>
@@ -147,6 +158,7 @@ static partial class Program
         icon.ContextMenuStrip = menu;
         if (args.Length >= 2 && args[0] == "measure") form.Shown += async (_, _) => await Probe.Measure(form, shell, Path.GetFullPath(args[1]));
         if (args.Length >= 2 && args[0] == "probe") form.Shown += async (_, _) => await Probe.Run(form, shell, Path.GetFullPath(args[1]));
+        form.Trace($"start: screens {string.Join(" | ", Screen.AllScreens.Select(x => $"{x.DeviceName} {x.Bounds} work {x.WorkingArea}"))}");
         Application.Run(form);
         icon.Visible = false;
     }

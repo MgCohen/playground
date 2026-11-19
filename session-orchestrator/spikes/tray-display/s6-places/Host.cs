@@ -98,9 +98,24 @@ public sealed partial class ClearForm : Form
     /// <summary>The probe: the badge input steps.</summary>
     public readonly List<string> Steps = [];
 
+    /// <summary>The trace file: each place change, enter, leave and click area change, with the time and the place.</summary>
+    public static readonly string TraceFile = Path.Combine(AppContext.BaseDirectory, "s6-trace.log");
+
+    public void Trace(string step)
+    {
+        try
+        {
+            File.AppendAllText(TraceFile, $"{DateTime.Now:HH:mm:ss.fff} [{(BadgeMode ? "badge place" : "panel place")}] {step}{Environment.NewLine}");
+        }
+        catch (IOException)
+        {
+        }
+    }
+
     /// <summary>Sets where the page takes the clicks, in window pixels. Outside these parts the clicks go to the window below.</summary>
     public void SetHitArea(Rectangle[] parts)
     {
+        Trace($"click area: {string.Join(" + ", parts.Select(r => r.ToString()))} (window {Size.Width} x {Size.Height})");
         var region = new Region(Rectangle.Empty);
         foreach (var r in parts) region.Union(r);
         Region = region;
@@ -111,6 +126,7 @@ public sealed partial class ClearForm : Form
     {
         const int WmNcHitTest = 0x84, WmSetCursor = 0x20, WmMouseWheel = 0x20A, WmMouseLeave = 0x2A3, WmExitSizeMove = 0x232;
         if (m.Msg == WmExitSizeMove && !BadgeMode) PanelMoved?.Invoke();
+        if (!BadgeMode && m.Msg == 0x2A3) Trace($"leave not seen by the badge code (over stays {over}) at {Cursor.Position}");
         if (controller is not null && BadgeMode && Badge(ref m)) return;
         if (controller is not null)
         {
@@ -159,6 +175,17 @@ public sealed partial class ClearForm : Form
     /// <summary>The end of a drag of the panel (the system move loop of the header).</summary>
     public event Action? PanelMoved;
 
+    /// <summary>
+    /// A new place starts with no badge input: no hover, no press, no drag. The hover flag must not carry over from the last
+    /// time in the badge place: its leave can come while the window is in the panel place, where the badge code does not see it.
+    /// </summary>
+    public void ResetBadgeInput()
+    {
+        over = false;
+        down = null;
+        dragging = false;
+    }
+
     Point? down;
     int downTop;
     bool dragging, over;
@@ -184,11 +211,13 @@ public sealed partial class ClearForm : Form
                 }
             case 0x200 when !over:
                 Steps.Add("enter");
+                Trace($"enter (over was {over}) at {Cursor.Position}");
                 over = true;
                 BadgeHover?.Invoke(true);
                 return false;
             case 0x2A3: // WM_MOUSELEAVE
                 Steps.Add("leave");
+                Trace($"leave (over was {over}) at {Cursor.Position}");
                 over = false;
                 BadgeHover?.Invoke(false);
                 return false;
