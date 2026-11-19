@@ -2320,3 +2320,10 @@ Findings:
 
 Not checked: the screen reader in composition mode (the host gives no UI Automation provider yet), and a real look at the motion by the user.
 
+User check of the redesigned tray, round 1:
+
+| Finding of the user | Data | Cause | Fix |
+|---|---|---|---|
+| A bigger, darker shadow during a tab move | Shadow alpha 8 px outside the panel: 12 at rest, 23 in each tab move (two copies of 12 give 23) | The old and the new root picture both showed at full opacity, so the shadow showed two times | Only the new root picture shows; a self-test check of each tab move reads the shadow (now 12 in each move) |
+| An overlap at the move to Settings | A picture at 50 ms shows both pages, mixed | A tab move is a cross-fade: the new page fades in while the old page fades out (the old tray had the same timing); the page picture had no background | A fade through: the new page starts when the old page is out (`--t-tab-out` delay, in the tray and the browser); the view has the canvas, so a push covers the old page |
+

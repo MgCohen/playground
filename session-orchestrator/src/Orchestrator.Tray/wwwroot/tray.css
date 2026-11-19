@@ -48,6 +48,9 @@ html { scrollbar-gutter: auto; }
 .tray-view .nav2 .home { scale: 0; transition: scale var(--t-ball-out) var(--ease-in) calc(var(--t-content-out) + var(--t-shrink)); }
 
 .is-open .tray-view .nav2 .home { scale: 1; transition: scale var(--t-ball-in) var(--ease-spring), transform var(--t-press), box-shadow var(--t-press), filter var(--t-press); }
+/* The view has the canvas too, so each page picture of a page move is opaque and the new page covers the old one. */
+.is-open .tray-view { background-color: var(--canvas); transition: background-color 0s linear calc(var(--t-ball-in) * .7); }
+.is-folded .tray-view { transition: background-color var(--t-content-out) ease calc(var(--t-content-out) + var(--t-shrink)); }
 .is-open .tray-panel { background-color: var(--canvas); clip-path: inset(0 round 16px);
   transition: clip-path var(--t-grow) var(--ease-out) calc(var(--t-ball-in) * .7), background-color 0s linear calc(var(--t-ball-in) * .7); }
 .is-open .tray-shadow { filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .18)); transition: filter var(--t-grow) ease calc(var(--t-ball-in) * .7); }
@@ -62,11 +65,13 @@ html { scrollbar-gutter: auto; }
 
 /* ===== Page moves in the tray (T1, T2): the view moves inside the panel, clipped to its corners; the panel and its shadow stay ===== */
 ::view-transition-group(page) { overflow: clip; border-radius: 16px; }
-/* The root picture (the panel and its shadow) stays. The selector is as specific as the root rules of motion.css for a push and a
-   back (.vt:not(.vt-tab), .vt-back), and comes later, so it wins over them. */
-.vt:not(.vt-none)::view-transition-old(root), .vt:not(.vt-none)::view-transition-new(root) { animation: none; }
+/* The root picture (the panel and its shadow) stays, and only one copy of it shows: two copies on top of each other draw the
+   shadow two times. The selector is as specific as the root rules of motion.css for a push and a back (.vt:not(.vt-tab),
+   .vt-back), and comes later, so it wins over them. */
+.vt:not(.vt-none)::view-transition-old(root) { animation: none; opacity: 0; }
+.vt:not(.vt-none)::view-transition-new(root) { animation: none; }
 .vt-tab::view-transition-old(page) { animation: m-fade-out var(--t-tab-out) ease both; }
-.vt-tab::view-transition-new(page) { animation: m-rise var(--t-tab-in) var(--ease-out) both; }
+.vt-tab::view-transition-new(page) { animation: m-rise var(--t-tab-in) var(--ease-out) var(--t-tab-out) both; }
 .vt:not(.vt-tab)::view-transition-old(page) { animation: m-push-old var(--t-push) var(--ease-out) both; }
 .vt:not(.vt-tab)::view-transition-new(page) { animation: m-push-new var(--t-push) var(--ease-out) both; }
 .vt-back::view-transition-old(page) { animation: m-pop-old var(--t-push) var(--ease-out) both; z-index: 2; }

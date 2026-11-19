@@ -67,14 +67,15 @@
 .page { animation: m-fade var(--t-page-in) ease backwards; }
 
 /* ===== T1 and T2: page moves. The motion host (MotionHost.razor) picks the move from the depth of the two pages and starts a
-   view transition. A tab change: the old page fades out, the new page rises and fades in. A push: the new page slides in from
+   view transition. A tab change: the old page fades out, then the new page rises and fades in (a fade through: two pages never
+   show at the same time). A push: the new page slides in from
    the right, the old page moves 30 % left and dims. Back plays the push in reverse. The app bar is its own picture, so it stays.
    No block of a page has an entrance animation of its own, so nothing plays again after the move. ===== */
 html.nav .page { animation: none; }
 .nav2 { view-transition-name: appbar; }
 ::view-transition-group(root) { animation-duration: var(--t-push); animation-timing-function: var(--ease-out); }
 .vt-tab::view-transition-old(root) { animation: m-fade-out var(--t-tab-out) ease both; }
-.vt-tab::view-transition-new(root) { animation: m-rise var(--t-tab-in) var(--ease-out) both; }
+.vt-tab::view-transition-new(root) { animation: m-rise var(--t-tab-in) var(--ease-out) var(--t-tab-out) both; }
 .vt:not(.vt-tab)::view-transition-old(root) { animation: m-push-old var(--t-push) var(--ease-out) both; }
 .vt:not(.vt-tab)::view-transition-new(root) { animation: m-push-new var(--t-push) var(--ease-out) both; }
 .vt-back::view-transition-old(root) { animation: m-pop-old var(--t-push) var(--ease-out) both; z-index: 2; }

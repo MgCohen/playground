@@ -100,6 +100,27 @@ public static partial class SelfTest
         }
         else Add("page-move-in-panel", false, "no event link on the stream page");
 
+        // 4b. Tab moves: the shadow of the panel must not change in a move (one root picture, not two), and the pictures of the move
+        // to Settings show each step.
+        foreach (var (from, to) in new[] { ("", "cards"), ("cards", "stream"), ("stream", "sessions"), ("sessions", "settings"), ("settings", "") })
+        {
+            await Js(w, $"{Go}('{from}')");
+            await Task.Delay(800);
+            var rest = Shadow(await Picture(w), w);
+            await Js(w, $"setTimeout(() => {Go}('{to}'), 0)");
+            var steps = new List<int>();
+            for (var i = 0; i < 6; i++)
+            {
+                await Task.Delay(50);
+                var pic = await Picture(w);
+                if (to == "settings") pic.Save(Path.Combine(folder, $"tab-settings-{(i + 1) * 50}ms.png"));
+                steps.Add(Shadow(pic, w));
+            }
+            await Task.Delay(500);
+            Add($"tab-{(from.Length == 0 ? "home" : from)}-to-{(to.Length == 0 ? "home" : to)}", steps.Max() <= rest + 6,
+                $"shadow alpha 8 px out of the panel: at rest {rest}, in the move [{string.Join(", ", steps)}]");
+        }
+
         // 5. Minimize: the panel folds, the ball pops out, the badge slides in at the right edge.
         await Js(w, "window.__frames = null");
         var frames = w.Web!.ExecuteScriptAsync(Meter(1400));
@@ -254,6 +275,17 @@ public static partial class SelfTest
             var x = (int)(6 * w.DeviceDpi / 96f);
             var y = picture.Height / 2;
             return Enumerable.Range(y - 5, 10).Max(r => picture.GetPixel(x, r).A);
+        }
+    }
+
+    /// <summary>The alpha of the shadow 8 px left of the panel edge, at the middle height (the mean of 10 rows).</summary>
+    static int Shadow(Bitmap picture, TrayWindow w)
+    {
+        using (picture)
+        {
+            var x = (int)((TrayWindow.ShadowMargin - 8) * w.DeviceDpi / 96f);
+            var y = picture.Height / 2;
+            return (int)Enumerable.Range(y - 5, 10).Average(r => picture.GetPixel(x, r).A);
         }
     }
 
