@@ -102,6 +102,8 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
   <button role="tab" data-tab="i4" aria-selected="false"><span class="dot bg-rep"></span>I4 Sizing</button>
   <button role="tab" data-tab="i5" aria-selected="false"><span class="dot bg-det"></span>I5 Keyboard</button>
   <button role="tab" data-tab="i6" aria-selected="false"><span class="dot bg-rep"></span>I6 Grow review</button>
+  <button role="tab" data-tab="i7" aria-selected="false"><span class="dot bg-rpl"></span>I7 Badge cut</button>
+  <button role="tab" data-tab="i8" aria-selected="false"><span class="dot bg-det"></span>I8 Demo pointer</button>
   <button role="tab" data-tab="fixed" aria-selected="false"><span class="dot bg-fix"></span>Fixed</button>
 </nav>
 
@@ -136,6 +138,8 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td>I4</td><td>Sizing issues on the screen</td><td><span class="pill rep">Reported</span></td><td>Your picture or description</td></tr>
         <tr><td>I5</td><td>Keyboard and screen reader not tested</td><td><span class="pill det">Detected</span></td><td>Your decision: priority</td></tr>
         <tr><td>I6</td><td>The tray grow (G1) is not reviewed</td><td><span class="pill rep">Reported</span></td><td>Review with you</td></tr>
+        <tr><td>I7</td><td>The badge hover cuts the ring at the left</td><td><span class="pill rpl">Replicated</span></td><td>Your decision: fix option</td></tr>
+        <tr><td>I8</td><td>The demo moves your real pointer in 4 steps</td><td><span class="pill det">Detected</span></td><td>Your decision: window messages</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -278,6 +282,63 @@ record = that share for each frame, in place of the mean</pre>
   </section>
 </div>
 
+<!-- I7 -->
+<div class="panel off" id="i7" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rpl">Replicated</span><span class="k">source: you, in the demo · I7</span></div>
+    <h2>I7 · The badge hover cuts the ring at the left</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="now">Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>At a hover, the badge tab extends to the left with the counts. The left part of the tab, with the ring, is cut off.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+      <figure><div class="img"><img src="issues/badge-hover-cut.jpg" alt="Five frames of the badge. In the hover frames the ring at the left end of the tab is cut in half."></div>
+        <figcaption>Run <code>full</code> (demo). Frame 1: the badge at rest, correct. Frames 2, 3 and 5: the hover, the ring cut in half. Frame 4: the peek is on (the click area is the full window), the ring shows.</figcaption></figure>
+<pre class="stack">FAIL badge-hover-fits: tab width at the hover 333 CSS px,
+     click area of the hover 280 (+ 14 margin), window 332;
+     text "4 questions · 1 review · 2 reports · 1 blocked"</pre></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">Orchestrator.Tray --selftest out     <span class="c"># check badge-hover-fits: FAIL</span></pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v">
+      <p>Known. Two sizes do not agree:</p>
+      <ul><li>CSS: the hover width is <code>width: auto</code>, so the text sets it. With this text it is 333 px.</li>
+      <li>C#: the click area of the hover is fixed at 280 + 14 px. The window region is the click area, and Windows also clips the drawing to it.</li></ul>
+      <p>The result: 39 px at the left are cut. The window (332 px) is also 1 px too narrow.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v">
+      <div class="scroll"><table>
+        <thead><tr><th>Option</th><th>Change</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td>CSS: hover width fixed at 280 px (the spec N1 value); the text ends with "…" if it is too long</td><td>One size in two places. Long counts are cut</td></tr>
+          <tr><td>B</td><td>The page sends its tab width to C#; the click area and the window follow it</td><td>No text cut. More code, and the window size changes</td></tr>
+          <tr><td>C</td><td>A shorter text: "4 q · 1 rev · 2 rep · 1 blk"</td><td>Fits now, but a large count can still overflow</td></tr>
+        </tbody>
+      </table></div>
+      <p>The check <code>badge-hover-fits</code> proves the fix. It is in the self-test now and fails.</p>
+    </div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Which option: A, B or C? Recommendation: A, because the spec gives 280 px and the size stays in one token.</p></div></div></div>
+  </section>
+</div>
+
+<!-- I8 -->
+<div class="panel off" id="i8" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill det">Detected</span><span class="k">source: demo log · I8</span></div>
+    <h2>I8 · The demo moves your real pointer in 4 steps</h2>
+    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>Window messages are the default for clicks. But the header drag, the badge hover, the badge drag and the badge click of the demo still use the real pointer.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+<pre class="stack"><span class="c"># full/demo.txt</span>
+15:09:36.551 drag the header: True        <span class="c">Drag() = SetCursorPos + mouse_event</span>
+15:09:39.818 hover the badge: tab width 68  <span class="c">Glide() = SetCursorPos; measured before the 350 ms wait</span>
+15:09:43.507 drag the badge up: True
+15:09:51.238 click the badge: True</pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. Only <code>Press</code> reads <code>NoPointer</code>. <code>Drag</code> and <code>Glide</code> do not.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>Send the drag and hover as window messages too, or skip these steps with no pointer.</li><li>Measure the hover width after the 350 ms wait.</li></ol></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do I change the 4 steps to window messages?</p></div></div></div>
+  </section>
+</div>
+
 <!-- FIXED -->
 <div class="panel off" id="fixed" role="tabpanel">
   <section>
@@ -310,7 +371,7 @@ record = that share for each frame, in place of the mean</pre>
 
 <script>
 (function () {
-  var names = ["about", "i1", "i2", "i3", "i4", "i5", "i6", "fixed"];
+  var names = ["about", "i1", "i2", "i3", "i4", "i5", "i6", "i7", "i8", "fixed"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "about";
     names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });

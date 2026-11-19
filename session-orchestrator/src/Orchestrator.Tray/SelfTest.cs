@@ -164,6 +164,16 @@ public static partial class SelfTest
         Add("dock", docked && w.Bounds == w.BadgeBounds() && w.Right == area.Right && tab is "none" or "0px" or "0px 0px",
             $"phase {w.Phase}, window {w.Bounds} (expect {w.BadgeBounds()}), right edge {w.Right} = {area.Right}, tab translate {tab}, click area {w.HitArea}; frames {await Frames(w)}");
 
+        // 5b. The wide tab of the hover fits in the click area of the hover (the window region clips the drawing too). The hover
+        // width is the width of the tab with "width: auto", the same rule as :hover.
+        var fit = await Js(w, """
+            (e => { const old = e.style.width; e.style.transition = 'none'; e.style.width = 'auto';
+              const v = Math.round(e.getBoundingClientRect().width); e.style.width = old; e.style.transition = ''; return v; })(document.querySelector('.tb-tab'))
+            """);
+        var counts = await Js(w, "document.querySelector('.tb-txt small')?.textContent ?? ''");
+        Add("badge-hover-fits", int.TryParse(fit, out var wideTab) && wideTab <= TrayWindow.TabWide,
+            $"tab width at the hover {fit} CSS px, click area of the hover {TrayWindow.TabWide} (+ {TrayWindow.TabMargin} margin), window {TrayWindow.BadgeWidth}; text \"{counts}\"");
+
         // 6. Open from the badge: back at the panel place.
         w.Request(TrayRequest.Open);
         var back = await Until(() => w.Phase == TrayPhase.Open, 4000);
