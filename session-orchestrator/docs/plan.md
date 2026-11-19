@@ -2376,3 +2376,18 @@ Visual issue process (2026-11-19): the project skill `.claude/skills/visual-issu
 Prior art research (2026-11-19, web): Web Awesome 3, Shoelace 2, Carbon, Fluent UI React v9, Radix, Headless UI, Material 3; short look at Vue, Angular, Framer Motion, Spectrum, MudBlazor. Closest to our setup: Web Awesome 3 (CSS keyframes and tokens, one helper that waits for getAnimations). Patterns that fit: one state attribute, one end helper, a presence part with states, tokens only in CSS, reduced motion as 1 ms durations, a small registry for the deck, sizes as CSS variables from C#. Prior art tab in docs/ui-architecture.html. New tracker record I13: the reduced motion rule (animation and transition none) makes each orchTray.end wait run to its limit.
 
 Proposal (2026-11-19, from the user): the panel and the badge as two windows. Facts: one window does both jobs (9 uses of BadgeMode, one Hits() with a branch for each place, 6 stage phases); faults from the share: the S6 hover flag, I7, I10. The old four-window design failed because its windows showed at the same time and had to look like one; the panel and the badge never show together. Options A (today), B (two windows, one process, shared WebView2 environment), C (two processes), D (native badge). Recommendation: spike S7 for option B first. Tab "Proposal: two windows" in docs/ui-architecture.html; question Q3.
+
+## Tray display spike S7: two windows (2026-11-19)
+
+The user answered Q3: yes, spike first. `spikes/tray-display/s7-two-windows`: the S6 shapes as two composition windows (panel, badge) in one process with one shared WebView2 environment and a C# coordinator; no window moves. Measure mode, no mouse, recorder on the screen. Results in `spikes/tray-display/results/s7`.
+
+| Measure | One window | Two windows |
+|---|---|---|
+| WebView2 processes with the host | 6 | 7 (one more renderer) |
+| Working set / private memory at rest | 415 / 166 MB | 479 / 197 MB |
+| Time to ready | 1.8 s | 1.0 s (both, in parallel) |
+| Badge Show() to first frame | - | 6 to 12 ms |
+| Dock / open | - | 815 to 833 / 866 to 899 ms |
+| GPU process private memory after 10 cycles | not measured | 72 to 202 MB |
+
+Frames: the dock and the open are correct after the first cycle, with no blank or stale frame. Finding, reproduced one time, cause not examined: after the start, the panel does not show on the screen until the first dock and open (two recorder runs); the first dock is also faster (340 ms). Not checked: one-window mode with the recorder. Open question Q4: move the tray to two windows after the two open points.

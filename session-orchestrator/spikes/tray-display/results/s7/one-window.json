@@ -1,0 +1,47 @@
+{
+  "mode": "one window",
+  "panelReadyMs": 1822,
+  "memoryAtRest": {
+    "processes": 6,
+    "workingSetMb": 415,
+    "privateMb": 166,
+    "rows": [
+      {
+        "kind": "host",
+        "pid": 185216,
+        "workingSetMb": 78,
+        "privateMb": 20
+      },
+      {
+        "kind": "Browser",
+        "pid": 6968,
+        "workingSetMb": 123,
+        "privateMb": 38
+      },
+      {
+        "kind": "Utility",
+        "pid": 237456,
+        "workingSetMb": 19,
+        "privateMb": 7
+      },
+      {
+        "kind": "Gpu",
+        "pid": 254892,
+        "workingSetMb": 97,
+        "privateMb": 65
+      },
+      {
+        "kind": "Utility",
+        "pid": 255188,
+        "workingSetMb": 41,
+        "privateMb": 12
+      },
+      {
+        "kind": "Renderer",
+        "pid": 267100,
+        "workingSetMb": 55,
+        "privateMb": 22
+      }
+    ]
+  }
+}

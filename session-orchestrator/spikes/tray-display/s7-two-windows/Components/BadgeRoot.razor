@@ -1,0 +1,40 @@
+@* The root of the badge window: only the badge phases (out, in). The coordinator calls In and Out. *@
+@inject Coordinator Co
+@inject IJSRuntime Js
+
+<div class="stage is-@phase">
+    <div class="badge-layer">
+        <div class="badge">
+            <span class="ring"><i></i></span>
+            <span class="txt"><b>3 waiting</b><small>2 questions · 1 review</small></span>
+        </div>
+    </div>
+</div>
+
+@code {
+    string phase = "badge-out";
+
+    protected override void OnInitialized()
+    {
+        Co.BadgeIn = () => InvokeAsync(In);
+        Co.BadgeOut = () => InvokeAsync(Out);
+    }
+
+    // The window shows with the badge out of view; two frames later it slides in.
+    async Task In()
+    {
+        phase = "badge-out";
+        StateHasChanged();
+        await Js.InvokeVoidAsync("s7.frames", 2);
+        phase = "badge";
+        StateHasChanged();
+        await Js.InvokeVoidAsync("s7.settle", ".stage");
+    }
+
+    async Task Out()
+    {
+        phase = "badge-out";
+        StateHasChanged();
+        await Js.InvokeVoidAsync("s7.settle", ".stage");
+    }
+}

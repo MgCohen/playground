@@ -79,6 +79,7 @@ details.example > summary { cursor: pointer; padding: 12px 14px; font-family: va
 details.example > summary .d { font-family: var(--font-body); font-size: 14px; font-weight: 400; color: var(--muted); }
 details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+figure.card { margin: 0; } figure.card img { display: block; max-width: 100%; height: auto; border-radius: 6px; } figure.card figcaption { font-size: 13px; color: var(--muted); }
 .grid2 > * { min-width: 0; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 .card .big { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
@@ -568,7 +569,7 @@ flowchart LR
 <!-- PROPOSAL: TWO WINDOWS -->
 <div class="panel off" id="twowin" role="tabpanel">
   <section><h2>Proposal: the panel and the badge as two windows</h2>
-    <p class="summary">From your question: do some problems come from one window that is both the panel and the badge? For discussion. No code change. Open question Q3.</p>
+    <p class="summary">From your question: do some problems come from one window that is both the panel and the badge? Q3 answered: yes, spike S7 first. The S7 result is below. No change to the tray code.</p>
     <h3>Today: one window, two jobs</h3>
     <div class="scroll"><table>
       <thead><tr><th>Shared part</th><th>How</th><th>Problem that came from it</th></tr></thead>
@@ -621,9 +622,31 @@ sequenceDiagram
       </tbody>
     </table></div>
   </section>
+  <section><h3>Spike S7 result (2026-11-19)</h3>
+    <p class="summary">Simple shapes, as S6: two composition windows in one process, one shared WebView2 environment, a C# coordinator. Measure mode, no mouse. Files: <code>spikes/tray-display/s7-two-windows</code>, results in <code>spikes/tray-display/results/s7</code>.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Measure</th><th>One window</th><th>Two windows</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>WebView2 processes (with the host)</td><td>6</td><td>7</td><td>One more renderer</td></tr>
+        <tr><td>Working set at rest</td><td>415 MB</td><td>479 MB</td><td>+64 MB</td></tr>
+        <tr><td>Private memory at rest</td><td>166 MB</td><td>197 MB</td><td>+31 MB</td></tr>
+        <tr><td>Time to ready (both windows)</td><td>1.8 s</td><td>1.0 s</td><td>The two start in parallel; no extra wait</td></tr>
+        <tr><td>Badge: Show() to its first frame</td><td>-</td><td>6 to 12 ms (9 cycles)</td><td>No blank or stale frame in the strips</td></tr>
+        <tr><td>Dock (fold, hide, show, slide in)</td><td>-</td><td>815 to 833 ms</td><td>The sum of the motions; no wait at a limit</td></tr>
+        <tr><td>Open (slide out, hide, show, grow)</td><td>-</td><td>866 to 899 ms</td><td>The same</td></tr>
+        <tr><td>GPU process after 10 cycles</td><td>Not measured</td><td>72 to 202 MB private</td><td>Not compared with one window: open point</td></tr>
+      </tbody>
+    </table></div>
+    <div class="grid2">
+      <figure class="card"><img src="s7/dock.jpg" alt="Six frames of a dock with two windows: the panel folds, the ball shrinks, nothing shows, the badge slides in."><figcaption>Dock 4: the panel folds into the ball, the ball pops out, the badge window shows and its badge slides in.</figcaption></figure>
+      <figure class="card"><img src="s7/open.jpg" alt="Six frames of an open: the badge slides out, then the ball pops in and the panel grows."><figcaption>Open 1: the badge slides out, the panel window shows, the ball pops in, the panel grows.</figcaption></figure>
+    </div>
+    <p class="note">Found, reproduced one time, cause not examined: after the app start, the panel did not show on the screen in two-window mode. The recorder saw no change until the first dock (two runs). The first dock is also faster (340 ms, not 820 ms). After the first dock and open, all cycles are correct. Not checked: the one-window mode with the recorder.</p>
+    <p class="summary">Decision Q4 on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page</a>.</p>
+  </section>
   <section><h3>Next step if you agree</h3>
-    <p>A spike (S7) before a decision: two composition windows in one process with one shared environment. It measures the memory of the second WebView2, the time to the first paint of the badge, the frames of the dock and the open, and empty frames with the new detector. Then we compare it with today.</p>
-    <p class="summary">Question Q3 on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page</a>. This proposal also changes the Places, Start and stop, and Interactions tabs. Their proposals P-P1 and P-SS1 become smaller with option B.</p>
+    <p>Done: see the S7 result above. The plan was a spike (S7) before a decision: two composition windows in one process with one shared environment. It measures the memory of the second WebView2, the time to the first paint of the badge, the frames of the dock and the open, and empty frames with the new detector. Then we compare it with today.</p>
+    <p class="summary">Question Q4 on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page</a>. This proposal also changes the Places, Start and stop, and Interactions tabs. Their proposals P-P1 and P-SS1 become smaller with option B.</p>
   </section>
 </div>
 
