@@ -1,0 +1,284 @@
+<title>Orchestrator Devices Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one narrow reading column, a tab bar, tables in scroll boxes, chips that mark the kind of work. */
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --fg: #1b2430; --muted: #5a6676; --line: #dde2e9; --accent: #2f5fd0;
+  --host: #1f7a4d; --host-bg: #e3f4ea; --wrap: #2459b8; --wrap-bg: #e4ecfb;
+  --newh: #8a5a00; --newh-bg: #fbf0d9; --rew: #b03a2e; --rew-bg: #fae6e3;
+  --code-bg: #eef1f5;
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161c; --panel: #1a2029; --fg: #e3e8ef; --muted: #9aa6b5; --line: #2c3542; --accent: #7fa4ff;
+  --host: #6fd3a0; --host-bg: #183327; --wrap: #8fb2ff; --wrap-bg: #1b2a47;
+  --newh: #f0c062; --newh-bg: #3a2e14; --rew: #ff9488; --rew-bg: #3d1f1b; --code-bg: #222a35; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12161c; --panel: #1a2029; --fg: #e3e8ef; --muted: #9aa6b5; --line: #2c3542; --accent: #7fa4ff;
+  --host: #6fd3a0; --host-bg: #183327; --wrap: #8fb2ff; --wrap-bg: #1b2a47;
+  --newh: #f0c062; --newh-bg: #3a2e14; --rew: #ff9488; --rew-bg: #3d1f1b; --code-bg: #222a35; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body); }
+.wrap { max-width: 920px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.25; margin: 0; }
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.3rem; margin-top: 8px; }
+h3 { font-size: 1.05rem; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 .75rem var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.lead { color: var(--muted); }
+header { display: grid; gap: 8px; margin-bottom: 20px; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+nav a { padding: 8px 12px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; font-weight: 500; }
+nav a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--accent); }
+nav a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+section { display: grid; gap: 16px; }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+th, td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+th { font: 600 .78rem var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+code { font: .86em var(--mono); background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+.chip { display: inline-block; font: 600 .74rem var(--mono); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.k-host { color: var(--host); background: var(--host-bg); }
+.k-wrap { color: var(--wrap); background: var(--wrap-bg); }
+.k-newh { color: var(--newh); background: var(--newh-bg); }
+.k-rew { color: var(--rew); background: var(--rew-bg); }
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.legend div { display: grid; gap: 4px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+.legend p { font-size: .88rem; color: var(--muted); }
+.note { border-left: 3px solid var(--accent); padding: 8px 14px; background: var(--panel); border-radius: 0 6px 6px 0; }
+details { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+summary { cursor: pointer; padding: 10px 14px; font-weight: 600; }
+details > div { padding: 0 14px 14px; display: grid; gap: 8px; }
+ul, ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.tools { display: flex; gap: 8px; }
+button { font: 500 .85rem var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; overflow-x: auto; margin: 0; }
+.muted { color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">session-orchestrator · plan · 2026-11-19</span>
+  <h1>Devices plan: Android, web and Linux</h1>
+  <p class="lead">Each client uses the same Razor components. Android and Linux need a new host and three shared refactors, not a UI rewrite. Cloud visual tests run the components in headless Chromium. The Windows native parts keep their own self-test.</p>
+</header>
+
+<nav aria-label="Tabs">
+  <a href="#summary">Summary</a>
+  <a href="#platforms">Platforms</a>
+  <a href="#refactors">Refactors</a>
+  <a href="#tests">Cloud tests</a>
+  <a href="#questions">Questions</a>
+</nav>
+
+<!-- SUMMARY -->
+<section id="summary">
+  <h2>One component set, many hosts</h2>
+  <pre class="mermaid">
+flowchart LR
+    C[Razor components<br/>CSS + 4 JS files] --> W[Web host<br/>Blazor Server]
+    C --> T[Windows tray<br/>WinForms + WebView2]
+    C --> M[Android app<br/>MAUI Blazor Hybrid]
+    C --> L[Linux tray<br/>Photino, optional]
+    W --> B[Desktop browser]
+    W --> P[Android web app]
+    W --> H[Headless Chromium<br/>cloud tests]
+  </pre>
+
+  <h2>Kinds of work</h2>
+  <div class="legend">
+    <div><span class="chip k-host">Host</span><p>Same code. A different start or a different browser.</p></div>
+    <div><span class="chip k-wrap">Wrapper</span><p>The same running app inside a native shell.</p></div>
+    <div><span class="chip k-newh">New host</span><p>The same components in a new native project, plus shared refactors.</p></div>
+    <div><span class="chip k-rew">Rewrite</span><p>A new UI technology. No shared UI code.</p></div>
+  </div>
+
+  <h2>The UI today (branch <code>orch/integration-dlv</code>)</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Part</th><th>Technology</th><th>Runs on</th></tr></thead>
+    <tbody>
+      <tr><td>UI components</td><td>Blazor: Razor, CSS, <code>swipe.js</code>, <code>motion.js</code>, <code>speech.js</code></td><td>Each Chromium engine</td></tr>
+      <tr><td>Web host</td><td>Blazor Server, live connection to the server</td><td>Any OS</td></tr>
+      <tr><td>Tray host</td><td>WinForms + <code>BlazorWebView</code> (WebView2), components in-process</td><td>Windows only</td></tr>
+      <tr><td>Tray native parts</td><td>About 1,700 lines of Win32: ball, edge tab, grow shadow, drag</td><td>Windows only</td></tr>
+      <tr><td>CLI</td><td><code>orch</code>, local store or HTTP mode</td><td>Any OS</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">The tray is already a hybrid app: native window outside, the same components inside. An Android app with .NET MAUI uses the same model.</p>
+</section>
+
+<!-- PLATFORMS -->
+<section id="platforms" hidden>
+  <h2>Each platform</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Target</th><th>Kind</th><th>Engine</th><th>Needs</th></tr></thead>
+    <tbody>
+      <tr><td>CLI</td><td><span class="chip k-host">Host</span> done</td><td>None</td><td>Nothing</td></tr>
+      <tr><td>Web, full (with settings portal)</td><td><span class="chip k-host">Host</span> done</td><td>Browser</td><td>Only the settings pages</td></tr>
+      <tr><td>Windows tray</td><td><span class="chip k-host">Host</span> done</td><td>WebView2</td><td>Nothing</td></tr>
+      <tr><td>Android, installable web app</td><td><span class="chip k-host">Host</span> + small work</td><td>Chrome</td><td>Manifest, service worker, icons, touch checks</td></tr>
+      <tr><td>Android, WebView app</td><td><span class="chip k-wrap">Wrapper</span></td><td>Chrome</td><td>Installable web app in a thin shell</td></tr>
+      <tr><td>Android, native (MAUI)</td><td><span class="chip k-newh">New host</span></td><td>Android WebView</td><td>R1 to R4, data over HTTP</td></tr>
+      <tr><td>Android, Kotlin or Flutter</td><td><span class="chip k-rew">Rewrite</span></td><td>Native</td><td>Not recommended</td></tr>
+      <tr><td>Linux tray (Photino)</td><td><span class="chip k-newh">New host</span></td><td>WebKitGTK</td><td>R1, R3, new native parts</td></tr>
+      <tr><td>Linux tray (Electron)</td><td><span class="chip k-wrap">Wrapper</span> heavy</td><td>Chromium</td><td>Shows the web UI, no native parts</td></tr>
+      <tr><td>Linux, headless browser</td><td><span class="chip k-host">Host</span></td><td>Chromium</td><td>Tray frame page, fake <code>IWidgetWindow</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="tools"><button type="button" id="open-all">Open all</button><button type="button" id="close-all">Close all</button></div>
+
+  <details><summary>Web, full · works today</summary><div>
+    <p>The web host serves the full UI to each browser. A settings portal is more pages in the same host.</p>
+    <ul>
+      <li>Blazor Server keeps a live connection. A mobile network drop shows the reconnect screen.</li>
+      <li>Remote access (tunnel, sign-in) is out of scope for this plan.</li>
+    </ul>
+  </div></details>
+
+  <details><summary>Android, installable web app · smallest step</summary><div>
+    <p>Chrome on Android installs the web UI as an app icon with its own window. The UI code does not change.</p>
+    <ul>
+      <li>Add a web manifest, a service worker and icons.</li>
+      <li>Check touch, safe areas and the keyboard on a real phone.</li>
+      <li>The microphone works only on HTTPS.</li>
+      <li>Limit: no offline mode, because Blazor Server needs the server.</li>
+    </ul>
+  </div></details>
+
+  <details><summary>Android, WebView app · a store package</summary><div>
+    <p>A thin native shell (for example a Trusted Web Activity) opens the installable web app. It gives a Play Store package and native notices.</p>
+    <ul>
+      <li>Needs the installable web app first.</li>
+      <li>The UI still runs on the server.</li>
+    </ul>
+  </div></details>
+
+  <details><summary>Android, native MAUI app · the full app</summary><div>
+    <p>.NET MAUI Blazor Hybrid runs the components on the phone, inside the Android WebView. This is the Android form of the tray host.</p>
+    <ul>
+      <li>Needs refactors R1 to R4.</li>
+      <li>The phone has no store and no <code>claude</code>, so all data comes over the HTTP API.</li>
+      <li>The Win32 parts have no Android form. Android uses its own notices instead of the ball and the edge tab.</li>
+      <li>Toolchain: the MAUI Android workload, the Android SDK and a signing key.</li>
+    </ul>
+  </div></details>
+
+  <details><summary>Linux tray · optional third native host</summary><div>
+    <p>WinForms and WebView2 run only on Windows. A Linux tray needs a new host, for example Photino (WebKitGTK) or Electron (Chromium).</p>
+    <ul>
+      <li>The ball, the edge tab, the grow shadow and the drag become new X11 or GTK code.</li>
+      <li>Photino renders with WebKit, not Chromium. Its screens do not match the Windows tray.</li>
+      <li>A cloud VM has no display, so a Linux tray also needs a virtual display (Xvfb).</li>
+    </ul>
+  </div></details>
+</section>
+
+<!-- REFACTORS -->
+<section id="refactors" hidden>
+  <h2>Shared refactors before a new host</h2>
+  <p>Each refactor helps all new hosts. Do them once, in this order.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Id</th><th>Change</th><th>Reason</th><th>Used by</th></tr></thead>
+    <tbody>
+      <tr><td>R1</td><td>Move components to a Razor class library</td><td>MAUI cannot reference a server project</td><td>MAUI, Photino, tests</td></tr>
+      <tr><td>R2</td><td>Put <code>Board</code> behind an interface: local and HTTP</td><td><code>Board</code> uses <code>FileStore</code> and <code>Supervisor</code> directly</td><td>MAUI</td></tr>
+      <tr><td>R3</td><td>More host interfaces: notices, speech, window</td><td>Each host gives its own version</td><td>MAUI, Photino, tests</td></tr>
+      <tr><td>R4</td><td>Native speech on Android</td><td>Android WebView speech support is not verified</td><td>MAUI</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Where the coupling is (R2)</h3>
+<pre class="scroll" style="margin:0;padding:12px;font:.85rem var(--mono)"><code style="background:none;padding:0">// Orchestrator.Web/Board.cs
+public sealed class Board(FileStore store, Supervisor.Supervisor supervisor)</code></pre>
+  <p>The G2 <code>HttpRepositories</code> already reads the store over HTTP. The supervisor actions (stop, resume, archive) need API calls too.</p>
+
+  <h3>Host interface today (R3)</h3>
+<pre class="scroll" style="margin:0;padding:12px;font:.85rem var(--mono)"><code style="background:none;padding:0">public interface IWidgetWindow
+{
+    bool Pinned { get; }
+    void SetPinned(bool pinned);
+    void Minimize();
+    void Close();
+    void BeginDrag(double x, double y);
+}</code></pre>
+  <p>The web host has no widget window. A phone host and a test host give their own versions.</p>
+</section>
+
+<!-- TESTS -->
+<section id="tests" hidden>
+  <h2>Cloud visual tests: split by layer</h2>
+  <p>A Linux tray tests different native code and a different engine. So the plan splits the tests by layer.</p>
+  <pre class="mermaid">
+flowchart TD
+    V[Visual test] --> Q{Which layer?}
+    Q -->|Components, CSS, motion| C[Cloud VM<br/>headless Chromium]
+    Q -->|Ball, grow, edge tab, drag, DPI| W[Windows host<br/>tray self-test]
+    C --> S[Screens in tray frame]
+    W --> T[Self-test PASS list]
+  </pre>
+  <div class="scroll"><table>
+    <thead><tr><th>Layer</th><th>Where</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td>Components, CSS, motion</td><td>Cloud VM (Linux)</td><td>Headless Chromium, tray frame 525 × 840, fake widget window</td></tr>
+      <tr><td>Phone layout</td><td>Cloud VM (Linux)</td><td>Headless Chromium at 390 px width</td></tr>
+      <tr><td>Win32 native parts</td><td>User PC or Windows CI</td><td><code>tray.ps1 -SelfTest</code></td></tr>
+      <tr><td>Android host</td><td>Emulator or real phone</td><td>Later, after the MAUI host</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">The C0 probe shows that .NET 10, the web host and <code>claude -p</code> run in the cloud VM. Each test uses its own <code>ORCH_STORE</code> and port (issue #47).</p>
+</section>
+
+<!-- QUESTIONS -->
+<section id="questions" hidden>
+  <h2>Proposed order</h2>
+  <ol>
+    <li>Installable web app on Android (manifest, service worker, icons).</li>
+    <li>R1 and R3: Razor class library and host interfaces.</li>
+    <li>Cloud visual tests in headless Chromium with the tray frame.</li>
+    <li>R2 and R4, then the MAUI Android host.</li>
+    <li>Linux tray: only if the cloud tests are not enough.</li>
+  </ol>
+
+  <h2>Non-goals</h2>
+  <ul>
+    <li>No server, tunnel or sign-in work in this plan. Reason: the user scoped this plan to the app.</li>
+    <li>No Kotlin or Flutter app. Reason: it duplicates all UI code.</li>
+  </ul>
+
+  <h2>Open questions</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Question</th><th>Recommendation</th></tr></thead>
+    <tbody>
+      <tr><td>Which Android target first?</td><td>Installable web app, then MAUI</td></tr>
+      <tr><td>Is the test split enough, or a real Linux tray?</td><td>The split. A Linux tray is a third host</td></tr>
+      <tr><td>Does Android WebView support the speech API?</td><td>Verify on a real phone</td></tr>
+    </tbody>
+  </table></div>
+</section>
+</div>
+
+<script>
+(function () {
+  var ids = ["summary", "platforms", "refactors", "tests", "questions"];
+  function show() {
+    var id = location.hash.slice(1);
+    if (ids.indexOf(id) < 0) id = "summary";
+    ids.forEach(function (x) { document.getElementById(x).hidden = x !== id; });
+    document.querySelectorAll("nav a").forEach(function (a) {
+      if (a.getAttribute("href") === "#" + id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    });
+  }
+  window.addEventListener("hashchange", show);
+  show();
+  function all(open) { document.querySelectorAll("#platforms details").forEach(function (d) { d.open = open; }); }
+  document.getElementById("open-all").addEventListener("click", function () { all(true); });
+  document.getElementById("close-all").addEventListener("click", function () { all(false); });
+})();
+</script>
