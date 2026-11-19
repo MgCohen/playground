@@ -25,7 +25,7 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Tray/SelfTest.cs", [], "the place files and the result file of the tray self test"),
         ("src/Orchestrator.Tray/TrayWindow.cs", [], "the saved places of the tray window on the screen, not the store"),
         ("src/Orchestrator.Tray/StaticFiles.cs", [], "the web files of the tray page (wwwroot or the static asset manifest), not the store"),
-        ("src/Orchestrator.Tray/Program.cs", ["File.GetLastWriteTime(typeof(Program).Assembly.Location)"], "the build time of the program for the label of a named tray instance, not the store"),
+        ("src/Orchestrator.Tray/Program.cs", ["File.GetLastWriteTime(Environment.ProcessPath ?? AppContext.BaseDirectory)"], "the build time of the program for the label of a named tray instance, not the store"),
         ("src/Orchestrator.Tray/Faults.cs", [], "the log of the unhandled exceptions of the tray (V19)"),
         ("src/Orchestrator.Tray/Program.cs", ["\"templates\"", "selftest-error.txt"], "the check of the home folder, and the error file of the self test"),
         ("src/Orchestrator.Tray/MockStore.cs", ["CreateTempSubdirectory", "Directory.CreateDirectory(cwd)", "Directory.Delete(Folder"], "the mock store makes and deletes its own temp folder and the cwd of its sessions"),

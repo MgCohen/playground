@@ -2297,3 +2297,26 @@ Findings:
 | A leave never ended in a hidden page | A hidden page draws no frames: the CSS motion does not move and the frame callback never fires; the time limit started only in that callback | The limit starts at once; a page with the state `hidden` ends the wait at once. The hidden browser pane still reports `visible`: there the limit (1000 ms) ends the leave |
 | All static files of the web server came with 0 bytes | No `launchSettings.json`: `dotnet run` starts in Production, which serves only published files | Start a source run with `ASPNETCORE_ENVIRONMENT=Development` |
 | The store IO rule failed on `src/Orchestrator.Tray/Program.cs` | The build time read of the tray instance label (session V) | Allowed, with its reason: it is not store IO |
+
+### Tray redesign, steps 2 to 6: one composition window
+
+Code: `src/Orchestrator.Tray/ClearHost.cs` (composition, input, Blazor bridge), `TrayWindow.cs` (places, click area), `StaticFiles.cs`, `SelfTest.cs`; `src/Orchestrator.Web/Components/Tray/` (stage, badge); `src/Orchestrator.Tray/wwwroot/tray.css` and `tray.js`. Deleted: `EdgeTab`, `GrowShadow`, `BallWindow`, `LayeredForm`, `WidgetForm` and the old self-test groups. Pictures: `docs/screens/tray-redesign/`.
+
+| Check | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 822 tests, 0 failed |
+| Tray self-test from the build (`--selftest`, no mouse) | 13 of 13: start, home ball on the clip center, sheet in the panel, sheet close, push in the panel, dock (0 late frames of 351), open from the badge, hide, notice with peek, saved place, pin, no exceptions |
+| Tray self-test from a one-file publish (the options of `install.ps1`) | 13 of 13 |
+| Mouse checks (`--mouse`) | Not run: the user was at the PC |
+
+Findings:
+
+| Finding | Cause | Fix |
+|---|---|---|
+| A push moved the panel frame into the margin | The tray rule that stops the root animation had a lower specificity than the push rule of `motion.css` | Same specificity, later in the cascade; a check reads the alpha of the margin in the middle of a push |
+| The app bar had no white bar and faint icons | The view-transition name of the view makes a stacking context; the backdrop outside it lay over all of the view | The backdrop is in the view, fixed to the panel |
+| The panel was a pale box in the fold | Its background faded during the shrink | It fades after the shrink, while the ball still shows |
+| The one-file publish failed (session V code) | `Assembly.Location` is empty in a one-file app (IL3000 is an error) | `Environment.ProcessPath` |
+
+Not checked: the screen reader in composition mode (the host gives no UI Automation provider yet), and a real look at the motion by the user.
+

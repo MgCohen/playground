@@ -62,7 +62,7 @@ public static partial class Program
             var build = typeof(Program).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
                 .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion is { } v && v.Contains('+')
                 ? v[(v.IndexOf('+') + 1)..] is { Length: >= 7 } sha ? sha[..7] : v
-                : File.GetLastWriteTime(typeof(Program).Assembly.Location).ToString("MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+                : File.GetLastWriteTime(Environment.ProcessPath ?? AppContext.BaseDirectory).ToString("MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
             services.GetRequiredService<WidgetWindow>().Label = $"{named} · {build}";
             label = $"{named} · {build}, {label}";
         }

@@ -11,11 +11,11 @@ flowchart TB
     subgraph Tray[Orchestrator.Tray: window only]
         App[TrayApp: icon, store notices]
         Host[ClearHost: composition, input, Blazor bridge]
-        Places[TrayPlaces: panel place, badge place, click area]
+        Places[TrayWindow: panel place, badge place, click area]
     end
     subgraph Web[Orchestrator.Web: all visuals]
         Stage[TrayStage: phases of the tray]
-        Motion[Motion layer: Presence, Navigator, tokens]
+        Motion[Motion layer: Presence, MotionHost, tokens]
         Views[Pages and Ui components]
     end
     App --> Places
@@ -29,9 +29,9 @@ flowchart TB
 | Part | Project | Job |
 |---|---|---|
 | `ClearHost` | Tray | Transparent window, composition WebView2, input, Blazor bridge |
-| `TrayPlaces` | Tray | The two places and their saved values, the click area of each phase, the badge drag |
+| `TrayWindow` | Tray | The two places and their saved values, the click area of each phase, the badge drag |
 | `TrayApp` | Tray | Tray icon, menu, store counts to the stage |
-| `ITrayWindow` | Web | The contract between the stage and the window (below) |
+| `IWidgetWindow` | Web | The contract between the stage and the window (below) |
 | `TrayStage` | Web | The phase machine: start, open, folded, badge out, badge |
 | Motion layer | Web | One way to enter, leave, navigate and time a motion |
 
@@ -43,7 +43,7 @@ All motion uses three parts. No component starts or times a motion in another wa
 |---|---|---|
 | `motion.css` | CSS tokens | All durations and curves, as custom properties (`--t-sheet`, `--ease-out`) |
 | `<Presence>` | Razor component | Enter and leave of sheets, toasts, dials, peeks |
-| `Navigator` | C# service + small JS | Page moves; each page gives its depth |
+| `MotionHost` + `[PageDepth]` | Razor component + small JS | Page moves; each page gives its depth |
 
 ### Presence
 
@@ -61,9 +61,9 @@ All motion uses three parts. No component starts or times a motion in another wa
 .is-shown > .sheet { translate: 0 0; }
 ```
 
-### Navigator
+### MotionHost
 
-Each page states its depth once, with an attribute. The `Navigator` compares the depth of the current page and the target page and picks the move: tab (fade and rise), push (from the right) or back (to the right). `motion.js` keeps only `startViewTransition` and the wait for the Blazor render.
+Each page states its depth once, with an attribute. The `MotionHost` compares the depth of the current page and the target page and picks the move: tab (fade and rise), push (from the right) or back (to the right). `motion.js` keeps only `startViewTransition` and the wait for the Blazor render.
 
 ```csharp
 [PageDepth(1)] // a session page: one step below the tab pages
@@ -94,21 +94,25 @@ stateDiagram-v2
 
 The ball of the open panel is the home button of the app bar: one `HomeBall` element. In the browser, the app bar shows the same component. The badge ring uses the `KindRing` component of the views.
 
-### ITrayWindow
+### IWidgetWindow
 
 ```csharp
-public interface ITrayWindow
+public interface IWidgetWindow
 {
     bool Pinned { get; }
     event Action? PinnedChanged;
     void SetPinned(bool pinned);
-    Task GoTo(TrayPlace place);        // ends when the window is at the place
-    event Action<TrayRequest>? Requested; // open, dock: from the icon, a focus loss or a badge click
-    string? Label { get; }
+    string? Label => null;
+    bool OpenAtStart => true;
+    event Action<string>? Requested;  // TrayRequest: open, dock, hide (icon, menu, badge click, header buttons)
+    void Minimize();                   // header: dock
+    void Close();                      // header: hide
+    Task Enter(string phase);          // TrayPhase; ends when the window is at the place of the phase
+    void Peek(bool on);                // the click area takes the peek bubble in or out
 }
 ```
 
-The browser host has no `ITrayWindow`. Then the views show no window buttons and no `TrayStage`. The browser uses the same motion layer, because it shows the same components.
+The browser host has no `IWidgetWindow`. Then the views show no window buttons and no `TrayStage`. The browser uses the same motion layer, because it shows the same components.
 
 | Window button | Action |
 |---|---|
@@ -118,15 +122,15 @@ The browser host has no `ITrayWindow`. Then the views show no window buttons and
 
 ## Work order
 
-| Step | Content | Done when |
-|---|---|---|
-| 1 | Motion layer: `motion.css`, `<Presence>`, `Navigator`, `[PageDepth]` | Sheets, toasts and page moves use it |
-| 2 | Composition host in the tray, with the current views | Views run in `ClearHost`; host checks pass |
-| 3 | `TrayStage` with the open, fold and badge flow | The S6 checks pass with the real views |
-| 4 | Badge content: counts, ring spin, peek of a new card | The notice checks pass |
-| 5 | Delete the native windows and their self-test groups | Tests pass; no GDI+ drawing |
-| 6 | Tray self-test from the spike probes | Measure mode first; clicks only on the tray |
-| 7 | Docs: `plan.md`, design page, `how-it-works.html`, `know-how.md` | Each page describes this structure |
+| Step | Content | Done when | Status |
+|---|---|---|---|
+| 1 | Motion layer: `motion.css`, `<Presence>`, `MotionHost`, `[PageDepth]` | Sheets, toasts and page moves use it | Done |
+| 2 | Composition host in the tray, with the current views | Views run in `ClearHost`; host checks pass | Done; keyboard and screen reader not checked |
+| 3 | `TrayStage` with the open, fold and badge flow | The S6 checks pass with the real views | Done |
+| 4 | Badge content: counts, ring spin, peek of a new card | The notice checks pass | Done |
+| 5 | Delete the native windows and their self-test groups | Tests pass; no GDI+ drawing | Done |
+| 6 | Tray self-test from the spike probes | Measure mode first; clicks only on the tray | Done; mouse checks not run |
+| 7 | Docs: `plan.md`, design page, `how-it-works.html`, `know-how.md` | Each page describes this structure | Done: `plan.md`, `know-how.md` |
 
 <details>
 <summary>Step 2 · checks of the composition host</summary>
