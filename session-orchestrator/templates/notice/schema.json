@@ -27,6 +27,7 @@
         "archive-child",
         "state-inferred",
         "open-in-app",
+        "console-start",
         "cloud-worker"
       ]
     },

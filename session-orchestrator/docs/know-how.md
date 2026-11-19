@@ -84,6 +84,32 @@ Dummy data (questions, reports, messages) goes in with `POST /api/stream` or `or
 
 - To open a supervisor session in the desktop app, run `claude.exe --desktop --resume <id>` with PowerShell `Start-Process`. From bash it gives exit 1.
 - Then send one message to the session (`send_message`) to start its process. `set_remote_control` makes it visible on the phone.
+### Remote Control at the start (spike R, 2026-11-18, claude 2.1.312)
+
+No CLI command starts or imports a session into the desktop app with Remote Control on. `--desktop` accepts only `--resume` or `--continue`.
+
+| Command | Result |
+|---|---|
+| `--desktop --remote-control --session-id <new>` | Exit 1: "--desktop only opens the Claude Desktop app; it can't be combined with `--remote-control`." |
+| `--desktop --session-id <new>` | Exit 1: "... can't be combined with `--session-id`." |
+| `--desktop --remote-control --resume <known>` | Exit 1, same text as `--remote-control` above |
+| `--desktop --settings <file> --resume <known>` | Exit 1: "... can't be combined with `--settings`." |
+| `--desktop --resume <known>` | Exit 0. The app imports the session. Remote Control stays off |
+| `--desktop` | Exit 0. The app opens. No new session |
+| `-p --remote-control <name>` | Exit 0. The flag has no effect: no bridge in the debug log, no link (2.1.312 and the app CLI 2.1.325) |
+| `--bg --remote-control <name>` | Remote Control is on from the first turn (phone, claude.ai). Not in the app sidebar. `--bg` ignores `--session-id` and gives its own id |
+| `--bg --remote-control <name> --resume <known>` | Same id, Remote Control on. The job stays idle after the turn until `claude stop` |
+| `claude --remote-control <name> --session-id <new> "<prompt>"` in a console | Same id, Remote Control on from turn 1. The process stays open. Clear `CLAUDE_CODE_CHILD_SESSION` first: a child of a session inherits it, and then the CLI saves no transcript |
+| `--desktop --resume <id>` while that console session runs | Exit 1: "open in another terminal. Run /desktop there instead." |
+| `claude --remote-control <name> --resume <id> "/desktop"` | The CLI exits, the app imports the session, Remote Control off in the app |
+| `--desktop --resume <id of a live --bg job>` | Exit 1: "That session is running in the background ... `claude stop` first" |
+
+- `--desktop` refuses redirected output. To read its error text, run it in a console and read the console buffer.
+- The app record (`claude-code-sessions/.../local_<id>.json`) holds `remoteControlUserEnabled` and `bridgeSessionIds` after a Remote Control change.
+- The app setting `ccRemoteControlDefaultEnabled: true` applies only to sessions that the app makes. In 130 app records, no imported session (`adoptedFromOtherSurface: true`) has `remoteControlAutoEligible: true`.
+- `remoteControlAtStartup: true` is a user, flag or policy setting. Project and local settings cannot turn it on. A user setting changes all sessions, so the orchestrator does not use it.
+- So an imported session needs `set_remote_control`: by the session in its first live app turn, or by its parent.
+
 - The app keeps transcripts under `~/.claude/projects/<folder key>/`, keyed to the folder of the session. The spike sessions are under the keys of their folders, for example `claude-orchestrator-spikes-p2`. `dee17212` is under a scratchpad key of the build session. A resume from another folder may not find them (not tested).
 
 ## Settings history
@@ -189,6 +215,8 @@ Known limits:
 - If the session is live in the desktop app, `orch archive` first sends it the notice `archive-self`. The session turns its Remote Control off and calls `archive_session` with `self`, so the app archives it, also while it is open on screen. `orch archive` waits up to 120 s (`--wait`) for `"isArchived": true` in the app record, then archives the store side. `--store-only` skips the app step. A session that is not live in the app stays in the sidebar: archive it from the sidebar.
 - A worktree folder is `<repo>.wt/orch-<id8>`, next to the repository, on branch `orch/session-<id8>`.
 - `orch open <id>` imports a session into the desktop app (`claude --desktop --resume` with the session folder as working folder). The app starts its process at once, and the plugin takes the lease `live`. The supervisor imports each new session before its work starts, when it uses the default store (`ORCH_IMPORT=1` or `0` overrides): the first turn has only the notice `open-in-app` (reply READY), because the app can import only a session that has a transcript. The import follows at once, and the plugin of the live app session delivers the brief. If the app does not take the lease in 30 s, the supervisor delivers the brief with `claude -p`. The first turn of a new session gets `-n <title>`, so the sidebar shows the title.
+- A parent in the desktop app starts a normal child in the app (R-F8): `spawn_child` runs `orch new --app-start`, the parent calls `start_session` with the call in the tool result, and the child runs `orch join <file>` first. The app check is `CLAUDE_CODE_ENTRYPOINT=claude-desktop` (`IProvider.CallerInApp`). If the app tool is missing or refused, the parent calls `spawn_child` again with `inApp: false`, and the supervisor starts the child.
+- A child of a parent outside the app starts as a console session (`ORCH_CONSOLE=1`, default with the import): `claude --remote-control <title> --session-id <id> "<console-start notice>"`, started with PowerShell `Start-Process -WindowStyle Hidden`, so it inherits no handle of the supervisor. The variables of a parent session (`CLAUDE_CODE_CHILD_SESSION` and others, `Claude.ParentVariables`) are removed: with `CLAUDE_CODE_CHILD_SESSION` the CLI saves no transcript. `orch archive` stops the process. If the process ends, later turns run with `-p` again, with no Remote Control.
 - `orch enable [--title T] [--parent ID]` puts the session that runs it under the orchestrator. It reads `CLAUDE_CODE_SESSION_ID`, writes `meta.json` (title, parent, cwd, `started`, `imported`) and `enabled`, and prints the id. The hook activates after the next tool result, in the same turn. Use it in the brief of an app session that `start_session` started: the app links the session to its parent in the sidebar, and `--parent` links it in the store.
 
 ## The UI

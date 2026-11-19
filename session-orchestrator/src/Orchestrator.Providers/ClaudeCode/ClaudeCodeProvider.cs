@@ -32,6 +32,7 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     public async Task<TurnResult> Turn(TurnRequest request, CancellationToken cancel)
     {
         if (request.Where == Places.Cloud) return await CloudTurn(request, cancel);
+        if (request.RemoteControl) return await ConsoleTurn(request, cancel);
         var watch = Stopwatch.StartNew();
         var session = request.IsNew ? "--session-id" : "--resume";
         List<string> arguments = [.. SettingArguments(options.PluginDir), session, request.Id];
@@ -60,6 +61,45 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
             environment["PATH"] = path.Length == 0 ? dir : dir + Path.PathSeparator + path;
         }
         return environment;
+    }
+
+    /// <summary>
+    /// The arguments of a console start: an interactive session with Remote Control on from the first turn (R-12). It
+    /// keeps the session id, so the store entry stays valid. The prompt is short: the brief comes from the plugin.
+    /// </summary>
+    public static IReadOnlyList<string> ConsoleArguments(TurnRequest request, string? pluginDir)
+    {
+        var name = request.Title is { Length: > 0 } title ? title : request.Id;
+        List<string> arguments = [.. SettingArguments(pluginDir), "--remote-control", name, request.IsNew ? "--session-id" : "--resume", request.Id];
+        if (request.IsNew) arguments.AddRange(["-n", name]);
+        if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", Agent(agent)]);
+        arguments.Add(request.Prompt);
+        return arguments;
+    }
+
+    /// <summary>
+    /// The environment of a console session: the store, the home, and the holder <c>live</c>. The process is live, so
+    /// its plugin takes the lease <c>live</c>, as in an app session.
+    /// </summary>
+    public static Dictionary<string, string> ConsoleEnvironment(ProviderOptions options)
+    {
+        var environment = TurnEnvironment(options);
+        environment["ORCH_HOLDER"] = Holders.Live;
+        return environment;
+    }
+
+    async Task<TurnResult> ConsoleTurn(TurnRequest request, CancellationToken cancel)
+    {
+        var watch = Stopwatch.StartNew();
+        try
+        {
+            var pid = await Claude.Console(request.Cwd, ConsoleArguments(request, options.PluginDir), ConsoleEnvironment(options), cancel);
+            return new TurnResult(true, $"console session {pid} with Remote Control", null, Math.Round(watch.Elapsed.TotalSeconds)) { Pid = pid };
+        }
+        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception or IOException)
+        {
+            return new TurnResult(false, null, e.Message, Math.Round(watch.Elapsed.TotalSeconds));
+        }
     }
 
     /// <summary>The longest wait for a cloud start or a cloud message. A folder that is not trusted yet waits for a person.</summary>
@@ -121,6 +161,57 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     }
 
     public string? CallerSessionId() => Environment.GetEnvironmentVariable(SessionIdVariable) is { Length: > 0 } id ? id : null;
+
+    /// <summary>The desktop app sets this variable in each session that it runs. A headless <c>claude -p</c> turn does not have it (R-16).</summary>
+    public const string EntrypointVariable = "CLAUDE_CODE_ENTRYPOINT";
+
+    public const string DesktopEntrypoint = "claude-desktop";
+
+    /// <summary>The app tool that starts a session: in the sidebar at once, with Remote Control from the start (R-16).</summary>
+    public const string StartTool = "mcp__ccd_session__start_session";
+
+    static bool SameFolder(string a, string? b) =>
+        b is { Length: > 0 } && string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(a)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(b)),
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+
+    public bool CallerInApp() => Environment.GetEnvironmentVariable(EntrypointVariable) == DesktopEntrypoint;
+
+    /// <summary>
+    /// The app sets its own id of the session in this variable. A <c>claude -p</c> child of an app session inherits the
+    /// id of the parent, so the value counts only in the app (R-18).
+    /// </summary>
+    public const string HostSessionVariable = "CLAUDE_CODE_HOST_SESSION_ID";
+
+    public string? CallerAppId() =>
+        CallerInApp() && Environment.GetEnvironmentVariable(HostSessionVariable) is { } id && id.StartsWith("local_", StringComparison.Ordinal) ? id : null;
+
+    /// <summary>The JSON of the app call keeps quotes and backslashes readable for the model: no ".</summary>
+    static readonly JsonSerializerOptions Readable = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
+    /// <summary>
+    /// The call of <see cref="StartTool"/> for the parent. The folder is in the form of the system: the app refuses
+    /// <c>C:/…</c> on Windows as "another spelling" of <c>C:\…</c> (R-17). The permission mode is explicit: an app session started with
+    /// no mode showed <c>auto</c> at the start and <c>default</c> after its first turn (R-16).
+    /// </summary>
+    public string? AppStartInstruction(AppStartRequest request)
+    {
+        var prompt = $"You are a child session under the orchestrator. As your first action, run this shell command, and nothing before it: {request.Command} . Then follow the brief that arrives as the next message.";
+        var call = new Dictionary<string, object>
+        {
+            ["initiation"] = "user_asked",
+            ["context"] = "fresh",
+            ["title"] = request.Title,
+            ["use_worktree"] = request.Worktree,
+            ["permission_mode"] = "auto",
+            ["prompt"] = prompt,
+            ["background"] = $"A child session of the orchestrator for the task \"{request.Title}\". The command in the prompt joins it to the orchestrator store; the brief with the goal, the scope and the done check then arrives as a message.",
+        };
+        // R-25: in a turn that the app continues by itself (a note of a child, an event), the app refuses each explicit
+        // folder, also the folder of the parent. A child in the folder of the parent gets none: the app uses that folder.
+        if (!SameFolder(request.Cwd, request.ParentCwd)) call["cwd"] = Path.GetFullPath(request.Cwd);
+        return $"Start the child in the desktop app now: call {StartTool} with these inputs: {JsonSerializer.Serialize(call, Readable)}. "
+            + "Do not change the prompt. If you do not have that tool, or the call is refused, call spawn_child again with the same fields and inApp false: then the supervisor starts the child.";
+    }
 
     public IReadOnlyList<DoctorCheck> Doctor(CommandRun run) =>
     [

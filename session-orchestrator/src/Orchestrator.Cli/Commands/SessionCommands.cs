@@ -27,8 +27,63 @@ public static class SessionCommands
             Where = a.Option("where"),
             Parent = a.Option("parent") is { } parent ? c.Messages.RequireSession(parent) : null,
         };
-        var id = c.Messages.NewSession(brief, a.Option("created-by") ?? "orch", brief.Parent is { } p ? Parties.Session(p) : Parties.User);
+        var createdBy = a.Option("created-by") ?? "orch";
+        var from = brief.Parent is { } p ? Parties.Session(p) : Parties.User;
+        if (a.Flag("app-start") && AppStart(c, brief, createdBy, from)) return 0;
+        var id = c.Messages.NewSession(brief, createdBy, from);
         c.Output.WriteLine(id);
+        return 0;
+    }
+
+    /// <summary>The first line of the output of <c>orch new --app-start</c> when the parent must start the child in the app.</summary>
+    public const string AppStartMark = "app-start";
+
+    /// <summary>
+    /// R-F8: a caller in the app starts a child that is not a background child in the app, so the child shows in the
+    /// app with Remote Control from the start. The brief goes to a start file, and the output tells the parent which
+    /// app call to make. False: the supervisor starts the child, as before (a background child, a cloud child, a
+    /// caller outside the app, or an engine with no app start).
+    /// </summary>
+    static bool AppStart(CommandContext c, BriefFields brief, string createdBy, string from)
+    {
+        if (brief.Background == true || Places.IsCloud(brief.Where) || !c.Provider.CallerInApp()) return false;
+        c.Messages.BriefOf(brief);
+        var file = new AppStartFile(c.Store.Root, brief, createdBy, from).Write();
+        var instruction = c.Provider.AppStartInstruction(new AppStartRequest(brief.Title!, brief.Cwd!, brief.Worktree == true, $"orch join \"{file}\"") { ParentCwd = c.Cwd });
+        if (instruction is null)
+        {
+            File.Delete(file);
+            return false;
+        }
+        c.Output.WriteLine($"{AppStartMark} {file}");
+        c.Output.WriteLine(instruction);
+        return true;
+    }
+
+    /// <summary>
+    /// The first command of a child that the app started: the registry entry with the engine id of the child, the brief
+    /// of the start file, the parent link and the enabled file. The store is the store of the parent (the start file
+    /// names it), so a child of a test supervisor joins the test store.
+    /// </summary>
+    public static int Join(CommandContext c)
+    {
+        var path = c.Args.Required(1, "start file");
+        var start = AppStartFile.Read(path);
+        var store = c.Store;
+        var id = c.Args.Option("id") ?? c.Provider.CallerSessionId()
+            ?? throw new UsageException($"no session id: run this inside a {c.Provider.Name} session, or give --id");
+        if (store.Registry.Exists(id)) throw new UsageException($"{Short(id)} is in the store already: it joined before");
+        var cwd = Path.GetFullPath(c.Cwd).Replace('\\', '/');
+        var brief = start.Brief with { Cwd = cwd, Worktree = null };
+        // R-18: a session that the app made has its own app id, not the app id of its engine session id.
+        var appId = c.Args.Option("app-id") ?? c.Provider.CallerAppId() ?? c.Provider.AppId(id);
+        new Messages(store).NewSession(brief, start.CreatedBy, start.From, join: new SessionJoin(id, appId, cwd));
+        var meta = store.Session(id);
+        store.Events.Append(EventKinds.SessionStart, start.From, Parties.Session(id), Messages.Fields(("text", $"{meta.Title} started in the app"), ("title", meta.Title)),
+            meta.Parent is { } parent ? Messages.Fields(("parent", parent)) : null, id);
+        File.Delete(path);
+        c.Output.WriteLine($"Joined as {id} ({meta.Title}){(meta.Parent is { } q ? $", child of {Short(q)}" : "")}.");
+        c.Output.WriteLine($"The plugin activates after this tool result: the {c.Provider.PluginTools} tools, the inbox and the live lease. Your brief arrives as the next message.");
         return 0;
     }
 
