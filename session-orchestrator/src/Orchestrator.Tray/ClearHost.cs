@@ -102,6 +102,7 @@ public partial class ClearHost : Form
     // The page has the focus of the keyboard when the window is active.
     protected override void OnActivated(EventArgs e)
     {
+        Faults.Trace("window activated");
         base.OnActivated(e);
         controller?.MoveFocus(CoreWebView2MoveFocusReason.Programmatic);
     }
@@ -109,6 +110,7 @@ public partial class ClearHost : Form
     /// <summary>Sets where the window takes the clicks and what it shows, in window pixels.</summary>
     public void SetHitArea(Rectangle area)
     {
+        Faults.Trace($"click area {area} (window {Bounds})");
         Region = new Region(area);
         HitArea = area;
     }
@@ -122,6 +124,7 @@ public partial class ClearHost : Form
     {
         const int WmNcHitTest = 0x84, WmSetCursor = 0x20, WmMouseLeave = 0x2A3, WmSysCommand = 0x112, ScMaximize = 0xF030;
         if (m.Msg == WmSysCommand && ((int)m.WParam & 0xFFF0) == ScMaximize) return;
+        if (m.Msg == 0x232) Faults.Trace("move loop end");
         if (m.Msg == 0x232 && !BadgeMode) PanelMoved?.Invoke(); // WM_EXITSIZEMOVE: the end of a drag of the header.
         if (controller is not null && BadgeMode && Badge(ref m)) return;
         if (controller is not null)

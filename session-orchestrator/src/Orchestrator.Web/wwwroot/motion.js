@@ -59,18 +59,28 @@
         });
       });
     },
-    // MotionHost: starts a view transition of the kind ("tab", "push" or "back"). Resolves when the browser has the picture of
+    // The nav dot of the app bar: it moves to the center of the current tab item, and fades out on Home. The first place has no
+    // motion.
+    dot: function (nav) {
+      var dot = nav && nav.querySelector(".ndot");
+      if (!dot) return;
+      var on = nav.querySelector(".it.on"), first = !dot.dataset.ready;
+      if (first) nav.classList.add("jump");
+      if (on) dot.style.setProperty("--dx", (on.offsetLeft + on.offsetWidth / 2) + "px");
+      dot.classList.toggle("off", !on);
+      if (first) { void dot.offsetWidth; nav.classList.remove("jump"); dot.dataset.ready = "1"; }
+    },
+    // MotionHost: starts a view transition of the kind ("push" or "back"). Resolves when the browser has the picture of
     // the old page, so Blazor can change the page; the transition then waits for the render.
     begin: function (kind) {
       if (!moves) return Promise.resolve();
       return new Promise(function (started) {
         var root = document.documentElement;
         root.classList.add("nav", "vt");
-        root.classList.toggle("vt-tab", kind === "tab");
         root.classList.toggle("vt-back", kind === "back");
         var t = document.startViewTransition(function () { started(); return rendered(); });
         t.ready.catch(function () { });
-        t.finished.catch(function () { }).finally(function () { root.classList.remove("vt", "vt-back", "vt-tab"); });
+        t.finished.catch(function () { }).finally(function () { root.classList.remove("vt", "vt-back"); });
         // The browser calls the update also for a skipped transition; this limit only keeps a navigation from a wait with no end.
         setTimeout(started, 300);
       });

@@ -12,6 +12,65 @@ namespace Orchestrator.Tray;
 /// </summary>
 public static partial class SelfTest
 {
+    /// <summary>
+    /// The stress run (--selftest folder --demo --stress [--css rule]): 8 cycles of tabs, an answer sheet, a push and back, for a
+    /// count of empty frames in a screen recording. The CSS rule (an experiment) goes into the page first.
+    /// </summary>
+    public static async Task<int> Stress(TrayApp tray, string folder, string? css, bool opens = false)
+    {
+        Directory.CreateDirectory(folder);
+        var w = tray.Window;
+        await Until(() => w.Phase == TrayPhase.Open, 8000);
+        if (css is not null) await Js(w, $"(s => {{ s.textContent = {System.Text.Json.JsonSerializer.Serialize(css)}; document.head.appendChild(s); }})(document.createElement('style'))");
+        var log = new List<string> { $"{DateTime.Now:HH:mm:ss.fff} stress start, css {css ?? "none"}" };
+        // --opens: 10 cycles of a dock and an open, for the empty frames at the end of an open.
+        if (opens)
+        {
+            for (var cycle = 0; cycle < 10; cycle++)
+            {
+                w.Request(TrayRequest.Dock);
+                await Until(() => w.Phase == TrayPhase.Badge, 4000);
+                await Task.Delay(700);
+                log.Add($"{DateTime.Now:HH:mm:ss.fff} open");
+                w.Request(TrayRequest.Open);
+                await Until(() => w.Phase == TrayPhase.Open, 4000);
+                await Task.Delay(1500);
+            }
+            File.WriteAllLines(Path.Combine(folder, "stress.txt"), log);
+            return 0;
+        }
+        for (var cycle = 0; cycle < 8; cycle++)
+        {
+            foreach (var tab in new[] { "cards", "stream", "sessions", "settings", "" })
+            {
+                await Act(log, w, $".nav2 a[href=\"{tab}\"]");
+                await Task.Delay(500);
+            }
+            await Act(log, w, ".nav2 a[href=\"cards\"]");
+            await Task.Delay(500);
+            await Act(log, w, ".acts [data-act=\"left\"]");
+            await Task.Delay(600);
+            await Act(log, w, ".presence .scrim", 0.5, 0.2);
+            await Task.Delay(500);
+            await Act(log, w, ".nav2 a[href=\"stream\"]");
+            await Task.Delay(500);
+            await Act(log, w, "a[href^=\"events/\"]");
+            await Task.Delay(600);
+            await Act(log, w, ".hd .path a.cr");
+            await Task.Delay(500);
+            log.Add($"{DateTime.Now:HH:mm:ss.fff} cycle {cycle + 1} done");
+        }
+        File.WriteAllLines(Path.Combine(folder, "stress.txt"), log);
+        return 0;
+    }
+
+    /// <summary>A press of the stress run, with the time of the click in the log.</summary>
+    static async Task Act(List<string> log, TrayWindow w, string selector, double fx = 0.5, double fy = 0.5)
+    {
+        var result = await Press(w, selector, fx, fy);
+        log.Add($"{DateTime.Now:HH:mm:ss.fff} {selector}: {result}");
+    }
+
     public static async Task<int> Demo(TrayApp tray, string folder)
     {
         Directory.CreateDirectory(folder);

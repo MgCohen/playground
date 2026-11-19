@@ -23,6 +23,7 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Providers/Fake/FakeProvider.cs", [], "the behavior file of the fake provider, not the store"),
         ("src/Orchestrator.Providers/ClaudeCode/ClaudeCodeProvider.cs", ["File.ReadAllText(settings)", "plugin.json"], "the settings of Claude Code for orch doctor"),
         ("src/Orchestrator.Tray/SelfTest.cs", [], "the place files and the result file of the tray self test"),
+        ("src/Orchestrator.Tray/SelfTest.Demo.cs", [], "the step logs of the demo and stress runs of the tray"),
         ("src/Orchestrator.Tray/TrayWindow.cs", [], "the saved places of the tray window on the screen, not the store"),
         ("src/Orchestrator.Tray/StaticFiles.cs", [], "the web files of the tray page (wwwroot or the static asset manifest), not the store"),
         ("src/Orchestrator.Tray/Program.cs", ["File.GetLastWriteTime(Environment.ProcessPath ?? AppContext.BaseDirectory)"], "the build time of the program for the label of a named tray instance, not the store"),

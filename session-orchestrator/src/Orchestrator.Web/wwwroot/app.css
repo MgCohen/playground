@@ -252,7 +252,8 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .nav2 .it { width: 46px; height: 46px; display: grid; place-items: center; color: var(--muted); position: relative; }
 .nav2 .ic { width: 22px; height: 22px; }
 .nav2 .it.on { color: var(--text); }
-.nav2 .it.on::after { content: ""; position: absolute; left: 50%; margin-left: -3px; bottom: 1px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.nav2 .ndot { position: absolute; left: var(--dx, 50%); bottom: 7px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--accent); pointer-events: none; }
+.nav2 .ndot.off { opacity: 0; }
 /* V5: the home ball is one image (home-ball.png: a 100 px square with the 62 px ball, its icon and its shadow). The native ball
    of the tray and the edge tab draw the same file. */
 .nav2 .home { width: 62px; height: 62px; margin-top: -30px; border-radius: 50%; position: relative; isolation: isolate; }

@@ -85,9 +85,14 @@ public sealed class TrayWindow : ClearHost
             {
                 case TrayPhase.Start:
                     Go(badge: false);
-                    if (!Visible) Show();
+                    if (!Visible)
+                    {
+                        Faults.Trace("window show");
+                        Show();
+                    }
                     break;
                 case TrayPhase.Open:
+                    Faults.Trace("window activate");
                     Activate();
                     break;
                 case TrayPhase.BadgeOut:
@@ -116,6 +121,7 @@ public sealed class TrayWindow : ClearHost
         ResetBadgeInput();
         hover = peek = false;
         TopMost = badge || pinned;
+        Faults.Trace($"window bounds {(badge ? BadgeBounds() : PanelBounds())} (was {Bounds})");
         Bounds = badge ? BadgeBounds() : PanelBounds();
         Hits();
     }

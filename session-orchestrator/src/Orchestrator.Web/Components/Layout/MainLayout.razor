@@ -1,9 +1,51 @@
+@* The app frame: the page, the app bar and the motion host. A tab change (T1, option C) puts is-tab-in on the page in the same
+   render as the new page, so its blocks rise one after the other from their first frame (motion.css); the header and the app
+   bar stay. The class goes when the motion ends. A push and a back are view transitions (MotionHost). *@
 @inherits LayoutComponentBase
+@inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <div class="app">
-    <main class="page">
+    <main class="page @(tabIn ? "is-tab-in" : "")" @ref="page">
         @Body
     </main>
     <AppBar />
 </div>
 <MotionHost />
+
+@code {
+    ElementReference page;
+    string? last;
+    bool tabIn, settle;
+    int run;
+
+    protected override void OnParametersSet()
+    {
+        var here = Nav.ToBaseRelativePath(Nav.Uri);
+        if (last is not null && PageDepth.Move(last, here) == PageDepth.Tab)
+        {
+            tabIn = true;
+            settle = true;
+            run++;
+        }
+        last = here;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!settle) return;
+        settle = false;
+        var mine = run;
+        try
+        {
+            await JS.InvokeVoidAsync("orchMotion.settle", page);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
+        {
+        }
+        // A later tab change keeps the class for its own blocks.
+        if (mine != run) return;
+        tabIn = false;
+        StateHasChanged();
+    }
+}

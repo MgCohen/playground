@@ -8,8 +8,10 @@
   --t-scrim-in: .22s; --t-scrim-out: .2s; --t-sheet-in: .34s; --t-sheet-out: .22s; --t-toast-in: .32s;
   /* The speed dial: each button comes a step after the one before it. */
   --t-dial: .22s; --t-dial-step: 40ms; --t-dscrim: .2s;
-  /* Page moves (T1, T2): the first page fade, a tab change, a push and a back. */
-  --t-page-in: .18s; --t-tab-out: .12s; --t-tab-in: .26s; --t-push: .3s;
+  /* Page moves (T2): the first page fade, a push and a back. */
+  --t-page-in: .18s; --t-push: .3s;
+  /* A tab change (T1, option C): each block rises, a step after the block above it; the nav dot moves with a spring. */
+  --t-tab-block: .3s; --t-tab-step: 40ms; --t-dot: .3s;
   /* The tray (tray.css): the pop of the home ball, the grow and the fold of the panel, the badge, its peek and its ring spin. */
   --ease-in: cubic-bezier(.32,0,.67,0);
   --t-ball-in: .3s; --t-ball-out: .18s; --t-grow: .34s; --t-shrink: .24s; --t-content-in: .2s; --t-content-out: .1s;
@@ -66,18 +68,30 @@
 /* The page fades, not .app: an animation on .app makes a stacking context, and the backdrop of the app bar then covers the bar. */
 .page { animation: m-fade var(--t-page-in) ease backwards; }
 
-/* ===== T1 and T2: page moves. The motion host (MotionHost.razor) picks the move from the depth of the two pages and starts a
-   view transition. A tab change: the old page fades out, then the new page rises and fades in (a fade through: two pages never
-   show at the same time). A push: the new page slides in from
-   the right, the old page moves 30 % left and dims. Back plays the push in reverse. The app bar is its own picture, so it stays.
-   No block of a page has an entrance animation of its own, so nothing plays again after the move. ===== */
+/* ===== T1: a tab change (option C). The old page goes at once; each block of the new page rises 10 px and fades in, a step after
+   the block above it. The header (.hd) and the app bar stay. MainLayout puts is-tab-in on the page in the render of the new page.
+   T2: a push and a back. The motion host (MotionHost.razor) picks the move from the depth of the two pages and starts a view
+   transition: the new page slides in from the right, the old page moves 30 % left and dims; back plays it in reverse. The app
+   bar is its own picture, so it stays. ===== */
+.page.is-tab-in > :not(.hd) > * { animation: m-rise var(--t-tab-block) var(--ease-out) both; }
+.page.is-tab-in > :not(.hd) > :nth-child(2) { animation-delay: calc(1 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(3) { animation-delay: calc(2 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(4) { animation-delay: calc(3 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(5) { animation-delay: calc(4 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(6) { animation-delay: calc(5 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(7) { animation-delay: calc(6 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(8) { animation-delay: calc(7 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(9) { animation-delay: calc(8 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(10) { animation-delay: calc(9 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(11) { animation-delay: calc(10 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(12) { animation-delay: calc(11 * var(--t-tab-step)); }
+.nav2 .ndot { transition: left var(--t-dot) var(--ease-spring), opacity .2s ease; }
+.nav2.jump .ndot { transition: none; }
 html.nav .page { animation: none; }
 .nav2 { view-transition-name: appbar; }
 ::view-transition-group(root) { animation-duration: var(--t-push); animation-timing-function: var(--ease-out); }
-.vt-tab::view-transition-old(root) { animation: m-fade-out var(--t-tab-out) ease both; }
-.vt-tab::view-transition-new(root) { animation: m-rise var(--t-tab-in) var(--ease-out) var(--t-tab-out) both; }
-.vt:not(.vt-tab)::view-transition-old(root) { animation: m-push-old var(--t-push) var(--ease-out) both; }
-.vt:not(.vt-tab)::view-transition-new(root) { animation: m-push-new var(--t-push) var(--ease-out) both; }
+.vt::view-transition-old(root) { animation: m-push-old var(--t-push) var(--ease-out) both; }
+.vt::view-transition-new(root) { animation: m-push-new var(--t-push) var(--ease-out) both; }
 .vt-back::view-transition-old(root) { animation: m-pop-old var(--t-push) var(--ease-out) both; z-index: 2; }
 .vt-back::view-transition-new(root) { animation: m-pop-new var(--t-push) var(--ease-out) both; }
 @keyframes m-rise { from { opacity: 0; transform: translateY(10px); } }

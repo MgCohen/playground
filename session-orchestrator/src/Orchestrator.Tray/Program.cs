@@ -39,7 +39,8 @@ public static partial class Program
 
         // V19: an unhandled exception goes to the log, with no dialog of Windows Forms. The tray keeps running.
         Faults.Log = selfTest is not null ? Path.Combine(selfTest, "exceptions.log") : Path.Combine(data, named is null ? "tray.log" : $"tray.{named}.log");
-        Faults.Tracing = named is not null && selfTest is null;
+        // A named instance and the demo run write the trace of the window steps.
+        Faults.Tracing = (named is not null && selfTest is null) || args.Contains("--demo");
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
         Application.ThreadException += (_, e) => Faults.Add(e.Exception, "UI thread");
         AppDomain.CurrentDomain.UnhandledException += (_, e) => Faults.Add(e.ExceptionObject as Exception, "process");
@@ -77,7 +78,8 @@ public static partial class Program
             {
                 try
                 {
-                    code = args.Contains("--demo") ? await SelfTest.Demo(tray, selfTest) : await SelfTest.Run(tray, selfTest, args.Contains("--mouse"));
+                    code = args.Contains("--stress") ? await SelfTest.Stress(tray, selfTest, Value(args, "--css"), args.Contains("--opens"))
+                        : args.Contains("--demo") ? await SelfTest.Demo(tray, selfTest) : await SelfTest.Run(tray, selfTest, args.Contains("--mouse"));
                 }
                 catch (Exception e)
                 {

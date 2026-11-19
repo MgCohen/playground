@@ -1,16 +1,31 @@
 @inherits LiveView
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
-<nav class="nav2" aria-label="Views">
+<nav class="nav2" aria-label="Views" @ref="nav">
     <a class="it @On("cards")" href="cards" aria-label="Cards"><Icon Name="cards" />@if (count > 0) {<span class="bdg">@count</span>}</a>
     <a class="it @On("stream")" href="stream" aria-label="Stream"><Icon Name="stream" /></a>
     <a class="home" href="" aria-label="Home" aria-current="@(Section == "" ? "page" : null)"></a>
     <a class="it @On("sessions")" href="sessions" aria-label="Sessions"><Icon Name="tree" /></a>
     <a class="it @On("settings")" href="settings" aria-label="Settings"><Icon Name="gear" /></a>
+    @* One dot for the current tab: it moves to the new item (motion.css); on Home it fades out. *@
+    <i class="ndot" aria-hidden="true"></i>
 </nav>
 
 @code {
     int count;
+    ElementReference nav;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("orchMotion.dot", nav);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
+        {
+        }
+    }
 
     string Section => Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#', '/')[0] switch
     {

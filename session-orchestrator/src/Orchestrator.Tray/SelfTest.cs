@@ -121,6 +121,21 @@ public static partial class SelfTest
                 $"shadow alpha 8 px out of the panel: at rest {rest}, in the move [{string.Join(", ", steps)}]");
         }
 
+        // 4c. The nav dot: hidden on Home, at the center of the current item on each tab, after its motion.
+        foreach (var item in new[] { "", "cards", "stream", "sessions", "settings", "" })
+        {
+            await Js(w, $"{Go}('{item}')");
+            await Task.Delay(700);
+            var dot = await Js(w, """
+                (() => { const n = document.querySelector('.tray-view .nav2'), d = n.querySelector('.ndot'), on = n.querySelector('.it.on');
+                  const r = d.getBoundingClientRect(), o = on ? on.getBoundingClientRect() : null;
+                  return JSON.stringify({ off: d.classList.contains('off'), opacity: +getComputedStyle(d).opacity, dx: o ? Math.round(r.left + r.width / 2 - (o.left + o.width / 2)) : null }); })()
+                """);
+            var name = item.Length == 0 ? "home" : item;
+            var ok = item.Length == 0 ? dot.Contains("\"opacity\":0") : dot.Contains("\"dx\":0") && dot.Contains("\"opacity\":1");
+            Add($"dot-{name}", ok, $"dot {dot}");
+        }
+
         // 5. Minimize: the panel folds, the ball pops out, the badge slides in at the right edge.
         await Js(w, "window.__frames = null");
         var frames = w.Web!.ExecuteScriptAsync(Meter(1400));

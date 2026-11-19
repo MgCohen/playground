@@ -2327,3 +2327,13 @@ User check of the redesigned tray, round 1:
 | A bigger, darker shadow during a tab move | Shadow alpha 8 px outside the panel: 12 at rest, 23 in each tab move (two copies of 12 give 23) | The old and the new root picture both showed at full opacity, so the shadow showed two times | Only the new root picture shows; a self-test check of each tab move reads the shadow (now 12 in each move) |
 | An overlap at the move to Settings | A picture at 50 ms shows both pages, mixed | A tab move is a cross-fade: the new page fades in while the old page fades out (the old tray had the same timing); the page picture had no background | A fade through: the new page starts when the old page is out (`--t-tab-out` delay, in the tray and the browser); the view has the canvas, so a push covers the old page |
 
+User check of the redesigned tray, round 2 (video):
+
+| Finding of the user | Data | Cause | Fix |
+|---|---|---|---|
+| A blink at the end of the open | 30 fps screen recording with frame times and a window trace: empty frames 0.55 to 0.9 s after an open (20 in 10 opens); no window step at that time. An idle control run: no changed frame in 40 s | The `filter: drop-shadow` on the panel wrapper: the browser draws the filtered panel again at each change, and in the composition window it presented empty frames. Not the cause (tested): the click area change, delegated compositing, `will-change` | The shadow is its own element (`.tray-frame`, a box shadow) that follows the panel clip; the badge uses box shadows. Empty frames: open stress 20 to 0, full stress 16 in 85 s to 0 (one more was a "show desktop" of Windows) |
+| The tab change is not the design | `docs/motion-design.html`: T1, owner pick C | The tray did a fade through of the whole page | T1 C: no view transition for a tab change; each block of the new page rises 10 px in 0.3 s, 40 ms after the block above; the header and the app bar stay; one nav dot moves with a spring and hides on Home |
+| Page text in the ball circle at the start | Frames of the start | The first-load fade of the page (an animation) won over the start phase | No first-load fade in the tray |
+
+Faults found by the new self-test checks: without the filter, the fixed blocks lost their containing block (`contain: layout` on the panel); the content-fade rule of the tray hid the dot motion and showed the dot on Home (the dot keeps its own rules). Self-test: 24 of 24.
+
