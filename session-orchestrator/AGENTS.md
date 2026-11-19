@@ -11,7 +11,7 @@ Read these files before you change this project:
 | `docs/how-it-works.html` | How it works today: processes, folders, store files, call stack, sequences (https://claude.ai/artifact/CP2ozBgysFuJSwhrgoHugt) |
 | `docs/session-management.html` | The options for session management, with a worked example each (https://claude.ai/artifact/SRBob5ix2xQ2ArpwDXTJaW) |
 | `docs/setup-options.html` | Install and start options, and the cloud plan (https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX) |
-| `docs/ui-architecture.html` | The view architecture: hosts, the tray window, phases, pages, components, motion paths (https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM) |
+| `docs/ui-architecture.html` | The view architecture, one tab for each part (data, structure, places, start and stop, page moves, component motion, interactions, components, style), each with definition, architecture, guide and quality; the motion flow proposal (https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM) |
 | `docs/tray-testing.html` | How the tray tests work (https://claude.ai/artifact/RLKUe4bnMJj4mDBVLFPcEK) |
 | `docs/tray-issues.html` | The tray issue tracker: report, reproduce once, the user picks (https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s) |
 
