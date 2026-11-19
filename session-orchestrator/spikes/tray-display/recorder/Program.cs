@@ -39,6 +39,7 @@ static partial class Program
         var output = Path.GetFullPath(args[7]);
         var size = new Size((int)(area.Width * scale), (int)(area.Height * scale));
         var frames = new List<byte[]>();
+        var times = new List<string>();
         var backdrop = new Thread(() =>
         {
             using var form = new Form
@@ -76,8 +77,11 @@ static partial class Program
             first ??= bytes;
             if (frames.Count == 0 && bytes.AsSpan().SequenceEqual(first)) continue;
             frames.Add(bytes);
+            times.Add(DateTime.Now.ToString("HH:mm:ss.fff"));
         }
         Console.WriteLine($"{frames.Count} frames in {clock.Elapsed.TotalSeconds:0.0} s");
+        // The time of each frame, for a match with a trace of the recorded app.
+        File.WriteAllLines(output + ".times.txt", times);
         var encoder = new GifBitmapEncoder();
         foreach (var f in frames) encoder.Frames.Add(BitmapFrame.Create(new MemoryStream(f), BitmapCreateOptions.None, BitmapCacheOption.OnLoad));
         using var gif = new MemoryStream();
