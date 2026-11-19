@@ -54,11 +54,11 @@
 }
 @if (sheet is { } s)
 {
-    <AnswerSheet Card="s.Card" Voice="s.Voice" OnSend="text => SendSheet(s.Card, text)" OnClose="() => sheet = null" />
+    <Presence OnGone="() => sheet = null"><AnswerSheet Card="s.Card" Voice="s.Voice" OnSend="text => SendSheet(s.Card, text)" /></Presence>
 }
 @if (filterOpen)
 {
-    <FilterSheet Filter="filter" Sessions="FilterSessions" Show="@($"Show {Visible().Count} cards")" OnClose="() => filterOpen = false" />
+    <Presence OnGone="() => filterOpen = false"><FilterSheet Filter="filter" Sessions="FilterSessions" Show="@($"Show {Visible().Count} cards")" /></Presence>
 }
 
 @code {

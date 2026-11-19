@@ -1,0 +1,30 @@
+@* The page moves of all navigation: links, code and the back button. Before Blazor changes the page, the host picks the move
+   from the depth of the two pages (PageDepth) and starts a view transition (motion.js); motion.css plays it. No markup. *@
+@implements IDisposable
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+@code {
+    IDisposable? handler;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender) handler = Nav.RegisterLocationChangingHandler(Changing);
+    }
+
+    async ValueTask Changing(LocationChangingContext context)
+    {
+        var from = Nav.ToBaseRelativePath(Nav.Uri);
+        var to = Nav.ToBaseRelativePath(Nav.ToAbsoluteUri(context.TargetLocation).ToString());
+        if (PageDepth.Move(from, to) is not { } kind) return;
+        try
+        {
+            await JS.InvokeVoidAsync("orchMotion.begin", context.CancellationToken, kind);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
+        {
+        }
+    }
+
+    public void Dispose() => handler?.Dispose();
+}

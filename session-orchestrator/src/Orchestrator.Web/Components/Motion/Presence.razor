@@ -1,0 +1,82 @@
+@* A block that comes and goes: a sheet with its scrim, a speed dial. Its children get the phase class is-shown or is-leaving
+   (motion.css). At a leave the block stays until the browser ends each CSS motion in it, then it goes and OnGone runs.
+   The parent hides it with Shown="false"; a child closes it with Leave() through the cascading Presence. *@
+@inject IJSRuntime JS
+
+@if (phase != Gone)
+{
+    <div class="presence @phase" @ref="root">
+        <CascadingValue Value="this" IsFixed="true">@ChildContent</CascadingValue>
+    </div>
+}
+
+@code {
+    const string Showing = "is-shown", Leaving = "is-leaving", Gone = "";
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>False starts the leave (or keeps the block away); true shows it again.</summary>
+    [Parameter] public bool Shown { get; set; } = true;
+
+    /// <summary>Runs when the block is gone after a leave.</summary>
+    [Parameter] public EventCallback OnGone { get; set; }
+
+    ElementReference root;
+    string phase = Gone;
+    bool settle;
+    TaskCompletionSource? left;
+
+    // The last Shown value of the parent. A render of the parent passes Shown again with no change: that is no order to show,
+    // so a leave by Leave() goes on.
+    bool? lastShown;
+
+    protected override void OnParametersSet()
+    {
+        if (Shown == lastShown) return;
+        lastShown = Shown;
+        if (Shown && phase != Showing)
+        {
+            // A show during a leave stops the leave.
+            phase = Showing;
+            left?.TrySetResult();
+        }
+        else if (!Shown && phase == Showing) StartLeave();
+    }
+
+    /// <summary>Starts the leave. The task ends when the block is gone.</summary>
+    public Task Leave()
+    {
+        if (phase == Showing)
+        {
+            StartLeave();
+            StateHasChanged();
+        }
+        return left?.Task ?? Task.CompletedTask;
+    }
+
+    void StartLeave()
+    {
+        phase = Leaving;
+        settle = true;
+        left = new TaskCompletionSource();
+    }
+
+    // The wait starts after the render that put the leave class on the block.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!settle) return;
+        settle = false;
+        try
+        {
+            await JS.InvokeVoidAsync("orchMotion.settle", root);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
+        {
+        }
+        if (phase != Leaving) return;
+        phase = Gone;
+        StateHasChanged();
+        await OnGone.InvokeAsync();
+        left?.TrySetResult();
+    }
+}

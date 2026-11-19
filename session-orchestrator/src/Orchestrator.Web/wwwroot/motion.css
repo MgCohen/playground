@@ -1,0 +1,87 @@
+/* The motion layer: all motion tokens (times and curves) and the motion rules of the views. app.css has the layout and the
+   look. A component that moves uses a token from here; a block that comes and goes is in a <Presence> (Components/Motion). */
+:root {
+  --ease-out: cubic-bezier(.2,.8,.2,1); --ease-spring: cubic-bezier(.3,1.45,.5,1);
+  /* Press of a button, the fold of a details row, the draw of a ring. */
+  --t-press: .08s; --t-fold: .26s; --t-ring: .9s;
+  /* Sheets and the toast (M5): in and out. */
+  --t-scrim-in: .22s; --t-scrim-out: .2s; --t-sheet-in: .34s; --t-sheet-out: .22s; --t-toast-in: .32s;
+  /* The speed dial: each button comes a step after the one before it. */
+  --t-dial: .22s; --t-dial-step: 40ms; --t-dscrim: .2s;
+  /* Page moves (T1, T2): the first page fade, a tab change, a push and a back. */
+  --t-page-in: .18s; --t-tab-out: .12s; --t-tab-in: .26s; --t-push: .3s;
+  /* The longest wait of a <Presence> for the end of its motion: a motion that does not run stops no block. */
+  --t-limit: 1000ms;
+}
+
+/* ===== Presence: a block that comes and goes. The wrapper has no box; its children get the phase class of the parent. ===== */
+.presence { display: contents; }
+
+/* ===== M5: sheets and toast ===== */
+.scrim { animation: m-fade var(--t-scrim-in) ease backwards; }
+.sheet { animation: m-up var(--t-sheet-in) var(--ease-out) backwards; }
+.is-leaving > .scrim { animation: m-fade-out var(--t-scrim-out) ease both; }
+.is-leaving > .sheet { animation: m-down var(--t-sheet-out) ease-in both; }
+.toast:not(.inline) { overflow: hidden; animation: m-drop var(--t-toast-in) var(--ease-spring) backwards; }
+.toast .ubar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--accent); transform-origin: left; animation: m-count 5s linear both; }
+@keyframes m-fade { from { opacity: 0; } }
+@keyframes m-fade-out { to { opacity: 0; } }
+@keyframes m-up { from { transform: translateY(105%); } }
+@keyframes m-down { to { transform: translateY(105%); } }
+@keyframes m-drop { from { transform: translate(-50%, -140%); } }
+@keyframes m-count { to { transform: scaleX(0); } }
+
+/* ===== The speed dial of the page bar (E-1) ===== */
+.dscrim { animation: m-fade var(--t-dscrim) ease backwards; }
+.dial .btn { animation: m-dial var(--t-dial) var(--ease-out) backwards; animation-delay: calc(var(--n, 0) * var(--t-dial-step)); }
+.cfab .ic { transition: transform .25s var(--ease-spring); }
+@keyframes m-dial { from { transform: translateY(14px) scale(.85); opacity: 0; } }
+
+/* ===== M7: small motion ===== */
+/* Press: a raised button goes into the surface. */
+.btn, .chip, .fbtn, .pin, .wbtn, .nav2 .home, .nav2 .it, .seg button, .cfab, .dial .btn { transition: transform var(--t-press), box-shadow var(--t-press), filter var(--t-press); }
+.btn:not(:disabled):active, .chip:active, .fbtn:active, .cfab:active, .dial .btn:active { transform: translateY(1px) scale(.98); box-shadow: var(--sh-carve); }
+/* The home ball is an image: the press moves it down and makes it a little darker. */
+.nav2 .home:active { transform: translateY(1px) scale(.96); filter: brightness(.94); }
+.nav2 .it:active, .seg button:active, .pin:active, .wbtn:active { transform: scale(.92); }
+/* The fold of a details row: the rows open their height (the details content box animates from 0 to auto). */
+.fold > summary .chev { transition: transform var(--t-fold) var(--ease-out); }
+.fold::details-content { transition: height var(--t-fold) var(--ease-out), content-visibility var(--t-fold) allow-discrete; }
+/* Ring draw: the arcs draw on first show. The deep ring sweeps, so each type starts after the type before it. */
+@property --draw { syntax: "<angle>"; inherits: false; initial-value: 360deg; }
+@property --p { syntax: "<number>"; inherits: true; initial-value: 0; }
+.dring .fill { mask: conic-gradient(#000 var(--draw), transparent 0); animation: m-sweep var(--t-ring) var(--ease-out) backwards; }
+.ring .fill { animation: m-arc var(--t-ring) var(--ease-out) backwards; }
+@keyframes m-sweep { from { --draw: 0deg; } }
+@keyframes m-arc { from { --p: 0; } }
+/* V12: a ring draws only the first time its key (data-ring: an event, a session) shows. motion.js marks a ring with a key
+   that was drawn before (data-drawn), so a tab change back shows it at once and a new row draws one time. */
+[data-drawn] > .fill { animation: none; }
+
+/* ===== M6: the loading skeleton (tray widget only) and the first page fade ===== */
+.boot i::after { animation: m-shine 1.3s ease-in-out infinite; }
+@keyframes m-shine { to { transform: translateX(100%); } }
+/* The page fades, not .app: an animation on .app makes a stacking context, and the backdrop of the app bar then covers the bar. */
+.page { animation: m-fade var(--t-page-in) ease backwards; }
+
+/* ===== T1 and T2: page moves. The motion host (MotionHost.razor) picks the move from the depth of the two pages and starts a
+   view transition. A tab change: the old page fades out, the new page rises and fades in. A push: the new page slides in from
+   the right, the old page moves 30 % left and dims. Back plays the push in reverse. The app bar is its own picture, so it stays.
+   No block of a page has an entrance animation of its own, so nothing plays again after the move. ===== */
+html.nav .page { animation: none; }
+.nav2 { view-transition-name: appbar; }
+::view-transition-group(root) { animation-duration: var(--t-push); animation-timing-function: var(--ease-out); }
+.vt-tab::view-transition-old(root) { animation: m-fade-out var(--t-tab-out) ease both; }
+.vt-tab::view-transition-new(root) { animation: m-rise var(--t-tab-in) var(--ease-out) both; }
+.vt:not(.vt-tab)::view-transition-old(root) { animation: m-push-old var(--t-push) var(--ease-out) both; }
+.vt:not(.vt-tab)::view-transition-new(root) { animation: m-push-new var(--t-push) var(--ease-out) both; }
+.vt-back::view-transition-old(root) { animation: m-pop-old var(--t-push) var(--ease-out) both; z-index: 2; }
+.vt-back::view-transition-new(root) { animation: m-pop-new var(--t-push) var(--ease-out) both; }
+@keyframes m-rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes m-push-old { to { transform: translateX(-30%); filter: brightness(.8); } }
+@keyframes m-push-new { from { transform: translateX(100%); } }
+@keyframes m-pop-old { to { transform: translateX(100%); } }
+@keyframes m-pop-new { from { transform: translateX(-30%); filter: brightness(.8); } }
+
+/* One switch for all motion. */
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

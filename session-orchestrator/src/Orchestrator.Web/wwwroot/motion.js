@@ -1,11 +1,9 @@
-// V13: one navigation path for each link. The View Transitions API of Chromium takes a picture of the old page, Blazor renders
-// the new page, and CSS (app.css, "T1" and "T2") moves the two pictures. A move to a deeper page pushes it in from the right
-// (T2), a move back plays it in reverse, and a tab change fades and rises (T1). No page has an entrance animation of its own,
-// so nothing plays again after the transition. This script only picks the kind and starts the transition.
-// V12: a ring draws only the first time its key shows. A mutation observer runs before the next paint: a new ring element
-// with a key that was drawn before gets data-drawn (app.css stops its draw); a new key draws and goes into the list.
-// Blazor keeps an attribute that a script adds, so the mark stays when the ring renders again.
+// The small script of the motion layer (Components/Motion). C# decides each motion; this script only does what C# cannot:
+// wait for the end of the CSS motion of a block, start a view transition, and mark the rings that were drawn before.
 (function () {
+  // V12: a ring draws only the first time its key shows. A mutation observer runs before the next paint: a new ring element
+  // with a key that was drawn before gets data-drawn (motion.css stops its draw); a new key draws and goes into the list.
+  // Blazor keeps an attribute that a script adds, so the mark stays when the ring renders again.
   var seen = new Set();
   function mark(node) {
     var rings = node.matches && node.matches("[data-ring]") ? [node] : [];
@@ -23,58 +21,59 @@
     });
   }).observe(document.documentElement, { childList: true, subtree: true });
   mark(document.documentElement);
-})();
 
-(function () {
-  if (!document.startViewTransition || !window.matchMedia || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-  // The depth of a page: 0 for a tab page, 1 for a session or a session stream, 2 for a document.
-  function depth(url) {
-    var p = new URL(url, document.baseURI);
-    var path = p.pathname.replace(/^\/+/, "");
-    if (path.startsWith("events/")) return 2;
-    if (path.startsWith("sessions/")) return 1;
-    if (path === "stream" && p.searchParams.has("session")) return 1.5;
-    return 0;
+  // The longest wait of a block for its motion (--t-limit in motion.css), in ms.
+  function limit() {
+    var v = getComputedStyle(document.documentElement).getPropertyValue("--t-limit").trim();
+    var ms = parseFloat(v);
+    return isNaN(ms) ? 1000 : v.endsWith("ms") ? ms : ms * 1000;
   }
 
+  // Resolves when Blazor changes the page, or after 600 ms. V13: watch the body, because Blazor replaces the .app element
+  // itself. Not requestAnimationFrame: the browser pauses the rendering during the update of a view transition, so a frame
+  // callback waits for the time limit. The next task comes after the Blazor batch of the render.
   function rendered() {
-    // Resolve when Blazor changes the page, or after 600 ms. V13: watch the body, because Blazor replaces the .app element
-    // itself; a watch on the old element saw no change and always waited the 600 ms.
     return new Promise(function (resolve) {
-      var page = document.body;
       var done = false;
       function end() { if (!done) { done = true; observer.disconnect(); resolve(); } }
-      // V13: not requestAnimationFrame. The browser pauses the rendering during the update of a view transition, so a frame
-      // callback waits for the time limit. The next task comes after the Blazor batch of the render.
       var observer = new MutationObserver(function () { setTimeout(end, 0); });
-      observer.observe(page, { childList: true, subtree: true });
+      observer.observe(document.body, { childList: true, subtree: true });
       setTimeout(end, 600);
     });
   }
 
-  window.addEventListener("click", function (e) {
-    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    var a = e.target.closest && e.target.closest("a[href]");
-    if (!a || a.target || a.hasAttribute("download") || !window.Blazor || !Blazor.navigateTo) return;
-    var to = new URL(a.getAttribute("href"), document.baseURI);
-    if (to.origin !== location.origin) return;
-    var from = depth(location.href), next = depth(to.href);
-    // The same page is no move. A tab change (both depth 0) is T1; another move at the same depth is no move.
-    var same = to.pathname + to.search === location.pathname + location.search;
-    var tab = from === 0 && next === 0;
-    if (same || (from === next && !tab)) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    var root = document.documentElement;
-    root.classList.add("nav");
-    root.classList.toggle("vt-tab", tab);
-    root.classList.toggle("vt-back", !tab && next < from);
-    root.classList.add("vt");
-    var t = document.startViewTransition(function () {
-      Blazor.navigateTo(to.pathname.replace(/^\//, "") + to.search);
-      return rendered();
-    });
-    t.finished.finally(function () { root.classList.remove("vt", "vt-back", "vt-tab"); });
-  }, true);
+  var moves = !!document.startViewTransition && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  window.orchMotion = {
+    // Presence: resolves when each finite CSS animation and transition in the block ends, or after the time limit.
+    // One frame first, so the phase class of the render is in the styles. A hidden page draws no frames and moves no
+    // animation, so it resolves at once; the limit starts before the frame, so a page that hides during the wait ends too.
+    settle: function (el) {
+      return new Promise(function (resolve) {
+        if (document.visibilityState === "hidden") { resolve(); return; }
+        var timer = setTimeout(resolve, limit());
+        requestAnimationFrame(function () {
+          var all = el && el.getAnimations ? el.getAnimations({ subtree: true }) : [];
+          var finite = all.filter(function (a) { return a.effect && a.effect.getComputedTiming().endTime !== Infinity; });
+          Promise.all(finite.map(function (a) { return a.finished.catch(function () { }); })).then(function () { clearTimeout(timer); resolve(); });
+        });
+      });
+    },
+    // MotionHost: starts a view transition of the kind ("tab", "push" or "back"). Resolves when the browser has the picture of
+    // the old page, so Blazor can change the page; the transition then waits for the render.
+    begin: function (kind) {
+      if (!moves) return Promise.resolve();
+      return new Promise(function (started) {
+        var root = document.documentElement;
+        root.classList.add("nav", "vt");
+        root.classList.toggle("vt-tab", kind === "tab");
+        root.classList.toggle("vt-back", kind === "back");
+        var t = document.startViewTransition(function () { started(); return rendered(); });
+        t.ready.catch(function () { });
+        t.finished.catch(function () { }).finally(function () { root.classList.remove("vt", "vt-back", "vt-tab"); });
+        // The browser calls the update also for a skipped transition; this limit only keeps a navigation from a wait with no end.
+        setTimeout(started, 300);
+      });
+    }
+  };
 })();

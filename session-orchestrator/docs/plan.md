@@ -2278,3 +2278,22 @@ Goal: find a simpler display for the tray than the four native windows of sessio
 | S6 two places | The S2 host; the window moves between the panel place and the badge place while nothing shows | The panel place (header drag) and the badge place (right screen edge, drag up and down only) are separate and each keeps its own value. Dock: fold, ball pops out, window to the badge place, badge slides in. Open: badge slides out, window to the panel place, ball pops in, panel grows. The places chain on `transitionend`. Probe: panel drag exact, badge at the right edge, badge drag -200 for -200, open at the saved panel place, dock at the saved badge place, focus loss docks, 0 late frames. Fault: the badge hover did not show. Measure (no mouse): window, WebView and viewport sizes correct, but `.stage` was 100 × 76 in the badge phase. Cause: the phase class `badge` on the stage matched the component class `.badge`. Fix: phase classes with the prefix `is-`. After the fix the stage is 274 × 124 and the badge is flush right. User check: the flow works; only the first hover after a far drag of the panel was cut. Trace (`results/s6/trace-before-fix.log`): the click area stayed at rest (174 px) because no enter came: the hover flag `over` was still true. Its leave had come while the window was in the panel place, where the badge code does not see it; with the panel near the badge, the leave came after the move and reset the flag, so the drag changed only the timing. Fix: reset the badge input at each place change |
 
 Finding: the first S2 run failed all mouse checks, because a popup of another app was on top. Mouse probes need a free screen. A notification of another app lay over the S5 panel and took a probe click. The probe now clicks only on a point that is on its own window, and its pictures come from the page (`CapturePreviewAsync`), not from the screen. Method finding: a wrong guess (a false mouse leave) cost three runs. Measure first, with no mouse, and fix only the cause that the data shows.
+
+### Tray redesign, step 1: the motion layer
+
+Plan: `docs/tray-redesign-plan.md`. Code: `wwwroot/motion.css` (all motion tokens and rules), `Components/Motion/Presence.razor`, `Components/Motion/MotionHost.razor`, `PageDepth.cs`, `wwwroot/motion.js`.
+
+| Check | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 822 tests, 0 failed (13 skipped as before) |
+| Live, web server on a test store (port 7805, `ASPNETCORE_ENVIRONMENT=Development`) | A tab change gets `vt vt-tab`, a push `vt`, a back `vt-back`; the classes go after the move. A code navigation (`Blazor.navigateTo`) and the back button move too |
+| Live, the close of the filter sheet | `is-leaving`, then the block goes when its motion ends (about 284 ms) |
+
+Findings:
+
+| Finding | Cause | Fix |
+|---|---|---|
+| A leave went back to `is-shown` when its motion ended | The parent rendered again during the wait and passed `Shown = true` (the default); the code read it as "show again" | `Presence` acts only on a change of `Shown`; a bUnit test holds the wait open and renders the parent (it failed before the fix) |
+| A leave never ended in a hidden page | A hidden page draws no frames: the CSS motion does not move and the frame callback never fires; the time limit started only in that callback | The limit starts at once; a page with the state `hidden` ends the wait at once. The hidden browser pane still reports `visible`: there the limit (1000 ms) ends the leave |
+| All static files of the web server came with 0 bytes | No `launchSettings.json`: `dotnet run` starts in Production, which serves only published files | Start a source run with `ASPNETCORE_ENVIRONMENT=Development` |
+| The store IO rule failed on `src/Orchestrator.Tray/Program.cs` | The build time read of the tray instance label (session V) | Allowed, with its reason: it is not store IO |
