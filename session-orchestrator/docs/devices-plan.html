@@ -1,0 +1,294 @@
+<title>Orchestrator Devices Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one narrow reading column, a tab bar, tables in scroll boxes, chips that mark the kind of work. */
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --fg: #1b2430; --muted: #5a6676; --line: #dde2e9; --accent: #2f5fd0;
+  --host: #1f7a4d; --host-bg: #e3f4ea; --wrap: #2459b8; --wrap-bg: #e4ecfb;
+  --newh: #8a5a00; --newh-bg: #fbf0d9; --rew: #b03a2e; --rew-bg: #fae6e3;
+  --code-bg: #eef1f5;
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161c; --panel: #1a2029; --fg: #e3e8ef; --muted: #9aa6b5; --line: #2c3542; --accent: #7fa4ff;
+  --host: #6fd3a0; --host-bg: #183327; --wrap: #8fb2ff; --wrap-bg: #1b2a47;
+  --newh: #f0c062; --newh-bg: #3a2e14; --rew: #ff9488; --rew-bg: #3d1f1b; --code-bg: #222a35; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12161c; --panel: #1a2029; --fg: #e3e8ef; --muted: #9aa6b5; --line: #2c3542; --accent: #7fa4ff;
+  --host: #6fd3a0; --host-bg: #183327; --wrap: #8fb2ff; --wrap-bg: #1b2a47;
+  --newh: #f0c062; --newh-bg: #3a2e14; --rew: #ff9488; --rew-bg: #3d1f1b; --code-bg: #222a35; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body); }
+.wrap { max-width: 920px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.25; margin: 0; }
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.3rem; margin-top: 8px; }
+h3 { font-size: 1.05rem; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 .75rem var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.lead { color: var(--muted); }
+header { display: grid; gap: 8px; margin-bottom: 20px; }
+nav { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+nav a { padding: 8px 12px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; font-weight: 500; }
+nav a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--accent); }
+nav a:focus-visible, summary:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+section { display: grid; gap: 16px; }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+th, td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+th { font: 600 .78rem var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+code { font: .86em var(--mono); background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+.chip { display: inline-block; font: 600 .74rem var(--mono); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.k-host { color: var(--host); background: var(--host-bg); }
+.k-wrap { color: var(--wrap); background: var(--wrap-bg); }
+.k-newh { color: var(--newh); background: var(--newh-bg); }
+.k-rew { color: var(--rew); background: var(--rew-bg); }
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.legend div { display: grid; gap: 4px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+.legend p { font-size: .88rem; color: var(--muted); }
+.note { border-left: 3px solid var(--accent); padding: 8px 14px; background: var(--panel); border-radius: 0 6px 6px 0; }
+details { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+summary { cursor: pointer; padding: 10px 14px; font-weight: 600; }
+details > div { padding: 0 14px 14px; display: grid; gap: 8px; }
+ul, ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.tools { display: flex; gap: 8px; }
+button { font: 500 .85rem var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; overflow-x: auto; margin: 0; }
+pre.code { margin: 0; padding: 12px; font: .85rem/1.5 var(--mono); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow-x: auto; }
+.dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: .92rem; }
+.dl dt { color: var(--muted); font-weight: 600; }
+.dl dd { margin: 0; min-width: 0; }
+@media (max-width: 520px) { .dl { grid-template-columns: 1fr; } .dl dd { margin-bottom: 6px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">session-orchestrator · plan · 2026-11-19</span>
+  <h1>Devices plan: Android, web and desktop</h1>
+  <p class="lead">Spike A1 shows that the Razor components run unchanged in an Android app. The plan makes one shared UI library, then three hosts on it: web, Windows tray and Android. Each phase has a check that shows it is done.</p>
+</header>
+
+<nav aria-label="Tabs">
+  <a href="#summary">Summary</a>
+  <a href="#plan">Plan</a>
+  <a href="#spike">Spike A1</a>
+  <a href="#platforms">Platforms</a>
+  <a href="#questions">Questions</a>
+</nav>
+
+<!-- SUMMARY -->
+<section id="summary">
+  <h2>Target: one UI library, three hosts</h2>
+  <pre class="mermaid">
+flowchart TD
+    U[Orchestrator.Ui<br/>components, Board, CSS, JS] --> W[Orchestrator.Web<br/>Blazor Server]
+    U --> T[Orchestrator.Tray<br/>WinForms + WebView2]
+    U --> A[Orchestrator.Android<br/>MAUI + Android WebView]
+    D[Orchestrator.Demo<br/>mock store] --> T
+    D --> A
+    W --> B[PC browser]
+  </pre>
+
+  <h2>Kinds of work</h2>
+  <div class="legend">
+    <div><span class="chip k-host">Host</span><p>Same code. A different start or a different browser.</p></div>
+    <div><span class="chip k-wrap">Wrapper</span><p>The same running app inside a native shell.</p></div>
+    <div><span class="chip k-newh">New host</span><p>The same components in a new native project.</p></div>
+    <div><span class="chip k-rew">Rewrite</span><p>A new UI technology. No shared UI code.</p></div>
+  </div>
+
+  <h2>From a button to the C# and back</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Host</th><th>Bridge</th><th>Component code</th></tr></thead>
+    <tbody>
+      <tr><td>PC browser</td><td>SignalR WebSocket to the PC</td><td>Same</td></tr>
+      <tr><td>Windows tray</td><td><code>BlazorWebView</code>, in-process, WebView2</td><td>Same</td></tr>
+      <tr><td>Android app</td><td><code>BlazorWebView</code>, in-process, Android WebView</td><td>Same (tested in A1)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Data access (the local store, or an API to a server) is behind <code>Board</code>. This plan keeps it as it is. The Android app uses the mock store until a later backend plan.</p>
+</section>
+
+<!-- PLAN -->
+<section id="plan" hidden>
+  <h2>Phases and their order</h2>
+  <pre class="mermaid">
+flowchart LR
+    P1[P1 UI library] --> P2[P2 Shared mock and services]
+    P2 --> P3[P3 Android host in src]
+    P3 --> P4[P4 Build and share]
+    P3 --> P5[P5 Android smoke test]
+    P3 --> P6[P6 Phone host features]
+  </pre>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Phase</th><th>Result</th><th>Done when</th></tr></thead>
+    <tbody>
+      <tr><td>P1</td><td>Razor class library <code>Orchestrator.Ui</code></td><td>Tests and tray self-test pass</td></tr>
+      <tr><td>P2</td><td>One mock store, one service list</td><td>Tray mock mode runs on it</td></tr>
+      <tr><td>P3</td><td><code>src/Orchestrator.Android</code></td><td>APK starts on emulator</td></tr>
+      <tr><td>P4</td><td>Script, signing key, share link</td><td>APK under 30 MB on the phone</td></tr>
+      <tr><td>P5</td><td>Scripted emulator test</td><td>Screens and PASS list</td></tr>
+      <tr><td>P6</td><td>Back button, bar color, speech</td><td>Tested on a real phone</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="tools"><button type="button" class="open-all">Open all</button><button type="button" class="close-all">Close all</button></div>
+
+  <details><summary>P1 · UI library · move only, no logic change</summary><div>
+    <dl class="dl">
+      <dt>Goal</dt><dd>Each host references one library. No host links the files of another project.</dd>
+      <dt>Moves</dt><dd><code>Components/**</code> except <code>App.razor</code>; <code>Routes.razor</code>; <code>Board</code>, <code>Ui</code>, <code>Markdown</code>, <code>PageAct</code>, <code>PathTrail</code>, <code>ViewFilter</code>, <code>StreamHub</code>, <code>IWidgetWindow</code>, <code>NewSession</code>; <code>wwwroot</code> assets.</dd>
+      <dt>Stays in Web</dt><dd><code>Program.cs</code>, <code>App.razor</code>, <code>Api/</code>, <code>SignIn</code>, <code>TickService</code>.</dd>
+      <dt>Effect</dt><dd>The assets get the path <code>_content/Orchestrator.Ui/</code>. Each host page changes its links. <code>Routes</code> names the library assembly, so all hosts use one router.</dd>
+      <dt>Done when</dt><dd><code>dotnet test --solution Orchestrator.slnx</code> passes. <code>tray.ps1 -SelfTest</code> passes. The web pages look the same.</dd>
+      <dt>Risk</dt><dd>bUnit tests and the tray self-test read asset paths. Change them in the same commit.</dd>
+    </dl>
+  </div></details>
+
+  <details><summary>P2 · Shared mock and services · removes two copies</summary><div>
+    <dl class="dl">
+      <dt>Goal</dt><dd>The tray and the Android app use the same demo data and the same service list.</dd>
+      <dt>Moves</dt><dd><code>MockStore</code>, <code>NoRunner</code>, <code>NoDocs</code> from the tray to a small library <code>Orchestrator.Demo</code>.</dd>
+      <dt>Adds</dt><dd>One extension method in <code>Orchestrator.Ui</code>, for example <code>AddOrchestratorUi(store, policy, ticks)</code>. It replaces the list in <code>Tray/Program.cs</code> and in the Android host.</dd>
+      <dt>Done when</dt><dd>Tray mock mode and live mode run. Tests pass.</dd>
+    </dl>
+  </div></details>
+
+  <details><summary>P3 · Android host in src · the spike becomes a project</summary><div>
+    <dl class="dl">
+      <dt>Goal</dt><dd><code>src/Orchestrator.Android</code> references <code>Orchestrator.Ui</code> and <code>Orchestrator.Demo</code>, with no linked files.</dd>
+      <dt>Keeps from A1</dt><dd>Host page with <code>autostart="false"</code>, <code>SafeAreaEdges.All</code>, templates as resources with <code>ORCH_HOME</code>.</dd>
+      <dt>Solution</dt><dd>A second solution file <code>Orchestrator.Android.slnx</code>. The main solution needs no Android workload.</dd>
+      <dt>Removes</dt><dd><code>spikes/android/</code>.</dd>
+      <dt>Done when</dt><dd>The APK starts on the emulator and shows the home view.</dd>
+    </dl>
+  </div></details>
+
+  <details><summary>P4 · Build and share · an APK on the phone in one step</summary><div>
+    <dl class="dl">
+      <dt>Script</dt><dd><code>tools/android/build.ps1</code>: install the user-local toolchain if missing, then build a release APK for <code>android-arm64</code>.</dd>
+      <dt>Signing</dt><dd>One release key. The key and its password stay in 1Password.</dd>
+      <dt>Size</dt><dd>Below 30 MB, so the file reaches the phone. Trim only if a test shows that it is safe.</dd>
+      <dt>Share</dt><dd>Open question: a GitHub release, or a file send.</dd>
+      <dt>Done when</dt><dd>The APK installs on the phone from the share link.</dd>
+    </dl>
+  </div></details>
+
+  <details><summary>P5 · Android smoke test · the self-test for the phone</summary><div>
+    <dl class="dl">
+      <dt>Script</dt><dd><code>tools/android/smoke.ps1</code>: start the emulator, install, open each tab, swipe a card, take screenshots.</dd>
+      <dt>Output</dt><dd>A PASS list and the screens in <code>docs/screens/android-*.png</code>, as the tray self-test.</dd>
+      <dt>Done when</dt><dd>The script passes twice from a cold emulator.</dd>
+    </dl>
+  </div></details>
+
+  <details><summary>P6 · Phone host features · small native parts</summary><div>
+    <ul>
+      <li>The Android back button goes back in the app. It must not close the app.</li>
+      <li>The status bar band has the theme color, not white.</li>
+      <li>The microphone: test <code>speech.js</code> in Android WebView. If it fails, add native speech through a host interface.</li>
+      <li>Optional: an Android notice for a new waiting card.</li>
+    </ul>
+  </div></details>
+
+  <h3>After this plan</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Item</th><th>Depends on</th></tr></thead>
+    <tbody>
+      <tr><td>Data on the phone over the HTTP API</td><td>Backend plan</td></tr>
+      <tr><td>Electron desktop spike (Windows, Linux)</td><td>P1</td></tr>
+      <tr><td>Cloud visual tests in headless Chromium</td><td>P1</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- SPIKE -->
+<section id="spike" hidden>
+  <h2>Spike A1 result: the UI runs on Android</h2>
+  <p>Branch <code>orch/spike-android</code>, folder <code>spikes/android/</code>. A .NET MAUI <code>BlazorWebView</code> runs the Razor components of <code>Orchestrator.Web</code> on the tray mock store.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Test</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Start and home view</td><td>Pass</td></tr>
+      <tr><td>Cards tab (tap)</td><td>Pass</td></tr>
+      <tr><td>Swipe on a card</td><td>Pass: accept, undo toast, badge 8 to 7</td></tr>
+      <tr><td>Sessions tab</td><td>Pass</td></tr>
+      <tr><td>Microphone, real phone</td><td>Not tested</td></tr>
+    </tbody>
+  </table></div>
+  <div class="scroll"><table>
+    <thead><tr><th>Finding</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>Only the loading text showed</td><td><code>autostart="false"</code>: MAUI starts Blazor itself</td></tr>
+      <tr><td>Header under the status bar</td><td><code>SafeAreaEdges = SafeAreaEdges.All</code></td></tr>
+      <tr><td><code>NewSession</code> in a server file</td><td>Moved to <code>NewSession.cs</code></td></tr>
+      <tr><td>Debug APK is 84 MB</td><td>P4: release build for arm64</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">Toolchain: .NET 10.0.404 with <code>maui-android</code>, JDK, Android SDK and emulator, all user-local in <code>%LOCALAPPDATA%\orch-android</code>. Emulator: Android 15 with WHPX.</p>
+</section>
+
+<!-- PLATFORMS -->
+<section id="platforms" hidden>
+  <h2>Each platform</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Target</th><th>Kind</th><th>Engine</th><th>Needs</th></tr></thead>
+    <tbody>
+      <tr><td>CLI</td><td><span class="chip k-host">Host</span> done</td><td>None</td><td>Nothing</td></tr>
+      <tr><td>Web, full (with settings)</td><td><span class="chip k-host">Host</span> done</td><td>Browser</td><td>Only the settings pages</td></tr>
+      <tr><td>Windows tray</td><td><span class="chip k-host">Host</span> done</td><td>WebView2</td><td>P1, P2</td></tr>
+      <tr><td>Android app (MAUI)</td><td><span class="chip k-newh">New host</span> spike done</td><td>Android WebView</td><td>P1 to P6</td></tr>
+      <tr><td>Android, WebView to the PC</td><td><span class="chip k-wrap">Wrapper</span></td><td>Android WebView</td><td>Not planned</td></tr>
+      <tr><td>Desktop, Electron</td><td><span class="chip k-wrap">Wrapper</span></td><td>Chromium</td><td>Spike after P1</td></tr>
+      <tr><td>Desktop, Tauri 2</td><td><span class="chip k-wrap">Wrapper</span></td><td>WebView2 / WebKitGTK</td><td>Not planned: Linux engine differs</td></tr>
+      <tr><td>Linux, headless browser</td><td><span class="chip k-host">Host</span></td><td>Chromium</td><td>Tests after P1</td></tr>
+      <tr><td>Android, Kotlin or Flutter</td><td><span class="chip k-rew">Rewrite</span></td><td>Native</td><td>Not planned</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- QUESTIONS -->
+<section id="questions" hidden>
+  <h2>Non-goals</h2>
+  <ul>
+    <li>No change to the logic of the components. Reason: A1 shows that they work on Android as they are.</li>
+    <li>No backend work: no tunnel, no sign-in, no remote data. Reason: a separate plan covers the server.</li>
+    <li>No Play Store release. Reason: one user; an APK file is enough.</li>
+  </ul>
+
+  <h2>Open questions</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Question</th><th>Recommendation</th></tr></thead>
+    <tbody>
+      <tr><td>Where do we share the APK?</td><td>A GitHub release of the repository</td></tr>
+      <tr><td>Do P1 and P2 run as one child task?</td><td>Yes: both touch the same files</td></tr>
+      <tr><td>Electron for the desktop?</td><td>Decide after an Electron spike</td></tr>
+    </tbody>
+  </table></div>
+</section>
+</div>
+
+<script>
+(function () {
+  var ids = ["summary", "plan", "spike", "platforms", "questions"];
+  function show() {
+    var id = location.hash.slice(1);
+    if (ids.indexOf(id) < 0) id = "summary";
+    ids.forEach(function (x) { document.getElementById(x).hidden = x !== id; });
+    document.querySelectorAll("nav a").forEach(function (a) {
+      if (a.getAttribute("href") === "#" + id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    });
+  }
+  window.addEventListener("hashchange", show);
+  show();
+  function all(open) { document.querySelectorAll("#plan details").forEach(function (d) { d.open = open; }); }
+  document.querySelectorAll(".open-all").forEach(function (b) { b.addEventListener("click", function () { all(true); }); });
+  document.querySelectorAll(".close-all").forEach(function (b) { b.addEventListener("click", function () { all(false); }); });
+})();
+</script>
