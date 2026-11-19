@@ -1,0 +1,210 @@
+@* The tray stage: the panel with the views, and the badge. One phase at a time (TrayPhase), as the class "is-<phase>".
+   Inside one place, CSS orders the steps of a change (tray.css). Between the places, the stage waits for the end of the last
+   motion, the window goes to the next place while nothing shows, and the next place starts. One request runs at a time.
+   The home button of the app bar is the ball of the open and the fold: the panel clip starts and ends as a circle around it.
+   In the web server (no IWidgetWindow) the stage renders only the views. *@
+@using Microsoft.Extensions.DependencyInjection
+@inherits LiveView
+@inject IJSRuntime JS
+@inject IServiceProvider Services
+
+@if (window is null)
+{
+    @ChildContent
+}
+else
+{
+    <div class="tray-stage is-@phase" @ref="stage">
+        <div class="tray-shadow">
+            <div class="tray-panel">
+                <div class="tray-view">@ChildContent</div>
+            </div>
+        </div>
+        <div class="tray-badge-layer">
+            <TrayBadge Counts="counts" Spin="spin" Peek="peek" PeekTitle="@peekTitle" PeekSub="@peekSub" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The time that the peek bubble shows (N2).</summary>
+    public static readonly TimeSpan PeekTime = TimeSpan.FromSeconds(5);
+
+    IWidgetWindow? window;
+    ElementReference stage;
+    string phase = TrayPhase.Hidden;
+    string? pending;
+    bool busy, started, spin, peek;
+    string peekTitle = "", peekSub = "";
+    TrayCounts counts = TrayCounts.None;
+    int notice;
+
+    protected override void OnInitialized()
+    {
+        window = Services.GetService<IWidgetWindow>();
+        if (window is not null) window.Requested += OnRequest;
+        base.OnInitialized();
+    }
+
+    // The counts of the badge. A new card while the tray is hidden brings the badge in; at the badge it spins the ring and peeks.
+    protected override void Load()
+    {
+        var cards = Board.Cards();
+        var next = TrayCounts.Of(cards);
+        var more = started && next.Total > counts.Total;
+        counts = next;
+        if (!more || window is null) return;
+        var newest = cards.MaxBy(c => c.Id, StringComparer.Ordinal);
+        _ = InvokeAsync(() => Notice(newest is null ? "" : $"{newest.Label} · {newest.SessionTitle}", newest?.Title ?? ""));
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || window is null) return;
+        started = true;
+        if (window.OpenAtStart) await Run(TrayRequest.Open);
+    }
+
+    void OnRequest(string what) => _ = InvokeAsync(() => Run(what));
+
+    // One request at a time; a request during a run waits, and only the last one runs.
+    async Task Run(string what)
+    {
+        if (busy)
+        {
+            pending = what;
+            return;
+        }
+        busy = true;
+        try
+        {
+            if (what == TrayRequest.Open) await Open();
+            else if (what == TrayRequest.Dock) await Dock();
+            else if (what == TrayRequest.Hide) await Hide();
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
+        {
+        }
+        finally
+        {
+            busy = false;
+        }
+        if (pending is { } next)
+        {
+            pending = null;
+            await Run(next);
+        }
+    }
+
+    async Task Open()
+    {
+        if (phase == TrayPhase.Open) return;
+        if (phase == TrayPhase.Badge) await LeaveBadge();
+        if (phase is TrayPhase.Hidden or TrayPhase.BadgeOut)
+        {
+            await window!.Enter(TrayPhase.Start);
+            await Set(TrayPhase.Start);
+            await Home();
+            await JS.InvokeVoidAsync("orchTray.frames", 2);
+        }
+        await Set(TrayPhase.Open);
+        await window!.Enter(TrayPhase.Open);
+    }
+
+    async Task Dock()
+    {
+        if (phase != TrayPhase.Open) return;
+        await Fold();
+        await window!.Enter(TrayPhase.BadgeOut);
+        await ShowBadge();
+    }
+
+    async Task Hide()
+    {
+        if (phase == TrayPhase.Open) await Fold();
+        else if (phase == TrayPhase.Badge) await LeaveBadge();
+        else if (phase == TrayPhase.Hidden) return;
+        await window!.Enter(TrayPhase.Hidden);
+        await Set(TrayPhase.Hidden);
+    }
+
+    // The fold: the content fades, the panel folds into the ball, then the ball pops out.
+    async Task Fold()
+    {
+        await Home();
+        await Set(TrayPhase.Folded);
+        await JS.InvokeVoidAsync("orchTray.end", ".tray-view .nav2 .home", "scale", 900);
+    }
+
+    async Task LeaveBadge()
+    {
+        await Set(TrayPhase.BadgeOut);
+        await JS.InvokeVoidAsync("orchTray.end", ".tb-tab", "translate", 500);
+    }
+
+    async Task ShowBadge()
+    {
+        await Set(TrayPhase.BadgeOut);
+        await JS.InvokeVoidAsync("orchTray.frames", 2);
+        await Set(TrayPhase.Badge);
+        await window!.Enter(TrayPhase.Badge);
+    }
+
+    // A new card: the badge comes in when the tray is hidden; at the badge the ring spins and the bubble peeks.
+    async Task Notice(string title, string sub)
+    {
+        if (phase == TrayPhase.Hidden && !busy && counts.Total > 0)
+        {
+            busy = true;
+            try
+            {
+                await window!.Enter(TrayPhase.BadgeOut);
+                await ShowBadge();
+            }
+            catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
+            {
+            }
+            finally
+            {
+                busy = false;
+            }
+        }
+        if (phase != TrayPhase.Badge) return;
+        var mine = ++notice;
+        spin = true;
+        peekTitle = title;
+        peekSub = sub;
+        window!.Peek(true);
+        peek = true;
+        StateHasChanged();
+        var shown = Task.Delay(PeekTime);
+        await JS.InvokeVoidAsync("orchTray.end", ".tb-ring", "tb-spin", 1500);
+        if (mine != notice) return;
+        spin = false;
+        StateHasChanged();
+        await shown;
+        if (mine != notice) return;
+        peek = false;
+        StateHasChanged();
+        await JS.InvokeVoidAsync("orchTray.end", ".tb-peek", "opacity", 400);
+        if (mine == notice && !peek) window!.Peek(false);
+    }
+
+    // The place of the home button in the panel, for the clip circle of the open and the fold (tray.js).
+    Task Home() => JS.InvokeVoidAsync("orchTray.home", stage).AsTask();
+
+    Task Set(string next)
+    {
+        phase = next;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    public override void Dispose()
+    {
+        if (window is not null) window.Requested -= OnRequest;
+        base.Dispose();
+    }
+}

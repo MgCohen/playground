@@ -1,484 +1,316 @@
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
+using Orchestrator.Core.Contract;
+using Orchestrator.Core.Events;
+using Orchestrator.Store;
+using Orchestrator.Web;
 
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The self-test of the window (--selftest &lt;folder&gt;): it opens each A4 view with the mock data, examines the DOM,
-/// and writes a screenshot of each view. The exit code is 0 when all checks pass.
+/// The self-test of the tray (--selftest folder). It runs the flow of the tray stage and reads the state of the window and of the
+/// page: no mouse, so it does not depend on the screen. With --mouse it adds checks with real mouse input; each one first makes
+/// sure that the point is on the tray window, so no click goes to another window. The result is selftest.json in the folder.
 /// </summary>
 public static partial class SelfTest
 {
-    public sealed record Check(string View, bool Pass, string Message, string Screenshot);
-
-    /// <summary>One step: a script that opens the view, then a CSS selector that must match when the view is there.</summary>
-    sealed record Step(string View, string Open, string Expect);
+    public sealed record Check(string Name, bool Pass, string Message);
 
     // Go(path) clicks a temporary link, so the Blazor router opens the view as a user click does.
     const string Go = "(p => { const a = document.createElement('a'); a.href = p; document.body.appendChild(a); a.click(); a.remove(); })";
 
-    static readonly Step[] Steps =
-    [
-        new("home", $"{Go}('')", ".wait-block .ring-n"),
-        new("cards", $"{Go}('cards')", ".pcard"),
-        new("answer-sheet", "document.querySelector('.acts [data-act=\"left\"]').click()", ".sheet textarea"),
-        new("open", $"document.querySelector('.scrim')?.click(); {Go}(document.querySelector('.card-link').getAttribute('href'))", ".doc-page"),
-        new("stream", $"{Go}('stream')", ".tl"),
-        new("sessions", $"{Go}('sessions')", "a.srow"),
-        new("session-status", $"{Go}(([...document.querySelectorAll('a.srow')].find(a => a.textContent.includes('Plan the inbox')) ?? document.querySelector('a.srow')).getAttribute('href'))", ".hero"),
-        new("session-stream", $"{Go}(document.querySelector('.pagebar a.pri').getAttribute('href'))", ".lock"),
-    ];
-
-    /// <summary>The place file of the self-test: a new file in the self-test folder, so the widget and the edge tab start at their home places.</summary>
+    /// <summary>The place files of the self-test: new files in the self-test folder, so the panel and the badge start at their home places.</summary>
     public static string FreshPlaceFile(string folder)
     {
-        var file = Path.Combine(folder, "place.json");
-        if (File.Exists(file)) File.Delete(file);
-        // The edge tab keeps its place next to the widget place.
-        var tab = Path.Combine(folder, "edge-tab.txt");
-        if (File.Exists(tab)) File.Delete(tab);
-        return file;
-    }
-
-    /// <summary>
-    /// Runs all checks, or with <paramref name="only"/> a list of groups: "notify" (the notice motion, V1 and V2) and "overlap"
-    /// (one form at a time, V4) and "ball" (one look of the home ball, V5), "drag" and "edge" (N1 and N2), "cards" (pictures of the cards, V7), "swipe" (a real drag on the top card, V17), "shadow" (one shadow, V10), "motion" (M5 to M7 and the ring draw, V12), "nav" (a card tap to its page, V13), "transitions" (T1, T2), "threads" (the home ball from two threads, V19), "shadow-life" (the shadow follows the widget, V20). The groups run with the test places of the widget and the edge tab.
-    /// </summary>
-    public static async Task<int> Run(TrayApp tray, string folder, string? only = null)
-    {
-        var form = tray.Form;
         Directory.CreateDirectory(folder);
-        var checks = new List<Check>();
-        var web = await Until(() => Task.FromResult(form.Web), TimeSpan.FromSeconds(60)) ?? throw new TimeoutException("WebView2 did not start in 60 seconds.");
-        await Until(() => Found(web, "main.page"), TimeSpan.FromSeconds(30));
-        if (only is not null)
+        foreach (var name in new[] { "place.json", "badge.txt" })
         {
-            var groups = only.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-            await Task.Delay(1200);
-            TestPlaces(tray);
-            form.HideWidget();
-            await Settle(form);
-            form.ShowWidget();
-            await Settle(form);
-            if (groups.Contains("notify")) checks.AddRange(await NoticeMotion(tray, web, folder));
-            if (groups.Contains("overlap")) checks.AddRange(await Overlap(tray, folder));
-            if (groups.Contains("ball")) checks.AddRange(await HomeBall(form, folder));
-            if (groups.Contains("drag")) checks.Add(await Drag(form, web));
-            if (groups.Contains("edge")) checks.AddRange(await Edge(tray, web, folder));
-            if (groups.Contains("cards")) checks.AddRange(await Cards(web, folder));
-            if (groups.Contains("swipe")) checks.AddRange(await Swipe(form, web, folder));
-            if (groups.Contains("shadow")) checks.AddRange(await Shadow(form, folder));
-            if (groups.Contains("motion")) checks.AddRange(await Motion(web, folder));
-            if (groups.Contains("nav")) checks.AddRange(await Nav(web, folder));
-            if (groups.Contains("transitions")) checks.AddRange(await Transitions(web, folder));
-            if (groups.Contains("threads")) checks.AddRange(await Threads());
-            if (groups.Contains("shadow-life")) checks.AddRange(await ShadowLife(form));
-            if (groups.Contains("click")) checks.AddRange(await Click(form, folder));
-            return Write(checks, folder);
+            var file = Path.Combine(folder, name);
+            if (File.Exists(file)) File.Delete(file);
         }
-        foreach (var step in Steps)
-        {
-            string? error = null;
-            try
-            {
-                await web.ExecuteScriptAsync(step.Open);
-            }
-            catch (Exception e)
-            {
-                error = e.Message;
-            }
-            var found = await Until(() => Found(web, step.Expect), TimeSpan.FromSeconds(20)) is not null;
-            // The fonts and the layout settle after the first render.
-            await Task.Delay(1200);
-            var png = Path.Combine(folder, $"tray-{step.View}.png");
-            await using (var file = File.Create(png)) await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, file);
-            var path = JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync("location.pathname + location.search"));
-            checks.Add(new Check(step.View, found, $"{path}: expect {step.Expect}{(found ? "" : " (not found)")}{(error is null ? "" : $", error {error}")}", png));
-        }
-        await web.ExecuteScriptAsync($"{Go}('')");
-        await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
-        await Task.Delay(1200);
-        var scale = form.DeviceDpi / 96f;
-        var size = form.Size;
-        var expect = form.Scaled();
-        var home = form.HomeLocation();
-        checks.Add(new Check("widget", size == expect && form.Location == home && !form.ShowInTaskbar && form.FormBorderStyle == FormBorderStyle.None,
-            $"size {size.Width} × {size.Height} (expect {expect.Width} × {expect.Height}) at {form.DeviceDpi} DPI, location {form.Location.X},{form.Location.Y} (home {home.X},{home.Y}), not in the taskbar, no title bar", ""));
-        var area = Screen.FromControl(form).WorkingArea;
-        var gap = area.Bottom - form.Bottom;
-        var margin = (int)(12 * scale);
-        var fit = form.Fit(new Point(form.Left, area.Bottom - form.Height));
-        checks.Add(new Check("taskbar-gap", gap == margin && area.Bottom - (fit.Y + form.Height) == margin,
-            $"gap {gap} px above the work area bottom (expect {margin}); a drop on the taskbar edge moves up to a gap of {area.Bottom - (fit.Y + form.Height)} px", ""));
-        // The test places (top left, and high on the right edge): the other checks do not meet the trays of other sessions there.
-        TestPlaces(tray);
-        form.HideWidget();
-        await Settle(form);
-        form.ShowWidget();
-        await Settle(form);
-        // The scroll bar gutter of the page: the window width less the width of the content box.
-        var bar = JsonSerializer.Deserialize<double>(await web.ExecuteScriptAsync("window.innerWidth - document.documentElement.clientWidth"));
-        var scrolls = JsonSerializer.Deserialize<bool>(await web.ExecuteScriptAsync("document.documentElement.scrollHeight > window.innerHeight"));
-        // S3, S4: a fixed gutter of 6 CSS px for the quiet scroll bar, so the content never moves.
-        checks.Add(new Check("scroll-gutter", bar == 6 && scrolls, $"scroll bar gutter {bar} px (expect 6), the home page scrolls {scrolls}", ""));
-        // The backdrop behind the app bar: a fixed layer under the bar that fades the content into the canvas.
-        var backdrop = JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync(
-            "(s => s.position + ' ' + s.zIndex + ' ' + s.height + ' ' + (s.backgroundImage.startsWith('linear-gradient') ? 'gradient' : 'none'))(getComputedStyle(document.body, '::after'))"));
-        checks.Add(new Check("app-bar-backdrop", backdrop == "fixed 9 92px gradient", $"body::after {backdrop} (expect fixed 9 92px gradient)", ""));
-        checks.Add(await ScrollEnd(web));
-        await web.ExecuteScriptAsync($"{Go}('')");
-        await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
-        await Task.Delay(800);
-        checks.AddRange(await RenderShots(form, web, folder));
-        checks.AddRange(await Motion(web, folder));
-        checks.AddRange(await Header(form, web, folder));
-        checks.AddRange(await Transitions(web, folder));
-        checks.AddRange(await Actions(web, folder));
-        await web.ExecuteScriptAsync($"{Go}('')");
-        await Until(() => Found(web, ".wait-block .ring-n"), TimeSpan.FromSeconds(20));
-        await Task.Delay(800);
-        var corner = Path.Combine(folder, "tray-desktop-corner.png");
-        checks.Add(new Check("desktop-corner", Corner(form, corner), "screenshot of the screen corner with the widget and the tray", corner));
-        checks.Add(await Pin(form, web, folder));
-        checks.Add(await Drag(form, web));
-        checks.Add(await Toggle(form));
-        checks.Add(await PlaceClamp(form, folder));
-        checks.Add(await Grow(form, folder));
-        checks.AddRange(await Ball(form, web, folder));
-        checks.Add(await Video(form, folder));
-        checks.AddRange(await Edge(tray, web, folder));
-        checks.AddRange(await NoticeMotion(tray, web, folder));
-        checks.AddRange(await Overlap(tray, folder));
-        checks.AddRange(await HomeBall(form, folder));
-        checks.AddRange(await Swipe(form, web, folder));
-        checks.AddRange(await Shadow(form, folder));
-        checks.AddRange(await Nav(web, folder));
-        checks.AddRange(await Threads());
-        checks.AddRange(await ShadowLife(form));
-        checks.AddRange(await Click(form, folder));
-        return Write(checks, folder);
+        return Path.Combine(folder, "place.json");
     }
 
-    static int Write(List<Check> checks, string folder)
+    public static async Task<int> Run(TrayApp tray, string folder, bool mouse)
     {
-        // V19: no unhandled exception in the run (each one is in exceptions.log).
-        checks.Add(new Check("no-exceptions", Faults.Count == 0, Faults.Count == 0 ? "no unhandled exception" : $"{Faults.Count} unhandled exceptions; first: {Faults.First}", ""));
-        foreach (var c in checks) Console.WriteLine($"{(c.Pass ? "PASS" : "FAIL")} {c.View}: {c.Message}");
+        Directory.CreateDirectory(folder);
+        var w = tray.Window;
+        var checks = new List<Check>();
+        void Add(string name, bool pass, string message)
+        {
+            checks.Add(new Check(name, pass, message));
+            Console.WriteLine($"{(pass ? "PASS" : "FAIL")} {name}: {message}");
+        }
+
+        // 1. The start: the ball pops in, the panel grows, the panel is at its home place.
+        var open = await Until(() => w.Phase == TrayPhase.Open, 8000);
+        await Task.Delay(900);
+        var stage = await Js(w, "document.querySelector('.tray-stage')?.className");
+        var size = await Js(w, "(r => [Math.round(r.width), Math.round(r.height)])(document.querySelector('.tray-panel').getBoundingClientRect())");
+        (await Picture(w)).Save(Path.Combine(folder, "1-open.png"));
+        Add("start", open && w.Visible && w.Bounds == w.PanelBounds() && stage.Contains("is-open"),
+            $"phase {w.Phase}, visible {w.Visible}, window {w.Bounds} (expect {w.PanelBounds()}), stage \"{stage}\", panel {size} CSS px");
+
+        // 2. The home button is the ball: the clip circle of the fold is centered on it.
+        await Js(w, "orchTray.home(document.querySelector('.tray-stage'))");
+        var ball = await Js(w, """
+            (() => { const s = document.querySelector('.tray-stage'), p = document.querySelector('.tray-panel').getBoundingClientRect(),
+              h = document.querySelector('.tray-view .nav2 .home').getBoundingClientRect();
+              return [h.left + h.width / 2 - p.left, h.top + h.height / 2 - p.top, parseFloat(s.style.getPropertyValue('--hx')), parseFloat(s.style.getPropertyValue('--hy'))].map(Math.round); })()
+            """);
+        var b = Ints(ball);
+        Add("home-ball", b.Length == 4 && b[0] == b[2] && b[1] == b[3] && b[0] > 0, $"home center and clip center [x, y, hx, hy] = {ball}");
+
+        // 3. A sheet is fixed to the panel, not to the window with its margin.
+        await Js(w, $"{Go}('cards')");
+        await Until(async () => await Js(w, "!!document.querySelector('.acts [data-act=\"left\"]')") == "true", 3000);
+        await Js(w, "document.querySelector('.acts [data-act=\"left\"]').click()");
+        await Until(async () => await Js(w, "!!document.querySelector('.presence .scrim')") == "true", 3000);
+        await Task.Delay(500);
+        var scrim = await Js(w, "(s => (p => [s.left - p.left, s.top - p.top, s.width - p.width, s.height - p.height].map(Math.round))(document.querySelector('.tray-panel').getBoundingClientRect()))(document.querySelector('.presence .scrim').getBoundingClientRect())");
+        Add("sheet-in-panel", Ints(scrim).All(v => v == 0), $"scrim minus panel [left, top, width, height] = {scrim} (expect all 0)");
+        await Js(w, "document.querySelector('.presence .scrim').click()");
+        var gone = await Until(async () => await Js(w, "!!document.querySelector('.sheet')") == "false", 2000);
+        Add("sheet-close", gone, gone ? "the sheet left and went" : "the sheet is still there after 2 s");
+
+        // 4. A page move stays in the panel: in the middle of a push, the margin of the window shows no page.
+        await Js(w, $"{Go}('stream')");
+        await Task.Delay(700);
+        var edge = Edge(await Picture(w), w);
+        var link = await Js(w, "document.querySelector('a[href^=\"events/\"]')?.getAttribute('href') ?? ''");
+        var moved = false;
+        if (link.Length > 0)
+        {
+            await Js(w, $"setTimeout(() => {Go}('{link}'), 0)");
+            await Task.Delay(120);
+            var shot = await Picture(w);
+            shot.Save(Path.Combine(folder, "push-middle.png"));
+            var mid = Edge(shot, w);
+            var classes = await Js(w, "document.documentElement.className");
+            var group = await Js(w, "(s => [s.overflow, s.borderRadius, s.width, s.height, s.left, s.top].join(' '))(getComputedStyle(document.documentElement, '::view-transition-group(page)'))");
+            var named = await Js(w, "getComputedStyle(document.querySelector('.tray-view')).viewTransitionName");
+            Console.WriteLine($"push: group {group}, name {named}");
+            checks.Add(new Check("push-data", true, $"group (overflow radius width height left top) {group}; name of the view {named}"));
+            await Task.Delay(700);
+            moved = classes.Contains("vt");
+            Add("page-move-in-panel", moved && mid <= edge + 40, $"alpha of the margin before {edge}, in the push {mid} (a page would be 255); classes in the push \"{classes}\"");
+            await Js(w, $"{Go}('')");
+            await Task.Delay(700);
+        }
+        else Add("page-move-in-panel", false, "no event link on the stream page");
+
+        // 5. Minimize: the panel folds, the ball pops out, the badge slides in at the right edge.
+        await Js(w, "window.__frames = null");
+        var frames = w.Web!.ExecuteScriptAsync(Meter(1400));
+        w.Request(TrayRequest.Dock);
+        await Task.Delay(180);
+        (await Picture(w)).Save(Path.Combine(folder, "2-fold-middle.png"));
+        var docked = await Until(() => w.Phase == TrayPhase.Badge, 4000);
+        await frames;
+        // ExecuteScriptAsync does not wait for the promise of the meter: wait for its result.
+        await Until(async () => await Js(w, "!!window.__frames") == "true", 3000);
+        var area = Screen.FromRectangle(w.Bounds).WorkingArea;
+        var tab = await Js(w, "getComputedStyle(document.querySelector('.tb-tab')).translate");
+        (await Picture(w)).Save(Path.Combine(folder, "3-badge.png"));
+        Add("dock", docked && w.Bounds == w.BadgeBounds() && w.Right == area.Right && tab is "none" or "0px" or "0px 0px",
+            $"phase {w.Phase}, window {w.Bounds} (expect {w.BadgeBounds()}), right edge {w.Right} = {area.Right}, tab translate {tab}, click area {w.HitArea}; frames {await Frames(w)}");
+
+        // 6. Open from the badge: back at the panel place.
+        w.Request(TrayRequest.Open);
+        var back = await Until(() => w.Phase == TrayPhase.Open, 4000);
+        await Until(() => w.Phase == TrayPhase.Start || w.Phase == TrayPhase.Open, 2000);
+        await Task.Delay(330);
+        (await Picture(w)).Save(Path.Combine(folder, "5-grow-middle.png"));
+        await Task.Delay(600);
+        Add("open-from-badge", back && w.Bounds == w.PanelBounds() && w.BadgeMode == false, $"phase {w.Phase}, window {w.Bounds} (expect {w.PanelBounds()})");
+
+        // 7. Close: the tray hides, with no badge.
+        w.Request(TrayRequest.Hide);
+        var hidden = await Until(() => w.Phase == TrayPhase.Hidden && !w.Visible, 3000);
+        Add("hide", hidden, $"phase {w.Phase}, visible {w.Visible}");
+
+        // 8. A new card while the tray is hidden: the badge comes in, the ring spins, the bubble peeks and goes after 5 s.
+        var session = tray.Store.Sessions().FirstOrDefault();
+        // A blocked report, as the report tool posts it: a new card.
+        if (session is not null)
+            tray.Store.Events.Post(new PostInput(EventKinds.Report, Parties.Session(session), Parties.User,
+                new Dictionary<string, object?> { ["state"] = ReportStates.Blocked, ["summary"] = "The self-test is blocked on purpose" }) { Session = session, Needs = Needs.Ack });
+        var noticed = await Until(() => w.Phase == TrayPhase.Badge, 5000);
+        await Task.Delay(400);
+        var peek = await Js(w, "!!document.querySelector('.tb-peek.on')");
+        (await Picture(w)).Save(Path.Combine(folder, "4-peek.png"));
+        var wideArea = w.HitArea.Width;
+        var peekGone = await Until(async () => await Js(w, "!!document.querySelector('.tb-peek.on')") == "false", 7000);
+        await Task.Delay(800);
+        Add("notice", session is not null && noticed && peek == "true" && wideArea == w.Width && peekGone && w.HitArea.Width < w.Width,
+            $"session {session}, phase {w.Phase}, peek {peek}, click area at the peek {wideArea} (window {w.Width}), peek gone {peekGone}, click area after {w.HitArea.Width}");
+
+        // 9. A saved place of the panel: the next open is there.
+        var place = new Point(area.Left + 200, area.Top + 120);
+        w.UsePlace(place);
+        w.Request(TrayRequest.Open);
+        await Until(() => w.Phase == TrayPhase.Open, 4000);
+        await Task.Delay(600);
+        var m = (int)(TrayWindow.ShadowMargin * w.DeviceDpi / 96f);
+        Add("saved-place", w.Left + m == place.X && w.Top + m == place.Y, $"panel at {w.Left + m}, {w.Top + m} (expect {place.X}, {place.Y})");
+
+        // 10. The pin keeps the window on top; at the badge place the window is always on top.
+        w.Pinned = true;
+        var pinnedTop = w.TopMost;
+        w.Pinned = false;
+        Add("pin", pinnedTop && !w.TopMost, $"pinned top {pinnedTop}, unpinned top {w.TopMost}");
+
+        if (mouse) await Mouse(w, Add);
+
+        Add("exceptions", Faults.Count == 0, Faults.First ?? "no unhandled exception");
         File.WriteAllText(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));
         return checks.All(c => c.Pass) ? 0 : 1;
     }
 
-    /// <summary>
-    /// At full scroll, the last content of each view ends above the backdrop of the app bar and above the home button.
-    /// The app bar is sticky in the page flow, so its own space is the bottom padding of the page.
-    /// </summary>
-    static async Task<Check> ScrollEnd(CoreWebView2 web)
+    /// <summary>The checks with real mouse input. Each press first makes sure that the point is on the tray window.</summary>
+    static async Task Mouse(TrayWindow w, Action<string, bool, string> add)
     {
-        var lines = new List<string>();
-        var pass = true;
-        foreach (var view in new[] { "", "cards", "stream", "sessions" })
-        {
-            await web.ExecuteScriptAsync($"{Go}('{view}')");
-            await Task.Delay(1500);
-            await web.ExecuteScriptAsync("window.scrollTo(0, 1e6)");
-            await Task.Delay(400);
-            var m = JsonSerializer.Deserialize<double[]>(await web.ExecuteScriptAsync("""
-                (() => { const page = document.querySelector('.page');
-                  const kids = [...page.children].filter(e => !e.matches('.nav2') && e.getBoundingClientRect().height > 0);
-                  const fade = innerHeight - parseFloat(getComputedStyle(document.body, '::after').height);
-                  return [Math.max(...kids.map(e => e.getBoundingClientRect().bottom)), fade, document.querySelector('.nav2 .home').getBoundingClientRect().top]; })()
-                """))!;
-            var ok = m[0] <= m[1] && m[0] <= m[2];
-            pass &= ok;
-            lines.Add($"/{view} last {m[0]:0}{(ok ? "" : " (under the bar)")}");
-        }
-        return new Check("scroll-end", pass, $"{string.Join(", ", lines)}; each must end above the backdrop and the home button", "");
-    }
-
-    /// <summary>
-    /// R2: the full document (Open) and the preview (the card, or the stream row for a notice) of the question,
-    /// report and notice kinds, from their view.json. Each check takes a screenshot of the desktop corner.
-    /// </summary>
-    static async Task<IEnumerable<Check>> RenderShots(WidgetForm form, CoreWebView2 web, string folder)
-    {
-        var checks = new List<Check>();
-        async Task Shot(string view, string open, string expect)
-        {
-            await web.ExecuteScriptAsync(open);
-            var found = await Until(() => Found(web, expect), TimeSpan.FromSeconds(20)) is not null;
-            await Task.Delay(1200);
-            var png = Path.Combine(folder, $"tray-corner-{view}.png");
-            checks.Add(new Check(view, found && Corner(form, png), $"expect {expect}{(found ? "" : " (not found)")}", png));
-        }
-        // The stream row of the first envelope of a kind; for a report, the one with links.
-        static string Row(string kind, string has = "") => $"[...document.querySelectorAll('.tli[data-kind=\"{kind}\"]')].find(r => r.textContent.includes('{has}'))";
-        foreach (var (kind, has, expect) in new[] { ("question", "filters", ".blk.chips"), ("report", "typed shape", ".blk.links"), ("notice", "", ".facts [data-field=kind]") })
-        {
-            await web.ExecuteScriptAsync($"{Go}('stream')");
-            await Until(() => Found(web, $".tli[data-kind={kind}]"), TimeSpan.FromSeconds(20));
-            if (kind == "notice")
-            {
-                await Shot("row-notice", $"({Row(kind)}).scrollIntoView({{block: 'center'}})", ".tli[data-kind=notice] .t2");
-            }
-            await Shot($"open-{kind}", $"{Go}(({Row(kind, has)}).querySelector('a.ev').getAttribute('href'))", $".doc-page {expect}");
-        }
-        await web.ExecuteScriptAsync($"{Go}('cards')");
-        await Until(() => Found(web, ".pcard"), TimeSpan.FromSeconds(20));
-        await Shot("card-question", "window.scrollTo(0, 0)", ".pcard .chips .chip");
-        await Shot("card-report", "[...document.querySelectorAll('.seg button')].find(b => b.textContent.startsWith('Reports')).click()", ".pcard .pill");
-        return checks;
-    }
-
-    /// <summary>The pin in the page header: a click removes the pin (TopMost off), a second click sets it again.</summary>
-    static async Task<Check> Pin(WidgetForm form, CoreWebView2 web, string folder)
-    {
-        const string click = "document.querySelector('.hd.win .pin').click()";
-        var start = form.Pinned;
-        await web.ExecuteScriptAsync(click);
-        var off = await Until(() => Task.FromResult(form.Pinned ? null : "off"), TimeSpan.FromSeconds(5)) is not null
-            && await Found(web, ".hd.win .pin:not(.on)") is not null;
-        await web.ExecuteScriptAsync(click);
-        var on = await Until(() => Task.FromResult(form.Pinned ? "on" : null), TimeSpan.FromSeconds(5)) is not null
-            && await Until(() => Found(web, ".hd.win .pin.on"), TimeSpan.FromSeconds(5)) is not null;
+        var s = w.DeviceDpi / 96f;
+        // The header drag: the system move loop moves the window with the pointer.
+        var before = w.Location;
+        var grip = new Point(w.Left + (int)((TrayWindow.ShadowMargin + 120) * s), w.Top + (int)((TrayWindow.ShadowMargin + 22) * s));
+        var dragged = await Drag(w, grip, -120, -80);
         await Task.Delay(400);
-        var png = Path.Combine(folder, "tray-pin.png");
-        await using (var file = File.Create(png)) await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, file);
-        return new Check("pin", start && off && on, $"pinned at start {start}, after click 1 off {off}, after click 2 on {on}", png);
-    }
+        add("mouse-panel-drag", dragged && w.Left - before.X == -120 && w.Top - before.Y == -80, $"moved {w.Left - before.X}, {w.Top - before.Y} (expect -120, -80); press on the window {dragged}");
 
-    /// <summary>
-    /// Two real mouse drags of the header title (down right, then back): the widget lands exactly on each target, and the new place is saved.
-    /// </summary>
-    static async Task<Check> Drag(WidgetForm form, CoreWebView2 web)
-    {
-        var rect = JsonSerializer.Deserialize<double[]>(JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync(
-            "JSON.stringify((r => [r.left + 20, r.top + r.height / 2])(document.querySelector('.hd.win .title').getBoundingClientRect()))"))!)!;
-        var scale = form.DeviceDpi / 96f;
-        var by = new Size((int)(160 * scale), (int)(120 * scale));
-        var back = Cursor.Position;
-        var lines = new List<string>();
-        var pass = true;
-        foreach (var move in new[] { by, new Size(-by.Width, -by.Height) })
-        {
-            var client = form.PointToScreen(Point.Empty);
-            var from = new Point(client.X + (int)(rect[0] * scale), client.Y + (int)(rect[1] * scale));
-            var before = form.Location;
-            // The drag loop runs on the UI thread, so the mouse input comes from another thread.
-            await Task.Run(() => Mouse.Drag(from, from + move));
-            for (var i = 0; i < 50 && form.Dragging; i++) await Task.Delay(20);
-            await Task.Delay(200);
-            var target = before + move;
-            var saved = WidgetForm.LoadPlace(form.PlaceFile);
-            var ok = form.Location == target && form.Place == form.Location && saved == form.Location;
-            pass &= ok;
-            lines.Add($"from {before.X},{before.Y} to {form.Location.X},{form.Location.Y} (expect {target.X},{target.Y}, off by {form.Location.X - target.X},{form.Location.Y - target.Y}), place file {saved}");
-        }
-        Cursor.Position = back;
-        return new Check("drag", pass, string.Join("; ", lines), "");
-    }
-
-    /// <summary>
-    /// A saved place on a screen that is gone (right of all screens, as X 2001 on a 1707 px screen) comes back into a current work area.
-    /// </summary>
-    static async Task<Check> PlaceClamp(WidgetForm form, string folder)
-    {
-        var keep = form.Place;
-        var right = Screen.AllScreens.Max(s => s.Bounds.Right);
-        var gone = new Point(right + 300, form.Top);
-        form.HideWidget();
-        await Settle(form);
-        form.UsePlace(gone);
-        form.ShowWidget();
-        await Settle(form);
-        await Task.Delay(300);
-        var bounds = form.Bounds;
-        var inside = Screen.AllScreens.Any(s => s.WorkingArea.Contains(bounds));
-        var png = Path.Combine(folder, "tray-e2-place-clamp.png");
-        Corner(form, png);
-        var text = $"saved place {gone.X},{gone.Y} (right edge of all screens {right}); shown at {bounds.X},{bounds.Y} size {bounds.Width} × {bounds.Height}, inside a work area {inside}";
-        if (keep is { } k)
-        {
-            form.HideWidget();
-            await Settle(form);
-            form.UsePlace(k);
-            form.ShowWidget();
-            await Settle(form);
-        }
-        return new Check("place-clamp", inside, text, png);
-    }
-
-    /// <summary>The tray icon click: hide, then show again at the saved place. Each change waits for the shrink or the grow.</summary>
-    static async Task<Check> Toggle(WidgetForm form)
-    {
-        var place = form.Location;
-        form.Toggle();
-        var shrinking = form.Visible && form.Growing;
-        await Settle(form);
-        var hidden = !form.Visible;
-        var shrink = Frames(form.GrowFrames);
-        var shrinkCount = form.GrowFrames.Count;
-        form.Toggle();
-        await Settle(form);
-        return new Check("toggle", shrinking && hidden && form.Visible && form.Location == place && shrink.Down,
-            $"shrinks first {shrinking}, hidden {hidden} after {shrinkCount} frames ({shrink.Text}), visible again {form.Visible} at {form.Location.X},{form.Location.Y}", "");
-    }
-
-    /// <summary>
-    /// The widget grows from height 0 at its bottom edge to its full height. The check hides the widget, shows it again,
-    /// and copies the screen corner at three times of the grow. The shown height must go up on each frame and end at the full height.
-    /// </summary>
-    static async Task<Check> Grow(WidgetForm form, string folder)
-    {
-        form.HideWidget();
-        await Settle(form);
-        form.ShowWidget();
-        // G1: the ball pops in first; the grow starts after the pop and the gap.
-        for (var i = 0; i < 100 && !form.Resizing; i++) await Task.Delay(5);
-        var pngs = new List<string>();
-        foreach (var at in new[] { 60, 140 })
-        {
-            await Task.Delay(at - (pngs.Count == 0 ? 0 : 60));
-            var png = Path.Combine(folder, $"tray-grow-{pngs.Count + 1}.png");
-            Corner(form, png);
-            pngs.Add(png);
-        }
-        await Settle(form);
-        var last = Path.Combine(folder, "tray-grow-3.png");
-        Corner(form, last);
-        pngs.Add(last);
-        var grow = Frames(form.GrowFrames);
-        var full = form.GrowFrames.Count > 0 && form.GrowFrames[^1] == form.Height;
-        var small = form.GrowFrames.Count > 0 && form.GrowFrames[0] < form.Height / 4;
-        return new Check("grow", grow.Up && full && small && form.GrowFrames.Count >= 5,
-            $"{form.GrowFrames.Count} frames in {WidgetForm.GrowMs} ms, {grow.Text}; starts small {small}, ends at the full height {full}", string.Join(";", pngs));
-    }
-
-    /// <summary>
-    /// G1: the show and the hide with the home ball. Show: the ball pops in at the home button, then the widget grows out of it
-    /// with a shadow that grows too; at the end the home button of the page takes the place of the ball. Hide: the ball first.
-    /// </summary>
-    static async Task<IEnumerable<Check>> Ball(WidgetForm form, CoreWebView2 web, string folder)
-    {
-        var checks = new List<Check>();
-        await Settle(form);
-        form.HideWidget();
-        await Task.Delay(60);
-        var ballFirst = form.Ball.Visible && !form.Resizing;
-        var hidePng = Path.Combine(folder, "tray-e2-g1-hide.png");
-        Corner(form, hidePng);
-        await Settle(form);
-        checks.Add(new Check("g1-hide", ballFirst && !form.Visible && !form.Ball.Visible, $"ball first (the ball shows, the shrink waits) {ballFirst}; hidden after {!form.Visible}", hidePng));
-
-        form.ShowWidget();
-        await Task.Delay(BallWindow.InMs / 2);
-        var popping = form.Ball.Visible && !form.Resizing;
-        var popPng = Path.Combine(folder, "tray-e2-g1-ball-in.png");
-        Corner(form, popPng);
-        var homeHidden = await Eval<bool>(web, "document.documentElement.classList.contains('ball')");
-        for (var i = 0; i < 100 && !form.Resizing; i++) await Task.Delay(5);
-        await Task.Delay(110);
-        var shadow = form.GrowShadow.Visible;
-        var unfold = await Eval<string>(web, "getComputedStyle(document.querySelector('.nav2')).animationName");
-        var midPng = Path.Combine(folder, "tray-e2-g1-grow.png");
-        Corner(form, midPng);
-        await Settle(form);
-        await Task.Delay(300);
-        // V10: the shadow window stays after the grow; it is the one shadow of the widget.
-        var handoff = !form.Ball.Visible && form.GrowShadow.Visible && !await Eval<bool>(web, "document.documentElement.classList.contains('ball')");
-        var endPng = Path.Combine(folder, "tray-e2-g1-end.png");
-        Corner(form, endPng);
-        checks.Add(new Check("g1-show", popping && homeHidden && shadow && unfold == "g-unfold" && handoff,
-            $"ball pops in before the grow {popping}; page home button hidden {homeHidden}; grow shadow {shadow}; app bar {unfold}; ball and class gone and the shadow kept at the end {handoff}",
-            $"{popPng};{midPng};{endPng}"));
-        return checks;
-    }
-
-    /// <summary>
-    /// Records one shrink and one grow as JPEG frames of the screen corner, in grow-video\ with times.json.
-    /// A background thread copies the screen, so the UI thread and the motion run as usual.
-    /// </summary>
-    static async Task<Check> Video(WidgetForm form, string folder)
-    {
-        var dir = Path.Combine(folder, "grow-video");
-        if (Directory.Exists(dir)) Directory.Delete(dir, true);
-        Directory.CreateDirectory(dir);
-        var screen = Screen.FromControl(form).Bounds;
-        var margin = (int)(40 * form.DeviceDpi / 96f);
-        var area = Rectangle.FromLTRB(Math.Max(screen.Left, form.Left - margin), Math.Max(screen.Top, form.Top - margin), Math.Min(screen.Right, form.Right + margin), Math.Min(screen.Bottom, form.Bottom + margin));
-        var frames = new List<(long Ms, Bitmap Image)>();
-        using var stop = new CancellationTokenSource();
-        var clock = System.Diagnostics.Stopwatch.StartNew();
-        var recorder = Task.Run(() =>
-        {
-            while (!stop.IsCancellationRequested)
-            {
-                var bitmap = new Bitmap(area.Width, area.Height);
-                using (var g = Graphics.FromImage(bitmap)) g.CopyFromScreen(area.Location, Point.Empty, area.Size);
-                frames.Add((clock.ElapsedMilliseconds, bitmap));
-            }
-        });
-        await Task.Delay(400);
-        form.HideWidget();
-        await Settle(form);
+        w.Request(TrayRequest.Dock);
+        await Until(() => w.Phase == TrayPhase.Badge, 4000);
         await Task.Delay(500);
-        form.ShowWidget();
-        await Settle(form);
+        var ring = new Point(w.Right - (int)(34 * s), w.Top + (int)((TrayWindow.TabMargin + 34) * s));
+        var on = Own(w, ring);
+        SetCursorPos(ring.X, ring.Y);
         await Task.Delay(600);
-        await stop.CancelAsync();
-        await recorder;
-        var jpeg = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders().First(c => c.FormatID == System.Drawing.Imaging.ImageFormat.Jpeg.Guid);
-        using var quality = new System.Drawing.Imaging.EncoderParameters(1);
-        quality.Param[0] = new System.Drawing.Imaging.EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 80L);
-        for (var i = 0; i < frames.Count; i++)
+        var wide = await Js(w, "Math.round(document.querySelector('.tb-tab').getBoundingClientRect().width)");
+        var area = w.HitArea.Width;
+        SetCursorPos(ring.X - (int)(500 * s), ring.Y);
+        await Task.Delay(700);
+        var rest = await Js(w, "Math.round(document.querySelector('.tb-tab').getBoundingClientRect().width)");
+        add("mouse-badge-hover", on && int.TryParse(wide, out var a) && a > TrayWindow.TabRest && rest == TrayWindow.TabRest.ToString() && area > w.HitArea.Width,
+            $"tab width at the hover {wide}, after {rest}; click area at the hover {area}, after {w.HitArea.Width}; pointer on the window {on}");
+
+        var top = w.Top;
+        var moved = await Drag(w, ring, 0, -150);
+        await Task.Delay(300);
+        add("mouse-badge-drag", moved && w.Top - top == -150 && w.Right == Screen.FromRectangle(w.Bounds).WorkingArea.Right && w.Phase == TrayPhase.Badge,
+            $"moved {w.Top - top} (expect -150), right edge {w.Right}, phase {w.Phase}");
+
+        ring = new Point(w.Right - (int)(34 * s), w.Top + (int)((TrayWindow.TabMargin + 34) * s));
+        var clicked = await Drag(w, ring, 0, 0);
+        var opened = await Until(() => w.Phase == TrayPhase.Open, 4000);
+        add("mouse-badge-click", clicked && opened, $"phase {w.Phase}; press on the window {clicked}");
+    }
+
+    static bool Own(TrayWindow w, Point at) => WindowFromPoint(new Pt(at.X, at.Y)) == w.Handle;
+
+    /// <summary>A press, a move in steps, a release; only on the tray window. A move of 0, 0 is a click.</summary>
+    static async Task<bool> Drag(TrayWindow w, Point from, int dx, int dy)
+    {
+        if (!Own(w, from)) return false;
+        SetCursorPos(from.X, from.Y);
+        await Task.Delay(120);
+        mouse_event(0x2, 0, 0, 0, 0);
+        for (var i = 1; i <= 12 && (dx != 0 || dy != 0); i++)
         {
-            using var half = new Bitmap(frames[i].Image, area.Width / 2, area.Height / 2);
-            half.Save(Path.Combine(dir, $"f{i:D3}.jpg"), jpeg, quality);
-            frames[i].Image.Dispose();
+            await Task.Delay(16);
+            SetCursorPos(from.X + dx * i / 12, from.Y + dy * i / 12);
         }
-        await File.WriteAllTextAsync(Path.Combine(dir, "times.json"), JsonSerializer.Serialize(frames.Select(f => f.Ms)));
-        var fps = frames.Count / (clock.ElapsedMilliseconds / 1000.0);
-        return new Check("video", frames.Count > 30, $"{frames.Count} frames at {fps:F0} frames a second", dir);
+        await Task.Delay(60);
+        mouse_event(0x4, 0, 0, 0, 0);
+        return true;
     }
 
-    static async Task Settle(WidgetForm form)
+    static string Meter(int ms) => $$"""
+        new Promise(r => { const t = [], s = performance.now(); let l = s;
+          const f = n => { t.push(n - l); l = n; if (n - s < {{ms}}) requestAnimationFrame(f); else { window.__frames = t.slice(1); r(); } };
+          requestAnimationFrame(f); })
+        """;
+
+    static async Task<string> Frames(TrayWindow w)
     {
-        for (var i = 0; i < 100 && form.Growing; i++) await Task.Delay(20);
+        var t = JsonSerializer.Deserialize<double[]>(await w.Web!.ExecuteScriptAsync("window.__frames || []")) ?? [];
+        return t.Length == 0 ? "none" : $"{t.Length} frames, longest {t.Max():0.0} ms, late {t.Count(x => x > 20)}";
     }
 
-    static (bool Up, bool Down, string Text) Frames(IReadOnlyList<int> frames)
+    /// <summary>A picture of the page only (WebView2 preview), with no other window over it.</summary>
+    static async Task<Bitmap> Picture(TrayWindow w)
     {
-        var up = frames.Count > 1 && frames.Zip(frames.Skip(1)).All(p => p.Second >= p.First);
-        var down = frames.Count > 1 && frames.Zip(frames.Skip(1)).All(p => p.Second <= p.First);
-        var text = frames.Count == 0 ? "no frames" : $"heights {string.Join(" ", frames)}";
-        return (up, down, text);
+        var stream = new MemoryStream();
+        await w.Web!.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, stream);
+        stream.Position = 0;
+        return new Bitmap(stream);
     }
 
-    /// <summary>Copies the bottom right part of the screen: the widget, the margin and the taskbar with the tray.</summary>
-    static bool Corner(WidgetForm form, string png)
+    /// <summary>The highest alpha in the left margin of the window, at the middle height (6 px from the edge, 10 rows).</summary>
+    static int Edge(Bitmap picture, TrayWindow w)
     {
-        var screen = Screen.FromControl(form).Bounds;
-        var margin = (int)(40 * form.DeviceDpi / 96f);
-        var left = Math.Max(screen.Left, form.Left - margin);
-        var top = Math.Max(screen.Top, form.Top - margin);
-        var area = Rectangle.FromLTRB(left, top, screen.Right, screen.Bottom);
-        using var bitmap = new Bitmap(area.Width, area.Height);
-        using (var g = Graphics.FromImage(bitmap)) g.CopyFromScreen(area.Location, Point.Empty, area.Size);
-        bitmap.Save(png, System.Drawing.Imaging.ImageFormat.Png);
-        return File.Exists(png);
-    }
-
-    /// <summary>A non-null value when the selector matches an element of the page.</summary>
-    static async Task<string?> Found(CoreWebView2 web, string selector) =>
-        JsonSerializer.Deserialize<bool>(await web.ExecuteScriptAsync($"!!document.querySelector({JsonSerializer.Serialize(selector)})")) ? selector : null;
-
-    static async Task<T?> Until<T>(Func<Task<T?>> probe, TimeSpan limit) where T : class
-    {
-        var end = DateTime.UtcNow + limit;
-        while (DateTime.UtcNow < end)
+        using (picture)
         {
-            if (await probe() is { } value) return value;
-            await Task.Delay(200);
+            var x = (int)(6 * w.DeviceDpi / 96f);
+            var y = picture.Height / 2;
+            return Enumerable.Range(y - 5, 10).Max(r => picture.GetPixel(x, r).A);
         }
-        return null;
     }
+
+    static int[] Ints(string json)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<int[]>(json) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    static async Task<string> Js(TrayWindow w, string script)
+    {
+        var json = await w.Web!.ExecuteScriptAsync(script);
+        return json.StartsWith('"') ? JsonSerializer.Deserialize<string>(json) ?? "" : json;
+    }
+
+    static async Task<bool> Until(Func<bool> test, int ms)
+    {
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        while (clock.ElapsedMilliseconds < ms)
+        {
+            if (test()) return true;
+            await Task.Delay(50);
+        }
+        return test();
+    }
+
+    static async Task<bool> Until(Func<Task<bool>> test, int ms)
+    {
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        while (clock.ElapsedMilliseconds < ms)
+        {
+            if (await test()) return true;
+            await Task.Delay(50);
+        }
+        return await test();
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct Pt(int x, int y)
+    {
+        public int X = x;
+        public int Y = y;
+    }
+
+    [LibraryImport("user32.dll")]
+    private static partial nint WindowFromPoint(Pt point);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool SetCursorPos(int x, int y);
+
+    [LibraryImport("user32.dll")]
+    private static partial void mouse_event(uint flags, int dx, int dy, uint data, nint extra);
 }

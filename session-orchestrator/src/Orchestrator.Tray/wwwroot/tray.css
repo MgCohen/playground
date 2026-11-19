@@ -1,6 +1,15 @@
-/* The widget header of the tray app: a drag of the header moves the window. T4: the window buttons are always there:
-   the pin keeps the widget on top, minimize puts it in its minimized form, close hides it. */
-.hd.win { display: flex; align-items: center; gap: 8px; user-select: none; cursor: default; padding-right: 8px; }
+/* The tray page: one transparent window (ClearHost) with the stage of Components/Tray. The window is the panel place (the panel
+   with a 24 px margin for its shadow) or the badge place (a strip at the right screen edge). The phase is a class on the stage:
+   is-start, is-open, is-folded, is-badge-out, is-badge, is-hidden. Each phase sets its own transition delays, so CSS orders the
+   steps of a change. All times and curves are tokens of motion.css. */
+
+/* ===== The page: transparent; the panel is the view ===== */
+html, body { height: 100%; overflow: hidden; background: transparent; }
+html { scrollbar-gutter: auto; }
+
+/* ===== The header of the widget (T4): it drags the window; the window buttons are always there ===== */
+.hd.win { display: flex; align-items: center; gap: 8px; user-select: none; cursor: default; padding-right: 8px; app-region: drag; -webkit-app-region: drag; }
+.hd.win a, .hd.win button, .hd.win .wb { app-region: no-drag; -webkit-app-region: no-drag; }
 .hd.win .title { flex: 1; min-width: 0; }
 .wb { display: flex; align-items: center; gap: 2px; flex: none; }
 .wbtn { width: 32px; height: 32px; border: 0; border-radius: 9px; background: transparent; color: var(--muted);
@@ -10,17 +19,87 @@
 .wbtn.x:hover { background: #d93a3a; color: #fff; }
 .pin.on { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-glow); }
 
-/* The scroll bar comes from app.css (S3, S4): a fixed 6 px gutter and a quiet 4 px thumb that shows only when the page overflows. */
-
+/* ===== The stage, the shadow and the panel ===== */
+/* --hx and --hy: the center of the home button in the panel (tray.js measures it before each open and fold). */
+.tray-stage { position: fixed; inset: 0; --hx: calc(50% - 3px); --hy: calc(100% - 54px); }
+.tray-shadow { position: absolute; inset: 24px; filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0)); }
+/* The panel is the view of the pages: its size is the size of the page units (cqh), it holds the fixed blocks (scrim, sheet,
+   toast), and its corners clip them. The view inside it scrolls and has the sticky bars. */
+.tray-panel { position: absolute; inset: 0; border-radius: 16px; overflow: clip; container-type: size; background-color: transparent;
+  clip-path: inset(calc(var(--hy) - 50px) calc(100% - var(--hx) - 50px) calc(100% - var(--hy) - 50px) calc(var(--hx) - 50px) round 50px); }
+.tray-view { position: absolute; inset: 0; overflow: auto; scrollbar-gutter: stable; view-transition-name: page; }
+.tray-view .app { min-height: 100cqh; }
+.tray-view .deck-screen { min-height: calc(100cqh - 190px); }
+.tray-view .sheet { max-height: 86cqh; }
 /* A backdrop behind the bottom app bar: the content under the bar fades into the canvas, so the bar never mixes with it.
-   It stays below the app bar (z-index 10), the sheets (20, 21) and the toast (15), and it lets clicks through. */
-body::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 92px; z-index: 9; pointer-events: none;
-  background: linear-gradient(to bottom, transparent, var(--canvas) 55%); }
+   It stays below the app bar (z-index 10), the sheets (20, 21) and the toast (15), and it lets clicks through. It is in the view:
+   the view is a stacking context (its view-transition-name), so a backdrop outside it would cover all of the view. Its fixed
+   place is relative to the panel (the containing block of the fixed blocks). */
+.tray-view .app::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 92px; z-index: 9; pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--canvas) 55%); opacity: 0; }
+.tray-view .app:has(.pagebar.no-app-bar)::after { height: 84px; }
 
-/* G1: the show of the widget. The native home ball covers the home button until the grow ends ("ball"); during the grow the
-   page fades in and the app bar unfolds sideways from the ball ("grow-in"). The fill is backwards only: no stacking context stays. */
-html.ball .nav2 .home { visibility: hidden; }
-html.grow-in body { animation: g-fade .28s cubic-bezier(.33, 1, .68, 1) backwards; }
-html.grow-in .nav2 { animation: g-unfold .28s cubic-bezier(.33, 1, .68, 1) backwards; }
-@keyframes g-fade { from { opacity: 0; } }
-@keyframes g-unfold { from { clip-path: inset(-40px calc(50% - 31px) -12px calc(50% - 31px) round 999px); } to { clip-path: inset(-40px 0 -12px 0 round 999px); } }
+/* ===== Phases of the panel place =====
+   Start and folded: only the home ball shows; the panel clip is a circle around it, with no background and no shadow.
+   Open: the ball pops in, then the panel grows out of it, then the content fades in. Folded: the content fades out, the panel
+   folds into the ball, then the ball pops out. */
+.tray-stage:not(.is-open) .tray-view .nav2 { display: flex !important; background-color: transparent; box-shadow: none; }
+.tray-stage:not(.is-open) .tray-view .app > :not(.nav2), .tray-stage:not(.is-open) .tray-view .nav2 > :not(.home) { opacity: 0; }
+.tray-view .nav2 .home { scale: 0; transition: scale var(--t-ball-out) var(--ease-in) calc(var(--t-content-out) + var(--t-shrink)); }
+
+.is-open .tray-view .nav2 .home { scale: 1; transition: scale var(--t-ball-in) var(--ease-spring), transform var(--t-press), box-shadow var(--t-press), filter var(--t-press); }
+.is-open .tray-panel { background-color: var(--canvas); clip-path: inset(0 round 16px);
+  transition: clip-path var(--t-grow) var(--ease-out) calc(var(--t-ball-in) * .7), background-color 0s linear calc(var(--t-ball-in) * .7); }
+.is-open .tray-shadow { filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .18)); transition: filter var(--t-grow) ease calc(var(--t-ball-in) * .7); }
+.is-open .tray-view .app::after { opacity: 1; transition: opacity var(--t-content-in) ease calc(var(--t-ball-in) + var(--t-grow) * .6); }
+.is-open .tray-view .app > :not(.nav2), .is-open .tray-view .nav2 > :not(.home) { opacity: 1; transition: opacity var(--t-content-in) ease calc(var(--t-ball-in) + var(--t-grow) * .6); }
+.is-open .tray-view .nav2 { transition: background-color var(--t-content-in) ease calc(var(--t-ball-in) + var(--t-grow) * .6), box-shadow var(--t-content-in) ease calc(var(--t-ball-in) + var(--t-grow) * .6); }
+
+.is-folded .tray-panel { transition: clip-path var(--t-shrink) var(--ease-in) var(--t-content-out), background-color var(--t-content-out) ease calc(var(--t-content-out) + var(--t-shrink)); }
+.is-folded .tray-shadow { transition: filter var(--t-content-out) ease calc(var(--t-content-out) + var(--t-shrink)); }
+.is-folded .tray-view .app > :not(.nav2), .is-folded .tray-view .nav2 > :not(.home), .is-folded .tray-view .app::after { transition: opacity var(--t-content-out) ease; }
+.is-folded .tray-view .nav2 { transition: background-color var(--t-content-out) ease, box-shadow var(--t-content-out) ease; }
+
+/* ===== Page moves in the tray (T1, T2): the view moves inside the panel, clipped to its corners; the panel and its shadow stay ===== */
+::view-transition-group(page) { overflow: clip; border-radius: 16px; }
+/* The root picture (the panel and its shadow) stays. The selector is as specific as the root rules of motion.css for a push and a
+   back (.vt:not(.vt-tab), .vt-back), and comes later, so it wins over them. */
+.vt:not(.vt-none)::view-transition-old(root), .vt:not(.vt-none)::view-transition-new(root) { animation: none; }
+.vt-tab::view-transition-old(page) { animation: m-fade-out var(--t-tab-out) ease both; }
+.vt-tab::view-transition-new(page) { animation: m-rise var(--t-tab-in) var(--ease-out) both; }
+.vt:not(.vt-tab)::view-transition-old(page) { animation: m-push-old var(--t-push) var(--ease-out) both; }
+.vt:not(.vt-tab)::view-transition-new(page) { animation: m-push-new var(--t-push) var(--ease-out) both; }
+.vt-back::view-transition-old(page) { animation: m-pop-old var(--t-push) var(--ease-out) both; z-index: 2; }
+.vt-back::view-transition-new(page) { animation: m-pop-new var(--t-push) var(--ease-out) both; }
+
+/* ===== The badge place (N1, N2): the tab at the right edge with the ring and the home ball; the peek bubble at its left ===== */
+.tray-badge-layer { display: none; position: absolute; inset: 0; }
+.is-badge-out .tray-badge-layer, .is-badge .tray-badge-layer { display: block; }
+.is-badge-out .tray-shadow, .is-badge .tray-shadow { display: none; }
+.tbadge { position: absolute; inset: 0; filter: drop-shadow(0 3px 8px rgba(60, 50, 40, .22)); }
+/* The tab: round at the left, flush with the screen edge at the right. At rest it shows the ring only; a hover extends it to the
+   width of its text. */
+.tb-tab { position: absolute; right: 0; top: 14px; height: 68px; width: 68px; display: flex; align-items: center; overflow: hidden; white-space: nowrap;
+  border-radius: 34px 0 0 34px; background: var(--surf); cursor: pointer; translate: 110% 0;
+  transition: translate var(--t-badge-out) var(--ease-in), width var(--t-badge-hover) var(--ease-out); }
+.is-badge .tb-tab { translate: 0 0; transition: translate var(--t-badge-in) var(--ease-out), width var(--t-badge-hover) var(--ease-out); }
+.is-badge .tb-tab:hover { width: auto; }
+/* The ring of the waiting cards by type: one conic gradient, 6 px wide, 6 px from the edge of the tab. */
+.tb-ring { position: absolute; left: 6px; top: 6px; width: 56px; height: 56px; border-radius: 50%;
+  background: conic-gradient(var(--b-q) 0 var(--a1), var(--b-rev) 0 var(--a2), var(--b-rep) 0 var(--a3), var(--b-blk) 0 var(--a4), var(--sunken) 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px)); }
+.tbadge.spin .tb-ring { animation: tb-spin var(--t-spin) cubic-bezier(.65, 0, .35, 1); }
+@keyframes tb-spin { to { rotate: 1turn; } }
+/* The home ball in the ring: the same image as the home button of the app bar. */
+.tb-ball { position: absolute; left: 10px; top: 10px; width: 48px; height: 48px; background: url(home-ball.png) center / 48px 48px no-repeat; }
+.tb-txt { margin: 0 16px 0 72px; display: grid; gap: 1px; opacity: 0; transition: opacity var(--t-content-out) ease; }
+.tb-txt b { font: 600 13px var(--f-body); color: var(--text); }
+.tb-txt small { font-size: 11.5px; color: var(--muted); }
+.is-badge .tb-tab:hover .tb-txt { opacity: 1; transition: opacity var(--t-content-in) ease calc(var(--t-badge-hover) * .4); }
+/* The peek bubble: the newest card comes out of the tab to the left, and goes back after a short time. */
+.tb-peek { position: absolute; right: 78px; top: 48px; translate: 0 -50%; max-width: 240px; padding: 7px 14px; border-radius: 16px; background: var(--surf);
+  display: grid; gap: 1px; white-space: nowrap; overflow: hidden; pointer-events: none; transform-origin: right center; scale: .2; opacity: 0;
+  transition: scale var(--t-peek-out) var(--ease-out), opacity var(--t-peek-out) ease; }
+.tb-peek.on { scale: 1; opacity: 1; transition: scale var(--t-peek-in) var(--ease-spring), opacity var(--t-peek-in) ease; }
+.tb-peek b { font: 600 13px var(--f-body); color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+.tb-peek small { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }

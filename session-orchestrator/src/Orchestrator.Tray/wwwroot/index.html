@@ -11,11 +11,12 @@
     <link rel="stylesheet" href="tray.css" />
 </head>
 <body>
-    <!-- M6: a skeleton until Blazor starts. The root component replaces it, and the app fades in. -->
-    <div id="app"><div class="boot" aria-label="Loading"><i class="b-hd"></i><i class="b-ring"></i><i class="b-row"></i><i class="b-row s"></i><i class="b-row s"></i><i class="b-bar"></i></div></div>
+    <!-- The window is transparent until the tray stage renders: its first open starts with the home ball. -->
+    <div id="app"></div>
     <script src="_framework/blazor.webview.js"></script>
     <script src="swipe.js"></script>
     <script src="speech.js"></script>
     <script src="motion.js"></script>
+    <script src="tray.js"></script>
 </body>
 </html>

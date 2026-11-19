@@ -1,0 +1,67 @@
+[
+  {
+    "Name": "start",
+    "Pass": true,
+    "Message": "phase open, visible True, window {X=1981,Y=394,Width=597,Height=1152} (expect {X=1981,Y=394,Width=597,Height=1152}), stage \u0022tray-stage is-open\u0022, panel [350,720] CSS px"
+  },
+  {
+    "Name": "home-ball",
+    "Pass": true,
+    "Message": "home center and clip center [x, y, hx, hy] = [172,666,172,666]"
+  },
+  {
+    "Name": "sheet-in-panel",
+    "Pass": true,
+    "Message": "scrim minus panel [left, top, width, height] = [0,0,0,0] (expect all 0)"
+  },
+  {
+    "Name": "sheet-close",
+    "Pass": true,
+    "Message": "the sheet left and went"
+  },
+  {
+    "Name": "push-data",
+    "Pass": true,
+    "Message": "group (overflow radius width height left top) clip 16px 350px 720px 0px 0px; name of the view page"
+  },
+  {
+    "Name": "page-move-in-panel",
+    "Pass": true,
+    "Message": "alpha of the margin before 3, in the push 6 (a page would be 255); classes in the push \u0022speech nav vt\u0022"
+  },
+  {
+    "Name": "dock",
+    "Pass": true,
+    "Message": "phase badge, window {X=2062,Y=692,Width=498,Height=144} (expect {X=2062,Y=692,Width=498,Height=144}), right edge 2560 = 2560, tab translate 0px, click area {X=375,Y=0,Width=123,Height=144}; frames 349 frames, longest 8.2 ms, late 0"
+  },
+  {
+    "Name": "open-from-badge",
+    "Pass": true,
+    "Message": "phase open, window {X=1981,Y=394,Width=597,Height=1152} (expect {X=1981,Y=394,Width=597,Height=1152})"
+  },
+  {
+    "Name": "hide",
+    "Pass": true,
+    "Message": "phase hidden, visible False"
+  },
+  {
+    "Name": "notice",
+    "Pass": true,
+    "Message": "session 3911c686-9b01-425c-a7c0-b6c157ae5a7a, phase badge, peek true, click area at the peek 498 (window 498), peek gone True, click area after 123"
+  },
+  {
+    "Name": "saved-place",
+    "Pass": true,
+    "Message": "panel at 200, 120 (expect 200, 120)"
+  },
+  {
+    "Name": "pin",
+    "Pass": true,
+    "Message": "pinned top True, unpinned top False"
+  },
+  {
+    "Name": "exceptions",
+    "Pass": true,
+    "Message": "no unhandled exception"
+  }
+]

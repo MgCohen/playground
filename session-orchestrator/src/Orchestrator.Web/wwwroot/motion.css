@@ -10,6 +10,10 @@
   --t-dial: .22s; --t-dial-step: 40ms; --t-dscrim: .2s;
   /* Page moves (T1, T2): the first page fade, a tab change, a push and a back. */
   --t-page-in: .18s; --t-tab-out: .12s; --t-tab-in: .26s; --t-push: .3s;
+  /* The tray (tray.css): the pop of the home ball, the grow and the fold of the panel, the badge, its peek and its ring spin. */
+  --ease-in: cubic-bezier(.32,0,.67,0);
+  --t-ball-in: .3s; --t-ball-out: .18s; --t-grow: .34s; --t-shrink: .24s; --t-content-in: .2s; --t-content-out: .1s;
+  --t-badge-in: .28s; --t-badge-out: .18s; --t-badge-hover: .22s; --t-peek-in: .26s; --t-peek-out: .2s; --t-spin: .8s;
   /* The longest wait of a <Presence> for the end of its motion: a motion that does not run stops no block. */
   --t-limit: 1000ms;
 }
@@ -58,9 +62,7 @@
    that was drawn before (data-drawn), so a tab change back shows it at once and a new row draws one time. */
 [data-drawn] > .fill { animation: none; }
 
-/* ===== M6: the loading skeleton (tray widget only) and the first page fade ===== */
-.boot i::after { animation: m-shine 1.3s ease-in-out infinite; }
-@keyframes m-shine { to { transform: translateX(100%); } }
+/* ===== M6: the first page fade ===== */
 /* The page fades, not .app: an animation on .app makes a stacking context, and the backdrop of the app bar then covers the bar. */
 .page { animation: m-fade var(--t-page-in) ease backwards; }
 

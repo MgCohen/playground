@@ -1,0 +1,37 @@
+@* The minimized form of the tray (N1, N2): a white tab at the right screen edge with the ring of the waiting cards around the
+   home ball. A hover extends the tab to the left with the counts; the ring is at the left side of the tab, so it moves with it.
+   A new card spins the ring and shows the peek bubble. The click and the drag go to the window (it moves the badge up and down). *@
+<div class="tbadge @(Spin ? "spin" : "")">
+    <div class="tb-peek @(Peek ? "on" : "")" aria-live="polite">
+        <b>@PeekTitle</b>
+        @if (PeekSub.Length > 0)
+        {
+            <small>@PeekSub</small>
+        }
+    </div>
+    <div class="tb-tab">
+        <span class="tb-ring" style="@RingStyle"></span>
+        <span class="tb-ball"></span>
+        <span class="tb-txt"><b>@Counts.Headline</b><small>@Counts.Detail</small></span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public TrayCounts Counts { get; set; } = TrayCounts.None;
+    [Parameter] public bool Spin { get; set; }
+    [Parameter] public bool Peek { get; set; }
+    [Parameter] public string PeekTitle { get; set; } = "";
+    [Parameter] public string PeekSub { get; set; } = "";
+
+    // The ring: one conic gradient, a part for each type in the order questions, reviews, reports, blocked.
+    string RingStyle
+    {
+        get
+        {
+            if (Counts.Total == 0) return "--a1: 0deg; --a2: 0deg; --a3: 0deg; --a4: 0deg";
+            double a = 0;
+            string At(int n) => Ui.Num(a += 360.0 * n / Counts.Total) + "deg";
+            return $"--a1: {At(Counts.Questions)}; --a2: {At(Counts.Reviews)}; --a3: {At(Counts.Reports)}; --a4: {At(Counts.Blocked)}";
+        }
+    }
+}

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
   <!--
-    The desktop tray app (T1): a tray icon and a window with a BlazorWebView on WebView2.
-    It shows the Razor components of Orchestrator.Web with mock data in a temporary store. No supervisor ticks, no engine process.
+    The desktop tray app (T1): a tray icon and one transparent window with WebView2 in composition mode (ClearHost).
+    It shows the Razor components of Orchestrator.Web: mock data in a temporary store, or a live store (the live option).
   -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -17,10 +17,6 @@
   <ItemGroup>
     <ProjectReference Include="../Orchestrator.Web/Orchestrator.Web.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" />
-  </ItemGroup>
-  <ItemGroup>
-    <!-- V5: the one image of the home ball. The page button shows the same file from the web assets. -->
-    <EmbeddedResource Include="../Orchestrator.Web/wwwroot/home-ball.png" LogicalName="home-ball.png" />
   </ItemGroup>
   <ItemGroup>
     <!-- The templates and the policy go next to the exe, so an installed app does not need the source folder. -->

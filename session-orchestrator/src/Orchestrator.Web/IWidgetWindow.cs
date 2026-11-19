@@ -1,7 +1,9 @@
 namespace Orchestrator.Web;
 
 /// <summary>
-/// The desktop widget window of the tray app (Orchestrator.Tray). The web server has none: then the header shows no pin.
+/// The desktop window of the tray app (Orchestrator.Tray). The web server has none: then the header shows no window buttons and
+/// no tray stage renders. The stage (Components/Tray/TrayStage) owns the phases and all motion; the window only goes to the place
+/// of each phase, sets its click area and reports the requests of the user.
 /// </summary>
 public interface IWidgetWindow
 {
@@ -15,15 +17,38 @@ public interface IWidgetWindow
     /// <summary>The label of a named tray instance (the name and the build), shown in the header; null for no label.</summary>
     string? Label => null;
 
-    /// <summary>T4: the widget goes into its minimized form (the edge tab), which stays on the screen.</summary>
+    /// <summary>True when the tray opens the panel at the start; false for a start in the tray icon only.</summary>
+    bool OpenAtStart => true;
+
+    /// <summary>A request of the user for the stage: <see cref="TrayRequest.Open"/>, <see cref="TrayRequest.Dock"/> or <see cref="TrayRequest.Hide"/>.</summary>
+    event Action<string>? Requested;
+
+    /// <summary>The minimize button of the header: the panel docks to the badge.</summary>
     void Minimize();
 
-    /// <summary>T4: the widget hides. The tray icon opens it again.</summary>
+    /// <summary>The close button of the header: the tray hides. The tray icon opens it again.</summary>
     void Close();
 
-    /// <summary>
-    /// Starts a drag of the window with the mouse button that is down. <paramref name="x"/> and <paramref name="y"/> are the
-    /// CSS pixels of the mouse down in the page: that point stays under the pointer during the drag.
-    /// </summary>
-    void BeginDrag(double x, double y);
+    /// <summary>The stage enters a phase (<see cref="TrayPhase"/>). The task ends when the window is at the place of the phase.</summary>
+    Task Enter(string phase);
+
+    /// <summary>The badge shows its peek bubble (true) or hides it (false): the click area takes the bubble in or out.</summary>
+    void Peek(bool on);
+}
+
+/// <summary>The requests of the user for the tray stage.</summary>
+public static class TrayRequest
+{
+    public const string Open = "open", Dock = "dock", Hide = "hide";
+}
+
+/// <summary>
+/// The phases of the tray stage. Start, open and folded are at the panel place; badge-out and badge at the badge place; hidden
+/// has no window. Each phase is also a CSS class with the prefix "is-" (tray.css).
+/// </summary>
+public static class TrayPhase
+{
+    public const string Start = "start", Open = "open", Folded = "folded", BadgeOut = "badge-out", Badge = "badge", Hidden = "hidden";
+
+    public static bool AtBadge(string phase) => phase is BadgeOut or Badge;
 }

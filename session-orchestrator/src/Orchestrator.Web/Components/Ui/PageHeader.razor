@@ -4,9 +4,9 @@
 @inject NavigationManager Nav
 
 @* The page header. A tab page shows its title. A sub-page shows its path (T3): the parents as small links with "›", and the
-   current page in bold. In the desktop widget, a drag of the header moves the window, and the window buttons (T4) are always
-   there: pin, minimize, close. *@
-<header class="crd hd @(window is null ? "" : "win") @(parents.Count > 0 ? "sub" : "")" @onmousedown="Drag">
+   current page in bold. In the desktop widget, the header drags the window (app-region in tray.css), and the window buttons (T4)
+   are always there: pin, minimize, close. *@
+<header class="crd hd @(window is null ? "" : "win") @(parents.Count > 0 ? "sub" : "")">
     @if (parents.Count == 0)
     {
         <h1 class="title">@Title</h1>
@@ -16,7 +16,7 @@
         <nav class="path" aria-label="Path">
             @foreach (var p in PathTrail.Shown(parents))
             {
-                <a class="cr" href="@p.Href" @onmousedown:stopPropagation>@p.Title</a><span class="psep" aria-hidden="true">›</span>
+                <a class="cr" href="@p.Href">@p.Title</a><span class="psep" aria-hidden="true">›</span>
             }
             <h1 class="cur">@Title</h1>
         </nav>
@@ -28,7 +28,7 @@
     }
     @if (window is not null)
     {
-        <span class="wb" @onmousedown:stopPropagation>
+        <span class="wb">
             <button type="button" class="wbtn pin @(window.Pinned ? "on" : "")" aria-pressed="@(window.Pinned ? "true" : "false")" aria-label="Pin on screen" title="Pin on screen"
                     @onclick="() => window.SetPinned(!window.Pinned)"><Icon Name="pin" /></button>
             <button type="button" class="wbtn min" aria-label="Minimize" title="Minimize" @onclick="() => window.Minimize()"><Icon Name="min" /></button>
@@ -64,11 +64,6 @@
     }
 
     void Changed() => InvokeAsync(StateHasChanged);
-
-    void Drag(MouseEventArgs e)
-    {
-        if (e.Button == 0) window?.BeginDrag(e.ClientX, e.ClientY);
-    }
 
     public void Dispose()
     {
