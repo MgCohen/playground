@@ -110,6 +110,7 @@ h3 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   <button role="tab" data-tab="style" aria-selected="false">Style</button>
   <button role="tab" data-tab="prior" aria-selected="false">Prior art</button>
   <button role="tab" data-tab="flow" aria-selected="false">Proposal: motion contract</button>
+  <button role="tab" data-tab="twowin" aria-selected="false">Proposal: two windows</button>
 </nav>
 
 <!-- OVERVIEW -->
@@ -564,6 +565,68 @@ flowchart LR
   </section>
 </div>
 
+<!-- PROPOSAL: TWO WINDOWS -->
+<div class="panel off" id="twowin" role="tabpanel">
+  <section><h2>Proposal: the panel and the badge as two windows</h2>
+    <p class="summary">From your question: do some problems come from one window that is both the panel and the badge? For discussion. No code change. Open question Q3.</p>
+    <h3>Today: one window, two jobs</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Shared part</th><th>How</th><th>Problem that came from it</th></tr></thead>
+      <tbody>
+        <tr><td>One window</td><td>It moves and changes size between the panel place and the badge place, while nothing shows</td><td>Each dock and open must order: motion end, move, next motion</td></tr>
+        <tr><td>One input path</td><td><code>ClearHost</code> has a badge mode: 9 uses of <code>BadgeMode</code> in the tray code</td><td>S6: the hover flag of the badge came back after a stay at the panel place (fixed with <code>ResetBadgeInput</code>)</td></tr>
+        <tr><td>One click area</td><td><code>Hits()</code> has one branch for each place, and fixed badge sizes</td><td>I7: the badge hover is cut; I10: sizes in two places</td></tr>
+        <tr><td>One page and one stage</td><td><code>TrayStage</code> has 6 phases; CSS hides the panel at the badge and the badge at the panel</td><td>Each phase rule must know both forms</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>What the old design teaches</h3>
+    <p>Before the redesign, the tray had four native windows: the widget, its shadow, the home ball and the side badge. The handover of session V lists the main reason for its faults: "four windows that must look like one". The shadow, the ball and the widget show at the same time and must join without a gap.</p>
+    <p class="note">The rule from this: split by what shows at the same time. The panel and the badge never show at the same time, and the dock has no object that flies from one to the other (spec: the panel folds into the ball, the ball pops out, then the badge slides in). So two windows for them do not have the "look like one" problem.</p>
+  </section>
+  <section><h3>Options</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Option</th><th>What</th><th>For</th><th>Against</th></tr></thead>
+      <tbody>
+        <tr><td>A. One window (today)</td><td>No change</td><td>Works; tested</td><td>The shared input, click area and phases stay</td></tr>
+        <tr><td>B. Two windows, one process</td><td>A panel window and a badge window. Each has its own WebView2 controller from one shared <code>CoreWebView2Environment</code>, and its own Blazor root (<code>TrayRoot</code>, <code>BadgeRoot</code>). One coordinator in C# orders them</td><td>Each window has one place, one size, one input rule. No badge mode in <code>ClearHost</code>. The same store and <code>Board</code>, so the counts are equal</td><td>A second WebView2 (memory, start time: not measured). The badge must paint before it slides in</td></tr>
+        <tr><td>C. Two processes</td><td>The badge is its own app</td><td>Full isolation</td><td>Two starts, two tray icons or a link between them. Too much for this need</td></tr>
+        <tr><td>D. A native badge</td><td>GDI or composition drawing in C#, no WebView</td><td>Small and fast</td><td>Custom drawing code, which you did not want; a second style system</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Option B: the dock</h3>
+    <div class="box"><pre class="mermaid">
+sequenceDiagram
+  participant C as Coordinator (C#)
+  participant P as Panel window
+  participant B as Badge window
+  C->>P: fold (state class), wait for the motion end
+  C->>P: Hide()
+  C->>B: Show() at the badge place (badge out of view)
+  C->>B: slide in (state class)
+  Note over P,B: The open is the reverse. No window moves or changes size.
+</pre></div>
+  </section>
+  <section><h3>What changes, what stays</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Option B</th></tr></thead>
+      <tbody>
+        <tr><td><code>ClearHost</code></td><td>Stays, without the badge mode. A small <code>BadgeHost</code> adds the badge input (click, vertical drag, hover)</td></tr>
+        <tr><td><code>TrayWindow</code></td><td>Panel place only</td></tr>
+        <tr><td><code>TrayStage</code></td><td>Panel phases only: start, open, folded, hidden</td></tr>
+        <tr><td><code>TrayBadge</code></td><td>The root of the badge window, with its own phases: out, in, peek</td></tr>
+        <tr><td>Store, <code>Board</code>, CSS tokens, components</td><td>Shared, no change</td></tr>
+        <tr><td>Self-test</td><td>Checks for each window, and one for the order of the dock and the open</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Next step if you agree</h3>
+    <p>A spike (S7) before a decision: two composition windows in one process with one shared environment. It measures the memory of the second WebView2, the time to the first paint of the badge, the frames of the dock and the open, and empty frames with the new detector. Then we compare it with today.</p>
+    <p class="summary">Question Q3 on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page</a>. This proposal also changes the Places, Start and stop, and Interactions tabs. Their proposals P-P1 and P-SS1 become smaller with option B.</p>
+  </section>
+</div>
+
 <!-- PRIOR ART -->
 <div class="panel off" id="prior" role="tabpanel">
   <section><h2>Prior art: how known libraries build motion</h2>
@@ -654,7 +717,7 @@ flowchart LR
 
 <script>
 (function () {
-  var names = ["overview", "data", "structure", "places", "startstop", "moves", "cmotion", "input", "components", "style", "prior", "flow"];
+  var names = ["overview", "data", "structure", "places", "startstop", "moves", "cmotion", "input", "components", "style", "prior", "flow", "twowin"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "overview";
     names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
