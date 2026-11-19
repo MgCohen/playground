@@ -170,6 +170,10 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     /// <summary>The app tool that starts a session: in the sidebar at once, with Remote Control from the start (R-16).</summary>
     public const string StartTool = "mcp__ccd_session__start_session";
 
+    static bool SameFolder(string a, string? b) =>
+        b is { Length: > 0 } && string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(a)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(b)),
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+
     public bool CallerInApp() => Environment.GetEnvironmentVariable(EntrypointVariable) == DesktopEntrypoint;
 
     /// <summary>
@@ -197,12 +201,14 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
             ["initiation"] = "user_asked",
             ["context"] = "fresh",
             ["title"] = request.Title,
-            ["cwd"] = Path.GetFullPath(request.Cwd),
             ["use_worktree"] = request.Worktree,
             ["permission_mode"] = "auto",
             ["prompt"] = prompt,
             ["background"] = $"A child session of the orchestrator for the task \"{request.Title}\". The command in the prompt joins it to the orchestrator store; the brief with the goal, the scope and the done check then arrives as a message.",
         };
+        // R-25: in a turn that the app continues by itself (a note of a child, an event), the app refuses each explicit
+        // folder, also the folder of the parent. A child in the folder of the parent gets none: the app uses that folder.
+        if (!SameFolder(request.Cwd, request.ParentCwd)) call["cwd"] = Path.GetFullPath(request.Cwd);
         return $"Start the child in the desktop app now: call {StartTool} with these inputs: {JsonSerializer.Serialize(call, Readable)}. "
             + "Do not change the prompt. If you do not have that tool, or the call is refused, call spawn_child again with the same fields and inApp false: then the supervisor starts the child.";
     }

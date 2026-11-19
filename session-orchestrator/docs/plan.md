@@ -2169,6 +2169,10 @@ Test setup: scratchpad folder `spike/s1`, test store `spike/store`, port 7840. T
 | R-20 | Console start (test supervisor, port 7842) in a new folder that is not trusted | The console waits at the trust prompt. No transcript, no lease. The old fallback ran `-p --resume` next to the live process and failed |
 | R-21 | Interactive start in a new worktree of a trusted folder | No trust prompt. Remote Control link shown, READY |
 | R-22 | Console start end to end (test supervisor, port 7844, `ORCH_BIN` set): parent outside the app, child with `--worktree` | Console pid 246432, lease `live` in 4 s, the plugin delivered the brief, the child reported done. `orch archive` stopped the process and removed the worktree |
+| R-23 | `start_session` in a turn that came through Remote Control | Refused: "The user is working over Remote Control, and this turn can't start that session" |
+| R-24 | `start_session` with `permission_mode: bypassPermissions` and Opus parent in bypass ("R spike P", Haiku child) | `bypassPermissions` at the start and after the first turn. Remote Control `on` |
+| R-25 | `start_session` in a turn that the app continued by itself (a note of a child), with an explicit `cwd`: a test folder, then the folder of this session | Both refused: "it can only start sessions where this one runs, in this project" |
+| R-26 | R-25 with no `cwd` ("R spike Q") | Started |
 
 Findings:
 
@@ -2181,7 +2185,8 @@ Findings:
 - R-F8: the app tool `start_session` gives both at once: the sidebar and Remote Control from the start (the app default `ccRemoteControlDefaultEnabled`). Only an app session has this tool, so the parent must start the child, not the supervisor.
 - R-F9: `orch join` must not resolve the store from the environment: an app child has no `ORCH_STORE`, and the HTTP fallback calls port 7777. The start file names the store.
 - R-F10: the app id of a session that the app made comes from `CLAUDE_CODE_HOST_SESSION_ID`, only in the app (a `-p` child inherits the id of its parent).
-- R-F11 (open): the permission mode of an app child shows `default` after its first turn, also with `permission_mode: auto`. Not solved.
+- R-F11: an explicit `permission_mode` stays after the first turn (R-24). The `default` of R-18 and R-16 most likely came from the Haiku model of those probes: the auto mode is not available for it. Not checked with an Opus child in auto.
+- R-F14: the app starts a session only in a turn that the user typed in the desktop app, or, in a turn that the app continued by itself, only in the project of the parent with no `cwd` (R-23, R-25, R-26). So the app call has no `cwd` for a child in the folder of the parent, which is the default of `spawn_child`. In other cases the parent falls back to `inApp: false`. Not tested: a turn that an orch plugin message started.
 - R-F12: a console start in a folder that is not trusted waits at the trust prompt, and no session can answer it. A worktree of a trusted repository is trusted. Fallback: after `ImportWait` with no lease, the supervisor stops the console process and starts the child with a print turn.
 - R-F13: a test supervisor needs `ORCH_BIN` for its build of `orch`: the plugin of a live process calls the `orch` on `PATH` (R-22 failed first with the installed `orch`, which has no `watch`).
 - R-F4: so a session started by the supervisor needs `set_remote_control`. Only a live app session has that tool.

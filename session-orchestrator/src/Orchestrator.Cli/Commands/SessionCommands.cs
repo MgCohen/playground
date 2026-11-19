@@ -49,7 +49,7 @@ public static class SessionCommands
         if (brief.Background == true || Places.IsCloud(brief.Where) || !c.Provider.CallerInApp()) return false;
         c.Messages.BriefOf(brief);
         var file = new AppStartFile(c.Store.Root, brief, createdBy, from).Write();
-        var instruction = c.Provider.AppStartInstruction(new AppStartRequest(brief.Title!, brief.Cwd!, brief.Worktree == true, $"orch join \"{file}\""));
+        var instruction = c.Provider.AppStartInstruction(new AppStartRequest(brief.Title!, brief.Cwd!, brief.Worktree == true, $"orch join \"{file}\"") { ParentCwd = c.Cwd });
         if (instruction is null)
         {
             File.Delete(file);

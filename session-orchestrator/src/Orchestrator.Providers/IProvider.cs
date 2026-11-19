@@ -61,8 +61,14 @@ public delegate (bool Ok, string Text) CommandRun(string program, params string[
 /// <summary>One setup check of orch doctor.</summary>
 public sealed record DoctorCheck(string Name, Func<(bool Ok, string Detail)> Test);
 
-/// <summary>A child that a parent in the app starts. <c>Command</c>: the first command of the child, which joins it to the store.</summary>
-public sealed record AppStartRequest(string Title, string Cwd, bool Worktree, string Command);
+/// <summary>
+/// A child that a parent in the app starts. <c>Command</c>: the first command of the child, which joins it to the store.
+/// <c>ParentCwd</c>: the folder of the parent; a child in the same folder gets no explicit folder in the app call (R-25).
+/// </summary>
+public sealed record AppStartRequest(string Title, string Cwd, bool Worktree, string Command)
+{
+    public string? ParentCwd { get; init; }
+}
 
 /// <summary>The app facts of one session. <c>InApp</c>: the app has a record of the session.</summary>
 public sealed record AppFacts(bool InApp, bool Archived);

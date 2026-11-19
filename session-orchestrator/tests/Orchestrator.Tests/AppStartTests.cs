@@ -150,6 +150,14 @@ public sealed class AppStartTests
     }
 
     [Test]
+    public void A_child_in_the_folder_of_the_parent_gets_no_folder_in_the_app_call()
+    {
+        var text = new ClaudeCodeProvider(new()).AppStartInstruction(new("T 2", "C:/repo", true, "orch join \"C:/t/s.json\"") { ParentCwd = @"C:\repo\" })!;
+        Assert.That(text, Does.Not.Contain("\"cwd\""), "R-25: in a turn that the app continues by itself, the app refuses each explicit folder");
+        Assert.That(text, Does.Contain("\"use_worktree\":true"));
+    }
+
+    [Test]
     public void The_app_call_names_the_folder_the_title_and_the_first_command()
     {
         var text = new ClaudeCodeProvider(new()).AppStartInstruction(new("T 1", "C:/repo", false, "orch join \"C:/t/s.json\""))!;
