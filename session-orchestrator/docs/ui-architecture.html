@@ -107,6 +107,7 @@ h3 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   <button role="tab" data-tab="input" aria-selected="false">Interactions</button>
   <button role="tab" data-tab="components" aria-selected="false">Components</button>
   <button role="tab" data-tab="style" aria-selected="false">Style</button>
+  <button role="tab" data-tab="prior" aria-selected="false">Prior art</button>
   <button role="tab" data-tab="flow" aria-selected="false">Motion flow</button>
 </nav>
 
@@ -479,10 +480,56 @@ flowchart LR
   </section>
 </div>
 
+<!-- PRIOR ART -->
+<div class="panel off" id="prior" role="tabpanel">
+  <section><h2>Prior art: how known libraries build motion</h2>
+    <p class="summary">A web research of design systems and UI libraries, 2026-11-19. Each row links to its source. "Not confirmed" means the source did not show it.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Library</th><th>Where motion runs</th><th>Defined as</th><th>Enter and exit</th><th>End detection</th><th>Reduced motion</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://raw.githubusercontent.com/shoelace-style/webawesome/next/packages/webawesome/src/internal/animate.ts">Web Awesome 3</a></td><td>CSS keyframes; a JS helper adds a class</td><td>CSS tokens (<code>--wa-transition-normal</code>); <code>--show-duration</code>, <code>--hide-duration</code> on each component</td><td><code>animateWithClass(el, "show" | "hide")</code></td><td><code>getAnimations()</code>, then <code>Promise.allSettled(finished)</code></td><td>Helper exists; use not confirmed</td></tr>
+        <tr><td><a href="https://shoelace.style/getting-started/customizing#animations">Shoelace 2</a></td><td>JS, Web Animations API</td><td>JS registry: name to keyframes and options</td><td><code>getAnimation(el, "dialog.show")</code>, <code>animateTo</code></td><td><code>finish</code> or <code>cancel</code> event</td><td>Duration 0</td></tr>
+        <tr><td><a href="https://carbondesignsystem.com/elements/motion/overview/">IBM Carbon</a></td><td>CSS (Sass), JS <code>motion()</code></td><td>6 durations (70 to 700 ms) × 3 curves (standard, entrance, exit) × 2 styles (productive, expressive)</td><td>CSS in each component</td><td>Not confirmed</td><td>Guidance only</td></tr>
+        <tr><td><a href="https://raw.githubusercontent.com/microsoft/fluentui/master/packages/react-components/react-motion/library/src/factories/createPresenceComponent.ts">Fluent UI React v9</a></td><td>JS, Web Animations API</td><td>Motion atoms (keyframes, duration, easing) and <code>motionTokens</code></td><td><code>createPresenceComponent({ enter, exit })</code>, <code>visible</code>, <code>unmountOnExit</code></td><td><code>onfinish</code> of each animation, <code>Promise.all</code></td><td>1 ms duration for each atom</td></tr>
+        <tr><td><a href="https://raw.githubusercontent.com/radix-ui/primitives/main/packages/react/presence/src/presence.tsx">Radix UI</a></td><td>CSS keyframes on <code>[data-state]</code></td><td>The user writes the CSS</td><td><code>Presence</code>: mounted, unmount suspended, unmounted</td><td><code>animationend</code> or <code>animationcancel</code>, with a name check</td><td>User CSS</td></tr>
+        <tr><td><a href="https://github.com/tailwindlabs/headlessui/blob/main/packages/@headlessui-react/src/hooks/use-transition.ts">Headless UI 2</a></td><td>CSS transitions</td><td>The user writes the classes</td><td><code>data-closed</code>, <code>data-enter</code>, <code>data-leave</code></td><td><code>getAnimations()</code>, <code>allSettled(finished)</code>; a parent waits for its children</td><td>User CSS</td></tr>
+        <tr><td><a href="https://github.com/material-components/material-web/blob/main/dialog/internal/dialog.ts">Material 3 (Material Web)</a></td><td>Tokens in CSS; the dialog uses the Web Animations API</td><td>16 durations, 10 easings</td><td><code>getOpenAnimation</code>, <code>getCloseAnimation</code> functions</td><td>Waits for all <code>animate()</code> results</td><td><code>quick</code> property only</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Short look</h3>
+    <ul>
+      <li><a href="https://vuejs.org/guide/built-ins/transition">Vue &lt;Transition&gt;</a>: six classes for enter and leave; Vue detects the end event itself.</li>
+      <li><a href="https://angular.dev/guide/animations">Angular</a>: <code>animate.enter</code> and <code>animate.leave</code> add CSS classes; it waits for the longest animation, with a 4 s fallback.</li>
+      <li><a href="https://motion.dev/docs/react-animate-presence">Framer Motion</a>: <code>AnimatePresence</code> with <code>exit</code> and <code>key</code>; modes sync, wait, popLayout.</li>
+      <li><a href="https://unpkg.com/@spectrum-css/tokens/dist/index.css">Adobe Spectrum</a>: duration and ease tokens as CSS variables.</li>
+      <li><a href="https://docs.dndocs.com/n/MudBlazor/8.0.0/api/MudBlazor.MudPopover.html">MudBlazor</a>: no motion system; <code>Duration</code> and <code>Delay</code> are C# parameters, the same problem as ours. <a href="https://github.com/dotnet/aspnetcore/issues/10389">Blazor has no built-in transitions</a>.</li>
+      <li>Page moves: none of these libraries has its own route transition API.</li>
+    </ul>
+  </section>
+  <section><h3>Closest to us</h3>
+    <p><strong>Web Awesome 3.</strong> It has CSS keyframes and tokens, one small JS helper that adds a class and waits for <code>getAnimations()</code>, and a state class from the host. Our <code>orchMotion.settle</code> is almost the same helper. Next are Radix and Headless UI: the state is in the framework, the motion is in CSS, and one presence part waits.</p>
+  </section>
+  <section><h3>Patterns that fit us</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Pattern</th><th>From</th><th>For us</th><th>Issues</th></tr></thead>
+      <tbody>
+        <tr><td>One state attribute</td><td>Radix, Headless UI</td><td>C# renders <code>data-state="open | closed | leaving"</code>. All motion CSS keys on it</td><td>I9</td></tr>
+        <tr><td>One end helper</td><td>Web Awesome 3, Headless UI</td><td><code>orchMotion.settle</code> for all waits. Remove <code>orchTray.end</code>. C# needs no time</td><td>I11, I12</td></tr>
+        <tr><td>One presence part with states</td><td>Radix</td><td><code>Presence</code>: shown, leaving, gone. With no animation, it goes at once</td><td>I9</td></tr>
+        <tr><td>Tokens only in CSS</td><td>Carbon, Material 3, Spectrum</td><td>A script that needs a time reads the token (<code>getComputedStyle</code>). No copies</td><td>I11</td></tr>
+        <tr><td>Reduced motion in one place</td><td>Fluent, Shoelace</td><td>Set the duration tokens to 1 ms, not <code>animation: none</code>. The end events still come, so the waits do not change</td><td>I13</td></tr>
+        <tr><td>A small registry for the deck</td><td>Shoelace, Fluent atoms</td><td>Named deck motions that read the tokens; <code>swipe.js</code> has no times</td><td>I11</td></tr>
+        <tr><td>Sizes as CSS variables from C#</td><td>Web Awesome (<code>--size</code>)</td><td>C# writes its size constants on the stage as custom properties. CSS uses them</td><td>I7, I10</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Lesson for us (I13): our reduced motion rule is <code>animation: none; transition: none</code>. Then no <code>transitionend</code> comes, and each <code>orchTray.end</code> wait in the tray runs to its full limit (900 ms for the open). Not tested. Recorded in the tracker.</p>
+  </section>
+</div>
+
 <!-- MOTION FLOW -->
 <div class="panel off" id="flow" role="tabpanel">
   <section><h2>Motion flow: today and a proposal</h2>
-    <p class="summary">For discussion. No code changes yet. Issues I9, I11 and I12 are about this.</p>
+    <p class="summary">For discussion. No code changes yet. Issues I9, I11, I12 and I13 are about this. The Prior art tab shows where each point comes from.</p>
     <h3>Today: eight mechanisms</h3>
     <div class="scroll"><table>
       <thead><tr><th>#</th><th>Mechanism</th><th>Starts</th><th>Waits with</th><th>Time limit</th></tr></thead>
@@ -505,6 +552,7 @@ flowchart LR
       <li><strong>Wait:</strong> one helper, <code>orchMotion.settle(element)</code>, for all waits. It writes a trace line when the limit ends a wait, so a wrong wait shows.</li>
       <li><strong>Sizes:</strong> one owner. C# writes its constants to the page as CSS variables at the start, or the page measures and reports.</li>
       <li><strong>Deck:</strong> <code>swipe.js</code> keeps only the pointer math. The throw, the tuck and the back-in become state classes with tokens, and the wait is <code>settle</code>.</li>
+      <li><strong>Reduced motion:</strong> the duration tokens go to 1 ms, so the end events still come (Fluent, Shoelace).</li>
       <li><strong>Test:</strong> one check reads all running animations (<code>getAnimations</code>) and compares their times with the tokens.</li>
     </ol>
     <div class="scroll"><table>
@@ -521,7 +569,7 @@ flowchart LR
 
 <script>
 (function () {
-  var names = ["overview", "data", "structure", "places", "startstop", "moves", "cmotion", "input", "components", "style", "flow"];
+  var names = ["overview", "data", "structure", "places", "startstop", "moves", "cmotion", "input", "components", "style", "prior", "flow"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "overview";
     names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });

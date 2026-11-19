@@ -115,6 +115,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i10">I10 · Sizes in two places (C# and CSS)  (Detected)</option>
     <option value="i11">I11 · Motion times outside the tokens  (Detected)</option>
     <option value="i12">I12 · Two wait rules for "the motion ended"  (Detected)</option>
+    <option value="i13">I13 · Reduced motion makes the tray waits run to their limit  (Detected)</option>
     <option value="f1">F1 · A blink at the end of the open  (Fixed)</option>
     <option value="f2">F2 · A bigger, darker shadow and an overlap at a tab change  (Fixed)</option>
     <option value="f3">F3 · The tab change was not the spec (T1 C)  (Fixed)</option>
@@ -171,6 +172,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i10">I10</a></td><td>Sizes in two places (C# and CSS)</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i11">I11</a></td><td>Motion times outside the tokens</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i12">I12</a></td><td>Two wait rules for "the motion ended"</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
+        <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f3">F3</a></td><td>The tab change was not the spec (T1 C)</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -443,6 +445,26 @@ orchMotion.settle(root)                         <span class="c">// Presence, Mai
     <div class="field"><span class="k">Possible effect</span><div class="v"><p>A wrong property name waits for the full limit, with no error. The flow then looks slow, but no test fails.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>One wait helper for all: <code>settle</code>, with a log line when the limit ends a wait.</p></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Part of the design pass of I9?</p></div></div></div>
+  </section>
+</div>
+
+<!-- I13 -->
+<div class="panel off" id="i13" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill det">Detected</span><span class="k">source: review, prior art · I13</span></div>
+    <h2>I13 · Reduced motion makes the tray waits run to their limit</h2>
+    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>With the Windows setting for reduced motion, each wait of the tray stage can run to its full time limit. The open then can take 900 ms more, with no motion on the screen.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Fact of the code. Not run.</p>
+<pre class="stack">motion.css   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+tray.js      end(): waits for transitionend of one property, or for the limit
+TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transition: no event: 900 ms</span></pre></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><p>Not tried. A run of the self-test with the CSS media emulated as reduced would show it.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known from the code. <code>orchMotion.settle</code> is safe: with no animation it ends at once. <code>orchTray.end</code> is not.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>Prior art (Fluent, Shoelace): set the duration tokens to 1 ms in place of <code>none</code>, so the end events still come. Or use one wait helper (I12).</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Part of the motion flow design (I9)?</p></div></div></div>
   </section>
 </div>
 
