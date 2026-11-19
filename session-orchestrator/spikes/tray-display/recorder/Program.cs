@@ -22,6 +22,8 @@ static partial class Program
     [STAThread]
     static int Main(string[] args)
     {
+        // "mp4 in.gif out.mp4 fps": the frames of the GIF as an MP4 video (Media Foundation), for a player that shows no GIF motion.
+        if (args.Length == 4 && args[0] == "mp4") return Mp4(args[1], args[2], int.Parse(args[3])).GetAwaiter().GetResult();
         // "trim in.gif out.gif fps": the frames at the end that do not change go.
         if (args.Length == 4 && args[0] == "trim") return Trim(args[1], args[2], int.Parse(args[3]));
         if (args.Length < 8)
@@ -83,6 +85,49 @@ static partial class Program
         File.WriteAllBytes(output, Loop(gif.ToArray(), (int)Math.Round(100.0 / fps)));
         Console.WriteLine($"{output}: {new FileInfo(output).Length / 1024} KB");
         return 0;
+    }
+
+    static async Task<int> Mp4(string input, string output, int fps)
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "recorder-frames-" + Guid.NewGuid().ToString("n")[..8]);
+        Directory.CreateDirectory(folder);
+        int width, height, count;
+        using (var file = File.OpenRead(input))
+        {
+            var decoder = new GifBitmapDecoder(file, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+            count = decoder.Frames.Count;
+            // The encoder needs an even width and height.
+            width = decoder.Frames[0].PixelWidth & ~1;
+            height = decoder.Frames[0].PixelHeight & ~1;
+            for (var i = 0; i < count; i++)
+            {
+                var png = new PngBitmapEncoder();
+                png.Frames.Add(BitmapFrame.Create(new CroppedBitmap(decoder.Frames[i], new System.Windows.Int32Rect(0, 0, width, height))));
+                using var o = File.Create(Path.Combine(folder, $"{i:00000}.png"));
+                png.Save(o);
+            }
+        }
+        var composition = new Windows.Media.Editing.MediaComposition();
+        var frame = TimeSpan.FromSeconds(1.0 / fps);
+        for (var i = 0; i < count; i++)
+        {
+            var image = await Windows.Storage.StorageFile.GetFileFromPathAsync(Path.Combine(folder, $"{i:00000}.png"));
+            composition.Clips.Add(await Windows.Media.Editing.MediaClip.CreateFromImageFileAsync(image, frame));
+        }
+        var target = Path.GetFullPath(output);
+        File.WriteAllBytes(target, []);
+        var outFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(target);
+        var profile = Windows.Media.MediaProperties.MediaEncodingProfile.CreateMp4(Windows.Media.MediaProperties.VideoEncodingQuality.HD720p);
+        profile.Video.Width = (uint)width;
+        profile.Video.Height = (uint)height;
+        profile.Video.FrameRate.Numerator = (uint)fps;
+        profile.Video.FrameRate.Denominator = 1;
+        profile.Video.Bitrate = 2_000_000;
+        profile.Audio = null;
+        var result = await composition.RenderToFileAsync(outFile, Windows.Media.Editing.MediaTrimmingPreference.Precise, profile);
+        Directory.Delete(folder, true);
+        Console.WriteLine($"{count} frames, {width} x {height}: {result}; {target}: {new FileInfo(target).Length / 1024} KB");
+        return result == Windows.Media.Transcoding.TranscodeFailureReason.None ? 0 : 1;
     }
 
     static int Trim(string input, string output, int fps)
