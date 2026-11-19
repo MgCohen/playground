@@ -104,6 +104,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
   <button role="tab" data-tab="i6" aria-selected="false"><span class="dot bg-rep"></span>I6 Grow review</button>
   <button role="tab" data-tab="i7" aria-selected="false"><span class="dot bg-rpl"></span>I7 Badge cut</button>
   <button role="tab" data-tab="i8" aria-selected="false"><span class="dot bg-det"></span>I8 Demo pointer</button>
+  <button role="tab" data-tab="arch" aria-selected="false"><span class="dot bg-det"></span>I9–I12 Structure</button>
   <button role="tab" data-tab="fixed" aria-selected="false"><span class="dot bg-fix"></span>Fixed</button>
 </nav>
 
@@ -150,6 +151,10 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td>I6</td><td>The tray grow (G1) is not reviewed</td><td><span class="pill rep">Reported</span></td><td>Review with you</td></tr>
         <tr><td>I7</td><td>The badge hover cuts the ring at the left</td><td><span class="pill rpl">Replicated</span></td><td>Your decision: fix option</td></tr>
         <tr><td>I8</td><td>The demo moves your real pointer in 4 steps</td><td><span class="pill det">Detected</span></td><td>Your decision: window messages</td></tr>
+        <tr><td>I9</td><td>Eight motion mechanisms, no single flow</td><td><span class="pill det">Detected</span></td><td>Discuss with you</td></tr>
+        <tr><td>I10</td><td>Sizes in two places (C# and CSS)</td><td><span class="pill det">Detected</span></td><td>Discuss with you</td></tr>
+        <tr><td>I11</td><td>Motion times outside the tokens</td><td><span class="pill det">Detected</span></td><td>Discuss with you</td></tr>
+        <tr><td>I12</td><td>Two wait rules for "the motion ended"</td><td><span class="pill det">Detected</span></td><td>Discuss with you</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -349,6 +354,34 @@ record = that share for each frame, in place of the mean</pre>
   </section>
 </div>
 
+<!-- I9 to I12 -->
+<div class="panel off" id="arch" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill det">Detected</span><span class="k">source: review of the view code · I9 to I12</span></div>
+    <h2>I9 to I12 · Structure of the views</h2>
+    <p class="summary">Found in the architecture review. The detail, with the full inventory, is on the Findings tab of the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">view architecture page</a>. No reproduction: these are facts of the code. No fix.</p>
+  </section>
+  <section>
+    <details class="more" open><summary><span class="pill det">Detected</span> I9 · Eight motion mechanisms, no single flow</summary><div class="body">
+      <div class="field"><span class="k">What</span><div class="v"><p>Stage phases, Presence, tab change, view transition, nav dot, ring draw, deck script and C# timers each start and wait for motion in their own way.</p></div></div>
+      <div class="field"><span class="k">Possible effect</span><div class="v"><p>A fix in one path does not reach the others. Some faults can come from two paths at the same time.</p></div></div>
+    </div></details>
+    <details class="more"><summary><span class="pill det">Detected</span> I10 · Sizes in two places (C# and CSS)</summary><div class="body">
+      <div class="field"><span class="k">What</span><div class="v"><p>Shadow margin 24, tab 68, tab margin 14, hover 280, badge window 332: C# constants and CSS values, kept equal by hand.</p></div></div>
+      <div class="field"><span class="k">Possible effect</span><div class="v"><p>The click area and the drawing disagree. I7 is one known result.</p></div></div>
+    </div></details>
+    <details class="more"><summary><span class="pill det">Detected</span> I11 · Motion times outside the tokens</summary><div class="body">
+      <div class="field"><span class="k">What</span><div class="v"><p>The deck times in <code>app.css</code> and <code>swipe.js</code>, the 300 ms hover fold in C#, the 5 s undo in C# and CSS, the wait limits in <code>TrayStage</code>.</p></div></div>
+      <div class="field"><span class="k">Possible effect</span><div class="v"><p>A change of one value makes a wait end too early or too late. The rule "all motion tokens in motion.css" is not true today.</p></div></div>
+    </div></details>
+    <details class="more"><summary><span class="pill det">Detected</span> I12 · Two wait rules for "the motion ended"</summary><div class="body">
+      <div class="field"><span class="k">What</span><div class="v"><p><code>orchTray.end</code> waits for one named property of one element. <code>orchMotion.settle</code> waits for all animations of a subtree.</p></div></div>
+      <div class="field"><span class="k">Possible effect</span><div class="v"><p>A wrong property name waits for the full limit, with no error. The flow then looks slow, but no test fails.</p></div></div>
+    </div></details>
+    <div class="ask"><span class="k">Question</span><p>Do we discuss one unified motion flow as a design topic, before we fix I7 and the other issues of this group?</p></div>
+  </section>
+</div>
+
 <!-- FIXED -->
 <div class="panel off" id="fixed" role="tabpanel">
   <section>
@@ -381,7 +414,7 @@ record = that share for each frame, in place of the mean</pre>
 
 <script>
 (function () {
-  var names = ["about", "i1", "i2", "i3", "i4", "i5", "i6", "i7", "i8", "fixed"];
+  var names = ["about", "i1", "i2", "i3", "i4", "i5", "i6", "i7", "i8", "arch", "fixed"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "about";
     names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });

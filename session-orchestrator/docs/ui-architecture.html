@@ -1,0 +1,382 @@
+<title>Orch View Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one topic for each tab, the visual first. Same tokens as the test guide. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --warn: #9a6200; --code-bg: #eef1f3; --bad: #b3402f;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f; --bad: #ef8a78; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f; --bad: #ef8a78; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 70ch; }
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap; }
+nav button { font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 24px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 12px; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+td code { white-space: nowrap; }
+pre.stack { margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg); white-space: pre; }
+pre .c { color: var(--muted); }
+pre .k { color: var(--accent); }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 70ch; }
+.tag { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.cs { color: var(--accent); border-color: var(--accent); }
+.tag.css { color: var(--warn); border-color: var(--warn); }
+.tag.js { color: var(--bad); border-color: var(--bad); }
+.tree { font-family: var(--font-mono); font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+.tree details { margin-left: 16px; }
+.tree > details { margin-left: 0; }
+.tree summary { cursor: pointer; padding: 2px 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
+.tree summary::-webkit-details-marker { display: none; }
+.tree summary::before { content: "▸"; color: var(--muted); width: 10px; flex: none; }
+.tree details[open] > summary::before { content: "▾"; }
+.tree details.leaf > summary::before { content: "·"; }
+.tree .n { color: var(--fg); font-weight: 500; }
+.tree .d { color: var(--muted); font-family: var(--font-body); font-size: 13px; }
+.tree .more { margin: 2px 0 6px 20px; font-family: var(--font-body); font-size: 13px; color: var(--muted); max-width: 70ch; }
+details.example { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+details.example > summary { cursor: pointer; padding: 12px 14px; font-family: var(--font-display); font-weight: 500; font-size: 16px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+details.example > summary .d { font-family: var(--font-body); font-size: 14px; font-weight: 400; color: var(--muted); }
+details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.grid2 > * { min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.card .big { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.where { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.find { border-left: 3px solid var(--bad); }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · orch/visual-review</div>
+  <h1>Orch View Architecture</h1>
+  <p class="summary">How the views of the tray and of the web UI are built today: the hosts, the window, the pages, the components and the motion. The last tab lists where the parts do not follow one flow.</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" data-tab="layers" aria-selected="true">Layers</button>
+  <button role="tab" data-tab="window" aria-selected="false">The window</button>
+  <button role="tab" data-tab="phases" aria-selected="false">Start and close</button>
+  <button role="tab" data-tab="pages" aria-selected="false">Pages and components</button>
+  <button role="tab" data-tab="motion" aria-selected="false">Motion</button>
+  <button role="tab" data-tab="paths" aria-selected="false">Motion paths</button>
+  <button role="tab" data-tab="findings" aria-selected="false">Findings</button>
+</nav>
+
+<!-- LAYERS -->
+<div class="panel" id="layers" role="tabpanel">
+  <section>
+    <h2>Two hosts, one set of views</h2>
+    <p class="summary">The same Razor components run in the browser (web server) and in the tray window. Only the root and one style file are different.</p>
+    <div class="box"><pre class="mermaid">
+flowchart TB
+  subgraph Web["Web server · Orchestrator.Web"]
+    A1["App.razor<br/>Blazor Server"] --> R1["Routes"]
+  end
+  subgraph Tray["Tray app · Orchestrator.Tray"]
+    W["TrayWindow : ClearHost<br/>one composition window"] --> M["Manager : WebViewManager<br/>index.html"]
+    M --> TR["TrayRoot"] --> TS["TrayStage<br/>phases, badge"] --> R2["Routes"]
+  end
+  R1 --> L["MainLayout<br/>.page, AppBar, MotionHost"]
+  R2 --> L
+  L --> P["Pages<br/>@page, LiveView"]
+  P --> C["Components<br/>Ui/*, Presence"]
+</pre></div>
+  </section>
+  <section>
+    <h2>Who owns what</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Layer</th><th>Files</th><th>Owns</th><th>Kind</th></tr></thead>
+      <tbody>
+        <tr><td>Window</td><td><code>ClearHost.cs</code>, <code>TrayWindow.cs</code></td><td>Place, size, click area, mouse input to the page</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Window contract</td><td><code>IWidgetWindow.cs</code>, <code>WidgetWindow.cs</code></td><td>Requests (open, dock, hide), <code>Enter(phase)</code>, <code>Peek</code></td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Stage</td><td><code>TrayStage.razor</code>, <code>tray.css</code>, <code>tray.js</code></td><td>The phase order, the badge, the notice</td><td><span class="tag cs">C#</span> <span class="tag css">CSS</span> <span class="tag js">JS</span></td></tr>
+        <tr><td>Layout</td><td><code>MainLayout.razor</code>, <code>AppBar.razor</code>, <code>MotionHost.razor</code></td><td>Page frame, tab change, push and back</td><td><span class="tag cs">C#</span> <span class="tag js">JS</span></td></tr>
+        <tr><td>Pages</td><td><code>Components/Pages/*</code></td><td>Data (<code>Load</code>), blocks, sheets</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Look</td><td><code>app.css</code></td><td>Layout, colors, and the deck motion</td><td><span class="tag css">CSS</span></td></tr>
+        <tr><td>Motion</td><td><code>motion.css</code>, <code>motion.js</code>, <code>Presence.razor</code></td><td>Tokens, motion rules, waits</td><td><span class="tag css">CSS</span> <span class="tag js">JS</span></td></tr>
+        <tr><td>Deck</td><td><code>swipe.js</code></td><td>Drag, throw, tuck of the top card</td><td><span class="tag js">JS</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+
+<!-- WINDOW -->
+<div class="panel off" id="window" role="tabpanel">
+  <section>
+    <h2>One window, two places</h2>
+    <div class="grid2">
+      <div class="card"><span class="where">panel place</span><span class="big">350 × 720 + 24 px margin</span><p>A free point. A drag of the header moves it (<code>app-region: drag</code>). Phases: start, open, folded.</p></div>
+      <div class="card"><span class="where">badge place</span><span class="big">332 × 96 at the right edge</span><p>A saved height. A drag moves it up and down only. Phases: badge-out, badge.</p></div>
+      <div class="card"><span class="where">hidden</span><span class="big">no window</span><p>The tray icon opens it again.</p></div>
+    </div>
+    <p>The window moves only while nothing shows. The stage asks for each move with <code>Enter(phase)</code>.</p>
+  </section>
+  <section>
+    <h2>How the window shows a page</h2>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  F["Form<br/>WS_EX_NOREDIRECTIONBITMAP"] --> D["DirectComposition<br/>visual"]
+  D --> V["WebView2<br/>composition controller"]
+  V --> P["Page<br/>transparent body"]
+  F -->|"SetWindowRgn<br/>(click area)"| R["Region: takes clicks<br/>and clips the drawing"]
+  F -->|"WM_MOUSE*"| V
+</pre></div>
+    <p class="note">The click area is also the visible area. If a part of the page is outside the region, Windows does not show it. This is the cause of I7 (badge cut).</p>
+  </section>
+  <section>
+    <h2>The click area by phase</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>State</th><th>Click area (from the right edge)</th><th>Set by</th></tr></thead>
+      <tbody>
+        <tr><td>Panel place</td><td>The full window, cut to the work area</td><td><code>Hits()</code></td></tr>
+        <tr><td>Badge at rest</td><td>68 + 14 px</td><td><code>Hits()</code></td></tr>
+        <tr><td>Badge hover</td><td>280 + 14 px; back to rest 300 ms after the leave</td><td><code>BadgeHover</code>, <code>Task.Delay(300)</code></td></tr>
+        <tr><td>Badge peek</td><td>The full window (332 px)</td><td><code>Peek(true)</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+
+<!-- PHASES -->
+<div class="panel off" id="phases" role="tabpanel">
+  <section>
+    <h2>Open (start)</h2>
+    <p class="summary">C# orders the places. CSS orders the steps inside one place, with transition delays.</p>
+    <div class="box"><pre class="mermaid">
+sequenceDiagram
+  participant S as TrayStage (C#)
+  participant W as TrayWindow (C#)
+  participant C as tray.css
+  participant J as tray.js
+  S->>W: Enter(start): window to the panel place, Show()
+  S->>C: class is-start (only the ball place, scale 0)
+  S->>J: home(): measure the ball center (--hx, --hy)
+  S->>J: frames(2)
+  S->>C: class is-open
+  Note over C: ball pops 0.30 s, clip grows 0.34 s after 0.21 s, content fades 0.20 s
+  S->>W: Enter(open): Activate()
+  S->>J: end(".tray-panel", "clip-path", 900)
+  S->>C: class is-ready: the rings draw
+</pre></div>
+  </section>
+  <section>
+    <h2>Minimize (dock) and close (hide)</h2>
+    <div class="box"><pre class="mermaid">
+sequenceDiagram
+  participant S as TrayStage (C#)
+  participant W as TrayWindow (C#)
+  participant C as tray.css
+  participant J as tray.js
+  S->>J: home()
+  S->>C: class is-folded
+  Note over C: content fades 0.10 s, clip folds 0.24 s, ball pops out 0.18 s
+  S->>J: end(".nav2 .home", "scale", 900)
+  alt dock
+    S->>W: Enter(badge-out): window to the badge place
+    S->>C: is-badge-out, frames(2), is-badge: the tab slides in 0.26 s
+    S->>W: Enter(badge)
+  else hide
+    S->>W: Enter(hidden): Hide()
+  end
+</pre></div>
+  </section>
+  <section>
+    <h2>A new card</h2>
+    <ol>
+      <li><code>LiveView.Load</code> sees more cards. <code>TrayStage.Notice</code> runs.</li>
+      <li>If the tray is hidden, the badge comes in (badge-out, then badge).</li>
+      <li>The ring spins (<code>.spin</code>, 0.8 s). The peek bubble shows, and <code>Peek(true)</code> makes the click area wide.</li>
+      <li>After 5 s (<code>PeekTime</code>, C#) the bubble goes. Then <code>Peek(false)</code>.</li>
+    </ol>
+  </section>
+</div>
+
+<!-- PAGES -->
+<div class="panel off" id="pages" role="tabpanel">
+  <section>
+    <h2>Anatomy of a page</h2>
+<pre class="stack"><span class="k">@page</span> "/cards"                 <span class="c">// route; PageDepth attribute for pages below a tab</span>
+<span class="k">@inherits</span> LiveView               <span class="c">// Load() on each store change (300 ms batch) and each 10 s</span>
+
+&lt;PageHeader Title="Cards" /&gt;     <span class="c">// title or path (T3); window buttons in the tray</span>
+&lt;div class="deck-screen"&gt; ... &lt;/div&gt;   <span class="c">// the blocks: each child rises at a tab change (T1)</span>
+
+@if (sheet is { } s)
+{
+    &lt;Presence OnGone="() =&gt; sheet = null"&gt;   <span class="c">// a block that comes and goes</span>
+        &lt;AnswerSheet ... /&gt;                  <span class="c">// it closes itself with Presence.Leave()</span>
+    &lt;/Presence&gt;
+}</pre>
+  </section>
+  <section>
+    <h2>The frame around each page</h2>
+    <div class="tree">
+      <details open><summary><span class="n">MainLayout</span><span class="d">.app</span></summary>
+        <details class="leaf"><summary><span class="n">main.page</span><span class="d">the page; is-tab-in during a tab change</span></summary></details>
+        <details><summary><span class="n">AppBar</span><span class="d">nav.nav2, view-transition-name: appbar</span></summary>
+          <div class="more">Cards, Stream, Home ball, Sessions, Settings, and one nav dot (.ndot). The home ball is also the ball of the tray grow and fold.</div>
+        </details>
+        <details class="leaf"><summary><span class="n">MotionHost</span><span class="d">no markup; starts a push or a back</span></summary></details>
+      </details>
+    </div>
+  </section>
+  <section>
+    <h2>Components</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Group</th><th>Examples</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>Ui</td><td><code>PageHeader</code>, <code>AppBar</code>, <code>Ring</code>, <code>DeepRing</code>, <code>EventRow</code>, <code>AnswerSheet</code>, <code>FilterSheet</code>, <code>PageBar</code></td><td>Parameters in, events out</td></tr>
+        <tr><td>Ui/Looks</td><td><code>PillLook</code>, <code>ListLook</code>, <code>CodeLook</code> ...</td><td>One look for each render kind of a message</td></tr>
+        <tr><td>Motion</td><td><code>Presence</code>, <code>MotionHost</code></td><td>The only Razor parts that wait for motion</td></tr>
+        <tr><td>Tray</td><td><code>TrayRoot</code>, <code>TrayStage</code>, <code>TrayBadge</code></td><td>Only in the tray host</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+
+<!-- MOTION -->
+<div class="panel off" id="motion" role="tabpanel">
+  <section>
+    <h2>How a motion is defined</h2>
+    <ol>
+      <li>A token in <code>motion.css</code> <code>:root</code>: a time or a curve.</li>
+      <li>A rule that uses the token, with the spec ID in a comment (M1 to M7, T1 to T4, N1, N2).</li>
+      <li>A state class starts it: a phase (<code>is-open</code>), a Presence phase (<code>is-leaving</code>), a tab change (<code>is-tab-in</code>), a view transition (<code>vt</code>).</li>
+    </ol>
+<pre class="stack"><span class="c">/* token */</span>
+--t-sheet-out: .22s;
+<span class="c">/* rule: M5, a sheet leaves */</span>
+.is-leaving &gt; .sheet { animation: m-down var(--t-sheet-out) ease-in both; }
+<span class="c">/* state: Presence sets is-leaving, then waits (orchMotion.settle) */</span></pre>
+  </section>
+  <section>
+    <h2>Where the motion rules are</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>File</th><th>Motion</th></tr></thead>
+      <tbody>
+        <tr><td><code>motion.css</code></td><td>Tokens; sheets, toast, speed dial, press, fold, ring draw, count-up, first page fade, tab change, push and back, header path</td></tr>
+        <tr><td><code>tray.css</code></td><td>Grow, fold, ball, content fade, badge, peek, spin; tray overrides of push and back</td></tr>
+        <tr><td><code>app.css</code></td><td>The card deck: arrive, throw, tuck, back-in; toggle; <code>.cfab</code></td></tr>
+        <tr><td><code>swipe.js</code></td><td>Drag transform, throw distance, the waits of the deck</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>Three kinds of page moves</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Move</th><th>When</th><th>How</th></tr></thead>
+      <tbody>
+        <tr><td>Tab change (T1 C)</td><td>Depth 0 to depth 0</td><td><code>MainLayout</code> sets <code>is-tab-in</code>; each block rises; settle removes the class</td></tr>
+        <tr><td>Push (T2)</td><td>To a deeper page</td><td><code>MotionHost</code> → <code>orchMotion.begin("push")</code> → view transition</td></tr>
+        <tr><td>Back (T2)</td><td>To a page that is less deep</td><td>The same, with <code>vt-back</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+
+<!-- PATHS -->
+<div class="panel off" id="paths" role="tabpanel">
+  <section>
+    <h2>Each way that a motion is started and awaited</h2>
+    <p class="summary">This is the inventory of the code today. Each row is a separate mechanism.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Mechanism</th><th>Starts</th><th>Waits with</th><th>Time limit</th><th>Used by</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Stage phase class</td><td><span class="tag cs">C#</span> <code>Set(phase)</code></td><td><code>orchTray.end(selector, property, ms)</code></td><td>900, 500, 1500, 400 ms in C#</td><td>Grow, fold, badge, spin, peek</td></tr>
+        <tr><td>2</td><td>Presence</td><td><span class="tag cs">C#</span> <code>is-leaving</code></td><td><code>orchMotion.settle</code> (all animations)</td><td><code>--t-limit</code> 1000 ms</td><td>Sheets, toast, speed dial, send box</td></tr>
+        <tr><td>3</td><td>Tab change</td><td><span class="tag cs">C#</span> <code>is-tab-in</code></td><td><code>orchMotion.settle</code></td><td><code>--t-limit</code></td><td>MainLayout</td></tr>
+        <tr><td>4</td><td>View transition</td><td><span class="tag js">JS</span> <code>orchMotion.begin</code></td><td>MutationObserver + <code>setTimeout</code></td><td>300 and 600 ms in JS</td><td>Push, back</td></tr>
+        <tr><td>5</td><td>Nav dot</td><td><span class="tag js">JS</span> <code>orchMotion.dot</code> sets <code>--dx</code></td><td>None</td><td>-</td><td>AppBar</td></tr>
+        <tr><td>6</td><td>Ring draw once</td><td><span class="tag js">JS</span> MutationObserver sets <code>data-drawn</code></td><td>None</td><td>-</td><td>Rings, Home count</td></tr>
+        <tr><td>7</td><td>Deck</td><td><span class="tag js">JS</span> <code>swipe.js</code> classes and styles</td><td><code>animationend</code> / <code>transitionend</code> + <code>setTimeout</code></td><td>300 + 80, 180 + 80, 450, 60 ms in JS</td><td>Card throw, tuck, back-in</td></tr>
+        <tr><td>8</td><td>C# timers</td><td><span class="tag cs">C#</span> <code>Task.Delay</code></td><td>-</td><td>300 ms hover, 5 s peek, 5 s undo</td><td>TrayWindow, TrayStage, Cards</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+
+<!-- FINDINGS -->
+<div class="panel off" id="findings" role="tabpanel">
+  <section>
+    <h2>Where the parts do not follow one flow</h2>
+    <p class="summary">From this review of the code. Each one is a record in the issue tracker (I9 to I12). No fix is made.</p>
+    <details class="example find" open><summary>I9 · Eight motion mechanisms <span class="d">no single flow</span></summary><div class="body">
+      <p>See the Motion paths tab. Two wait helpers do the same job with different rules: <code>orchTray.end</code> waits for one named property, <code>orchMotion.settle</code> waits for all animations. The deck has its own state machine in <code>swipe.js</code>.</p>
+    </div></details>
+    <details class="example find"><summary>I10 · Sizes in two places <span class="d">C# and CSS</span></summary><div class="body">
+<pre class="stack">C#  TrayWindow   ShadowMargin 24   TabRest 68   TabMargin 14   TabWide 280   BadgeWidth 332
+CSS tray.css     inset: 24px       width: 68px  top: 14px      width: auto   (none)</pre>
+      <p>The click area (C#) and the drawing (CSS) can disagree. I7 is one result.</p>
+    </div></details>
+    <details class="example find"><summary>I11 · Motion times outside the tokens <span class="d">literals in 4 files</span></summary><div class="body">
+      <ul>
+        <li><code>app.css</code>: deck .32 s, .45 s, .42 s, .3 s, .18 s; toggle .15 s.</li>
+        <li><code>swipe.js</code>: 300, 180, 450, 60 ms. They must match <code>app.css</code> by hand.</li>
+        <li><code>motion.css</code>: the undo bar is 5 s; <code>Cards.UndoTime</code> in C# is also 5 s.</li>
+        <li><code>TrayWindow</code>: 300 ms hover fold; the token <code>--t-badge-hover</code> is 0.28 s.</li>
+        <li><code>TrayStage</code>: the wait limits 900, 500, 1500, 400 ms.</li>
+      </ul>
+    </div></details>
+    <details class="example find"><summary>I12 · Two wait rules for "the motion ended" <span class="d">different limits</span></summary><div class="body">
+      <p><code>orchTray.end</code>: one element, one property name, a limit for each call. <code>orchMotion.settle</code>: a subtree, all finite animations, one limit token. A wrong property name in <code>end</code> waits for the full limit, with no error.</p>
+    </div></details>
+  </section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["layers", "window", "phases", "pages", "motion", "paths", "findings"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "layers";
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
+    document.querySelectorAll("nav button").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false"); });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>

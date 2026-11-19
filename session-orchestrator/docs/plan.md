@@ -2368,3 +2368,5 @@ Two pages: `docs/tray-testing.html` (how the tests work, https://claude.ai/artif
 | The demo moves the real pointer (I8) | `full/demo.txt`: header drag, badge hover, badge drag and badge click use `Drag` and `Glide` | Only `Press` reads `NoPointer`. Open |
 
 Working rule for tray issues (from the user, 2026-11-19): a found problem gets a record in `docs/tray-issues.html`, not a fix. Reproduce it one time at most; if that is not clear, record what was tried and stop. The user picks the issue to work on.
+
+View architecture review (2026-11-19): `docs/ui-architecture.html`. Findings, recorded in the tracker as I9 to I12, no fix: eight separate motion mechanisms (stage phases, Presence, tab change, view transition, nav dot, ring draw, deck script, C# timers); sizes kept equal by hand in C# and CSS (cause of I7); motion times outside the tokens (deck, hover fold, undo, wait limits); two wait rules (`orchTray.end` for one property, `orchMotion.settle` for all animations).
