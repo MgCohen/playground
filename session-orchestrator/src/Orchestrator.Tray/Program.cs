@@ -41,7 +41,8 @@ public static partial class Program
         Faults.Log = selfTest is not null ? Path.Combine(selfTest, "exceptions.log") : Path.Combine(data, named is null ? "tray.log" : $"tray.{named}.log");
         // A named instance and the demo run write the trace of the window steps.
         Faults.Tracing = (named is not null && selfTest is null) || args.Contains("--demo");
-        SelfTest.NoPointer = args.Contains("--no-pointer");
+        // The demo and stress runs click with window messages; --pointer uses the real pointer (it moves the mouse of the user).
+        SelfTest.NoPointer = !args.Contains("--pointer");
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
         Application.ThreadException += (_, e) => Faults.Add(e.Exception, "UI thread");
         AppDomain.CurrentDomain.UnhandledException += (_, e) => Faults.Add(e.ExceptionObject as Exception, "process");

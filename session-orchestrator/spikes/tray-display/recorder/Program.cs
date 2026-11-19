@@ -77,7 +77,7 @@ static partial class Program
             first ??= bytes;
             if (frames.Count == 0 && bytes.AsSpan().SequenceEqual(first)) continue;
             frames.Add(bytes);
-            times.Add(DateTime.Now.ToString("HH:mm:ss.fff"));
+            times.Add(DateTime.Now.ToString("HH:mm:ss.fff") + " " + Mean(small).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
         }
         Console.WriteLine($"{frames.Count} frames in {clock.Elapsed.TotalSeconds:0.0} s");
         // The time of each frame, for a match with a trace of the recorded app.
@@ -157,6 +157,24 @@ static partial class Program
         File.WriteAllBytes(output, Loop(gif.ToArray(), (int)Math.Round(100.0 / fps)));
         Console.WriteLine($"{decoder.Frames.Count} frames to {last + 1}; {output}: {new FileInfo(output).Length / 1024} KB");
         return 0;
+    }
+
+    /// <summary>The mean of the blue channel of each 8th pixel: a frame with no recorded window has the level of the backdrop.</summary>
+    static double Mean(Bitmap b)
+    {
+        var data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        try
+        {
+            var px = new byte[data.Stride * b.Height];
+            Marshal.Copy(data.Scan0, px, 0, px.Length);
+            long sum = 0, n = 0;
+            for (var i = 0; i < px.Length; i += 32) { sum += px[i]; n++; }
+            return (double)sum / n;
+        }
+        finally
+        {
+            b.UnlockBits(data);
+        }
     }
 
     /// <summary>Draws the pointer into the picture at its screen place.</summary>

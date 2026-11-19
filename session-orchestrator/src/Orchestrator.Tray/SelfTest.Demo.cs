@@ -23,10 +23,10 @@ public static partial class SelfTest
         await Until(() => w.Phase == TrayPhase.Open, 8000);
         if (css is not null) await Js(w, $"(s => {{ s.textContent = {System.Text.Json.JsonSerializer.Serialize(css)}; document.head.appendChild(s); }})(document.createElement('style'))");
         var log = new List<string> { $"{DateTime.Now:HH:mm:ss.fff} stress start, css {css ?? "none"}" };
-        // --sheets: 6 cycles of the Cards tab, the answer sheet and its close, for the empty frames at a sheet open.
+        // --sheets: 12 cycles of the Cards tab, the answer sheet and its close, for the empty frames at a sheet open.
         if (sheets)
         {
-            for (var cycle = 0; cycle < 6; cycle++)
+            for (var cycle = 0; cycle < 12; cycle++)
             {
                 await Act(log, w, ".nav2 a[href=\"cards\"]");
                 await Task.Delay(700);
