@@ -19,6 +19,8 @@ public sealed class MainPage : ContentPage
         var view = new BlazorWebView { HostPage = "wwwroot/index.html" };
         view.RootComponents.Add(new RootComponent { Selector = "#app", ComponentType = typeof(AndroidRoutes) });
         view.RootComponents.Add(new RootComponent { Selector = "head::after", ComponentType = typeof(HeadOutlet) });
+        // Android 15 draws the app under the system bars. The page keeps out of them.
+        SafeAreaEdges = SafeAreaEdges.All;
         Content = view;
     }
 }

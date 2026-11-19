@@ -2264,3 +2264,36 @@ Later (not in the graph):
 | Item | Owner | Content | Start |
 |---|---|---|---|
 | Workflow page | E (UI), with C | A UI page for one workflow run: progress, the graph, the history, the current step on the graph and the possible next steps | Plan and design after C2 |
+
+## A1 result: Android host spike (2026-11-19)
+
+Branch `orch/spike-android`, base `orch/integration-dlv`. Project `spikes/android/`, not in `Orchestrator.slnx`. Plan page: https://claude.ai/artifact/DGrG2DtX4nKwX1tpSrobLh
+
+The orchestrator UI runs as an Android app. A .NET MAUI `BlazorWebView` runs the same Razor components as the tray, in the app process, on the tray mock store. The components did not change.
+
+| Part | Result |
+|---|---|
+| Components | Linked from `Orchestrator.Web` as `RazorComponent` items. `App.razor` and `Routes.razor` stay out; the spike has its own router |
+| Change in `src/` | `NewSession` moved from `Api/OrchestratorApi.cs` to `NewSession.cs`. No logic change |
+| Data | `MockStore.cs` of the tray, linked. Templates and policy are resources; the app writes them to its data folder and sets `ORCH_HOME` |
+| APK | Debug, 84 MB, installs with no store |
+| Toolchain | User-local: .NET 10.0.404 + `maui-android`, JDK, Android SDK, emulator in `%LOCALAPPDATA%\orch-android`. No administrator rights |
+| Emulator | Android 15 (API 35), WHPX acceleration, boot in about 25 s |
+
+### Test results
+
+| Test | Result | Proof (`docs/screens/`) |
+|---|---|---|
+| Start and home view | ✅ Ring, active sessions, events, waiting list | `android-a1-home.png` |
+| Cards tab (tap) | ✅ | `android-a1-cards.png` |
+| Swipe on a card | ✅ Accept, undo toast, badge 8 to 7 after the supervisor tick | `android-a1-swipe.png` |
+| Sessions tab | ✅ Foldable tree with states | `android-a1-sessions.png` |
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| A1-1 | The MAUI host starts Blazor itself. A host page without `autostart="false"` shows only the loading text | Fixed in `wwwroot/index.html` |
+| A1-2 | Android 15 draws the app under the status bar, and the header went under it | Fixed: `SafeAreaEdges = SafeAreaEdges.All` on the page. The bar band is white; a theme color is later work |
+| A1-3 | The components need no change for a phone host. The host work is a router, a host page and the service list | Input for the devices plan |
+| A1-4 | Not tested: the microphone (`speech.js`) in Android WebView, a real phone, a release build with trim | Open |
