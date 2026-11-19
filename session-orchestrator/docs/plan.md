@@ -2366,3 +2366,5 @@ Two pages: `docs/tray-testing.html` (how the tests work, https://claude.ai/artif
 | A missed stress press does not fail the run | `base-now/stress.txt`: 2 of 48 presses "no element" in cycle 1 | Issue I3 open |
 | The badge hover cuts the ring at the left (I7) | Full demo recording: the ring is cut in half in each hover frame, not at the peek. New check `badge-hover-fits` fails: hover tab 333 CSS px, hover click area 280 + 14, window 332 | CSS sets the hover width with `width: auto` (the text sets it); C# fixes the click area, and the window region clips the drawing. Open: fix option for the user |
 | The demo moves the real pointer (I8) | `full/demo.txt`: header drag, badge hover, badge drag and badge click use `Drag` and `Glide` | Only `Press` reads `NoPointer`. Open |
+
+Working rule for tray issues (from the user, 2026-11-19): a found problem gets a record in `docs/tray-issues.html`, not a fix. Reproduce it one time at most; if that is not clear, record what was tried and stop. The user picks the issue to work on.

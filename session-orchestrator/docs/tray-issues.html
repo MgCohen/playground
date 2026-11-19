@@ -114,6 +114,16 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <p>One record for each problem. Each record shows the proof, the cause and the proposed fix. We stop at each issue and decide together. This stops the loop of fixes for problems that nobody proved.</p>
   </section>
   <section>
+    <h2>Working rule</h2>
+    <ol>
+      <li>When you or a test find a problem, write a record. Do not fix it.</li>
+      <li>Try to reproduce it one time. If the reproduction or the error is clear, add the proof.</li>
+      <li>If it is not clear after one try, record what was tried and stop.</li>
+      <li>You pick which issue we work on, and when.</li>
+    </ol>
+    <p class="note">Reason: one cause can make many issues, and one issue can have many causes. We see this only when all records are side by side. A fix loop on one issue hides that.</p>
+  </section>
+  <section>
     <h2>Status flow</h2>
     <div class="track"><span class="rep">Reported</span><span class="det">Detected</span><span class="rpl">Replicated</span><span class="fix">Fixed</span></div>
     <div class="scroll"><table>
