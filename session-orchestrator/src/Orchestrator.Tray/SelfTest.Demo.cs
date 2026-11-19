@@ -16,13 +16,30 @@ public static partial class SelfTest
     /// The stress run (--selftest folder --demo --stress [--css rule]): 8 cycles of tabs, an answer sheet, a push and back, for a
     /// count of empty frames in a screen recording. The CSS rule (an experiment) goes into the page first.
     /// </summary>
-    public static async Task<int> Stress(TrayApp tray, string folder, string? css, bool opens = false)
+    public static async Task<int> Stress(TrayApp tray, string folder, string? css, bool opens = false, bool sheets = false)
     {
         Directory.CreateDirectory(folder);
         var w = tray.Window;
         await Until(() => w.Phase == TrayPhase.Open, 8000);
         if (css is not null) await Js(w, $"(s => {{ s.textContent = {System.Text.Json.JsonSerializer.Serialize(css)}; document.head.appendChild(s); }})(document.createElement('style'))");
         var log = new List<string> { $"{DateTime.Now:HH:mm:ss.fff} stress start, css {css ?? "none"}" };
+        // --sheets: 6 cycles of the Cards tab, the answer sheet and its close, for the empty frames at a sheet open.
+        if (sheets)
+        {
+            for (var cycle = 0; cycle < 6; cycle++)
+            {
+                await Act(log, w, ".nav2 a[href=\"cards\"]");
+                await Task.Delay(700);
+                await Act(log, w, ".acts [data-act=\"left\"]");
+                await Task.Delay(900);
+                await Act(log, w, ".presence .scrim", 0.5, 0.2);
+                await Task.Delay(700);
+                await Act(log, w, ".nav2 a[href=\"\"]");
+                await Task.Delay(700);
+            }
+            File.WriteAllLines(Path.Combine(folder, "stress.txt"), log);
+            return 0;
+        }
         // --opens: 10 cycles of a dock and an open, for the empty frames at the end of an open.
         if (opens)
         {
@@ -175,10 +192,27 @@ public static partial class SelfTest
         return new Point(w.Left + (int)Math.Round(x * s), w.Top + (int)Math.Round(y * s));
     }
 
+    /// <summary>
+    /// --no-pointer: a press is window messages to the tray window (a move, a button down and up at the client point), the same
+    /// input that the host forwards to the page. The real pointer does not move, so the user can work during a run.
+    /// </summary>
+    public static bool NoPointer { get; set; }
+
     /// <summary>Glides the pointer to the element and clicks it, only when the point is on the tray window.</summary>
     static async Task<string> Press(TrayWindow w, string selector, double fx = 0.5, double fy = 0.5)
     {
         if (await Center(w, selector, fx, fy) is not { } at) return $"no element {selector}";
+        if (NoPointer)
+        {
+            var client = new Point(at.X - w.Left, at.Y - w.Top);
+            var lp = (nint)((client.Y << 16) | (client.X & 0xffff));
+            _ = PostMessage(w.Handle, 0x200, 0, lp);
+            await Task.Delay(30);
+            _ = PostMessage(w.Handle, 0x201, 1, lp);
+            await Task.Delay(40);
+            _ = PostMessage(w.Handle, 0x202, 0, lp);
+            return "clicked (window messages)";
+        }
         await Glide(at);
         await Task.Delay(150);
         return await Drag(w, at, 0, 0) ? "clicked" : "not on the tray window: no click";
@@ -194,4 +228,8 @@ public static partial class SelfTest
             await Task.Delay(16);
         }
     }
+
+    [System.Runtime.InteropServices.LibraryImport("user32.dll", EntryPoint = "PostMessageW")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static partial bool PostMessage(nint hwnd, int message, nint wparam, nint lparam);
 }
