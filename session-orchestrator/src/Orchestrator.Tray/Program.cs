@@ -7,7 +7,7 @@ using Orchestrator.Web;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The start of the tray app. Usage: Orchestrator.Tray.exe [--instance &lt;name&gt;] [--hidden] [--pin] [--selftest &lt;folder&gt; [--mouse]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
+/// The start of the tray app. Usage: Orchestrator.Tray.exe [--instance &lt;name&gt;] [--hidden] [--pin] [--selftest &lt;folder&gt; [--mouse | --demo]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
 /// Mock mode (the default): the window shows mock data from a temporary store.
 /// Live mode: the window shows a real store. With no store after --live, the tray uses the default store root (<see cref="Home.StoreRoot"/>). The supervisor process of that store (on the port) does the ticks; the tray only reads and posts.
 /// If no supervisor answers on the port, the tray starts one in its own process, unless --no-supervisor.
@@ -71,12 +71,13 @@ public static partial class Program
         var code = 0;
         if (selfTest is not null)
         {
-            // The self-test starts when the page is there. --mouse adds the checks with real mouse input on the tray window.
+            // The self-test starts when the page is there. --mouse adds the checks with real mouse input on the tray window; --demo runs
+            // the flow with the real pointer for a screen recording.
             tray.Window.Ready.Task.ContinueWith(_ => tray.Window.BeginInvoke(async () =>
             {
                 try
                 {
-                    code = await SelfTest.Run(tray, selfTest, args.Contains("--mouse"));
+                    code = args.Contains("--demo") ? await SelfTest.Demo(tray, selfTest) : await SelfTest.Run(tray, selfTest, args.Contains("--mouse"));
                 }
                 catch (Exception e)
                 {
