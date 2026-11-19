@@ -23,7 +23,7 @@ The tracker is `docs/tray-issues.html` (https://claude.ai/artifact/KcP1KAskQiQqi
 3. Copy the page of an issue with the same status, and change the content. Write each field of the template.
 4. Add a line to the page list (`<option>`) and a row to the table of all issues.
 5. Put each proof picture in `docs/screens/tray-redesign/issues/`. Publish the page with the picture in `files` (`issues/<name>.jpg`).
-6. Publish the tracker to the same URL. Record the issue in `docs/plan.md`. Commit.
+6. If the issue has a question for the user, add a row to the "Open questions" page. Publish the tracker to the same URL. Record the issue in `docs/plan.md`. Commit.
 7. Tell the user the ID, the status and the question. End the turn.
 
 ## Template

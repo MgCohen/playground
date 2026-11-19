@@ -38,8 +38,8 @@ p, li { max-width: 70ch; }
 p { margin: 0; }
 ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
 .summary { color: var(--muted); max-width: 70ch; }
-nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap; }
-nav button { font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+nav button { flex: none; white-space: nowrap; font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
 nav button:hover { color: var(--fg); background: var(--code-bg); }
 nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
 nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -87,6 +87,7 @@ details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: c
 .q { font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; border: 1px solid currentColor; white-space: nowrap; vertical-align: middle; }
 .q.good { color: var(--accent); } .q.mixed { color: var(--warn); } .q.weak { color: var(--bad); }
 h3 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.prop > summary { font-size: 15px; }
 </style>
 
 <div class="wrap">
@@ -108,7 +109,7 @@ h3 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   <button role="tab" data-tab="components" aria-selected="false">Components</button>
   <button role="tab" data-tab="style" aria-selected="false">Style</button>
   <button role="tab" data-tab="prior" aria-selected="false">Prior art</button>
-  <button role="tab" data-tab="flow" aria-selected="false">Motion flow</button>
+  <button role="tab" data-tab="flow" aria-selected="false">Proposal: motion contract</button>
 </nav>
 
 <!-- OVERVIEW -->
@@ -182,6 +183,17 @@ flowchart LR
   <section><h3>Guide</h3>
     <ol><li>A new card type: add its group, label and two actions in <code>Ui.cs</code>. The deck, the ring and the badge read it.</li><li>A new page level: put <code>[PageDepth]</code> on the page. The motion host picks the move.</li><li>A new time: add a token to <code>motion.css</code>.</li></ol>
   </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-D1 · A motion registry in C# <span class="d">I9</span></summary><div class="body">
+      <p>A C# list of motions: name, state, target, token, spec ID. The CSS rules and the checks come from it. This is option B of the motion contract.</p>
+      <p><strong>Check:</strong> a test compares the registry with the running animations.</p>
+    </div></details>
+    <details class="example prop"><summary>P-D2 · Sizes as data <span class="d">I10 · contract step 4</span></summary><div class="body">
+      <p>Each tray size has one owner. See P-P1.</p>
+      <p><strong>Check:</strong> see P-P1.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
   <section><h3>Quality <span class="q mixed">Mixed</span></h3>
     <ul><li>Good: card types, actions and page depth are data. One change reaches all views.</li><li>Gap: no motion is data. A motion is a CSS rule plus a wait in code (I9).</li><li>Gap: sizes have two owners (I10).</li></ul>
   </section>
@@ -231,6 +243,13 @@ flowchart TB
     &lt;Presence OnGone="() =&gt; sheet = null"&gt;&lt;AnswerSheet ... /&gt;&lt;/Presence&gt;
 }</pre>
   </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-S1 · Load the hidden views only while the widget shows <span class="d">V-F2</span></summary><div class="body">
+      <p>The hidden Blazor views load after each store change. Stop the load while the tray is hidden or at the badge.</p>
+      <p><strong>Check:</strong> a count of <code>Load</code> calls while the tray is hidden is 0.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
   <section><h3>Quality <span class="q good">Good</span></h3>
     <ul><li>One set of views for both hosts.</li><li>Known gap from the V session (V-F2): the hidden views still load after each store change.</li></ul>
   </section>
@@ -267,6 +286,17 @@ flowchart LR
   <section><h3>Guide</h3>
     <ol><li>A new size: change the C# constant in <code>TrayWindow</code> and the CSS value in <code>tray.css</code>. Both, by hand.</li><li>Add a self-test check that compares the drawn size with the click area (as <code>badge-hover-fits</code>).</li></ol>
     <p class="note">The click area is also the visible area. A part outside the region does not show.</p>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-P1 · Sizes from C# as CSS variables <span class="d">I7, I10 · contract step 4</span></summary><div class="body">
+      <p><code>TrayWindow</code> writes its constants on the stage as custom properties (<code>--tab-rest</code>, <code>--tab-wide</code>, <code>--shadow</code>). <code>tray.css</code> uses only these. The hover width is fixed at <code>--tab-wide</code> (I7 option A).</p>
+      <p><strong>Check:</strong> <code>badge-hover-fits</code> passes.</p>
+    </div></details>
+    <details class="example prop"><summary>P-P2 · A check for each size pair <span class="d">I10 · contract step 6</span></summary><div class="body">
+      <p>One self-test check reads each drawn size and compares it with the click area.</p>
+      <p><strong>Check:</strong> the check fails when one value changes.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
   <section><h3>Quality <span class="q weak">Weak</span></h3>
     <ul><li>I7: the badge hover is 333 px wide, the click area is 294 px. The ring is cut.</li><li>I10: five sizes have two owners.</li></ul>
@@ -319,6 +349,17 @@ sequenceDiagram
   <section><h3>Guide</h3>
     <ol><li>One request runs at a time (<code>Run</code>). A request during a run waits; only the last one runs.</li><li>A new step inside one place: a CSS transition with a delay token in <code>tray.css</code>.</li><li>A new step between places: a call to <code>window.Enter(phase)</code> after a wait for the last motion.</li></ol>
   </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-SS1 · One wait helper for the stage <span class="d">I12, I13 · contract step 3</span></summary><div class="body">
+      <p><code>TrayStage</code> waits with <code>orchMotion.settle</code> on the changed element. <code>orchTray.end</code> and its fixed limits go.</p>
+      <p><strong>Check:</strong> the open, the fold and the dock times stay the same; a trace line shows each wait that ends by its limit.</p>
+    </div></details>
+    <details class="example prop"><summary>P-SS2 · Review the grow with you <span class="d">I6</span></summary><div class="body">
+      <p>An MP4 of the grow, frame by frame next to the spec G1 and M6.</p>
+      <p><strong>Check:</strong> your approval.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
   <section><h3>Quality <span class="q mixed">Mixed</span></h3>
     <ul><li>Good: checks for start, dock, open from the badge, hide, notice, saved place.</li><li>Gap: waits use <code>orchTray.end</code> with fixed limits 900, 500, 1500, 400 ms (I11, I12).</li><li>Open: the grow is not reviewed with you (I6).</li></ul>
   </section>
@@ -349,6 +390,13 @@ flowchart LR
   <section><h3>Guide</h3>
     <ol><li>A new page below a tab: give it <code>[PageDepth(1)]</code>. The push and the back come with no more code.</li><li>In the tray, the view (<code>.tray-view</code>) moves inside the panel. The panel and its shadow stay.</li></ol>
   </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-M1 · View transition limits as tokens <span class="d">I11 · contract step 1</span></summary><div class="body">
+      <p>The 300 and 600 ms limits in <code>motion.js</code> read a token from <code>motion.css</code>.</p>
+      <p><strong>Check:</strong> no number of milliseconds in <code>motion.js</code>.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
   <section><h3>Quality <span class="q good">Good</span></h3>
     <ul><li>Good: one rule for all moves. Checks <code>tab-*-to-*</code>, <code>dot-*</code>, <code>page-move-in-panel</code>, <code>header-path-motion</code>.</li><li>Gap: the JS limits 300 and 600 ms are outside the tokens (I11).</li></ul>
   </section>
@@ -378,6 +426,17 @@ flowchart LR
   </section>
   <section><h3>Guide</h3>
     <ol><li>A block that comes and goes: put it in a <code>&lt;Presence&gt;</code>. Write the in and out rules in <code>motion.css</code> with <code>.is-leaving</code>.</li><li>A child that closes itself: call <code>Presence.Leave()</code> from the cascading value.</li></ol>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-C1 · One state attribute <span class="d">I9 · contract step 2</span></summary><div class="body">
+      <p>C# renders <code>data-state</code> (open, closed, leaving) on each part that moves, as Radix and Headless UI do. All motion CSS keys on it.</p>
+      <p><strong>Check:</strong> a search finds no other state class for motion.</p>
+    </div></details>
+    <details class="example prop"><summary>P-C2 · The deck as state classes <span class="d">I9, I11 · contract step 5</span></summary><div class="body">
+      <p><code>swipe.js</code> keeps only the pointer math. The throw, the tuck and the back-in are state classes with tokens. The wait is <code>settle</code>.</p>
+      <p><strong>Check:</strong> no <code>setTimeout</code> with a motion time in <code>swipe.js</code>.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
   <section><h3>Quality <span class="q mixed">Mixed</span></h3>
     <ul><li>Good: Presence is one way for come and go, with a bUnit test.</li><li>Gap: the deck is its own state machine, with literal times (I9, I11).</li></ul>
@@ -412,6 +471,17 @@ flowchart LR
   </section>
   <section><h3>Guide</h3>
     <ol><li>A click target in the tray: a normal button. The host forwards the click.</li><li>A drag area: <code>app-region: drag</code>; its buttons <code>app-region: no-drag</code>.</li><li>A test click: window messages (<code>Press</code> in the self-test), not the real pointer.</li></ol>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-I1 · A keyboard check <span class="d">I5</span></summary><div class="body">
+      <p>Focus the reply box, send key messages, read the value. The Tab key moves the focus.</p>
+      <p><strong>Check:</strong> two new self-test checks pass.</p>
+    </div></details>
+    <details class="example prop"><summary>P-I2 · Demo drag and hover with window messages <span class="d">I8</span></summary><div class="body">
+      <p><code>Drag</code> and <code>Glide</code> also use window messages, as <code>Press</code> does.</p>
+      <p><strong>Check:</strong> the pointer does not move in a demo run.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
   <section><h3>Quality <span class="q mixed">Mixed</span></h3>
     <ul><li>Good: 4 mouse checks pass (panel drag, badge hover, badge drag, badge click).</li><li>Gap: no keyboard or screen reader test (I5).</li><li>Gap: the demo drag and hover use the real pointer (I8).</li></ul>
@@ -448,6 +518,9 @@ flowchart LR
   <section><h3>Guide</h3>
     <ol><li>A new component: one <code>.razor</code> file in <code>Components/Ui</code>, a comment that names its spec ID, parameters in.</li><li>If it comes and goes, the parent puts it in a <code>Presence</code>.</li></ol>
   </section>
+  <section><h3>Proposals</h3>
+    <p>None.</p>
+  </section>
   <section><h3>Quality <span class="q good">Good</span></h3>
     <ul><li>Small and clear. bUnit tests for the components.</li></ul>
   </section>
@@ -474,6 +547,17 @@ flowchart LR
   </section>
   <section><h3>Guide</h3>
     <ol><li>A color: a token in <code>app.css</code>, in light and in dark.</li><li>A time or a curve: a token in <code>motion.css</code>.</li><li>A tray-only change: <code>tray.css</code>, with a selector more specific than the rule in <code>motion.css</code>.</li></ol>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-St1 · Reduced motion as 1 ms durations <span class="d">I13 · contract step 3</span></summary><div class="body">
+      <p>The reduced motion rule sets the duration tokens to 1 ms, in place of <code>animation: none</code>. The end events still come.</p>
+      <p><strong>Check:</strong> the self-test with reduced motion has the same phase order, with no wait at its limit.</p>
+    </div></details>
+    <details class="example prop"><summary>P-St2 · Deck times as tokens <span class="d">I11 · contract step 1</span></summary><div class="body">
+      <p>The deck times in <code>app.css</code> move to <code>motion.css</code> tokens.</p>
+      <p><strong>Check:</strong> no motion time literal in <code>app.css</code>.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
   <section><h3>Quality <span class="q mixed">Mixed</span></h3>
     <ul><li>Good: one theme with tokens and a dark mode.</li><li>Gap: motion literals in <code>app.css</code> (I11).</li><li>Risk: the specificity rule is fragile. An equal selector in a later file changes the result.</li></ul>
@@ -528,7 +612,7 @@ flowchart LR
 
 <!-- MOTION FLOW -->
 <div class="panel off" id="flow" role="tabpanel">
-  <section><h2>Motion flow: today and a proposal</h2>
+  <section><h2>Proposal: one motion contract</h2>
     <p class="summary">For discussion. No code changes yet. Issues I9, I11, I12 and I13 are about this. The Prior art tab shows where each point comes from.</p>
     <h3>Today: eight mechanisms</h3>
     <div class="scroll"><table>
@@ -545,7 +629,8 @@ flowchart LR
       </tbody>
     </table></div>
   </section>
-  <section><h3>Proposal: one motion contract</h3>
+  <section><h3>The contract, in steps</h3>
+    <p class="summary">This proposal covers more than one part. The part tabs show their own proposals, with the step number of this contract.</p>
     <ol>
       <li><strong>Define:</strong> each motion is one CSS rule with a token, started by one state class. No time outside <code>motion.css</code>.</li>
       <li><strong>Start:</strong> C# sets the state class (phase, presence, tab, deck state). JS starts only the view transition, which needs the browser API.</li>
@@ -562,7 +647,7 @@ flowchart LR
         <tr><td>B. Motion registry</td><td>A C# list of motions (name, state, target, token, spec ID). The CSS and the checks come from it</td><td>Larger. Data-driven, as you plan for the UI</td></tr>
       </tbody>
     </table></div>
-    <p class="note">Open question for you: A, B, or A first and B later. I recommend A first: each step removes one mechanism, and the tracker shows which issues it closes.</p>
+    <p class="note">Open question Q1 on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page</a>: A, B, or A first and B later. Recommendation: A first. Each step removes one mechanism, and the tracker shows which issues it closes.</p>
   </section>
 </div>
 </div>
