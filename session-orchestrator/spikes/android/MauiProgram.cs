@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Orchestrator.Store;
 using Orchestrator.Supervisor;
 using Orchestrator.Tray;
@@ -20,7 +19,6 @@ public static class MauiProgram
         builder.Services.AddMauiBlazorWebView();
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
-        builder.Logging.AddDebug();
 #endif
         builder.Services.AddSingleton(mock);
         builder.Services.AddSingleton(mock.Store);
