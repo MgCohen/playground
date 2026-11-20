@@ -154,6 +154,8 @@ public static partial class Program
         services.AddSingleton<WidgetWindow>();
         services.AddSingleton<IWidgetWindow>(p => p.GetRequiredService<WidgetWindow>());
         services.AddSingleton<Orchestrator.Web.Components.Tray.TrayFlow>();
+        // The Umpire modules of Orchestrator.Web, as in the web server. The tray has no configuration of its own.
+        Orchestrator.Web.App.Host.OrchHost.Add(services, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
         return services.BuildServiceProvider();
     }
 
