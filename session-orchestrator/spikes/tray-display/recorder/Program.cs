@@ -36,6 +36,7 @@ static partial class Program
         }
         SetProcessDpiAwarenessContext(-4); // Per monitor v2: the area is in real screen pixels.
         string? ready = null;
+        string? run = null;
         Rectangle area;
         if (fileTarget)
         {
@@ -44,7 +45,7 @@ static partial class Program
                 Console.Error.WriteLine($"no area: {args[1]} did not come in 180 s. Did the test tray start?");
                 return 4;
             }
-            area = found;
+            (area, run) = found;
             ready = args[1] + ".ready";
             args = args[2..];
         }
@@ -103,6 +104,7 @@ static partial class Program
             times.Add(DateTime.Now.ToString("HH:mm:ss.fff") + " " + Mean(small).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
         }
         Console.WriteLine($"{frames.Count} frames in {clock.Elapsed.TotalSeconds:0.0} s");
+        Record(run, output, frames.Count, clock.Elapsed.TotalSeconds, frames.Count == 0 ? 3 : 0);
         // I17: no frame means that the area did not change, so the recorded app did not show. Fail at once with no empty GIF.
         if (frames.Count == 0)
         {
@@ -120,8 +122,32 @@ static partial class Program
         return 0;
     }
 
-    /// <summary>Waits for the instance file of a test tray and reads its area. Null when the file does not come in time.</summary>
-    static Rectangle? AreaFromFile(string file, TimeSpan wait)
+    /// <summary>
+    /// The record of this recording: one new file for each recording in %LOCALAPPDATA%\Orchestrator.Tray\runs, next to the record of
+    /// the tray run (the same run id). The file name has the process id of the recorder, so no two recorders write the same file.
+    /// </summary>
+    static void Record(string? run, string output, int frames, double seconds, int result)
+    {
+        try
+        {
+            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Orchestrator.Tray", "runs");
+            Directory.CreateDirectory(folder);
+            var id = run ?? $"{DateTime.Now:yyyyMMdd-HHmmss.fff}-pid{Environment.ProcessId}";
+            var file = Path.Combine(folder, $"{id}.rec-pid{Environment.ProcessId}.json");
+            File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(new
+            {
+                run = id, source = "recorder", kind = "recording", name = Path.GetFileNameWithoutExtension(output),
+                end = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff"), seconds = Math.Round(seconds, 1), frames, result,
+            }));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine($"warning: no run record: {e.Message}");
+        }
+    }
+
+    /// <summary>Waits for the instance file of a test tray and reads its area and run id. Null when the file does not come in time.</summary>
+    static (Rectangle Area, string? Run)? AreaFromFile(string file, TimeSpan wait)
     {
         var clock = System.Diagnostics.Stopwatch.StartNew();
         while (clock.Elapsed < wait)
@@ -132,7 +158,8 @@ static partial class Program
                 {
                     using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(file));
                     var a = json.RootElement.GetProperty("area");
-                    return new Rectangle(a.GetProperty("x").GetInt32(), a.GetProperty("y").GetInt32(), a.GetProperty("width").GetInt32(), a.GetProperty("height").GetInt32());
+                    var run = json.RootElement.TryGetProperty("run", out var r) ? r.GetString() : null;
+                    return (new Rectangle(a.GetProperty("x").GetInt32(), a.GetProperty("y").GetInt32(), a.GetProperty("width").GetInt32(), a.GetProperty("height").GetInt32()), run);
                 }
                 catch (IOException)
                 {

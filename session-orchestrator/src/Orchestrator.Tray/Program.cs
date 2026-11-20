@@ -7,7 +7,7 @@ using Orchestrator.Web;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The start of the tray app. Usage: Orchestrator.Tray.exe [--instance &lt;name&gt;] [--slot &lt;n&gt;] [--hidden] [--pin] [--selftest &lt;folder&gt; [--mouse | --demo | --scenario &lt;name&gt;] [--reduced] [--slot-wait &lt;s&gt;] [--wait-recorder]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
+/// The start of the tray app. Usage: Orchestrator.Tray.exe [--instance &lt;name&gt;] [--slot &lt;n&gt;] [--hidden] [--pin] [--selftest &lt;folder&gt; [--mouse | --demo | --scenario &lt;name&gt;] [--reduced] [--label &lt;code&gt;] [--slot-wait &lt;s&gt;] [--wait-recorder]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
 /// A self-test takes a free test slot (<see cref="Slot"/>): its own lock, WebView2 folder and strip of the screen. It writes &lt;folder&gt;/instance.json with the slot and the area to record.
 /// Mock mode (the default): the window shows mock data from a temporary store.
 /// Live mode: the window shows a real store. With no store after --live, the tray uses the default store root (<see cref="Home.StoreRoot"/>). The supervisor process of that store (on the port) does the ticks; the tray only reads and posts.
@@ -90,16 +90,16 @@ public static partial class Program
         if (live is not null) StartSupervisor(store.Root, port, start: !args.Contains("--no-supervisor"));
         Console.WriteLine($"orch tray: {label}");
         using var services = Services(store, live is null ? MockStore.MockPolicy : store.Policy, ticks: live is null);
-        // A named instance shows its name and build in the header and in the icon tip.
-        if (named is not null)
-        {
-            var build = typeof(Program).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
-                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion is { } v && v.Contains('+')
-                ? v[(v.IndexOf('+') + 1)..] is { Length: >= 7 } sha ? sha[..7] : v
-                : File.GetLastWriteTime(Environment.ProcessPath ?? AppContext.BaseDirectory).ToString("MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
-            services.GetRequiredService<WidgetWindow>().Label = $"{named} · {build}";
-            label = $"{named} · {build}, {label}";
-        }
+        // Each tray shows its code and build in the corner of the panel and in the icon tip, at all times: "I17 · 3da7df8".
+        var build = typeof(Program).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion is { } v && v.Contains('+')
+            ? v[(v.IndexOf('+') + 1)..] is { Length: >= 7 } sha ? sha[..7] : v
+            : File.GetLastWriteTime(Environment.ProcessPath ?? AppContext.BaseDirectory).ToString("MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+        var runCode = RunCode(args, named, selfTest is not null);
+        var corner = $"{runCode} · {build}";
+        services.GetRequiredService<WidgetWindow>().Label = corner;
+        SelfTest.ExpectedLabel = corner;
+        label = $"{corner}, {label}";
         tray = new TrayApp(services, label, show: selfTest is not null || !args.Contains("--hidden"), pinned: selfTest is not null || args.Contains("--pin"),
             placeFile: selfTest is null ? Path.Combine(data, named is null ? "place.json" : $"place.{named}.json") : SelfTest.FreshPlaceFile(selfTest));
         var code = 0;
@@ -129,7 +129,23 @@ public static partial class Program
         }
         Application.Run(tray);
         tray.Dispose();
+        if (selfTest is not null)
+        {
+            var kind = args.Contains("--scenario") ? "scenario" : args.Contains("--stress") ? "stress" : args.Contains("--demo") ? "demo" : args.Contains("--mouse") ? "selftest-mouse" : "selftest";
+            RunRecord.Write(kind, Value(args, "--scenario") ?? Path.GetFileName(selfTest), runCode, Slot.Index, build, code);
+        }
         return code;
+    }
+
+    /// <summary>
+    /// The code of the run in the label: --label, else the --instance name, else the RUN_CODE environment value, else "tray" for
+    /// the normal tray and "test" for a self-test. Only letters, digits, "-" and "_", at most 24 characters.
+    /// </summary>
+    static string RunCode(string[] args, string? named, bool selfTest)
+    {
+        var given = Value(args, "--label") ?? named ?? Environment.GetEnvironmentVariable("RUN_CODE");
+        var clean = given is null ? "" : new string(given.Where(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_').Take(24).ToArray());
+        return clean.Length > 0 ? clean : selfTest ? "test" : "tray";
     }
 
     /// <summary>Waits for the file of the recorder. With no file at the end of the wait, the run continues with a warning.</summary>

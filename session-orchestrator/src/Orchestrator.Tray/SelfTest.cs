@@ -53,6 +53,10 @@ public static partial class SelfTest
         Add("start", open && w.Visible && w.Bounds == w.PanelBounds() && stage.Contains("is-open"),
             $"phase {w.Phase}, visible {w.Visible}, window {w.Bounds} (expect {w.PanelBounds()}), stage \"{stage}\", panel {size} CSS px");
 
+        // 1a. The label in the corner: the run code and the build, visible and not covered (I17).
+        var (labelPass, labelMessage) = await LabelCheck(w);
+        Add("label", labelPass, labelMessage);
+
         // 1b. The number of the Home ring counts up on its first show: the rule is valid (an invalid steps() drops the animation).
         var count = await Js(w, "(e => e ? [getComputedStyle(e, '::after').animationName, getComputedStyle(e, '::after').animationTimingFunction, e.textContent].join(' | ') : 'none')(document.querySelector('.ring-n[data-count]'))");
         var probe = await Js(w, """

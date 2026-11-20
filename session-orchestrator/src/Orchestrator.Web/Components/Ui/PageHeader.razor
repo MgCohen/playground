@@ -23,8 +23,8 @@
     }
     @if (window?.Label is { } label)
     {
-        @* A named tray instance (a test tray next to another tray) shows its name and build. *@
-        <span class="inst mono" title="Tray instance and build">@label</span>
+        @* Each tray shows its run code and build at all times, so the user sees which session owns a tray on the screen. *@
+        <span class="inst mono" title="Run code and build">@label</span>
     }
     @if (window is not null)
     {

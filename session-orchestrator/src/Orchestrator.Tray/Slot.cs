@@ -81,6 +81,7 @@ public static partial class Slot
         File.WriteAllText(file + ".tmp", JsonSerializer.Serialize(new
         {
             slot = index,
+            run = RunRecord.Id,
             pid = Environment.ProcessId,
             area = new { x = area.X, y = area.Y, width = area.Width, height = area.Height },
         }));

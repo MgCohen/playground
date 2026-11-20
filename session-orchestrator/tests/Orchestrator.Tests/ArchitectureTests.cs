@@ -31,6 +31,7 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Tray/Program.cs", ["File.GetLastWriteTime(Environment.ProcessPath ?? AppContext.BaseDirectory)"], "the build time of the program for the label of a named tray instance, not the store"),
         ("src/Orchestrator.Tray/Faults.cs", [], "the log of the unhandled exceptions of the tray (V19)"),
         ("src/Orchestrator.Tray/SelfTest.Scenarios.cs", [], "the step log of the scenario runs of the tray"),
+        ("src/Orchestrator.Tray/RunRecord.cs", [], "the record file of one test run of the tray (I17), not the store"),
         ("src/Orchestrator.Tray/Slot.cs", [], "the instance file of a test slot (slot and area to record) for the recorder, not the store"),
         ("src/Orchestrator.Tray/Program.cs", ["Directory.CreateDirectory(selfTest)", "File.Exists(file)"], "the self-test folder, and the ready file of the recorder (I17)"),
         ("src/Orchestrator.Tray/Program.cs", ["\"templates\"", "selftest-error.txt"], "the check of the home folder, and the error file of the self test"),

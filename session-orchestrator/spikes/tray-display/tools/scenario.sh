@@ -3,6 +3,7 @@
 # The tray takes a free test slot (its own lock, WebView2 folder and strip of the screen) and writes <name>/instance.json.
 # The recorder waits for that file and records the area of the slot. The tray waits for the recorder (--wait-recorder).
 # So two sessions can run this script at the same time.
+# Set RUN_CODE (for example RUN_CODE=I17) for the label of the tray: "I17 · <build>". Each run writes a run record (tools/runs.sh).
 # Exit codes: 0 done; 1 the tray failed (log in <name>.tray.txt); 3 the recorder caught no frame, 4 no area (log in <name>.rec.txt).
 S="${OUT:-$(pwd)/out}"; mkdir -p "$S"; D="$(cd "$(dirname "$0")" && pwd)"
 T="$D/../../.."
