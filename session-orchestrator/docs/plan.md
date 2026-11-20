@@ -2451,7 +2451,7 @@ Decision: keep the look. The gap between the windows is good. Each value (the wi
 
 | Issue | Result |
 |---|---|
-| I14 | Replicated with `--stress --sheets` (bubble in 6 of 9 frames). Fixed: `IsStatusBarEnabled = false` in `ClearHost.Start`. After video open: the recorder caught 0 frames two times (probably a locked screen) |
+| I14 | Replicated with `--stress --sheets` (bubble in 6 of 9 frames). Fixed: `IsStatusBarEnabled = false` in `ClearHost.Start`. After video: no bubble in 9 of 9 frames. Two runs before it caught 0 frames (probably a locked screen) |
 | I8 | Badge click and drag use window messages; `HostInput` reads the point and the button from the message. Demo log: "pointer: not moved". Platform limits, not fixed: the header drag (caption drag), and the badge hover (`TrackMouseEvent` follows the real pointer) |
 | Test gap | `badge-input` reads the hover click area at 200 ms, inside the 300 ms fold delay, so it passes although the hover ended |
 | Tests | Self-test 27 of 28 (I7). Unit tests 809 pass, 0 fail. The 1 failure of the run before did not come back: flaky, not examined |

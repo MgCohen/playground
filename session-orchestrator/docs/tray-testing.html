@@ -102,9 +102,9 @@ details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: c
     <h2>Four test runs, one app</h2>
     <p class="summary">All runs start the real tray app (<code>Orchestrator.Tray</code>) with a flag. The app drives itself, then writes files. Nothing is a mock.</p>
     <div class="grid2">
-      <div class="card"><span class="where">--selftest &lt;folder&gt;</span><span class="big">Self-test</span><p>27 checks with pass or fail. It reads the page and the window. No pointer. About 40 s.</p><p><span class="tag code">automated</span></p></div>
+      <div class="card"><span class="where">--selftest &lt;folder&gt;</span><span class="big">Self-test</span><p>28 checks with pass or fail. It reads the page and the window. No pointer. About 40 s.</p><p><span class="tag code">automated</span></p></div>
       <div class="card"><span class="where">--selftest &lt;folder&gt; --mouse</span><span class="big">Mouse checks</span><p>4 more checks with the real pointer: panel drag, badge hover, badge drag, badge click.</p><p><span class="tag code">automated</span> <span class="tag user">uses your mouse</span></p></div>
-      <div class="card"><span class="where">--selftest &lt;folder&gt; --demo</span><span class="big">Demo</span><p>The full flow, slow, for a video. A step log, no pass or fail.</p><p><span class="tag code">automated</span> <span class="tag agent">agent looks</span></p></div>
+      <div class="card"><span class="where">--selftest &lt;folder&gt; --demo</span><span class="big">Demo</span><p>The full flow, slow, for a video. A step log, no pass or fail. Window messages only: the log ends with "pointer: not moved". The header drag is skipped (platform limit).</p><p><span class="tag code">automated</span> <span class="tag agent">agent looks</span></p></div>
       <div class="card"><span class="where">--demo --stress [--sheets | --opens] [--css rule]</span><span class="big">Stress plus recorder</span><p>The same action many times. A screen recorder counts empty frames. One CSS rule can go in, as an experiment.</p><p><span class="tag code">automated</span> <span class="tag agent">agent decides</span></p></div>
     </div>
   </section>
@@ -314,6 +314,8 @@ Add("x-width", v == "280", $"width {v} (expect 280)");</pre>
     <div class="scroll"><table>
       <thead><tr><th>Gap</th><th>Effect</th><th>Possible fix</th></tr></thead>
       <tbody>
+        <tr><td>A window message cannot drive the caption drag of Windows</td><td>The demo skips the header drag</td><td>Only <code>--mouse</code> tests it, with your pointer</td></tr>
+        <tr><td>Windows sends WM_MOUSELEAVE by the real pointer (<code>TrackMouseEvent</code>)</td><td>A badge hover with messages ends at once</td><td>Only <code>--mouse</code> tests the hover. Recorded in I8</td></tr>
         <tr><td>The self-test picture is from the page, not from the screen</td><td>It does not see empty frames or composition faults</td><td>Use the recorder for each motion check</td></tr>
         <tr><td>A stress step that finds no element logs "no element" and continues</td><td>A run can count frames for steps that did not occur</td><td>Count the misses; fail the run if one step misses</td></tr>
         <tr><td>The empty frame rule uses the mean color of the frame</td><td>A fade can give the backdrop mean: false empty frames (issue I2)</td><td>Count the pixels with the backdrop color in the tray area</td></tr>

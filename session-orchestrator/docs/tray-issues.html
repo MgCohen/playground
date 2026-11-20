@@ -177,7 +177,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i11">I11</a></td><td>Motion times outside the tokens</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i12">I12</a></td><td>Two wait rules for "the motion ended"</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
-        <tr><td><a href="#i14">I14</a></td><td>A browser status bubble shows the link address</td><td><span class="pill fix">Fixed</span></td><td>After video open (capture failed)</td></tr>
+        <tr><td><a href="#i14">I14</a></td><td>A browser status bubble shows the link address</td><td><span class="pill fix">Fixed</span></td><td>Before and after videos done</td></tr>
         <tr><td><a href="#i15">I15</a></td><td>The gap between the two windows is not managed</td><td><span class="pill det">Detected</span></td><td>Later</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -603,7 +603,8 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
     <div class="field"><span class="k">Result</span><div class="v">
       <figure><div class="img"><img src="issues/status-bubble-before.jpg" alt="Nine frames of the sheet stress run, one each second. A small grey bubble with the address is at the bottom left in six frames."></div><figcaption>Before the fix: one frame each second. The bubble is at the bottom left.</figcaption></figure>
       <p>Fix: <code>web.Settings.IsStatusBarEnabled = false</code> in <code>ClearHost.Start</code>. Self-test 27 of 28 (only I7). Tests 809 pass, 0 fail.</p>
-      <p>Open: the after video. The recorder caught 0 frames two times, and the tray did not start in that run. Probable cause: the screen was locked. Not examined more.</p>
+      <figure><div class="img"><img src="issues/status-bubble-after.jpg" alt="Nine frames of the same run after the fix, one each second. No bubble at the bottom left."></div><figcaption>After the fix: the same run. No bubble in any frame.</figcaption></figure>
+      <p>The first after run failed two times (0 frames, the tray did not start), probably because the screen was locked. The third run worked.</p>
     </div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we turn off the status bubble?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, turn off.</b> IsStatusBarEnabled = false in ClearHost.Start.</p></div></div></div>
   </section>
