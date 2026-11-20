@@ -42,7 +42,7 @@
     <WebDir>../../src/Orchestrator.Web/</WebDir>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(WebDir)Board.cs;$(WebDir)Ui.cs;$(WebDir)Markdown.cs;$(WebDir)PageAct.cs;$(WebDir)PathTrail.cs;$(WebDir)ViewFilter.cs;$(WebDir)StreamHub.cs;$(WebDir)IWidgetWindow.cs;$(WebDir)NewSession.cs;$(WebDir)Usings.cs" Link="Web/%(Filename)%(Extension)" />
+    <Compile Include="$(WebDir)Board.cs;$(WebDir)Ui.cs;$(WebDir)Markdown.cs;$(WebDir)PageAct.cs;$(WebDir)PathTrail.cs;$(WebDir)ViewFilter.cs;$(WebDir)StreamHub.cs;$(WebDir)IWidgetWindow.cs;$(WebDir)NewSession.cs;$(WebDir)DemoPane.cs;$(WebDir)Usings.cs" Link="Web/%(Filename)%(Extension)" />
     <Compile Include="$(WebDir)Components/**/*.cs" Link="Components/%(RecursiveDir)%(Filename)%(Extension)" />
     <RazorComponent Include="$(WebDir)Components/**/*.razor" Exclude="$(WebDir)Components/App.razor;$(WebDir)Components/Routes.razor" Link="Components/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../src/Orchestrator.Tray/MockStore.cs" Link="Web/MockStore.cs" />
