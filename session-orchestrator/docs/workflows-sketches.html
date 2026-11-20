@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Workflows Sketches</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -189,13 +193,18 @@ code { font: 12px var(--f-mono); }
 .graph .lp.next text { fill: var(--accent); }
 .graph .entry { fill: var(--muted); font: 600 8.5px var(--f-body); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+/* Embed mode: the F2 tab of Advanced Features shows this page in a frame. The frame has no header and no outer padding. */
+html.embed .head { display: none; }
+html.embed body { padding: 0 0 24px; }
+html.embed body::before { display: none; }
 </style>
+<script>if (/[?&]embed\b/.test(location.search)) document.documentElement.classList.add("embed");</script>
 
 <div class="wrap">
 <header class="head">
   <div class="eyebrow">Session orchestrator · task P · F2 Workflows · 2026-11-20</div>
   <h1>Workflows Sketches</h1>
-  <p class="intro">Sketches of the eight pages and components of the Workflows feature. Each tab has 2 or 3 variants in the 350 px widget frame, with sample data. The notes give the purpose, the difference between the variants, and the source of each part. Pick a variant for each item, or say the change. The spec of the feature is on the page <a href="https://claude.ai/artifact/Kn888Us7Y4A7MnPTiQNmUj">Advanced Features</a>, tab F2.</p>
+  <p class="intro">Sketches of the eight pages and components of the Workflows feature. Each tab has 2 or 3 variants in the 350 px widget frame, with sample data. The notes give the purpose, the difference between the variants, and the source of each part. Pick a variant for each item, or say the change. The spec of the feature is on the page <a href="https://claude.ai/artifact/Kn888Us7Y4A7MnPTiQNmUj">Advanced Features</a>, tab F2, sub-tab Spec.</p>
 </header>
 
 <nav aria-label="Sketches">
