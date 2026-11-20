@@ -6,7 +6,7 @@
 @inject ICommandSender Commands
 
 <div class="app">
-    <main class="page @(tabIn ? "is-tab-in" : "")" data-motion="tab-in" @ref="page">
+    <main class="page @(tabIn ? MotionSteps.TabIn.State : "")" data-motion="tab-in" @ref="page">
         @Body
     </main>
     <AppBar />

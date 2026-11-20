@@ -34,6 +34,14 @@
     // time (TrayNotices): each card is done after its notice, and the cards that the panel showed get none.
     readonly TrayNotices notices = new();
 
+    // The fold time of the hover of the badge window: the token --t-badge-fold, read once from this page.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || window is null) return;
+        if (await MotionTimes.Of(Commands, "--t-badge-fold") is { } fold) window.UseBadgeFold(fold);
+        else window.Fault(new InvalidOperationException("The page gave no --t-badge-fold."), "badge window");
+    }
+
     protected override void Load()
     {
         var cards = Board.Cards();
@@ -48,16 +56,16 @@
     public Task In() => InvokeAsync(async () =>
     {
         Set(TrayPhase.BadgeOut);
-        await Commands.SendAsync(new MotionWait(null, WaitMode.Event, "frames:2"), default);
+        await Commands.Must(new MotionWait(null, WaitMode.Frames, "2"));
         Set(TrayPhase.Badge);
         // H2: the phase badge comes after the slide of the tab, so the next step never cuts it.
-        await Commands.SendAsync(new MotionWait(MotionSteps.BadgeIn.Target, WaitMode.Step), default);
+        await Commands.Must(new MotionWait(MotionSteps.BadgeIn.Target, WaitMode.Step));
     });
 
     public Task Out() => InvokeAsync(async () =>
     {
         Set(TrayPhase.BadgeOut);
-        await Commands.SendAsync(new MotionWait(MotionSteps.BadgeOut.Target, WaitMode.Step), default);
+        await Commands.Must(new MotionWait(MotionSteps.BadgeOut.Target, WaitMode.Step));
     });
 
     async Task Notice(string title, string sub)
@@ -65,6 +73,8 @@
         try
         {
             if (counts.Total == 0 || !await flow!.BringBadge()) return;
+            // The peek shows for the token --t-peek-show of motion.css (N2). No time from the page is a fault, not 0 s.
+            var peekTime = await MotionTimes.Of(Commands, "--t-peek-show") ?? throw new InvalidOperationException("The page gave no --t-peek-show.");
             var mine = ++notice;
             spin = true;
             peekTitle = title;
@@ -72,9 +82,8 @@
             window!.Peek(true);
             peek = true;
             StateHasChanged();
-            // The peek shows for the token --t-peek-show of motion.css (N2).
-            var shown = Task.Delay(await MotionTimes.Of(Commands, "--t-peek-show") ?? TimeSpan.Zero);
-            await Commands.SendAsync(new MotionWait(MotionSteps.Spin.Target, WaitMode.Step), default);
+            var shown = Task.Delay(peekTime);
+            await Commands.Must(new MotionWait(MotionSteps.Spin.Target, WaitMode.Step));
             if (mine != notice) return;
             spin = false;
             StateHasChanged();
@@ -82,11 +91,13 @@
             if (mine != notice) return;
             peek = false;
             StateHasChanged();
-            await Commands.SendAsync(new MotionWait(MotionSteps.PeekOut.Target, WaitMode.Step), default);
+            await Commands.Must(new MotionWait(MotionSteps.PeekOut.Target, WaitMode.Step));
             if (mine == notice && !peek) window.Peek(false);
         }
-        catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
+        catch (Exception e)
         {
+            // The notice runs on its own (no caller waits for it), so its error goes to the fault log of the tray.
+            window?.Fault(e, "badge notice");
         }
     }
 

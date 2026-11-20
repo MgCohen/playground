@@ -132,7 +132,7 @@ public sealed class JsPipelineTests
         using var build = Process.Start(start)!;
         var output = build.StandardOutput.ReadToEnd() + build.StandardError.ReadToEnd();
         build.WaitForExit();
-        string[] r1 = [@"\Plugins\Js\", @"\Features\Motion\", "/Plugins/Js/", "/Features/Motion/"];
+        string[] r1 = [@"\Plugins\", @"\Features\", "/Plugins/", "/Features/"];
         var findings = output.Split('\n')
             .Where(l => l.Contains("UMP", StringComparison.Ordinal) && r1.Any(f => l.Contains(f, StringComparison.Ordinal)))
             .Where(l => !(l.Contains("UMP020301", StringComparison.Ordinal)

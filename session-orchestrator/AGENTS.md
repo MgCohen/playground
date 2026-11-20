@@ -28,6 +28,12 @@ Read these files before you change this project:
 
 C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the UI, NUnit for the tests. Do not add TypeScript or JavaScript, with two exceptions: the plugin hooks (the Claude Code engine runs only TypeScript) and small JavaScript parts of the Blazor UI. `spikes/supervisor-ts/` is the frozen TypeScript supervisor of the spikes. Do not change it.
 
+## UI
+
+### Working with motion
+
+Before you add, change or use a motion of the web pages or the tray, read the motion guide: https://claude.ai/artifact/A4N6FKvzRUfqCCZsoZVde8 (source `docs/motion-guide.html`). After a change of the pipeline, update the guide and publish it again to the same URL.
+
 ## Provider boundary
 
 Follow these rules for each change. The design is on the Engines tab of `docs/session-design.html`.

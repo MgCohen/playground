@@ -23,7 +23,7 @@ internal sealed class JsCommandHandler<TResult>(IJSRuntime js, JsCalls calls)
             return await InvokeAsync(name, call.Token, arguments);
         }
         catch (Exception e) when (e is JSException or JSDisconnectedException or OperationCanceledException
-                                      or InvalidOperationException)
+                                      or InvalidOperationException or System.Text.Json.JsonException)
         {
             var code = e is OperationCanceledException ? JsErrors.Canceled : JsErrors.Failed;
             return new Error(code, $"{name} (envelope {envelope.Id}): {e.GetType().Name}: {e.Message}");

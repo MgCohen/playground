@@ -1,7 +1,7 @@
 @* The minimized form of the tray (N1, N2): a white tab at the right screen edge with the ring of the waiting cards around the
    home ball. A hover extends the tab to the left with the counts; the ring is at the left side of the tab, so it moves with it.
    A new card spins the ring and shows the peek bubble. The click and the drag go to the window (it moves the badge up and down). *@
-<div class="tbadge @(Spin ? "spin" : "")">
+<div class="tbadge @(Spin ? MotionSteps.Spin.State : "")">
     <div class="tb-peek @(Peek ? "on" : "")" data-motion="peek-out" aria-live="polite">
         <b>@PeekTitle</b>
         @if (PeekSub.Length > 0)

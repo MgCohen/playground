@@ -1,6 +1,7 @@
 @page "/cards"
 @inherits LiveView
 @inject ICommandSender Commands
+@inject Orchestrator.Web.Plugins.Js.Contracts.IJsTrace Trace
 
 <PageTitle>Cards · orch</PageTitle>
 
@@ -18,7 +19,7 @@
         <div class="pile">
             @foreach (var (c, i) in visible.Take(3).Select((c, i) => (c, i)))
             {
-                <article class="crd pcard @(i > 0 ? "behind" : motion ?? (Arrives(c) ? "arrive" : ""))" style="--i:@i" data-deck-card="@(i == 0)" data-motion="deck-throw deck-tuck deck-back-in deck-arrive" aria-hidden="@(i > 0 ? "true" : null)" @key="c.Id">
+                <article class="crd pcard @CardClass(c, i)" style="--i:@i" data-deck-card="@(i == 0)" data-card="@c.Id" data-motion="deck-throw deck-tuck" aria-hidden="@(i > 0 ? "true" : null)" @key="c.Id">
                     @if (i == 0)
                     {
                         @* V17: no native link drag, or the drag of the browser cancels the swipe. *@
@@ -160,22 +161,26 @@
         }).ToList();
     }
 
-    // M1, M2 (S8): the motion class of the top card (out-r, out-l or tuck). C# starts the motion, waits for its end through the
-    // motion pipeline, then does the act. A second act during the motion does nothing.
-    string? motion;
+    // M1, M2 (S8): the motion class of the card of the act (out-r, out-l or tuck), by its id: a card that arrives during the
+    // motion takes the top slot, but not the class. C# starts the motion, waits for its end through the motion pipeline, then
+    // does the act. A second act during the motion does nothing.
+    (string Id, string Css)? motion;
 
-    async Task Move(string css, MotionStep step)
+    string CardClass(CardView card, int slot) =>
+        motion is { } m && m.Id == card.Id ? m.Css : slot > 0 ? "behind" : Arrives(card) ? "arrive" : "";
+
+    async Task Move(CardView card, string css, MotionStep step)
     {
-        motion = css;
+        motion = (card.Id, css);
         StateHasChanged();
-        await Commands.SendAsync(new MotionWait(step.Target, WaitMode.Step), default);
+        await Commands.SendAsync(new MotionWait($"[data-card=\"{card.Id}\"]{step.Target}", WaitMode.Step), default);
         motion = null;
     }
 
     async Task Do(CardView card, CardAction action)
     {
         if (motion is not null) return;
-        if (Throws(action) is not null) await Move(action == card.Right ? "out-r" : "out-l", MotionSteps.DeckThrow);
+        if (Throws(action) is not null) await Move(card, MotionSteps.DeckThrow.States[action == card.Right ? 0 : 1], MotionSteps.DeckThrow);
         switch (action.Do)
         {
             case CardDo.Type: sheet = (card, false); break;
@@ -200,8 +205,16 @@
         var cancel = new CancellationTokenSource();
         var p = new Pending(card.Id, work, done, cancel);
         pending = p;
+        if (undoTime is not { } undo)
+        {
+            // No undo time from the page: the act runs at once, and the toast offers no undo that does nothing.
+            Trace.Warn("cards: the page gave no --t-undo, so the act has no undo");
+            Run(p);
+            toast ??= new Toast($"{done} (no undo)", null);
+            return;
+        }
         toast = new Toast(done, Undo);
-        _ = UndoWait(cancel.Token).ContinueWith(task =>
+        _ = Task.Delay(undo, cancel.Token).ContinueWith(task =>
         {
             if (task.IsCanceled) return;
             InvokeAsync(() =>
@@ -211,12 +224,6 @@
                 StateHasChanged();
             });
         }, TaskScheduler.Default);
-    }
-
-    async Task UndoWait(CancellationToken cancel)
-    {
-        undoTime ??= await MotionTimes.Of(Commands, "--t-undo") ?? throw new InvalidOperationException("The page gave no --t-undo.");
-        await Task.Delay(undoTime.Value, cancel);
     }
 
     void Run(Pending p)
@@ -257,7 +264,7 @@
     async Task Skip(CardView card)
     {
         if (motion is not null) return;
-        await Move("tuck", MotionSteps.DeckTuck);
+        await Move(card, MotionSteps.DeckTuck.State, MotionSteps.DeckTuck);
         Flush();
         skipUndo = [.. order];
         order.Remove(card.Id);

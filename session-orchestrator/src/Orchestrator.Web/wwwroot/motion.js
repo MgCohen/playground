@@ -54,30 +54,34 @@
     // The one wait of the motion pipeline (R1, I12). C# sends it as the command MotionWait. The modes:
     //   settle    each finite CSS animation and transition of the target and its children ends.
     //   property  the transitions of the properties (or the animations of the names) in arg end, on the target and its
-    //             children. arg is one name or a list ("clip-path scale"). None running: at once.
-    //   time      the time of a token (arg, for example "--t-peek-show").
-    //   event     a DOM event of the target (arg), or "frames:n": n display frames.
+    //             children. arg is one name or a list ("clip-path scale").
+    //   frames    arg display frames (a number) pass. No target.
     //   step      a motion step of the registry: the target has data-motion, and its CSS rule owns the wait. The custom
-    //             property --motion-wait names the property (or the animation) to wait for; with no value, the wait settles.
-    // The target is an element or a selector; with no target and mode "settle" or "property", the target is missing. One frame
-    // first, so the state class of the render is in the styles. The result is { by, ms }: by is "end", "cancel" (the browser
-    // stopped a motion: the state changed during the wait), "limit" (--t-limit, or --t-frame-limit for frames), "hidden" (a
-    // hidden page moves nothing) or "missing" (no target).
+    //             property --motion-wait names the properties (or the animations) to wait for; with no value, the wait settles.
+    // The target is an element or a selector. One frame first, so the state class of the render is in the styles. The result
+    // is { by, ms }:
+    //   end      the motions ended (settle with no motion also ends here).
+    //   cancel   the browser stopped a motion: the state changed during the wait.
+    //   none     the wait names motions, but none started in 3 frames: a wrong name, or a state with no motion.
+    //   limit    --t-limit (or --t-frame-limit for frames) ended the wait.
+    //   hidden   the page is hidden, or it hides during the wait: a hidden page moves nothing, so the wait stops at once.
+    //   missing  no target.
     wait: function (target, mode, arg) {
       mode = String(mode || "settle").toLowerCase();
       var el = typeof target === "string" ? document.querySelector(target) : target;
       var start = performance.now();
       return new Promise(function (resolve) {
         var done = false, timer = 0;
+        function hide() { if (document.visibilityState === "hidden") finish("hidden"); }
         function finish(by) {
           if (done) return;
           done = true;
           clearTimeout(timer);
+          document.removeEventListener("visibilitychange", hide);
           resolve({ by: by, ms: Math.round(performance.now() - start) });
         }
-        if (mode === "time") { timer = setTimeout(function () { finish("end"); }, ms(arg)); return; }
-        var frames = mode === "event" && /^frames:\d+$/.test(arg || "") ? parseInt(arg.slice(7), 10) : 0;
-        if (frames > 0) {
+        if (mode === "frames") {
+          var frames = parseInt(arg, 10) || 1;
           timer = setTimeout(function () { finish("limit"); }, ms("--t-frame-limit"));
           var step = function () { if (--frames <= 0) finish("end"); else requestAnimationFrame(step); };
           requestAnimationFrame(step);
@@ -89,18 +93,20 @@
           mode = arg ? "property" : "settle";
         }
         if (document.visibilityState === "hidden") { finish("hidden"); return; }
+        document.addEventListener("visibilitychange", hide);
         timer = setTimeout(function () { finish("limit"); }, limit());
-        if (mode === "event") { el.addEventListener(arg, function () { finish("end"); }, { once: true }); return; }
         // The state class can come in the render after this call (the render batch and the call are two messages), so with no
         // motion yet the wait looks again for 2 more frames.
         var names = String(arg || "").split(/[\s,]+/).filter(Boolean);
         var look = function (frames) {
+          if (done) return;
           var all = el.getAnimations ? el.getAnimations({ subtree: true }) : [];
           var mine = all.filter(function (a) {
             if (!a.effect || a.effect.getComputedTiming().endTime === Infinity) return false;
             return mode === "settle" || names.indexOf(a.transitionProperty) >= 0 || names.indexOf(a.animationName) >= 0;
           });
           if (mine.length === 0 && frames > 0) { requestAnimationFrame(function () { look(frames - 1); }); return; }
+          if (mine.length === 0) { finish(mode === "settle" ? "end" : "none"); return; }
           var canceled = false;
           Promise.all(mine.map(function (a) { return a.finished.catch(function () { canceled = true; }); }))
             .then(function () { finish(canceled ? "cancel" : "end"); });

@@ -120,6 +120,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i13">I13 · Reduced motion makes the tray waits run to their limit  (Detected)</option>
     <option value="i14">I14 · A browser status bubble shows the link address  (Fixed)</option>
     <option value="i15">I15 · The gap between the two windows is not managed  (Detected)</option>
+    <option value="i18">I18 · The window cuts the shadow of the side badge  (Reported)</option>
     <option value="f1">F1 · A blink at the end of the open  (Fixed)</option>
     <option value="f2">F2 · A bigger, darker shadow and an overlap at a tab change  (Fixed)</option>
     <option value="f3">F3 · The tab change was not the spec (T1 C)  (Fixed)</option>
@@ -179,6 +180,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill det">Detected</span></td><td>In R1 (own session)</td></tr>
         <tr><td><a href="#i14">I14</a></td><td>A browser status bubble shows the link address</td><td><span class="pill fix">Fixed</span></td><td>Before and after videos done</td></tr>
         <tr><td><a href="#i15">I15</a></td><td>The gap between the two windows is not managed</td><td><span class="pill det">Detected</span></td><td>In R1, later step</td></tr>
+        <tr><td><a href="#i18">I18</a></td><td>The window cuts the shadow of the side badge</td><td><span class="pill rep">Reported</span></td><td>Proposed: in R2, with I7</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f3">F3</a></td><td>The tab change was not the spec (T1 C)</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -665,6 +667,22 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
   </section>
 </div>
 
+
+<!-- I18 -->
+<div class="panel off" id="i18" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rep">Reported</span><span class="k">source: you · 2026-11-20</span></div>
+    <h2>I18 · The window cuts the shadow of the side badge</h2>
+    <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>The shadow of the side badge is often longer than its window. The window edge cuts the shadow, and the cut looks bad. You see it often, but not each time.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>None yet. A frame strip of the badge at rest, at the hover and at the peek will show it.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Probable, not checked: two owners for one size, as in I7. C# sets the window size and the click area. CSS sets the shadow. The R2 inventory names "the shadow margin" as one of the sizes that the page must measure and report.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>A scenario that shows the badge at rest, at the hover and at the peek, and a strip of each state.</li><li>A self-test check: the shadow box of the tab is inside the window.</li><li>The fix goes into R2: the page reports the shadow margin, and the window size uses it.</li></ol></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Does I18 go into R2, or does it get its own fix earlier?</p></div></div>
+  </section>
+</div>
 <!-- F1 -->
 <div class="panel off" id="f1" role="tabpanel">
   <section>

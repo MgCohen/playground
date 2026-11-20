@@ -93,5 +93,7 @@ public sealed class WidgetWindow : IWidgetWindow
 
     public void Fault(Exception error, string where) => Faults.Add(error, where);
 
+    public void UseBadgeFold(TimeSpan fold) => Badge?.BeginInvoke(() => Badge.UseFold(fold));
+
     public void Peek(bool on) => Badge?.BeginInvoke(() => Badge.Peek(on));
 }

@@ -1,4 +1,4 @@
-namespace Orchestrator.Web.Features.Motion.Slices.Home;
+namespace Orchestrator.Web.Features.Tray.Slices.Home;
 
 using Orchestrator.Web.Plugins.Js.Contracts.Commands;
 using Umpire.Messages.Contracts;

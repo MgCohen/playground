@@ -73,6 +73,8 @@
     d.card.addEventListener("click", function stop(c) { c.preventDefault(); c.stopPropagation(); }, { capture: true, once: true });
     var name = d.dx > minX ? "right" : d.dx < -minX ? "left" : d.dy > minY && d.dy > Math.abs(d.dx) ? "skip" : null;
     var b = name && button(d.card, name);
+    // A motion of C# runs (a throw or a tuck): C# ignores a second act, so the card goes back and keeps no stamp.
+    if (document.querySelector(".pcard.out-r, .pcard.out-l, .pcard.tuck")) { reset(d.card); return; }
     if (b && name === "skip") tuck(d.card, b);
     else if (b && b.dataset.throw) fly(d.card, name === "right" ? 1 : -1, d.dx, d.dy, b);
     else {
