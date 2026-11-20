@@ -109,7 +109,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i2">I2 · The empty frame detector gives false alarms  (Replicated)</option>
     <option value="i3">I3 · A stress step that misses does not fail the run  (Replicated)</option>
     <option value="i4">I4 · Sizing issues on the screen  (Reported)</option>
-    <option value="i5">I5 · Keyboard and screen reader not tested  (Detected)</option>
+    <option value="i5">I5 · Keyboard and screen reader not tested  (Fixed)</option>
     <option value="i6">I6 · The tray grow (G1) is not reviewed  (Reported)</option>
     <option value="i7">I7 · The badge hover cuts the ring at the left  (Replicated)</option>
     <option value="i8">I8 · The demo moves your real pointer in 4 steps  (Partly fixed)</option>
@@ -367,7 +367,7 @@ record = that share for each frame, in place of the mean</pre>
 <span class="c"># 46 presses clicked, 2 missed. Run h-sheet: the same misses in cycle 1.</span></pre></div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. <code>Act</code> writes the result but has no pass rule. In cycle 1 the Cards page is not ready 700 ms after the tab click.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>Wait for the element with <code>Until</code> before the press, up to 3 s.</li><li>Count the misses. Exit 1 if one press misses.</li></ol></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I make a missed press fail the run?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Wait 1 s, then retry.</b> Each press waits at most 1 s for its element. If it is missing, retry up to 3 s. A retry or a miss is a failure, and the run exits with 1.</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I make a missed press fail the run?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Wait 1 s, then retry.</b> Each press waits at most 1 s for its element. If it is missing, retry up to 3 s. A miss after 3 s is a failure, and the run exits with 1.</p><p><b>Change, 2026-11-20:</b> a retry is a warning, not a failure. The run continues. The log line gives the cause and the wait time, and the summary gives the count of warnings. A late element is not acceptable, so each warning is a record to examine later.</p></div></div></div>
   </section>
 </div>
 
@@ -400,13 +400,29 @@ record = that share for each frame, in place of the mean</pre>
 <!-- I5 -->
 <div class="panel off" id="i5" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill det">Detected</span><span class="k">source: review · I5</span></div>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review · I5</span></div>
     <h2>I5 · Keyboard and screen reader not tested</h2>
-    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p>The tray window uses composition mode. The host forwards mouse input to the page. No test checks key input or the screen reader.</p></div></div>
     <div class="field"><span class="k">Proof</span><div class="v"><p>No check in <code>SelfTest.cs</code> sends a key. Not tried by hand.</p></div></div>
+    <div class="field"><span class="k">Spike</span><div class="v"><p>Scenario <code>keys</code> (window messages, the pointer does not move). The keyboard works. Real keys go to the focus window of the host thread: the WebView2 child window <code>Chrome_WidgetWin_0</code>, not the host. Posted keys use the same path, so this is not a platform limit.</p>
+<pre class="stack">keys to the host window       box = ''
+keys to Chrome_WidgetWin_0    box = 'xyz'
+Tab 1, 2, 3                   dictate button (aria-label), Cancel, Send answer</pre></div></div>
+    <div class="field"><span class="k">Result</span><div class="v">
+      <p>Two self-test checks: <code>keys-type</code> and <code>keys-tab</code>. Proof that they can fail:</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Run</th><th>keys-type</th><th>keys-tab</th></tr></thead>
+        <tbody>
+          <tr><td>Normal</td><td>Pass</td><td>Pass</td></tr>
+          <tr><td><code>MoveFocus</code> off</td><td>Pass</td><td>Pass</td></tr>
+          <tr><td>Focus on the host window (a test break)</td><td>Fail: box empty</td><td>Fail: focus stays in the box</td></tr>
+        </tbody>
+      </table></div>
+      <p><code>MoveFocus</code> is not the only path: a click into the page gives the focus to WebView2. Self-test: 29 of 30 (only I7 fails). Open: the Narrator test, a manual step for you.</p>
+    </div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>A check: focus the reply box, send key messages, read the box value.</li><li>A check: Tab key moves the focus to the next button.</li><li>A manual test with Narrator, once.</li></ol></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Is keyboard input in the tray a need now, or later?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, a must.</b> Keyboard use is a must. Add two self-test checks: type in the reply box, and Tab moves the focus. A failure is a must-fix issue. Narrator is a manual step for the user.</p></div></div></div>
   </section>

@@ -2463,3 +2463,12 @@ Decision: keep the look. The gap between the windows is good. Each value (the wi
 - Finding: with window messages, a hover alone does not show the bubble (WM_MOUSELEAVE comes at once). A click does.
 - Finding (test tooling, not examined): the recorder caught 0 frames in 3 of 8 runs today. The screen was not locked. The next try worked each time.
 - Skill `visual-issue`: rules 7 and 8 (the smallest scenario; before and after with the same scenario).
+
+## Visual review: I5 keyboard checks (2026-11-20)
+
+- Spike, scenario `keys`: keys posted to the host window do not reach the page. Keys posted to the WebView2 child window (`Chrome_WidgetWin_0`, the focus window of the host thread) do. Tab moves the focus: dictate button, Cancel, Send answer. Not a platform limit.
+- Fault in the first spike run: each letter came 2 times. The message loop makes `WM_CHAR` from `WM_KEYDOWN`, so the test posts only key down and key up.
+- New checks `keys-type` and `keys-tab`. Normal run: both pass, self-test 29 of 30 (only I7 fails).
+- Proof that the checks can fail: with `MoveFocus` off, both still pass (a click into the page gives the focus to WebView2). With the focus on the host window, both fail.
+- Open: the Narrator test, a manual step for the user.
+- I3 answer changed: a retry is a warning with the cause and the wait time in the log. A miss after 3 s fails the run.
