@@ -277,6 +277,8 @@ public static partial class SelfTest
         Add("deck-throw", thrown && topAfter != topBefore, $"trace of step deck-throw by end {thrown}; top card before \"{topBefore}\", after \"{topAfter}\"");
         await Js(w, $"{Go}('')");
         await Task.Delay(600);
+        // The tab move to Home ends about 460 ms after its render. A hide before its end freezes its blocks, and its wait runs to the limit.
+        await Until(async () => await Js(w, "!!document.querySelector('.page.is-tab-in')") == "false", 2000);
 
         // H4: a new card during a hide: the notice waits for the hide, then the badge comes in and peeks.
         w.Request(TrayRequest.Hide);
