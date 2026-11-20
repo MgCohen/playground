@@ -160,9 +160,11 @@ public static partial class SelfTest
         // ExecuteScriptAsync does not wait for the promise of the meter: wait for its result.
         await Until(async () => await Js(w, "!!window.__frames") == "true", 3000);
         var b = tray.Badge;
+        // H2: at phase badge the slide of the tab has ended, so the read needs no delay.
+        var tab = await Js(b, "getComputedStyle(document.querySelector('.tb-tab')).translate");
+        Add("badge-in-ended", tab is "none" or "0px" or "0px 0px", $"tab translate at the first read with phase badge: {tab} (expect 0)");
         var area = Screen.FromRectangle(b.Bounds).WorkingArea;
         await Task.Delay(400);
-        var tab = await Js(b, "getComputedStyle(document.querySelector('.tb-tab')).translate");
         (await Picture(b)).Save(Path.Combine(folder, "3-badge.png"));
         Add("dock", docked && !w.Visible && b.Visible && b.Bounds == b.PlaceBounds() && b.Right == area.Right && tab is "none" or "0px" or "0px 0px",
             $"phase {w.Phase}, panel window shows {w.Visible}, badge window {b.Bounds} (expect {b.PlaceBounds()}), right edge {b.Right} = {area.Right}, tab translate {tab}, click area {b.HitArea}; frames of the fold {await Frames(w)}");
@@ -290,7 +292,7 @@ public static partial class SelfTest
         var waits = trace.Where(l => l.Contains("js orchMotion.wait", StringComparison.Ordinal)).ToList();
         var late = waits.Where(l => l.Contains("by limit", StringComparison.Ordinal) || l.Contains("by missing", StringComparison.Ordinal) || l.Contains(" error js.failed", StringComparison.Ordinal)).ToList();
         // S4: each step of the tray flow runs through the registry (its data-motion target) and ends by the end of its motion.
-        string[] tracedSteps = ["grow", "fold", "badge-out", "spin", "peek-out"];
+        string[] tracedSteps = ["grow", "fold", "badge-in", "badge-out", "spin", "peek-out"];
         var untraced = tracedSteps.Where(s => !waits.Any(l => l.Contains($"~=\"{s}\"]", StringComparison.Ordinal) && l.Contains("by end", StringComparison.Ordinal))).ToList();
         Add("steps-traced", untraced.Count == 0, untraced.Count == 0 ? $"each step ends by end: {string.Join(", ", tracedSteps)}" : $"no wait by end for: {string.Join(", ", untraced)}");
         Add("no-wait-at-limit",waits.Count >= 10 && late.Count == 0, $"{waits.Count} waits, {late.Count} by limit, missing or error{(late.Count > 0 ? ": " + string.Join(" | ", late.Take(4)) : "")}");

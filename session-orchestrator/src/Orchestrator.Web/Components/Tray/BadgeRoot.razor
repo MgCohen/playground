@@ -53,6 +53,8 @@
         Set(TrayPhase.BadgeOut);
         await Commands.SendAsync(new MotionWait(null, WaitMode.Event, "frames:2"), default);
         Set(TrayPhase.Badge);
+        // H2: the phase badge comes after the slide of the tab, so the next step never cuts it.
+        await Commands.SendAsync(new MotionWait(MotionSteps.BadgeIn.Target, WaitMode.Step), default);
     });
 
     public Task Out() => InvokeAsync(async () =>
