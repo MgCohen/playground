@@ -305,7 +305,7 @@ Add("x-width", v == "280", $"width {v} (expect 280)");</pre>
       </tbody>
     </table></div>
     <p>The test store is a new copy for each run, so the panel and the badge start at their home places. The recorder is in <code>spikes/tray-display/recorder</code>. The scripts <code>sheets.sh</code>, <code>empty.py</code>, <code>strip.ps1</code> and <code>at.ps1</code> are in <code>spikes/tray-display/tools</code>. To report an issue, use the project skill <code>visual-issue</code>.</p>
-    <p><code>scenario.sh</code> starts each tray with its own <code>--instance</code>, so it can run while another session runs a self-test (I17). If the recorded area does not change, the recorder writes no GIF and exits with code 3.</p>
+    <p>Each self-test takes a free test slot: its own lock, WebView2 folder and strip of the screen (460 DIP wide, from the right edge). It writes <code>instance.json</code> with the slot and the area to record. <code>scenario.sh</code> and <code>sheets.sh</code> start the recorder with <code>--area-file</code> and the tray with <code>--wait-recorder</code>, so two sessions can record at the same time (I17). If the recorded area does not change, the recorder writes no GIF and exits with code 3.</p>
   </section>
 </div>
 

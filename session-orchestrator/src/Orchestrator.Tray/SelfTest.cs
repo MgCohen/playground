@@ -173,7 +173,7 @@ public static partial class SelfTest
         // ExecuteScriptAsync does not wait for the promise of the meter: wait for its result.
         await Until(async () => await Js(w, "!!window.__frames") == "true", 3000);
         var b = tray.Badge;
-        var area = Screen.FromRectangle(b.Bounds).WorkingArea;
+        var area = Slot.Area(Screen.FromRectangle(b.Bounds));
         await Task.Delay(400);
         var tab = await Js(b, "getComputedStyle(document.querySelector('.tb-tab')).translate");
         (await Picture(b)).Save(Path.Combine(folder, "3-badge.png"));
@@ -291,7 +291,7 @@ public static partial class SelfTest
         var top = b.Top;
         var moved = await Drag(b, ring, 0, -150);
         await Task.Delay(300);
-        add("mouse-badge-drag", moved && b.Top - top == -150 && b.Right == Screen.FromRectangle(b.Bounds).WorkingArea.Right && w.Phase == TrayPhase.Badge,
+        add("mouse-badge-drag", moved && b.Top - top == -150 && b.Right == Slot.Area(Screen.FromRectangle(b.Bounds)).Right && w.Phase == TrayPhase.Badge,
             $"moved {b.Top - top} (expect -150), right edge {b.Right}, phase {w.Phase}");
 
         ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
