@@ -32,7 +32,7 @@ public static partial class SelfTest
         return Path.Combine(folder, "place.json");
     }
 
-    public static async Task<int> Run(TrayApp tray, string folder, bool mouse)
+    public static async Task<int> Run(TrayApp tray, string folder, bool mouse, bool reduced = false)
     {
         Directory.CreateDirectory(folder);
         var w = tray.Window;
@@ -242,6 +242,26 @@ public static partial class SelfTest
             $"click area at rest {atRest}, at the hover {hover}; after the click: phase {w.Phase}, panel window shows {w.Visible}, badge window shows {b.Visible}");
 
         if (mouse) await Mouse(w, b, Add);
+
+        // I13: with reduced motion each duration token is 1 ms, so a dock and an open end at once: no wait runs to its limit.
+        if (reduced)
+        {
+            var times = new List<long>();
+            for (var i = 0; i < 2; i++)
+            {
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                w.Request(TrayRequest.Dock);
+                await Until(() => w.Phase == TrayPhase.Badge, 4000);
+                times.Add(clock.ElapsedMilliseconds);
+                await Task.Delay(300);
+                clock.Restart();
+                w.Request(TrayRequest.Open);
+                await Until(() => w.Phase == TrayPhase.Open, 4000);
+                times.Add(clock.ElapsedMilliseconds);
+                await Task.Delay(300);
+            }
+            Add("reduced-flow-time", times.All(t => t < 300), $"dock, open, dock, open in ms: {string.Join(", ", times)} (expect each under 300)");
+        }
 
         Add("exceptions", Faults.Count == 0, Faults.First ?? "no unhandled exception");
         File.WriteAllText(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));

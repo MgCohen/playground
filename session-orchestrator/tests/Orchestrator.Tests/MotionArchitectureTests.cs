@@ -74,6 +74,23 @@ public sealed class MotionArchitectureTests
         Assert.That(unused, Is.Empty, "Remove these entries: " + string.Join("; ", unused.Select(u => $"{u.File}: {u.Text}")));
     }
 
+    /// <summary>The tokens that reduced motion keeps: the dwell times and the limits.</summary>
+    static readonly string[] Kept = ["--t-undo", "--t-peek-show", "--t-limit", "--t-vt-start", "--t-vt-render", "--t-frame-limit", "--t-window-gap"];
+
+    [Test]
+    public void Reduced_motion_sets_each_duration_token_to_1ms()
+    {
+        var css = File.ReadAllText(Path.Combine(Repo(), "src/Orchestrator.Web/wwwroot/motion.css"));
+        var at = css.IndexOf("@media (prefers-reduced-motion: reduce)", StringComparison.Ordinal);
+        Assert.That(at, Is.GreaterThan(0), "motion.css has the reduced motion rule");
+        var root = css[..at];
+        var reduced = css[at..];
+        var times = Regex.Matches(root, @"(--t-[a-z-]+)\s*:").Select(m => m.Groups[1].Value).Distinct().Where(t => !Kept.Contains(t)).ToList();
+        var missing = times.Where(t => !Regex.IsMatch(reduced, Regex.Escape(t) + @"\s*:\s*1ms;")).ToList();
+        Assert.That(missing, Is.Empty, "Set these duration tokens to 1ms in the reduced motion rule (I13): " + string.Join(", ", missing));
+        Assert.That(reduced, Does.Not.Contain("none !important"), "reduced motion keeps each motion at 1 ms, so its end event comes");
+    }
+
     [Test]
     public void The_scan_finds_a_time_literal()
     {

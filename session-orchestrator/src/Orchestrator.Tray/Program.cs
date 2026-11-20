@@ -80,11 +80,11 @@ public static partial class Program
             {
                 try
                 {
-                    // --reduced: both pages get prefers-reduced-motion: reduce before the first step.
-                    if (args.Contains("--reduced")) await Task.WhenAll(SelfTest.Reduced(tray.Window), SelfTest.Reduced(tray.Badge));
+                    // --reduced (or a scenario name that ends with -reduced): both pages get prefers-reduced-motion: reduce before the first step.
+                    if (args.Contains("--reduced") || Value(args, "--scenario")?.EndsWith("-reduced", StringComparison.Ordinal) == true) await Task.WhenAll(SelfTest.Reduced(tray.Window), SelfTest.Reduced(tray.Badge));
                     code = args.Contains("--scenario") ? await SelfTest.Scenario(tray, selfTest, Value(args, "--scenario"))
                         : args.Contains("--stress") ? await SelfTest.Stress(tray, selfTest, Value(args, "--css"), args.Contains("--opens"), args.Contains("--sheets"))
-                        : args.Contains("--demo") ? await SelfTest.Demo(tray, selfTest) : await SelfTest.Run(tray, selfTest, args.Contains("--mouse"));
+                        : args.Contains("--demo") ? await SelfTest.Demo(tray, selfTest) : await SelfTest.Run(tray, selfTest, args.Contains("--mouse"), args.Contains("--reduced"));
                 }
                 catch (Exception e)
                 {

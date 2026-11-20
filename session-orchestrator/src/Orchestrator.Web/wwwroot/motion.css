@@ -137,5 +137,18 @@ html.nav .page { animation: none; }
 @keyframes m-pop-old { to { transform: translateX(100%); } }
 @keyframes m-pop-new { from { transform: translateX(-30%); opacity: .5; } }
 
-/* One switch for all motion. */
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+/* One switch for all motion (I13): with reduced motion each duration token is 1 ms. Each motion still runs and ends, so each
+   end event comes and each wait ends at once; nothing waits for a limit. The dwell tokens (--t-undo, --t-peek-show) and the
+   limit tokens keep their values. motion.js starts no view transition. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-press: 1ms; --t-fold: 1ms; --t-chevron: 1ms; --t-ring: 1ms; --t-count-step: 1ms; --t-scrim-in: 1ms; --t-scrim-out: 1ms;
+    --t-sheet-in: 1ms; --t-sheet-out: 1ms; --t-toast-in: 1ms; --t-toast-out: 1ms; --t-dial: 1ms; --t-dial-step: 1ms;
+    --t-dscrim: 1ms; --t-fab: 1ms; --t-page-in: 1ms; --t-push: 1ms; --t-back: 1ms; --t-tab-block: 1ms; --t-tab-step: 1ms;
+    --t-dot: 1ms; --t-dot-fade: 1ms; --t-card-move: 1ms; --t-card-back: 1ms; --t-card-arrive: 1ms; --t-card-throw: 1ms;
+    --t-card-tuck: 1ms; --t-card-tuck-hold: 1ms; --t-toggle: 1ms; --t-ball-in: 1ms; --t-ball-out: 1ms; --t-grow: 1ms;
+    --t-shrink: 1ms; --t-content-in: 1ms; --t-content-out: 1ms; --t-badge-in: 1ms; --t-badge-out: 1ms; --t-badge-hover: 1ms;
+    --t-badge-wait: 1ms; --t-badge-text: 1ms; --t-badge-text-wait: 1ms; --t-peek-in: 1ms; --t-peek-out: 1ms; --t-spin: 1ms;
+    --t-badge-fold: 1ms;
+  }
+}
