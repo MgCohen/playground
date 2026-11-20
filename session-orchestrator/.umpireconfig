@@ -1,0 +1,2 @@
+# The Umpire block of session-orchestrator. All findings are warnings: the existing code does not follow the VSA layout.
+umpire.check.mode = "Warn"

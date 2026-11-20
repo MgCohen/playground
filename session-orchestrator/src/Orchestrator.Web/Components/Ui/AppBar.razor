@@ -1,6 +1,6 @@
 @inherits LiveView
 @inject NavigationManager Nav
-@inject IJSRuntime JS
+@inject ICommandSender Commands
 
 <nav class="nav2" aria-label="Views" @ref="nav">
     <a class="it @On("cards")" href="cards" aria-label="Cards"><Icon Name="cards" />@if (count > 0) {<span class="bdg">@count</span>}</a>
@@ -18,13 +18,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        try
-        {
-            await JS.InvokeVoidAsync("orchMotion.dot", nav);
-        }
-        catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
-        {
-        }
+        await Commands.SendAsync(new Orchestrator.Web.Features.Motion.Slices.Dot.MotionDot(nav), default);
     }
 
     string Section => Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#', '/')[0] switch

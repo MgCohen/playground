@@ -1,5 +1,6 @@
 @page "/cards"
 @inherits LiveView
+@inject ICommandSender Commands
 
 <PageTitle>Cards · orch</PageTitle>
 
@@ -17,7 +18,7 @@
         <div class="pile">
             @foreach (var (c, i) in visible.Take(3).Select((c, i) => (c, i)))
             {
-                <article class="crd pcard @(i > 0 ? "behind" : Arrives(c) ? "arrive" : "")" style="--i:@i" data-deck-card="@(i == 0)" aria-hidden="@(i > 0 ? "true" : null)" @key="c.Id">
+                <article class="crd pcard @(i > 0 ? "behind" : motion ?? (Arrives(c) ? "arrive" : ""))" style="--i:@i" data-deck-card="@(i == 0)" data-motion="deck-throw deck-tuck deck-back-in deck-arrive" aria-hidden="@(i > 0 ? "true" : null)" @key="c.Id">
                     @if (i == 0)
                     {
                         @* V17: no native link drag, or the drag of the browser cancels the swipe. *@
@@ -65,7 +66,8 @@
 }
 
 @code {
-    public static readonly TimeSpan UndoTime = TimeSpan.FromSeconds(5);
+    /// <summary>The undo time of an act: the token --t-undo of motion.css, read once from the page.</summary>
+    TimeSpan? undoTime;
 
     static readonly string[] Chips = ["All", "Questions", "Reviews", "Reports"];
 
@@ -105,7 +107,11 @@
 
     bool Arrives(CardView card) => lastPile.Count > 0 && !lastPile.Contains(card.Id);
 
-    protected override void OnAfterRender(bool firstRender) => lastPile = visible.Take(3).Select(c => c.Id).ToHashSet();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        lastPile = visible.Take(3).Select(c => c.Id).ToHashSet();
+        if (firstRender) undoTime ??= await MotionTimes.Of(Commands, "--t-undo");
+    }
 
     IReadOnlyDictionary<string, string> ChipLabels => new Dictionary<string, string>
     {
@@ -154,8 +160,22 @@
         }).ToList();
     }
 
-    void Do(CardView card, CardAction action)
+    // M1, M2 (S8): the motion class of the top card (out-r, out-l or tuck). C# starts the motion, waits for its end through the
+    // motion pipeline, then does the act. A second act during the motion does nothing.
+    string? motion;
+
+    async Task Move(string css, MotionStep step)
     {
+        motion = css;
+        StateHasChanged();
+        await Commands.SendAsync(new MotionWait(step.Target, WaitMode.Step), default);
+        motion = null;
+    }
+
+    async Task Do(CardView card, CardAction action)
+    {
+        if (motion is not null) return;
+        if (Throws(action) is not null) await Move(action == card.Right ? "out-r" : "out-l", MotionSteps.DeckThrow);
         switch (action.Do)
         {
             case CardDo.Type: sheet = (card, false); break;
@@ -181,7 +201,7 @@
         var p = new Pending(card.Id, work, done, cancel);
         pending = p;
         toast = new Toast(done, Undo);
-        _ = Task.Delay(UndoTime, cancel.Token).ContinueWith(task =>
+        _ = UndoWait(cancel.Token).ContinueWith(task =>
         {
             if (task.IsCanceled) return;
             InvokeAsync(() =>
@@ -191,6 +211,12 @@
                 StateHasChanged();
             });
         }, TaskScheduler.Default);
+    }
+
+    async Task UndoWait(CancellationToken cancel)
+    {
+        undoTime ??= await MotionTimes.Of(Commands, "--t-undo") ?? throw new InvalidOperationException("The page gave no --t-undo.");
+        await Task.Delay(undoTime.Value, cancel);
     }
 
     void Run(Pending p)
@@ -228,8 +254,10 @@
     List<string>? skipUndo;
 
     /// <summary>Skip moves the card to the end of the pile. A card that arrives later goes after it.</summary>
-    void Skip(CardView card)
+    async Task Skip(CardView card)
     {
+        if (motion is not null) return;
+        await Move("tuck", MotionSteps.DeckTuck);
         Flush();
         skipUndo = [.. order];
         order.Remove(card.Id);

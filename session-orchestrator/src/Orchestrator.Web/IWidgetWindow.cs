@@ -32,6 +32,17 @@ public interface IWidgetWindow
     /// <summary>The flow enters a phase (<see cref="TrayPhase"/>). The task ends when the window of the phase shows and the other hides.</summary>
     Task Enter(string phase);
 
+    /// <summary>The phase of the windows: the last phase that <see cref="Enter"/> made (H3: the flow reads it after a fault).</summary>
+    string Phase => TrayPhase.Hidden;
+
+    /// <summary>The window event of the last <see cref="Enter"/>: "shown", "hidden", "activated" or "not activated".</summary>
+    string LastEvent => "";
+
+    /// <summary>An error of the tray flow: the tray writes it to its fault log (H3: nothing is swallowed).</summary>
+    void Fault(Exception error, string where)
+    {
+    }
+
     /// <summary>The badge shows its peek bubble (true) or hides it (false): the click area takes the bubble in or out.</summary>
     void Peek(bool on);
 }

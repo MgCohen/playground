@@ -127,3 +127,10 @@ html { scrollbar-gutter: auto; }
 .tb-peek.on { scale: 1 1; opacity: 1; transition: scale var(--t-peek-in) var(--ease-out), opacity var(--t-peek-in) var(--ease-out); }
 .tb-peek b { font: 600 12.5px var(--f-body); color: var(--text); overflow: hidden; text-overflow: ellipsis; }
 .tb-peek small { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+
+/* ===== The motion steps of the tray (MotionSteps in C#; the rule of motion.css explains --motion-wait). ===== */
+[data-motion~="grow"] { --motion-wait: clip-path; } /* G1 · tray */
+[data-motion~="fold"] { --motion-wait: clip-path scale; } /* G1 · tray: the panel clip and the ball, also with no app bar (H1) */
+[data-motion~="badge-in"], [data-motion~="badge-out"] { --motion-wait: translate; } /* N1 · minimize */
+[data-motion~="spin"] { --motion-wait: tb-spin; } /* N2 · notify */
+[data-motion~="peek-out"] { --motion-wait: opacity; } /* N2 · notify */

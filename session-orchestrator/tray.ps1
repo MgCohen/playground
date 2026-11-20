@@ -5,6 +5,8 @@
 #        .\tray.ps1 -LiveDefault [-Port <port>]   Live mode on the default store root: ORCH_STORE, else %LOCALAPPDATA%\orch\store.
 param([switch] $SelfTest, [string] $Live, [switch] $LiveDefault, [int] $Port)
 $ErrorActionPreference = 'Stop'
+# The Umpire packages come from GitHub Packages (nuget.config): the restore reads the token from GITHUB_TOKEN.
+if (-not $env:GITHUB_TOKEN) { $env:GITHUB_TOKEN = (gh auth token) }
 $project = Join-Path $PSScriptRoot 'src\Orchestrator.Tray'
 dotnet build $project -v q --nologo | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "The build of $project failed. Run: dotnet build $project" }

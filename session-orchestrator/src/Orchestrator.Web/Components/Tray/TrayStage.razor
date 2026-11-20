@@ -4,7 +4,7 @@
    as a circle around it. In the web server (no flow) the stage renders only the views. *@
 @using Microsoft.Extensions.DependencyInjection
 @implements TrayFlow.IPanel
-@inject IJSRuntime JS
+@inject ICommandSender Commands
 @inject IServiceProvider Services
 
 @if (flow is null)
@@ -14,9 +14,9 @@
 else
 {
     <div class="tray-stage is-@phase @(ready ? "is-ready" : "")" @ref="stage">
-        <div class="tray-shadow">
+        <div class="tray-shadow" data-motion="fold">
             <div class="tray-frame"></div>
-            <div class="tray-panel">
+            <div class="tray-panel" data-motion="grow">
                 <div class="tray-view">@ChildContent</div>
             </div>
         </div>
@@ -48,14 +48,14 @@ else
     {
         Set(TrayPhase.Start);
         await Home();
-        await JS.InvokeVoidAsync("orchTray.frames", 2);
+        await Commands.SendAsync(new MotionWait(null, WaitMode.Event, "frames:2"), default);
     });
 
     public Task Grow() => InvokeAsync(async () =>
     {
         Set(TrayPhase.Open);
         // The grow ends: the first draw of the rings in the view starts now, with the content fade (tray.css, is-ready).
-        await JS.InvokeVoidAsync("orchTray.end", ".tray-panel", "clip-path", 900);
+        await Commands.SendAsync(new MotionWait(MotionSteps.Grow.Target, WaitMode.Step), default);
         ready = true;
         StateHasChanged();
     });
@@ -64,11 +64,11 @@ else
     {
         await Home();
         Set(TrayPhase.Folded);
-        await JS.InvokeVoidAsync("orchTray.end", ".tray-view .nav2 .home", "scale", 900);
+        await Commands.SendAsync(new MotionWait(MotionSteps.Fold.Target, WaitMode.Step), default);
     });
 
     // The place of the home button in the panel, for the clip circle of the open and the fold (tray.js).
-    Task Home() => JS.InvokeVoidAsync("orchTray.home", stage).AsTask();
+    Task Home() => Commands.SendAsync(new Orchestrator.Web.Features.Motion.Slices.Home.TrayHome(stage), default);
 
     void Set(string next)
     {

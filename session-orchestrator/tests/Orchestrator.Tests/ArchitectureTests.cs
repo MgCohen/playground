@@ -24,6 +24,7 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Providers/ClaudeCode/ClaudeCodeProvider.cs", ["File.ReadAllText(settings)", "plugin.json"], "the settings of Claude Code for orch doctor"),
         ("src/Orchestrator.Tray/SelfTest.cs", [], "the place files and the result file of the tray self test"),
         ("src/Orchestrator.Tray/SelfTest.Demo.cs", [], "the step logs of the demo and stress runs of the tray"),
+        ("src/Orchestrator.Tray/SelfTest.Scenarios.cs", [], "the step log of a scenario run of the tray"),
         ("src/Orchestrator.Tray/TrayWindow.cs", [], "the saved place of the panel window on the screen, not the store"),
         ("src/Orchestrator.Tray/BadgeWindow.cs", [], "the saved height of the badge window on the screen, not the store"),
         ("src/Orchestrator.Tray/StaticFiles.cs", [], "the web files of the tray page (wwwroot or the static asset manifest), not the store"),
