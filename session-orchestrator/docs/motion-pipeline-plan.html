@@ -120,16 +120,16 @@ ol, ul { padding-left: 22px; }
       <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
       <rect class="box key" x="10" y="30" width="140" height="70" rx="10"/>
       <text class="t" x="80" y="58" text-anchor="middle">Registry row</text>
-      <text class="s" x="80" y="78" text-anchor="middle">name, state, target</text>
-      <text class="s" x="80" y="92" text-anchor="middle">token, spec ID</text>
+      <text class="s" x="80" y="78" text-anchor="middle">name, state class</text>
+      <text class="s" x="80" y="92" text-anchor="middle">only</text>
       <rect class="box" x="190" y="30" width="140" height="70" rx="10"/>
       <text class="t" x="260" y="58" text-anchor="middle">Set state</text>
       <text class="s" x="260" y="78" text-anchor="middle">C# sets the class</text>
       <text class="s" x="260" y="92" text-anchor="middle">is-open, is-leaving</text>
       <rect class="box" x="370" y="30" width="150" height="70" rx="10"/>
       <text class="t" x="445" y="58" text-anchor="middle">CSS rule + token</text>
-      <text class="s" x="445" y="78" text-anchor="middle">motion.css owns</text>
-      <text class="s" x="445" y="92" text-anchor="middle">all times</text>
+      <text class="s" x="445" y="78" text-anchor="middle">motion.css owns times,</text>
+      <text class="s" x="445" y="92" text-anchor="middle">wait, spec ID</text>
       <rect class="box key" x="560" y="30" width="150" height="70" rx="10"/>
       <text class="t" x="635" y="58" text-anchor="middle">Wait utility</text>
       <text class="s" x="635" y="78" text-anchor="middle">settle · property</text>
@@ -196,7 +196,8 @@ ol, ul { padding-left: 22px; }
   <div class="tbl"><table>
     <tr><th>Term</th><th>Meaning</th></tr>
     <tr><td>Motion pipeline (R1)</td><td>This work: tokens, wait utility, registry, window steps</td></tr>
-    <tr><td>Registry row</td><td>One motion step as C# data</td></tr>
+    <tr><td>Registry row</td><td>One motion step in C#: the step name and the state class only</td></tr>
+    <tr><td>Motion target</td><td>The element with <code>data-motion="&lt;step name&gt;"</code> in Razor. Its CSS rule owns the token, the wait and the spec ID</td></tr>
     <tr><td>Duration token</td><td>A motion time. Reduced motion sets it to 1 ms</td></tr>
     <tr><td>Dwell token</td><td>A show time (undo, peek). Reduced motion keeps it</td></tr>
     <tr><td>Limit token</td><td>The longest wait: <code>--t-limit</code></td></tr>
@@ -406,18 +407,21 @@ dotnet run -- --selftest before-reduced --reduced</pre>
     <summary><span class="sid">S4</span><span class="stt">C# motion registry</span><span class="chip i">Q1 B</span><span class="chip i">I9</span><span class="risk med">risk medium</span></summary>
     <dl class="sb">
       <dt>Changes</dt><dd><ul>
-        <li>New <code>Features/Motion/Slices/Registry</code>: one row for each motion step today (Pipeline tab).</li>
+        <li>New <code>Features/Motion/Slices/Registry</code>: one row for each motion step today. A row has only the step name and the state class (Pipeline tab).</li>
+        <li>Razor: each motion target gets <code>data-motion="&lt;step name&gt;"</code>. Targets do not change.</li>
+        <li><code>motion.css</code>: one rule for each step, for example <code>[data-motion="grow"] { --motion-wait: clip-path; }</code>, with the spec ID as a comment. No <code>--motion-wait</code> means settle mode.</li>
+        <li><code>orchMotion.wait</code> finds the target by <code>data-motion</code> and reads <code>--motion-wait</code> from it.</li>
         <li>A row makes a <code>MotionWait</code> command. The step trace writes "step &lt;name&gt;: by end in N ms".</li>
         <li>The other JS calls become commands: <code>TrayHome</code>, <code>MotionDot</code>, <code>MotionBegin</code>, <code>MotionMs</code>. No component calls <code>IJSRuntime</code> directly after this step.</li>
         <li><code>TrayStage</code>, <code>BadgeRoot</code>, <code>Presence</code>, <code>MainLayout</code> call steps by row name. Targets do not change.</li>
-        <li>Registry scope: names only. A row names its token; <code>motion.css</code> has the value. C# reads a value from the page when it needs one.</li>
+        <li>Registry scope: name and state class only. C# has no selector, token, wait mode or spec ID. C# reads a value from the page when it needs one.</li>
       </ul></dd>
       <dt>Closes</dt><dd>Q1 B. Part of I9: stage phases, Presence and the tab change use the registry.</dd>
       <dt>Proof</dt><dd><ul>
         <li>Scenarios <code>dock-open</code>, <code>page-moves</code>: same frames. The trace names each step.</li>
-        <li>New unit test <code>Registry_matches_motion_css</code>: each row token is in motion.css; each duration token has a row; each spec ID is in <code>motion-design.html</code>.</li>
+        <li>New unit test <code>Registry_matches_motion_css</code>: each row name has one <code>data-motion</code> element in Razor and one rule in motion.css. Each <code>data-motion</code> rule has a row. Each spec ID comment is in <code>motion-design.html</code>.</li>
         <li>New self-test check <code>motion-times</code>: for each step, the <code>getAnimations()</code> durations on the target equal the token, ±1 ms.</li>
-        <li>Fail first: these checks need the registry. Change one row token, see FAIL, restore it.</li>
+        <li>Fail first: these checks need the registry. Rename one <code>data-motion</code> value, see FAIL, restore it.</li>
         <li>New unit test <code>No_direct_js_calls</code>: no <code>IJSRuntime</code> call outside <code>Plugins/Js</code>. Before: about 10 hits, FAIL.</li>
         <li>New unit test <code>Js_names_exist</code>: the JS name of each command is in <code>motion.js</code> or <code>tray.js</code>. Fail first: rename one function, see FAIL.</li>
       </ul></dd>
@@ -430,8 +434,9 @@ dotnet run -- --selftest before-reduced --reduced</pre>
     <summary><span class="sid">S5</span><span class="stt">The fold waits for the panel, not the home button</span><span class="chip h">H1</span><span class="risk low">risk low</span></summary>
     <dl class="sb">
       <dt>Changes</dt><dd><ul>
-        <li>Registry row <code>fold</code>: target <code>.tray-shadow</code>, mode settle. Today: <code>.tray-view .nav2 .home</code>, property scale.</li>
-        <li>No other code change.</li>
+        <li>Razor: move <code>data-motion="fold"</code> to <code>.tray-shadow</code>. Today the wait target is <code>.tray-view .nav2 .home</code>.</li>
+        <li><code>motion.css</code>: the <code>fold</code> rule has no <code>--motion-wait</code>, so the wait uses settle mode. Today: property scale.</li>
+        <li>No C# change.</li>
       </ul></dd>
       <dt>Closes</dt><dd>H1.</dd>
       <dt>Proof</dt><dd><ul>
@@ -439,7 +444,7 @@ dotnet run -- --selftest before-reduced --reduced</pre>
         <li>New self-test check <code>fold-no-app-bar</code>: on <code>events/&lt;id&gt;</code>, dock to phase folded takes at least <code>--t-content-out + --t-shrink</code> (340 ms). Before: near 0 ms, FAIL.</li>
       </ul></dd>
       <dt>Risk</dt><dd>Low. A long view animation can make the fold longer. If the trace shows that, use two property waits: clip-path, then scale.</dd>
-      <dt>Undo</dt><dd>Revert the commit (one row).</dd>
+      <dt>Undo</dt><dd>Revert the commit (one attribute, one CSS rule).</dd>
     </dl>
   </details>
 
@@ -447,7 +452,7 @@ dotnet run -- --selftest before-reduced --reduced</pre>
     <summary><span class="sid">S6</span><span class="stt">The badge phase starts after the slide</span><span class="chip h">H2</span><span class="risk low">risk low</span></summary>
     <dl class="sb">
       <dt>Changes</dt><dd><ul>
-        <li>Registry row <code>badge-in</code>: after <code>is-badge</code>, wait property <code>translate</code> on <code>.tb-tab</code>.</li>
+        <li>Razor: <code>data-motion="badge-in"</code> on <code>.tb-tab</code>. <code>motion.css</code>: <code>--motion-wait: translate</code>. The row <code>badge-in</code> sets <code>is-badge</code>, then waits.</li>
         <li><code>BadgeRoot.In</code> ends after that wait. <code>TrayFlow</code> then sets phase badge, as today.</li>
         <li>Self-test <code>dock</code>: read the tab translate at once, not after 400 ms.</li>
       </ul></dd>
@@ -507,7 +512,7 @@ dotnet run -- --selftest before-reduced --reduced</pre>
     <summary><span class="sid">S9</span><span class="stt">Window steps in the pipeline</span><span class="chip i">I6</span><span class="chip i">I9</span><span class="chip i">I15</span><span class="risk med">risk medium</span></summary>
     <dl class="sb">
       <dt>Changes</dt><dd><ul>
-        <li>Registry rows of kind window: <code>panel-show</code>, <code>panel-activate</code>, <code>badge-show</code>, <code>all-hide</code>.</li>
+        <li>Window rows: <code>panel-show</code>, <code>panel-activate</code>, <code>badge-show</code>, <code>all-hide</code>. C# owns these steps, because C# controls the windows. Each row has the window event to wait for.</li>
         <li><code>TrayFlow</code>: each request is a list of rows (page and window). One entry point runs them.</li>
         <li><code>WidgetWindow.Enter</code>: ends on the window events shown and hidden. The trace has each window step and the window gap in ms.</li>
         <li><code>motion.css</code>: <code>--t-window-gap: 100ms</code>, as a reference value. No code waits for it (I15 stays "later").</li>
@@ -573,7 +578,7 @@ var r = await Commands.SendAsync(new MotionWait(stage, WaitMode.Property, "clip-
     <tr><td>Each wait is one interop call</td><td>Fast in the tray; a network trip in the web server</td><td>Keep tight orders inside one CSS phase</td></tr>
     <tr><td>One request at a time</td><td>No reversal in the middle of a motion</td><td>Same as today. A dock during a grow waits</td></tr>
     <tr><td>Pointer motion</td><td>C# cannot follow each frame</td><td>The drag math stays in <code>swipe.js</code></td></tr>
-    <tr><td>A new motion</td><td>A CSS rule and a registry row</td><td>A unit test finds a row and a token that do not agree</td></tr>
+    <tr><td>A new motion</td><td>A CSS rule, a <code>data-motion</code> attribute and a registry row</td><td>A unit test finds a name with no rule or no row. Later: a source generator makes the rows from the CSS</td></tr>
     <tr><td>JS name from the type</td><td>A rename breaks the call with no build error</td><td>A unit test finds each name in the scripts</td></tr>
     <tr><td>Umpire is a preview</td><td>The API can change</td><td>Stay on <code>0.2.0-preview.11</code> until R1 is done</td></tr>
     <tr><td>No check mode for each folder</td><td>R1 findings are warnings</td><td>Test <code>R1_folders_have_no_findings</code></td></tr>
@@ -583,19 +588,22 @@ var r = await Commands.SendAsync(new MotionWait(stage, WaitMode.Property, "clip-
 
   <h2>The registry row</h2>
   <pre><span class="c">// Components/Motion/MotionRegistry.cs</span>
-public sealed record MotionStep(string Name, MotionKind Kind, string State, string Target,
-    string Token, string Spec, WaitMode Wait, string? Arg = null);
+public sealed record MotionStep(string Name, string State);   <span class="c">// page step</span>
+public sealed record WindowStep(string Name, string Event);   <span class="c">// window step: C# owns it</span>
 
 public static readonly MotionStep[] Steps =
 [
-    new("grow",     MotionKind.Page,   "is-open",   ".tray-panel", "--t-grow",     "G1 · tray", WaitMode.Property, "clip-path"),
-    new("fold",     MotionKind.Page,   "is-folded", ".tray-shadow","--t-shrink",   "G1 · tray", WaitMode.Settle),
-    new("badge-in", MotionKind.Page,   "is-badge",  ".tb-tab",     "--t-badge-in", "N1",        WaitMode.Property, "translate"),
-    new("sheet-out",MotionKind.Page,   "is-leaving",".presence",   "--t-sheet-out","M5",        WaitMode.Settle),
-    new("badge-show",MotionKind.Window,"badge-out", "badge window","--t-window-gap","G1 · tray",WaitMode.Event, "shown"),
-    <span class="c">// ... one row for each motion step</span>
+    new("grow", "is-open"), new("fold", "is-folded"), new("badge-in", "is-badge"), new("sheet-out", "is-leaving"),
+    <span class="c">// ... one row for each page step</span>
 ];</pre>
-  <p class="sum">The rows above show the shape. The <code>fold</code> row is the S5 version.</p>
+  <pre><span class="c">&lt;!-- Razor: the step name marks the target --&gt;</span>
+&lt;div class="tray-panel" data-motion="grow"&gt;
+
+<span class="c">/* motion.css: the CSS owns the token, the wait and the spec ID */</span>
+<span class="c">/* G1 · tray */</span>
+[data-motion="grow"] { --motion-wait: clip-path; transition: clip-path var(--t-grow); }
+[data-motion="fold"] { <span class="c">/* no --motion-wait: settle mode */</span> }</pre>
+  <p class="sum">C# knows only the facts that it uses: the step name and the class that it sets. The <code>fold</code> rule is the S5 version.</p>
 
   <h2>Token classes</h2>
   <div class="tbl"><table>
@@ -631,7 +639,7 @@ public static readonly MotionStep[] Steps =
     <tr><td><code>R1_folders_have_no_findings</code></td><td>unit</td><td>S3</td><td>Fail first by one bad name</td></tr>
     <tr><td><code>no-wait-at-limit</code></td><td>self-test</td><td>S3</td><td>FAIL: no wait lines</td></tr>
     <tr><td><code>One_wait_utility</code></td><td>unit</td><td>S3</td><td>FAIL: 7 old calls</td></tr>
-    <tr><td><code>Registry_matches_motion_css</code></td><td>unit</td><td>S4</td><td>Fail first by a wrong token</td></tr>
+    <tr><td><code>Registry_matches_motion_css</code></td><td>unit</td><td>S4</td><td>Fail first by a renamed <code>data-motion</code></td></tr>
     <tr><td><code>motion-times</code></td><td>self-test</td><td>S4</td><td>Fail first by a wrong token</td></tr>
     <tr><td><code>No_direct_js_calls</code></td><td>unit</td><td>S4</td><td>FAIL: about 10 calls</td></tr>
     <tr><td><code>Js_names_exist</code></td><td>unit</td><td>S4</td><td>Fail first by a renamed function</td></tr>
@@ -656,7 +664,8 @@ public static readonly MotionStep[] Steps =
 <!-- ============ QUESTIONS ============ -->
 <section class="panel" id="questions" role="tabpanel" aria-labelledby="t-questions" hidden>
   <div class="q">
-    <h3>Q-R1 · Registry scope: A, names only (answer of the user, 2026-11-20)</h3>
+    <h3>Q-R1 · Registry scope: name and state class only (answers of the user, 2026-11-20)</h3>
+    <p>Second answer: the first row shape had a selector, a token name, a wait mode and a spec ID. These are CSS facts. Now C# has only the step name and the state class. The CSS rule of the <code>data-motion</code> target has the other facts.</p>
     <p>Answer: use the standard. The values stay in CSS. C# has only the names, to run the steps.</p>
     <div class="tbl"><table>
       <tr><th>Option</th><th>What</th><th>Effect</th></tr>
@@ -679,6 +688,7 @@ public static readonly MotionStep[] Steps =
     <li>No event wait for the window gap. Reason: I15 stays "later". S9 prepares it.</li>
     <li>No rename of the state classes to <code>data-state</code>. Reason: no open issue needs it. The rows name the current classes.</li>
     <li>No size ownership work (I7, I10). Reason: it comes after R1 and uses the wait utility.</li>
+    <li>No source generator in R1. Reason: later work. It will make the JS command records from the scripts and the registry rows from <code>motion.css</code>.</li>
     <li>No change of the <code>LiveView</code> 300 ms load delay. Reason: it groups file events; it is not a motion.</li>
   </ul>
 </section>
