@@ -56,6 +56,8 @@
     //   property  the transitions of one property (or the animations of one name) of the target end. None running: at once.
     //   time      the time of a token (arg, for example "--t-peek-show").
     //   event     a DOM event of the target (arg), or "frames:n": n display frames.
+    //   step      a motion step of the registry: the target has data-motion, and its CSS rule owns the wait. The custom
+    //             property --motion-wait names the property (or the animation) to wait for; with no value, the wait settles.
     // The target is an element or a selector; with no target and mode "settle" or "property", the target is missing. One frame
     // first, so the state class of the render is in the styles. The result is { by, ms }: by is "end", "cancel" (the browser
     // stopped a motion: the state changed during the wait), "limit" (--t-limit, or --t-frame-limit for frames), "hidden" (a
@@ -81,6 +83,10 @@
           return;
         }
         if (!el) { finish("missing"); return; }
+        if (mode === "step") {
+          arg = getComputedStyle(el).getPropertyValue("--motion-wait").trim();
+          mode = arg ? "property" : "settle";
+        }
         if (document.visibilityState === "hidden") { finish("hidden"); return; }
         timer = setTimeout(function () { finish("limit"); }, limit());
         if (mode === "event") { el.addEventListener(arg, function () { finish("end"); }, { once: true }); return; }

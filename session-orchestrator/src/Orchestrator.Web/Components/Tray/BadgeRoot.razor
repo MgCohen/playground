@@ -4,7 +4,6 @@
 @using Microsoft.Extensions.DependencyInjection
 @inherits LiveView
 @implements TrayFlow.IBadge
-@inject IJSRuntime JS
 @inject ICommandSender Commands
 @inject IServiceProvider Services
 
@@ -59,7 +58,7 @@
     public Task Out() => InvokeAsync(async () =>
     {
         Set(TrayPhase.BadgeOut);
-        await Commands.SendAsync(new MotionWait(".tb-tab", WaitMode.Property, "translate"), default);
+        await Commands.SendAsync(new MotionWait(MotionSteps.BadgeOut.Target, WaitMode.Step), default);
     });
 
     async Task Notice(string title, string sub)
@@ -75,8 +74,8 @@
             peek = true;
             StateHasChanged();
             // The peek shows for the token --t-peek-show of motion.css (N2).
-            var shown = Task.Delay(await MotionTimes.Of(JS, "--t-peek-show"));
-            await Commands.SendAsync(new MotionWait(".tb-ring", WaitMode.Property, "tb-spin"), default);
+            var shown = Task.Delay(await MotionTimes.Of(Commands, "--t-peek-show") ?? TimeSpan.Zero);
+            await Commands.SendAsync(new MotionWait(MotionSteps.Spin.Target, WaitMode.Step), default);
             if (mine != notice) return;
             spin = false;
             StateHasChanged();
@@ -84,7 +83,7 @@
             if (mine != notice) return;
             peek = false;
             StateHasChanged();
-            await Commands.SendAsync(new MotionWait(".tb-peek", WaitMode.Property, "opacity"), default);
+            await Commands.SendAsync(new MotionWait(MotionSteps.PeekOut.Target, WaitMode.Step), default);
             if (mine == notice && !peek) window.Peek(false);
         }
         catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)

@@ -25,6 +25,16 @@ internal static class JsNames
     public static object?[] ArgumentsOf(JsCommand command) =>
         [.. Parameters.GetOrAdd(command.GetType(), ParametersOf).Select(p => p.GetValue(command))];
 
+    public static string Show(object?[] arguments) => string.Join(", ", arguments.Select(Show));
+
+    static string Show(object? argument) => argument switch
+    {
+        null => "null",
+        string text => $"\"{text}\"",
+        Microsoft.AspNetCore.Components.ElementReference => "element",
+        _ => $"{argument}",
+    };
+
     static PropertyInfo[] ParametersOf(Type type)
     {
         var constructor = type.GetConstructors()

@@ -3,7 +3,7 @@
    is no view transition: the layout (MainLayout) plays it on the blocks of the new page. No markup. *@
 @implements IDisposable
 @inject NavigationManager Nav
-@inject IJSRuntime JS
+@inject ICommandSender Commands
 
 @code {
     IDisposable? handler;
@@ -18,13 +18,7 @@
         var from = Nav.ToBaseRelativePath(Nav.Uri);
         var to = Nav.ToBaseRelativePath(Nav.ToAbsoluteUri(context.TargetLocation).ToString());
         if (PageDepth.Move(from, to) is not { } kind || kind == PageDepth.Tab) return;
-        try
-        {
-            await JS.InvokeVoidAsync("orchMotion.begin", context.CancellationToken, kind);
-        }
-        catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
-        {
-        }
+        await Commands.SendAsync(new Orchestrator.Web.Features.Motion.Slices.Begin.MotionBegin(kind), context.CancellationToken);
     }
 
     public void Dispose() => handler?.Dispose();

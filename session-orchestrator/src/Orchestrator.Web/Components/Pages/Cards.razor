@@ -1,6 +1,6 @@
 @page "/cards"
 @inherits LiveView
-@inject IJSRuntime JS
+@inject ICommandSender Commands
 
 <PageTitle>Cards · orch</PageTitle>
 
@@ -110,7 +110,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         lastPile = visible.Take(3).Select(c => c.Id).ToHashSet();
-        if (firstRender) undoTime ??= await MotionTimes.Of(JS, "--t-undo");
+        if (firstRender) undoTime ??= await MotionTimes.Of(Commands, "--t-undo");
     }
 
     IReadOnlyDictionary<string, string> ChipLabels => new Dictionary<string, string>
@@ -201,7 +201,7 @@
 
     async Task UndoWait(CancellationToken cancel)
     {
-        undoTime ??= await MotionTimes.Of(JS, "--t-undo");
+        undoTime ??= await MotionTimes.Of(Commands, "--t-undo") ?? throw new InvalidOperationException("The page gave no --t-undo.");
         await Task.Delay(undoTime.Value, cancel);
     }
 

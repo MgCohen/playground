@@ -13,7 +13,8 @@ public sealed class JsTraceEnd : AfterStep
         var ms = started == 0 ? 0 : (int)Stopwatch.GetElapsedTime(started).TotalMilliseconds;
         var name = envelope.Items.TryGetValue(JsTraceStart.NameItem, out var n) ? n : envelope.Message.GetType().Name;
         var trace = envelope.Services.GetRequiredService<JsTrace>();
-        trace.Write($"js {name} #{envelope.Id}: {Outcome(envelope)} in {ms} ms");
+        var arguments = envelope.Items.TryGetValue(JsTraceStart.ArgumentsItem, out var a) ? a : "";
+        trace.Write($"js {name}({arguments}) #{envelope.Id}: {Outcome(envelope)} in {ms} ms");
         return Task.CompletedTask;
     }
 

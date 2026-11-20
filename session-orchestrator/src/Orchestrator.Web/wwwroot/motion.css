@@ -31,6 +31,13 @@
   --t-vt-start: 300ms; --t-vt-render: 600ms; --t-frame-limit: 100ms;
 }
 
+/* ===== The motion steps of the registry (MotionSteps in C#): the element with data-motion is the target of the step, and
+   its rule owns the wait: --motion-wait names the property or the animation that ends the step; with no value the step
+   settles (each motion of the element and its children ends). The comment is the spec ID of docs/motion-design.html. ===== */
+@property --motion-wait { syntax: "*"; inherits: false; }
+[data-motion~="tab-in"] { } /* T1 */
+[data-motion~="leave"] { } /* M5 */
+
 /* ===== Presence: a block that comes and goes. The wrapper has no box; its children get the phase class of the parent. ===== */
 .presence { display: contents; }
 

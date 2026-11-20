@@ -1,6 +1,6 @@
 @page "/settings"
 @inherits LiveView
-@inject IJSRuntime JS
+@inject ICommandSender Commands
 
 <PageTitle>Settings · orch</PageTitle>
 
@@ -30,7 +30,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        undo = await MotionTimes.Of(JS, "--t-undo");
+        undo = await MotionTimes.Of(Commands, "--t-undo");
         StateHasChanged();
     }
 

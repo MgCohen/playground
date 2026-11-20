@@ -5,7 +5,7 @@
 
 @if (phase != Gone)
 {
-    <div class="presence @phase" @ref="root">
+    <div class="presence @phase" data-motion="leave" @ref="root">
         <CascadingValue Value="this" IsFixed="true">@ChildContent</CascadingValue>
     </div>
 }
@@ -67,7 +67,7 @@
         if (!settle) return;
         settle = false;
         // A JS error comes back as an Error in the result, and the trace of the JS pipeline has it. The block goes in each case.
-        await Commands.SendAsync(new MotionWait(root, WaitMode.Settle), default);
+        await Commands.SendAsync(new MotionWait(root, WaitMode.Step), default);
         if (phase != Leaving) return;
         phase = Gone;
         StateHasChanged();

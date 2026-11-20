@@ -9,4 +9,5 @@ public enum WaitMode
     Property,
     Time,
     Event,
+    Step,
 }

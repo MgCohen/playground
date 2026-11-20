@@ -10,6 +10,8 @@ public sealed class JsTraceStart : BeforeStep
 
     public const string NameItem = "js.name";
 
+    public const string ArgumentsItem = "js.arguments";
+
     public override Task<object> BeforeAsync(Envelope envelope)
     {
         envelope.Items[StartItem] = Stopwatch.GetTimestamp();

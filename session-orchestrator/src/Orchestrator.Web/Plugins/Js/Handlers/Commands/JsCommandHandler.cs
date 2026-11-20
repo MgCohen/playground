@@ -14,11 +14,13 @@ internal sealed class JsCommandHandler<TResult>(IJSRuntime js, JsCalls calls)
     {
         var command = envelope.Message;
         var name = JsNames.NameOf(command);
+        var arguments = JsNames.ArgumentsOf(command);
         envelope.Items[JsTraceStart.NameItem] = name;
+        envelope.Items[JsTraceStart.ArgumentsItem] = JsNames.Show(arguments);
         using var call = calls.Start(command.Key, envelope.Cancellation);
         try
         {
-            return await InvokeAsync(name, call.Token, JsNames.ArgumentsOf(command));
+            return await InvokeAsync(name, call.Token, arguments);
         }
         catch (Exception e) when (e is JSException or JSDisconnectedException or OperationCanceledException
                                       or InvalidOperationException)
