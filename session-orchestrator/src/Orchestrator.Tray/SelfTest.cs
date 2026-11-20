@@ -246,6 +246,24 @@ public static partial class SelfTest
 
         if (mouse) await Mouse(w, b, Add);
 
+        // S8: a throw from the act button: C# starts the throw, waits for it (step deck-throw), then the next card is on top.
+        await Js(w, $"{Go}('cards')");
+        await Task.Delay(700);
+        for (var i = 0; i < 4 && await Js(w, "!!document.querySelector('.acts [data-throw]')") != "true"; i++)
+        {
+            await Js(w, "document.querySelector('.acts [data-act=\"skip\"]')?.click()");
+            await Task.Delay(700);
+        }
+        var topBefore = await Js(w, "document.querySelector('[data-deck-card] .q, [data-deck-card] h3, [data-deck-card]')?.textContent?.trim().slice(0, 60) ?? ''");
+        await Js(w, "document.querySelector('.acts [data-throw]')?.click()");
+        await Task.Delay(800);
+        var topAfter = await Js(w, "document.querySelector('[data-deck-card] .q, [data-deck-card] h3, [data-deck-card]')?.textContent?.trim().slice(0, 60) ?? ''");
+        var thrown = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Infrastructure.JsTrace>().Lines
+            .Any(l => l.Contains("~=\"deck-throw\"]", StringComparison.Ordinal) && l.Contains("by end", StringComparison.Ordinal));
+        Add("deck-throw", thrown && topAfter != topBefore, $"trace of step deck-throw by end {thrown}; top card before \"{topBefore}\", after \"{topAfter}\"");
+        await Js(w, $"{Go}('')");
+        await Task.Delay(600);
+
         // H4: a new card during a hide: the notice waits for the hide, then the badge comes in and peeks.
         w.Request(TrayRequest.Hide);
         PostCard(tray, "The self-test posts a card during a hide");

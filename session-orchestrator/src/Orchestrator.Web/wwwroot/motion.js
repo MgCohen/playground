@@ -91,17 +91,21 @@
         if (document.visibilityState === "hidden") { finish("hidden"); return; }
         timer = setTimeout(function () { finish("limit"); }, limit());
         if (mode === "event") { el.addEventListener(arg, function () { finish("end"); }, { once: true }); return; }
-        requestAnimationFrame(function () {
+        // The state class can come in the render after this call (the render batch and the call are two messages), so with no
+        // motion yet the wait looks again for 2 more frames.
+        var names = String(arg || "").split(/[\s,]+/).filter(Boolean);
+        var look = function (frames) {
           var all = el.getAnimations ? el.getAnimations({ subtree: true }) : [];
-          var names = String(arg || "").split(/[\s,]+/).filter(Boolean);
           var mine = all.filter(function (a) {
             if (!a.effect || a.effect.getComputedTiming().endTime === Infinity) return false;
             return mode === "settle" || names.indexOf(a.transitionProperty) >= 0 || names.indexOf(a.animationName) >= 0;
           });
+          if (mine.length === 0 && frames > 0) { requestAnimationFrame(function () { look(frames - 1); }); return; }
           var canceled = false;
           Promise.all(mine.map(function (a) { return a.finished.catch(function () { canceled = true; }); }))
             .then(function () { finish(canceled ? "cancel" : "end"); });
-        });
+        };
+        requestAnimationFrame(function () { look(2); });
       });
     },
     // The nav dot of the app bar: it moves to the center of the current tab item, and fades out on Home. The first place has no

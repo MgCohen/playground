@@ -12,8 +12,8 @@
   --t-page-in: .18s; --t-push: .3s; --t-back: .28s;
   /* A tab change (T1, option C): each block rises, a step after the block above it; the nav dot moves with a spring. */
   --t-tab-block: .3s; --t-tab-step: 40ms; --t-dot: .3s; --t-dot-fade: .2s;
-  /* The deck (M1, M2, M3): a card moves to its slot, springs back, arrives, is thrown, tucks under the pile, then holds. */
-  --t-card-move: .32s; --t-card-back: .45s; --t-card-arrive: .42s; --t-card-throw: .3s; --t-card-tuck: .18s; --t-card-tuck-hold: 60ms;
+  /* The deck (M1, M2, M3): a card moves to its slot, springs back, arrives, is thrown, tucks under the pile. */
+  --t-card-move: .32s; --t-card-back: .45s; --t-card-arrive: .42s; --t-card-throw: .3s; --t-card-tuck: .18s;
   /* A toggle switch. */
   --t-toggle: .15s;
   /* The tray (tray.css): the pop of the home ball, the grow and the fold of the panel, the badge, its peek and its ring spin. */
@@ -37,6 +37,8 @@
 @property --motion-wait { syntax: "*"; inherits: false; }
 [data-motion~="tab-in"] { } /* T1 */
 [data-motion~="leave"] { } /* M5 */
+[data-motion~="deck-throw"], [data-motion~="deck-tuck"], [data-motion~="deck-back-in"], [data-motion~="deck-arrive"] { /* M1 */
+  --motion-wait: transform m-fly-r m-fly-l m-arrive; }
 
 /* ===== Presence: a block that comes and goes. The wrapper has no box; its children get the phase class of the parent. ===== */
 .presence { display: contents; }
@@ -153,7 +155,7 @@ html.nav .page { animation: none; }
     --t-sheet-in: 1ms; --t-sheet-out: 1ms; --t-toast-in: 1ms; --t-toast-out: 1ms; --t-dial: 1ms; --t-dial-step: 1ms;
     --t-dscrim: 1ms; --t-fab: 1ms; --t-page-in: 1ms; --t-push: 1ms; --t-back: 1ms; --t-tab-block: 1ms; --t-tab-step: 1ms;
     --t-dot: 1ms; --t-dot-fade: 1ms; --t-card-move: 1ms; --t-card-back: 1ms; --t-card-arrive: 1ms; --t-card-throw: 1ms;
-    --t-card-tuck: 1ms; --t-card-tuck-hold: 1ms; --t-toggle: 1ms; --t-ball-in: 1ms; --t-ball-out: 1ms; --t-grow: 1ms;
+    --t-card-tuck: 1ms; --t-toggle: 1ms; --t-ball-in: 1ms; --t-ball-out: 1ms; --t-grow: 1ms;
     --t-shrink: 1ms; --t-content-in: 1ms; --t-content-out: 1ms; --t-badge-in: 1ms; --t-badge-out: 1ms; --t-badge-hover: 1ms;
     --t-badge-wait: 1ms; --t-badge-text: 1ms; --t-badge-text-wait: 1ms; --t-peek-in: 1ms; --t-peek-out: 1ms; --t-spin: 1ms;
     --t-badge-fold: 1ms;

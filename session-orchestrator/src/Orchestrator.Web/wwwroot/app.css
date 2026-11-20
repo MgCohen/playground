@@ -202,8 +202,8 @@ code { font-family: var(--f-mono); font-size: .92em; }
 /* M3 A: a new top card drops in from the top with a small spring. A throw (below) wins over it. */
 .pcard.arrive { animation: m-arrive var(--t-card-arrive) var(--ease-spring) backwards; }
 /* M1 A: the card keeps the drag place, turns 18° and fades out in the throw direction in 300 ms. */
-.pcard.out-r { animation: m-fly-r var(--t-card-throw) var(--ease-out) forwards; }
-.pcard.out-l { animation: m-fly-l var(--t-card-throw) var(--ease-out) forwards; }
+.pcard.out-r { --sr: 1; animation: m-fly-r var(--t-card-throw) var(--ease-out) forwards; }
+.pcard.out-l { --sl: 1; animation: m-fly-l var(--t-card-throw) var(--ease-out) forwards; }
 @keyframes m-fly-r { to { transform: translate(var(--fx, 120%), var(--fy, 30px)) rotate(18deg); opacity: 0; } }
 @keyframes m-fly-l { to { transform: translate(var(--fx, -120%), var(--fy, 30px)) rotate(-18deg); opacity: 0; } }
 /* M2 A: skip drops the card 180 ms and tucks it under the pile; it then rises into the last slot. */

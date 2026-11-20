@@ -18,5 +18,14 @@ public static class MotionSteps
 
     public static readonly MotionStep Leave = new("leave", "is-leaving");
 
-    public static IReadOnlyList<MotionStep> All { get; } = [Grow, Fold, BadgeIn, BadgeOut, Spin, PeekOut, TabIn, Leave];
+    public static readonly MotionStep DeckThrow = new("deck-throw", "out-r");
+
+    public static readonly MotionStep DeckTuck = new("deck-tuck", "tuck");
+
+    public static readonly MotionStep DeckBackIn = new("deck-back-in", "back-in");
+
+    public static readonly MotionStep DeckArrive = new("deck-arrive", "arrive");
+
+    public static IReadOnlyList<MotionStep> All { get; } =
+        [Grow, Fold, BadgeIn, BadgeOut, Spin, PeekOut, TabIn, Leave, DeckThrow, DeckTuck, DeckBackIn, DeckArrive];
 }

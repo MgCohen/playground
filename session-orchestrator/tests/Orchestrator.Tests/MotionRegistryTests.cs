@@ -48,6 +48,14 @@ public sealed class MotionRegistryTests
         });
     }
 
+    /// <summary>S8: the deck script follows the pointer only; each motion wait is orchMotion.wait, not a timer.</summary>
+    [Test]
+    public void No_motion_timer_in_scripts()
+    {
+        var swipe = File.ReadAllText(Path.Combine(Src, "Orchestrator.Web", "wwwroot", "swipe.js"));
+        Assert.That(Regex.Matches(swipe, "setTimeout").Count, Is.Zero, "swipe.js waits with orchMotion.wait");
+    }
+
     [Test]
     public void No_direct_js_calls()
     {

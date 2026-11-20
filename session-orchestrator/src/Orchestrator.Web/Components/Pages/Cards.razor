@@ -18,7 +18,7 @@
         <div class="pile">
             @foreach (var (c, i) in visible.Take(3).Select((c, i) => (c, i)))
             {
-                <article class="crd pcard @(i > 0 ? "behind" : Arrives(c) ? "arrive" : "")" style="--i:@i" data-deck-card="@(i == 0)" aria-hidden="@(i > 0 ? "true" : null)" @key="c.Id">
+                <article class="crd pcard @(i > 0 ? "behind" : motion ?? (Arrives(c) ? "arrive" : ""))" style="--i:@i" data-deck-card="@(i == 0)" data-motion="deck-throw deck-tuck deck-back-in deck-arrive" aria-hidden="@(i > 0 ? "true" : null)" @key="c.Id">
                     @if (i == 0)
                     {
                         @* V17: no native link drag, or the drag of the browser cancels the swipe. *@
@@ -160,8 +160,22 @@
         }).ToList();
     }
 
-    void Do(CardView card, CardAction action)
+    // M1, M2 (S8): the motion class of the top card (out-r, out-l or tuck). C# starts the motion, waits for its end through the
+    // motion pipeline, then does the act. A second act during the motion does nothing.
+    string? motion;
+
+    async Task Move(string css, MotionStep step)
     {
+        motion = css;
+        StateHasChanged();
+        await Commands.SendAsync(new MotionWait(step.Target, WaitMode.Step), default);
+        motion = null;
+    }
+
+    async Task Do(CardView card, CardAction action)
+    {
+        if (motion is not null) return;
+        if (Throws(action) is not null) await Move(action == card.Right ? "out-r" : "out-l", MotionSteps.DeckThrow);
         switch (action.Do)
         {
             case CardDo.Type: sheet = (card, false); break;
@@ -240,8 +254,10 @@
     List<string>? skipUndo;
 
     /// <summary>Skip moves the card to the end of the pile. A card that arrives later goes after it.</summary>
-    void Skip(CardView card)
+    async Task Skip(CardView card)
     {
+        if (motion is not null) return;
+        await Move("tuck", MotionSteps.DeckTuck);
         Flush();
         skipUndo = [.. order];
         order.Remove(card.Id);
