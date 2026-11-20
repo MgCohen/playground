@@ -7,7 +7,7 @@ using Orchestrator.Web;
 namespace Orchestrator.Tray;
 
 /// <summary>
-/// The start of the tray app. Usage: Orchestrator.Tray.exe [--instance &lt;name&gt;] [--hidden] [--pin] [--selftest &lt;folder&gt; [--mouse | --demo]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
+/// The start of the tray app. Usage: Orchestrator.Tray.exe [--instance &lt;name&gt;] [--hidden] [--pin] [--selftest &lt;folder&gt; [--mouse | --demo | --scenario &lt;name&gt;] [--reduced]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
 /// Mock mode (the default): the window shows mock data from a temporary store.
 /// Live mode: the window shows a real store. With no store after --live, the tray uses the default store root (<see cref="Home.StoreRoot"/>). The supervisor process of that store (on the port) does the ticks; the tray only reads and posts.
 /// If no supervisor answers on the port, the tray starts one in its own process, unless --no-supervisor.
@@ -80,6 +80,8 @@ public static partial class Program
             {
                 try
                 {
+                    // --reduced: both pages get prefers-reduced-motion: reduce before the first step.
+                    if (args.Contains("--reduced")) await Task.WhenAll(SelfTest.Reduced(tray.Window), SelfTest.Reduced(tray.Badge));
                     code = args.Contains("--scenario") ? await SelfTest.Scenario(tray, selfTest, Value(args, "--scenario"))
                         : args.Contains("--stress") ? await SelfTest.Stress(tray, selfTest, Value(args, "--css"), args.Contains("--opens"), args.Contains("--sheets"))
                         : args.Contains("--demo") ? await SelfTest.Demo(tray, selfTest) : await SelfTest.Run(tray, selfTest, args.Contains("--mouse"));
