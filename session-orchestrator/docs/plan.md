@@ -2049,7 +2049,7 @@ Task P plans the advanced features of the UI. It makes drafts only, no app code.
 |---|---|---|
 | `docs/review-pages-spec.html` | https://claude.ai/artifact/Kn888Us7Y4A7MnPTiQNmUj | Advanced Features: the list of features F1 to F14, the spec of F1 to F4, the backlog, the user workflows, the data gaps, the open questions |
 | `docs/workflows-sketches.html` | Advanced Features, tab F2, sub-tab Sketches (a supporting file of the same artifact) | Sketches of F2 Workflows: Workflows, Workflow definition, Step definition, Runs, Run, Step run, Run row, Wait card. 2 or 3 variants each |
-| `docs/workflow-graphs.html` | Advanced Features, tab F2, sub-tab Graph shapes | Five sample workflows (line to open graph), each in four graph shapes: vertical boxes, horizontal boxes, stage columns, node graph |
+| `docs/workflow-graphs.html` | Advanced Features, tab F2, sub-tab Graph shapes | Five sample workflows (line to open graph), each in four graph shapes: boxes and nodes, in a line and in a free layout |
 
 The decisions are in `docs/decisions.md` (rows "P").
 
