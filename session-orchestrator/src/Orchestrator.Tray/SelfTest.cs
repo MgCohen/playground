@@ -249,6 +249,9 @@ public static partial class SelfTest
         // S8: a throw from the act button: C# starts the throw, waits for it (step deck-throw), then the next card is on top.
         await Js(w, $"{Go}('cards')");
         await Task.Delay(700);
+        // One skip first, so the tuck (step deck-tuck) runs in each self-test.
+        await Js(w, "document.querySelector('.acts [data-act=\"skip\"]')?.click()");
+        await Task.Delay(700);
         for (var i = 0; i < 4 && await Js(w, "!!document.querySelector('.acts [data-throw]')") != "true"; i++)
         {
             await Js(w, "document.querySelector('.acts [data-act=\"skip\"]')?.click()");
@@ -320,8 +323,17 @@ public static partial class SelfTest
         var waits = trace.Where(l => l.Contains("js orchMotion.wait", StringComparison.Ordinal)).ToList();
         var late = waits.Where(l => l.Contains("by limit", StringComparison.Ordinal) || l.Contains("by missing", StringComparison.Ordinal) || l.Contains(" error js.failed", StringComparison.Ordinal)).ToList();
         // S4: each step of the tray flow runs through the registry (its data-motion target) and ends by the end of its motion.
-        string[] tracedSteps = ["grow", "fold", "badge-in", "badge-out", "spin", "peek-out"];
-        var untraced = tracedSteps.Where(s => !waits.Any(l => l.Contains($"~=\"{s}\"]", StringComparison.Ordinal) && l.Contains("by end", StringComparison.Ordinal))).ToList();
+        // Each step of the registry, except the steps in the list below, each with its reason. A new step is checked at once.
+        var notTraced = new Dictionary<string, string>
+        {
+            ["leave"] = "the target is an element reference, so the trace shows \"element\"",
+            ["tab-in"] = "the target is an element reference, so the trace shows \"element\"",
+            ["deck-back-in"] = "the script waits for it after a drag; the self-test has no drag",
+            ["deck-arrive"] = "nothing waits for it",
+        };
+        var tracedSteps = Orchestrator.Web.Features.Motion.Domain.MotionSteps.All.Select(s => s.Name).Where(n => !notTraced.ContainsKey(n)).ToList();
+        var stale = notTraced.Keys.Where(n => Orchestrator.Web.Features.Motion.Domain.MotionSteps.All.All(s => s.Name != n)).ToList();
+        var untraced = stale.Concat(tracedSteps.Where(s => !waits.Any(l => l.Contains($"~=\"{s}\"]", StringComparison.Ordinal) && l.Contains("by end", StringComparison.Ordinal)))).ToList();
         Add("steps-traced", untraced.Count == 0, untraced.Count == 0 ? $"each step ends by end: {string.Join(", ", tracedSteps)}" : $"no wait by end for: {string.Join(", ", untraced)}");
         // S9: each window step of the run is in the trace, with its window event and its window gap.
         string[] windowSteps = ["panel-show", "panel-activate", "badge-show", "all-hide"];
