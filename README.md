@@ -5,4 +5,5 @@ A place for small tools, spikes and experiments, most of them made with AI agent
 | Folder | Content |
 |---|---|
 | [pattern-engine/](pattern-engine/) | A generic engine for patterns, composition and evaluation. C# engine in progress; Node spike in `spike/` |
+| [doc-kit/](doc-kit/) | One simple look for document blocks (tree, columns, graph, stack, folds). Notion export and artifact render. Spike done |
 | [session-orchestrator/](session-orchestrator/) | A local supervisor for many Claude Code sessions: one writer for each session, free-text decisions, stacked default PRs |

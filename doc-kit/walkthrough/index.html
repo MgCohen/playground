@@ -1,0 +1,400 @@
+<title>Doc Kit Walkthrough</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="kit.css">
+<style>
+body { background: var(--dk-bg); color: var(--dk-fg); font-family: var(--dk-sans); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 28px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+h1 { margin: 0; font-size: 28px; font-weight: 600; text-wrap: balance; }
+h2 { margin: 0; font-size: 19px; font-weight: 600; text-wrap: balance; padding-bottom: 6px; border-bottom: 1px solid var(--dk-line); }
+h3 { margin: 0; font-size: 15.5px; font-weight: 600; }
+.lead { margin: 0; max-width: 70ch; color: var(--dk-muted); }
+.eyebrow { font: 500 11.5px var(--dk-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dk-accent); }
+/* tabs */
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--dk-bg); display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--dk-line); padding-top: 6px; }
+.tabs::-webkit-scrollbar { display: none; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--dk-bg); }
+.tabs a { flex: none; padding: 7px 12px 9px; font-size: 14px; font-weight: 500; color: var(--dk-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.tabs a:hover { color: var(--dk-fg); }
+.tabs a[aria-selected="true"] { color: var(--dk-accent); border-bottom-color: var(--dk-accent); }
+.tabs a .n { font: 500 11px var(--dk-mono); color: var(--dk-faint); margin-right: 5px; }
+.panel { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.panel > section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+/* cards and links */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.card { background: var(--dk-surface); border: 1px solid var(--dk-line); border-radius: var(--dk-radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.card .top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.card b { font-weight: 600; }
+.card p { margin: 0; color: var(--dk-muted); font-size: 13.5px; }
+.card a { color: var(--dk-accent); font-size: 13.5px; font-weight: 500; text-decoration: none; overflow-wrap: anywhere; }
+.card a:hover { text-decoration: underline; }
+/* screenshots */
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px; }
+.shots.wide { grid-template-columns: 1fr; }
+.shots.phone { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+figure.shot { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+figure.shot button { all: unset; cursor: zoom-in; display: block; border: 1px solid var(--dk-line); border-radius: var(--dk-radius); overflow: hidden; background: var(--dk-surface); }
+figure.shot button:focus-visible { outline: 2px solid var(--dk-accent); outline-offset: 2px; }
+figure.shot img { display: block; width: 100%; height: auto; }
+.shots:not(.phone):not(.wide) figure.shot img { max-height: 420px; object-fit: cover; object-position: top; }
+figure.shot figcaption { font-size: 12.5px; color: var(--dk-muted); }
+figure.shot figcaption b { color: var(--dk-fg); font-weight: 500; }
+.lightbox { position: fixed; inset: 0; z-index: 20; background: rgb(10 12 16 / .86); display: flex; flex-direction: column; align-items: center; overflow: auto; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); cursor: zoom-out; }
+.lightbox img { max-width: min(100%, 1100px); height: auto; border-radius: 4px; box-shadow: 0 10px 40px rgb(0 0 0 / .4); }
+.lightbox p { color: #e5e8ee; font-size: 13px; margin: 0 0 10px; }
+/* steps */
+ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: flex; flex-direction: column; gap: 8px; }
+ol.steps > li { counter-increment: s; display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; min-width: 0; }
+ol.steps > li::before { content: counter(s); display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--dk-accent-soft); color: var(--dk-accent); font: 600 12px var(--dk-mono); }
+ol.steps > li > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 1px; }
+.pending { padding: 14px; border: 1px dashed var(--dk-line); border-radius: var(--dk-radius); color: var(--dk-muted); font-size: 13.5px; background: var(--dk-surface); }
+.verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+.verdict div { background: var(--dk-surface); border: 1px solid var(--dk-line); border-left: 3px solid var(--dk-good); border-radius: var(--dk-radius); padding: 8px 12px; display: flex; flex-direction: column; }
+.verdict div.warn { border-left-color: var(--dk-warn); }
+.verdict b { font: 500 11px var(--dk-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--dk-muted); }
+.verdict span { font-weight: 600; }
+@media (max-width: 560px) { h1 { font-size: 23px; } .shots { grid-template-columns: 1fr; } .shots.phone { grid-template-columns: 1fr 1fr; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Spike · doc kit · 2026-11-16</span>
+    <h1>Doc Kit Walkthrough</h1>
+    <p class="lead">One set of blocks, three ways to make a document: write it in Notion, let Claude write it as an artifact, or write it in Notion and render it with the kit. This page shows each way, the screenshots, the live outputs and the findings.</p>
+  </header>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <main id="panels"></main>
+</div>
+
+<script src="kit.js"></script>
+<script>
+(function () {
+  var LINKS = {
+    gallery: "https://claude.ai/artifact/JhMVKhiiGxUQrNJf6cnv6p",
+    notionRender: "https://claude.ai/artifact/Lxk8FpcaMxv9F2tDdENwWR",
+    spike: "https://claude.ai/artifact/BjCJtS6BRBPYweXE5GFuMK",
+    template: "https://app.notion.com/p/41a91e245786819da063dd4956191390",
+    sample: "https://app.notion.com/p/41a91e2457868137ba84f5f5e871a703"
+  };
+  // Screenshots of the Notion pages. Empty until the browser can open Notion.
+  var NOTION_SHOTS = [];
+
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function md(s) { return "<span>" + DocKit.block({ type: "p", text: s }).replace(/^<p[^>]*>|<\/p>$/g, "") + "</span>"; }
+  function shot(f, cap, title) { return '<figure class="shot"><button type="button" data-full="shots/' + f + '" aria-label="Open ' + esc(title || cap) + '"><img src="shots/' + f + '" alt="' + esc((title ? title + ": " : "") + cap) + '"></button><figcaption>' + (title ? "<b>" + esc(title) + "</b> · " : "") + md(cap) + "</figcaption></figure>"; }
+  function shots(list, cls) { return '<div class="shots ' + (cls || "") + '">' + list.map(function (s) { return shot(s[0], s[1], s[2]); }).join("") + "</div>"; }
+  function fold(title, summary, body, open) { return '<details class="dk-fold"' + (open ? " open" : "") + '><summary><span class="dk-ft">' + esc(title) + '</span><span class="dk-fs">' + md(summary) + '</span></summary><div class="dk-fold-body">' + body + "</div></details>"; }
+  function folds(items) { return '<div class="dk-folds">' + items.join("") + "</div>"; }
+  function b(x) { return '<div class="dk">' + (Array.isArray(x) ? x : [x]).map(DocKit.block).join("") + "</div>"; }
+  function code(c, cap, lang) { return b({ type: "code", code: c, cap: cap, lang: lang }); }
+  function steps(list) { return '<ol class="steps">' + list.map(function (s) { return "<li><div>" + s + "</div></li>"; }).join("") + "</ol>"; }
+  function tag(t, tone) { return '<span class="dk-tag dk-t-' + (tone || "none") + '">' + esc(t) + "</span>"; }
+  function card(title, tags, text, link, linkText) { return '<div class="card"><div class="top"><b>' + esc(title) + "</b>" + tags + "</div><p>" + md(text) + "</p>" + (link ? '<a href="' + link + '" target="_blank" rel="noopener">' + esc(linkText) + " ↗</a>" : "") + "</div>"; }
+  function kit(type, data) { return { kit: type, data: data }; }
+
+  // ---------- shared data ----------
+  var flowGraph = {
+    rows: [3, 3, 3],
+    nodes: [
+      { id: "tpl", label: "Notion template", sub: "duplicate per doc", kind: "outside", row: 0, col: 0 },
+      { id: "claude", label: "Claude", sub: "writes JSON", kind: "outside", row: 0, col: 2 },
+      { id: "page", label: "Notion page", sub: "native blocks", kind: "outside", row: 1, col: 0 },
+      { id: "exp", label: "notion2doc", sub: "REST API → JSON", kind: "key", row: 1, col: 1 },
+      { id: "json", label: "doc.json", sub: "the contract", kind: "data", row: 1, col: 2 },
+      { id: "view", label: "Read in Notion", sub: "way 1: Notion", kind: "plain", row: 2, col: 0 },
+      { id: "html", label: "doc.html + kit", sub: "one renderer", kind: "key", row: 2, col: 1 },
+      { id: "art", label: "Artifact", sub: "ways 2 and 3", kind: "plain", row: 2, col: 2 }
+    ],
+    edges: [
+      { from: "tpl", to: "page", label: "duplicate" },
+      { from: "page", to: "view" },
+      { from: "page", to: "exp", label: "export" },
+      { from: "exp", to: "json", label: "write" },
+      { from: "claude", to: "json", label: "write" },
+      { from: "json", to: "html", dashed: true, label: "fetch" },
+      { from: "html", to: "art", label: "publish" }
+    ],
+    legend: [{ kind: "key", text: "spike code" }, { kind: "data", text: "contract" }, { kind: "outside", text: "where content starts" }]
+  };
+
+  var parts = {
+    groups: [
+      { id: "n", title: "Notion side", desc: "People write here. No custom blocks on the Free plan.", items: [
+        { name: "Template page", meta: "Lab", desc: "One example of each block, with the rules inline" },
+        { name: "Conventions", meta: "CONVENTIONS.md", desc: "Native block → kit block" },
+        { name: "Text formats", meta: "dk:tree · dk:stack", desc: "Code blocks that hold a tree or a call stack" },
+        { name: "Mermaid", meta: "flowchart TD", desc: "Notion draws it; the exporter makes a kit graph" } ] },
+      { id: "e", title: "Exporter", desc: "One Node script, no packages.", items: [
+        { name: "notion2doc.mjs", meta: "~250 lines", desc: "Reads all child blocks, writes doc.json" },
+        { name: "Token", meta: "1Password", desc: "NOTION_TOKEN through with-secrets.sh" } ] },
+      { id: "c", title: "Contract", desc: "The only thing both sides share.", items: [
+        { name: "doc.json", meta: "JSON", desc: "Title, summary, source, sections of blocks" },
+        { name: "Block types", meta: "5 kit + 9 text", desc: "tree, columns, graph, stack, folds; p, h, list, table…" } ] },
+      { id: "r", title: "Renderer", desc: "Static files. No build step.", items: [
+        { name: "doc.html", meta: "template", desc: "Fetches doc.json, draws header and sections" },
+        { name: "kit.js · kit.css", meta: "~30 KB", desc: "The blocks, light and dark, fit to width" },
+        { name: "build.mjs", meta: "copy", desc: "Puts template, kit and doc.json in one folder" } ] }
+    ]
+  };
+
+  var exportStack = { groups: [{ title: "", stacks: [{ root: [
+    { call: "Person duplicates the template", note: "Notion", children: [
+      { call: "writes text, toggles, code blocks, columns", note: "native blocks only" } ] },
+    { call: "notion2doc <page>", key: true, note: "Claude runs it", children: [
+      { call: "read page + all child blocks", note: "REST API, 2022-06-28" },
+      { call: "heading 2 → new section" },
+      { call: "convert each block", key: true, children: [
+        { call: "text, lists, table, callout → same type" },
+        { call: "code dk:tree / dk:stack → tree / stack" },
+        { call: "code mermaid → graph", note: "rows from arrows" },
+        { call: "columns → columns block" },
+        { call: "toggle → fold; toggle in toggle → child" } ] },
+      { call: "write doc.json" } ] },
+    { call: "build.mjs doc.json out/x", key: true, children: [
+      { call: "copy doc.html, kit.js, kit.css, doc.json" } ] },
+    { call: "Artifact publish out/x", note: "Claude, with the files" }
+  ], foot: "The person never touches JSON. Claude never touches the Notion page." }] }] };
+
+  var treeFiles = {
+    tags: { later: "warn" },
+    rows: [
+      { path: "doc-kit", desc: "Spike folder, not a git repo yet" },
+      { path: "doc-kit/kit.css", desc: "Look of all blocks", kind: "kit" },
+      { path: "doc-kit/kit.js", desc: "DocKit.render · block · fit", kind: "kit" },
+      { path: "doc-kit/doc.html", desc: "Doc template", kind: "template" },
+      { path: "doc-kit/index.html", desc: "Gallery of the six blocks" },
+      { path: "doc-kit/CONVENTIONS.md", desc: "Notion → kit rules" },
+      { path: "doc-kit/data", desc: "Reference data of each block" },
+      { path: "doc-kit/examples", desc: "doc.json files" },
+      { path: "doc-kit/examples/notion-sample.json", desc: "Export of the Notion sample", kind: "way 3" },
+      { path: "doc-kit/examples/spike-report.json", desc: "Written by Claude", kind: "way 2" },
+      { path: "doc-kit/tools/notion2doc.mjs", desc: "Exporter" },
+      { path: "doc-kit/tools/build.mjs", desc: "Builder" },
+      { path: "doc-kit/tools/doc2notion.mjs", desc: "JSON → Notion", when: "later" },
+      { path: "doc-kit/walkthrough", desc: "This page and the screenshots" },
+      { path: "doc-kit/out", desc: "Build output, ignored" }
+    ].map(function (r, i) { r.order = i; return r; })
+  };
+
+  // ---------- tabs ----------
+  var TABS = [
+    { id: "overview", label: "Overview", build: overview },
+    { id: "architecture", label: "Architecture", build: architecture },
+    { id: "notion", label: "1 · Notion", build: notion },
+    { id: "artifact", label: "2 · Artifact", build: artifact },
+    { id: "mixed", label: "3 · Mixed", build: mixed },
+    { id: "phone", label: "Phone", build: phone },
+    { id: "findings", label: "Findings", build: findings }
+  ];
+
+  function overview() { return [
+    "<section><h2>Result</h2>" + b({ type: "p", text: "All three ways work end to end. The Notion export and the artifact draw with the same kit and look the same. The open questions are about cost and comfort, not about whether it works." }) +
+    '<div class="verdict"><div><b>Notion → render</b><span>Works</span></div><div><b>Artifact template</b><span>Works</span></div><div><b>Same look, both sources</b><span>Yes</span></div><div><b>Phone width</b><span>Fits (after a fix)</span></div><div class="warn"><b>Way back to Notion</b><span>Not built</span></div><div class="warn"><b>Errors in text formats</b><span>Silent</span></div></div></section>',
+    "<section><h2>Three ways</h2>" + '<div class="cards">' +
+      card("1 · Notion", tag("person writes", "info"), "Write in Notion from the template. Read it in Notion. No kit, no export.", LINKS.template, "Template page") +
+      card("2 · Artifact", tag("Claude writes", "accent"), "Claude writes `doc.json` directly. The kit draws it as an artifact. No Notion.", LINKS.spike, "Traffic light controller (artifact)") +
+      card("3 · Mixed", tag("person writes", "info") + tag("Claude renders", "accent"), "Write in Notion, export with the API, draw with the kit, publish as an artifact.", LINKS.notionRender, "4-bit ripple-carry adder (artifact)") +
+    "</div></section>",
+    "<section><h2>Flow</h2>", kit("graph", flowGraph), "</section>",
+    "<section><h2>Live outputs</h2>" + b({ type: "p", text: "Open these to see the final shape. Each one is a real output of the spike." }) + '<div class="cards">' +
+      card("Gallery", tag("reference"), "The six reference blocks with the real content from old artifacts.", LINKS.gallery, "Open the gallery") +
+      card("Notion sample, rendered", tag("way 3", "good"), "The Notion sample page after export and render. 7 sections, all six blocks.", LINKS.notionRender, "Open the render") +
+      card("Spike report", tag("way 2", "good"), "`doc.json` written by Claude, same template.", LINKS.spike, "Open the report") +
+      card("Notion template", tag("way 1", "good"), "Duplicate it to start a doc. Needs a Notion sign-in.", LINKS.template, "Open in Notion") +
+      card("Notion sample", tag("way 1", "good"), "The source of the rendered sample.", LINKS.sample, "Open in Notion") +
+    "</div></section>",
+    "<section><h2>The six reference blocks</h2>" + b({ type: "p", text: "Step 1 of the spike: six blocks from old artifacts, with their real content. The kit draws each one from JSON." }) + shots([
+      ["g-top.png", "Gallery header and the folder tree.", "Folder tree"],
+      ["g-stacks.png", "Two call stacks; code shrinks to fit.", "Call stacks"],
+      ["g-composed.png", "Folds inside folds.", "Composed folds"]
+    ]) + "</section>"
+  ]; }
+
+  function architecture() { return [
+    "<section><h2>Layers</h2>" + b({ type: "p", text: "Three layers. Each source writes the contract. Only the renderer reads it. A new source needs only a new writer." }) + "</section>",
+    kit("graph", { rows: [2, 1, 1, 2], nodes: [
+      { id: "n", label: "Notion page", sub: "person", kind: "outside", row: 0, col: 0 },
+      { id: "c", label: "Claude", sub: "agent", kind: "outside", row: 0, col: 1 },
+      { id: "j", label: "doc.json", sub: "contract", kind: "data", row: 1, col: 0 },
+      { id: "k", label: "doc.html + kit", sub: "renderer", kind: "key", row: 2, col: 0 },
+      { id: "a", label: "Artifact", sub: "claude.ai", kind: "plain", row: 3, col: 0 },
+      { id: "l", label: "Local preview", sub: "http.server", kind: "plain", row: 3, col: 1 } ],
+      edges: [ { from: "n", to: "j", label: "notion2doc" }, { from: "c", to: "j", label: "writes" }, { from: "j", to: "k", dashed: true, label: "fetch" }, { from: "k", to: "a" }, { from: "k", to: "l" } ],
+      legend: [{ kind: "outside", text: "source" }, { kind: "data", text: "contract" }, { kind: "key", text: "renderer" }] }),
+    "<section><h2>Parts</h2>", kit("columns", parts), "</section>",
+    "<section><h2>The contract</h2>" + b({ type: "p", text: "A document is a title, a summary and sections. A section is a list of blocks. Kit blocks carry `data`; text blocks carry their own fields." }) +
+      code('{\n  "title": "4-bit ripple-carry adder",\n  "summary": "A 4-bit ripple-carry adder adds two 4-bit numbers…",\n  "source": { "kind": "notion", "url": "https://…", "edited": "2026-11-16T18:15" },\n  "sections": [\n    { "title": "Files", "blocks": [\n      { "type": "p", "text": "Text with `code` and **bold**." },\n      { "type": "tree", "data": { "rows": [ { "path": "adder4/rtl", "desc": "The circuit, in Verilog", "kind": "source" } ] } }\n    ] }\n  ]\n}', "doc.json (short)", "json") +
+      b({ type: "table", head: ["Kind", "Types"], rows: [["Kit blocks", "`tree` `columns` `graph` `stack` `folds`"], ["Text blocks", "`p` `h` `list` `table` `callout` `code` `kv` `facts` `cols`"], ["Inline", "`` `code` `` and `**bold**` only"]] }) + "</section>",
+    "<section><h2>Files</h2>", kit("tree", treeFiles), "</section>"
+  ]; }
+
+  function notion() {
+    var pics = NOTION_SHOTS.length ? shots(NOTION_SHOTS) : '<div class="pending">The Notion screenshots are not here yet: the browser that takes them is not signed in to Notion. Open the <a href="' + LINKS.template + '" target="_blank" rel="noopener">template</a> or the <a href="' + LINKS.sample + '" target="_blank" rel="noopener">sample</a> to see the page.</div>';
+    return [
+    "<section><h2>What it is</h2>" + b({ type: "p", text: "The person writes in Notion with native blocks only. The template shows one example of each block and its rule. The page stays a normal Notion page: you can read, comment and link it." }) + "</section>",
+    "<section><h2>Screenshots</h2>" + pics + "</section>",
+    "<section><h2>How to make a sample</h2>" + steps([
+      md("Open the template in Notion: Lab → **Doc kit · Template**."),
+      md("Duplicate it. Give the copy a title."),
+      md("Write the summary as the first paragraph, before the first heading 2."),
+      md("Start each section with a heading 2."),
+      md("Use the blocks in the table below for each kit block."),
+      md("Share the page with the Notion integration, so the exporter can read it.")
+    ]) + "</section>",
+    "<section><h2>Notion block → kit block</h2>" +
+      b({ type: "table", head: ["Kit block", "Write in Notion", "Notion shows"], rows: [
+        ["Folder tree", "Code block, plain text, first line `dk:tree`", "Monospace text"],
+        ["Call stack", "Code block, plain text, first line `dk:stack`", "Monospace text"],
+        ["Topology graph", "Code block, language Mermaid, `flowchart TD`", "A real diagram"],
+        ["Topology in columns", "Columns block: bold title, text, bullets", "Columns"],
+        ["Folds", "Toggle `Title — summary`", "Toggles"],
+        ["Composed folds", "Toggle in a toggle", "Nested toggles"]] }) + "</section>",
+    "<section><h2>Text formats</h2>" + folds([
+      fold("dk:tree", "indent = depth, two spaces before the description", code("dk:tree\narchitecture/        The definition API  [library]\n  Architecture.cs    The base class of each architecture\npacks/               The real architectures  [group folder]\n  Mvvm/              A second pack  [pack] !later", "code block in Notion")),
+      fold("dk:stack", "`*` = key call, `//` = note, `>` = foot note", code("dk:stack\n*TickService.ExecuteAsync      // every 3 s\n  *Supervisor.Tick             // one lock, one pass\n    StopRunningTurns           // control.json stopped → cancel\n> no turn starts here: the next tick starts it", "code block in Notion")),
+      fold("Mermaid", "Notion draws it, the exporter reads it", code('flowchart TD\n  shell["Shell<br/>Program.cs"] -->|Run| app["App<br/>lifetime"]\n  app -->|selects| arch["Architecture"]\n  arch -.-> def["Definition<br/>rules"]\n  class app,arch key\n  class def data', "code block in Notion, language Mermaid")),
+      fold("Columns", "one column = one group", b({ type: "list", items: ["Bold first line: the group title", "Next paragraph: the group text", "Each bullet: `**Name** `meta` — description`"] }))
+    ]) + "</section>",
+    "<section><h2>What you get, what you lose</h2>" + b({ type: "cols", items: [
+      { title: "Get", tone: "good", items: ["Normal Notion editing and comments", "Live databases and links stay in Notion", "Mermaid draws as a diagram"] },
+      { title: "Lose", tone: "bad", items: ["Tree and stack are plain monospace text", "No kit look, no Open all, no fit to width", "No check of the text formats"] }] }) + "</section>"
+  ]; }
+
+  function artifact() { return [
+    "<section><h2>What it is</h2>" + b({ type: "p", text: "Claude writes `doc.json` directly, with no Notion page. The same template draws it. Use it for reports that Claude makes from code, sessions or research." }) + b({ type: "callout", icon: "→", text: "The sample subject: a **traffic light controller**, a finite state machine with four states. Claude wrote all of it as JSON." }) + "</section>",
+    "<section><h2>Screenshots</h2>" + shots([
+      ["s-flow.png", "Header, section list and the state graph.", "Top"],
+      ["s-sides.png", "Topology in columns: inputs, registers, logic, lamps.", "Columns"],
+      ["s-files.png", "Folder tree of the Verilog project.", "Tree"],
+      ["s-stack.png", "One clock tick, as a call stack.", "Stack"],
+      ["s-limits.png", "State table, code and folds.", "Table and folds"]
+    ]) + "</section>",
+    "<section><h2>How to make a sample</h2>" + steps([
+      md("Ask Claude for a doc kit document about a subject."),
+      md("Claude writes `examples/<name>.json` with the contract."),
+      md("Claude builds it:") + code("node tools/build.mjs examples/<name>.json out/<name>", "", "sh"),
+      md("Claude publishes `out/<name>/index.html` with `kit.js`, `kit.css` and `doc.json` as files."),
+      md("To change it, ask Claude. Claude edits the JSON, builds again and publishes to the same link.")
+    ]) + "</section>",
+    "<section><h2>Live output</h2>" + '<div class="cards">' + card("Traffic light controller", tag("way 2", "good"), "6 sections: graph, columns, tree, stack, table, folds.", LINKS.spike, "Open the artifact") + "</div></section>",
+    "<section><h2>Notes</h2>" + b({ type: "list", items: ["Fastest way: one JSON file, no API, no token.", "Claude must know the block shapes. The gallery has a **Data shape** fold under each block.", "A person cannot edit it in place. Edits go through Claude."] }) + "</section>"
+  ]; }
+
+  function mixed() { return [
+    "<section><h2>What it is</h2>" + b({ type: "p", text: "The hybrid: the person writes in Notion, Claude exports the page and draws it with the kit. Notion keeps the source. The artifact gives the kit look." }) + b({ type: "callout", icon: "→", text: "The sample subject: a **4-bit ripple-carry adder**. The source is a Notion page. The screenshots show its export." }) + "</section>",
+    "<section><h2>Flow</h2>", kit("stack", exportStack), "</section>",
+    "<section><h2>Screenshots</h2>" + b({ type: "p", muted: true, text: "The adder page after export, drawn by the kit. Click a screenshot to open it full size." }) + shots([
+      ["n-text.png", "Header, section list, then text, list, table, callout, numbered list and code.", "Text blocks"],
+      ["n-tree.png", "From a `dk:tree` code block. Open all, Close all, Hide later.", "Folder tree"],
+      ["n-stack.png", "From two `dk:stack` code blocks: 7 + 1, and one full adder.", "Call stack"],
+      ["n-graph.png", "From a Mermaid block. Rows come from the arrows, so FA3 moves to the side.", "Topology graph"],
+      ["n-columns.png", "From a Notion columns block: one full adder.", "Topology in columns"],
+      ["n-folds.png", "From toggles. A toggle in a toggle is a child fold.", "Folds"]
+    ]) + "</section>",
+    "<section><h2>How to make a sample</h2>" + steps([
+      md("Make the Notion page as in tab **1 · Notion**."),
+      md("Send Claude the page link."),
+      md("Claude exports it. The token comes from 1Password:") + code("with-secrets.sh node tools/notion2doc.mjs <page id> examples/<name>.json\n# wrote examples/notion-sample.json: \"4-bit ripple-carry adder\", 7 sections, 12 blocks", "", "sh"),
+      md("Claude builds and publishes as in tab **2 · Artifact**."),
+      md("To see a change, edit the Notion page, then ask Claude to export again. The link stays the same.")
+    ]) + "</section>",
+    "<section><h2>Local preview</h2>" + b({ type: "p", text: "Without a publish: build with `--doctype`, start the `doc-kit` server and open the folder." }) +
+      code("node tools/build.mjs examples/<name>.json out/<name>-local --doctype\npython -m http.server 5311 --directory doc-kit\n# open http://127.0.0.1:5311/out/<name>-local/", "", "sh") + "</section>",
+    "<section><h2>Live output</h2>" + '<div class="cards">' + card("4-bit ripple-carry adder, rendered", tag("way 3", "good"), "Source: the Notion page.", LINKS.notionRender, "Open the artifact") + card("4-bit ripple-carry adder, source", tag("Notion"), "The page that the exporter read.", LINKS.sample, "Open in Notion") + "</div></section>"
+  ]; }
+
+  function phone() { return [
+    "<section><h2>390 px wide</h2>" + b({ type: "p", text: "Phone captures of both outputs at 390 px. Nothing scrolls the page sideways. Code and call stacks shrink until they fit, to a minimum of 7 px. The graph scales as one picture." }) +
+      b({ type: "callout", icon: "!", text: "The first phone capture showed the graph at a fixed 520 px minimum, with a scroll bar inside the box. This pass removed the minimum. Now the graph scales down with the page." }) + "</section>",
+    "<section><h3>Adder (hybrid way)</h3>" + shots([["n-mob-1.png", "Header, text, table"], ["n-mob-2.png", "Code, tree, stacks"], ["n-mob-3.png", "Graph, columns"], ["n-mob-4.png", "Columns, folds"]], "phone") + "</section>",
+    "<section><h3>Traffic light controller (artifact way)</h3>" + shots([["s-mob-1.png", "Header, state graph, columns"], ["s-mob-2.png", "Columns, tree, stack"], ["s-mob-3.png", "Table, code, folds"]], "phone") + "</section>",
+    "<section><h2>Behavior at phone width</h2>" + b({ type: "table", head: ["Block", "Phone behavior"], rows: [
+      ["Code, call stack", "Font shrinks until the longest line fits"],
+      ["Topology graph", "Scales as one picture; labels get small"],
+      ["Folder tree", "Descriptions hide; names and tags stay"],
+      ["Columns", "One column under the other"],
+      ["Table", "Scrolls inside its box"],
+      ["Folds", "Body indent gets smaller"]] }) + "</section>"
+  ]; }
+
+  function findings() { return [
+    "<section><h2>Findings</h2>" + folds([
+      fold("One contract is enough", "both sources fit `doc.json` with no special cases", b([{ type: "p", text: "Five kit blocks and nine text blocks covered all content of the sample and the report. The renderer does not know the source. The source shows only in the header line." }]), true),
+      fold("Notion needs conventions, not custom blocks", "the Free plan has no custom blocks", b([{ type: "p", text: "The exporter reads meaning from native blocks: a first line `dk:tree`, a Mermaid language, a toggle in a toggle. This works, but nothing checks it. A wrong indent gives a wrong tree with no error." }])),
+      fold("Mermaid is the best bridge", "one source, two good views", b([{ type: "p", text: "Notion draws Mermaid as a diagram, and the exporter converts the same text to a kit graph. The person sees a picture in both places. The kit layout is simple: one dashed arrow put two nodes on one row." }])),
+      fold("Toggles map 1:1 to folds", "the most natural block", b([{ type: "p", text: "`Title — summary` in the toggle text gives the fold title and summary. Nested toggles give composed folds. No new rule for the person." }])),
+      fold("Columns lose detail", "no field for flags and size bars", b([{ type: "p", text: "The columns block in Notion has only text. The gallery version has flags and a size bar; the Notion version cannot express them." }])),
+      fold("The artifact way is the cheapest", "no token, no API, no page", b([{ type: "p", text: "Claude writes the JSON and publishes. For reports that Claude makes, this is the default. Notion adds value only when a person writes or edits the content." }])),
+      fold("Phone width works", "after one CSS fix", b([{ type: "p", text: "Code and stacks shrink to fit. The graph had a 520 px minimum and scrolled; this pass removed it. Local previews also need a viewport tag; `build --doctype` now adds it." }])),
+      fold("Publish is a Claude step", "the scripts do not publish", b([{ type: "p", text: "The Artifact tool publishes the folder. A person cannot run one command to publish. This is acceptable when Claude does the export anyway." }]))
+    ]) + "</section>",
+    "<section><h2>Compare the three ways</h2>" + b({ type: "table", head: ["", "1 · Notion", "2 · Artifact", "3 · Mixed"], rows: [
+      ["Who writes", "Person", "Claude", "Person"],
+      ["How to edit", "Notion editor", "Ask Claude", "Notion, then export again"],
+      ["Look", "Notion; tree and stack as plain text", "Kit", "Kit"],
+      ["Open all, fit to width", "No", "Yes", "Yes"],
+      ["Live databases", "Yes", "No", "Snapshot at export"],
+      ["Steps per change", "0", "build + publish", "export + build + publish"],
+      ["Best for", "Notes people keep editing", "Reports Claude makes", "Docs people write and share"]] }) + "</section>",
+    "<section><h2>Limits</h2>" + b({ type: "list", items: [
+      "One way only: Notion → doc. Edits on the artifact do not go back.",
+      "The text formats have no check. Typos fail with no error.",
+      "The graph layout is simple. Lines can cross.",
+      "Clicks on the published pages were not tested; local pages were.",
+      "Notion screenshots need a signed-in browser."] }) + "</section>",
+    "<section><h2>Open questions</h2>" + b({ type: "list", ordered: true, items: [
+      "Which way is the default for new documents: 2 or 3?",
+      "Is a `doc-kit` skill worth it, so each session knows the block shapes?",
+      "Is `doc2notion` worth it, so an artifact can become a Notion page?",
+      "Should the exporter report wrong `dk:` text, instead of silent output?",
+      "When the vsa-design look is ready, does it replace `kit.css` tokens only?"] }) + "</section>"
+  ]; }
+
+  // ---------- mount ----------
+  var nav = document.getElementById("tabs"), main = document.getElementById("panels"), built = {};
+  TABS.forEach(function (t, i) {
+    var a = document.createElement("a"); a.href = "#" + t.id; a.id = "tab-" + t.id; a.setAttribute("role", "tab");
+    a.innerHTML = esc(t.label); nav.appendChild(a);
+    var p = document.createElement("div"); p.className = "panel"; p.id = "p-" + t.id; p.setAttribute("role", "tabpanel"); p.hidden = true; main.appendChild(p);
+  });
+  function build(t) {
+    var p = document.getElementById("p-" + t.id), sec = null;
+    t.build().forEach(function (part) {
+      if (typeof part === "string") {
+        if (/^<section>/.test(part) && !/<\/section>$/.test(part)) { p.insertAdjacentHTML("beforeend", part + "</section>"); sec = p.lastElementChild; }
+        else if (part === "</section>") sec = null;
+        else p.insertAdjacentHTML("beforeend", part);
+      } else {
+        var el = document.createElement("div"); (sec || p).appendChild(el);
+        try { DocKit.render(el, part.kit, part.data); } catch (e) { el.textContent = part.kit + " did not draw: " + e.message; }
+      }
+    });
+    p.querySelectorAll(".dk").forEach(function (d) { DocKit.drawPending && DocKit.drawPending(d); });
+  }
+  function show() {
+    var id = (location.hash || "").slice(1), t = TABS.filter(function (x) { return x.id === id; })[0] || TABS[0];
+    TABS.forEach(function (x) {
+      var on = x === t; document.getElementById("p-" + x.id).hidden = !on;
+      document.getElementById("tab-" + x.id).setAttribute("aria-selected", on ? "true" : "false");
+    });
+    if (!built[t.id]) { build(t); built[t.id] = true; }
+    document.getElementById("tab-" + t.id).scrollIntoView({ block: "nearest", inline: "nearest" });
+    requestAnimationFrame(function () { DocKit.fit(); });
+  }
+  window.addEventListener("hashchange", function () { show(); window.scrollTo(0, 0); });
+  show();
+
+  // lightbox
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest && e.target.closest("[data-full]");
+    if (btn) {
+      var box = document.createElement("div"); box.className = "lightbox"; box.setAttribute("role", "dialog");
+      box.innerHTML = "<p>Click or press Escape to close</p><img src=\"" + btn.getAttribute("data-full") + "\" alt=\"\">";
+      box.addEventListener("click", function () { box.remove(); }); document.body.appendChild(box); return;
+    }
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { var l = document.querySelector(".lightbox"); if (l) l.remove(); } });
+})();
+</script>

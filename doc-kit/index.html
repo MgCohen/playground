@@ -1,0 +1,103 @@
+<meta charset="utf-8">
+<title>Doc Kit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="kit.css">
+<style>
+/* Layout: one reading column; for each block a heading, the block drawn from its JSON file, and its data shape */
+body { background: var(--dk-bg); color: var(--dk-fg); font-family: var(--dk-sans); font-size: 15px; line-height: 1.5; }
+.page { max-width: 1040px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 36px; }
+.page > header { display: flex; flex-direction: column; gap: 8px; }
+h1 { margin: 0; font-size: 26px; font-weight: 600; text-wrap: balance; }
+h2 { margin: 0; font-size: 19px; font-weight: 600; text-wrap: balance; }
+p { margin: 0; max-width: 72ch; }
+a { color: var(--dk-accent); }
+.eyebrow { font: 500 12px var(--dk-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--dk-muted); }
+.index { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.index a { display: inline-flex; gap: 6px; align-items: baseline; padding: 4px 10px; border: 1px solid var(--dk-line); border-radius: 6px; background: var(--dk-surface); color: var(--dk-fg); text-decoration: none; font-size: 14px; }
+.index b { font: 600 12px var(--dk-mono); color: var(--dk-accent); }
+.ref { display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 16px; min-width: 0; }
+.ref-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; border-bottom: 1px solid var(--dk-line); padding-bottom: 8px; }
+.ref-head .num { font: 600 13px var(--dk-mono); color: var(--dk-accent); }
+.ref-head .src { font: 400 12.5px var(--dk-mono); color: var(--dk-muted); margin-left: auto; }
+.lead { color: var(--dk-muted); font-size: 14px; }
+.shape { margin: 0; }
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">Doc kit · v0 · one look for six blocks</div>
+    <h1>Doc Kit</h1>
+    <p>Six blocks that our documents use, in one simple look. Each block is drawn by <code>kit.js</code> from a JSON file, with the real content of the artifact it came from. Under each block, a fold shows the shape of its data. The same shape is the target for the Notion mapping later.</p>
+    <ul class="index">
+      <li><a href="#tree"><b>1</b>Folder tree</a></li>
+      <li><a href="#columns"><b>2</b>Topology in columns</a></li>
+      <li><a href="#graph"><b>3</b>Topology graph</a></li>
+      <li><a href="#stack"><b>4</b>Call stacks</a></li>
+      <li><a href="#folds"><b>5</b>Folds</a></li>
+      <li><a href="#composed"><b>6</b>Composed folds</a></li>
+    </ul>
+  </header>
+
+  <section class="ref" id="tree">
+    <div class="ref-head"><span class="num">1</span><h2>Folder tree</h2><a class="src" href="https://claude.ai/artifact/6q4JDs9ndFKhkgw3pURTNn" target="_blank" rel="noopener">from Umpire Folder Layout</a></div>
+    <p class="lead">One line for each path. Folders open and close. Click a dotted description to see the details of that line.</p>
+    <div data-dk="tree" data-src="data/tree.json"></div>
+    <div class="dk shape" data-shape="tree"></div>
+  </section>
+
+  <section class="ref" id="columns">
+    <div class="ref-head"><span class="num">2</span><h2>Topology in columns</h2><a class="src" href="https://claude.ai/artifact/WzLLoM4f8CEt4WDwzwYh1o" target="_blank" rel="noopener">from VSA Split Map</a></div>
+    <p class="lead">One column for each group and one box for each part. Each group gets a color, and the size bar and the flag table use the same colors.</p>
+    <div data-dk="columns" data-src="data/columns.json"></div>
+    <div class="dk shape" data-shape="columns"></div>
+  </section>
+
+  <section class="ref" id="graph">
+    <div class="ref-head"><span class="num">3</span><h2>Topology graph</h2><a class="src" href="https://claude.ai/artifact/CGKtHX8HKMssjKXaaTQZsJ" target="_blank" rel="noopener">from Q6 Anchor and Host Types</a></div>
+    <p class="lead">Boxes in rows, arrows between them. The data gives a row and a column for each box. The kit calculates the positions and the arrows.</p>
+    <div data-dk="graph" data-src="data/graph.json"></div>
+    <div class="dk shape" data-shape="graph"></div>
+  </section>
+
+  <section class="ref" id="stack">
+    <div class="ref-head"><span class="num">4</span><h2>Call stacks</h2><a class="src" href="https://claude.ai/artifact/CP2ozBgysFuJSwhrgoHugt" target="_blank" rel="noopener">from Orchestrator Internals</a></div>
+    <p class="lead">A tree of calls. The kit draws the tree lines from the nesting, and puts each note in a column on the right. A wide stack becomes smaller until it fits.</p>
+    <div data-dk="stack" data-src="data/stack.json"></div>
+    <div class="dk shape" data-shape="stack"></div>
+  </section>
+
+  <section class="ref" id="folds">
+    <div class="ref-head"><span class="num">5</span><h2>Folds</h2><a class="src" href="https://claude.ai/artifact/Hd1v1iskYsus8RgNWhPoFu" target="_blank" rel="noopener">from Unity Test Suite Map</a></div>
+    <p class="lead">Each fold has a title and a one-line summary. The body holds content blocks: text, code, lists, tables. Code in a fold becomes smaller until it fits.</p>
+    <div data-dk="folds" data-src="data/folds.json"></div>
+    <div class="dk shape" data-shape="folds"></div>
+  </section>
+
+  <section class="ref" id="composed">
+    <div class="ref-head"><span class="num">6</span><h2>Composed folds</h2><a class="src" href="https://claude.ai/artifact/X8c3Qx9iLgY66K77exdU3Z" target="_blank" rel="noopener">from Umpire File Map</a></div>
+    <p class="lead">The same fold as block 5, with child folds. Each file has the same three child folds: Today, Proposal and Trade-offs.</p>
+    <div data-dk="folds" data-src="data/composed.json"></div>
+    <div class="dk shape" data-shape="composed"></div>
+  </section>
+</div>
+
+<script src="kit.js"></script>
+<script>
+(function () {
+  var SHAPES = {
+    tree: '{\n  "tags": { "later": "warn", "kind": "neutral" },     // tone of each tag\n  "rows": [\n    { "path": "framework/Kernel", "desc": "…", "kind": "kernel",\n      "when": "later", "entry": "…", "install": "…" }   // all but path are optional\n  ]\n}',
+    columns: '{\n  "groups": [ { "id": "engine", "title": "Engine", "desc": "…",\n      "items": [ { "name": "Engine", "meta": "686", "desc": "…", "ref": "#94", "flags": ["1"] } ] } ],\n  "bar":   { "title": "…", "parts": [ { "group": "engine", "value": 1450, "label": "Engine ~1,450" } ] },\n  "flags": { "title": "…", "rows": [ { "flag": "1", "from": { "text": "…", "group": "engine" },\n                                     "to": { "text": "…", "group": "vsa" }, "problem": "…" } ] }\n}',
+    graph: '{\n  "rows": [3, 3, 3, 4],                 // number of columns in each row\n  "nodes": [ { "id": "app", "label": "App", "sub": "…", "kind": "key", "row": 0, "col": 1 } ],\n  "edges": [ { "from": "app", "to": "arch", "label": "selects", "dashed": false } ],\n  "legend": [ { "kind": "key", "text": "…" } ],   // kinds: key, data, outside, plain\n  "summary": "…", "note": "…"\n}',
+    stack: '{\n  "groups": [ { "title": "…", "summary": "…",\n    "stacks": [ { "root": [ { "call": "Supervisor.Tick", "note": "…", "key": true,\n                              "children": [ { "call": "…" } ] } ],\n                  "foot": "…" } ] } ]\n}',
+    folds: '{\n  "items": [ { "title": "Lazy start", "summary": "…", "open": false,\n               "tags": [ { "text": "core", "tone": "accent" } ],\n               "body": [ { "type": "p", "text": "…" },\n                         { "type": "code", "cap": "file.cs", "lang": "cs", "code": "…" },\n                         { "type": "list", "items": ["…"] },\n                         { "type": "table", "head": ["…"], "rows": [["…"]] } ] } ]\n}',
+    composed: '{\n  "title": "…",\n  "items": [ { "title": "App/Host/ShopApp.cs", "mono": true, "summary": "…", "tags": [ … ],\n               "children": [ { "title": "Today", "body": [ … ] },      // a child is a fold\n                             { "title": "Trade-offs",\n                               "body": [ { "type": "cols", "items": [ { "title": "Win", "tone": "good", "items": ["…"] } ] } ] } ] } ]\n}\n// more content blocks: kv { items: [{label, value}] }, facts { items: [{label, value, tone}] }'
+  };
+  document.querySelectorAll("[data-shape]").forEach(function (el) {
+    el.innerHTML = DocKit.block({ type: "p", text: "" }).replace("<p></p>", "") +
+      '<details class="dk-fold"><summary><span class="dk-ft">Data shape</span><span class="dk-fs">The JSON that draws this block</span></summary><div class="dk-fold-body">' +
+      DocKit.block({ type: "code", lang: "json", code: SHAPES[el.getAttribute("data-shape")] }) + "</div></details>";
+  });
+})();
+</script>

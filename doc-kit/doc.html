@@ -1,0 +1,81 @@
+<meta charset="utf-8">
+<title>Doc</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="kit.css">
+<style>
+/* Layout: the doc template. A header, a list of sections, then each section with its blocks. doc.json gives all content. */
+body { background: var(--dk-bg); color: var(--dk-fg); font-family: var(--dk-sans); font-size: 15px; line-height: 1.55; }
+.doc { max-width: 1000px; margin: 0 auto; padding-block: 32px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 32px; }
+.doc > header { display: flex; flex-direction: column; gap: 10px; }
+.doc h1 { margin: 0; font-size: 28px; font-weight: 600; text-wrap: balance; }
+.doc h2 { margin: 0; font-size: 19px; font-weight: 600; text-wrap: balance; padding-bottom: 8px; border-bottom: 1px solid var(--dk-line); }
+.doc > header p { margin: 0; max-width: 72ch; color: var(--dk-muted); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 400 12.5px var(--dk-mono); color: var(--dk-muted); }
+.meta a { color: var(--dk-accent); }
+.toc { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.toc a { display: inline-block; padding: 3px 10px; border: 1px solid var(--dk-line); border-radius: 6px; background: var(--dk-surface); color: var(--dk-fg); text-decoration: none; font-size: 13.5px; }
+.sec { display: flex; flex-direction: column; gap: 14px; scroll-margin-top: 16px; min-width: 0; }
+.sec > .dk { gap: 14px; }
+.empty { color: var(--dk-muted); }
+</style>
+
+<div class="doc" id="doc">
+  <header>
+    <h1 id="title">Loading the document…</h1>
+    <p class="empty" id="state">The page reads its content from <code>doc.json</code>.</p>
+  </header>
+</div>
+
+<script src="kit.js"></script>
+<script>
+(function () {
+  var root = document.getElementById("doc");
+  var src = "doc.json";
+  try { var q = new URLSearchParams(location.search).get("doc"); if (q && /^[\w./-]+\.json$/.test(q)) src = q; } catch (e) {}
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function slug(s, i) { return (String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "s") + "-" + i; }
+
+  function draw(doc) {
+    document.title = doc.title || "Doc";
+    var head = '<header><h1>' + esc(doc.title) + "</h1>" + (doc.summary ? '<div class="dk">' + DocKit.block({ type: "p", text: doc.summary }) + "</div>" : "");
+    var meta = [];
+    if (doc.source && doc.source.kind === "notion") meta.push('Source: <a href="' + esc(doc.source.url) + '" target="_blank" rel="noopener">Notion page</a>');
+    if (doc.source && doc.source.kind === "artifact") meta.push("Source: written as doc.json");
+    if (doc.source && doc.source.edited) meta.push("Edited " + esc(doc.source.edited.slice(0, 16).replace("T", " ")));
+    if (meta.length) head += '<div class="meta">' + meta.map(function (m) { return "<span>" + m + "</span>"; }).join("") + "</div>";
+    var named = doc.sections.filter(function (s) { return s.title; });
+    if (named.length > 2) head += '<ul class="toc">' + doc.sections.map(function (s, i) { return s.title ? '<li><a href="#' + slug(s.title, i) + '">' + esc(s.title) + "</a></li>" : ""; }).join("") + "</ul>";
+    root.innerHTML = head + "</header>";
+
+    doc.sections.forEach(function (s, i) {
+      var sec = document.createElement("section");
+      sec.className = "sec";
+      if (s.title) { sec.id = slug(s.title, i); sec.insertAdjacentHTML("beforeend", "<h2>" + esc(s.title) + "</h2>"); }
+      root.appendChild(sec);
+      var flow = null; // content blocks in a row share one .dk box
+      (s.blocks || []).forEach(function (b) {
+        if (DocKit.types[b.type] && b.data) {
+          flow = null;
+          var el = document.createElement("div");
+          sec.appendChild(el);
+          try { DocKit.render(el, b.type, b.data); } catch (e) { el.innerHTML = '<p class="empty">This ' + esc(b.type) + " block did not draw: " + esc(e.message) + "</p>"; }
+          return;
+        }
+        if (!flow) { flow = document.createElement("div"); flow.className = "dk"; sec.appendChild(flow); }
+        flow.insertAdjacentHTML("beforeend", DocKit.block(b));
+        DocKit.drawPending(flow);
+      });
+    });
+    DocKit.fit();
+  }
+
+  fetch(src).then(function (r) { if (!r.ok) throw new Error(src + ": " + r.status); return r.json(); })
+    .then(draw)
+    .catch(function (e) {
+      document.getElementById("title").textContent = "No document";
+      document.getElementById("state").textContent = "The page could not read its content: " + e.message;
+    });
+})();
+</script>

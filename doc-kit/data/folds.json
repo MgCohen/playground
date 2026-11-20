@@ -1,0 +1,81 @@
+{
+ "source": {
+  "title": "Unity Test Suite Map",
+  "url": "https://claude.ai/artifact/Hd1v1iskYsus8RgNWhPoFu"
+ },
+ "items": [
+  {
+   "title": "Composition root",
+   "summary": "Manual composition for the spike, no DI container",
+   "open": true,
+   "body": [
+    {
+     "type": "code",
+     "code": "public sealed class TestRoot\n{\n    public ActionRuntime Build()\n    {\n        var input     = new InputSystemAdapter();\n        var pointer   = new PointerSystem(input);\n        var objects   = new ObjectSystem();\n\n        var handlers = new HandlerSet()\n            .Add(new FindObjectHandler(objects))\n            .Add(new ClickScreenHandler(pointer))\n            .Add(new ClickObjectHandler());\n\n        var hooks = new IActionHook[] { new LogHook(), new ScreenshotOnFailHook() };\n        return new ActionRuntime(new ActionPipeline(handlers, hooks));\n    }\n}"
+    },
+    {
+     "type": "p",
+     "text": "Later, VSA registration replaces this root. The rest of the code does not change."
+    }
+   ]
+  },
+  {
+   "title": "Lazy start",
+   "summary": "Nothing runs at game start; the first command builds the runtime",
+   "open": false,
+   "body": [
+    {
+     "type": "code",
+     "code": "public static class Actions\n{\n    public static Task<ExitCode> Run<T>(CommandContext cmd, IAction<T> action)\n        => ActionRuntime.GetOrBuild().RunFromCli(cmd, action);\n}\n\npublic sealed class ActionRuntime\n{\n    static ActionRuntime active;                       // the one singleton\n    public static ActionRuntime GetOrBuild()\n        => active ??= new TestRoot().Build();          // first call builds it\n\n    readonly ActionPipeline pipeline;\n    public ActionRuntime(ActionPipeline pipeline) => this.pipeline = pipeline;\n    public Task<ExitCode> RunFromCli<T>(CommandContext cmd, IAction<T> action) { /* run, map result, exit code */ }\n}"
+    },
+    {
+     "type": "list",
+     "ordered": false,
+     "items": [
+      "Press Play and nothing happens. The Pipeline listener is native and always on, in the Editor and in dev builds.",
+      "A domain reload deletes the static. The next command builds the runtime again, at no extra cost.",
+      "Systems find scene objects at call time, not at build time. The root can start in Edit Mode and serve Play Mode.",
+      "Commands run on the main thread, so the lazy build has no thread race."
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Command, action and system",
+   "summary": "A simple action and a composite action",
+   "open": false,
+   "body": [
+    {
+     "type": "code",
+     "code": "// 1. Command: CLI args to one action\n[CliGroupCommand(\"ui\", \"Click an object by hierarchy path\")]\ninternal static Task<ExitCode> ClickObject(CommandContext cmd,\n    [CliArg(\"path\", \"Hierarchy path\")] string path)\n    => Actions.Run(cmd, new ClickObject(path));\n\n// 2a. Simple action: route to a system\npublic sealed record ClickScreen(Vector2 Point) : IAction<Unit>;\nsealed class ClickScreenHandler : IActionHandler<ClickScreen, Unit>\n{\n    readonly PointerSystem pointer;\n    public ClickScreenHandler(PointerSystem pointer) => this.pointer = pointer;\n    public Task<Unit> Handle(ClickScreen a, ActionContext ctx) => pointer.Click(a.Point, ctx.Cancel);\n}\n\n// 2b. Composite action: route and map, no logic\npublic sealed record ClickObject(string Path) : IAction<Unit>;\nsealed class ClickObjectHandler : IActionHandler<ClickObject, Unit>\n{\n    public async Task<Unit> Handle(ClickObject a, ActionContext ctx)\n    {\n        var obj = await ctx.Run(new FindObject(a.Path));\n        return await ctx.Run(new ClickScreen(obj.ScreenPoint));\n    }\n}\n\n// 3. System: the logic. A plain class, no base.\npublic sealed class PointerSystem\n{\n    readonly IInputAdapter input;\n    public PointerSystem(IInputAdapter input) => this.input = input;\n    public async Task<Unit> Click(Vector2 p, CancellationToken ct) { /* down, wait 1 frame, up */ }\n}"
+    },
+    {
+     "type": "p",
+     "text": "The world-to-screen conversion is logic, so `ObjectSystem.Find` returns `ScreenPoint`. The action only passes a field."
+    }
+   ]
+  },
+  {
+   "title": "Hook",
+   "summary": "Added one time in the root, applies to all actions",
+   "open": false,
+   "body": [
+    {
+     "type": "code",
+     "code": "sealed class ScreenshotOnFailHook : IActionHook\n{\n    public Task Before(ActionContext ctx, IAction a) => Task.CompletedTask;\n    public async Task After(ActionContext ctx, IAction a, ActionOutcome o)\n    {\n        if (o.Failed) await ctx.Evidence.Screenshot($\"{ctx.StepId}_fail.png\");\n    }\n}"
+    }
+   ]
+  },
+  {
+   "title": "Consumer extension",
+   "summary": "A custom wallet domain",
+   "open": false,
+   "body": [
+    {
+     "type": "code",
+     "code": "public sealed class WalletSystem { public Task<long> Add(string currency, long amount, CancellationToken ct) { /* game code */ } }\npublic sealed record WalletAdd(string Currency, long Amount) : IAction<long>;\nsealed class WalletAddHandler : IActionHandler<WalletAdd, long> { /* routes to WalletSystem */ }\n\n[CliGroupCommand(\"wallet\", \"Add currency\")]\ninternal static Task<ExitCode> Add(CommandContext cmd,\n    [CliArg(\"currency\", \"Currency id\")] string currency,\n    [CliArg(\"amount\", \"Amount\")] long amount)\n    => Actions.Run(cmd, new WalletAdd(currency, amount));"
+    }
+   ]
+  }
+ ]
+}
