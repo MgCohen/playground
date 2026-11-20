@@ -80,6 +80,12 @@ static partial class Program
             times.Add(DateTime.Now.ToString("HH:mm:ss.fff") + " " + Mean(small).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
         }
         Console.WriteLine($"{frames.Count} frames in {clock.Elapsed.TotalSeconds:0.0} s");
+        // I17: no frame means that the area did not change, so the recorded app did not show. Fail at once with no empty GIF.
+        if (frames.Count == 0)
+        {
+            Console.Error.WriteLine("no frame: the area did not change. Did the recorded app start and show in the area?");
+            return 3;
+        }
         // The time of each frame, for a match with a trace of the recorded app.
         File.WriteAllLines(output + ".times.txt", times);
         var encoder = new GifBitmapEncoder();

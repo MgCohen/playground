@@ -2462,6 +2462,9 @@ Decision: keep the look. The gap between the windows is good. Each value (the wi
 - I14 proof with the scenario `status-bubble`: fix off, bubble in 6 of 6 frames; fix on, 0 of 6.
 - Finding: with window messages, a hover alone does not show the bubble (WM_MOUSELEAVE comes at once). A click does.
 - Finding (test tooling, not examined): the recorder caught 0 frames in 3 of 8 runs today. The screen was not locked. The next try worked each time.
+- I17 result: the cause is the self-test lock. All self-test trays share one lock for each user. If a self-test tray of another session runs, the scenario tray exits at once with code 1, and `scenario.sh` did not see it. Proof: with the lock held by another process, the old start exits with 1.
+- I17 fix: `scenario.sh` starts the tray with `--instance scenario-<pid>`, keeps the tray log in `<name>.tray.txt`, and stops with exit code 1 if the tray fails. The recorder exits with code 3 and writes no GIF if it has 0 frames. Test: recorder with no app, exit 3 at once; 3 scenario runs with the lock held, 230, 89 and 90 frames.
+- Open (I17): `sheets.sh` starts the tray in the same way, with no `--instance`. A named tray shows its name in the header, so the scenario videos now show `scenario-<pid>`. Two trays still open at the same screen place; a start offset for each instance is part of the parallel-run work.
 - Skill `visual-issue`: rules 7 and 8 (the smallest scenario; before and after with the same scenario).
 
 ## Visual review: I5 keyboard checks (2026-11-20)

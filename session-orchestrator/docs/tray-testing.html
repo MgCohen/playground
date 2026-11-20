@@ -301,9 +301,11 @@ Add("x-width", v == "280", $"width {v} (expect 280)");</pre>
         <tr><td>Demo</td><td><code>dotnet run -- --selftest out --demo</code></td><td><code>out/demo.txt</code></td></tr>
         <tr><td>Sheet stress</td><td><code>sheets.sh name ["css rule"]</code></td><td>GIF, <code>.times.txt</code>, <code>stress.txt</code>, empty frame list</td></tr>
         <tr><td>Video</td><td><code>recorder mp4 in.gif out.mp4 30</code></td><td>MP4 for the phone</td></tr>
+        <tr><td>Scenario proof</td><td><code>scenario.sh scenario name [seconds]</code></td><td>GIF, MP4, <code>name.rec.txt</code>, <code>name.tray.txt</code>. Exit code 1: the tray failed. Exit code 3: the recorder caught no frame</td></tr>
       </tbody>
     </table></div>
     <p>The test store is a new copy for each run, so the panel and the badge start at their home places. The recorder is in <code>spikes/tray-display/recorder</code>. The scripts <code>sheets.sh</code>, <code>empty.py</code>, <code>strip.ps1</code> and <code>at.ps1</code> are in <code>spikes/tray-display/tools</code>. To report an issue, use the project skill <code>visual-issue</code>.</p>
+    <p><code>scenario.sh</code> starts each tray with its own <code>--instance</code>, so it can run while another session runs a self-test (I17). If the recorded area does not change, the recorder writes no GIF and exits with code 3.</p>
   </section>
 </div>
 
