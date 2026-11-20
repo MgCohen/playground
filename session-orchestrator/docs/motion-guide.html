@@ -60,6 +60,7 @@ ol, ul { padding-left: 22px; }
 
   <div class="lead">
     <p><b>The rule.</b> CSS owns each motion: its time, its curve, its target and what ends it. C# only sets a state class, waits for the end of the step, and orders the steps. C# calls JS only through a command record.</p>
+    <p><b>The one exception.</b> C# owns the window steps of the tray (a window shows or hides), because C# controls the windows. See the tab "Tray and deck".</p>
     <p>Read this guide before you add, change or use a motion. The design of the pipeline is in the <a href="https://claude.ai/artifact/G89uZPfkYsVe5kcHn4daaP">motion pipeline (R1) plan</a>.</p>
   </div>
 
@@ -108,12 +109,26 @@ await Commands.SendAsync(new MotionWait(MotionSteps.Grow.Target, WaitMode.Step),
       <tr><td>Step rules: <code>[data-motion~="name"]</code>, <code>--motion-wait</code>, spec ID</td><td><code>motion.css</code> (pages, deck), <code>tray.css</code> (tray)</td><td><span class="own css">CSS</span></td></tr>
       <tr><td>Step target</td><td>The element with <code>data-motion="name"</code> in a <code>.razor</code> file</td><td><span class="own razor">Razor</span></td></tr>
       <tr><td>Registry of the page steps (name, state class)</td><td><code>src/Orchestrator.Web/Features/Motion/Domain/MotionSteps.cs</code></td><td><span class="own cs">C#</span></td></tr>
-      <tr><td>Registry of the window steps (tray)</td><td><code>Features/Motion/Domain/WindowSteps.cs</code></td><td><span class="own cs">C#</span></td></tr>
-      <tr><td>The wait command</td><td><code>Features/Motion/Slices/Wait/</code>: <code>MotionWait</code>, <code>WaitMode</code>, <code>WaitResult</code></td><td><span class="own cs">C#</span></td></tr>
-      <tr><td>The other JS commands</td><td><code>Features/Motion/Slices/*</code>, <code>Features/Speech/Slices/*</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>Registry of the window steps (tray)</td><td><code>src/Orchestrator.Web/Features/Motion/Domain/WindowSteps.cs</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>The wait command</td><td><code>src/Orchestrator.Web/Features/Motion/Slices/Wait/</code>: <code>MotionWait</code>, <code>WaitMode</code>, <code>WaitResult</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>The other JS commands</td><td><code>src/Orchestrator.Web/Features/Motion/Slices/*</code>, <code>src/Orchestrator.Web/Features/Speech/Slices/*</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>Read a token from C# (<code>MotionTimes.Of</code>)</td><td><code>src/Orchestrator.Web/Components/Motion/MotionTimes.cs</code></td><td><span class="own cs">C#</span></td></tr>
       <tr><td>The JS command pipeline: one handler, trace, "newer call wins"</td><td><code>src/Orchestrator.Web/Plugins/Js/</code></td><td><span class="own cs">C#</span></td></tr>
       <tr><td>The wait function and <code>orchMotion.ms</code></td><td><code>src/Orchestrator.Web/wwwroot/motion.js</code></td><td><span class="own js">JS</span></td></tr>
-      <tr><td>The order of the tray windows, the badge notice</td><td><code>Components/Tray/TrayFlow.cs</code>, <code>TrayNotices.cs</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>The order of the tray windows, the badge notice</td><td><code>src/Orchestrator.Web/Components/Tray/TrayFlow.cs</code>, <code>TrayNotices.cs</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>The scripts of the pages</td><td><code>src/Orchestrator.Web/wwwroot/*.js</code>. The web pages load them in <code>Components/App.razor</code>; the tray loads them in <code>src/Orchestrator.Tray/wwwroot/index.html</code></td><td><span class="own js">JS</span></td></tr>
+      <tr><td>The tests of the rules</td><td><code>tests/Orchestrator.Tests/</code>: <code>MotionArchitectureTests.cs</code>, <code>MotionRegistryTests.cs</code>, <code>JsPipelineTests.cs</code>, <code>TrayFlowTests.cs</code>, <code>TrayNoticeTests.cs</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>The tray self-test and its scenarios</td><td><code>src/Orchestrator.Tray/SelfTest.cs</code>, <code>SelfTest.Scenarios.cs</code></td><td><span class="own cs">C#</span></td></tr>
+    </table></div>
+
+    <h2>The types</h2>
+    <div class="box"><table>
+      <tr><th>Type</th><th>Members</th></tr>
+      <tr><td><code>MotionStep(Name, State)</code></td><td><code>Name</code>: the step name in <code>data-motion</code>. <code>State</code>: the class that starts the step. <code>Target</code>: the selector <code>[data-motion~="name"]</code></td></tr>
+      <tr><td><code>MotionSteps</code></td><td>One static field for each step, and <code>All</code>: the list that the tests read. This list has the steps of the web pages and of the tray</td></tr>
+      <tr><td><code>WindowStep(Name, Phase, Event)</code></td><td>A window step of the tray, for one phase of <code>TrayPhase</code></td></tr>
+      <tr><td><code>MotionWait(Target, Mode, Arg)</code></td><td>The wait command. <code>Key</code> (optional): "newer call wins"</td></tr>
+      <tr><td><code>WaitResult(By, Ms)</code></td><td><code>By</code>: <code>end</code>, <code>cancel</code>, <code>limit</code>, <code>hidden</code> or <code>missing</code>. <code>Ms</code>: the time of the wait. <code>AtLimit</code>: true for <code>limit</code> and <code>missing</code></td></tr>
     </table></div>
   </section>
 
@@ -124,10 +139,10 @@ await Commands.SendAsync(new MotionWait(MotionSteps.Grow.Target, WaitMode.Step),
 
     <details class="recipe" open><summary>Change a time or a curve <span class="for">a token in motion.css</span></summary><div>
       <ol>
-        <li>Change the token in the <code>:root</code> block of <code>motion.css</code>. Do not write a time in a rule, a script or C#.</li>
+        <li>Change the token in the <code>:root</code> block of <code>motion.css</code>. Do not write a time in a view file: <code>Components/</code>, <code>wwwroot/</code> and the tray windows (<code>TrayWindow</code>, <code>BadgeWindow</code>, <code>WidgetWindow</code>, <code>ClearHost</code>). <code>TrayFlow</code> is in <code>Components/</code>, so the rule applies to it.</li>
         <li>If the motion has no token, add one with the name <code>--t-&lt;thing&gt;</code>. Use <code>var(--t-&lt;thing&gt;)</code> in the rule.</li>
         <li>If the token is a duration, add it with <code>1ms</code> to the reduced motion block. The test <code>Reduced_motion_sets_each_duration_token_to_1ms</code> finds a missing one.</li>
-        <li>If the token is a dwell time (how long a thing shows) or a limit, do not add it to the reduced block. Add its name to <code>Kept</code> in <code>MotionArchitectureTests.cs</code>.</li>
+        <li>If the token is a dwell time (how long a thing shows) or a limit, do not add it to the reduced block. Add its name to <code>Kept</code> in <code>MotionArchitectureTests.cs</code>. <code>Kept</code> has <code>--t-undo</code>, <code>--t-peek-show</code>, <code>--t-limit</code>, <code>--t-vt-start</code>, <code>--t-vt-render</code>, <code>--t-frame-limit</code> and <code>--t-window-gap</code>.</li>
       </ol>
     </div></details>
 
@@ -142,11 +157,12 @@ await Commands.SendAsync(new MotionWait(MotionSteps.Grow.Target, WaitMode.Step),
     <details class="recipe"><summary>Add a step that C# waits for <span class="for">the next action comes after the motion</span></summary><div>
       <p>Use this when a window hides, an act runs or a block goes away after the motion.</p>
       <ol>
-        <li>Add a row to <code>MotionSteps.cs</code>, and add it to <code>All</code>.</li>
+        <li>Add a row to <code>MotionSteps.cs</code>, and add it to <code>All</code>. This is also the file for a step of the tray.</li>
         <li>Mark the target in the <code>.razor</code> file. One element can have more than one step name: <code>data-motion="badge-in badge-out"</code>.</li>
-        <li>Write the step rule, with the spec ID as a comment on the same line. <code>--motion-wait</code> names the transition properties or the animation names that end the step. With no value, the step waits for each finite motion of the target and its children (settle).</li>
-        <li>In C#, set the class, render, then wait. Inject <code>ICommandSender Commands</code>.</li>
-        <li>Run the unit tests. <code>Registry_matches_motion_css</code> fails if the row, the mark and the rule do not agree, or if the spec ID is not in <code>motion-design.html</code>.</li>
+        <li>Write the step rule, with the spec ID as a comment on the same line. The spec ID must be in <code>docs/motion-design.html</code>. If the motion has no spec, add it to that page first. <code>--motion-wait</code> names the transition properties or the animation names that end the step. With no value, the step waits for each finite motion of the target and its children (settle).</li>
+        <li>In C#, set the class, render, then wait. Inject <code>ICommandSender Commands</code>. Set the same class as <code>State</code> of the row; use <code>MotionSteps.X.State</code> where you can.</li>
+        <li>Run the unit tests. <code>Registry_matches_motion_css</code> fails if the row, the mark and the rule do not agree, or if the spec ID is not in <code>motion-design.html</code>. <code>Each_state_class_has_a_rule</code> fails if no style sheet has the class of <code>State</code>.</li>
+        <li>Run the self-test. <code>steps-traced</code> checks each row of <code>All</code>. If the self-test does not run your step, add it to the self-test, or add it with its reason to the list <code>notTraced</code> in <code>SelfTest.cs</code>.</li>
       </ol>
 <pre><code>// MotionSteps.cs
 public static readonly MotionStep SheetOut = new("sheet-out", "is-leaving");
@@ -179,6 +195,35 @@ await Commands.SendAsync(new MotionWait(MotionSteps.SheetOut.Target, WaitMode.St
 <pre><code>var undo = await MotionTimes.Of(Commands, "--t-undo");   // TimeSpan?, null if the page did not answer</code></pre>
       <p>C# reads the value from the page. Do not copy the value into C#.</p>
     </div></details>
+
+    <details class="recipe"><summary>Remove a motion, a step or a token <span class="for">remove all parts together</span></summary><div>
+      <div class="box"><table>
+        <tr><th>Remove</th><th>Do</th></tr>
+        <tr><td>A motion with no wait</td><td>Remove the rule and the state class in the component</td></tr>
+        <tr><td>A step</td><td>Remove the row (and its name in <code>All</code>), the <code>data-motion</code> name, the step rule, and the C# wait. Remove it from <code>notTraced</code> if it is there</td></tr>
+        <tr><td>A token</td><td>Remove it from <code>:root</code>, from the reduced block and from <code>Kept</code>. Search for <code>var(--t-name)</code> and <code>"--t-name"</code> first: a missing token gives a time of 0</td></tr>
+      </table></div>
+      <p>The tests <code>Registry_matches_motion_css</code> and <code>Reduced_motion_sets_each_duration_token_to_1ms</code> find a part that you forgot.</p>
+    </div></details>
+
+    <details class="recipe"><summary>Add a window step <span class="for">a tray window shows or hides in a new phase</span></summary><div>
+      <ol>
+        <li>Add the phase to <code>TrayPhase</code> in <code>src/Orchestrator.Web/IWidgetWindow.cs</code>.</li>
+        <li>Add a row to <code>WindowSteps.cs</code> (name, phase, window event), and add it to <code>All</code>.</li>
+        <li>In <code>src/Orchestrator.Tray/WidgetWindow.cs</code>, <code>Enter</code>: show or hide the windows for the phase, and set <code>LastEvent</code> (<code>"shown"</code>, <code>"hidden"</code>, <code>"activated"</code>).</li>
+        <li>In <code>TrayFlow</code>, call <code>await Window(TrayPhase.X)</code> for the window step and <code>await Page(() =&gt; page.Step())</code> for each page step.</li>
+        <li>Add the step name to <code>windowSteps</code> of the check <code>window-steps</code> in <code>SelfTest.cs</code>, and to the order test in <code>TrayFlowTests.cs</code>.</li>
+      </ol>
+    </div></details>
+
+    <details class="recipe"><summary>Add a scenario <span class="for">a recording that proves a change</span></summary><div>
+      <ol>
+        <li>Add one entry to the list <code>Scenarios</code> in <code>src/Orchestrator.Tray/SelfTest.Scenarios.cs</code>: a name and the steps. Write each step to the log with <code>step("...")</code>.</li>
+        <li>Click with window messages (<code>Press</code>), so the pointer of the user does not move.</li>
+        <li>Keep the scenario between 5 and 15 s. Give the recording 2 s more than the scenario.</li>
+        <li>If the name ends with <code>-reduced</code>, the scenario runs with reduced motion.</li>
+      </ol>
+    </div></details>
   </section>
 
   <!-- WAIT -->
@@ -190,7 +235,7 @@ await Commands.SendAsync(new MotionWait(MotionSteps.SheetOut.Target, WaitMode.St
       <tr><td><code>Step</code></td><td>none</td><td>The motions in <code>--motion-wait</code> of the target end (settle if empty). Use it for each registry step</td></tr>
       <tr><td><code>Settle</code></td><td>none</td><td>Each finite motion of the target and its children ends</td></tr>
       <tr><td><code>Property</code></td><td><code>"clip-path"</code> or <code>"clip-path scale"</code></td><td>These transitions or animations of the target and its children end</td></tr>
-      <tr><td><code>Time</code></td><td><code>"--t-peek-show"</code></td><td>The time of the token passes</td></tr>
+      <tr><td><code>Time</code></td><td><code>"--t-peek-show"</code></td><td>The time of the token passes. Use it only for a dwell token (how long a thing shows), not to wait for a motion. With reduced motion a dwell token keeps its value, so the wait keeps its full time</td></tr>
       <tr><td><code>Event</code></td><td><code>"frames:2"</code> or a DOM event name</td><td>n display frames pass, or the event comes</td></tr>
     </table></div>
     <p class="note">Each wait ends at the latest after <code>--t-limit</code> (<code>--t-frame-limit</code> for frames). If the wait finds no motion, it looks again for 2 frames, because the class can come in the render after the call.</p>
@@ -205,9 +250,14 @@ await Commands.SendAsync(new MotionWait(MotionSteps.SheetOut.Target, WaitMode.St
       <tr><td><code>missing</code></td><td>No target</td><td><span class="own bad">Defect</span> Examine <code>data-motion</code> and the selector</td></tr>
     </table></div>
     <p>A JS error comes back as <code>waited.Error</code> (code <code>js.failed</code> or <code>js.canceled</code>), not as an exception. The trace has it.</p>
+    <div class="box"><table>
+      <tr><th>Name</th><th>Where it comes from</th><th>Meaning</th></tr>
+      <tr><td><code>By == "cancel"</code></td><td>The browser</td><td>The motion stopped, because the class changed during the wait. The wait completed</td></tr>
+      <tr><td><code>Error.Code == "js.canceled"</code></td><td>C#</td><td>A newer call with the same <code>Key</code> stopped this call. The wait did not complete</td></tr>
+    </table></div>
 
     <h2>Newer call wins</h2>
-    <p>Give the command a <code>Key</code>. A newer call with the same key cancels the older call, which ends with <code>js.canceled</code>.</p>
+    <p>Give the command a <code>Key</code>. A newer call with the same key cancels the older call, which ends with <code>js.canceled</code>. The key is any text; use the step name. The keys are separate for each page and each tray window.</p>
 <pre><code>var waited = await Commands.SendAsync(new MotionWait(page, WaitMode.Step) { Key = MotionSteps.TabIn.Name }, default);
 if (waited.Error?.Code == JsErrors.Canceled) return;</code></pre>
   </section>
@@ -217,9 +267,9 @@ if (waited.Error?.Code == JsErrors.Canceled) return;</code></pre>
     <h2>Add a C# to JS call</h2>
     <p>This is for each call from C# to JS, not only for motion.</p>
     <ol>
-      <li>Write a record. The JS name comes from the type: the first word is the object, the rest is the function. The constructor parameters are the arguments, in order.</li>
+      <li>Write a record. The JS name comes from the type: <code>orch</code> and the first word of the type is the object; the other words, joined in camelCase, are the function (<code>MotionWaitAll</code> → <code>orchMotion.waitAll</code>). The constructor parameters are the arguments, in order.</li>
       <li>Put it in a slice of its feature: <code>Features/&lt;Feature&gt;/Slices/&lt;Name&gt;/&lt;Record&gt;.cs</code>.</li>
-      <li>Write the function in the script.</li>
+      <li>Write the function in a script of <code>src/Orchestrator.Web/wwwroot/</code>. A new script file must load in <code>Components/App.razor</code> (web) and in <code>src/Orchestrator.Tray/wwwroot/index.html</code> (tray).</li>
       <li>Send it with <code>Commands.SendAsync</code>.</li>
       <li>Do not write a handler. One handler (<code>JsCommandHandler&lt;TResult&gt;</code>) runs all JS commands.</li>
     </ol>
@@ -266,25 +316,27 @@ window panel-show: shown in 24 ms, gap 0 ms</code></pre>
     <h2>Check a change</h2>
     <ol>
       <li>Run the unit tests: <code>dotnet test --solution Orchestrator.slnx</code>. Set <code>GITHUB_TOKEN</code> (<code>gh auth token</code>) before the first restore.</li>
-      <li>Run the tray self-test: <code>dotnet run --project src/Orchestrator.Tray -- --selftest &lt;folder&gt;</code>. Add <code>--reduced</code> for reduced motion.</li>
-      <li>Record a scenario before and after the change. Make sure that no window covers the tray.</li>
-      <li>Read the trace.</li>
+      <li>Run the tray self-test: <code>dotnet run --project src/Orchestrator.Tray -- --selftest &lt;folder&gt;</code>. Add <code>--reduced</code> for reduced motion. The folder gets <code>selftest.json</code> (each check with <code>Pass</code> and its message), the pictures and <code>exceptions.log</code>. Only <code>badge-hover-fits</code> (I7) fails today.</li>
+      <li>Record a scenario before and after the change. Do not use the computer during the recording, and close each dialog first: a window in front of the tray changes the frames.</li>
+      <li>Read the trace in the log of the scenario.</li>
     </ol>
     <div class="box"><table>
       <tr><th>Self-test check</th><th>Fails when</th></tr>
       <tr><td><code>no-wait-at-limit</code></td><td>A wait ends by its limit, or a JS call fails</td></tr>
-      <tr><td><code>steps-traced</code></td><td>A tray step does not end by the end of its motion</td></tr>
+      <tr><td><code>steps-traced</code></td><td>A step of <code>MotionSteps.All</code> has no wait that ends by <code>end</code> in the trace. The list <code>notTraced</code> has the steps that the self-test cannot see, each with its reason</td></tr>
       <tr><td><code>window-steps</code></td><td>A window step is not in the trace</td></tr>
       <tr><td><code>reduced-flow-time</code></td><td>With <code>--reduced</code>, a dock or an open takes 300 ms or more</td></tr>
     </table></div>
-<pre><code># In session-orchestrator. The scenarios are in src/Orchestrator.Tray/SelfTest.Scenarios.cs.
-spikes/tray-display/tools/scenario.sh dock-open dock-open-after 12
-# A name that ends with -reduced turns on reduced motion.
-# The log &lt;out&gt;/&lt;name&gt;/scenario.txt has each step, each phase change and each trace line.</code></pre>
+<pre><code># Git Bash, in session-orchestrator. Build the tray and spikes/tray-display/recorder first.
+# Arguments: the scenario, the output name, the seconds of the recording.
+OUT=/c/temp/rec spikes/tray-display/tools/scenario.sh dock-open dock-open-after 12
+# Output in $OUT (default ./out): &lt;name&gt;.mp4, &lt;name&gt;.gif, and &lt;name&gt;/scenario.txt
+# (each step, each phase change and each trace line, with the time).
+# Frames at given times: spikes/tray-display/tools/at.ps1 &lt;gif&gt; &lt;gif&gt;.times.txt &lt;out.jpg&gt; HH:mm:ss.fff,...</code></pre>
     <h3>A trace line</h3>
 <pre><code>js orchMotion.wait("[data-motion~="grow"]", Step, null) #5: by end after 342 ms in 343 ms
 wait at limit #67: Step  on [data-motion~="fold"]: by limit after 1007 ms</code></pre>
-    <p class="note">The tray writes the trace with <code>--instance &lt;name&gt;</code> or <code>--demo</code>. The self-test and the scenarios read it from the services.</p>
+    <p class="note">The self-test and the scenarios read the trace from the services. A tray with <code>--instance &lt;name&gt;</code> also writes it to <code>%LOCALAPPDATA%\Orchestrator.Tray\tray.&lt;name&gt;.log</code>.</p>
   </section>
 
   <!-- RULES -->
@@ -302,7 +354,7 @@ wait at limit #67: Step  on [data-motion~="fold"]: by limit after 1007 ms</code>
 
     <h2>Known limits</h2>
     <ul>
-      <li>Umpire gives the finding UMP020301 for each JS command record: the VSA rule wants a handler in the slice. This is an Umpire gap. The test <code>R1_folders_have_no_findings</code> allows only this finding.</li>
+      <li>Umpire gives the finding UMP020301 for each JS command record: the VSA rule wants a handler in the slice. This is an Umpire gap. The test <code>R1_folders_have_no_findings</code> reads all of <code>Plugins/</code> and <code>Features/</code>, and allows only this finding.</li>
       <li>Pointer motion (a drag) stays in the script: C# cannot follow each frame.</li>
       <li>A spring is a <code>cubic-bezier</code>. CSS has no physics.</li>
       <li>The window gap has a reference token (<code>--t-window-gap</code>), but no code waits for it (I15).</li>

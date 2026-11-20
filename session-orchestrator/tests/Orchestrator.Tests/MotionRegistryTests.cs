@@ -48,6 +48,16 @@ public sealed class MotionRegistryTests
         });
     }
 
+    /// <summary>The state class of each registry row is a class of a motion rule in the style sheets.</summary>
+    [Test]
+    public void Each_state_class_has_a_rule()
+    {
+        var css = string.Join(Environment.NewLine, new[] { "Orchestrator.Web/wwwroot/motion.css", "Orchestrator.Web/wwwroot/app.css", "Orchestrator.Tray/wwwroot/tray.css" }
+            .Select(f => File.ReadAllText(Path.Combine(Src, f))));
+        var missing = MotionSteps.All.Where(s => !Regex.IsMatch(css, $@"\.{Regex.Escape(s.State)}(?![\w-])")).Select(s => $"{s.Name}: .{s.State}").ToList();
+        Assert.That(missing, Is.Empty, "a registry row with a state class that no style sheet has");
+    }
+
     /// <summary>S8: the deck script follows the pointer only; each motion wait is orchMotion.wait, not a timer.</summary>
     [Test]
     public void No_motion_timer_in_scripts()
