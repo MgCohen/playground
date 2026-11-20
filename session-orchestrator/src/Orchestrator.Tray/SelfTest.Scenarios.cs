@@ -25,6 +25,30 @@ public static partial class SelfTest
                 await Task.Delay(1200);
             }
         },
+        // I3: a press right after a page move. The sheet cycle of the stress run (--sheets), three times, but the sheet press comes
+        // 100 ms after the tab click, before the Cards page is ready (in a stress run under load, 700 ms was not always enough).
+        ["late-press"] = async (tray, step) =>
+        {
+            var w = tray.Window;
+            // The state of the page after each press: the path, the sheet, and the sheet button (present, its place).
+            const string State = "(b => location.pathname + ' | sheet ' + !!document.querySelector('.sheet') + ' | button ' + (b ? (r => Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height))(b.getBoundingClientRect()) : 'none'))(document.querySelector('.acts [data-act=\\\"left\\\"]'))";
+            for (var i = 1; i <= 3; i++)
+            {
+                step($"{i}: tab cards: {await Press(w, ".nav2 a[href=\"cards\"]")}");
+                step($"{i}:   at once: {await Js(w, State)}");
+                await Task.Delay(100);
+                step($"{i}:   after 100 ms: {await Js(w, State)}");
+                step($"{i}: open sheet: {await Press(w, ".acts [data-act=\"left\"]")}");
+                await Task.Delay(900);
+                step($"{i}:   after 900 ms: {await Js(w, State)}");
+                step($"{i}: close sheet: {await Press(w, ".presence .scrim", 0.5, 0.2)}");
+                await Task.Delay(700);
+                step($"{i}:   after 700 ms: {await Js(w, State)}");
+                step($"{i}: tab home: {await Press(w, ".nav2 a[href=\"\"]")}");
+                await Task.Delay(700);
+                step($"{i}:   after 700 ms: {await Js(w, State)}");
+            }
+        },
         // I5 spike: do posted key messages reach the page? Open the answer sheet, click the reply box, post "abc" to the host window,
         // read the box; then post "xyz" to each child window of WebView2, read the box.
         ["keys"] = async (tray, step) =>
