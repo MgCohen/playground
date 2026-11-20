@@ -204,15 +204,20 @@ html.embed body::before { display: none; }
 body { padding: 12px 12px 24px; }
 .sk-rows { display: grid; gap: 8px; max-width: 1200px; margin: 0 auto; }
 .sk-row { background: var(--surf); border: 1px solid var(--page-line); border-radius: 10px; }
-.sk-row summary { cursor: pointer; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; color: var(--page-tx); }
+.sk-row summary { cursor: pointer; padding: 10px 12px; display: flex; list-style: none; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; color: var(--page-tx); }
+.sk-row summary::-webkit-details-marker { display: none; }
+.sk-row summary::before { content: ""; width: 0; height: 0; border-left: 7px solid var(--accent); border-top: 5px solid transparent; border-bottom: 5px solid transparent; align-self: center; transition: transform .15s; }
+.sk-row[open] summary::before { transform: rotate(90deg); }
 .sk-row summary b { font: 600 15px var(--f-body); }
 .sk-row summary span { font-size: 12px; color: var(--page-mu); }
 .sk-row[open] summary { border-bottom: 1px solid var(--page-line); }
-.sk-trio { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 8px; padding: 8px; align-items: start; }
+.sk-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px; align-items: start; }
 .sk-cell { margin: 0; min-width: 0; display: grid; gap: 4px; }
 .sk-cell figcaption { font: 500 11px var(--f-mono, monospace); color: var(--page-mu); }
-.sk-fit { min-width: 0; overflow: hidden; }
-.sk-fit > .phone { width: 362px; max-width: none; }
+.sk-fit { min-width: 0; overflow: hidden; position: relative; }
+.sk-fit > .phone { position: absolute; left: 0; top: 0; width: 362px; max-width: none; max-height: none; overflow: hidden; transform-origin: 0 0; }
+.sk-fit > .phone { grid-template-columns: minmax(0, 1fr); }
+.sk-fit > .phone > * { min-width: 0; }
 </style>
 <main class="sk-rows">
   <details class="sk-row">
@@ -601,9 +606,17 @@ body { padding: 12px 12px 24px; }
 
   // ---- Fit: scale each sketch to its cell ----
   function fit() {
-    document.querySelectorAll('.sk-fit').forEach(function (c) {
-      var ph = c.firstElementChild; if (!c.clientWidth) return;
-      ph.style.zoom = Math.min(1, c.clientWidth / 362);
+    document.querySelectorAll('.sk-trio').forEach(function (row) {
+      var cells = row.querySelectorAll('.sk-fit');
+      if (!cells.length || !cells[0].clientWidth) return;
+      var s = cells[0].clientWidth / 362, h = 0;
+      cells.forEach(function (c) { c.firstElementChild.style.minHeight = ''; h = Math.max(h, c.firstElementChild.offsetHeight); });
+      cells.forEach(function (c) {
+        var ph = c.firstElementChild;
+        ph.style.minHeight = h + 'px';
+        ph.style.transform = 'scale(' + s + ')';
+        c.style.height = Math.ceil(h * s) + 'px';
+      });
     });
   }
   document.querySelectorAll('details.sk-row').forEach(function (d) { d.addEventListener('toggle', fit); });
