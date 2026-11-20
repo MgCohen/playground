@@ -2463,3 +2463,32 @@ Decision: keep the look. The gap between the windows is good. Each value (the wi
 - Finding: with window messages, a hover alone does not show the bubble (WM_MOUSELEAVE comes at once). A click does.
 - Finding (test tooling, not examined): the recorder caught 0 frames in 3 of 8 runs today. The screen was not locked. The next try worked each time.
 - Skill `visual-issue`: rules 7 and 8 (the smallest scenario; before and after with the same scenario).
+
+## Motion pipeline (R1): results (2026-11-20)
+
+All 13 steps of `docs/motion-pipeline-plan.html` are done, one commit for each (S0 b254064 to S9 8fffc86). Unit tests: 843 pass (809 before R1). Tray self-test: 34 of 35; only `badge-hover-fits` fails (I7, size work, not R1).
+
+| Step | Proof: before → after |
+|---|---|
+| S1 tokens (I11) | `Motion_times_are_tokens`: 19 literals → 0. deck, peek, dock, page frames equal to before |
+| S2 reduced motion (I13) | dock with reduced motion: 1030 ms → 61 ms; open 46 ms |
+| U1 to U3 Umpire | All projects on Umpire.Sdk 0.2.0-preview.11, output in `artifacts~/`. Existing findings stay warnings: UMP0101xx about 4700, UMP020202 95 |
+| S3 one wait (I12) | 7 old wait calls → 0; self-test 32 waits, 0 at the limit |
+| S4 registry | registry row = step name + state class; `data-motion` and `--motion-wait` in CSS; no component calls `IJSRuntime` |
+| S5 fold (H1) | fold on a page with no app bar: 928 ms (limit) → 342 ms |
+| S6 badge-in (H2) | tab translate at phase badge: 103 to 110 % → 0 |
+| S7 flow (H3, H4) | badge after a notice during a hide: 0 of 3 → 3 of 3; flow errors go to the fault log |
+| S8 deck | swipe.js timers 4 → 0; tuck 184 ms, throw 305 ms by end; frames equal to before |
+| S9 window steps | window steps in the trace with event and gap; gap 0 to 10 ms in a dock |
+
+Findings:
+
+- Umpire gap: the VSA rule UMP020301 asks for one handler in the slice of each command. It does not know the open handler `JsCommandHandler<TResult>` of preview.11. Each JS command record gives this finding. The test `R1_folders_have_no_findings` allows only this one.
+- Umpire gap: the analyzers ignore an `.editorconfig` severity, and there is no check mode for each folder. So the R1 folders cannot make their findings errors; a test builds the web project and reads them.
+- Umpire guide versus Umpire docs: the guide pins the SDK in `global.json`; the docs (`umpire init`) say to put the version in the project SDK line. The projects use the SDK line.
+- A JS wait can run before Blazor puts the state class in the page (two messages). The wait looks again for 2 frames when it finds no motion.
+- A settle of the whole panel reached the 1000 ms limit once (a long view animation). The fold waits for `clip-path scale` instead.
+- `dock-open-reduced-before` from S0 had no reduced motion: `scenario.sh` passes no `--reduced`. Now a scenario name that ends with `-reduced` turns it on; the before was recorded again from the S0 commit.
+- Recordings after S4 had a dim screen (a layer of the desktop, not the tray), so the pixel compare of those is not useful; the frames show the same motion.
+- `page-moves` takes 12.3 s plus the start, longer than its 14 s recording: compare only the first 9 steps.
+- `motion-times` (plan S4) is not done: with the registry of the name and the state class only, C# has no token to compare. `steps-traced` checks that each step ends by the end of its motion.
