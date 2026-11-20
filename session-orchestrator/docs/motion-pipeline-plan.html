@@ -327,7 +327,7 @@ dotnet run -- --selftest before-reduced --reduced</pre>
     <dl class="sb">
       <dt>Changes</dt><dd><ul>
         <li><code>nuget.config</code>: the <code>umpire</code> source for <code>Umpire.*</code>, nuget.org for the rest. The login is in the user profile, not in the repository.</li>
-        <li><code>global.json</code>: <code>msbuild-sdks</code> pins <code>Umpire.Sdk</code> and <code>Umpire.Sdk.Web</code> to <code>0.2.0-preview.10</code>.</li>
+        <li><code>global.json</code>: <code>msbuild-sdks</code> pins <code>Umpire.Sdk</code> and <code>Umpire.Sdk.Web</code> to <code>0.2.0-preview.11</code>. Preview.11 has the open handler <code>JsCommandHandler&lt;TResult&gt;</code> and <code>IEnvelope&lt;T&gt;</code>.</li>
         <li><code>.umpireconfig</code> at the project root: <code>umpire.check.mode = "Warn"</code>. Output goes to <code>artifacts~/</code>; add it to <code>.gitignore</code>.</li>
         <li>Each project gets its Umpire SDK. Web: <code>Umpire.Sdk.Web</code> and the check entry. Tray: Razor SDK plus <code>Umpire.Sdk</code>. Tests: delete the NUnit lines that the SDK gives.</li>
         <li>Scripts with output paths: <code>install.ps1</code>, <code>scenario.sh</code>, the E2E tests.</li>
@@ -384,8 +384,8 @@ dotnet run -- --selftest before-reduced --reduced</pre>
     <dl class="sb">
       <dt>Changes</dt><dd><ul>
         <li><code>motion.js</code>: <code>orchMotion.wait(target, mode, arg)</code> with 4 modes (Pipeline tab). One limit: <code>--t-limit</code>. It returns <code>{ by, ms }</code>.</li>
-        <li><code>Plugins/Js</code>: <code>JsCommand&lt;T&gt;</code>, the handler base (the JS name from the type, one error rule), <code>JsRunner</code> (renderer dispatcher, "newer call wins"), the trace steps.</li>
-        <li><code>Features/Motion/Slices/Wait</code>: <code>MotionWait</code>, <code>WaitResult</code>, a one-line handler. <code>Slices/WaitLimit</code>: the hook that writes a trace line when a limit ends a wait.</li>
+        <li><code>Plugins/Js</code>: <code>JsCommand&lt;T&gt;</code>, the one open handler <code>JsCommandHandler&lt;TResult&gt;</code> (the JS name from the type, one error rule), <code>JsRunner</code> (renderer dispatcher, "newer call wins"), the trace steps.</li>
+        <li><code>Features/Motion/Slices/Wait</code>: <code>MotionWait</code> and <code>WaitResult</code> only. No handler class. <code>Slices/WaitLimit</code>: the hook that writes a trace line when a limit ends a wait.</li>
         <li>Delete <code>orchTray.end</code> and <code>orchMotion.settle</code>. <code>tray.js</code> keeps only <code>home</code>. The frame wait is event mode <code>frames:2</code>.</li>
         <li>Call sites, one commit each: <code>TrayStage</code>, <code>BadgeRoot</code>, <code>Presence</code>, <code>MainLayout</code>. Same targets as today. Delete the local error filter and guard of each site.</li>
       </ul></dd>
@@ -552,11 +552,20 @@ orchMotion.wait(target, "event", "frames:2")    <span class="c">// a DOM event, 
   <h2>The C# call: one command on the Umpire pipeline</h2>
   <pre><span class="c">// Features/Motion/Slices/Wait. The JS name comes from the type: MotionWait → orchMotion.wait.</span>
 public sealed record MotionWait(object Target, WaitMode Mode, string? Arg = null) : JsCommand&lt;WaitResult&gt;;
-public sealed class MotionWaitHandler(IJSRuntime js, JsCalls calls) : JsCommandHandler&lt;MotionWait, WaitResult&gt;(js, calls);
+
+<span class="c">// Plugins/Js. One open handler for all JS commands. The message closes it: MotionWait gives JsCommandHandler&lt;WaitResult&gt;.</span>
+public sealed class JsCommandHandler&lt;TResult&gt;(IJSRuntime js, JsCalls calls)
+    : CommandHandler&lt;JsCommand&lt;TResult&gt;, TResult&gt; { ... }
+
+services.AddPipeline(new PipelineBuilder&lt;JsCommand&gt;()
+    .Handlers(typeof(JsCommandHandler&lt;&gt;))
+    .HooksOf(typeof(AfterCommandHook&lt;,&gt;))
+    .Runner&lt;JsRunner&gt;()
+    .BeforeStep&lt;JsTraceStart&gt;().AfterStep&lt;JsTraceEnd&gt;());
 
 <span class="c">// A call site. The handler catches JS errors and returns an Error; nothing is swallowed.</span>
 var r = await Commands.SendAsync(new MotionWait(stage, WaitMode.Property, "clip-path"));</pre>
-  <p class="sum"><code>Plugins/Js</code> is the general path for each C# to JS call, not only for motion. A new JS function gets one command record and one one-line handler.</p>
+  <p class="sum"><code>Plugins/Js</code> is the general path for each C# to JS call, not only for motion. A new JS function gets one command record. It needs no handler class (Umpire preview.11).</p>
 
   <h2>Trade-offs and limits</h2>
   <div class="tbl"><table>
@@ -565,9 +574,8 @@ var r = await Commands.SendAsync(new MotionWait(stage, WaitMode.Property, "clip-
     <tr><td>One request at a time</td><td>No reversal in the middle of a motion</td><td>Same as today. A dock during a grow waits</td></tr>
     <tr><td>Pointer motion</td><td>C# cannot follow each frame</td><td>The drag math stays in <code>swipe.js</code></td></tr>
     <tr><td>A new motion</td><td>A CSS rule and a registry row</td><td>A unit test finds a row and a token that do not agree</td></tr>
-    <tr><td>One-line handler for each command</td><td>Some code for each JS function</td><td>Later: a source generator</td></tr>
     <tr><td>JS name from the type</td><td>A rename breaks the call with no build error</td><td>A unit test finds each name in the scripts</td></tr>
-    <tr><td>Umpire is a preview</td><td>The API can change</td><td>Stay on <code>0.2.0-preview.10</code> until R1 is done</td></tr>
+    <tr><td>Umpire is a preview</td><td>The API can change</td><td>Stay on <code>0.2.0-preview.11</code> until R1 is done</td></tr>
     <tr><td>No check mode for each folder</td><td>R1 findings are warnings</td><td>Test <code>R1_folders_have_no_findings</code></td></tr>
     <tr><td>Deck act after the throw (S8)</td><td>Undo and the next card can change</td><td>The bUnit tests of Cards; risk high</td></tr>
     <tr><td>Springs</td><td><code>cubic-bezier</code> only, no physics</td><td>A CSS limit; no change</td></tr>
