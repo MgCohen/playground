@@ -80,6 +80,20 @@ public static partial class SelfTest
         await Task.Delay(500);
         var scrim = await Js(w, "(s => (p => [s.left - p.left, s.top - p.top, s.width - p.width, s.height - p.height].map(Math.round))(document.querySelector('.tray-panel').getBoundingClientRect()))(document.querySelector('.presence .scrim').getBoundingClientRect())");
         Add("sheet-in-panel", Ints(scrim).All(v => v == 0), $"scrim minus panel [left, top, width, height] = {scrim} (expect all 0)");
+
+        // 3b. I5: the keyboard. A click into the reply box (window messages), then key messages to the focus window of the host
+        // thread: Windows sends a real key to that window too (the WebView2 child window, not the host).
+        var clicked = await Press(w, "#sheet-text");
+        await Task.Delay(300);
+        var focus = FocusOf(w.Handle);
+        Type(focus, "abc");
+        var typed = await Until(async () => await Js(w, "document.querySelector('#sheet-text').value") == "abc", 1500);
+        var value = await Js(w, "document.querySelector('#sheet-text').value");
+        Add("keys-type", typed, $"reply box = '{value}' (expect 'abc'); click {clicked}; focus window {focus:x}, host {w.Handle:x}");
+        Key(focus, 0x09);
+        var tabbed = await Until(async () => await Js(w, "!!document.activeElement?.matches('.sheet .acts .mic')") == "true", 1500);
+        var active = await Js(w, "(e => e ? e.tagName + '.' + e.className : 'none')(document.activeElement)");
+        Add("keys-tab", tabbed, $"after Tab the focus is on {active} (expect the dictate button .mic, the next stop after the reply box)");
         await Js(w, "document.querySelector('.presence .scrim').click()");
         var gone = await Until(async () => await Js(w, "!!document.querySelector('.sheet')") == "false", 2000);
         Add("sheet-close", gone, gone ? "the sheet left and went" : "the sheet is still there after 2 s");

@@ -94,6 +94,13 @@ public static partial class SelfTest
         return list;
     }
 
+    /// <summary>The focus window of the GUI thread that owns the window (0 if none).</summary>
+    static nint FocusOf(nint hwnd)
+    {
+        var info = new GuiThreadInfo { Size = System.Runtime.InteropServices.Marshal.SizeOf<GuiThreadInfo>() };
+        return GetGUIThreadInfo(GetWindowThreadProcessId(hwnd, out _), ref info) ? info.Focus : 0;
+    }
+
     /// <summary>The focus window of the GUI thread that owns the window.</summary>
     static string Focused(nint hwnd)
     {
