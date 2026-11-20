@@ -15,6 +15,7 @@ Read these files before you change this project:
 | `docs/tray-testing.html` | How the tray tests work (https://claude.ai/artifact/RLKUe4bnMJj4mDBVLFPcEK) |
 | `docs/tray-issues.html` | The tray issue tracker: report, reproduce once, the user picks (https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s) |
 | `docs/motion-pipeline-plan.html` | The motion pipeline (R1) plan: thirteen steps, each with its scenario, before and after recordings, checks, risk and undo (https://claude.ai/artifact/G89uZPfkYsVe5kcHn4daaP) |
+| `docs/motion-guide.md` | How to add, change, use and check a motion: tokens, registry steps, `data-motion`, the wait command, JS commands, the tray windows, the checks. Read it before you change a motion |
 
 ## Rules
 
