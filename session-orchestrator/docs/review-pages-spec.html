@@ -92,6 +92,9 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
 .subtabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sub { display: flex; flex-direction: column; gap: 26px; }
 .sub[hidden] { display: none; }
+.zoom { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.72); display: flex; align-items: center; justify-content: center; padding: 2vh 2vw; cursor: zoom-out; }
+.zoom[hidden] { display: none; }
+.zoom iframe { width: 96vw; height: 94vh; border: 0; background: transparent; }
 .sketch-frame { width: 100%; height: 1400px; border: 1px solid var(--line); border-radius: 8px; background: #efece7; display: block; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -401,6 +404,7 @@ sequenceDiagram
 </div>
 <div class="sub" id="run/sketches" hidden>
   <p class="summary">One row for each page of F2. Open a row to see its sketches side by side. Pick one sketch for each page.</p>
+  <div class="zoom" id="zoom" hidden><iframe title="Sketch, large"></iframe></div>
   <iframe class="sketch-frame" title="F2 Workflows sketches" data-src="workflows-sketches.html?embed" loading="lazy"></iframe>
 </div>
 </div>
@@ -987,6 +991,17 @@ flowchart TD
     sel.value = id;
     showSub(id, parts[1] || '');
   }
+  var zoom = document.getElementById('zoom'), zf = zoom.querySelector('iframe');
+  function unzoom() { zoom.hidden = true; zf.removeAttribute('src'); }
+  window.addEventListener('message', function (e) {
+    var d = e.data || {};
+    var from = document.querySelector('.sketch-frame');
+    if (e.source !== zf.contentWindow && (!from || e.source !== from.contentWindow)) return;
+    if (d.sk === 'open' && /^[a-z]+-[a-c]$/.test(d.id)) { zf.src = 'workflows-sketches.html?one=' + d.id; zoom.hidden = false; }
+    if (d.sk === 'close') unzoom();
+  });
+  zoom.addEventListener('click', unzoom);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !zoom.hidden) unzoom(); });
   subs.forEach(function (b) {
     b.addEventListener('click', function () { go(b.dataset.sub); });
   });

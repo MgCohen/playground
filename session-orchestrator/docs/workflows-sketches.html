@@ -218,6 +218,13 @@ body { padding: 12px 12px 24px; }
 .sk-fit > .phone { position: absolute; left: 0; top: 0; width: 362px; max-width: none; max-height: none; overflow: hidden; transform-origin: 0 0; }
 .sk-fit > .phone { grid-template-columns: minmax(0, 1fr); }
 .sk-fit > .phone > * { min-width: 0; }
+.sk-fit { cursor: zoom-in; }
+.sk-fit > .phone { pointer-events: none; }
+/* One mode: the zoom view shows one sketch, scaled to fill the window. */
+html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: transparent; }
+.sk-one { position: fixed; inset: 0; cursor: zoom-out; }
+.sk-one > .phone { position: absolute; left: 0; top: 0; width: 362px; max-width: none; max-height: none; overflow: hidden; transform-origin: 0 0; grid-template-columns: minmax(0, 1fr); pointer-events: none; }
+.sk-one > .phone > * { min-width: 0; }
 </style>
 <main class="sk-rows">
   <details class="sk-row">
@@ -602,6 +609,33 @@ body { padding: 12px 12px 24px; }
     else if (k === 'mini-review') el.innerHTML = miniShape(6, [[3, 1]]);
     else if (k === 'mini-code') el.innerHTML = miniShape(5, [[3, 1]]);
     else el.innerHTML = draw(STATES[k] || STATES.def, false);
+  });
+
+  // ---- Zoom: a click on a sketch asks the parent page to open it large ----
+  var one = new URLSearchParams(location.search).get('one');
+  if (one) {
+    var id = one.split('-');
+    var ph = document.querySelector('.phone[data-for="' + id[0] + '"][data-v="' + id[1] + '"]');
+    document.documentElement.classList.add('one');
+    var box = document.createElement('div'); box.className = 'sk-one';
+    box.appendChild(ph);
+    document.body.innerHTML = ''; document.body.appendChild(box);
+    var place = function () {
+      var w = 362, h = ph.offsetHeight;
+      var s = Math.min(innerWidth / w, innerHeight / h);
+      ph.style.transform = 'scale(' + s + ')';
+      ph.style.left = Math.max(0, (innerWidth - w * s) / 2) + 'px';
+      ph.style.top = Math.max(0, (innerHeight - h * s) / 2) + 'px';
+    };
+    place(); addEventListener('resize', place);
+    box.addEventListener('click', function () { parent.postMessage({ sk: 'close' }, '*'); });
+    return;
+  }
+  document.querySelectorAll('.sk-fit').forEach(function (c) {
+    c.addEventListener('click', function () {
+      var ph = c.firstElementChild;
+      parent.postMessage({ sk: 'open', id: ph.dataset.for + '-' + ph.dataset.v }, '*');
+    });
   });
 
   // ---- Fit: scale each sketch to its cell ----
