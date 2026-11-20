@@ -27,6 +27,24 @@ public interface IProvider
     /// <summary>The engine session id of the session that runs this process. Null: the process does not run in a session.</summary>
     string? CallerSessionId();
 
+    /// <summary>
+    /// True when the process that runs this call is a session in the app of the engine, with the app tools. A parent in
+    /// the app starts its children with the app tool, so they show in the app with Remote Control from the start (R-F8).
+    /// </summary>
+    bool CallerInApp();
+
+    /// <summary>
+    /// The app id of the session that runs this process, when it runs in the app. Null: not in the app. A session that
+    /// the app made has an app id that is not <see cref="AppId"/> of its engine session id (R-18).
+    /// </summary>
+    string? CallerAppId();
+
+    /// <summary>
+    /// The instruction for a parent in the app: start the child with the app tool, with this first command. Null: the
+    /// engine cannot start a session from the app, and the supervisor starts the child.
+    /// </summary>
+    string? AppStartInstruction(AppStartRequest request);
+
     /// <summary>The notice fields that name the app tools for Remote Control and archive.</summary>
     IReadOnlyList<(string Key, object? Value)> AppTools { get; }
 
@@ -43,6 +61,15 @@ public delegate (bool Ok, string Text) CommandRun(string program, params string[
 /// <summary>One setup check of orch doctor.</summary>
 public sealed record DoctorCheck(string Name, Func<(bool Ok, string Detail)> Test);
 
+/// <summary>
+/// A child that a parent in the app starts. <c>Command</c>: the first command of the child, which joins it to the store.
+/// <c>ParentCwd</c>: the folder of the parent; a child in the same folder gets no explicit folder in the app call (R-25).
+/// </summary>
+public sealed record AppStartRequest(string Title, string Cwd, bool Worktree, string Command)
+{
+    public string? ParentCwd { get; init; }
+}
+
 /// <summary>The app facts of one session. <c>InApp</c>: the app has a record of the session.</summary>
 public sealed record AppFacts(bool InApp, bool Archived);
 
@@ -56,12 +83,21 @@ public sealed record TurnRequest(string Id, string Cwd, string Prompt, bool IsNe
 
     /// <summary>The id that the engine gave to the session at its start, for a session that the engine names (cloud).</summary>
     public string? AppId { get; init; }
+
+    /// <summary>
+    /// True: start the session as a live process with Remote Control, not as one print turn (a child of a parent outside
+    /// the app). The turn ends when the process runs; the plugin of the process takes the lease and delivers the next messages.
+    /// </summary>
+    public bool RemoteControl { get; init; }
 }
 
 /// <summary>The result of a turn. <c>AppId</c>: the id that the engine gave to a new session that it names (cloud).</summary>
 public sealed record TurnResult(bool Ok, string? Text, string? Error, double Seconds)
 {
     public string? AppId { get; init; }
+
+    /// <summary>The process id of a session that a <see cref="TurnRequest.RemoteControl"/> turn started.</summary>
+    public int? Pid { get; init; }
 }
 
 /// <summary>A one-shot model call. <c>Agent</c>: an agent of the orch plugin. <c>Plugin</c>: load the orch plugin as the turns do.</summary>

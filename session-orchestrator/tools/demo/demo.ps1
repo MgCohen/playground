@@ -244,8 +244,8 @@ If a message arrives later, reply in one line and end your turn.
 # 5. The tray in live mode on the demo store. One normal tray runs for each user (L-F4).
 $trayId = $null
 if (-not $NoTray) {
-    # A self-test tray has its own instance, so only a normal tray blocks the start.
-    $other = Get-CimInstance Win32_Process -Filter "Name='Orchestrator.Tray.exe'" | Where-Object { $_.CommandLine -notlike '*--selftest*' }
+    # A self-test tray and a tray with --instance have their own lock, so only a normal tray blocks the start.
+    $other = Get-CimInstance Win32_Process -Filter "Name='Orchestrator.Tray.exe'" | Where-Object { $_.CommandLine -notlike '*--selftest*' -and $_.CommandLine -notlike '*--instance*' }
     if ($other) { Write-Warning "Another tray runs (process $($other.ProcessId -join ', ')). Use the web UI, or stop that tray and run: $app\tray\Orchestrator.Tray.exe --live `"$store`" --port $Port --no-supervisor" }
     else {
         $tray = Start-Process (Join-Path $app 'tray\Orchestrator.Tray.exe') -ArgumentList '--live', "`"$store`"", '--port', $Port, '--no-supervisor', '--pin' -PassThru
@@ -258,6 +258,7 @@ $info = [ordered]@{ url = $url; port = $Port; root = $Root; store = $store; work
 Write-Utf8 $record ($info | ConvertTo-Json)
 
 Write-Output "Demo started ($mode). URL: $url  Store: $store"
+if ($Fake) { Write-Output "Demo pane: ${url}demo (buttons that write dummy events into this store)" }
 if ($FromLive) { Write-Output "Copied sessions: $copied (from $LiveStore)" } else { Write-Output "Root: $rootId  Children: $($childIds -join ', ')" }
 Write-Output "Answer a question: `$env:ORCH_STORE='$store'; & '$app\cli\orch.exe' answer <decision> <text>"
 Write-Output "Stop: .\tools\demo\demo.ps1 -Stop -Root '$Root' -Port $Port"

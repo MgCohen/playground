@@ -2139,6 +2139,58 @@ Four dummy sessions: a root and three children. The root and two children fail, 
 | D12 | Report Done items were paragraphs | `done`, `next` and `blockers`: one fact for each item, 200 characters and 12 items maximum (schema and skill). A post over the limit is refused, so the session writes it again shorter |
 | D7 | The card setting (which kinds make a card) does not exist. The inbox view decides in code | Open: the user wants it as a filter (code, app setting or live page filter), later |
 
+## R spike: Remote Control at the start (2026-11-18)
+
+Result: no CLI command starts or imports a session into the desktop app with Remote Control on. The command table is in `docs/know-how.md` ("Remote Control at the start").
+
+Test setup: scratchpad folder `spike/s1`, test store `spike/store`, port 7840. Test sessions: `4b0a24cd` ("R spike B", imported, in the sidebar), `1e268431` (transcript only), `f57246a9` ("R spike E", `--bg` job, stopped).
+
+| Test | Command | Result |
+|---|---|---|
+| R-1 | `--desktop --remote-control --session-id <new>` | Exit 1, refused |
+| R-2 | `--desktop --session-id <new>` | Exit 1, refused |
+| R-3 | `--desktop --remote-control --resume <known>` | Exit 1, refused |
+| R-4 | `--desktop --resume <known>` | Imported. Remote Control off |
+| R-5 | `-p --remote-control` | No effect |
+| R-6 | `--bg --remote-control` | Remote Control on from turn 1, not in the app. Own id |
+| R-7 | `--desktop --resume <live --bg id>` | Exit 1: stop the job first |
+| R-8 | `--desktop --settings <file> --resume <known>` | Exit 1, refused |
+| R-9 | `-p --remote-control` with `--debug-file`, a 20 s turn, CLI 2.1.312 | No bridge in the debug log |
+| R-10 | R-9 with the app CLI 2.1.325 | No bridge in the debug log |
+| R-11 | `--bg --remote-control <name> --resume <known>` | Same session id. Remote Control on. The job stays idle after the turn until `claude stop` |
+| R-12 | `claude --remote-control <name> --session-id <new> "<prompt>"` (interactive, in a console) | Same id. Remote Control on from turn 1 ("/remote-control is active"). The process stays open after the turn |
+| R-13 | `--desktop --resume <id>` while R-12 runs | Exit 1: "Session ... is open in another terminal. Run /desktop there instead." |
+| R-14 | `claude --remote-control <name> --resume <id> "/desktop"` | The CLI exits and the app imports the session. App state: `remoteControlState: off` |
+| R-15 | R-12 again ("R spike M"), then a look at the app sidebar by the user | Not in the sidebar, not in `list_sessions`, no app record. Only the imported tests (G, I, K) show |
+| R-16 | App tool `start_session` from an app session ("R spike N", `beaa0468`) | In the sidebar at once, linked to its parent. `remoteControlState: connecting` 2 s after the start. No headless turn |
+| R-17 | `start_session` with `cwd` as `C:/…` | Refused: "reached through a symbolic link (or another spelling)". With `C:\…` it starts |
+| R-18 | Live test of `orch new --app-start`, `start_session`, `orch join` on a test store ("R live child") | Joined. Remote Control `on`. The CLI id (`2ec9d858`) is not the app id (`local_1d15b9da`). `CLAUDE_CODE_HOST_SESSION_ID` holds the app id |
+| R-19 | R-18 with `permission_mode: "auto"` | The app reports `permissionMode: default` after the turn |
+| R-20 | Console start (test supervisor, port 7842) in a new folder that is not trusted | The console waits at the trust prompt. No transcript, no lease. The old fallback ran `-p --resume` next to the live process and failed |
+| R-21 | Interactive start in a new worktree of a trusted folder | No trust prompt. Remote Control link shown, READY |
+| R-22 | Console start end to end (test supervisor, port 7844, `ORCH_BIN` set): parent outside the app, child with `--worktree` | Console pid 246432, lease `live` in 4 s, the plugin delivered the brief, the child reported done. `orch archive` stopped the process and removed the worktree |
+| R-23 | `start_session` in a turn that came through Remote Control | Refused: "The user is working over Remote Control, and this turn can't start that session" |
+| R-24 | `start_session` with `permission_mode: bypassPermissions` and Opus parent in bypass ("R spike P", Haiku child) | `bypassPermissions` at the start and after the first turn. Remote Control `on` |
+| R-25 | `start_session` in a turn that the app continued by itself (a note of a child), with an explicit `cwd`: a test folder, then the folder of this session | Both refused: "it can only start sessions where this one runs, in this project" |
+| R-26 | R-25 with no `cwd` ("R spike Q") | Started |
+
+Findings:
+
+- R-F1: `--desktop` takes no flag other than `--resume` or `--continue`. So the first import of a new session needs a transcript, and the opening turn stays headless.
+- R-F2: the app turns on Remote Control by default (`ccRemoteControlDefaultEnabled`) only for sessions that it makes. An imported session never gets it.
+- R-F3: a `--bg --remote-control` job has Remote Control from turn 1, but the app cannot import it while it runs, and Remote Control stops with the job.
+- R-F5: `-p` ignores `--remote-control` in 2.1.312 and 2.1.325. The help text says the flag starts an interactive session.
+- R-F6: `--bg --remote-control --resume <id>` keeps the id. So a known session can run a turn with Remote Control on, but as a background job, not as an app session.
+- R-F7: an interactive `claude --remote-control` keeps the id and has Remote Control from turn 1, but needs a console and stays open. Each move to the app (`/desktop` or `--desktop --resume`) gives Remote Control off in the app.
+- R-F8: the app tool `start_session` gives both at once: the sidebar and Remote Control from the start (the app default `ccRemoteControlDefaultEnabled`). Only an app session has this tool, so the parent must start the child, not the supervisor.
+- R-F9: `orch join` must not resolve the store from the environment: an app child has no `ORCH_STORE`, and the HTTP fallback calls port 7777. The start file names the store.
+- R-F10: the app id of a session that the app made comes from `CLAUDE_CODE_HOST_SESSION_ID`, only in the app (a `-p` child inherits the id of its parent).
+- R-F11: an explicit `permission_mode` stays after the first turn (R-24). The `default` of R-18 and R-16 most likely came from the Haiku model of those probes: the auto mode is not available for it. Not checked with an Opus child in auto.
+- R-F14: the app starts a session only in a turn that the user typed in the desktop app, or, in a turn that the app continued by itself, only in the project of the parent with no `cwd` (R-23, R-25, R-26). So the app call has no `cwd` for a child in the folder of the parent, which is the default of `spawn_child`. In other cases the parent falls back to `inApp: false`. Not tested: a turn that an orch plugin message started.
+- R-F12: a console start in a folder that is not trusted waits at the trust prompt, and no session can answer it. A worktree of a trusted repository is trusted. Fallback: after `ImportWait` with no lease, the supervisor stops the console process and starts the child with a print turn.
+- R-F13: a test supervisor needs `ORCH_BIN` for its build of `orch`: the plugin of a live process calls the `orch` on `PATH` (R-22 failed first with the installed `orch`, which has no `watch`).
+- R-F4: so a session started by the supervisor needs `set_remote_control`. Only a live app session has that tool.
+
 ## V: Visual fixes in the tray and web UI (2026-11-18)
 
 V fixes the visual issues that the user found in the app of PR #45. Branch `orch/v-visual-fixes`, base `orch/c5-c3-findings`. Tray self-test: 59 of 59 PASS. `dotnet test --solution Orchestrator.slnx`: 781 tests, 0 failed. The checks of V1, V2 and V4 also ran with `--live` on a copy of the demo store of session L (port 7800, no supervisor, `ORCH_IMPORT=0`, fake `ORCH_CLAUDE`).
@@ -2218,6 +2270,21 @@ Branch `orch/integration-dlv`, base `orch/c5-c3-findings`. It starts from `orch/
 | `dotnet test --solution Orchestrator.slnx` | 804 tests: 791 passed, 13 skipped, 0 failed |
 | `node --test test/` in `plugin/hooks` | 20 of 20 pass |
 | Tray self-test | Not run: the tray code is the same as on V (59 of 59 PASS there) |
+
+### Demo control pane (2026-11-18)
+
+The page `/demo` of a fake demo supervisor writes dummy events into its store. The user clicked the buttons on port 7791 and watched the tray.
+
+| Check | Result |
+|---|---|
+| Tests | Pass. `DemoPaneTests` (6): the guard, each button, the failure rule in the behavior file, the burst. Full suite: 810 tests, 1 failure (the architecture rule on file IO), fixed with an entry and its reason |
+| Live, port 7791 | Pass. Add question and Add report make a card and a tray notice. The other buttons change the tree and the stream |
+| Plain page | Pass. Its own layout: no app bar, no link to the other pages |
+
+| Id | Finding | State |
+|---|---|---|
+| L-F9 | The tray notices and counts only inbox cards (questions, reviews, reports, blocked). A new session, an update or a message makes no notice. This is the design | Proposal for V: a quiet peek bubble with no count for these events, if the user wants it |
+| L-F10 | The tray check of `demo.ps1` saw a tray of V (`--instance v`) as a block. That tray has its own lock | Fixed: the check ignores a tray with `--instance` |
 
 ## Next tasks
 
