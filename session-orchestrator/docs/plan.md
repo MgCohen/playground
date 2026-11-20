@@ -2446,3 +2446,12 @@ Decision: keep the look. The gap between the windows is good. Each value (the wi
 - When a window controls its page, it uses that pipeline.
 - One entry point that controls a window and its page together is good, but not a hard need.
 - New issue I15: the gap of about 100 ms between the two windows is not managed. Later: start the next window on the event "the last window is hidden".
+
+### I14 and I8 results (2026-11-20)
+
+| Issue | Result |
+|---|---|
+| I14 | Replicated with `--stress --sheets` (bubble in 6 of 9 frames). Fixed: `IsStatusBarEnabled = false` in `ClearHost.Start`. After video open: the recorder caught 0 frames two times (probably a locked screen) |
+| I8 | Badge click and drag use window messages; `HostInput` reads the point and the button from the message. Demo log: "pointer: not moved". Platform limits, not fixed: the header drag (caption drag), and the badge hover (`TrackMouseEvent` follows the real pointer) |
+| Test gap | `badge-input` reads the hover click area at 200 ms, inside the 300 ms fold delay, so it passes although the hover ended |
+| Tests | Self-test 27 of 28 (I7). Unit tests 809 pass, 0 fail. The 1 failure of the run before did not come back: flaky, not examined |

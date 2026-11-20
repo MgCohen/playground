@@ -90,14 +90,14 @@ public sealed class BadgeWindow : ClearHost
         switch (m.Msg)
         {
             case 0x201: // WM_LBUTTONDOWN: the window keeps it; the page gets no click.
-                down = Cursor.Position;
+                down = At(m);
                 downTop = Top;
                 dragging = false;
                 Capture = true;
                 return true;
-            case 0x200 when down is { } d && MouseButtons == MouseButtons.Left:
+            case 0x200 when down is { } d && (m.WParam & 1) != 0: // MK_LBUTTON
                 {
-                    var dy = Cursor.Position.Y - d.Y;
+                    var dy = At(m).Y - d.Y;
                     // N1: a move of 5 px starts the drag; a smaller move is still a click.
                     if (!dragging && Math.Abs(dy) < 5 * DeviceDpi / 96) return true;
                     dragging = true;
@@ -123,6 +123,10 @@ public sealed class BadgeWindow : ClearHost
         }
         return false;
     }
+
+    // The screen point of a mouse message. The point and the button come from the message, not from the real pointer, so a
+    // posted message (the demo, the self-test) and a real one take the same path.
+    Point At(Message m) => PointToScreen(new Point((short)(m.LParam & 0xffff), (short)((m.LParam >> 16) & 0xffff)));
 
     void SaveTop()
     {

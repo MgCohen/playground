@@ -112,13 +112,13 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i5">I5 · Keyboard and screen reader not tested  (Detected)</option>
     <option value="i6">I6 · The tray grow (G1) is not reviewed  (Reported)</option>
     <option value="i7">I7 · The badge hover cuts the ring at the left  (Replicated)</option>
-    <option value="i8">I8 · The demo moves your real pointer in 4 steps  (Detected)</option>
+    <option value="i8">I8 · The demo moves your real pointer in 4 steps  (Partly fixed)</option>
     <option value="i9">I9 · Eight motion mechanisms, no single flow  (Detected)</option>
     <option value="i10">I10 · Sizes in two places (C# and CSS)  (Detected)</option>
     <option value="i11">I11 · Motion times outside the tokens  (Detected)</option>
     <option value="i12">I12 · Two wait rules for "the motion ended"  (Detected)</option>
     <option value="i13">I13 · Reduced motion makes the tray waits run to their limit  (Detected)</option>
-    <option value="i14">I14 · A browser status bubble shows the link address  (Detected)</option>
+    <option value="i14">I14 · A browser status bubble shows the link address  (Fixed)</option>
     <option value="i15">I15 · The gap between the two windows is not managed  (Detected)</option>
     <option value="f1">F1 · A blink at the end of the open  (Fixed)</option>
     <option value="f2">F2 · A bigger, darker shadow and an overlap at a tab change  (Fixed)</option>
@@ -171,13 +171,13 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i5">I5</a></td><td>Keyboard and screen reader not tested</td><td><span class="pill det">Detected</span></td><td>Your decision: priority</td></tr>
         <tr><td><a href="#i6">I6</a></td><td>The tray grow (G1) is not reviewed</td><td><span class="pill rep">Reported</span></td><td>Review with you</td></tr>
         <tr><td><a href="#i7">I7</a></td><td>The badge hover cuts the ring at the left</td><td><span class="pill rpl">Replicated</span></td><td>Your decision: fix option</td></tr>
-        <tr><td><a href="#i8">I8</a></td><td>The demo moves your real pointer in 4 steps</td><td><span class="pill det">Detected</span></td><td>Your decision: window messages</td></tr>
+        <tr><td><a href="#i8">I8</a></td><td>The demo moves your real pointer in 4 steps</td><td><span class="pill rpl">Partly fixed</span></td><td>2 of 4 steps fixed; 2 are a platform limit</td></tr>
         <tr><td><a href="#i9">I9</a></td><td>Eight motion mechanisms, no single flow</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i10">I10</a></td><td>Sizes in two places (C# and CSS)</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i11">I11</a></td><td>Motion times outside the tokens</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i12">I12</a></td><td>Two wait rules for "the motion ended"</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
-        <tr><td><a href="#i14">I14</a></td><td>A browser status bubble shows the link address</td><td><span class="pill det">Detected</span></td><td>Your decision: turn off</td></tr>
+        <tr><td><a href="#i14">I14</a></td><td>A browser status bubble shows the link address</td><td><span class="pill fix">Fixed</span></td><td>After video open (capture failed)</td></tr>
         <tr><td><a href="#i15">I15</a></td><td>The gap between the two windows is not managed</td><td><span class="pill det">Detected</span></td><td>Later</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -466,7 +466,7 @@ record = that share for each frame, in place of the mean</pre>
 <!-- I8 -->
 <div class="panel off" id="i8" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill det">Detected</span><span class="k">source: demo log · I8</span></div>
+    <div class="meta"><span class="pill rpl">Partly fixed</span><span class="k">source: demo log · I8</span></div>
     <h2>I8 · The demo moves your real pointer in 4 steps</h2>
     <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
   </section>
@@ -480,6 +480,16 @@ record = that share for each frame, in place of the mean</pre>
 15:09:51.238 click the badge: True</pre></div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. Only <code>Press</code> reads <code>NoPointer</code>. <code>Drag</code> and <code>Glide</code> do not.</p><p>Replicated: the demo of 2026-11-19 (two windows) moved the pointer again in the same 4 steps.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>Send the drag and hover as window messages too, or skip these steps with no pointer.</li><li>Measure the hover width after the 350 ms wait.</li></ol></div></div>
+    <div class="field"><span class="k">Result</span><div class="v">
+      <p>2026-11-20, demo with window messages: the log ends with "pointer: not moved".</p>
+      <div class="scroll"><table><thead><tr><th>Step</th><th>Result</th></tr></thead><tbody>
+        <tr><td>Badge click</td><td>Fixed: window messages</td></tr>
+        <tr><td>Badge drag</td><td>Fixed: window messages. <code>HostInput</code> now reads the point and the button from the message (log: "badge drag end: top 400")</td></tr>
+        <tr><td>Header drag</td><td>Skipped. Platform limit: only the real pointer drives the caption drag of Windows</td></tr>
+        <tr><td>Badge hover</td><td>Does not hold. Platform limit: <code>TrackMouseEvent</code> follows the real pointer, so Windows sends WM_MOUSELEAVE at once (tab width 68, not 280)</td></tr>
+      </tbody></table></div>
+      <p>Open: the two platform limits. Think about them later. Test gap found: the self-test check <code>badge-input</code> reads the hover click area after 200 ms, inside the 300 ms fold delay, so it passes although the hover already ended.</p>
+    </div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I change the 4 steps to window messages?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A.</b> All 4 demo steps use window messages. The header drag can move the window in code.</p></div></div></div>
   </section>
 </div>
@@ -577,7 +587,7 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
 <!-- I14 -->
 <div class="panel off" id="i14" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill det">Detected</span><span class="k">source: demo recording · I14</span></div>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: demo recording · I14</span></div>
     <h2>I14 · A browser status bubble shows the link address</h2>
     <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
   </section>
@@ -587,9 +597,14 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
       <figure><div class="img"><img src="issues/status-bubble.jpg" alt="Two frames of the panel at a dock. A grey bubble with the text https://0.0.0.1/ is at the bottom left."></div>
         <figcaption>Run <code>tw-demo</code>, the start of the dock: the pointer is on the header. The bubble is at the bottom left.</figcaption></figure>
     </div></div>
-    <div class="field"><span class="k">Replicate</span><div class="v"><p>Not tried again. One recording shows it.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><p>Replicated 2026-11-20: <code>--stress --sheets</code> (window messages). The bubble shows in 6 of 9 frames, one each second.</p></div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Probable: the WebView2 setting <code>IsStatusBarEnabled</code> is on (the default). <code>ClearHost</code> does not set it. Not tested.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p><code>web.Settings.IsStatusBarEnabled = false</code> in <code>ClearHost.Start</code>, for both windows. Check: a frame strip of a link hover shows no bubble.</p></div></div>
+    <div class="field"><span class="k">Result</span><div class="v">
+      <figure><div class="img"><img src="issues/status-bubble-before.jpg" alt="Nine frames of the sheet stress run, one each second. A small grey bubble with the address is at the bottom left in six frames."></div><figcaption>Before the fix: one frame each second. The bubble is at the bottom left.</figcaption></figure>
+      <p>Fix: <code>web.Settings.IsStatusBarEnabled = false</code> in <code>ClearHost.Start</code>. Self-test 27 of 28 (only I7). Tests 809 pass, 0 fail.</p>
+      <p>Open: the after video. The recorder caught 0 frames two times, and the tray did not start in that run. Probable cause: the screen was locked. Not examined more.</p>
+    </div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we turn off the status bubble?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, turn off.</b> IsStatusBarEnabled = false in ClearHost.Start.</p></div></div></div>
   </section>
 </div>

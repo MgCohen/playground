@@ -87,6 +87,8 @@ public partial class ClearHost : Form
         var web = controller.CoreWebView2;
         web.Settings.IsNonClientRegionSupportEnabled = true;
         web.Settings.AreDevToolsEnabled = System.Diagnostics.Debugger.IsAttached;
+        // I14: no status bubble with the internal address ("https://0.0.0.1/") at a link hover.
+        web.Settings.IsStatusBarEnabled = false;
         web.ProcessFailed += (_, f) => Faults.Trace($"webview process failed: {f.ProcessFailedKind}, reason {f.Reason}, exit {f.ExitCode}");
         web.NavigationCompleted += (_, _) => Ready.TrySetResult();
         await web.AddScriptToExecuteOnDocumentCreatedAsync("""

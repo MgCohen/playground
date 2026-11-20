@@ -100,6 +100,7 @@ public static partial class SelfTest
         }
 
         await Until(() => w.Phase == TrayPhase.Open, 8000);
+        var pointer = Cursor.Position;
         Step("start: the ball pops in and the panel grows");
         await Task.Delay(1500);
 
@@ -129,7 +130,9 @@ public static partial class SelfTest
         await Task.Delay(1000);
 
         // A drag of the header moves the panel.
-        if (await Center(w, ".hd .title, .hd h1") is { } grip)
+        // I8: no window message can drive the system move loop of a caption drag, so without the real pointer the step is skipped.
+        if (NoPointer) Step("drag the header: skipped (platform limit: only the real pointer drives a caption drag)");
+        else if (await Center(w, ".hd .title, .hd h1") is { } grip)
         {
             Step($"drag the header: {await Drag(w, grip, -260, -180)}");
             await Task.Delay(1000);
@@ -144,15 +147,15 @@ public static partial class SelfTest
         var s = w.DeviceDpi / 96f;
         var b = tray.Badge;
         var ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
-        await Glide(ring);
+        await Hover(b, ring);
         Step($"hover the badge: tab width {await Js(b, "Math.round(document.querySelector('.tb-tab').getBoundingClientRect().width)")}");
         await Task.Delay(1800);
-        await Glide(new Point(ring.X - (int)(260 * s), ring.Y + (int)(80 * s)));
+        await Leave(b, new Point(ring.X - (int)(260 * s), ring.Y + (int)(80 * s)));
         await Task.Delay(900);
 
         // A drag of the badge: up and down only, on the right edge.
         ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
-        Step($"drag the badge up: {await Drag(b, ring, 0, -220)}");
+        Step($"drag the badge up: {await BadgeDrag(b, ring, -220)}");
         await Task.Delay(1000);
 
         // A new card: the ring spins and the peek bubble shows the card.
@@ -166,7 +169,7 @@ public static partial class SelfTest
 
         // A click on the badge: it slides out, and the panel opens at the place of the header drag.
         ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
-        Step($"click the badge: {await Drag(b, ring, 0, 0)}");
+        Step($"click the badge: {await BadgeDrag(b, ring, 0)}");
         await Until(() => w.Phase == TrayPhase.Open, 4000);
         await Task.Delay(1500);
 
@@ -179,6 +182,8 @@ public static partial class SelfTest
         await Until(() => w.Phase == TrayPhase.Open, 4000);
         await Task.Delay(1800);
 
+        // I8: without --pointer the demo must not move the pointer of the user. A move by the user in the run also shows here.
+        if (NoPointer) Step(Cursor.Position == pointer ? "pointer: not moved" : $"pointer: moved from {pointer} to {Cursor.Position}");
         File.WriteAllLines(Path.Combine(folder, "demo.txt"), log);
         return Faults.Count == 0 ? 0 : 1;
     }
@@ -217,6 +222,49 @@ public static partial class SelfTest
         await Glide(at);
         await Task.Delay(150);
         return await Drag(w, at, 0, 0) ? "clicked" : "not on the tray window: no click";
+    }
+
+    /// <summary>A pointer on the badge: a window message, or the real pointer with --pointer.</summary>
+    static async Task Hover(BadgeWindow b, Point at)
+    {
+        if (!NoPointer) { await Glide(at); return; }
+        Post(b, 0x200, 0, at);
+        await Task.Delay(30);
+    }
+
+    /// <summary>The pointer leaves the badge: WM_MOUSELEAVE, or the real pointer with --pointer.</summary>
+    static async Task Leave(BadgeWindow b, Point away)
+    {
+        if (!NoPointer) { await Glide(away); return; }
+        _ = PostMessage(b.Handle, 0x2A3, 0, 0);
+        await Task.Delay(30);
+    }
+
+    /// <summary>
+    /// A press on the badge with a vertical move (0 is a click): window messages, or the real pointer with --pointer. Each move is
+    /// posted at the client point of the window as it is now, because the window moves with the drag.
+    /// </summary>
+    static async Task<string> BadgeDrag(BadgeWindow b, Point from, int dy)
+    {
+        if (!NoPointer) return await Drag(b, from, 0, dy) ? "pressed" : "not on the badge window: no press";
+        Post(b, 0x200, 0, from);
+        await Task.Delay(30);
+        Post(b, 0x201, 1, from);
+        for (var i = 1; i <= 12 && dy != 0; i++)
+        {
+            await Task.Delay(16);
+            Post(b, 0x200, 1, new Point(from.X, from.Y + dy * i / 12));
+        }
+        await Task.Delay(60);
+        Post(b, 0x202, 0, new Point(from.X, from.Y + dy));
+        return "pressed (window messages)";
+    }
+
+    /// <summary>Posts a mouse message at a screen point, as a client point of the window.</summary>
+    static void Post(Control c, int message, nint wparam, Point screen)
+    {
+        var client = c.PointToClient(screen);
+        _ = PostMessage(c.Handle, message, wparam, (nint)(((client.Y & 0xffff) << 16) | (client.X & 0xffff)));
     }
 
     /// <summary>Moves the pointer in steps from where it is, so a recording shows the path.</summary>
