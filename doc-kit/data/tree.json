@@ -1,0 +1,606 @@
+{
+ "source": {
+  "title": "Umpire Folder Layout",
+  "url": "https://claude.ai/artifact/6q4JDs9ndFKhkgw3pURTNn"
+ },
+ "tags": {
+  "later": "warn",
+  "kind": "neutral"
+ },
+ "rows": [
+  {
+   "path": "architecture",
+   "desc": "The definition API: Architecture, Concept, Part, RuleBook, Options. It depends on no other folder",
+   "kind": "library",
+   "when": "now",
+   "entry": "AssemblyMetadata (not enforced)",
+   "install": "none",
+   "order": 1
+  },
+  {
+   "path": "architecture/Architecture.cs",
+   "desc": "The base class of each architecture: Define(Root), Configure(Options defaults), Rules(RuleBook)",
+   "when": "now",
+   "order": 1.1
+  },
+  {
+   "path": "architecture/Concepts",
+   "desc": "Concept, Module, External: the kinds of thing that an architecture names (a layer is a concept)",
+   "when": "now",
+   "order": 1.2
+  },
+  {
+   "path": "architecture/Parts",
+   "desc": "Root, Part, PartGroup, IPartChain, FolderAlias: the folder tree of an architecture, built with Add, AddGroup, And",
+   "when": "now",
+   "order": 1.3
+  },
+  {
+   "path": "architecture/Rules",
+   "desc": "RuleBook, Rule, Count, Match, Statements: the rules of an architecture. Four verbs: Uses, Denies (references), Has (counts, with AtLeast, AtMost, Exactly, OfOneKind) and Takes (type-argument matches, with InSame)",
+   "when": "now",
+   "order": 1.4
+  },
+  {
+   "path": "architecture/Options",
+   "desc": "Options, Access, Boundary, Depth: the defaults of an architecture and of each concept",
+   "when": "now",
+   "order": 1.5
+  },
+  {
+   "path": "architecture/Queries",
+   "desc": "The resolved architecture and its questions: PartOf, MayUse, and the count and match checks. Plain data in, no ArchUnitNET: each tool asks the same questions here (was Resolution/)",
+   "when": "now",
+   "order": 1.6
+  },
+  {
+   "path": "architecture/Queries/ResolvedArchitecture.cs",
+   "desc": "The part tree, the rules and the options, worked out once",
+   "when": "now",
+   "order": 1.61
+  },
+  {
+   "path": "architecture/Queries/PartOf.cs",
+   "desc": "PartOf(type facts): which part a type belongs to (was Match)",
+   "when": "now",
+   "order": 1.62
+  },
+  {
+   "path": "architecture/Queries/MayUse.cs",
+   "desc": "MayUse(from, to): allow or deny, and the rule that decides (was Decide)",
+   "when": "now",
+   "order": 1.63
+  },
+  {
+   "path": "architecture/Scan",
+   "desc": "LoadedTypes.Of: the one load-safe read of the types of an assembly. The kernel, the engine and the unit test base use it (W11)",
+   "when": "now",
+   "order": 1.7
+  },
+  {
+   "path": "framework",
+   "desc": "The kernel and the components that go to consumers with the packs. Uses architecture/",
+   "kind": "group folder",
+   "when": "now",
+   "entry": "none: no own definition",
+   "install": "none",
+   "order": 2
+  },
+  {
+   "path": "framework/Kernel",
+   "desc": "Umpire.Kernel: the base that each app has, for each architecture. No layer, no pack type",
+   "kind": "kernel",
+   "when": "now",
+   "entry": "AssemblyMetadata, as an independent block (pinned for later)",
+   "install": "AppHost.Install (the framework kernel entry)",
+   "order": 3
+  },
+  {
+   "path": "framework/Kernel/App",
+   "desc": "IApp, App, App<TPack>, Pack, Pack<TArchitecture, THost>: the app class and the pack that it selects",
+   "when": "now",
+   "order": 4
+  },
+  {
+   "path": "framework/Kernel/Hosting",
+   "desc": "AppHost: Create, Compose (core, Install, modules, app), Build, Run, Stop. The configuration and the auto-registration",
+   "when": "now",
+   "order": 5
+  },
+  {
+   "path": "framework/Kernel/Modules",
+   "desc": "Module, Module<TSettings>, the settings binding (Modules:{Name}) and its validation",
+   "when": "now",
+   "order": 6
+  },
+  {
+   "path": "framework/Kernel/Scan",
+   "desc": "AppTypes: the one place that finds the types of the app (modules, marked types, keys)",
+   "when": "now",
+   "order": 7
+  },
+  {
+   "path": "framework/Kernel/Factories",
+   "desc": "IFactory<T>, AddFactory: make objects that the container cannot make (for example Unity objects)",
+   "when": "now",
+   "order": 8
+  },
+  {
+   "path": "framework/Kernel/Services",
+   "desc": "Extensions on IServiceCollection, for example Replace<TService, TImplementation>()",
+   "when": "now",
+   "order": 9
+  },
+  {
+   "path": "framework/Kernel/Analyzers",
+   "desc": "A separate package: rules about any code (no comments, file size, one type for each file)",
+   "when": "now",
+   "order": 10
+  },
+  {
+   "path": "framework/Kernel/Markers",
+   "desc": "A separate package: linker and scan markers (RequireDerived, RequireImplementors, AutoRegister)",
+   "when": "now",
+   "order": 11
+  },
+  {
+   "path": "framework/Components",
+   "desc": "Free blocks that many packs can use. A component knows no pack type",
+   "kind": "group folder",
+   "when": "now",
+   "entry": "none: no own definition",
+   "install": "none",
+   "order": 12
+  },
+  {
+   "path": "framework/Components/Messages",
+   "desc": "Messages and the handler pipeline",
+   "kind": "component",
+   "when": "now",
+   "entry": "AssemblyMetadata (not enforced)",
+   "install": "a Component class, called by the kernel that uses it (today the extension AddPipelines)",
+   "order": 13
+  },
+  {
+   "path": "framework/Components/Messages/Contracts",
+   "desc": "IMessage, Envelope, Result, Error",
+   "when": "now",
+   "order": 14
+  },
+  {
+   "path": "framework/Components/Messages/Handlers",
+   "desc": "The pipeline: validators, steps, hooks, runners",
+   "when": "now",
+   "order": 15
+  },
+  {
+   "path": "framework/Components/Persistence",
+   "desc": "Example: a repository port with no layer rules",
+   "when": "later",
+   "order": 16
+  },
+  {
+   "path": "framework/Components/Scheduling",
+   "desc": "Example: timers and frame ticks",
+   "when": "later",
+   "order": 17
+  },
+  {
+   "path": "packs",
+   "desc": "The real architectures. Each pack has the same four parts. Uses framework/ and architecture/",
+   "kind": "group folder",
+   "when": "now",
+   "entry": "none: no own definition",
+   "install": "none",
+   "order": 18
+  },
+  {
+   "path": "packs/Vsa",
+   "desc": "The VSA architecture",
+   "kind": "pack",
+   "when": "now",
+   "entry": "Pack : Block<PackArchitecture>, through VsaPack.cs",
+   "install": "none (its Kernel/ has the install point)",
+   "order": 19
+  },
+  {
+   "path": "packs/Vsa/VsaPack.cs",
+   "desc": "Vsa<THost> and Vsa<TArchitecture, THost>: the pack that an app class selects",
+   "kind": "check entry",
+   "when": "now",
+   "entry": "Vsa<THost> : ... : Pack : Block<PackArchitecture>. It also gives VsaArchitecture to apps",
+   "install": "CreateHost()",
+   "order": 20
+  },
+  {
+   "path": "packs/Vsa/Architecture",
+   "desc": "VsaArchitecture.cs: the VSA rules, written with the architecture/ API",
+   "when": "now",
+   "order": 21
+  },
+  {
+   "path": "packs/Vsa/Architecture/Concepts",
+   "desc": "The 15 layer records: Domain, Contracts, Handlers and the others",
+   "when": "now",
+   "order": 22
+  },
+  {
+   "path": "packs/Vsa/Kernel",
+   "desc": "The base types of each VSA layer",
+   "kind": "pack kernel",
+   "when": "now",
+   "entry": "none: an owned block of the pack",
+   "install": "VsaHost, through the hook in AppHost.Install",
+   "order": 23
+  },
+  {
+   "path": "packs/Vsa/Kernel/Domain",
+   "desc": "Entity<TId>",
+   "when": "now",
+   "order": 24
+  },
+  {
+   "path": "packs/Vsa/Kernel/Contracts",
+   "desc": "Requests, Commands, Events: the message contracts",
+   "when": "now",
+   "order": 25
+  },
+  {
+   "path": "packs/Vsa/Kernel/Handlers",
+   "desc": "Request, command and event handlers, and the four hook bases",
+   "when": "now",
+   "order": 26
+  },
+  {
+   "path": "packs/Vsa/Kernel/Infrastructure",
+   "desc": "IRepository<T, TId>",
+   "when": "now",
+   "order": 27
+  },
+  {
+   "path": "packs/Vsa/Kernel/Presenters",
+   "desc": "Presenter, IPresenterEvent<T>",
+   "when": "now",
+   "order": 28
+  },
+  {
+   "path": "packs/Vsa/Kernel/Views",
+   "desc": "PresenterWatcher, PresenterComponent<T>, ViewsRoot (web views)",
+   "when": "now",
+   "order": 29
+  },
+  {
+   "path": "packs/Vsa/Kernel/Composition",
+   "desc": "Plugin, Plugin<TSettings>, the bus, the layer registrations",
+   "when": "now",
+   "order": 30
+  },
+  {
+   "path": "packs/Vsa/Kernel/Hosts",
+   "desc": "VsaHost, WebVsaHost, ConsoleVsaHost",
+   "when": "now",
+   "order": 31
+  },
+  {
+   "path": "packs/Vsa/Tests",
+   "desc": "What checks or tests VSA code",
+   "when": "now",
+   "order": 32
+  },
+  {
+   "path": "packs/Vsa/Tests/Analyzers",
+   "desc": "The VSA1xxx rules (live errors in the editor)",
+   "when": "now",
+   "order": 33
+  },
+  {
+   "path": "packs/Vsa/Tests/Unit",
+   "desc": "VsaUnitTest and the in-memory fakes",
+   "when": "now",
+   "order": 34
+  },
+  {
+   "path": "packs/Vsa/Checks",
+   "desc": "Engine checks that only VSA needs (A1)",
+   "when": "later",
+   "order": 35
+  },
+  {
+   "path": "packs/Mvvm",
+   "desc": "A second pack, with the same four parts",
+   "kind": "pack",
+   "when": "later",
+   "entry": "Pack : Block<PackArchitecture>, through MvvmPack.cs",
+   "install": "none (its Kernel/ has the install point)",
+   "order": 36
+  },
+  {
+   "path": "packs/Mvvm/MvvmPack.cs",
+   "desc": "Mvvm<THost>",
+   "when": "later",
+   "order": 37
+  },
+  {
+   "path": "packs/Mvvm/Architecture",
+   "desc": "MvvmArchitecture.cs, Concepts/ (Model, ViewModel, View)",
+   "when": "later",
+   "order": 38
+  },
+  {
+   "path": "packs/Mvvm/Kernel",
+   "desc": "The ViewModel bases and the hosts",
+   "when": "later",
+   "order": 39
+  },
+  {
+   "path": "packs/Mvvm/Tests",
+   "desc": "Analyzers/, Unit/",
+   "when": "later",
+   "order": 40
+  },
+  {
+   "path": "packs/Vsa.Ecs",
+   "desc": "An extension pack: only the folders that change",
+   "kind": "pack",
+   "when": "later",
+   "entry": "Pack : Block<PackArchitecture>, through VsaEcsPack.cs",
+   "install": "none (its Kernel/ has the install point)",
+   "order": 41
+  },
+  {
+   "path": "packs/Vsa.Ecs/VsaEcsPack.cs",
+   "desc": "VsaEcs<THost> : Vsa<VsaEcsArchitecture, THost>",
+   "when": "later",
+   "order": 42
+  },
+  {
+   "path": "packs/Vsa.Ecs/Architecture",
+   "desc": "VsaEcsArchitecture : VsaArchitecture, with more concepts and rules",
+   "when": "later",
+   "order": 43
+  },
+  {
+   "path": "packs/Vsa.Ecs/Kernel",
+   "desc": "Only the new layer bases",
+   "when": "later",
+   "order": 44
+  },
+  {
+   "path": "engine",
+   "desc": "The rule system: the engine app, a VSA app that checks a built app against its architecture. Uses architecture/",
+   "kind": "app",
+   "when": "now",
+   "entry": "EngineApp (app class)",
+   "install": "the VSA kernel (ConsoleVsaHost)",
+   "order": 45
+  },
+  {
+   "path": "engine/Engine.csproj",
+   "desc": "The root project of the engine app",
+   "when": "now",
+   "order": 46
+  },
+  {
+   "path": "engine/App",
+   "desc": "Host/EngineApp.cs and EngineArchitecture.cs: the rules of the engine's own code",
+   "when": "now",
+   "order": 47
+  },
+  {
+   "path": "engine/Features",
+   "desc": "One feature module for each step of the engine run",
+   "kind": "modules (feature)",
+   "when": "now",
+   "entry": "none: owned blocks of the engine app",
+   "install": "a Module class in each feature",
+   "order": 48
+  },
+  {
+   "path": "engine/Features/Engine",
+   "desc": "The run command and its handler: the composition root of the engine run, one line for each step",
+   "when": "now",
+   "order": 48.5
+  },
+  {
+   "path": "engine/Features/Versions",
+   "desc": "Step: check that all Umpire versions agree (VSA3001)",
+   "when": "now",
+   "order": 49
+  },
+  {
+   "path": "engine/Features/LoadApp",
+   "desc": "Step: load the built app (with Plugins/BuiltApp) and its architecture (today Features/Definition)",
+   "when": "now",
+   "order": 50
+  },
+  {
+   "path": "engine/Features/Rules",
+   "desc": "Step: the loop. Each type → architecture Match, each use → architecture Decide, each denied use → a finding",
+   "when": "now",
+   "order": 51
+  },
+  {
+   "path": "engine/Features/Baseline",
+   "desc": "Step: accept the errors that vsa-baseline.txt lists",
+   "when": "now",
+   "order": 52
+  },
+  {
+   "path": "engine/Features/Report",
+   "desc": "Step: write the findings as file(line,col): error CODE: text",
+   "when": "now",
+   "order": 53
+  },
+  {
+   "path": "engine/Features/Export",
+   "desc": "Step: write the app facts and the architecture as data, for the viewer and the docs",
+   "when": "later",
+   "order": 54
+  },
+  {
+   "path": "engine/Plugins",
+   "desc": "VSA plugin modules of the engine app",
+   "kind": "modules (plugin)",
+   "when": "now",
+   "entry": "none: owned blocks of the engine app",
+   "install": "a Plugin class in each plugin",
+   "order": 55
+  },
+  {
+   "path": "engine/Plugins/Steps",
+   "desc": "EngineStep<T>, the step pipeline (skip, record, log) and Finding (RuleFinding merges into it)",
+   "when": "now",
+   "order": 56
+  },
+  {
+   "path": "engine/Plugins/BuiltApp",
+   "desc": "The facts of one built app: types, files, lines, namespaces, base types, uses. Several steps use it",
+   "when": "now",
+   "order": 56.1
+  },
+  {
+   "path": "engine/Plugins/BuiltApp/Infrastructure",
+   "desc": "The DLL reader (ArchUnitNET), the PDB reader, the Unity script assemblies. The only place with ArchUnitNET",
+   "when": "now",
+   "order": 56.2
+  },
+  {
+   "path": "engine/Versions",
+   "desc": "Umpire.Engine.Versions: the version slots, a small library. The Versions step and the doctor command read them (open: library or plugin)",
+   "kind": "library",
+   "when": "now",
+   "entry": "AssemblyMetadata (not enforced). An independent block inside the engine block",
+   "install": "none",
+   "order": 64
+  },
+  {
+   "path": "engine/Umpire.Engine.Build.targets",
+   "desc": "The build hook package: runs the engine after each build",
+   "when": "now",
+   "order": 65
+  },
+  {
+   "path": "tools",
+   "desc": "Utilities. They use engine/ and architecture/. An app never references them",
+   "kind": "group folder",
+   "when": "now",
+   "entry": "none: no own definition",
+   "install": "none",
+   "order": 66
+  },
+  {
+   "path": "tools/cli",
+   "desc": "The umpire tool (today: vsa)",
+   "kind": "tool (app)",
+   "when": "now",
+   "entry": "the app class, with a lighter host",
+   "install": "its kernel host",
+   "order": 67
+  },
+  {
+   "path": "tools/cli/Commands",
+   "desc": "One class for each command",
+   "when": "now",
+   "order": 68
+  },
+  {
+   "path": "tools/cli/Commands/Bases",
+   "desc": "ToolCommand, AppCommand, AddCommand",
+   "when": "now",
+   "order": 69
+  },
+  {
+   "path": "tools/cli/Scaffolding",
+   "desc": "Template names, file writer, app root",
+   "when": "now",
+   "order": 70
+  },
+  {
+   "path": "tools/cli/Templates",
+   "desc": "One template set for each pack",
+   "kind": "app (nested block)",
+   "when": "now",
+   "entry": "the app class of SampleApp. An independent block inside the tools/cli block",
+   "install": "the VSA kernel (its host)",
+   "order": 71
+  },
+  {
+   "path": "tools/cli/Templates/App",
+   "desc": "The new-app files: global.json, nuget.config, the app class",
+   "when": "now",
+   "order": 72
+  },
+  {
+   "path": "tools/cli/Templates/Vsa",
+   "desc": "Module, request, command, plugin, pack",
+   "when": "now",
+   "order": 73
+  },
+  {
+   "path": "tools/cli/Templates/Mvvm",
+   "desc": "The MVVM templates",
+   "when": "later",
+   "order": 74
+  },
+  {
+   "path": "tools/sdk",
+   "desc": "Umpire.Sdk: props, targets, globalconfig files",
+   "kind": "build package",
+   "when": "now",
+   "entry": "none (it will probably be removed). SDK split tracked for the orchestrator",
+   "install": "none",
+   "order": 75
+  },
+  {
+   "path": "tools/sdk/Polyfills",
+   "desc": "IsExternalInit and the other compiler polyfills for netstandard2.1. The one copy (today also in framework/Polyfills, review R19)",
+   "when": "now",
+   "order": 75.1
+  },
+  {
+   "path": "tools/viewer",
+   "desc": "The architecture viewer (A6)",
+   "when": "later",
+   "order": 76
+  },
+  {
+   "path": "tools/docs",
+   "desc": "The docs and playbook generator (b01)",
+   "when": "later",
+   "order": 77
+  },
+  {
+   "path": "samples",
+   "desc": "One small app for each pack",
+   "when": "now",
+   "order": 78
+  },
+  {
+   "path": "samples/Notes",
+   "desc": "The VSA web sample",
+   "kind": "app",
+   "when": "now",
+   "entry": "NotesApp (app class) : App<Vsa<WebVsaHost>>",
+   "install": "the VSA kernel (WebVsaHost)",
+   "order": 79
+  },
+  {
+   "path": "tests",
+   "desc": "One test project for each area, Fixtures/, Shared/",
+   "when": "now",
+   "order": 80
+  },
+  {
+   "path": "docs",
+   "desc": "Written docs. Generated docs go to the output of tools/docs",
+   "when": "now",
+   "order": 81
+  },
+  {
+   "path": ".github",
+   "desc": "CI and the package publish workflow",
+   "when": "now",
+   "order": 82
+  }
+ ]
+}
