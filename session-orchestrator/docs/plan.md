@@ -2428,3 +2428,14 @@ Found: I14, the browser status bubble ("https://0.0.0.1/") at a link hover. The 
 Order: the grow review, then the small fixes (I8, I14, I11, I12, I13, I3, I5), then the registry design (I9, Q1, I7, I10).
 
 Open point: the last full test run had 1 failure in 822 tests. Not examined yet.
+
+### I6 result: the grow review (2026-11-20)
+
+Recording: 10 dock and open cycles with `--stress --opens`, window requests only.
+
+| Step | Measured |
+|---|---|
+| Open from the badge | Badge out 210 ms, gap about 100 ms, ball pop, grow 340 ms; content at about 900 ms |
+| Dock | Content out, shrink, ball out, gap about 100 ms, badge in at about 700 ms |
+
+Decision: keep the look. The gap between the windows is good. Each value (the window gap too) becomes a token, and the window steps go through the one motion pipeline. This goes into I11 (tokens) and the registry design (I9, Q1).

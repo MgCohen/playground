@@ -221,7 +221,7 @@ Decision     the question for you</pre>
         <tr><td>I3</td><td><b>Wait 1 s, then retry.</b> Each press waits at most 1 s for its element. If it is missing, retry up to 3 s. A retry or a miss is a failure, and the run exits with 1.</td><td><a href="#i3">I3</a></td></tr>
         <tr><td>I4</td><td><b>Parked.</b> Parked until there is proof. Hint from the user: it occurred at a quick modal open (the answer sheet).</td><td><a href="#i4">I4</a></td></tr>
         <tr><td>I5</td><td><b>A, a must.</b> Keyboard use is a must. Add two self-test checks: type in the reply box, and Tab moves the focus. A failure is a must-fix issue. Narrator is a manual step for the user.</td><td><a href="#i5">I5</a></td></tr>
-        <tr><td>I6</td><td><b>Right after the questions.</b> The grow is part of the system design: review it together right after the questions. The order of the bug fixes is decided as we go.</td><td><a href="#i6">I6</a></td></tr>
+        <tr><td>I6</td><td><b>Reviewed: keep the look.</b> The grow, the ball and the gap of about 100 ms between the two windows are good (the gap is ideal). All values must be tokens and go through the one motion pipeline, the window steps too. Proof: recording of 2026-11-20, 10 dock and open cycles.</td><td><a href="#i6">I6</a></td></tr>
         <tr><td>Q2</td><td><b>Project for now.</b> Keep the skill in this project. Later move it to a general place: the machine, or the orch plugin.</td><td>Skill</td></tr>
       </tbody>
     </table></div>
@@ -229,7 +229,7 @@ Decision     the question for you</pre>
   <section>
     <h2>Order of the work</h2>
     <ol>
-      <li>Review the grow (G1, M6) together (I6).</li>
+      <li>Done: the grow review (I6). Keep the look; make all values tokens.</li>
       <li>Small fixes, one at a time, in the order that we pick: I8, I14, I11, I12, I13, I3, I5.</li>
       <li>The registry design for review (I9, Q1), with I7 and I10 as parts of it.</li>
       <li>Later: I1, I2. Parked: I4.</li>
@@ -358,7 +358,7 @@ record = that share for each frame, in place of the mean</pre>
     <div class="field"><span class="k">What</span><div class="v"><p>All motion follows <code>docs/motion-design.html</code>, except the grow from the ball to the panel (G1 and M6). You asked to review it together later.</p></div></div>
     <div class="field"><span class="k">Proof</span><div class="v"><p>Not a fault. An open review item.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>I send an MP4 of the grow, frame by frame next to the spec. We then pick the changes.</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: When do we review the grow: now, or after I1 to I4?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Right after the questions.</b> The grow is part of the system design: review it together right after the questions. The order of the bug fixes is decided as we go.</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: When do we review the grow: now, or after I1 to I4?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Reviewed: keep the look.</b> The grow, the ball and the gap of about 100 ms between the two windows are good (the gap is ideal). All values must be tokens and go through the one motion pipeline, the window steps too. Proof: recording of 2026-11-20, 10 dock and open cycles.</p></div></div></div>
   </section>
 </div>
 
