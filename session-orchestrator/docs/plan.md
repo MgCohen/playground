@@ -2489,6 +2489,5 @@ Findings:
 - A JS wait can run before Blazor puts the state class in the page (two messages). The wait looks again for 2 frames when it finds no motion.
 - A settle of the whole panel reached the 1000 ms limit once (a long view animation). The fold waits for `clip-path scale` instead.
 - `dock-open-reduced-before` from S0 had no reduced motion: `scenario.sh` passes no `--reduced`. Now a scenario name that ends with `-reduced` turns it on; the before was recorded again from the S0 commit.
-- Recordings after S4 had a dim screen (a layer of the desktop, not the tray), so the pixel compare of those is not useful; the frames show the same motion.
-- `page-moves` takes 12.3 s plus the start, longer than its 14 s recording: compare only the first 9 steps.
+- Recordings S4 to S8 had a dim screen: a Windows dialog was in front. The final recordings with no dialog: dock-open steps 1 to 4 differ at most 2.0 of 255, deck-throw-tuck 4.1, page-moves steps 1 to 9 1.9. The recordings of dock-open (12 s) and page-moves (14 s) end before the last steps, so compare only those steps.
 - `motion-times` (plan S4) is not done: with the registry of the name and the state class only, C# has no token to compare. `steps-traced` checks that each step ends by the end of its motion.
