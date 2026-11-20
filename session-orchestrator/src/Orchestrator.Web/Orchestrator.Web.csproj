@@ -6,6 +6,8 @@
   </PropertyGroup>
   <ItemGroup>
     <AssemblyMetadata Include="Umpire.Architecture" Value="Umpire.Vsa.Definition.VsaArchitecture, Umpire" />
+    <InternalsVisibleTo Include="Orchestrator.Tray" />
+    <InternalsVisibleTo Include="Orchestrator.Tests" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Orchestrator.Supervisor/Orchestrator.Supervisor.csproj" />

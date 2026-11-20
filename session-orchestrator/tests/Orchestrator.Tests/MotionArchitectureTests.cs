@@ -20,8 +20,6 @@ public sealed class MotionArchitectureTests
     [
         ("src/Orchestrator.Web/Components/LiveView.cs", "Refresh = TimeSpan.FromSeconds(10)", "the refresh of the data, not a motion"),
         ("src/Orchestrator.Web/Components/LiveView.cs", "Task.Delay(300)", "the load delay groups the file events of the store, not a motion"),
-        ("src/Orchestrator.Web/Components/Tray/TrayStage.razor", "\"orchTray.end\"", "the wait limits in C#: S3 replaces them with --t-limit"),
-        ("src/Orchestrator.Web/Components/Tray/BadgeRoot.razor", "\"orchTray.end\"", "the wait limits in C#: S3 replaces them with --t-limit"),
     ];
 
     static string Repo() => Orchestrator.Store.Home.Root();

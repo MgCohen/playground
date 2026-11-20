@@ -51,17 +51,48 @@
   window.orchMotion = {
     // A time token of motion.css in ms, for C# and the other scripts.
     ms: ms,
-    // Presence: resolves when each finite CSS animation and transition in the block ends, or after the time limit.
-    // One frame first, so the phase class of the render is in the styles. A hidden page draws no frames and moves no
-    // animation, so it resolves at once; the limit starts before the frame, so a page that hides during the wait ends too.
-    settle: function (el) {
+    // The one wait of the motion pipeline (R1, I12). C# sends it as the command MotionWait. The modes:
+    //   settle    each finite CSS animation and transition of the target and its children ends.
+    //   property  the transitions of one property (or the animations of one name) of the target end. None running: at once.
+    //   time      the time of a token (arg, for example "--t-peek-show").
+    //   event     a DOM event of the target (arg), or "frames:n": n display frames.
+    // The target is an element or a selector; with no target and mode "settle" or "property", the target is missing. One frame
+    // first, so the state class of the render is in the styles. The result is { by, ms }: by is "end", "cancel" (the browser
+    // stopped a motion: the state changed during the wait), "limit" (--t-limit, or --t-frame-limit for frames), "hidden" (a
+    // hidden page moves nothing) or "missing" (no target).
+    wait: function (target, mode, arg) {
+      mode = String(mode || "settle").toLowerCase();
+      var el = typeof target === "string" ? document.querySelector(target) : target;
+      var start = performance.now();
       return new Promise(function (resolve) {
-        if (document.visibilityState === "hidden") { resolve(); return; }
-        var timer = setTimeout(resolve, limit());
+        var done = false, timer = 0;
+        function finish(by) {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve({ by: by, ms: Math.round(performance.now() - start) });
+        }
+        if (mode === "time") { timer = setTimeout(function () { finish("end"); }, ms(arg)); return; }
+        var frames = mode === "event" && /^frames:\d+$/.test(arg || "") ? parseInt(arg.slice(7), 10) : 0;
+        if (frames > 0) {
+          timer = setTimeout(function () { finish("limit"); }, ms("--t-frame-limit"));
+          var step = function () { if (--frames <= 0) finish("end"); else requestAnimationFrame(step); };
+          requestAnimationFrame(step);
+          return;
+        }
+        if (!el) { finish("missing"); return; }
+        if (document.visibilityState === "hidden") { finish("hidden"); return; }
+        timer = setTimeout(function () { finish("limit"); }, limit());
+        if (mode === "event") { el.addEventListener(arg, function () { finish("end"); }, { once: true }); return; }
         requestAnimationFrame(function () {
-          var all = el && el.getAnimations ? el.getAnimations({ subtree: true }) : [];
-          var finite = all.filter(function (a) { return a.effect && a.effect.getComputedTiming().endTime !== Infinity; });
-          Promise.all(finite.map(function (a) { return a.finished.catch(function () { }); })).then(function () { clearTimeout(timer); resolve(); });
+          var all = el.getAnimations ? el.getAnimations(mode === "settle" ? { subtree: true } : undefined) : [];
+          var mine = all.filter(function (a) {
+            if (!a.effect || a.effect.getComputedTiming().endTime === Infinity) return false;
+            return mode === "settle" || a.transitionProperty === arg || a.animationName === arg;
+          });
+          var canceled = false;
+          Promise.all(mine.map(function (a) { return a.finished.catch(function () { canceled = true; }); }))
+            .then(function () { finish(canceled ? "cancel" : "end"); });
         });
       });
     },

@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Web.WebView2.Core;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
@@ -262,6 +263,12 @@ public static partial class SelfTest
             }
             Add("reduced-flow-time", times.All(t => t < 300), $"dock, open, dock, open in ms: {string.Join(", ", times)} (expect each under 300)");
         }
+
+        // I12: each wait of the run ends by the end of its motion, not by its limit.
+        var trace = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Infrastructure.JsTrace>().Lines;
+        var waits = trace.Where(l => l.Contains("js orchMotion.wait", StringComparison.Ordinal)).ToList();
+        var late = waits.Where(l => l.Contains("by limit", StringComparison.Ordinal) || l.Contains("by missing", StringComparison.Ordinal) || l.Contains(" error js.failed", StringComparison.Ordinal)).ToList();
+        Add("no-wait-at-limit", waits.Count >= 10 && late.Count == 0, $"{waits.Count} waits, {late.Count} by limit, missing or error{(late.Count > 0 ? ": " + string.Join(" | ", late.Take(4)) : "")}");
 
         Add("exceptions", Faults.Count == 0, Faults.First ?? "no unhandled exception");
         File.WriteAllText(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));

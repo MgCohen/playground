@@ -5,6 +5,7 @@
 @using Microsoft.Extensions.DependencyInjection
 @implements TrayFlow.IPanel
 @inject IJSRuntime JS
+@inject ICommandSender Commands
 @inject IServiceProvider Services
 
 @if (flow is null)
@@ -48,14 +49,14 @@ else
     {
         Set(TrayPhase.Start);
         await Home();
-        await JS.InvokeVoidAsync("orchTray.frames", 2);
+        await Commands.SendAsync(new MotionWait(null, WaitMode.Event, "frames:2"), default);
     });
 
     public Task Grow() => InvokeAsync(async () =>
     {
         Set(TrayPhase.Open);
         // The grow ends: the first draw of the rings in the view starts now, with the content fade (tray.css, is-ready).
-        await JS.InvokeVoidAsync("orchTray.end", ".tray-panel", "clip-path", 900);
+        await Commands.SendAsync(new MotionWait(".tray-panel", WaitMode.Property, "clip-path"), default);
         ready = true;
         StateHasChanged();
     });
@@ -64,7 +65,7 @@ else
     {
         await Home();
         Set(TrayPhase.Folded);
-        await JS.InvokeVoidAsync("orchTray.end", ".tray-view .nav2 .home", "scale", 900);
+        await Commands.SendAsync(new MotionWait(".tray-view .nav2 .home", WaitMode.Property, "scale"), default);
     });
 
     // The place of the home button in the panel, for the clip circle of the open and the fold (tray.js).

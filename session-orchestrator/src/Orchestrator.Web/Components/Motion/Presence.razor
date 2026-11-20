@@ -1,7 +1,7 @@
 @* A block that comes and goes: a sheet with its scrim, a speed dial. Its children get the phase class is-shown or is-leaving
    (motion.css). At a leave the block stays until the browser ends each CSS motion in it, then it goes and OnGone runs.
    The parent hides it with Shown="false"; a child closes it with Leave() through the cascading Presence. *@
-@inject IJSRuntime JS
+@inject ICommandSender Commands
 
 @if (phase != Gone)
 {
@@ -66,13 +66,8 @@
     {
         if (!settle) return;
         settle = false;
-        try
-        {
-            await JS.InvokeVoidAsync("orchMotion.settle", root);
-        }
-        catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
-        {
-        }
+        // A JS error comes back as an Error in the result, and the trace of the JS pipeline has it. The block goes in each case.
+        await Commands.SendAsync(new MotionWait(root, WaitMode.Settle), default);
         if (phase != Leaving) return;
         phase = Gone;
         StateHasChanged();

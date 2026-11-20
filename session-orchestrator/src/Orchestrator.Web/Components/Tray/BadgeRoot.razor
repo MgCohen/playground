@@ -5,6 +5,7 @@
 @inherits LiveView
 @implements TrayFlow.IBadge
 @inject IJSRuntime JS
+@inject ICommandSender Commands
 @inject IServiceProvider Services
 
 <div class="tray-stage is-@phase">
@@ -51,14 +52,14 @@
     public Task In() => InvokeAsync(async () =>
     {
         Set(TrayPhase.BadgeOut);
-        await JS.InvokeVoidAsync("orchTray.frames", 2);
+        await Commands.SendAsync(new MotionWait(null, WaitMode.Event, "frames:2"), default);
         Set(TrayPhase.Badge);
     });
 
     public Task Out() => InvokeAsync(async () =>
     {
         Set(TrayPhase.BadgeOut);
-        await JS.InvokeVoidAsync("orchTray.end", ".tb-tab", "translate", 500);
+        await Commands.SendAsync(new MotionWait(".tb-tab", WaitMode.Property, "translate"), default);
     });
 
     async Task Notice(string title, string sub)
@@ -75,7 +76,7 @@
             StateHasChanged();
             // The peek shows for the token --t-peek-show of motion.css (N2).
             var shown = Task.Delay(await MotionTimes.Of(JS, "--t-peek-show"));
-            await JS.InvokeVoidAsync("orchTray.end", ".tb-ring", "tb-spin", 1500);
+            await Commands.SendAsync(new MotionWait(".tb-ring", WaitMode.Property, "tb-spin"), default);
             if (mine != notice) return;
             spin = false;
             StateHasChanged();
@@ -83,7 +84,7 @@
             if (mine != notice) return;
             peek = false;
             StateHasChanged();
-            await JS.InvokeVoidAsync("orchTray.end", ".tb-peek", "opacity", 400);
+            await Commands.SendAsync(new MotionWait(".tb-peek", WaitMode.Property, "opacity"), default);
             if (mine == notice && !peek) window.Peek(false);
         }
         catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)

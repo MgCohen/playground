@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Store;
@@ -177,9 +178,13 @@ public static partial class SelfTest
         Step($"scenario {name}");
         using var stop = new CancellationTokenSource();
         var phases = Phases(tray, Step, stop.Token);
+        var trace = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Infrastructure.JsTrace>();
+        void OnTrace(string line) => Step($"trace {line[13..]}");
+        trace.Written += OnTrace;
         await run(tray, Step);
         await stop.CancelAsync();
         await phases;
+        trace.Written -= OnTrace;
         Step(Cursor.Position == pointer ? "pointer: not moved" : $"pointer: moved from {pointer} to {Cursor.Position}");
         File.WriteAllLines(Path.Combine(folder, "scenario.txt"), log);
         return Faults.Count == 0 ? 0 : 1;
