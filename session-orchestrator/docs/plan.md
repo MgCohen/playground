@@ -2472,3 +2472,12 @@ Decision: keep the look. The gap between the windows is good. Each value (the wi
 - Proof that the checks can fail: with `MoveFocus` off, both still pass (a click into the page gives the focus to WebView2). With the focus on the host window, both fail.
 - Open: the Narrator test, a manual step for the user.
 - I3 answer changed: a retry is a warning with the cause and the wait time in the log. A miss after 3 s fails the run.
+
+## Visual review: I3 press rules (2026-11-20)
+
+- Scenario `late-press` (the sheet cycle, 3 times, page state after each press): 12 of 12 presses did their job, also with the sheet press 100 ms after the tab click. The Cards button comes in less than 100 ms. The stress-run miss occurs only under load.
+- Fix: `Press` waits up to 3 s for its element. After 1 s: a warning with the wait time and the page. After 3 s: a miss. The stress run, the demo and the scenarios end the log with a press summary and exit 1 on a miss.
+- Proof, scenario `press-rules`: a button 1.5 s late gives a warning (1504 ms) and a click; a button that never comes gives a miss (3002 ms) and exit 1. Before the fix: both "no element", exit 0.
+- Self-test 29 of 30 (only I7).
+- Finding: the self-test lock is the same for all worktrees. When another session runs a self-test tray, a second one stops with "The tray app already runs". Use `--instance <name>` for a separate lock. Both trays open at the same screen place, so a run during a recording of another session shows in that recording.
+- Finding: `dotnet run --no-build` waited more than 60 s when another session used the MSBuild nodes. The built exe starts at once.

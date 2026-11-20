@@ -107,7 +107,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="inventory">Inventory: architecture or standalone</option>
     <option value="i1">I1 · Empty frames at the sheet open  (Not real)</option>
     <option value="i2">I2 · The empty frame detector gives false alarms  (Replicated)</option>
-    <option value="i3">I3 · A stress step that misses does not fail the run  (Replicated)</option>
+    <option value="i3">I3 · A stress step that misses does not fail the run  (Fixed)</option>
     <option value="i4">I4 · Sizing issues on the screen  (Reported)</option>
     <option value="i5">I5 · Keyboard and screen reader not tested  (Fixed)</option>
     <option value="i6">I6 · The tray grow (G1) is not reviewed  (Reported)</option>
@@ -354,9 +354,9 @@ record = that share for each frame, in place of the mean</pre>
 <!-- I3 -->
 <div class="panel off" id="i3" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill rpl">Replicated</span><span class="k">source: stress log · I3</span></div>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: stress log · I3</span></div>
     <h2>I3 · A stress step that misses does not fail the run</h2>
-    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="now">Replicated</span><span>Fixed</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p>If a press finds no element, the run logs "no element" and continues. The frame count then covers steps that did not occur.</p></div></div>
@@ -365,6 +365,23 @@ record = that share for each frame, in place of the mean</pre>
 14:59:05.670 .acts [data-act="left"]: no element .acts [data-act="left"]
 14:59:06.573 .presence .scrim: no element .presence .scrim
 <span class="c"># 46 presses clicked, 2 missed. Run h-sheet: the same misses in cycle 1.</span></pre></div></div>
+    <div class="field"><span class="k">Small scenario</span><div class="v"><p>Scenario <code>late-press</code> (the sheet cycle, 3 times, with the page state after each press): 12 of 12 presses did their job, even with the sheet press 100 ms after the tab click. The button comes in less than 100 ms. The miss occurs only under load (the recorder ran in the stress run), so the proof makes the cases on purpose.</p></div></div>
+    <div class="field"><span class="k">Result</span><div class="v">
+      <p>Scenario <code>press-rules</code>: test buttons that the scenario adds to the page.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Case</th><th>Before</th><th>After</th></tr></thead>
+        <tbody>
+          <tr><td>Normal button</td><td>clicked</td><td>clicked</td></tr>
+          <tr><td>Button 1.5 s late</td><td>"no element", no click</td><td>clicked after 1504 ms, warning</td></tr>
+          <tr><td>Button never comes</td><td>"no element"</td><td>miss after 3002 ms</td></tr>
+          <tr><td>Exit code</td><td>0</td><td>1</td></tr>
+        </tbody>
+      </table></div>
+<pre class="stack">presses: 1 warnings, 1 misses
+  WARNING #t-late: the element came after 1506 ms (limit 1000 ms); page /
+  MISS #t-never: no element after 3057 ms; page /</pre>
+      <p>The rule is in <code>Press</code>, so the stress run, the demo and the scenarios use it. Self-test: 29 of 30 (only I7 fails).</p>
+    </div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. <code>Act</code> writes the result but has no pass rule. In cycle 1 the Cards page is not ready 700 ms after the tab click.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>Wait for the element with <code>Until</code> before the press, up to 3 s.</li><li>Count the misses. Exit 1 if one press misses.</li></ol></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I make a missed press fail the run?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Wait 1 s, then retry.</b> Each press waits at most 1 s for its element. If it is missing, retry up to 3 s. A miss after 3 s is a failure, and the run exits with 1.</p><p><b>Change, 2026-11-20:</b> a retry is a warning, not a failure. The run continues. The log line gives the cause and the wait time, and the summary gives the count of warnings. A late element is not acceptable, so each warning is a record to examine later.</p></div></div></div>
