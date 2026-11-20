@@ -78,6 +78,32 @@ public static partial class SelfTest
             }
         },
 
+        // N2: one notice for each card that arrives while the tray is closed. A card that the panel showed gets none, also at a
+        // minimize; a card that had its notice gets none again.
+        ["notice-once"] = async (tray, step) =>
+        {
+            var w = tray.Window;
+            var b = tray.Badge;
+            async Task<string> Peek() => await Js(b, "!!document.querySelector('.tb-peek.on')") == "true" ? "peek" : "no peek";
+            step($"open: post card A: {PostCard(tray, "Card A arrives while the panel shows")}");
+            await Task.Delay(1000);
+            step("dock");
+            w.Request(TrayRequest.Dock);
+            await Task.Delay(1500);
+            step($"at the badge: {await Peek()} (expect no peek: the panel showed card A)");
+            step($"post card B: {PostCard(tray, "Card B arrives at the badge")}");
+            await Task.Delay(1500);
+            step($"at the badge: {await Peek()} (expect peek: card B is new)");
+            await Task.Delay(5000);
+            step("open");
+            w.Request(TrayRequest.Open);
+            await Task.Delay(1500);
+            step("dock");
+            w.Request(TrayRequest.Dock);
+            await Task.Delay(1500);
+            step($"at the badge: {await Peek()} (expect no peek: card B had its notice)");
+        },
+
         // The reference look of the spin and the peek of the badge.
         ["badge-peek"] = async (tray, step) =>
         {

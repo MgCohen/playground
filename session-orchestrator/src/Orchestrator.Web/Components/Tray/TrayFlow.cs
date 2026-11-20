@@ -42,6 +42,7 @@ public sealed class TrayFlow
     bool busy;
     string? pending;
     TaskCompletionSource<bool>? notice;
+    string? running;
 
     readonly IJsTrace? trace;
     readonly Stopwatch clock = Stopwatch.StartNew();
@@ -61,6 +62,17 @@ public sealed class TrayFlow
 
     public void Attach(IBadge stage) => badge.TrySetResult(stage);
 
+    /// <summary>
+    /// True when the tray is closed for the user: hidden or at the badge, or on the way there (a hide or a dock runs). An open
+    /// that runs counts as open. The badge notice (TrayNotices) uses it.
+    /// </summary>
+    public bool Closed => running switch
+    {
+        TrayRequest.Open => false,
+        TrayRequest.Hide or TrayRequest.Dock => true,
+        _ => Phase is TrayPhase.Hidden or TrayPhase.BadgeOut or TrayPhase.Badge,
+    };
+
     public async Task Request(string what)
     {
         if (busy)
@@ -68,6 +80,7 @@ public sealed class TrayFlow
             pending = what;
             return;
         }
+        running = what;
         await Run(what switch
         {
             TrayRequest.Open => Open,
@@ -110,6 +123,7 @@ public sealed class TrayFlow
         finally
         {
             busy = false;
+            running = null;
         }
         if (pending is { } next)
         {

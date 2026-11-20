@@ -2491,3 +2491,7 @@ Findings:
 - `dock-open-reduced-before` from S0 had no reduced motion: `scenario.sh` passes no `--reduced`. Now a scenario name that ends with `-reduced` turns it on; the before was recorded again from the S0 commit.
 - Recordings S4 to S8 had a dim screen: a Windows dialog was in front. The final recordings with no dialog: dock-open steps 1 to 4 differ at most 2.0 of 255, deck-throw-tuck 4.1, page-moves steps 1 to 9 1.9. The recordings of dock-open (12 s) and page-moves (14 s) end before the last steps, so compare only those steps.
 - `motion-times` (plan S4) is not done: with the registry of the name and the state class only, C# has no token to compare. `steps-traced` checks that each step ends by the end of its motion.
+
+### Badge notice: one notice for each new card (2026-11-20)
+
+Request of the user: a notice comes only for a card that arrives while the tray is closed (hidden or at the badge), one time; then the card is done. `TrayNotices` holds the rule; `TrayFlow.Closed` says if the tray is closed (a hide or a dock that runs counts as closed, an open that runs as open). Before: a notice came for each rise of the card count, and the peek showed the card with the highest id, which could be an old card. Proof: scenario `notice-once` (card A while the panel shows: no peek at the dock; card B at the badge: peek; after open and dock: no peek); 3 new unit tests, 846 pass; self-test 34 of 35.
