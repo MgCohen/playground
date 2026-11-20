@@ -166,19 +166,19 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
       <tbody>
         <tr><td><a href="#i1">I1</a></td><td>Empty frames at the sheet open</td><td><span class="pill no">Not real</span></td><td>Close it, after I2 confirms</td></tr>
         <tr><td><a href="#i2">I2</a></td><td>The empty frame detector gives false alarms</td><td><span class="pill rpl">Replicated</span></td><td>Your decision: new rule</td></tr>
-        <tr><td><a href="#i3">I3</a></td><td>A stress step that misses does not fail the run</td><td><span class="pill rpl">Replicated</span></td><td>Your decision: fail or count</td></tr>
+        <tr><td><a href="#i3">I3</a></td><td>A stress step that misses does not fail the run</td><td><span class="pill fix">Fixed</span></td><td>Done: a late press is a warning, a miss fails the run</td></tr>
         <tr><td><a href="#i4">I4</a></td><td>Sizing issues on the screen</td><td><span class="pill rep">Reported</span></td><td>Your picture or description</td></tr>
-        <tr><td><a href="#i5">I5</a></td><td>Keyboard and screen reader not tested</td><td><span class="pill det">Detected</span></td><td>Your decision: priority</td></tr>
-        <tr><td><a href="#i6">I6</a></td><td>The tray grow (G1) is not reviewed</td><td><span class="pill rep">Reported</span></td><td>Review with you</td></tr>
-        <tr><td><a href="#i7">I7</a></td><td>The badge hover cuts the ring at the left</td><td><span class="pill rpl">Replicated</span></td><td>Your decision: fix option</td></tr>
-        <tr><td><a href="#i8">I8</a></td><td>The demo moves your real pointer in 4 steps</td><td><span class="pill rpl">Partly fixed</span></td><td>2 of 4 steps fixed; 2 are a platform limit</td></tr>
-        <tr><td><a href="#i9">I9</a></td><td>Eight motion mechanisms, no single flow</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
-        <tr><td><a href="#i10">I10</a></td><td>Sizes in two places (C# and CSS)</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
-        <tr><td><a href="#i11">I11</a></td><td>Motion times outside the tokens</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
-        <tr><td><a href="#i12">I12</a></td><td>Two wait rules for "the motion ended"</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
-        <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
+        <tr><td><a href="#i5">I5</a></td><td>Keyboard and screen reader not tested</td><td><span class="pill fix">Fixed</span></td><td>Done: 2 key checks. Open: Narrator, a manual step for you</td></tr>
+        <tr><td><a href="#i6">I6</a></td><td>The tray grow (G1) is not reviewed</td><td><span class="pill rep">Reported</span></td><td>Look approved; the rest is in R1</td></tr>
+        <tr><td><a href="#i7">I7</a></td><td>The badge hover cuts the ring at the left</td><td><span class="pill rpl">Replicated</span></td><td>In R2, after R1</td></tr>
+        <tr><td><a href="#i8">I8</a></td><td>The demo moves your real pointer in 4 steps</td><td><span class="pill rpl">Partly fixed</span></td><td>Done: the badge steps. Open: the header drag and the badge hover (platform limits)</td></tr>
+        <tr><td><a href="#i9">I9</a></td><td>Eight motion mechanisms, no single flow</td><td><span class="pill det">Detected</span></td><td>In R1 (own session)</td></tr>
+        <tr><td><a href="#i10">I10</a></td><td>Sizes in two places (C# and CSS)</td><td><span class="pill det">Detected</span></td><td>In R2, after R1</td></tr>
+        <tr><td><a href="#i11">I11</a></td><td>Motion times outside the tokens</td><td><span class="pill det">Detected</span></td><td>In R1 (own session)</td></tr>
+        <tr><td><a href="#i12">I12</a></td><td>Two wait rules for "the motion ended"</td><td><span class="pill det">Detected</span></td><td>In R1 (own session)</td></tr>
+        <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill det">Detected</span></td><td>In R1 (own session)</td></tr>
         <tr><td><a href="#i14">I14</a></td><td>A browser status bubble shows the link address</td><td><span class="pill fix">Fixed</span></td><td>Before and after videos done</td></tr>
-        <tr><td><a href="#i15">I15</a></td><td>The gap between the two windows is not managed</td><td><span class="pill det">Detected</span></td><td>Later</td></tr>
+        <tr><td><a href="#i15">I15</a></td><td>The gap between the two windows is not managed</td><td><span class="pill det">Detected</span></td><td>In R1, later step</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f3">F3</a></td><td>The tab change was not the spec (T1 C)</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -233,8 +233,9 @@ Decision     the question for you</pre>
     <h2>Order of the work</h2>
     <ol>
       <li>Done: the grow review (I6). Keep the look; make all values tokens.</li>
-      <li>Small fixes, one at a time, in the order that we pick: I8, I14, I11, I12, I13, I3, I5.</li>
-      <li>The registry design for review (I9, Q1), with I7 and I10 as parts of it.</li>
+      <li>Done: the standalone fixes I14, I8 (part), I5 and I3 (PR #59).</li>
+      <li>R1, the motion pipeline (I6 rest, I9, I11, I12, I13, I15): in its own session, plan in review with you.</li>
+      <li>R2, size ownership (I7, I10): after R1.</li>
       <li>Later: I1, I2. Parked: I4.</li>
     </ol>
   </section>
@@ -248,14 +249,14 @@ Decision     the question for you</pre>
     <div class="scroll"><table>
       <thead><tr><th>Issue</th><th>Problem</th><th>Class</th><th>Root cause</th></tr></thead>
       <tbody>
-        <tr><td><a href="#i9">I9</a></td><td>Eight motion mechanisms</td><td>G1</td><td>No shared start and wait contract</td></tr>
-        <tr><td><a href="#i11">I11</a></td><td>Times outside tokens</td><td>G1 (part safe now)</td><td>Old code came before the motion layer</td></tr>
-        <tr><td><a href="#i12">I12</a></td><td>Two wait rules</td><td>G1</td><td><code>orchTray.end</code> has a property name and fixed limits</td></tr>
-        <tr><td><a href="#i13">I13</a></td><td>Reduced motion waits to the limit</td><td>G1</td><td><code>transition: none</code> removes the end events</td></tr>
-        <tr><td><a href="#i15">I15</a></td><td>Window gap not managed</td><td>G1</td><td><code>WidgetWindow.Enter</code> has no shown or hidden event</td></tr>
-        <tr><td><a href="#i6">I6</a></td><td>Grow review (rest)</td><td>G1</td><td>Look approved; tokens and window steps go to G1</td></tr>
-        <tr><td><a href="#i7">I7</a></td><td>Hover cuts the ring</td><td>G2</td><td>Click area is a C# constant; the width is CSS <code>auto</code></td></tr>
-        <tr><td><a href="#i10">I10</a></td><td>Sizes in C# and CSS</td><td>G2</td><td>Two owners for each size</td></tr>
+        <tr><td><a href="#i9">I9</a></td><td>Eight motion mechanisms</td><td>R1</td><td>No shared start and wait contract</td></tr>
+        <tr><td><a href="#i11">I11</a></td><td>Times outside tokens</td><td>R1 (part safe now)</td><td>Old code came before the motion layer</td></tr>
+        <tr><td><a href="#i12">I12</a></td><td>Two wait rules</td><td>R1</td><td><code>orchTray.end</code> has a property name and fixed limits</td></tr>
+        <tr><td><a href="#i13">I13</a></td><td>Reduced motion waits to the limit</td><td>R1</td><td><code>transition: none</code> removes the end events</td></tr>
+        <tr><td><a href="#i15">I15</a></td><td>Window gap not managed</td><td>R1</td><td><code>WidgetWindow.Enter</code> has no shown or hidden event</td></tr>
+        <tr><td><a href="#i6">I6</a></td><td>Grow review (rest)</td><td>R1</td><td>Look approved; tokens and window steps go to R1</td></tr>
+        <tr><td><a href="#i7">I7</a></td><td>Hover cuts the ring</td><td>R2</td><td>Click area is a C# constant; the width is CSS <code>auto</code></td></tr>
+        <tr><td><a href="#i10">I10</a></td><td>Sizes in C# and CSS</td><td>R2</td><td>Two owners for each size</td></tr>
         <tr><td><a href="#i14">I14</a></td><td>Status bubble</td><td>Standalone</td><td><code>IsStatusBarEnabled</code> not set</td></tr>
         <tr><td><a href="#i8">I8</a></td><td>Demo moves the real pointer</td><td>Standalone</td><td><code>Drag</code> and <code>Glide</code> ignore <code>NoPointer</code>; <code>HostInput</code> reads <code>Cursor.Position</code></td></tr>
         <tr><td><a href="#i3">I3</a></td><td>A missed press does not fail the run</td><td>Test tooling</td><td><code>Act</code> has no pass rule</td></tr>
@@ -268,22 +269,23 @@ Decision     the question for you</pre>
   </section>
   <section>
     <h2>Refactor groups</h2>
-    <details class="example" open><summary>G1 · Motion pipeline · L · I6, I9, I11, I12, I13, I15</summary><div class="body">
+    <p>R1 and R2 were G1 and G2. The new names keep them apart from the grow spec G1 in <code>motion-design.html</code>.</p>
+    <details class="example" open><summary>R1 · Motion pipeline · L · I6, I9, I11, I12, I13, I15</summary><div class="body">
       <p>Covers: P-D1, P-SS1, P-M1, P-C1, P-C2, P-St1, P-St2, and the motion contract. The refactor must:</p>
       <ol><li>Put all times in tokens.</li><li>Make one wait utility: settle, property, time, event; a limit from a token; a trace line at a limit.</li><li>Use 1 ms durations for reduced motion.</li><li>Make the window steps pipeline steps with end events (shown, first frame, hidden).</li><li>Add the C# registry: state, target, token, spec ID, and the checks.</li></ol>
     </div></details>
-    <details class="example" open><summary>G2 · Size ownership · M · I7, I10 · after G1</summary><div class="body">
+    <details class="example" open><summary>R2 · Size ownership · M · I7, I10 · after R1</summary><div class="body">
       <p>Covers: P-P1 (reversed: the page owns the sizes), P-P2, P-D2. The refactor must:</p>
-      <ol><li>The page measures the tab widths (rest, hover, peek), the shadow margin and the panel size.</li><li>The page reports them to C#.</li><li><code>Hits()</code> uses only the reported values.</li><li>The 300 ms hover fold timer becomes "report after the motion ends" (needs the G1 wait).</li><li>A check compares each drawn size with its click area.</li></ol>
+      <ol><li>The page measures the tab widths (rest, hover, peek), the shadow margin and the panel size.</li><li>The page reports them to C#.</li><li><code>Hits()</code> uses only the reported values.</li><li>The 300 ms hover fold timer becomes "report after the motion ends" (needs the R1 wait).</li><li>A check compares each drawn size with its click area.</li></ol>
     </div></details>
   </section>
   <section>
     <h2>Safe to fix now</h2>
-    <ul><li><b>I14</b>: one line in <code>ClearHost.Start</code>.</li><li><b>I8</b>: test helpers, and <code>HostInput</code> reads the point from the message. G2 does not change the drag code.</li><li><b>I3, I5</b>: self-test only.</li></ul>
-    <p>Not now: I11 and I12 are the base of G1. Do them as G1 step 1 and 2, with the final API.</p>
+    <ul><li><b>I14</b>: one line in <code>ClearHost.Start</code>. Done.</li><li><b>I8</b>: test helpers, and <code>HostInput</code> reads the point from the message. R2 does not change the drag code. Done, except the 2 platform limits.</li><li><b>I3, I5</b>: self-test only. Done.</li></ul>
+    <p>Not now: I11 and I12 are the base of R1. Do them as R1 step 1 and 2, with the final API.</p>
   </section>
   <section>
-    <h2>Hidden defects found (no record before; all in G1)</h2>
+    <h2>Hidden defects found (no record before; all in R1)</h2>
     <ul>
       <li><code>TrayStage.Fold</code> waits on <code>.nav2 .home</code>. A page with no app bar ends the wait at once.</li>
       <li><code>BadgeRoot.In</code> sets <code>Badge</code> after 2 frames, before the slide ends. The self-test passes too early.</li>
