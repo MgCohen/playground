@@ -37,8 +37,8 @@ public static partial class SelfTest
                 await Act(log, w, ".nav2 a[href=\"\"]");
                 await Task.Delay(700);
             }
-            File.WriteAllLines(Path.Combine(folder, "stress.txt"), log);
-            return 0;
+            File.WriteAllLines(Path.Combine(folder, "stress.txt"), log.Concat(PressSummary()));
+            return PressMisses.Count == 0 ? 0 : 1;
         }
         // --opens: 10 cycles of a dock and an open, for the empty frames at the end of an open.
         if (opens)
@@ -53,8 +53,8 @@ public static partial class SelfTest
                 await Until(() => w.Phase == TrayPhase.Open, 4000);
                 await Task.Delay(1500);
             }
-            File.WriteAllLines(Path.Combine(folder, "stress.txt"), log);
-            return 0;
+            File.WriteAllLines(Path.Combine(folder, "stress.txt"), log.Concat(PressSummary()));
+            return PressMisses.Count == 0 ? 0 : 1;
         }
         for (var cycle = 0; cycle < 8; cycle++)
         {
@@ -77,8 +77,8 @@ public static partial class SelfTest
             await Task.Delay(500);
             log.Add($"{DateTime.Now:HH:mm:ss.fff} cycle {cycle + 1} done");
         }
-        File.WriteAllLines(Path.Combine(folder, "stress.txt"), log);
-        return 0;
+        File.WriteAllLines(Path.Combine(folder, "stress.txt"), log.Concat(PressSummary()));
+        return PressMisses.Count == 0 ? 0 : 1;
     }
 
     /// <summary>A press of the stress run, with the time of the click in the log.</summary>
@@ -184,8 +184,8 @@ public static partial class SelfTest
 
         // I8: without --pointer the demo must not move the pointer of the user. A move by the user in the run also shows here.
         if (NoPointer) Step(Cursor.Position == pointer ? "pointer: not moved" : $"pointer: moved from {pointer} to {Cursor.Position}");
-        File.WriteAllLines(Path.Combine(folder, "demo.txt"), log);
-        return Faults.Count == 0 ? 0 : 1;
+        File.WriteAllLines(Path.Combine(folder, "demo.txt"), log.Concat(PressSummary()));
+        return Faults.Count == 0 && PressMisses.Count == 0 ? 0 : 1;
     }
 
     /// <summary>The screen point of a part of the element (0.5, 0.5 is its center), or null when the element is not there.</summary>
@@ -204,10 +204,41 @@ public static partial class SelfTest
     /// </summary>
     public static bool NoPointer { get; set; }
 
-    /// <summary>Glides the pointer to the element and clicks it, only when the point is on the tray window.</summary>
+    /// <summary>The late presses (warnings) and the missed presses (failures) of the run, with the cause and the wait time.</summary>
+    static readonly List<string> PressWarnings = [], PressMisses = [];
+
+    /// <summary>A press must find its element in 1 s. Later is a warning; nothing after 3 s is a miss.</summary>
+    const int PressOnTime = 1000, PressLimit = 3000;
+
+    /// <summary>
+    /// Waits for the element, then glides the pointer to it and clicks it, only when the point is on the tray window. An element that
+    /// comes after <see cref="PressOnTime"/> gives a warning; no element after <see cref="PressLimit"/> is a miss. The scenario
+    /// and the stress run fail on a miss.
+    /// </summary>
     static async Task<string> Press(TrayWindow w, string selector, double fx = 0.5, double fy = 0.5)
     {
-        if (await Center(w, selector, fx, fy) is not { } at) return $"no element {selector}";
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        Point? found;
+        while ((found = await Center(w, selector, fx, fy)) is null && clock.ElapsedMilliseconds < PressLimit) await Task.Delay(50);
+        var waited = clock.ElapsedMilliseconds;
+        if (found is not { } at)
+        {
+            var miss = $"MISS {selector}: no element after {waited} ms; page {await Js(w, "location.pathname")}";
+            PressMisses.Add(miss);
+            return miss;
+        }
+        if (waited <= PressOnTime) return await Click(w, at);
+        var late = $"the element came after {waited} ms (limit {PressOnTime} ms); page {await Js(w, "location.pathname")}";
+        PressWarnings.Add($"{selector}: {late}");
+        return $"{await Click(w, at)}; WARNING late: {late}";
+    }
+
+    /// <summary>A press summary for the end of a log: the count of warnings and misses, then each one.</summary>
+    static IEnumerable<string> PressSummary() =>
+        new[] { $"presses: {PressWarnings.Count} warnings, {PressMisses.Count} misses" }.Concat(PressWarnings.Select(x => "  WARNING " + x)).Concat(PressMisses.Select(x => "  " + x));
+
+    static async Task<string> Click(TrayWindow w, Point at)
+    {
         if (NoPointer)
         {
             var client = new Point(at.X - w.Left, at.Y - w.Top);

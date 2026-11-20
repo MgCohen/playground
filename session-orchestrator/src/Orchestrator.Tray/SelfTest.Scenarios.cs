@@ -49,6 +49,26 @@ public static partial class SelfTest
                 step($"{i}:   after 700 ms: {await Js(w, State)}");
             }
         },
+        // I3 proof: the rules of a press, made on purpose. 1: a normal press. 2: a button that comes 1.5 s late (a warning, the run
+        // continues). 3: a button that never comes (a miss, the run fails). Each test button records its click in data-hit.
+        ["press-rules"] = async (tray, step) =>
+        {
+            var w = tray.Window;
+            const string Add = "((id, ms) => setTimeout(() => { const b = document.createElement('button'); b.id = id; b.textContent = id; b.style.cssText = 'position:fixed;left:60px;top:300px;width:120px;height:40px;z-index:99'; b.onclick = () => b.dataset.hit = 'yes'; document.querySelector('.tray-panel').appendChild(b); }, ms))";
+            string Hit(string id) => $"document.getElementById('{id}')?.dataset.hit === 'yes'";
+            await Js(w, $"{Add}('t-now', 0)");
+            await Task.Delay(200);
+            step($"1 normal: {await Press(w, "#t-now")}");
+            await Task.Delay(200);
+            step($"1   hit {await Js(w, Hit("t-now"))}");
+            await Js(w, "document.getElementById('t-now').remove()");
+            await Js(w, $"{Add}('t-late', 1500)");
+            step($"2 late (1.5 s): {await Press(w, "#t-late")}");
+            await Task.Delay(200);
+            step($"2   hit {await Js(w, Hit("t-late"))}");
+            await Js(w, "document.getElementById('t-late')?.remove()");
+            step($"3 never: {await Press(w, "#t-never")}");
+        },
         // I5 spike: do posted key messages reach the page? Open the answer sheet, click the reply box, post "abc" to the host window,
         // read the box; then post "xyz" to each child window of WebView2, read the box.
         ["keys"] = async (tray, step) =>
@@ -173,8 +193,8 @@ public static partial class SelfTest
         Step($"scenario {name}");
         await run(tray, Step);
         Step(Cursor.Position == pointer ? "pointer: not moved" : $"pointer: moved from {pointer} to {Cursor.Position}");
-        File.WriteAllLines(Path.Combine(folder, "scenario.txt"), log);
-        return Faults.Count == 0 ? 0 : 1;
+        File.WriteAllLines(Path.Combine(folder, "scenario.txt"), log.Concat(PressSummary()));
+        return Faults.Count == 0 && PressMisses.Count == 0 ? 0 : 1;
     }
 
     /// <summary>A pointer move onto the element, with no click: a window message.</summary>
