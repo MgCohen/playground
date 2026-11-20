@@ -408,6 +408,7 @@ dotnet run -- --selftest before-reduced --reduced</pre>
       <dt>Changes</dt><dd><ul>
         <li>New <code>Features/Motion/Slices/Registry</code>: one row for each motion step today (Pipeline tab).</li>
         <li>A row makes a <code>MotionWait</code> command. The step trace writes "step &lt;name&gt;: by end in N ms".</li>
+        <li>The other JS calls become commands: <code>TrayHome</code>, <code>MotionDot</code>, <code>MotionBegin</code>, <code>MotionMs</code>. No component calls <code>IJSRuntime</code> directly after this step.</li>
         <li><code>TrayStage</code>, <code>BadgeRoot</code>, <code>Presence</code>, <code>MainLayout</code> call steps by row name. Targets do not change.</li>
         <li>Registry scope: names only. A row names its token; <code>motion.css</code> has the value. C# reads a value from the page when it needs one.</li>
       </ul></dd>
@@ -417,6 +418,8 @@ dotnet run -- --selftest before-reduced --reduced</pre>
         <li>New unit test <code>Registry_matches_motion_css</code>: each row token is in motion.css; each duration token has a row; each spec ID is in <code>motion-design.html</code>.</li>
         <li>New self-test check <code>motion-times</code>: for each step, the <code>getAnimations()</code> durations on the target equal the token, ±1 ms.</li>
         <li>Fail first: these checks need the registry. Change one row token, see FAIL, restore it.</li>
+        <li>New unit test <code>No_direct_js_calls</code>: no <code>IJSRuntime</code> call outside <code>Plugins/Js</code>. Before: about 10 hits, FAIL.</li>
+        <li>New unit test <code>Js_names_exist</code>: the JS name of each command is in <code>motion.js</code> or <code>tray.js</code>. Fail first: rename one function, see FAIL.</li>
       </ul></dd>
       <dt>Risk</dt><dd>Medium. Many call sites change. The rows keep the same targets, so the look stays.</dd>
       <dt>Undo</dt><dd>Revert the commit. S3 stays.</dd>
@@ -542,7 +545,8 @@ orchMotion.wait(target, "settle")              <span class="c">// all finite ani
 orchMotion.wait(target, "property", "clip-path") <span class="c">// one transition or animation name; none running: ends at once</span>
 orchMotion.wait(null,   "time", "--t-peek-show") <span class="c">// the time of a token</span>
 orchMotion.wait(target, "event", "frames:2")    <span class="c">// a DOM event, or n display frames</span>
-<span class="c">// Result: { by: "end" | "limit" | "hidden" | "missing", ms }</span>
+<span class="c">// Result: { by: "end" | "cancel" | "limit" | "hidden" | "missing", ms }</span>
+<span class="c">// "cancel": the state class changed during the wait, so the browser stopped the motion.</span>
 <span class="c">// by "limit" or "missing": C# writes a trace line with the step name.</span></pre>
 
   <h2>The C# call: one command on the Umpire pipeline</h2>
@@ -552,6 +556,22 @@ public sealed class MotionWaitHandler(IJSRuntime js, JsCalls calls) : JsCommandH
 
 <span class="c">// A call site. The handler catches JS errors and returns an Error; nothing is swallowed.</span>
 var r = await Commands.SendAsync(new MotionWait(stage, WaitMode.Property, "clip-path"));</pre>
+  <p class="sum"><code>Plugins/Js</code> is the general path for each C# to JS call, not only for motion. A new JS function gets one command record and one one-line handler.</p>
+
+  <h2>Trade-offs and limits</h2>
+  <div class="tbl"><table>
+    <tr><th>Item</th><th>Effect</th><th>What we do</th></tr>
+    <tr><td>Each wait is one interop call</td><td>Fast in the tray; a network trip in the web server</td><td>Keep tight orders inside one CSS phase</td></tr>
+    <tr><td>One request at a time</td><td>No reversal in the middle of a motion</td><td>Same as today. A dock during a grow waits</td></tr>
+    <tr><td>Pointer motion</td><td>C# cannot follow each frame</td><td>The drag math stays in <code>swipe.js</code></td></tr>
+    <tr><td>A new motion</td><td>A CSS rule and a registry row</td><td>A unit test finds a row and a token that do not agree</td></tr>
+    <tr><td>One-line handler for each command</td><td>Some code for each JS function</td><td>Later: a source generator</td></tr>
+    <tr><td>JS name from the type</td><td>A rename breaks the call with no build error</td><td>A unit test finds each name in the scripts</td></tr>
+    <tr><td>Umpire is a preview</td><td>The API can change</td><td>Stay on <code>0.2.0-preview.10</code> until R1 is done</td></tr>
+    <tr><td>No check mode for each folder</td><td>R1 findings are warnings</td><td>Test <code>R1_folders_have_no_findings</code></td></tr>
+    <tr><td>Deck act after the throw (S8)</td><td>Undo and the next card can change</td><td>The bUnit tests of Cards; risk high</td></tr>
+    <tr><td>Springs</td><td><code>cubic-bezier</code> only, no physics</td><td>A CSS limit; no change</td></tr>
+  </table></div>
 
   <h2>The registry row</h2>
   <pre><span class="c">// Components/Motion/MotionRegistry.cs</span>
@@ -593,6 +613,7 @@ public static readonly MotionStep[] Steps =
 <!-- ============ CHECKS ============ -->
 <section class="panel" id="checks" role="tabpanel" aria-labelledby="t-checks" hidden>
   <p class="sum">Each new check fails on the code before its step. If the check needs the code of its step, the fail-first proof is a change of one value: see FAIL, then restore it.</p>
+  <h2>Checks of S1 to S4</h2>
   <div class="tbl"><table>
     <tr><th>Check</th><th>Kind</th><th>Step</th><th>Before the step</th></tr>
     <tr><td><code>Motion_times_are_tokens</code></td><td>unit</td><td>S1</td><td>FAIL: about 20 literals</td></tr>
@@ -604,6 +625,12 @@ public static readonly MotionStep[] Steps =
     <tr><td><code>One_wait_utility</code></td><td>unit</td><td>S3</td><td>FAIL: 7 old calls</td></tr>
     <tr><td><code>Registry_matches_motion_css</code></td><td>unit</td><td>S4</td><td>Fail first by a wrong token</td></tr>
     <tr><td><code>motion-times</code></td><td>self-test</td><td>S4</td><td>Fail first by a wrong token</td></tr>
+    <tr><td><code>No_direct_js_calls</code></td><td>unit</td><td>S4</td><td>FAIL: about 10 calls</td></tr>
+    <tr><td><code>Js_names_exist</code></td><td>unit</td><td>S4</td><td>Fail first by a renamed function</td></tr>
+  </table></div>
+  <h2>Checks of S5 to S9</h2>
+  <div class="tbl"><table>
+    <tr><th>Check</th><th>Kind</th><th>Step</th><th>Before the step</th></tr>
     <tr><td><code>fold-no-app-bar</code></td><td>self-test</td><td>S5</td><td>FAIL: fold near 0 ms</td></tr>
     <tr><td><code>badge-in-ended</code></td><td>self-test</td><td>S6</td><td>FAIL: translate not 0</td></tr>
     <tr><td><code>dock</code> (changed)</td><td>self-test</td><td>S6</td><td>No 400 ms delay before the read</td></tr>
