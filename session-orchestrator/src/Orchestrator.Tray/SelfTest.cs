@@ -246,6 +246,16 @@ public static partial class SelfTest
 
         if (mouse) await Mouse(w, b, Add);
 
+        // H4: a new card during a hide: the notice waits for the hide, then the badge comes in and peeks.
+        w.Request(TrayRequest.Hide);
+        PostCard(tray, "The self-test posts a card during a hide");
+        var busyBadge = await Until(() => w.Phase == TrayPhase.Badge, 3000);
+        var busyPeek = await Until(async () => await Js(b, "!!document.querySelector('.tb-peek.on')") == "true", 1500);
+        Add("notice-while-busy", busyBadge && busyPeek, $"after a hide with a new card: phase {w.Phase}, badge shows {b.Visible}, peek {busyPeek}");
+        w.Request(TrayRequest.Open);
+        await Until(() => w.Phase == TrayPhase.Open, 4000);
+        await Task.Delay(600);
+
         // H1: the fold on a page with no app bar ends with the panel, not at once: the badge comes after the fold.
         var doc = await Js(w, "document.querySelector('a[href^=\"events/\"]')?.getAttribute('href') ?? ''");
         if (doc.Length == 0)

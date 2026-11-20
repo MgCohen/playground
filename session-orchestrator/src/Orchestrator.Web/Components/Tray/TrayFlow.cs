@@ -3,7 +3,8 @@ namespace Orchestrator.Web.Components.Tray;
 /// <summary>
 /// The order of the two tray windows: the panel (TrayStage) and the badge (BadgeRoot). Each page plays its own motion; the flow
 /// only orders the steps and asks the window for each phase (<see cref="IWidgetWindow.Enter"/>). One request runs at a time;
-/// a request during a run waits, and only the last one runs. Only the tray app has a flow (a singleton): the web server has
+/// a request during a run waits, and only the last one runs. This queue orders window requests, not JS calls, so it stays here
+/// (plain C#) and not in the JS pipeline. Only the tray app has a flow (a singleton): the web server has
 /// none.
 /// </summary>
 public sealed class TrayFlow
@@ -36,6 +37,7 @@ public sealed class TrayFlow
     readonly TaskCompletionSource<IBadge> badge = new(TaskCreationOptions.RunContinuationsAsynchronously);
     bool busy;
     string? pending;
+    TaskCompletionSource<bool>? notice;
 
     public TrayFlow(IWidgetWindow window)
     {
@@ -57,15 +59,44 @@ public sealed class TrayFlow
             pending = what;
             return;
         }
+        await Run(what switch
+        {
+            TrayRequest.Open => Open,
+            TrayRequest.Dock => Dock,
+            TrayRequest.Hide => Hide,
+            _ => () => Task.CompletedTask,
+        });
+    }
+
+    /// <summary>
+    /// A new card while the tray is hidden: the badge comes in. True when the badge shows after the call. H4: when the flow is
+    /// busy, the notice waits for the end of the run; the badge then comes in only if the tray is hidden, so a notice never
+    /// brings the badge over a panel that the user opened.
+    /// </summary>
+    public async Task<bool> BringBadge()
+    {
+        if (busy)
+        {
+            notice ??= new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            return await notice.Task;
+        }
+        if (Phase == TrayPhase.Hidden) await Run(ShowBadge);
+        return Phase == TrayPhase.Badge;
+    }
+
+    // One run at a time. H3: an error of a step goes to the fault log of the tray, and the phase becomes the phase of the
+    // windows, so the next request starts from what shows. After the run: the last waiting request, then a waiting notice.
+    async Task Run(Func<Task> work)
+    {
         busy = true;
         try
         {
-            if (what == TrayRequest.Open) await Open();
-            else if (what == TrayRequest.Dock) await Dock();
-            else if (what == TrayRequest.Hide) await Hide();
+            await work();
         }
-        catch (Exception e) when (e is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or TaskCanceledException or InvalidOperationException)
+        catch (Exception e)
         {
+            window.Fault(e, $"tray flow (phase {Phase}, windows {window.Phase})");
+            Phase = window.Phase;
         }
         finally
         {
@@ -75,25 +106,14 @@ public sealed class TrayFlow
         {
             pending = null;
             await Request(next);
+            return;
         }
-    }
-
-    /// <summary>A new card while the tray is hidden: the badge comes in. True when the badge shows after the call.</summary>
-    public async Task<bool> BringBadge()
-    {
-        if (Phase == TrayPhase.Hidden && !busy)
+        if (notice is { } waiting)
         {
-            busy = true;
-            try
-            {
-                await ShowBadge();
-            }
-            finally
-            {
-                busy = false;
-            }
+            notice = null;
+            if (Phase == TrayPhase.Hidden) await Run(ShowBadge);
+            waiting.TrySetResult(Phase == TrayPhase.Badge);
         }
-        return Phase == TrayPhase.Badge;
     }
 
     async Task Open()

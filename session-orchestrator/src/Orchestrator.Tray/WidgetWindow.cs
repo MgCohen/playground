@@ -79,5 +79,9 @@ public sealed class WidgetWindow : IWidgetWindow
         return done.Task;
     }
 
+    public string Phase => Window?.Phase ?? TrayPhase.Hidden;
+
+    public void Fault(Exception error, string where) => Faults.Add(error, where);
+
     public void Peek(bool on) => Badge?.BeginInvoke(() => Badge.Peek(on));
 }
