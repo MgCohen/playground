@@ -44,6 +44,7 @@ Follow these rules for each change. The design is on the Engines tab of `docs/se
 | Job | Command |
 |---|---|
 | Build and test | `dotnet test --solution Orchestrator.slnx` |
+| Umpire feed | The Umpire SDK and packages come from GitHub Packages. Set `GITHUB_TOKEN` (`gh auth token`) before the first restore. The build output is in `artifacts~/` |
 | Start the supervisor | `dotnet run --project src/Orchestrator.Web` |
 | Test store and port | Set `ORCH_STORE` and `ORCH_PORT` before the start |
 | Install or update `orch` | `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` |

@@ -1,17 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Umpire.Sdk/0.2.0-preview.11">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <EnableNUnitRunner>true</EnableNUnitRunner>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <Using Include="NUnit.Framework" />
     <Using Include="Orchestrator.Providers" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="bunit" />
-    <PackageReference Include="NUnit" />
-    <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
   </ItemGroup>
   <ItemGroup>

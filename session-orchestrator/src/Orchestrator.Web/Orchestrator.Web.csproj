@@ -1,4 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Umpire.Sdk.Web/0.2.0-preview.11">
+  <!-- The Umpire block of the architecture check: this project with the VSA definition. The engine runs after the build,
+       because the project is not in the block root. All findings are warnings (.umpireconfig). -->
+  <PropertyGroup>
+    <UmpireEngine>true</UmpireEngine>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="Umpire.Architecture" Value="Umpire.Vsa.Definition.VsaArchitecture, Umpire" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Orchestrator.Supervisor/Orchestrator.Supervisor.csproj" />
   </ItemGroup>
