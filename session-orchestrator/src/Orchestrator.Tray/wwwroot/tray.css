@@ -130,7 +130,7 @@ html { scrollbar-gutter: auto; }
 
 /* ===== The motion steps of the tray (MotionSteps in C#; the rule of motion.css explains --motion-wait). ===== */
 [data-motion~="grow"] { --motion-wait: clip-path; } /* G1 · tray */
-[data-motion~="fold"] { --motion-wait: scale; } /* G1 · tray */
+[data-motion~="fold"] { --motion-wait: clip-path scale; } /* G1 · tray: the panel clip and the ball, also with no app bar (H1) */
 [data-motion~="badge-in"], [data-motion~="badge-out"] { --motion-wait: translate; } /* N1 · minimize */
 [data-motion~="spin"] { --motion-wait: tb-spin; } /* N2 · notify */
 [data-motion~="peek-out"] { --motion-wait: opacity; } /* N2 · notify */

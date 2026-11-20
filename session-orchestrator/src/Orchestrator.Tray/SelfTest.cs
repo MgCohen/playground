@@ -244,6 +244,27 @@ public static partial class SelfTest
 
         if (mouse) await Mouse(w, b, Add);
 
+        // H1: the fold on a page with no app bar ends with the panel, not at once: the badge comes after the fold.
+        var doc = await Js(w, "document.querySelector('a[href^=\"events/\"]')?.getAttribute('href') ?? ''");
+        if (doc.Length == 0)
+        {
+            await Js(w, $"{Go}('stream')");
+            await Task.Delay(700);
+            doc = await Js(w, "document.querySelector('a[href^=\"events/\"]')?.getAttribute('href') ?? ''");
+        }
+        await Js(w, $"{Go}('{doc}')");
+        await Task.Delay(800);
+        var foldClock = System.Diagnostics.Stopwatch.StartNew();
+        w.Request(TrayRequest.Dock);
+        await Until(() => w.Phase == TrayPhase.BadgeOut || w.Phase == TrayPhase.Badge, 4000);
+        var foldMs = foldClock.ElapsedMilliseconds;
+        Add("fold-no-app-bar", reduced || foldMs is >= 340 and < 900, $"on {doc}: dock to badge-out {foldMs} ms (expect 340 to 900: the fold of the panel, no limit)");
+        w.Request(TrayRequest.Open);
+        await Until(() => w.Phase == TrayPhase.Open, 4000);
+        await Task.Delay(600);
+        await Js(w, $"{Go}('')");
+        await Task.Delay(500);
+
         // I13: with reduced motion each duration token is 1 ms, so a dock and an open end at once: no wait runs to its limit.
         if (reduced)
         {

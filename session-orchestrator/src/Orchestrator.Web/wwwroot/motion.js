@@ -53,7 +53,8 @@
     ms: ms,
     // The one wait of the motion pipeline (R1, I12). C# sends it as the command MotionWait. The modes:
     //   settle    each finite CSS animation and transition of the target and its children ends.
-    //   property  the transitions of one property (or the animations of one name) of the target end. None running: at once.
+    //   property  the transitions of the properties (or the animations of the names) in arg end, on the target and its
+    //             children. arg is one name or a list ("clip-path scale"). None running: at once.
     //   time      the time of a token (arg, for example "--t-peek-show").
     //   event     a DOM event of the target (arg), or "frames:n": n display frames.
     //   step      a motion step of the registry: the target has data-motion, and its CSS rule owns the wait. The custom
@@ -91,10 +92,11 @@
         timer = setTimeout(function () { finish("limit"); }, limit());
         if (mode === "event") { el.addEventListener(arg, function () { finish("end"); }, { once: true }); return; }
         requestAnimationFrame(function () {
-          var all = el.getAnimations ? el.getAnimations(mode === "settle" ? { subtree: true } : undefined) : [];
+          var all = el.getAnimations ? el.getAnimations({ subtree: true }) : [];
+          var names = String(arg || "").split(/[\s,]+/).filter(Boolean);
           var mine = all.filter(function (a) {
             if (!a.effect || a.effect.getComputedTiming().endTime === Infinity) return false;
-            return mode === "settle" || a.transitionProperty === arg || a.animationName === arg;
+            return mode === "settle" || names.indexOf(a.transitionProperty) >= 0 || names.indexOf(a.animationName) >= 0;
           });
           var canceled = false;
           Promise.all(mine.map(function (a) { return a.finished.catch(function () { canceled = true; }); }))

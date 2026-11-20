@@ -14,7 +14,7 @@
 else
 {
     <div class="tray-stage is-@phase @(ready ? "is-ready" : "")" @ref="stage">
-        <div class="tray-shadow">
+        <div class="tray-shadow" data-motion="fold">
             <div class="tray-frame"></div>
             <div class="tray-panel" data-motion="grow">
                 <div class="tray-view">@ChildContent</div>
