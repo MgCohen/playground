@@ -104,6 +104,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
   <select id="pick">
     <option value="about">Overview: all issues</option>
     <option value="questions">Questions and answers (0 open)</option>
+    <option value="inventory">Inventory: architecture or standalone</option>
     <option value="i1">I1 · Empty frames at the sheet open  (Not real)</option>
     <option value="i2">I2 · The empty frame detector gives false alarms  (Replicated)</option>
     <option value="i3">I3 · A stress step that misses does not fail the run  (Replicated)</option>
@@ -236,6 +237,68 @@ Decision     the question for you</pre>
       <li>The registry design for review (I9, Q1), with I7 and I10 as parts of it.</li>
       <li>Later: I1, I2. Parked: I4.</li>
     </ol>
+  </section>
+</div>
+
+<!-- inventory -->
+<div class="panel off" id="inventory" role="tabpanel">
+  <section>
+    <h2>Inventory: architecture or standalone</h2>
+    <p class="summary">8 of 15 open issues are symptoms of two architecture problems. Fix them inside the refactor, not one by one. 2 issues are standalone. 5 are test tooling or have no proof. Made on 2026-11-20 by an agent that did not see our classification; claims checked in the code.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Issue</th><th>Problem</th><th>Class</th><th>Root cause</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#i9">I9</a></td><td>Eight motion mechanisms</td><td>G1</td><td>No shared start and wait contract</td></tr>
+        <tr><td><a href="#i11">I11</a></td><td>Times outside tokens</td><td>G1 (part safe now)</td><td>Old code came before the motion layer</td></tr>
+        <tr><td><a href="#i12">I12</a></td><td>Two wait rules</td><td>G1</td><td><code>orchTray.end</code> has a property name and fixed limits</td></tr>
+        <tr><td><a href="#i13">I13</a></td><td>Reduced motion waits to the limit</td><td>G1</td><td><code>transition: none</code> removes the end events</td></tr>
+        <tr><td><a href="#i15">I15</a></td><td>Window gap not managed</td><td>G1</td><td><code>WidgetWindow.Enter</code> has no shown or hidden event</td></tr>
+        <tr><td><a href="#i6">I6</a></td><td>Grow review (rest)</td><td>G1</td><td>Look approved; tokens and window steps go to G1</td></tr>
+        <tr><td><a href="#i7">I7</a></td><td>Hover cuts the ring</td><td>G2</td><td>Click area is a C# constant; the width is CSS <code>auto</code></td></tr>
+        <tr><td><a href="#i10">I10</a></td><td>Sizes in C# and CSS</td><td>G2</td><td>Two owners for each size</td></tr>
+        <tr><td><a href="#i14">I14</a></td><td>Status bubble</td><td>Standalone</td><td><code>IsStatusBarEnabled</code> not set</td></tr>
+        <tr><td><a href="#i8">I8</a></td><td>Demo moves the real pointer</td><td>Standalone</td><td><code>Drag</code> and <code>Glide</code> ignore <code>NoPointer</code>; <code>HostInput</code> reads <code>Cursor.Position</code></td></tr>
+        <tr><td><a href="#i3">I3</a></td><td>A missed press does not fail the run</td><td>Test tooling</td><td><code>Act</code> has no pass rule</td></tr>
+        <tr><td><a href="#i5">I5</a></td><td>No keyboard check</td><td>Test tooling</td><td>No check sends keys</td></tr>
+        <tr><td><a href="#i1">I1</a></td><td>False empty frames</td><td>Test tooling</td><td>The detector, not the tray</td></tr>
+        <tr><td><a href="#i2">I2</a></td><td>Detector false alarms</td><td>Test tooling</td><td>Frame mean, not pixel share</td></tr>
+        <tr><td><a href="#i4">I4</a></td><td>Sizing issue</td><td>No proof</td><td>Not known</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>Refactor groups</h2>
+    <details class="example" open><summary>G1 · Motion pipeline · L · I6, I9, I11, I12, I13, I15</summary><div class="body">
+      <p>Covers: P-D1, P-SS1, P-M1, P-C1, P-C2, P-St1, P-St2, and the motion contract. The refactor must:</p>
+      <ol><li>Put all times in tokens.</li><li>Make one wait utility: settle, property, time, event; a limit from a token; a trace line at a limit.</li><li>Use 1 ms durations for reduced motion.</li><li>Make the window steps pipeline steps with end events (shown, first frame, hidden).</li><li>Add the C# registry: state, target, token, spec ID, and the checks.</li></ol>
+    </div></details>
+    <details class="example" open><summary>G2 · Size ownership · M · I7, I10 · after G1</summary><div class="body">
+      <p>Covers: P-P1 (reversed: the page owns the sizes), P-P2, P-D2. The refactor must:</p>
+      <ol><li>The page measures the tab widths (rest, hover, peek), the shadow margin and the panel size.</li><li>The page reports them to C#.</li><li><code>Hits()</code> uses only the reported values.</li><li>The 300 ms hover fold timer becomes "report after the motion ends" (needs the G1 wait).</li><li>A check compares each drawn size with its click area.</li></ol>
+    </div></details>
+  </section>
+  <section>
+    <h2>Safe to fix now</h2>
+    <ul><li><b>I14</b>: one line in <code>ClearHost.Start</code>.</li><li><b>I8</b>: test helpers, and <code>HostInput</code> reads the point from the message. G2 does not change the drag code.</li><li><b>I3, I5</b>: self-test only.</li></ul>
+    <p>Not now: I11 and I12 are the base of G1. Do them as G1 step 1 and 2, with the final API.</p>
+  </section>
+  <section>
+    <h2>Hidden defects found (no record before; all in G1)</h2>
+    <ul>
+      <li><code>TrayStage.Fold</code> waits on <code>.nav2 .home</code>. A page with no app bar ends the wait at once.</li>
+      <li><code>BadgeRoot.In</code> sets <code>Badge</code> after 2 frames, before the slide ends. The self-test passes too early.</li>
+      <li><code>TrayFlow.Request</code> catches JS errors with no report; <code>Phase</code> can stay out of date.</li>
+      <li><code>BringBadge</code> drops a notice when the flow is busy.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Conflicts to decide</h2>
+    <ul>
+      <li>Q1 registry: does it own the token values, or only the names? If the values, the I11 work moves again.</li>
+      <li>P-P1 and P-SS1 on the architecture page are out of date after the I7, I10 and I12 answers.</li>
+      <li>"Gap" has two meanings: 12 px at the screen edge, and about 100 ms between windows. Each needs its own term.</li>
+      <li>No record yet: P-S1 (hidden views load), and the order of <code>tray.css</code> over <code>motion.css</code>.</li>
+    </ul>
   </section>
 </div>
 
