@@ -103,7 +103,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
   <label for="pick">Page</label>
   <select id="pick">
     <option value="about">Overview: all issues</option>
-    <option value="questions">Open questions (16)</option>
+    <option value="questions">Questions and answers (0 open)</option>
     <option value="i1">I1 · Empty frames at the sheet open  (Not real)</option>
     <option value="i2">I2 · The empty frame detector gives false alarms  (Replicated)</option>
     <option value="i3">I3 · A stress step that misses does not fail the run  (Replicated)</option>
@@ -202,29 +202,38 @@ Decision     the question for you</pre>
 <!-- QUESTIONS -->
 <div class="panel off" id="questions" role="tabpanel">
   <section>
-    <h2>Open questions</h2>
-    <p class="summary">All open questions in one place. Answer in the chat with the ID, for example "Q1: A first". When a question is answered, it goes from this list, and the issue page records the answer.</p>
+    <h2>Questions and answers</h2>
+    <p class="summary">Open questions: 0. All 16 questions got an answer on 2026-11-20. Each issue page records its answer. A new question goes in this table first.</p>
     <div class="scroll"><table>
-      <thead><tr><th>ID</th><th>Question</th><th>Where</th><th>Recommendation</th></tr></thead>
+      <thead><tr><th>ID</th><th>Answer</th><th>Where</th></tr></thead>
       <tbody>
-        <tr><td>Q1</td><td>How do we build the motion contract: A (step by step), B (motion registry), or A first and B later?</td><td>Architecture, motion contract</td><td>A first, then B</td></tr>
-        <tr><td>I14</td><td>Do we turn off the browser status bubble in the tray windows?</td><td><a href="#i14">I14</a></td><td>Yes</td></tr>
-        <tr><td>Q2</td><td>Do we keep the visual-issue skill in this project, or move it to the orch plugin?</td><td>Skill</td><td>This project for now</td></tr>
-        <tr><td>I1</td><td>Do we close I1 after the new detector (I2) gives 0?</td><td><a href="#i1">I1</a></td><td>Yes</td></tr>
-        <tr><td>I2</td><td>Do I change the detector to the pixel share rule?</td><td><a href="#i2">I2</a></td><td>Yes</td></tr>
-        <tr><td>I3</td><td>Does a missed press fail the stress run?</td><td><a href="#i3">I3</a></td><td>Yes</td></tr>
-        <tr><td>I4</td><td>Which screen and which part showed the sizing issue?</td><td><a href="#i4">I4</a></td><td>Your picture</td></tr>
-        <tr><td>I5</td><td>Is keyboard input in the tray a need now, or later?</td><td><a href="#i5">I5</a></td><td>Later</td></tr>
-        <tr><td>I6</td><td>When do we review the grow?</td><td><a href="#i6">I6</a></td><td>After the motion contract</td></tr>
-        <tr><td>I7</td><td>Which fix: A (fixed 280 px), B (C# follows the page), C (shorter text)?</td><td><a href="#i7">I7</a></td><td>A, through P-P1</td></tr>
-        <tr><td>I8</td><td>Do the 4 demo steps use window messages?</td><td><a href="#i8">I8</a></td><td>Yes</td></tr>
-        <tr><td>I9</td><td>Do we do the design pass before the fixes of I7, I10 to I13?</td><td><a href="#i9">I9</a></td><td>Yes</td></tr>
-        <tr><td>I10</td><td>Which side owns the sizes: the page or C#?</td><td><a href="#i10">I10</a></td><td>C# (P-P1)</td></tr>
-        <tr><td>I11</td><td>Are the motion times part of the contract, or a separate fix?</td><td><a href="#i11">I11</a></td><td>Part of the contract</td></tr>
-        <tr><td>I12</td><td>Is one wait helper part of the contract?</td><td><a href="#i12">I12</a></td><td>Yes</td></tr>
-        <tr><td>I13</td><td>Is reduced motion as 1 ms part of the contract?</td><td><a href="#i13">I13</a></td><td>Yes</td></tr>
+        <tr><td>I8</td><td><b>A.</b> All 4 demo steps use window messages. The header drag can move the window in code.</td><td><a href="#i8">I8</a></td></tr>
+        <tr><td>I14</td><td><b>A, turn off.</b> IsStatusBarEnabled = false in ClearHost.Start.</td><td><a href="#i14">I14</a></td></tr>
+        <tr><td>I7</td><td><b>B, measure on demand.</b> No hard-coded sizes. The page measures its sizes and reports them; C# sets the click area from them. Part of the registry work (I9).</td><td><a href="#i7">I7</a></td></tr>
+        <tr><td>I10</td><td><b>A, the page.</b> The page owns all sizes (CSS tokens) and reports them to C#. C# keeps only the work area, the saved places and the gap.</td><td><a href="#i10">I10</a></td></tr>
+        <tr><td>Q1</td><td><b>B, registry.</b> A motion registry in C# (data-driven) that makes the CSS rules and the checks.</td><td>Architecture, motion contract</td></tr>
+        <tr><td>I9</td><td><b>A, design first.</b> First a registry design on the architecture page, for review. Then I7 and I10 as parts of it.</td><td><a href="#i9">I9</a></td></tr>
+        <tr><td>I11</td><td><b>B, tokens now.</b> Move all motion times to tokens in motion.css now, as a separate fix.</td><td><a href="#i11">I11</a></td></tr>
+        <tr><td>I12</td><td><b>One utility, many modes.</b> One wait utility with modes: settle (other animations), property, and time. One limit rule from a token, and a trace line when a limit ends a wait. It replaces orchTray.end and orchMotion.settle.</td><td><a href="#i12">I12</a></td></tr>
+        <tr><td>I13</td><td><b>A.</b> In reduced motion, the duration tokens become 1 ms. Run the self-test with reduced motion emulated.</td><td><a href="#i13">I13</a></td></tr>
+        <tr><td>I2</td><td><b>Later.</b> Discuss later.</td><td><a href="#i2">I2</a></td></tr>
+        <tr><td>I1</td><td><b>Later.</b> Discuss with I2 later.</td><td><a href="#i1">I1</a></td></tr>
+        <tr><td>I3</td><td><b>Wait 1 s, then retry.</b> Each press waits at most 1 s for its element. If it is missing, retry up to 3 s. A retry or a miss is a failure, and the run exits with 1.</td><td><a href="#i3">I3</a></td></tr>
+        <tr><td>I4</td><td><b>Parked.</b> Parked until there is proof. Hint from the user: it occurred at a quick modal open (the answer sheet).</td><td><a href="#i4">I4</a></td></tr>
+        <tr><td>I5</td><td><b>A, a must.</b> Keyboard use is a must. Add two self-test checks: type in the reply box, and Tab moves the focus. A failure is a must-fix issue. Narrator is a manual step for the user.</td><td><a href="#i5">I5</a></td></tr>
+        <tr><td>I6</td><td><b>Right after the questions.</b> The grow is part of the system design: review it together right after the questions. The order of the bug fixes is decided as we go.</td><td><a href="#i6">I6</a></td></tr>
+        <tr><td>Q2</td><td><b>Project for now.</b> Keep the skill in this project. Later move it to a general place: the machine, or the orch plugin.</td><td>Skill</td></tr>
       </tbody>
     </table></div>
+  </section>
+  <section>
+    <h2>Order of the work</h2>
+    <ol>
+      <li>Review the grow (G1, M6) together (I6).</li>
+      <li>Small fixes, one at a time, in the order that we pick: I8, I14, I11, I12, I13, I3, I5.</li>
+      <li>The registry design for review (I9, Q1), with I7 and I10 as parts of it.</li>
+      <li>Later: I1, I2. Parked: I4.</li>
+    </ol>
   </section>
 </div>
 
@@ -250,7 +259,7 @@ Decision     the question for you</pre>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. The scrim fade makes the tray area darker or lighter in steps. One step has a mean near the backdrop mean (204), so the detector marks it. See I2.</p>
       <p>This also explains the old test: with no scrim fade, the mean jumps past 204, so the count went to about 1.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>No change to the tray. Keep the scrim fade as the spec says. Close I1 when the new detector (I2) gives 0 on the same run.</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do we close I1 after the I2 check gives 0?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we close I1 after the I2 check gives 0?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Later.</b> Discuss with I2 later.</p></div></div></div>
   </section>
 </div>
 
@@ -273,7 +282,7 @@ record = that share for each frame, in place of the mean</pre>
       <p>Proof that the new rule works:</p>
       <ol><li>The old open blink (the real one, see <a href="#f1">F1</a>) still gives an empty frame.</li><li>The <code>base-now</code> run gives 0.</li></ol>
     </div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do I change the detector to the pixel share rule, and test it on the old and new runs?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I change the detector to the pixel share rule, and test it on the old and new runs?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Later.</b> Discuss later.</p></div></div></div>
   </section>
 </div>
 
@@ -293,7 +302,7 @@ record = that share for each frame, in place of the mean</pre>
 <span class="c"># 46 presses clicked, 2 missed. Run h-sheet: the same misses in cycle 1.</span></pre></div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. <code>Act</code> writes the result but has no pass rule. In cycle 1 the Cards page is not ready 700 ms after the tab click.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>Wait for the element with <code>Until</code> before the press, up to 3 s.</li><li>Count the misses. Exit 1 if one press misses.</li></ol></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do I make a missed press fail the run?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I make a missed press fail the run?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Wait 1 s, then retry.</b> Each press waits at most 1 s for its element. If it is missing, retry up to 3 s. A retry or a miss is a failure, and the run exits with 1.</p></div></div></div>
   </section>
 </div>
 
@@ -319,7 +328,7 @@ record = that share for each frame, in place of the mean</pre>
       </table></div>
     </div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>Send a screenshot, or say the page, the part and what is wrong. Then I add a size check for that part to the self-test.</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Which screen and which part showed the sizing issue?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Which screen and which part showed the sizing issue?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Parked.</b> Parked until there is proof. Hint from the user: it occurred at a quick modal open (the answer sheet).</p></div></div></div>
   </section>
 </div>
 
@@ -334,7 +343,7 @@ record = that share for each frame, in place of the mean</pre>
     <div class="field"><span class="k">What</span><div class="v"><p>The tray window uses composition mode. The host forwards mouse input to the page. No test checks key input or the screen reader.</p></div></div>
     <div class="field"><span class="k">Proof</span><div class="v"><p>No check in <code>SelfTest.cs</code> sends a key. Not tried by hand.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>A check: focus the reply box, send key messages, read the box value.</li><li>A check: Tab key moves the focus to the next button.</li><li>A manual test with Narrator, once.</li></ol></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Is keyboard input in the tray a need now, or later?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Is keyboard input in the tray a need now, or later?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, a must.</b> Keyboard use is a must. Add two self-test checks: type in the reply box, and Tab moves the focus. A failure is a must-fix issue. Narrator is a manual step for the user.</p></div></div></div>
   </section>
 </div>
 
@@ -349,7 +358,7 @@ record = that share for each frame, in place of the mean</pre>
     <div class="field"><span class="k">What</span><div class="v"><p>All motion follows <code>docs/motion-design.html</code>, except the grow from the ball to the panel (G1 and M6). You asked to review it together later.</p></div></div>
     <div class="field"><span class="k">Proof</span><div class="v"><p>Not a fault. An open review item.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>I send an MP4 of the grow, frame by frame next to the spec. We then pick the changes.</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>When do we review the grow: now, or after I1 to I4?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: When do we review the grow: now, or after I1 to I4?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Right after the questions.</b> The grow is part of the system design: review it together right after the questions. The order of the bug fixes is decided as we go.</p></div></div></div>
   </section>
 </div>
 
@@ -385,7 +394,7 @@ record = that share for each frame, in place of the mean</pre>
       </table></div>
       <p>The check <code>badge-hover-fits</code> proves the fix. It is in the self-test now and fails.</p>
     </div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Which option: A, B or C? Recommendation: A, because the spec gives 280 px and the size stays in one token.</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Which option: A, B or C? Recommendation: A, because the spec gives 280 px and the size stays in one token.</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>B, measure on demand.</b> No hard-coded sizes. The page measures its sizes and reports them; C# sets the click area from them. Part of the registry work (I9).</p></div></div></div>
   </section>
 </div>
 
@@ -406,7 +415,7 @@ record = that share for each frame, in place of the mean</pre>
 15:09:51.238 click the badge: True</pre></div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. Only <code>Press</code> reads <code>NoPointer</code>. <code>Drag</code> and <code>Glide</code> do not.</p><p>Replicated: the demo of 2026-11-19 (two windows) moved the pointer again in the same 4 steps.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>Send the drag and hover as window messages too, or skip these steps with no pointer.</li><li>Measure the hover width after the 350 ms wait.</li></ol></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do I change the 4 steps to window messages?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I change the 4 steps to window messages?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A.</b> All 4 demo steps use window messages. The header drag can move the window in code.</p></div></div></div>
   </section>
 </div>
 
@@ -423,7 +432,7 @@ record = that share for each frame, in place of the mean</pre>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. Each mechanism was added for one feature. No shared rule for start and wait.</p></div></div>
     <div class="field"><span class="k">Possible effect</span><div class="v"><p>A fix in one path does not reach the others. One fault can come from two paths at the same time.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>A design pass on one motion flow: one way to start, one way to wait, one place for times.</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do we do the design pass before we fix I7, I10, I11 and I12?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we do the design pass before we fix I7, I10, I11 and I12?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, design first.</b> First a registry design on the architecture page, for review. Then I7 and I10 as parts of it.</p></div></div></div>
   </section>
 </div>
 
@@ -441,7 +450,7 @@ CSS tray.css     inset: 24px       width: 68px  top: 14px      width: auto   (no
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. C# needs the sizes for the window and the click area. CSS needs them for the drawing.</p></div></div>
     <div class="field"><span class="k">Possible effect</span><div class="v"><p>The click area and the drawing disagree. I7 is one known result.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>One source for each size: the page measures and sends it to C#, or C# sends its values to the page as CSS variables.</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Which side owns the sizes: the page or C#?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Which side owns the sizes: the page or C#?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, the page.</b> The page owns all sizes (CSS tokens) and reports them to C#. C# keeps only the work area, the saved places and the gap.</p></div></div></div>
   </section>
 </div>
 
@@ -458,7 +467,7 @@ CSS tray.css     inset: 24px       width: 68px  top: 14px      width: auto   (no
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. The deck and the window code came before the motion layer.</p></div></div>
     <div class="field"><span class="k">Possible effect</span><div class="v"><p>A change of one value makes a wait end too early or too late.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>Move each time to a token. Scripts and C# read the token, or wait for the motion end.</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Part of the design pass of I9, or a separate fix?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Part of the design pass of I9, or a separate fix?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>B, tokens now.</b> Move all motion times to tokens in motion.css now, as a separate fix.</p></div></div></div>
   </section>
 </div>
 
@@ -476,7 +485,7 @@ orchMotion.settle(root)                         <span class="c">// Presence, Mai
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. The tray stage has its own script (<code>tray.js</code>).</p></div></div>
     <div class="field"><span class="k">Possible effect</span><div class="v"><p>A wrong property name waits for the full limit, with no error. The flow then looks slow, but no test fails.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>One wait helper for all: <code>settle</code>, with a log line when the limit ends a wait.</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Part of the design pass of I9?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Part of the design pass of I9?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>One utility, many modes.</b> One wait utility with modes: settle (other animations), property, and time. One limit rule from a token, and a trace line when a limit ends a wait. It replaces orchTray.end and orchMotion.settle.</p></div></div></div>
   </section>
 </div>
 
@@ -496,7 +505,7 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
     <div class="field"><span class="k">Replicate</span><div class="v"><p>Not tried. A run of the self-test with the CSS media emulated as reduced would show it.</p></div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known from the code. <code>orchMotion.settle</code> is safe: with no animation it ends at once. <code>orchTray.end</code> is not.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>Prior art (Fluent, Shoelace): set the duration tokens to 1 ms in place of <code>none</code>, so the end events still come. Or use one wait helper (I12).</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Part of the motion flow design (I9)?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Part of the motion flow design (I9)?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A.</b> In reduced motion, the duration tokens become 1 ms. Run the self-test with reduced motion emulated.</p></div></div></div>
   </section>
 </div>
 
@@ -516,7 +525,7 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
     <div class="field"><span class="k">Replicate</span><div class="v"><p>Not tried again. One recording shows it.</p></div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Probable: the WebView2 setting <code>IsStatusBarEnabled</code> is on (the default). <code>ClearHost</code> does not set it. Not tested.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p><code>web.Settings.IsStatusBarEnabled = false</code> in <code>ClearHost.Start</code>, for both windows. Check: a frame strip of a link hover shows no bubble.</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Question</span><p>Do we turn off the status bubble?</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we turn off the status bubble?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, turn off.</b> IsStatusBarEnabled = false in ClearHost.Start.</p></div></div></div>
   </section>
 </div>
 

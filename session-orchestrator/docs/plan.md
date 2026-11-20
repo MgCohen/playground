@@ -2404,3 +2404,27 @@ The user answered Q4: move. The panel and the badge are now two windows in one p
 | GPU memory | One window before: 269 to 297 MB private during 10 cycles; S7 two windows: 72 to 202 MB. No sign of more |
 
 Found: I14, the browser status bubble ("https://0.0.0.1/") at a link hover. The demo run moved the real pointer again (I8).
+
+## Visual review: answers to the 16 questions (2026-11-20)
+
+| ID | Answer |
+|---|---|
+| I8 | A: all 4 demo steps use window messages |
+| I14 | A: `IsStatusBarEnabled = false` in `ClearHost.Start` |
+| I7 | B: no hard-coded sizes; the page measures and reports, C# sets the click area. Part of the registry work |
+| I10 | A: the page owns all sizes (CSS tokens); C# keeps only the work area, the saved places and the gap |
+| Q1 | B: a motion registry in C# (data-driven) that makes the CSS rules and the checks |
+| I9 | A: the registry design first, for review |
+| I11 | B: all motion times to tokens in `motion.css` now |
+| I12 | One wait utility with modes (settle, property, time), one limit rule, a trace line at a limit |
+| I13 | A: reduced motion as 1 ms durations; self-test with reduced motion emulated |
+| I1, I2 | Later |
+| I3 | Each press waits at most 1 s, then retries up to 3 s; a retry or a miss fails the run |
+| I4 | Parked until proof. Hint: a quick modal open (the answer sheet) |
+| I5 | A: keyboard use is a must; two self-test checks (type, Tab focus); Narrator is manual |
+| I6 | Review the grow together right after the questions; the fix order is decided as we go |
+| Q2 | Keep the skill in this project; later move it to the machine or the orch plugin |
+
+Order: the grow review, then the small fixes (I8, I14, I11, I12, I13, I3, I5), then the registry design (I9, Q1, I7, I10).
+
+Open point: the last full test run had 1 failure in 822 tests. Not examined yet.
