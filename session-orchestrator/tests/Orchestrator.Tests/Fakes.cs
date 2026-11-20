@@ -28,7 +28,7 @@ public sealed class FakeRunner(bool ok) : ITurnRunner
         OnRun?.Invoke(request);
         if (Gate is { } gate) await Task.WhenAny(gate.Task, Task.Delay(Timeout.Infinite, cancel)).ContinueWith(_ => { });
         if (cancel.IsCancellationRequested) return new TurnResult(false, null, "stopped", 0);
-        return ok ? new TurnResult(true, "done", null, 0) : new TurnResult(false, null, "boom", 0);
+        return ok ? new TurnResult(true, "done", null, 0) { Pid = request.RemoteControl ? 999_999 : null } : new TurnResult(false, null, "boom", 0);
     }
 }
 
@@ -62,7 +62,7 @@ public sealed class Rig : IDisposable
 
     public List<string> Imports { get; } = [];
 
-    public Rig(bool ok = true, DocsResult? docs = null, bool import = false, Policy? policy = null, IStateChecker? checker = null)
+    public Rig(bool ok = true, DocsResult? docs = null, bool import = false, Policy? policy = null, IStateChecker? checker = null, bool console = false)
     {
         Folder = Directory.CreateTempSubdirectory("orch-").FullName;
         Clock = new ManualClock(DateTimeOffset.UtcNow);
@@ -73,6 +73,7 @@ public sealed class Rig : IDisposable
         {
             Import = import ? id => { Imports.Add(id); Store.Change(id, e => e with { Engine = e.Engine with { Imported = true } }); } : null,
             StateChecker = checker,
+            ConsoleStart = console,
         });
     }
 

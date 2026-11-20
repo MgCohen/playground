@@ -49,9 +49,22 @@ public sealed class Lifecycle(FileStore store, IProvider? provider = null)
         store.Registry.SetPhase(id, ControlStates.Archived, by, blockers.Count > 0 ? string.Join("; ", blockers) : null);
         store.SetEnabled(id, false);
         lines.Add($"Archived {id}. The supervisor does not run it again.");
+        if (StopConsole(id) is { } stopped) lines.Add(stopped);
         if (store.Session(id).Work is { Repo: { } repo, Cwd: { } worktree, Branch: { } branch })
             lines.Add(RemoveWorktree(repo, worktree, branch));
         return lines;
+    }
+
+    /// <summary>
+    /// A console session (<see cref="EngineRef.Console"/>) has no app that ends its process, so the archive stops the
+    /// process that holds its lease. The start time guards a reused process id.
+    /// </summary>
+    string? StopConsole(string id)
+    {
+        if (store.Session(id).Engine.Console != true || store.Lease(id) is not { Pid: { } pid } lease) return null;
+        if (!Processes.IsAlive(pid, lease.Started)) return null;
+        using var handle = Processes.Open(pid);
+        return handle?.Terminate() == true ? $"Stopped the console process {pid} of {id}." : $"The console process {pid} of {id} did not stop: end it by hand.";
     }
 
     static string RemoveWorktree(string repo, string worktree, string branch)

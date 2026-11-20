@@ -30,6 +30,13 @@ public abstract partial class LayeredForm : Form
 
     protected override bool ShowWithoutActivation => true;
 
+    /// <summary>The self-test: when set, each frame adds its time (ms of <see cref="FrameClock"/>) to the list.</summary>
+    [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+    public List<double>? FrameLog { get; set; }
+
+    /// <summary>The clock of <see cref="FrameLog"/>.</summary>
+    public static readonly System.Diagnostics.Stopwatch FrameClock = System.Diagnostics.Stopwatch.StartNew();
+
     /// <summary>The DPI scale of the window.</summary>
     protected float Dpi => DeviceDpi / 96f;
 
@@ -37,6 +44,7 @@ public abstract partial class LayeredForm : Form
     protected void Frame(Action<Graphics> draw)
     {
         if (!IsHandleCreated || Width <= 0 || Height <= 0) return;
+        if (FrameLog is { } log) lock (log) log.Add(FrameClock.Elapsed.TotalMilliseconds);
         using var bitmap = new Bitmap(Width, Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
         using (var g = Graphics.FromImage(bitmap))
         {
@@ -103,6 +111,18 @@ public abstract partial class LayeredForm : Form
             g.DrawPath(pen, copy);
         }
     }
+
+    /// <summary>Waits for the next composition of the screen (about one display refresh), at least 4 ms and at most 40 ms.</summary>
+    protected static void WaitForFrame()
+    {
+        var start = FrameClock.Elapsed.TotalMilliseconds;
+        if (DwmFlush() != 0) Thread.Sleep(15);
+        var spent = FrameClock.Elapsed.TotalMilliseconds - start;
+        if (spent < 4) Thread.Sleep(4);
+    }
+
+    [LibraryImport("dwmapi.dll")]
+    private static partial int DwmFlush();
 
     const int WsExLayered = 0x80000;
     const int WsExToolWindow = 0x80;

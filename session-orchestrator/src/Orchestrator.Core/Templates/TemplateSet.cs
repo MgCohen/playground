@@ -16,7 +16,8 @@ public static class Kinds
     public const string Update = "update";
     public const string Notice = "notice";
     public const string Ack = "ack";
-    public static readonly string[] All = [Brief, Message, Question, Plan, Answer, Review, Report, Update, Notice, Ack];
+    public const string Failure = "failure";
+    public static readonly string[] All = [Brief, Message, Question, Plan, Answer, Review, Report, Update, Notice, Ack, Failure];
 }
 
 /// <summary>The meta.json of a type: its purpose, who may send it to whom, and the types of its replies.</summary>

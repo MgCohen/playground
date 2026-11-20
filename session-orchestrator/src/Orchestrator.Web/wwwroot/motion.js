@@ -1,6 +1,16 @@
 // T2: a move to a deeper page pushes it in from the right; a move back plays it in reverse. The View Transitions API of
 // Chromium takes a picture of the old page, Blazor renders the new page, and CSS (app.css, "T2") moves the two pictures.
 // T1 (a tab change) is CSS only. This script only picks the direction and starts the transition.
+// V6: the rings draw only one time. The end of the first ring draw sets "drawn" on the root (app.css stops the draw then).
+(function () {
+  function done(e) {
+    if (e.animationName !== "m-sweep" && e.animationName !== "m-arc") return;
+    document.documentElement.classList.add("drawn");
+    document.removeEventListener("animationend", done, true);
+  }
+  document.addEventListener("animationend", done, true);
+})();
+
 (function () {
   if (!document.startViewTransition || !window.matchMedia || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
