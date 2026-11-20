@@ -232,6 +232,7 @@ flowchart LR
   <div class="subtabs" role="tablist" aria-label="F2 parts">
     <button role="tab" data-sub="run/spec" aria-selected="true">Spec</button>
     <button role="tab" data-sub="run/sketches">Sketches</button>
+    <button role="tab" data-sub="run/graphs">Graph shapes</button>
   </div>
 <div class="sub" id="run/spec">
   <section>
@@ -404,8 +405,11 @@ sequenceDiagram
 </div>
 <div class="sub" id="run/sketches" hidden>
   <p class="summary">One row for each page of F2. Open a row to see its sketches side by side. Pick one sketch for each page.</p>
-  <div class="zoom" id="zoom" hidden><iframe title="Sketch, large"></iframe></div>
   <iframe class="sketch-frame" title="F2 Workflows sketches" data-src="workflows-sketches.html?embed" loading="lazy"></iframe>
+</div>
+<div class="sub" id="run/graphs" hidden>
+  <p class="summary">Five real workflows, from a line to an open graph, each drawn in four shapes. The goal: find a graph shape that also fits a wide, low row, for example a row of the Workflows catalog.</p>
+  <iframe class="sketch-frame" title="Workflow graph shapes" data-src="workflow-graphs.html" loading="lazy"></iframe>
 </div>
 </div>
 
@@ -949,6 +953,7 @@ flowchart TD
 </div>
 </div>
 
+<div class="zoom" id="zoom" hidden><iframe title="Sketch, large"></iframe></div>
 <script>
 (function () {
   var tabs = document.querySelectorAll('nav button[data-tab]');
@@ -957,7 +962,7 @@ flowchart TD
   function fit(f) {
     try {
       var d = f.contentDocument;
-      var set = function () { f.style.height = (d.documentElement.scrollHeight + 4) + 'px'; };
+      var set = function () { var cs = getComputedStyle(d.body); f.style.height = Math.ceil(d.body.getBoundingClientRect().height + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom) + 4) + 'px'; };
       set();
       new ResizeObserver(set).observe(d.body);
     } catch (e) {}
@@ -995,9 +1000,11 @@ flowchart TD
   function unzoom() { zoom.hidden = true; zf.removeAttribute('src'); }
   window.addEventListener('message', function (e) {
     var d = e.data || {};
-    var from = document.querySelector('.sketch-frame');
-    if (e.source !== zf.contentWindow && (!from || e.source !== from.contentWindow)) return;
-    if (d.sk === 'open' && /^[a-z]+-[a-c]$/.test(d.id)) { zf.src = 'workflows-sketches.html?one=' + d.id; zoom.hidden = false; }
+    var known = e.source === zf.contentWindow;
+    document.querySelectorAll('.sketch-frame').forEach(function (f) { if (e.source === f.contentWindow) known = true; });
+    if (!known) return;
+    if (d.sk === 'open' && d.page === 'graphs' && /^w[1-9]-[a-z]$/.test(d.id)) { zf.src = 'workflow-graphs.html?one=' + d.id; zoom.hidden = false; }
+    else if (d.sk === 'open' && /^[a-z]+-[a-c]$/.test(d.id)) { zf.src = 'workflows-sketches.html?one=' + d.id; zoom.hidden = false; }
     if (d.sk === 'close') unzoom();
   });
   zoom.addEventListener('click', unzoom);
