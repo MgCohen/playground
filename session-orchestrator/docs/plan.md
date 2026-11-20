@@ -2439,3 +2439,10 @@ Recording: 10 dock and open cycles with `--stress --opens`, window requests only
 | Dock | Content out, shrink, ball out, gap about 100 ms, badge in at about 700 ms |
 
 Decision: keep the look. The gap between the windows is good. Each value (the window gap too) becomes a token, and the window steps go through the one motion pipeline. This goes into I11 (tokens) and the registry design (I9, Q1).
+
+### Rule: one motion pipeline (2026-11-20)
+
+- The windows use the motion pipeline. The pages use the same pipeline.
+- When a window controls its page, it uses that pipeline.
+- One entry point that controls a window and its page together is good, but not a hard need.
+- New issue I15: the gap of about 100 ms between the two windows is not managed. Later: start the next window on the event "the last window is hidden".

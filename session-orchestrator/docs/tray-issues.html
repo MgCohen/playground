@@ -118,6 +118,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i12">I12 · Two wait rules for "the motion ended"  (Detected)</option>
     <option value="i13">I13 · Reduced motion makes the tray waits run to their limit  (Detected)</option>
     <option value="i14">I14 · A browser status bubble shows the link address  (Detected)</option>
+    <option value="i15">I15 · The gap between the two windows is not managed  (Detected)</option>
     <option value="f1">F1 · A blink at the end of the open  (Fixed)</option>
     <option value="f2">F2 · A bigger, darker shadow and an overlap at a tab change  (Fixed)</option>
     <option value="f3">F3 · The tab change was not the spec (T1 C)  (Fixed)</option>
@@ -176,6 +177,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i12">I12</a></td><td>Two wait rules for "the motion ended"</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill det">Detected</span></td><td>Design pass (I9)</td></tr>
         <tr><td><a href="#i14">I14</a></td><td>A browser status bubble shows the link address</td><td><span class="pill det">Detected</span></td><td>Your decision: turn off</td></tr>
+        <tr><td><a href="#i15">I15</a></td><td>The gap between the two windows is not managed</td><td><span class="pill det">Detected</span></td><td>Later</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f3">F3</a></td><td>The tab change was not the spec (T1 C)</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -526,6 +528,26 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
     <div class="field"><span class="k">Cause</span><div class="v"><p>Probable: the WebView2 setting <code>IsStatusBarEnabled</code> is on (the default). <code>ClearHost</code> does not set it. Not tested.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p><code>web.Settings.IsStatusBarEnabled = false</code> in <code>ClearHost.Start</code>, for both windows. Check: a frame strip of a link hover shows no bubble.</p></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we turn off the status bubble?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, turn off.</b> IsStatusBarEnabled = false in ClearHost.Start.</p></div></div></div>
+  </section>
+</div>
+
+<!-- I15 -->
+<div class="panel off" id="i15" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill det">Detected</span><span class="k">source: grow review I6 · 2026-11-20</span></div>
+    <h2>I15 · The gap between the two windows is not managed</h2>
+    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>At each change between the badge window and the panel window, the screen shows nothing for about 100 ms. The look is good. But no code or token sets this time.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+      <figure><div class="img"><img src="issues/window-gap-dock.jpg" alt="Nine frames of a dock: the content fades, the card shrinks into the ball, the ball goes, two empty frames, then the badge slides in."></div>
+        <figcaption>A dock from the <code>--stress --opens</code> recording. The ball goes at about 500 ms. The badge comes at about 700 ms. The frames between are empty.</figcaption></figure>
+    </div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><p>Seen in all 10 cycles of the recording, at the open and at the dock.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Probable: the time that Windows takes to hide one window and show the other, plus two frame waits in <code>TrayFlow</code>. On a slow computer it can be longer. Not measured.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><ul><li>Simple: start the next window when the event "the last window is hidden" comes. The gap then does not matter.</li><li>Later: if all window steps are tokens, add the tokens to get the expected time, and use a timer.</li></ul></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Later.</b> Keep it simple now. Record it, and fix it with events in a later step.</p></div></div></div>
   </section>
 </div>
 
