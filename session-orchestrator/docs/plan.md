@@ -2519,3 +2519,5 @@ Request of the user: a notice comes only for a card that arrives while the tray 
 - Merged PR #58 (R1, last commit 28ee630) into `orch/visual-review`. Conflicts in `plan.md` and `SelfTest.Scenarios.cs`: both sides kept.
 - Unit tests: 846, 833 pass, 13 skipped, 0 fail. Build output is now `artifacts~/bin`.
 - Self-test: 35 of 37. `badge-hover-fits` (I7, known). New: `no-wait-at-limit` fails in 2 of 2 runs: `orchMotion.wait(element, Step, null) #82: by limit after 1001 ms`. R1 alone had 34 of 35 with this check green, so the merge causes it. Possible cause, not proved: the I5 key checks run in the open sheet and move the focus into it. Not fixed: waits for the decision of the user.
+- Review of R1 by the user: the window gap of 0 to 10 ms is fine. The Umpire SDK work was approved; the full migration to Umpire comes after the visual issues. Ignore the UMP warnings until then.
+- `motion-times` is not done: GitHub issue #60. C# owns only the names, so the proposed check runs in the page (token value against `getAnimations()`).
