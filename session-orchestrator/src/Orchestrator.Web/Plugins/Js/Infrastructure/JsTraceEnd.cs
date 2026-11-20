@@ -2,6 +2,7 @@ namespace Orchestrator.Web.Plugins.Js.Infrastructure;
 
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Orchestrator.Web.Plugins.Js.Contracts;
 using Umpire.Messages.Contracts;
 using Umpire.Messages.Handlers;
 
@@ -14,7 +15,16 @@ public sealed class JsTraceEnd : AfterStep
         var name = envelope.Items.TryGetValue(JsTraceStart.NameItem, out var n) ? n : envelope.Message.GetType().Name;
         var trace = envelope.Services.GetRequiredService<JsTrace>();
         var arguments = envelope.Items.TryGetValue(JsTraceStart.ArgumentsItem, out var a) ? a : "";
-        trace.Write($"js {name}({arguments}) #{envelope.Id}: {Outcome(envelope)} in {ms} ms");
+        var line = $"js {name}({arguments}) #{envelope.Id}: {Outcome(envelope)} in {ms} ms";
+        var error = envelope.Result?.Error ?? envelope.Error;
+        if (error is not null && error.Code != JsErrors.Canceled)
+        {
+            trace.Warn(line);
+        }
+        else
+        {
+            trace.Write(line);
+        }
         return Task.CompletedTask;
     }
 

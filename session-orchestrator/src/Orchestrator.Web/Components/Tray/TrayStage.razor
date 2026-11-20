@@ -48,14 +48,14 @@ else
     {
         Set(TrayPhase.Start);
         await Home();
-        await Commands.SendAsync(new MotionWait(null, WaitMode.Event, "frames:2"), default);
+        await Commands.Must(new MotionWait(null, WaitMode.Frames, "2"));
     });
 
     public Task Grow() => InvokeAsync(async () =>
     {
         Set(TrayPhase.Open);
         // The grow ends: the first draw of the rings in the view starts now, with the content fade (tray.css, is-ready).
-        await Commands.SendAsync(new MotionWait(MotionSteps.Grow.Target, WaitMode.Step), default);
+        await Commands.Must(new MotionWait(MotionSteps.Grow.Target, WaitMode.Step));
         ready = true;
         StateHasChanged();
     });
@@ -64,11 +64,11 @@ else
     {
         await Home();
         Set(TrayPhase.Folded);
-        await Commands.SendAsync(new MotionWait(MotionSteps.Fold.Target, WaitMode.Step), default);
+        await Commands.Must(new MotionWait(MotionSteps.Fold.Target, WaitMode.Step));
     });
 
     // The place of the home button in the panel, for the clip circle of the open and the fold (tray.js).
-    Task Home() => Commands.SendAsync(new Orchestrator.Web.Features.Motion.Slices.Home.TrayHome(stage), default);
+    Task Home() => Commands.Must(new Orchestrator.Web.Features.Tray.Slices.Home.TrayHome(stage));
 
     void Set(string next)
     {

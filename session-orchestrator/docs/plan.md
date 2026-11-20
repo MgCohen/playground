@@ -2527,3 +2527,29 @@ Request of the user: a notice comes only for a card that arrives while the tray 
 - Merge fix result (e29fefe): the cause was a race in the self-test (hide 600 ms after the tab move to Home), not the I5 key checks. Self-test 36 of 37. Product question open (to R1): a hide during a tab move holds the tab-in wait to its limit.
 - New issue I18 (user): the window cuts the shadow of the side badge. Proposed for R2.
 - Test time (from the result files): one recorded scenario 20 to 28 s, one self-test 35 to 45 s, one R1 step proof 1.5 to 3.5 min. R1: about 25 min of runs; this session: about 1 h. Repeats: `dock-open` recorded 9 times in R1, the full self-test after each step. Proposed: a test inventory and a run log.
+
+### R1 code review: fixes (2026-11-20)
+
+All findings of the review of 45bd266..28ee630 are fixed on `orch/motion-review-fixes` (from `orch/visual-review`). Unit tests 851 pass; self-test 37 of 38 (only I7), two runs.
+
+| # | Fix |
+|---|---|
+| 1 | The deck moves the card of the act (by `data-card`), and waits on that card |
+| 2 | No undo time from the page (or 0): the act runs at once, the toast has no Undo, the trace has a warning. No peek time: a fault |
+| 3 | The tray steps send with `Must`: a JS error throws, so the flow writes a fault (H3 in the real flow). JS errors are warnings in the log |
+| 4 | The badge page reads `--t-badge-fold` and gives it to the window (`UseBadgeFold`); no `ExecuteScriptAsync` |
+| 5 | `MotionStep(Name, States)`; the components set the class from the row; the throw has `out-r` and `out-l`; the rows `deck-back-in`, `deck-arrive` go |
+| 6 | `WindowStep.Event` is checked: another event is a warning; `window-steps` fails on a wrong show or hide and checks the order |
+| 7 | The window gap counts from the start of the run |
+| 8 | The hook, the tray and the self-test use `IJsTrace` (with `Warn`, `Written`); `TrayHome` is in `Features/Tray` |
+| 9 | `IWidgetWindow.Phase`, `LastEvent`, `Fault` have no default |
+| 10 | Dead code goes: the badge catch filter (now a fault), the second undo read, the JS modes time and DOM event (`Frames` stays), `Function` has a test |
+| 11 | `JsCalls` cancels after the lock |
+| P1 | A wait that names motions and finds none ends `none`; a defect on a named step |
+| P2 | `leave` waits for `m-fade-out m-down m-lift`, `tab-in` for `m-rise` |
+| P3 | The rule "all flow calls on the UI thread" is in the flow comment |
+| P4 | `JsonException` is in the catch list |
+| P5 | A drag during a C# motion goes back and keeps no stamp |
+| Hidden | A wait ends `hidden` when the page hides. The WebView2 controller now follows the window (`IsVisible`); before, a hidden window kept the page "visible", so a wait ran to its limit. New check `hide-during-motion` (530 ms, by hidden) |
+
+Umpire conflicts (report, no workaround): a helper class in a slice is denied (UMP020101), so `MotionTimes` stays in `Components/Motion`.

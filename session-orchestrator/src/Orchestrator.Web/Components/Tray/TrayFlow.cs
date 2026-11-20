@@ -9,7 +9,8 @@ namespace Orchestrator.Web.Components.Tray;
 /// only orders the steps and asks the window for each phase (<see cref="IWidgetWindow.Enter"/>). One request runs at a time;
 /// a request during a run waits, and only the last one runs. This queue orders window requests, not JS calls, so it stays here
 /// (plain C#) and not in the JS pipeline. Only the tray app has a flow (a singleton): the web server has
-/// none.
+/// none. The fields have no lock: each call comes on the UI thread (the window events and the page renderer of the tray use
+/// one thread), so a run, a request and a notice never run at the same time on two threads.
 /// </summary>
 public sealed class TrayFlow
 {
@@ -111,6 +112,8 @@ public sealed class TrayFlow
     async Task Run(Func<Task> work)
     {
         busy = true;
+        // The window gap of the first window step of a run counts from the start of the run, not from an older page step.
+        pageEnd = clock.ElapsedMilliseconds;
         try
         {
             await work();
@@ -146,7 +149,10 @@ public sealed class TrayFlow
         var start = clock.ElapsedMilliseconds;
         await window.Enter(phase);
         if (WindowSteps.For(phase) is not { } step) return;
-        trace?.Write($"window {step.Name}: {window.LastEvent} in {clock.ElapsedMilliseconds - start} ms, gap {start - pageEnd} ms");
+        var line = $"window {step.Name}: {window.LastEvent} in {clock.ElapsedMilliseconds - start} ms, gap {start - pageEnd} ms";
+        // A window that does not show the event of its step (for example "not activated") is a warning in the trace.
+        if (window.LastEvent == step.Event) trace?.Write(line);
+        else trace?.Warn($"{line} (expected {step.Event})");
     }
 
     // The one entry of a page step: the page plays its motion (through the motion pipeline) and the task ends with it.

@@ -110,6 +110,14 @@ public partial class ClearHost : Form
     }
 
     // The page has the focus of the keyboard when the window is active.
+    // The page follows the window: a hidden window makes the page hidden (visibilitychange), so a motion wait of the page ends
+    // "hidden" at once and does not run to its limit. The page shows again with the window.
+    protected override void OnVisibleChanged(EventArgs e)
+    {
+        base.OnVisibleChanged(e);
+        if (controller is not null) controller.IsVisible = Visible;
+    }
+
     protected override void OnActivated(EventArgs e)
     {
         Faults.Trace("window activated");

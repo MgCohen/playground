@@ -7,7 +7,6 @@ public enum WaitMode
 {
     Settle,
     Property,
-    Time,
-    Event,
+    Frames,
     Step,
 }
