@@ -211,6 +211,7 @@ body { padding: 12px 12px 24px; }
 .sk-row summary b { font: 600 15px var(--f-body); }
 .sk-row summary span { font-size: 12px; color: var(--page-mu); }
 .sk-row[open] summary { border-bottom: 1px solid var(--page-line); }
+.sk-why { margin: 0; padding: 8px 12px 0; font-size: 13px; line-height: 1.45; color: var(--page-tx); max-width: 80ch; }
 .sk-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px; align-items: start; }
 .sk-cell { margin: 0; min-width: 0; display: grid; gap: 4px; }
 .sk-cell figcaption { font: 500 10px var(--f-mono, monospace); color: var(--page-mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -229,6 +230,7 @@ html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden;
 <main class="sk-rows">
   <details class="sk-row">
     <summary><b>Workflows</b><span>The list of all workflow definitions · 2 sketches</span></summary>
+    <p class="sk-why">A catalog of the workflow definitions: what workflows exist and what each one does. You use it to learn and to choose a workflow, not to follow work. In version 1 you cannot start a run here; a run starts from a session. Later, the new session form uses this catalog as its workflow picker. The live work is on the Runs page.</p>
     <div class="sk-trio" style="--n:2">
       <figure class="sk-cell"><figcaption>A · List</figcaption><div class="sk-fit"><div class="phone" data-for="catalog" data-v="a">
         <div class="crd hd"><span class="path"><span class="cur">Workflows</span></span><span class="wb"><i>⌕</i><i>–</i><i>✕</i></span></div>
@@ -256,6 +258,7 @@ html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden;
   </details>
   <details class="sk-row">
     <summary><b>Workflow definition</b><span>One definition: the steps as a graph, an outline or fields · 3 sketches</span></summary>
+    <p class="sk-why">One workflow definition, read only: its steps, its branches and loops, its approvals and its definition of done. You use it to understand how a workflow behaves before or during a run. The three sketches are three views of the same data. A tap on a step opens its step definition.</p>
     <div class="sk-trio" style="--n:3">
       <figure class="sk-cell"><figcaption>A · Graph</figcaption><div class="sk-fit"><div class="phone" data-for="def" data-v="a">
         <div class="crd hd"><span class="path"><span class="cr">Workflows ›</span><span class="cur">planning</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
@@ -317,6 +320,7 @@ html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden;
   </details>
   <details class="sk-row">
     <summary><b>Step definition</b><span>The settings of one step of a definition · 2 sketches</span></summary>
+    <p class="sk-why">The settings of one step: who does it, what it gets, what it makes, the approval and the conditions to the next steps. You open it from the definition page. Later, this is where you edit a step.</p>
     <div class="sk-trio" style="--n:2">
       <figure class="sk-cell"><figcaption>A · Sheet on the graph</figcaption><div class="sk-fit"><div class="phone" data-for="stepdef" data-v="a" style="min-height:720px">
         <div class="crd hd"><span class="path"><span class="cr">Workflows ›</span><span class="cur">planning</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
@@ -371,6 +375,7 @@ html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden;
   </details>
   <details class="sk-row">
     <summary><b>Runs</b><span>All runs, with their state and wait · 2 sketches</span></summary>
+    <p class="sk-why">All the runs, live and old: which workflow, which goal, which owner, the current step and the wait. You use it to see the live work and to find the runs that wait for you. This page is the answer to "what is running now", not the Workflows page.</p>
     <div class="sk-trio" style="--n:2">
       <figure class="sk-cell"><figcaption>A · Grouped by state</figcaption><div class="sk-fit"><div class="phone" data-for="runs" data-v="a">
         <div class="crd hd"><span class="path"><span class="cur">Runs</span></span><span class="wb"><i>⌕</i><i>–</i><i>✕</i></span></div>
@@ -405,6 +410,7 @@ html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden;
   </details>
   <details class="sk-row">
     <summary><b>Run</b><span>One run: where it is, why it waits, and what you can do · 3 sketches</span></summary>
+    <p class="sk-why">One run: where it is, why it waits, how it came there and where it can go. You use it to act on a wait (answer, approve, pick) and to check the progress. A run that waits for you opens in wait mode; other runs open in check mode.</p>
     <div class="sk-trio" style="--n:3">
       <figure class="sk-cell"><figcaption>A · Wait mode</figcaption><div class="sk-fit"><div class="phone" data-for="run" data-v="a">
         <div class="crd hd"><span class="path"><span class="cr">Runs ›</span><span class="cur">Plan the review pages</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
@@ -483,6 +489,7 @@ html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden;
   </details>
   <details class="sk-row">
     <summary><b>Step run</b><span>One pass of a run through one step · 2 sketches</span></summary>
+    <p class="sk-why">One pass of a run through one step: the input, the output, the session, the question and answer, and the time. You open it from the history of a run, to see what happened in that pass.</p>
     <div class="sk-trio" style="--n:2">
       <figure class="sk-cell"><figcaption>A · Facts</figcaption><div class="sk-fit"><div class="phone" data-for="steprun" data-v="a">
         <div class="crd hd"><span class="path"><span class="cr">Plan the review pages ›</span><span class="cur">Approve · pass 1</span></span><span class="wb"><i>‹</i><i>›</i><i>✕</i></span></div>
