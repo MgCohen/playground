@@ -17,6 +17,8 @@ The tracker is `docs/tray-issues.html` (https://claude.ai/artifact/KcP1KAskQiQqi
 6. Never use the real pointer of the user. The test runs click with window messages.
 7. Prove an issue with the smallest scenario that shows it: 3 or 4 focused actions, repeated 2 or 3 times, 5 to 15 s. Do not use a long run (the demo, a stress run) as a proof. Add the scenario to `SelfTest.Scenarios.cs` and record it with `spikes/tray-display/tools/scenario.sh <scenario> <name>`.
 8. For a before and after proof, run the same scenario two times: once with the fix turned off, once with the fix on.
+9. If an attempt fails 3 times (a run, a recording, a fix), stop. Tell the user what you tried, and ask.
+10. Send the user the record (the link to the issue page) and the proof files (MP4, frame strips) together.
 
 ## Steps
 
