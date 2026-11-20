@@ -15,7 +15,6 @@ Read these files before you change this project:
 | `docs/tray-testing.html` | How the tray tests work (https://claude.ai/artifact/RLKUe4bnMJj4mDBVLFPcEK) |
 | `docs/tray-issues.html` | The tray issue tracker: report, reproduce once, the user picks (https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s) |
 | `docs/motion-pipeline-plan.html` | The motion pipeline (R1) plan: thirteen steps, each with its scenario, before and after recordings, checks, risk and undo (https://claude.ai/artifact/G89uZPfkYsVe5kcHn4daaP) |
-| `docs/motion-guide.md` | How to add, change, use and check a motion: tokens, registry steps, `data-motion`, the wait command, JS commands, the tray windows, the checks. Read it before you change a motion |
 
 ## Rules
 
@@ -28,6 +27,12 @@ Read these files before you change this project:
 ## Stack
 
 C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the UI, NUnit for the tests. Do not add TypeScript or JavaScript, with two exceptions: the plugin hooks (the Claude Code engine runs only TypeScript) and small JavaScript parts of the Blazor UI. `spikes/supervisor-ts/` is the frozen TypeScript supervisor of the spikes. Do not change it.
+
+## UI
+
+### Working with motion
+
+Before you add, change or use a motion of the web pages or the tray, read the motion guide: https://claude.ai/artifact/A4N6FKvzRUfqCCZsoZVde8 (source `docs/motion-guide.html`). After a change of the pipeline, update the guide and publish it again to the same URL.
 
 ## Provider boundary
 
