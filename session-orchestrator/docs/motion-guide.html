@@ -1,0 +1,335 @@
+<title>Tray Motion Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column; tabs that scroll to the side; each recipe is a foldable row; code and tables scroll in their own box. */
+:root {
+  --bg: #f5f4f1; --panel: #ffffff; --fg: #1e1c19; --muted: #6a645b; --line: #e2ded6;
+  --accent: #e8590c; --accent-soft: #fdeee4; --css: #2f6f9f; --css-soft: #e5f0f8; --cs: #6b4fb3; --cs-soft: #efeafa;
+  --js: #8a6a00; --js-soft: #fbf3d8; --bad: #b23a2a; --bad-soft: #f9e6e2; --code: #f0eee9;
+  --display: "Space Grotesk", system-ui, sans-serif; --body: "Inter", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #171513; --panel: #201e1b; --fg: #ece8e1; --muted: #a39c91; --line: #34302b;
+  --accent: #ff8a4c; --accent-soft: #3a2418; --css: #7db8e4; --css-soft: #1b2b38; --cs: #b49cf0; --cs-soft: #2a2340;
+  --js: #e6c25a; --js-soft: #332a10; --bad: #f08b7a; --bad-soft: #3a1f1a; --code: #262320; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #171513; --panel: #201e1b; --fg: #ece8e1; --muted: #a39c91; --line: #34302b;
+  --accent: #ff8a4c; --accent-soft: #3a2418; --css: #7db8e4; --css-soft: #1b2b38; --cs: #b49cf0; --cs-soft: #2a2340;
+  --js: #e6c25a; --js-soft: #332a10; --bad: #f08b7a; --bad-soft: #3a1f1a; --code: #262320; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font: 700 1.9rem/1.2 var(--display); margin: 0 0 6px; text-wrap: balance; }
+h2 { font: 600 1.25rem/1.3 var(--display); margin: 30px 0 10px; text-wrap: balance; }
+h3 { font: 600 1rem/1.3 var(--display); margin: 18px 0 8px; }
+p, li { max-width: 72ch; }
+.meta { color: var(--muted); font: .85rem var(--mono); }
+.lead { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); padding: 14px 16px; margin: 18px 0; }
+.lead p { margin: 0 0 6px; } .lead p:last-child { margin: 0; }
+nav.tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line); margin-top: 20px; scrollbar-width: thin; }
+nav.tabs button { flex: none; font: 500 .9rem var(--body); color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent; padding: 9px 12px; cursor: pointer; }
+nav.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+nav.tabs button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.box { overflow-x: auto; margin: 10px 0; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; background: var(--panel); }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 .72rem var(--body); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+code { font: .85em var(--mono); background: var(--code); padding: 1px 4px; border-radius: 3px; }
+pre { font: .8rem/1.55 var(--mono); background: var(--code); padding: 12px 14px; overflow-x: auto; margin: 10px 0; }
+pre code { background: none; padding: 0; }
+.own { display: inline-block; font: 600 .7rem var(--body); letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+.css { background: var(--css-soft); color: var(--css); } .cs { background: var(--cs-soft); color: var(--cs); }
+.js { background: var(--js-soft); color: var(--js); } .razor { background: var(--accent-soft); color: var(--accent); }
+.bad { background: var(--bad-soft); color: var(--bad); }
+details.recipe { background: var(--panel); border: 1px solid var(--line); margin: 8px 0; }
+details.recipe > summary { cursor: pointer; padding: 11px 14px; font: 600 .98rem var(--display); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+details.recipe > summary .for { font: 400 .85rem var(--body); color: var(--muted); }
+details.recipe > div { padding: 0 16px 14px; min-width: 0; }
+ol, ul { padding-left: 22px; }
+.flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.flow > div { background: var(--panel); border: 1px solid var(--line); padding: 12px; min-width: 0; }
+.flow h3 { margin: 0 0 6px; } .flow ol { margin: 0; padding-left: 18px; font-size: .9rem; }
+@media (max-width: 680px) { .flow { grid-template-columns: 1fr; } }
+.note { color: var(--muted); font-size: .9rem; }
+</style>
+
+<div class="wrap">
+  <h1>Tray Motion Guide</h1>
+  <div class="meta">session-orchestrator · motion pipeline (R1) · 2026-11-20</div>
+
+  <div class="lead">
+    <p><b>The rule.</b> CSS owns each motion: its time, its curve, its target and what ends it. C# only sets a state class, waits for the end of the step, and orders the steps. C# calls JS only through a command record.</p>
+    <p>Read this guide before you add, change or use a motion. The design of the pipeline is in the <a href="https://claude.ai/artifact/G89uZPfkYsVe5kcHn4daaP">motion pipeline (R1) plan</a>.</p>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Guide sections">
+    <button role="tab" id="t-how" aria-controls="how" aria-selected="true">How it works</button>
+    <button role="tab" id="t-recipes" aria-controls="recipes" aria-selected="false">Recipes</button>
+    <button role="tab" id="t-wait" aria-controls="wait" aria-selected="false">Wait</button>
+    <button role="tab" id="t-js" aria-controls="js" aria-selected="false">JS calls</button>
+    <button role="tab" id="t-tray" aria-controls="tray" aria-selected="false">Tray and deck</button>
+    <button role="tab" id="t-check" aria-controls="check" aria-selected="false">Check</button>
+    <button role="tab" id="t-rules" aria-controls="rules" aria-selected="false">Rules</button>
+  </nav>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" role="tabpanel" aria-labelledby="t-how">
+    <h2>One motion step</h2>
+    <div class="flow">
+      <div><h3><span class="own cs">C#</span> component</h3><ol>
+        <li>Set the state class (<code>is-open</code>, <code>out-r</code>).</li>
+        <li>Send <code>MotionWait(step)</code>.</li>
+        <li>Read the result, then do the next step.</li></ol></div>
+      <div><h3><span class="own css">CSS</span> rules</h3><ol>
+        <li>The rule of the class plays the motion with a token: <code>var(--t-grow)</code>.</li>
+        <li>The step rule names what ends the step: <code>--motion-wait: clip-path</code>.</li></ol></div>
+      <div><h3><span class="own js">JS</span> motion.js</h3><ol>
+        <li><code>orchMotion.wait</code> finds the target by <code>data-motion</code>.</li>
+        <li>It waits for the motions in <code>--motion-wait</code>.</li>
+        <li>It returns <code>{ by, ms }</code>.</li></ol></div>
+    </div>
+<pre><code>// TrayStage.razor: the grow
+Set(TrayPhase.Open);                                                                // 1. state class is-open
+await Commands.SendAsync(new MotionWait(MotionSteps.Grow.Target, WaitMode.Step), default);  // 2. wait for the step
+
+/* tray.css */
+[data-motion~="grow"] { --motion-wait: clip-path; } /* G1 · tray */
+
+&lt;!-- TrayStage.razor --&gt;
+&lt;div class="tray-panel" data-motion="grow"&gt;</code></pre>
+
+    <h2>Where each part is</h2>
+    <div class="box"><table>
+      <tr><th>Part</th><th>File</th><th>Owner</th></tr>
+      <tr><td>Time and curve tokens (<code>--t-*</code>, <code>--ease-*</code>)</td><td><code>src/Orchestrator.Web/wwwroot/motion.css</code>, block <code>:root</code></td><td><span class="own css">CSS</span></td></tr>
+      <tr><td>Reduced motion: each duration token is 1 ms</td><td><code>motion.css</code>, the last block</td><td><span class="own css">CSS</span></td></tr>
+      <tr><td>Motion rules of the views</td><td><code>motion.css</code>, <code>app.css</code>; the tray: <code>src/Orchestrator.Tray/wwwroot/tray.css</code></td><td><span class="own css">CSS</span></td></tr>
+      <tr><td>Step rules: <code>[data-motion~="name"]</code>, <code>--motion-wait</code>, spec ID</td><td><code>motion.css</code> (pages, deck), <code>tray.css</code> (tray)</td><td><span class="own css">CSS</span></td></tr>
+      <tr><td>Step target</td><td>The element with <code>data-motion="name"</code> in a <code>.razor</code> file</td><td><span class="own razor">Razor</span></td></tr>
+      <tr><td>Registry of the page steps (name, state class)</td><td><code>src/Orchestrator.Web/Features/Motion/Domain/MotionSteps.cs</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>Registry of the window steps (tray)</td><td><code>Features/Motion/Domain/WindowSteps.cs</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>The wait command</td><td><code>Features/Motion/Slices/Wait/</code>: <code>MotionWait</code>, <code>WaitMode</code>, <code>WaitResult</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>The other JS commands</td><td><code>Features/Motion/Slices/*</code>, <code>Features/Speech/Slices/*</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>The JS command pipeline: one handler, trace, "newer call wins"</td><td><code>src/Orchestrator.Web/Plugins/Js/</code></td><td><span class="own cs">C#</span></td></tr>
+      <tr><td>The wait function and <code>orchMotion.ms</code></td><td><code>src/Orchestrator.Web/wwwroot/motion.js</code></td><td><span class="own js">JS</span></td></tr>
+      <tr><td>The order of the tray windows, the badge notice</td><td><code>Components/Tray/TrayFlow.cs</code>, <code>TrayNotices.cs</code></td><td><span class="own cs">C#</span></td></tr>
+    </table></div>
+  </section>
+
+  <!-- RECIPES -->
+  <section id="recipes" role="tabpanel" aria-labelledby="t-recipes" hidden>
+    <h2>Recipes</h2>
+    <p class="note">Open the recipe for your task.</p>
+
+    <details class="recipe" open><summary>Change a time or a curve <span class="for">a token in motion.css</span></summary><div>
+      <ol>
+        <li>Change the token in the <code>:root</code> block of <code>motion.css</code>. Do not write a time in a rule, a script or C#.</li>
+        <li>If the motion has no token, add one with the name <code>--t-&lt;thing&gt;</code>. Use <code>var(--t-&lt;thing&gt;)</code> in the rule.</li>
+        <li>If the token is a duration, add it with <code>1ms</code> to the reduced motion block. The test <code>Reduced_motion_sets_each_duration_token_to_1ms</code> finds a missing one.</li>
+        <li>If the token is a dwell time (how long a thing shows) or a limit, do not add it to the reduced block. Add its name to <code>Kept</code> in <code>MotionArchitectureTests.cs</code>.</li>
+      </ol>
+    </div></details>
+
+    <details class="recipe"><summary>Add a motion that nothing waits for <span class="for">hover, press, first show, ring draw</span></summary><div>
+      <ol>
+        <li>Write the rule in <code>motion.css</code> (or <code>tray.css</code>) with tokens. Add a comment with the spec ID of <code>docs/motion-design.html</code>.</li>
+        <li>Set the state class in the <code>.razor</code> file.</li>
+        <li>Add no C# wait and no registry row.</li>
+      </ol>
+    </div></details>
+
+    <details class="recipe"><summary>Add a step that C# waits for <span class="for">the next action comes after the motion</span></summary><div>
+      <p>Use this when a window hides, an act runs or a block goes away after the motion.</p>
+      <ol>
+        <li>Add a row to <code>MotionSteps.cs</code>, and add it to <code>All</code>.</li>
+        <li>Mark the target in the <code>.razor</code> file. One element can have more than one step name: <code>data-motion="badge-in badge-out"</code>.</li>
+        <li>Write the step rule, with the spec ID as a comment on the same line. <code>--motion-wait</code> names the transition properties or the animation names that end the step. With no value, the step waits for each finite motion of the target and its children (settle).</li>
+        <li>In C#, set the class, render, then wait. Inject <code>ICommandSender Commands</code>.</li>
+        <li>Run the unit tests. <code>Registry_matches_motion_css</code> fails if the row, the mark and the rule do not agree, or if the spec ID is not in <code>motion-design.html</code>.</li>
+      </ol>
+<pre><code>// MotionSteps.cs
+public static readonly MotionStep SheetOut = new("sheet-out", "is-leaving");
+
+&lt;!-- the component --&gt;
+&lt;div class="sheet" data-motion="sheet-out"&gt;
+
+/* motion.css */
+[data-motion~="sheet-out"] { --motion-wait: transform opacity; } /* M5 */
+
+// the component
+phase = "is-leaving";
+StateHasChanged();
+await Commands.SendAsync(new MotionWait(MotionSteps.SheetOut.Target, WaitMode.Step), default);
+// with an ElementReference: new MotionWait(root, WaitMode.Step)</code></pre>
+    </div></details>
+
+    <details class="recipe"><summary>Change a step <span class="for">what to change, and where</span></summary><div>
+      <div class="box"><table>
+        <tr><th>Change</th><th>Where</th></tr>
+        <tr><td>What ends the step</td><td><code>--motion-wait</code> in the step rule</td></tr>
+        <tr><td>The element that moves</td><td>Move <code>data-motion</code> in the <code>.razor</code> file</td></tr>
+        <tr><td>The look or the time</td><td>The motion rule and the tokens</td></tr>
+        <tr><td>The state class</td><td>The row in <code>MotionSteps.cs</code> and the class in the component</td></tr>
+        <tr><td>The order of the steps</td><td>The component, or <code>TrayFlow</code> for the tray windows</td></tr>
+      </table></div>
+    </div></details>
+
+    <details class="recipe"><summary>Read a token in C# <span class="for">a time that C# needs</span></summary><div>
+<pre><code>var undo = await MotionTimes.Of(Commands, "--t-undo");   // TimeSpan?, null if the page did not answer</code></pre>
+      <p>C# reads the value from the page. Do not copy the value into C#.</p>
+    </div></details>
+  </section>
+
+  <!-- WAIT -->
+  <section id="wait" role="tabpanel" aria-labelledby="t-wait" hidden>
+    <h2>The wait command</h2>
+    <p><code>MotionWait(target, mode, arg)</code>. The target is a selector, an <code>ElementReference</code>, or null (frames and time).</p>
+    <div class="box"><table>
+      <tr><th>Mode</th><th>Arg</th><th>Ends when</th></tr>
+      <tr><td><code>Step</code></td><td>none</td><td>The motions in <code>--motion-wait</code> of the target end (settle if empty). Use it for each registry step</td></tr>
+      <tr><td><code>Settle</code></td><td>none</td><td>Each finite motion of the target and its children ends</td></tr>
+      <tr><td><code>Property</code></td><td><code>"clip-path"</code> or <code>"clip-path scale"</code></td><td>These transitions or animations of the target and its children end</td></tr>
+      <tr><td><code>Time</code></td><td><code>"--t-peek-show"</code></td><td>The time of the token passes</td></tr>
+      <tr><td><code>Event</code></td><td><code>"frames:2"</code> or a DOM event name</td><td>n display frames pass, or the event comes</td></tr>
+    </table></div>
+    <p class="note">Each wait ends at the latest after <code>--t-limit</code> (<code>--t-frame-limit</code> for frames). If the wait finds no motion, it looks again for 2 frames, because the class can come in the render after the call.</p>
+
+    <h2>The result</h2>
+    <div class="box"><table>
+      <tr><th>By</th><th>Meaning</th><th>Do</th></tr>
+      <tr><td><code>end</code></td><td>The motion ended</td><td>Go on</td></tr>
+      <tr><td><code>cancel</code></td><td>The browser stopped the motion: the state changed</td><td>Go on. A newer step owns the element</td></tr>
+      <tr><td><code>limit</code></td><td>The limit ended the wait</td><td><span class="own bad">Defect</span> The trace has a "wait at limit" line. Examine <code>--motion-wait</code></td></tr>
+      <tr><td><code>hidden</code></td><td>The page is hidden; nothing moves</td><td>Go on</td></tr>
+      <tr><td><code>missing</code></td><td>No target</td><td><span class="own bad">Defect</span> Examine <code>data-motion</code> and the selector</td></tr>
+    </table></div>
+    <p>A JS error comes back as <code>waited.Error</code> (code <code>js.failed</code> or <code>js.canceled</code>), not as an exception. The trace has it.</p>
+
+    <h2>Newer call wins</h2>
+    <p>Give the command a <code>Key</code>. A newer call with the same key cancels the older call, which ends with <code>js.canceled</code>.</p>
+<pre><code>var waited = await Commands.SendAsync(new MotionWait(page, WaitMode.Step) { Key = MotionSteps.TabIn.Name }, default);
+if (waited.Error?.Code == JsErrors.Canceled) return;</code></pre>
+  </section>
+
+  <!-- JS CALLS -->
+  <section id="js" role="tabpanel" aria-labelledby="t-js" hidden>
+    <h2>Add a C# to JS call</h2>
+    <p>This is for each call from C# to JS, not only for motion.</p>
+    <ol>
+      <li>Write a record. The JS name comes from the type: the first word is the object, the rest is the function. The constructor parameters are the arguments, in order.</li>
+      <li>Put it in a slice of its feature: <code>Features/&lt;Feature&gt;/Slices/&lt;Name&gt;/&lt;Record&gt;.cs</code>.</li>
+      <li>Write the function in the script.</li>
+      <li>Send it with <code>Commands.SendAsync</code>.</li>
+      <li>Do not write a handler. One handler (<code>JsCommandHandler&lt;TResult&gt;</code>) runs all JS commands.</li>
+    </ol>
+<pre><code>public sealed record SpeechFocus(string Id, bool Voice) : JsCommand&lt;Unit&gt;;      // orchSpeech.focus, no result
+public sealed record MotionMs(string Token) : JsCommand&lt;double&gt;;               // orchMotion.ms, a result
+public sealed record OldName(string X) : JsCommand&lt;Unit&gt;("orchLegacy.run");    // a name that is not from the type
+
+// the script
+window.orchSpeech = { focus: function (id, voice) { /* ... */ } };
+
+// the component
+await Commands.SendAsync(new SpeechFocus("sheet-text", true), default);</code></pre>
+    <div class="box"><table>
+      <tr><th>Type</th><th>JS name</th></tr>
+      <tr><td><code>MotionWait</code></td><td><code>orchMotion.wait</code></td></tr>
+      <tr><td><code>TrayHome</code></td><td><code>orchTray.home</code></td></tr>
+      <tr><td><code>SpeechFocus</code></td><td><code>orchSpeech.focus</code></td></tr>
+    </table></div>
+    <p class="note">The test <code>Js_names_exist</code> finds a JS function for each record. <code>No_direct_js_calls</code> finds an <code>IJSRuntime</code> outside <code>Plugins/Js</code>.</p>
+  </section>
+
+  <!-- TRAY AND DECK -->
+  <section id="tray" role="tabpanel" aria-labelledby="t-tray" hidden>
+    <h2>The tray windows</h2>
+    <p>The tray has page steps (a page plays a motion) and window steps (a window shows or hides). C# owns the window steps, because C# controls the windows.</p>
+    <div class="box"><table>
+      <tr><th>Part</th><th>Rule</th></tr>
+      <tr><td>Window step</td><td>A row of <code>WindowSteps.cs</code>: <code>panel-show</code>, <code>panel-activate</code>, <code>badge-show</code>, <code>all-hide</code>. <code>TrayFlow</code> runs it through <code>Window(phase)</code></td></tr>
+      <tr><td>Page step</td><td><code>TrayFlow</code> runs it through <code>Page(...)</code>. The page waits for its motion</td></tr>
+      <tr><td>Trace</td><td>Each window step with its event, its time and the window gap</td></tr>
+      <tr><td>Requests</td><td>One runs at a time. A request during a run waits, and only the last one runs</td></tr>
+      <tr><td>Errors</td><td>An error goes to the fault log of the tray. The phase becomes the phase of the windows</td></tr>
+      <tr><td>Badge notice</td><td>Only for a card that arrives while the tray is closed (hidden or at the badge), one time (<code>TrayNotices</code>)</td></tr>
+    </table></div>
+<pre><code>window badge-show: shown in 35 ms, gap 0 ms
+window panel-show: shown in 24 ms, gap 0 ms</code></pre>
+
+    <h2>The deck</h2>
+    <p><code>swipe.js</code> follows the pointer and clicks the act buttons. C# starts the throw and the tuck (the classes <code>out-r</code>, <code>out-l</code>, <code>tuck</code>), waits for the step <code>deck-throw</code> or <code>deck-tuck</code>, then does the act. Do not add a timer to <code>swipe.js</code>.</p>
+  </section>
+
+  <!-- CHECK -->
+  <section id="check" role="tabpanel" aria-labelledby="t-check" hidden>
+    <h2>Check a change</h2>
+    <ol>
+      <li>Run the unit tests: <code>dotnet test --solution Orchestrator.slnx</code>. Set <code>GITHUB_TOKEN</code> (<code>gh auth token</code>) before the first restore.</li>
+      <li>Run the tray self-test: <code>dotnet run --project src/Orchestrator.Tray -- --selftest &lt;folder&gt;</code>. Add <code>--reduced</code> for reduced motion.</li>
+      <li>Record a scenario before and after the change. Make sure that no window covers the tray.</li>
+      <li>Read the trace.</li>
+    </ol>
+    <div class="box"><table>
+      <tr><th>Self-test check</th><th>Fails when</th></tr>
+      <tr><td><code>no-wait-at-limit</code></td><td>A wait ends by its limit, or a JS call fails</td></tr>
+      <tr><td><code>steps-traced</code></td><td>A tray step does not end by the end of its motion</td></tr>
+      <tr><td><code>window-steps</code></td><td>A window step is not in the trace</td></tr>
+      <tr><td><code>reduced-flow-time</code></td><td>With <code>--reduced</code>, a dock or an open takes 300 ms or more</td></tr>
+    </table></div>
+<pre><code># In session-orchestrator. The scenarios are in src/Orchestrator.Tray/SelfTest.Scenarios.cs.
+spikes/tray-display/tools/scenario.sh dock-open dock-open-after 12
+# A name that ends with -reduced turns on reduced motion.
+# The log &lt;out&gt;/&lt;name&gt;/scenario.txt has each step, each phase change and each trace line.</code></pre>
+    <h3>A trace line</h3>
+<pre><code>js orchMotion.wait("[data-motion~="grow"]", Step, null) #5: by end after 342 ms in 343 ms
+wait at limit #67: Step  on [data-motion~="fold"]: by limit after 1007 ms</code></pre>
+    <p class="note">The tray writes the trace with <code>--instance &lt;name&gt;</code> or <code>--demo</code>. The self-test and the scenarios read it from the services.</p>
+  </section>
+
+  <!-- RULES -->
+  <section id="rules" role="tabpanel" aria-labelledby="t-rules" hidden>
+    <h2>Do not</h2>
+    <div class="box"><table>
+      <tr><th>Do not</th><th>Do</th><th>Test</th></tr>
+      <tr><td>Write a time (<code>.3s</code>, <code>300</code>, <code>TimeSpan.FromMilliseconds</code>) in a view file</td><td>Use a token</td><td><code>Motion_times_are_tokens</code></td></tr>
+      <tr><td>Call <code>IJSRuntime</code> in a component</td><td>Send a command record</td><td><code>No_direct_js_calls</code></td></tr>
+      <tr><td>Wait for a motion with <code>setTimeout</code></td><td>Use <code>orchMotion.wait</code></td><td><code>No_motion_timer_in_scripts</code></td></tr>
+      <tr><td>Set <code>transition: none</code> for reduced motion</td><td>The duration tokens are 1 ms, so each end event comes</td><td><code>Reduced_motion_sets_each_duration_token_to_1ms</code></td></tr>
+      <tr><td>Catch and ignore a JS error</td><td>Read <code>Error</code> of the result; the trace has the line</td><td><code>A_JS_error_is_an_Error_with_the_JS_name_and_a_trace_line</code></td></tr>
+      <tr><td>Add a step with no target or no rule</td><td>Add the row, the mark and the rule together</td><td><code>Registry_matches_motion_css</code></td></tr>
+    </table></div>
+
+    <h2>Known limits</h2>
+    <ul>
+      <li>Umpire gives the finding UMP020301 for each JS command record: the VSA rule wants a handler in the slice. This is an Umpire gap. The test <code>R1_folders_have_no_findings</code> allows only this finding.</li>
+      <li>Pointer motion (a drag) stays in the script: C# cannot follow each frame.</li>
+      <li>A spring is a <code>cubic-bezier</code>. CSS has no physics.</li>
+      <li>The window gap has a reference token (<code>--t-window-gap</code>), but no code waits for it (I15).</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('nav.tabs [role="tab"]'));
+  function show(id) {
+    if (!tabs.some(function (t) { return t.getAttribute("aria-controls") === id; })) id = "how";
+    tabs.forEach(function (t) {
+      var on = t.getAttribute("aria-controls") === id;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    });
+  }
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      var id = t.getAttribute("aria-controls");
+      show(id);
+      try { history.replaceState(null, "", "#" + id); } catch (e) {}
+    });
+  });
+  show((location.hash || "").slice(1));
+  window.addEventListener("hashchange", function () { show((location.hash || "").slice(1)); });
+})();
+</script>
