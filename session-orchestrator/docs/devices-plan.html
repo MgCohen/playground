@@ -70,7 +70,7 @@ pre.code { margin: 0; padding: 12px; font: .85rem/1.5 var(--mono); background: v
 <header>
   <span class="eyebrow">session-orchestrator · plan · 2026-11-19</span>
   <h1>Devices plan: Android, web and desktop</h1>
-  <p class="lead">Spike A1 shows that the Razor components run unchanged in an Android app. The plan makes one shared UI library, then three hosts on it: web, Windows tray and Android. Each phase has a check that shows it is done.</p>
+  <p class="lead">Spike A1 shows that the Razor components run unchanged in an Android app. The plan makes one shared UI library in the VSA shape (one presenter for each module), then three hosts on it: web, Windows tray and Android. Each phase has a check that shows it is done.</p>
 </header>
 
 <nav aria-label="Tabs">
@@ -86,7 +86,7 @@ pre.code { margin: 0; padding: 12px; font: .85rem/1.5 var(--mono); background: v
   <h2>Target: one UI library, three hosts</h2>
   <pre class="mermaid">
 flowchart TD
-    U[Orchestrator.Ui<br/>components, Board, CSS, JS] --> W[Orchestrator.Web<br/>Blazor Server]
+    U[Orchestrator.Ui<br/>views, presenters, CSS, JS] --> W[Orchestrator.Web<br/>Blazor Server]
     U --> T[Orchestrator.Tray<br/>WinForms + WebView2]
     U --> A[Orchestrator.Android<br/>MAUI + Android WebView]
     D[Orchestrator.Demo<br/>mock store] --> T
@@ -111,7 +111,7 @@ flowchart TD
       <tr><td>Android app</td><td><code>BlazorWebView</code>, in-process, Android WebView</td><td>Same (tested in A1)</td></tr>
     </tbody>
   </table></div>
-  <p class="note">Data access (the local store, or an API to a server) is behind <code>Board</code>. This plan keeps it as it is. The Android app uses the mock store until a later backend plan.</p>
+  <p class="note">Data access is behind the presenters and their requests. A local sender runs the handlers in the process. A later remote sender sends the same requests to a server, with no change to the views.</p>
 </section>
 
 <!-- PLAN -->
@@ -119,35 +119,65 @@ flowchart TD
   <h2>Phases and their order</h2>
   <pre class="mermaid">
 flowchart LR
-    P1[P1 UI library] --> P2[P2 Shared mock and services]
-    P2 --> P3[P3 Android host in src]
-    P3 --> P4[P4 Build and share]
-    P3 --> P5[P5 Android smoke test]
-    P3 --> P6[P6 Phone host features]
+    P1a[P1a UI library<br/>feature folders] --> P1b[P1b Presenters<br/>and requests]
+    P1a --> P2[P2 Shared mock<br/>and services]
+    P2 --> P3[P3 Android host]
+    P1b --> P4[P4 Build, share, CI]
+    P3 --> P4
+    P3 --> P5[P5 Smoke test]
+    P3 --> P6[P6 Phone features]
   </pre>
+  <p>The UI takes the VSA shape of the back end, with plain .NET and no VSA framework. P3 depends only on P1a and P2, so Android work can run next to P1b.</p>
 
   <div class="scroll"><table>
     <thead><tr><th>Phase</th><th>Result</th><th>Done when</th></tr></thead>
     <tbody>
-      <tr><td>P1</td><td>Razor class library <code>Orchestrator.Ui</code></td><td>Tests and tray self-test pass</td></tr>
-      <tr><td>P2</td><td>One mock store, one service list</td><td>Tray mock mode runs on it</td></tr>
+      <tr><td>P1a</td><td><code>Orchestrator.Ui</code> with feature folders</td><td>Tests and tray self-test pass</td></tr>
+      <tr><td>P1b</td><td>One presenter for each module</td><td>No <code>Board</code>; tests pass</td></tr>
+      <tr><td>P2</td><td>One mock store, one service list</td><td>Tray mock and live modes run</td></tr>
       <tr><td>P3</td><td><code>src/Orchestrator.Android</code></td><td>APK starts on emulator</td></tr>
-      <tr><td>P4</td><td>Script, signing key, share link</td><td>APK under 30 MB on the phone</td></tr>
+      <tr><td>P4</td><td>Script, signing key, CI build</td><td>APK under 30 MB; CI fails on a break</td></tr>
       <tr><td>P5</td><td>Scripted emulator test</td><td>Screens and PASS list</td></tr>
       <tr><td>P6</td><td>Back button, bar color, speech</td><td>Tested on a real phone</td></tr>
     </tbody>
   </table></div>
 
+  <h3>Modules of the UI (P1a folders, P1b presenters)</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Module</th><th>Views</th><th>Members of <code>Board</code> today</th></tr></thead>
+    <tbody>
+      <tr><td>Home</td><td>HomePage, DeepRing</td><td><code>Activity</code>, counts of the waiting cards</td></tr>
+      <tr><td>Cards</td><td>Cards, AnswerSheet, CardPreview</td><td><code>Cards</code>, <code>Inbox</code>, <code>OpenDecisions</code>, <code>DefaultsToReview</code>, <code>Accept</code>, <code>Refuse</code>, <code>SendSheet</code>, <code>Answer</code>, <code>Review</code></td></tr>
+      <tr><td>Sessions</td><td>Sessions, SessionStatus, NewSessionForm</td><td><code>Tree</code>, <code>NewSession</code>, <code>Send</code>, <code>Stop</code>, <code>Resume</code>, <code>Archive</code>, <code>EventCount</code>, <code>Links</code>, <code>LastActive</code></td></tr>
+      <tr><td>Stream</td><td>StreamPage, EventRow, FilterSheet</td><td><code>Timeline</code>, <code>Stream</code>, <code>Find</code>, <code>Results</code>, <code>IsOpen</code>, <code>IsAcked</code></td></tr>
+      <tr><td>Documents</td><td>Open, DocBody, Looks</td><td><code>Document</code>, <code>Preview</code>, <code>Fields</code>, <code>BodyText</code>, <code>Look</code></td></tr>
+      <tr><td>Shared</td><td>Layout, AppBar, PageHeader, small parts</td><td><code>Now</code>, <code>Party</code>, <code>Title</code></td></tr>
+    </tbody>
+  </table></div>
+
   <div class="tools"><button type="button" class="open-all">Open all</button><button type="button" class="close-all">Close all</button></div>
 
-  <details><summary>P1 · UI library · move only, no logic change</summary><div>
+  <details><summary>P1a · UI library with feature folders · move only, no logic change</summary><div>
     <dl class="dl">
-      <dt>Goal</dt><dd>Each host references one library. No host links the files of another project.</dd>
-      <dt>Moves</dt><dd><code>Components/**</code> except <code>App.razor</code>; <code>Routes.razor</code>; <code>Board</code>, <code>Ui</code>, <code>Markdown</code>, <code>PageAct</code>, <code>PathTrail</code>, <code>ViewFilter</code>, <code>StreamHub</code>, <code>IWidgetWindow</code>, <code>NewSession</code>; <code>wwwroot</code> assets.</dd>
+      <dt>Goal</dt><dd>Each host references one library, and the files sit in the folder of their module.</dd>
+      <dt>Layout</dt><dd><code>Orchestrator.Ui/Features/{Home,Cards,Sessions,Stream,Documents}/</code>, <code>Orchestrator.Ui/Shared/</code>, <code>Routes.razor</code>, <code>wwwroot/</code>.</dd>
+      <dt>Moves</dt><dd>All components except <code>App.razor</code>; <code>Board</code>, <code>Ui</code>, <code>Markdown</code>, <code>PageAct</code>, <code>PathTrail</code>, <code>ViewFilter</code>, <code>StreamHub</code>, <code>IWidgetWindow</code>, <code>NewSession</code>; the web assets.</dd>
       <dt>Stays in Web</dt><dd><code>Program.cs</code>, <code>App.razor</code>, <code>Api/</code>, <code>SignIn</code>, <code>TickService</code>.</dd>
-      <dt>Effect</dt><dd>The assets get the path <code>_content/Orchestrator.Ui/</code>. Each host page changes its links. <code>Routes</code> names the library assembly, so all hosts use one router.</dd>
-      <dt>Done when</dt><dd><code>dotnet test --solution Orchestrator.slnx</code> passes. <code>tray.ps1 -SelfTest</code> passes. The web pages look the same.</dd>
-      <dt>Risk</dt><dd>bUnit tests and the tray self-test read asset paths. Change them in the same commit.</dd>
+      <dt>Names</dt><dd>The namespaces <code>Orchestrator.Web.*</code> stay in P1a, so the tests need no change. P1b sets the module namespaces.</dd>
+      <dt>Paths</dt><dd>The assets get <code>_content/Orchestrator.Ui/</code>: <code>App.razor</code>, the tray start page, <code>WidgetForm.cs</code>, <code>EdgeTab.cs</code>, the tray project file.</dd>
+      <dt>Done when</dt><dd><code>dotnet test --solution Orchestrator.slnx</code> and <code>tray.ps1 -SelfTest</code> pass. The web pages look the same.</dd>
+    </dl>
+  </div></details>
+
+  <details><summary>P1b · Presenters and requests · Board goes away</summary><div>
+    <dl class="dl">
+      <dt>Goal</dt><dd>The UI has the VSA shape: a view uses the presenter of its module, and a presenter sends requests.</dd>
+      <dt>Shape</dt><dd>One presenter for each module (table above). Each read or action of <code>Board</code> becomes one request with one handler in the slice of its module. The handlers keep the logic of <code>Board</code>.</dd>
+      <dt>Sender</dt><dd>One <code>IRequestSender</code>. The local sender calls the handlers in the process. A later remote sender sends the same requests over HTTP; then the phone needs no store.</dd>
+      <dt>Push</dt><dd>A presenter listens to <code>StreamHub.Changed</code> and raises its own <code>Changed</code>. The views render on it.</dd>
+      <dt>Calls</dt><dd>About 60 call sites in the views change from <code>Board.X</code> to the presenter of the module. The calls become <code>async</code>.</dd>
+      <dt>Reference</dt><dd><code>vsa-template/docs/presenter-events.md</code>. Copy the shape, not the packages.</dd>
+      <dt>Done when</dt><dd>No <code>Board</code> class. Tests, tray self-test and the Android smoke test pass. One unit test for each handler.</dd>
     </dl>
   </div></details>
 
@@ -170,13 +200,14 @@ flowchart LR
     </dl>
   </div></details>
 
-  <details><summary>P4 · Build and share · an APK on the phone in one step</summary><div>
+  <details><summary>P4 · Build, share and CI · a break shows at once</summary><div>
     <dl class="dl">
       <dt>Script</dt><dd><code>tools/android/build.ps1</code>: install the user-local toolchain if missing, then build a release APK for <code>android-arm64</code>.</dd>
-      <dt>Signing</dt><dd>One release key. The key and its password stay in 1Password.</dd>
+      <dt>CI</dt><dd>A GitHub Actions job builds the APK on each PR. A UI change that breaks Android fails the PR.</dd>
+      <dt>Signing</dt><dd>One release key. The key and its password stay in 1Password and in a CI secret.</dd>
       <dt>Size</dt><dd>Below 30 MB, so the file reaches the phone. Trim only if a test shows that it is safe.</dd>
       <dt>Share</dt><dd>Open question: a GitHub release, or a file send.</dd>
-      <dt>Done when</dt><dd>The APK installs on the phone from the share link.</dd>
+      <dt>Done when</dt><dd>The APK installs on the phone from the share link. CI is green.</dd>
     </dl>
   </div></details>
 
@@ -192,18 +223,25 @@ flowchart LR
     <ul>
       <li>The Android back button goes back in the app. It must not close the app.</li>
       <li>The status bar band has the theme color, not white.</li>
-      <li>The microphone: test <code>speech.js</code> in Android WebView. If it fails, add native speech through a host interface.</li>
+      <li>The microphone: test <code>speech.js</code> on a real phone. If it fails, add native speech through a host interface.</li>
       <li>Optional: an Android notice for a new waiting card.</li>
     </ul>
   </div></details>
+
+  <h3>Rules for all phases</h3>
+  <ul>
+    <li>Components use no server-only and no Windows-only code. A function that differs between hosts goes behind a host interface, as <code>IWidgetWindow</code>.</li>
+    <li>A new view goes into the folder of its module, with its presenter.</li>
+    <li>Each phase is one PR. The next phase waits for the review.</li>
+  </ul>
 
   <h3>After this plan</h3>
   <div class="scroll"><table>
     <thead><tr><th>Item</th><th>Depends on</th></tr></thead>
     <tbody>
-      <tr><td>Data on the phone over the HTTP API</td><td>Backend plan</td></tr>
-      <tr><td>Electron desktop spike (Windows, Linux)</td><td>P1</td></tr>
-      <tr><td>Cloud visual tests in headless Chromium</td><td>P1</td></tr>
+      <tr><td>Remote sender: phone data over the HTTP API</td><td>P1b, backend plan</td></tr>
+      <tr><td>Electron desktop spike (Windows, Linux)</td><td>P1a</td></tr>
+      <tr><td>Cloud visual tests in headless Chromium</td><td>P1a</td></tr>
     </tbody>
   </table></div>
 </section>
@@ -242,12 +280,12 @@ flowchart LR
     <tbody>
       <tr><td>CLI</td><td><span class="chip k-host">Host</span> done</td><td>None</td><td>Nothing</td></tr>
       <tr><td>Web, full (with settings)</td><td><span class="chip k-host">Host</span> done</td><td>Browser</td><td>Only the settings pages</td></tr>
-      <tr><td>Windows tray</td><td><span class="chip k-host">Host</span> done</td><td>WebView2</td><td>P1, P2</td></tr>
+      <tr><td>Windows tray</td><td><span class="chip k-host">Host</span> done</td><td>WebView2</td><td>P1a, P2</td></tr>
       <tr><td>Android app (MAUI)</td><td><span class="chip k-newh">New host</span> spike done</td><td>Android WebView</td><td>P1 to P6</td></tr>
       <tr><td>Android, WebView to the PC</td><td><span class="chip k-wrap">Wrapper</span></td><td>Android WebView</td><td>Not planned</td></tr>
-      <tr><td>Desktop, Electron</td><td><span class="chip k-wrap">Wrapper</span></td><td>Chromium</td><td>Spike after P1</td></tr>
+      <tr><td>Desktop, Electron</td><td><span class="chip k-wrap">Wrapper</span></td><td>Chromium</td><td>Spike after P1a</td></tr>
       <tr><td>Desktop, Tauri 2</td><td><span class="chip k-wrap">Wrapper</span></td><td>WebView2 / WebKitGTK</td><td>Not planned: Linux engine differs</td></tr>
-      <tr><td>Linux, headless browser</td><td><span class="chip k-host">Host</span></td><td>Chromium</td><td>Tests after P1</td></tr>
+      <tr><td>Linux, headless browser</td><td><span class="chip k-host">Host</span></td><td>Chromium</td><td>Tests after P1a</td></tr>
       <tr><td>Android, Kotlin or Flutter</td><td><span class="chip k-rew">Rewrite</span></td><td>Native</td><td>Not planned</td></tr>
     </tbody>
   </table></div>
@@ -257,6 +295,7 @@ flowchart LR
 <section id="questions" hidden>
   <h2>Non-goals</h2>
   <ul>
+    <li>No VSA framework packages. Reason: the decision "plain .NET until VSA 1.0" stays. The UI copies only the shape.</li>
     <li>No change to the logic of the components. Reason: A1 shows that they work on Android as they are.</li>
     <li>No backend work: no tunnel, no sign-in, no remote data. Reason: a separate plan covers the server.</li>
     <li>No Play Store release. Reason: one user; an APK file is enough.</li>
@@ -267,7 +306,7 @@ flowchart LR
     <thead><tr><th>Question</th><th>Recommendation</th></tr></thead>
     <tbody>
       <tr><td>Where do we share the APK?</td><td>A GitHub release of the repository</td></tr>
-      <tr><td>Do P1 and P2 run as one child task?</td><td>Yes: both touch the same files</td></tr>
+      <tr><td>Does P3 run next to P1b?</td><td>Yes: P3 needs only P1a and P2</td></tr>
       <tr><td>Electron for the desktop?</td><td>Decide after an Electron spike</td></tr>
     </tbody>
   </table></div>
