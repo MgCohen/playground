@@ -104,7 +104,7 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
     <button role="tab" data-tab="run">F2 Workflows</button>
     <button role="tab" data-tab="stack">F3 PR stack</button>
     <button role="tab" data-tab="pr">F4 PR</button>
-    <button role="tab" data-tab="backlog">Backlog F5–F14</button>
+    <button role="tab" data-tab="backlog">Backlog F5–F15</button>
     <span class="sep" aria-hidden="true"></span>
     <button role="tab" data-tab="flows">User workflows</button>
     <button role="tab" data-tab="gaps">Data gaps</button>
@@ -118,7 +118,7 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
       <option value="run">F2 Workflows</option>
       <option value="stack">F3 PR stack</option>
       <option value="pr">F4 PR</option>
-      <option value="backlog">Backlog F5–F14</option>
+      <option value="backlog">Backlog F5–F15</option>
     </optgroup>
     <optgroup label="Across features">
       <option value="flows">User workflows</option>
@@ -168,6 +168,7 @@ flowchart LR
       <tr><td class="mono"><a href="#backlog">F12</a></td><td>Setup and supervisor</td><td>Backlog</td><td>The supervisor state, the app version, the update check and the cloud workers</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
       <tr><td class="mono"><a href="#backlog">F13</a></td><td>Session status page</td><td>Backlog (Q10: first set?)</td><td>Completes the page of one session: registry, work tree, runs, PRs, questions, state reason</td><td><span class="chip have">most</span></td><td><span class="chip part">built in part</span></td></tr>
       <tr><td class="mono"><a href="#backlog">F14</a></td><td>GitHub overview</td><td>Backlog</td><td>Issues, open PRs, merges, and the commit and CI status of each repository</td><td><span class="chip gap">gap</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F15</a></td><td>Change log</td><td>Backlog (Q13: meaning?)</td><td>What changed, by day: merged PRs, decisions, workflow versions, app releases. For each project and stream</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
       <tr><td class="mono"><a href="#flows">W1–W3</a></td><td>User workflows</td><td>Across features</td><td>The paths across the pages: answer a run, review a stream, review a default</td><td>—</td><td><span class="chip">spec</span></td></tr>
     </table></div>
   </section>
@@ -579,6 +580,7 @@ sequenceDiagram
       <tr><td class="mono">F11</td><td>Storage and store</td><td>Shows the store root, version, size and repository health in Settings</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
       <tr><td class="mono">F12</td><td>Setup and supervisor</td><td>Shows the supervisor state, the app version, the update check and the cloud workers</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
       <tr><td class="mono">F14</td><td>GitHub overview</td><td>Issues, open PRs, merges, and the commit and CI status of each repository</td><td><span class="chip gap">gap</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F15</td><td>Change log</td><td>What changed, by day: merged PRs, decisions, workflow versions, app releases</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
       <tr><td class="mono">F13</td><td>Session status page</td><td>The page of one session. It exists, but it shows little. F13 completes it: registry, work tree, runs, PRs, questions, state reason</td><td><span class="chip have">most</span></td><td><span class="chip part">built in part</span></td></tr>
     </table></div>
   </section>
@@ -756,6 +758,31 @@ flowchart LR
       </ul></div>
     </div>
   </section>
+  <section>
+    <span class="kicker">F15 · Change log</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>One page that tells what changed, newest first, grouped by day. It shows the result of the work, not the work: merged PRs, decisions that apply, new workflow versions and app releases. You read it to catch up after a pause.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>One entry for each change: time, kind, title, project, stream, session, link</li>
+        <li>Kinds: PR merged, decision applied (answer, default, review verdict), workflow version, app release</li>
+        <li>Filter by project (F6), stream, kind and date</li>
+        <li>"Since my last visit" mark</li>
+        <li>Export one period as Markdown, for example for release notes</li>
+        <li>Each entry opens its PR page (F4), decision or run (F2)</li>
+      </ul></div>
+      <div class="box"><h3>Logic</h3><ul>
+        <li>The page reads the envelopes of the store. It writes nothing. A change log is a filtered view of the event stream</li>
+        <li>Only finished changes show: a merge, not an open PR; an applied decision, not an open question</li>
+        <li>The merge entry takes its text from the PR title and the report summary</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> <code>pr.merge</code>, decision and review envelopes, <code>docs/decisions.md</code></li>
+        <li><span class="chip gap">gap</span> task PRs that merge outside <code>orch merge</code> (P-G4)</li>
+        <li><span class="chip gap">gap</span> workflow versions (P-G14) and an app release record</li>
+      </ul></div>
+    </div>
+  </section>
 </div>
 
 <!-- USER WORKFLOWS -->
@@ -890,6 +917,8 @@ flowchart TD
       <p>The run page and the PR page link to the session page. Today that page does not show runs, PRs or the registry.</p>
       <p>Options: (a) yes: sketch it with F2–F4; (b) no: keep it in the backlog.</p>
       <p class="rec">Recommendation: (a). Without it, the links from the new pages open a page with little data.</p></div>
+    <div class="q"><b>Q13. What does the change log (F15) show?</b>
+      <p>Proposal: the finished changes of the work (merges, applied decisions, workflow versions, app releases), for each project and stream. Other options: only the release notes of the orchestrator app, or a feed of all events.</p></div>
     <div class="q"><b>Q11. Where does the GitHub data of F14 come from?</b>
       <p>Issues and CI status are only on GitHub. The design rule says that the store is the source.</p>
       <p>Options: (a) a live read with <code>gh</code> and a short cache, at page open; (b) the supervisor copies the GitHub state into envelopes on a timer; (c) GitHub webhooks through the tunnel (D1).</p>
