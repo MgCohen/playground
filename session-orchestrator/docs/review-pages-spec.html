@@ -93,7 +93,7 @@ pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-ra
   <div class="eyebrow">Session orchestrator · task P · 2026-11-18</div>
   <h1>Advanced Features</h1>
   <p class="summary">The advanced features of the orchestrator UI: the features after the basic sessions, cards and event stream. The first set is three pages: a workflow run, the PR stack of a stream, and one PR. They connect through the stream: a stream has sessions, workflow runs and PRs. Each feature has the same parts: what it is, its logic, its capabilities and its workflow. More features come later as new tabs. The sketches come after the approval.</p>
-  <span class="status">Draft for discussion · not approved</span>
+  <span class="status">Draft · F2 approved for sketches · <a href="https://claude.ai/artifact/NLryVXeApNnBRr9LFE3chV">Workflows Sketches</a></span>
 </header>
 
 <nav aria-label="Sections">
@@ -828,7 +828,7 @@ flowchart TD
 <div class="panel" id="gaps" hidden>
   <section>
     <h2>Data gaps</h2>
-    <p class="summary">Data that the pages need and the store does not have. Session D owns the store code. These rows go into <code>docs/plan.md</code> after the approval.</p>
+    <p class="summary">Data that the pages need and the store does not have. Session D owns the store code. The same rows are in <code>docs/plan.md</code>, section "P plan".</p>
     <div class="scroll"><table>
       <tr><th>Id</th><th>Gap</th><th>Page</th><th>Proposal</th></tr>
       <tr><td class="mono">P-G1</td><td>A run has no <code>stream</code> field</td><td>F1, F2</td><td>Read it from the owner entry. Or copy it into the run at start</td></tr>
@@ -843,6 +843,8 @@ flowchart TD
       <tr><td class="mono">P-G10</td><td>No link from a PR to the run step that made it</td><td>F2, F4</td><td><code>refs.run</code> and <code>refs.step</code> on <code>pr.open</code></td></tr>
       <tr><td class="mono">P-G12</td><td>The runner has no "force a next step" and no "go back to step X"</td><td>F2</td><td><code>orch run step --force S</code>, <code>orch run back S</code>, and the same in the run API (P-G2)</td></tr>
       <tr><td class="mono">P-G13</td><td>No link from a step to the child run that it started</td><td>F2</td><td><code>history[].run</code>: the id of the child run</td></tr>
+      <tr><td class="mono">P-G14</td><td>No list of the versions of a workflow definition</td><td>F2</td><td>Keep each version, or read the <code>.removed/</code> folders as old versions</td></tr>
+      <tr><td class="mono">P-G15</td><td>No timer on a pick wait</td><td>F2, F7</td><td>A pick wait that the owner session takes after a time limit</td></tr>
       <tr><td class="mono">P-G11</td><td>The review API needs a decision id</td><td>F4</td><td>A review by PR number for a task PR</td></tr>
     </table></div>
   </section>
