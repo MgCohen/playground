@@ -1,4 +1,4 @@
-@inject IJSRuntime JS
+@inject ICommandSender Commands
 <div class="scrim" @onclick="Close"></div>
 <div class="crd sheet" role="dialog" aria-label="@Card.SheetLabel">
     <span class="grab"></span>
@@ -36,8 +36,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        try { await JS.InvokeVoidAsync("orchSpeech.focus", "sheet-text", Voice); }
-        catch (Exception e) when (e is JSException or InvalidOperationException or JSDisconnectedException) { }
+        await Commands.SendAsync(new Orchestrator.Web.Features.Speech.Slices.Focus.SpeechFocus("sheet-text", Voice), default);
     }
 
     Task Send() => OnSend.InvokeAsync(text.Trim());

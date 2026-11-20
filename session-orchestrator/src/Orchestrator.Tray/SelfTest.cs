@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Web.WebView2.Core;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
@@ -32,7 +33,7 @@ public static partial class SelfTest
         return Path.Combine(folder, "place.json");
     }
 
-    public static async Task<int> Run(TrayApp tray, string folder, bool mouse)
+    public static async Task<int> Run(TrayApp tray, string folder, bool mouse, bool reduced = false)
     {
         Directory.CreateDirectory(folder);
         var w = tray.Window;
@@ -173,9 +174,11 @@ public static partial class SelfTest
         // ExecuteScriptAsync does not wait for the promise of the meter: wait for its result.
         await Until(async () => await Js(w, "!!window.__frames") == "true", 3000);
         var b = tray.Badge;
+        // H2: at phase badge the slide of the tab has ended, so the read needs no delay.
+        var tab = await Js(b, "getComputedStyle(document.querySelector('.tb-tab')).translate");
+        Add("badge-in-ended", tab is "none" or "0px" or "0px 0px", $"tab translate at the first read with phase badge: {tab} (expect 0)");
         var area = Screen.FromRectangle(b.Bounds).WorkingArea;
         await Task.Delay(400);
-        var tab = await Js(b, "getComputedStyle(document.querySelector('.tb-tab')).translate");
         (await Picture(b)).Save(Path.Combine(folder, "3-badge.png"));
         Add("dock", docked && !w.Visible && b.Visible && b.Bounds == b.PlaceBounds() && b.Right == area.Right && tab is "none" or "0px" or "0px 0px",
             $"phase {w.Phase}, panel window shows {w.Visible}, badge window {b.Bounds} (expect {b.PlaceBounds()}), right edge {b.Right} = {area.Right}, tab translate {tab}, click area {b.HitArea}; frames of the fold {await Frames(w)}");
@@ -256,6 +259,91 @@ public static partial class SelfTest
             $"click area at rest {atRest}, at the hover {hover}; after the click: phase {w.Phase}, panel window shows {w.Visible}, badge window shows {b.Visible}");
 
         if (mouse) await Mouse(w, b, Add);
+
+        // S8: a throw from the act button: C# starts the throw, waits for it (step deck-throw), then the next card is on top.
+        await Js(w, $"{Go}('cards')");
+        await Task.Delay(700);
+        for (var i = 0; i < 4 && await Js(w, "!!document.querySelector('.acts [data-throw]')") != "true"; i++)
+        {
+            await Js(w, "document.querySelector('.acts [data-act=\"skip\"]')?.click()");
+            await Task.Delay(700);
+        }
+        var topBefore = await Js(w, "document.querySelector('[data-deck-card] .q, [data-deck-card] h3, [data-deck-card]')?.textContent?.trim().slice(0, 60) ?? ''");
+        await Js(w, "document.querySelector('.acts [data-throw]')?.click()");
+        await Task.Delay(800);
+        var topAfter = await Js(w, "document.querySelector('[data-deck-card] .q, [data-deck-card] h3, [data-deck-card]')?.textContent?.trim().slice(0, 60) ?? ''");
+        var thrown = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Infrastructure.JsTrace>().Lines
+            .Any(l => l.Contains("~=\"deck-throw\"]", StringComparison.Ordinal) && l.Contains("by end", StringComparison.Ordinal));
+        Add("deck-throw", thrown && topAfter != topBefore, $"trace of step deck-throw by end {thrown}; top card before \"{topBefore}\", after \"{topAfter}\"");
+        await Js(w, $"{Go}('')");
+        await Task.Delay(600);
+
+        // H4: a new card during a hide: the notice waits for the hide, then the badge comes in and peeks.
+        w.Request(TrayRequest.Hide);
+        PostCard(tray, "The self-test posts a card during a hide");
+        var busyBadge = await Until(() => w.Phase == TrayPhase.Badge, 3000);
+        var busyPeek = await Until(async () => await Js(b, "!!document.querySelector('.tb-peek.on')") == "true", 1500);
+        Add("notice-while-busy", busyBadge && busyPeek, $"after a hide with a new card: phase {w.Phase}, badge shows {b.Visible}, peek {busyPeek}");
+        w.Request(TrayRequest.Open);
+        await Until(() => w.Phase == TrayPhase.Open, 4000);
+        await Task.Delay(600);
+
+        // H1: the fold on a page with no app bar ends with the panel, not at once: the badge comes after the fold.
+        var doc = await Js(w, "document.querySelector('a[href^=\"events/\"]')?.getAttribute('href') ?? ''");
+        if (doc.Length == 0)
+        {
+            await Js(w, $"{Go}('stream')");
+            await Task.Delay(700);
+            doc = await Js(w, "document.querySelector('a[href^=\"events/\"]')?.getAttribute('href') ?? ''");
+        }
+        await Js(w, $"{Go}('{doc}')");
+        await Task.Delay(800);
+        var foldClock = System.Diagnostics.Stopwatch.StartNew();
+        w.Request(TrayRequest.Dock);
+        await Until(() => w.Phase == TrayPhase.BadgeOut || w.Phase == TrayPhase.Badge, 4000);
+        var foldMs = foldClock.ElapsedMilliseconds;
+        Add("fold-no-app-bar", reduced || foldMs is >= 340 and < 900, $"on {doc}: dock to badge-out {foldMs} ms (expect 340 to 900: the fold of the panel, no limit)");
+        w.Request(TrayRequest.Open);
+        await Until(() => w.Phase == TrayPhase.Open, 4000);
+        await Task.Delay(600);
+        await Js(w, $"{Go}('')");
+        await Task.Delay(500);
+
+        // I13: with reduced motion each duration token is 1 ms, so a dock and an open end at once: no wait runs to its limit.
+        if (reduced)
+        {
+            var times = new List<long>();
+            for (var i = 0; i < 2; i++)
+            {
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                w.Request(TrayRequest.Dock);
+                await Until(() => w.Phase == TrayPhase.Badge, 4000);
+                times.Add(clock.ElapsedMilliseconds);
+                await Task.Delay(300);
+                clock.Restart();
+                w.Request(TrayRequest.Open);
+                await Until(() => w.Phase == TrayPhase.Open, 4000);
+                times.Add(clock.ElapsedMilliseconds);
+                await Task.Delay(300);
+            }
+            Add("reduced-flow-time", times.All(t => t < 300), $"dock, open, dock, open in ms: {string.Join(", ", times)} (expect each under 300)");
+        }
+
+        // I12: each wait of the run ends by the end of its motion, not by its limit.
+        var trace = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Infrastructure.JsTrace>().Lines;
+        var waits = trace.Where(l => l.Contains("js orchMotion.wait", StringComparison.Ordinal)).ToList();
+        var late = waits.Where(l => l.Contains("by limit", StringComparison.Ordinal) || l.Contains("by missing", StringComparison.Ordinal) || l.Contains(" error js.failed", StringComparison.Ordinal)).ToList();
+        // S4: each step of the tray flow runs through the registry (its data-motion target) and ends by the end of its motion.
+        string[] tracedSteps = ["grow", "fold", "badge-in", "badge-out", "spin", "peek-out"];
+        var untraced = tracedSteps.Where(s => !waits.Any(l => l.Contains($"~=\"{s}\"]", StringComparison.Ordinal) && l.Contains("by end", StringComparison.Ordinal))).ToList();
+        Add("steps-traced", untraced.Count == 0, untraced.Count == 0 ? $"each step ends by end: {string.Join(", ", tracedSteps)}" : $"no wait by end for: {string.Join(", ", untraced)}");
+        // S9: each window step of the run is in the trace, with its window event and its window gap.
+        string[] windowSteps = ["panel-show", "panel-activate", "badge-show", "all-hide"];
+        var windowLines = trace.Where(l => l.Contains(" window ", StringComparison.Ordinal)).ToList();
+        var noWindow = windowSteps.Where(s => !windowLines.Any(l => l.Contains($"window {s}: ", StringComparison.Ordinal) && l.Contains(" gap ", StringComparison.Ordinal))).ToList();
+        var gaps = windowLines.Where(l => l.Contains("window badge-show", StringComparison.Ordinal)).Select(l => l[(l.LastIndexOf("gap ", StringComparison.Ordinal) + 4)..].Split(' ')[0]).ToList();
+        Add("window-steps", noWindow.Count == 0, noWindow.Count == 0 ? $"{windowLines.Count} window steps; gaps of the badge-show steps in ms: {string.Join(", ", gaps)}" : $"no window step: {string.Join(", ", noWindow)}");
+        Add("no-wait-at-limit", waits.Count >= 10 && late.Count == 0, $"{waits.Count} waits, {late.Count} by limit, missing or error{(late.Count > 0 ? ": " + string.Join(" | ", late.Take(4)) : "")}");
 
         Add("exceptions", Faults.Count == 0, Faults.First ?? "no unhandled exception");
         File.WriteAllText(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));

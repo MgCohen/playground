@@ -3,10 +3,10 @@
    bar stay. The class goes when the motion ends. A push and a back are view transitions (MotionHost). *@
 @inherits LayoutComponentBase
 @inject NavigationManager Nav
-@inject IJSRuntime JS
+@inject ICommandSender Commands
 
 <div class="app">
-    <main class="page @(tabIn ? "is-tab-in" : "")" @ref="page">
+    <main class="page @(tabIn ? "is-tab-in" : "")" data-motion="tab-in" @ref="page">
         @Body
     </main>
     <AppBar />
@@ -17,7 +17,6 @@
     ElementReference page;
     string? last;
     bool tabIn, settle;
-    int run;
 
     protected override void OnParametersSet()
     {
@@ -26,7 +25,6 @@
         {
             tabIn = true;
             settle = true;
-            run++;
         }
         last = here;
     }
@@ -35,16 +33,9 @@
     {
         if (!settle) return;
         settle = false;
-        var mine = run;
-        try
-        {
-            await JS.InvokeVoidAsync("orchMotion.settle", page);
-        }
-        catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)
-        {
-        }
-        // A later tab change keeps the class for its own blocks.
-        if (mine != run) return;
+        // The key makes a newer tab change cancel this wait: the later change keeps the class for its own blocks.
+        var waited = await Commands.SendAsync(new MotionWait(page, WaitMode.Step) { Key = MotionSteps.TabIn.Name }, default);
+        if (waited.Error?.Code == Orchestrator.Web.Plugins.Js.Contracts.JsErrors.Canceled) return;
         tabIn = false;
         StateHasChanged();
     }

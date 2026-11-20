@@ -6,3 +6,4 @@ TestResults/
 *.nupkg
 plugin/.claude-plugin/types/
 selftest/
+artifacts~/

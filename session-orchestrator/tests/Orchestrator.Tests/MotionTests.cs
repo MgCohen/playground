@@ -43,7 +43,7 @@ public sealed class MotionTests
     [Test]
     public void A_hidden_presence_leaves_and_then_tells_the_parent()
     {
-        using var context = new BunitContext();
+        using var context = UiContext.New();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         var gone = 0;
         var cut = context.Render<Presence>(p => p.AddChildContent("<p class=\"x\">block</p>").Add(x => x.OnGone, () => gone++));
@@ -53,13 +53,13 @@ public sealed class MotionTests
 
         cut.WaitForAssertion(() => Assert.That(cut.FindAll(".x"), Is.Empty));
         Assert.That(gone, Is.EqualTo(1));
-        Assert.That(context.JSInterop.Invocations.Select(i => i.Identifier), Does.Contain("orchMotion.settle"), "the leave waits for the end of the CSS motion");
+        Assert.That(context.JSInterop.Invocations.Select(i => i.Identifier), Does.Contain("orchMotion.wait"), "the leave waits for the end of the CSS motion");
     }
 
     [Test]
     public void A_presence_that_starts_hidden_shows_nothing()
     {
-        using var context = new BunitContext();
+        using var context = UiContext.New();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         var cut = context.Render<Presence>(p => p.AddChildContent("<p class=\"x\">block</p>").Add(x => x.Shown, false));
         Assert.That(cut.FindAll(".x"), Is.Empty);
@@ -73,7 +73,7 @@ public sealed class MotionTests
     public void The_scrim_closes_the_filter_sheet_through_its_presence()
     {
         using var rig = new Rig();
-        using var context = new BunitContext();
+        using var context = UiContext.New();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddSingleton(new Board(rig.Store, rig.Supervisor));
         context.Services.AddSingleton(new StreamHub(rig.Store));
@@ -89,10 +89,10 @@ public sealed class MotionTests
     [Test]
     public void A_render_of_the_parent_during_the_leave_does_not_stop_it()
     {
-        using var context = new BunitContext();
+        using var context = UiContext.New();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         // The wait for the CSS motion stays open until the test ends it, as in a browser.
-        var wait = context.JSInterop.SetupVoid("orchMotion.settle", _ => true);
+        var wait = context.JSInterop.Setup<Orchestrator.Web.Features.Motion.Slices.Wait.WaitResult>("orchMotion.wait", _ => true);
         var gone = 0;
         var cut = context.Render<Presence>(p => p.AddChildContent("<p class=\"x\">block</p>").Add(x => x.OnGone, () => gone++));
 
@@ -101,7 +101,7 @@ public sealed class MotionTests
         // The parent renders again with the same parameters while the motion runs.
         cut.Render(p => p.AddChildContent("<p class=\"x\">block</p>").Add(x => x.OnGone, () => gone++));
         Assert.That(cut.FindAll(".presence.is-leaving"), Has.Count.EqualTo(1), "the leave goes on");
-        wait.SetVoidResult();
+        wait.SetResult(new Orchestrator.Web.Features.Motion.Slices.Wait.WaitResult("end", 0));
 
         cut.WaitForAssertion(() => Assert.That(cut.FindAll(".x"), Is.Empty));
         Assert.That(gone, Is.EqualTo(1));
