@@ -16,6 +16,8 @@ public sealed class InboxUiTests
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
+        // The undo time is the token --t-undo of motion.css; the page gives 5 s.
+        context.JSInterop.Setup<double>("orchMotion.ms", "--t-undo").SetResult(5000);
         context.Services.AddSingleton(new Board(rig.Store, rig.Supervisor));
         context.Services.AddSingleton(new StreamHub(rig.Store));
         return context;

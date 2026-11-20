@@ -25,15 +25,15 @@
     card.style.setProperty("--sr", 0);
     card.style.setProperty("--sl", 0);
     card.style.setProperty("--sd", 0);
-    setTimeout(function () { card.classList.remove("back-in"); }, 450);
+    setTimeout(function () { card.classList.remove("back-in"); }, orchMotion.ms("--t-card-back"));
   }
 
-  // Wait for the end of the motion, with a time limit when the motion does not run (reduced motion).
-  function after(card, type, ms, then) {
+  // Wait for the end of the motion of a token, with a time limit when the motion does not run: the token plus --t-frame-limit.
+  function after(card, type, token, then) {
     var done = false;
     function end() { if (!done) { done = true; then(); } }
     card.addEventListener(type, end, { once: true });
-    setTimeout(end, ms + 80);
+    setTimeout(end, orchMotion.ms(token) + orchMotion.ms("--t-frame-limit"));
   }
 
   function fly(card, dir, dx, dy, b) {
@@ -49,7 +49,7 @@
     }
     card.style.setProperty(dir > 0 ? "--sr" : "--sl", 1);
     card.classList.add(dir > 0 ? "out-r" : "out-l");
-    after(card, "animationend", 300, function () { go(b); });
+    after(card, "animationend", "--t-card-throw", function () { go(b); });
   }
 
   function tuck(card, b) {
@@ -57,10 +57,10 @@
     card.style.transform = "";
     card.style.setProperty("--sd", 0);
     card.classList.add("tuck");
-    after(card, "transitionend", 180, function () {
+    after(card, "transitionend", "--t-card-tuck", function () {
       go(b);
       // Blazor sets the class of a card that moves to a back slot. A card that stays on top (a pile of one) rises again.
-      setTimeout(function () { card.classList.remove("tuck"); }, 60);
+      setTimeout(function () { card.classList.remove("tuck"); }, orchMotion.ms("--t-card-tuck-hold"));
     });
   }
 

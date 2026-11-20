@@ -194,20 +194,20 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .pcard, .pcard a, .pcard img { -webkit-user-drag: none; }
 .pcard { position: absolute; inset: 0 0 18px; display: flex; flex-direction: column; touch-action: pan-y; user-select: none; will-change: transform; overflow: hidden;
   transform: translateY(calc(var(--i, 0) * 8px)) scale(calc(1 - var(--i, 0) * .045)); transform-origin: 50% 100%; z-index: calc(10 - var(--i, 0)); opacity: calc(1 - var(--i, 0) * .22);
-  transition: transform .32s var(--ease-out), opacity .32s var(--ease-out); }
+  transition: transform var(--t-card-move) var(--ease-out), opacity var(--t-card-move) var(--ease-out); }
 .pcard.behind { pointer-events: none; }
 .pcard.drag { transition: none; }
 /* M1: a short drag goes back with a small spring. */
-.pcard.back-in { transition: transform .45s var(--ease-spring); }
+.pcard.back-in { transition: transform var(--t-card-back) var(--ease-spring); }
 /* M3 A: a new top card drops in from the top with a small spring. A throw (below) wins over it. */
-.pcard.arrive { animation: m-arrive .42s var(--ease-spring) backwards; }
+.pcard.arrive { animation: m-arrive var(--t-card-arrive) var(--ease-spring) backwards; }
 /* M1 A: the card keeps the drag place, turns 18° and fades out in the throw direction in 300 ms. */
-.pcard.out-r { animation: m-fly-r .3s var(--ease-out) forwards; }
-.pcard.out-l { animation: m-fly-l .3s var(--ease-out) forwards; }
+.pcard.out-r { animation: m-fly-r var(--t-card-throw) var(--ease-out) forwards; }
+.pcard.out-l { animation: m-fly-l var(--t-card-throw) var(--ease-out) forwards; }
 @keyframes m-fly-r { to { transform: translate(var(--fx, 120%), var(--fy, 30px)) rotate(18deg); opacity: 0; } }
 @keyframes m-fly-l { to { transform: translate(var(--fx, -120%), var(--fy, 30px)) rotate(-18deg); opacity: 0; } }
 /* M2 A: skip drops the card 180 ms and tucks it under the pile; it then rises into the last slot. */
-.pcard.tuck { transition: transform .18s ease-in; transform: translateY(68%) scale(.9) !important; z-index: 0 !important; }
+.pcard.tuck { transition: transform var(--t-card-tuck) ease-in; transform: translateY(68%) scale(.9) !important; z-index: 0 !important; }
 @keyframes m-arrive { from { transform: translateY(-40px) scale(.96); opacity: 0; } }
 .card-link { position: absolute; inset: 0; z-index: 1; border-radius: var(--r); }
 .pcard .head { border-bottom: 1px solid var(--line-c); padding: 12px 14px; }
@@ -239,7 +239,7 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .fsec { display: grid; gap: 6px; }
 .fsec .gt { margin: 0; }
 .tg { appearance: none; width: 34px; height: 20px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); position: relative; flex: none; margin: 0; cursor: pointer; }
-.tg::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surf); box-shadow: 0 2px 4px rgba(0,0,0,.3); transition: left .15s; }
+.tg::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surf); box-shadow: 0 2px 4px rgba(0,0,0,.3); transition: left var(--t-toggle); }
 .tg:checked { background: var(--accent); box-shadow: inset 2px 2px 4px rgba(0,0,0,.25), var(--sh-glow); }
 .tg:checked::after { left: 17px; }
 .toast { position: fixed; z-index: 15; left: 50%; transform: translateX(-50%); top: calc(12px + env(safe-area-inset-top, 0px)); width: min(520px, calc(100% - 28px));

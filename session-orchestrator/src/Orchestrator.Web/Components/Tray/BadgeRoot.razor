@@ -14,9 +14,6 @@
 </div>
 
 @code {
-    /// <summary>The time that the peek bubble shows (N2).</summary>
-    public static readonly TimeSpan PeekTime = TimeSpan.FromSeconds(5);
-
     TrayFlow? flow;
     IWidgetWindow? window;
     string phase = TrayPhase.BadgeOut;
@@ -76,7 +73,8 @@
             window!.Peek(true);
             peek = true;
             StateHasChanged();
-            var shown = Task.Delay(PeekTime);
+            // The peek shows for the token --t-peek-show of motion.css (N2).
+            var shown = Task.Delay(await MotionTimes.Of(JS, "--t-peek-show"));
             await JS.InvokeVoidAsync("orchTray.end", ".tb-ring", "tb-spin", 1500);
             if (mine != notice) return;
             spin = false;

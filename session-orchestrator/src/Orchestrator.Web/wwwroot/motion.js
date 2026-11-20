@@ -25,14 +25,15 @@
   }).observe(document.documentElement, { childList: true, subtree: true });
   mark(document.documentElement);
 
-  // The longest wait of a block for its motion (--t-limit in motion.css), in ms.
-  function limit() {
-    var v = getComputedStyle(document.documentElement).getPropertyValue("--t-limit").trim();
-    var ms = parseFloat(v);
-    return isNaN(ms) ? 1000 : v.endsWith("ms") ? ms : ms * 1000;
+  // A time token of motion.css (for example "--t-limit"), in ms. An unknown token is 0.
+  function ms(name) {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    var n = parseFloat(v);
+    return isNaN(n) ? 0 : v.endsWith("ms") ? n : n * 1000;
   }
+  function limit() { return ms("--t-limit"); }
 
-  // Resolves when Blazor changes the page, or after 600 ms. V13: watch the body, because Blazor replaces the .app element
+  // Resolves when Blazor changes the page, or after --t-vt-render. V13: watch the body, because Blazor replaces the .app element
   // itself. Not requestAnimationFrame: the browser pauses the rendering during the update of a view transition, so a frame
   // callback waits for the time limit. The next task comes after the Blazor batch of the render.
   function rendered() {
@@ -41,13 +42,15 @@
       function end() { if (!done) { done = true; observer.disconnect(); resolve(); } }
       var observer = new MutationObserver(function () { setTimeout(end, 0); });
       observer.observe(document.body, { childList: true, subtree: true });
-      setTimeout(end, 600);
+      setTimeout(end, ms("--t-vt-render"));
     });
   }
 
   var moves = !!document.startViewTransition && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   window.orchMotion = {
+    // A time token of motion.css in ms, for C# and the other scripts.
+    ms: ms,
     // Presence: resolves when each finite CSS animation and transition in the block ends, or after the time limit.
     // One frame first, so the phase class of the render is in the styles. A hidden page draws no frames and moves no
     // animation, so it resolves at once; the limit starts before the frame, so a page that hides during the wait ends too.
@@ -85,7 +88,7 @@
         t.ready.catch(function () { });
         t.finished.catch(function () { }).finally(function () { root.classList.remove("vt", "vt-back"); });
         // The browser calls the update also for a skipped transition; this limit only keeps a navigation from a wait with no end.
-        setTimeout(started, 300);
+        setTimeout(started, ms("--t-vt-start"));
       });
     }
   };

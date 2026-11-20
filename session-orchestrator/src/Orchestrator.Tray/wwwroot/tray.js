@@ -22,7 +22,7 @@ window.orchTray = {
   // Resolves after n display frames, so the browser drew a state before the next change. A limit keeps a hidden page going.
   frames: function (n) {
     return new Promise(function (resolve) {
-      var timer = setTimeout(resolve, 100);
+      var timer = setTimeout(resolve, orchMotion.ms("--t-frame-limit"));
       function step() { if (--n <= 0) { clearTimeout(timer); resolve(); } else requestAnimationFrame(step); }
       requestAnimationFrame(step);
     });

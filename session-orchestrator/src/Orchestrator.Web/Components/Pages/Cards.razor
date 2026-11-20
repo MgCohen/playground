@@ -1,5 +1,6 @@
 @page "/cards"
 @inherits LiveView
+@inject IJSRuntime JS
 
 <PageTitle>Cards · orch</PageTitle>
 
@@ -65,7 +66,8 @@
 }
 
 @code {
-    public static readonly TimeSpan UndoTime = TimeSpan.FromSeconds(5);
+    /// <summary>The undo time of an act: the token --t-undo of motion.css, read once from the page.</summary>
+    TimeSpan? undoTime;
 
     static readonly string[] Chips = ["All", "Questions", "Reviews", "Reports"];
 
@@ -105,7 +107,11 @@
 
     bool Arrives(CardView card) => lastPile.Count > 0 && !lastPile.Contains(card.Id);
 
-    protected override void OnAfterRender(bool firstRender) => lastPile = visible.Take(3).Select(c => c.Id).ToHashSet();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        lastPile = visible.Take(3).Select(c => c.Id).ToHashSet();
+        if (firstRender) undoTime ??= await MotionTimes.Of(JS, "--t-undo");
+    }
 
     IReadOnlyDictionary<string, string> ChipLabels => new Dictionary<string, string>
     {
@@ -181,7 +187,7 @@
         var p = new Pending(card.Id, work, done, cancel);
         pending = p;
         toast = new Toast(done, Undo);
-        _ = Task.Delay(UndoTime, cancel.Token).ContinueWith(task =>
+        _ = UndoWait(cancel.Token).ContinueWith(task =>
         {
             if (task.IsCanceled) return;
             InvokeAsync(() =>
@@ -191,6 +197,12 @@
                 StateHasChanged();
             });
         }, TaskScheduler.Default);
+    }
+
+    async Task UndoWait(CancellationToken cancel)
+    {
+        undoTime ??= await MotionTimes.Of(JS, "--t-undo");
+        await Task.Delay(undoTime.Value, cancel);
     }
 
     void Run(Pending p)

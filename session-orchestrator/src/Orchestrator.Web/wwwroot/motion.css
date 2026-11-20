@@ -11,14 +11,24 @@
   /* Page moves (T2): the first page fade, a push and a back. */
   --t-page-in: .18s; --t-push: .3s; --t-back: .28s;
   /* A tab change (T1, option C): each block rises, a step after the block above it; the nav dot moves with a spring. */
-  --t-tab-block: .3s; --t-tab-step: 40ms; --t-dot: .3s;
+  --t-tab-block: .3s; --t-tab-step: 40ms; --t-dot: .3s; --t-dot-fade: .2s;
+  /* The deck (M1, M2, M3): a card moves to its slot, springs back, arrives, is thrown, tucks under the pile, then holds. */
+  --t-card-move: .32s; --t-card-back: .45s; --t-card-arrive: .42s; --t-card-throw: .3s; --t-card-tuck: .18s; --t-card-tuck-hold: 60ms;
+  /* A toggle switch. */
+  --t-toggle: .15s;
   /* The tray (tray.css): the pop of the home ball, the grow and the fold of the panel, the badge, its peek and its ring spin. */
   --ease-in: cubic-bezier(.32,0,.67,0);
   --t-ball-in: .3s; --t-ball-out: .18s; --t-grow: .34s; --t-shrink: .24s; --t-content-in: .2s; --t-content-out: .1s;
   --t-badge-in: .26s; --t-badge-out: .2s; --t-badge-hover: .28s; --t-badge-wait: .35s; --t-badge-text: .18s; --t-badge-text-wait: .43s;
   --t-peek-in: .26s; --t-peek-out: .2s; --t-spin: .8s; --ease-spin: cubic-bezier(.4,0,.2,1);
+  /* The badge window: the click area gets small after the fold of the hover. */
+  --t-badge-fold: .3s;
+  /* Dwell times: how long a thing shows. Reduced motion keeps them. */
+  --t-undo: 5s; --t-peek-show: 5s;
   /* The longest wait of a <Presence> for the end of its motion: a motion that does not run stops no block. */
   --t-limit: 1000ms;
+  /* Other limits: the start of a view transition, the render in it, and a wait for display frames. */
+  --t-vt-start: 300ms; --t-vt-render: 600ms; --t-frame-limit: 100ms;
 }
 
 /* ===== Presence: a block that comes and goes. The wrapper has no box; its children get the phase class of the parent. ===== */
@@ -31,7 +41,7 @@
 .is-leaving > .sheet { animation: m-down var(--t-sheet-out) ease-in both; }
 .is-leaving > .toast { animation: m-lift var(--t-toast-out) ease-in both; }
 .toast:not(.inline) { overflow: hidden; animation: m-drop var(--t-toast-in) var(--ease-spring) backwards; }
-.toast .ubar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--accent); transform-origin: left; animation: m-count 5s linear both; }
+.toast .ubar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--accent); transform-origin: left; animation: m-count var(--t-undo) linear both; }
 @keyframes m-fade { from { opacity: 0; } }
 @keyframes m-fade-out { to { opacity: 0; } }
 @keyframes m-up { from { transform: translateY(105%); } }
@@ -99,7 +109,7 @@
 .page.is-tab-in > :not(.hd) > :nth-child(10) { animation-delay: calc(9 * var(--t-tab-step)); }
 .page.is-tab-in > :not(.hd) > :nth-child(11) { animation-delay: calc(10 * var(--t-tab-step)); }
 .page.is-tab-in > :not(.hd) > :nth-child(12) { animation-delay: calc(11 * var(--t-tab-step)); }
-.nav2 .ndot { transition: left var(--t-dot) var(--ease-spring), opacity .2s ease; }
+.nav2 .ndot { transition: left var(--t-dot) var(--ease-spring), opacity var(--t-dot-fade) ease; }
 .nav2.jump .ndot { transition: none; }
 html.nav .page { animation: none; }
 .nav2 { view-transition-name: appbar; }

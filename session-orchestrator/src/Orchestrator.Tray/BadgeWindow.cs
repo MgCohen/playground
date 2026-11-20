@@ -16,6 +16,9 @@ public sealed class BadgeWindow : ClearHost
     int? top;
     bool hover, peek;
 
+    // The fold of the hover: the token --t-badge-fold of motion.css, read from the page when it is ready.
+    TimeSpan fold;
+
     public BadgeWindow(IServiceProvider services, Icon icon, Func<Screen> screen, string? topFile) : base(services, typeof(Orchestrator.Web.Components.Tray.BadgeRoot))
     {
         this.screen = screen;
@@ -26,6 +29,11 @@ public sealed class BadgeWindow : ClearHost
         TopMost = true;
         Bounds = PlaceBounds();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += DisplayChanged;
+        _ = Ready.Task.ContinueWith(_ => BeginInvoke(async () =>
+        {
+            if (double.TryParse(await Web!.ExecuteScriptAsync("orchMotion.ms('--t-badge-fold')"), System.Globalization.CultureInfo.InvariantCulture, out var ms))
+                fold = TimeSpan.FromMilliseconds(ms);
+        }), TaskScheduler.Default);
     }
 
     /// <summary>A click on the badge (no drag).</summary>
@@ -78,7 +86,7 @@ public sealed class BadgeWindow : ClearHost
         hover = on;
         if (on) Hits();
         // The fold of the hover ends before the click area gets small again.
-        else _ = Task.Delay(300).ContinueWith(_ => BeginInvoke(() => { if (!hover) Hits(); }), TaskScheduler.Default);
+        else _ = Task.Delay(fold).ContinueWith(_ => BeginInvoke(() => { if (!hover) Hits(); }), TaskScheduler.Default);
     }
 
     Point? down;
