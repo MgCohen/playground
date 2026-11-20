@@ -23,7 +23,11 @@ internal sealed class JsTrace(ILogger<JsTrace> log) : IJsTrace
 
     public event Action<string>? Written;
 
-    public void Write(string line)
+    public void Write(string line) => Add(line, LogLevel.Debug);
+
+    public void Warn(string line) => Add($"WARN {line}", LogLevel.Warning);
+
+    void Add(string line, LogLevel level)
     {
         var stamped = $"{DateTime.Now:HH:mm:ss.fff} {line}";
         lock (gate)
@@ -34,7 +38,7 @@ internal sealed class JsTrace(ILogger<JsTrace> log) : IJsTrace
                 lines.Dequeue();
             }
         }
-        log.LogDebug("{Line}", line);
+        log.Log(level, "{Line}", line);
         Written?.Invoke(stamped);
     }
 }

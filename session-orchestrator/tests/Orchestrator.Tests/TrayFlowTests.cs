@@ -36,6 +36,15 @@ public sealed class TrayFlowTests
 
         public void Fault(Exception error, string where) => Faults.Add($"{where}: {error.Message}");
 
+        public string LastEvent => Phase switch
+        {
+            TrayPhase.Start or TrayPhase.BadgeOut => "shown",
+            TrayPhase.Open => "activated",
+            _ => "hidden",
+        };
+
+        public void UseBadgeFold(TimeSpan fold) { }
+
         public void Peek(bool on) { }
     }
 
@@ -78,9 +87,13 @@ public sealed class TrayFlowTests
     {
         readonly List<string> lines = [];
 
+        public event Action<string>? Written { add { } remove { } }
+
         public IReadOnlyList<string> Lines => lines;
 
         public void Write(string line) => lines.Add(line);
+
+        public void Warn(string line) => lines.Add($"WARN {line}");
     }
 
     [Test]

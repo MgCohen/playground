@@ -12,14 +12,13 @@ internal sealed class JsCalls
         {
             return new JsRun(source, () => { });
         }
+        CancellationTokenSource? older;
         lock (gate)
         {
-            if (newest.Remove(key, out var older))
-            {
-                older.Cancel();
-            }
+            newest.Remove(key, out older);
             newest[key] = source;
         }
+        older?.Cancel();
         return new JsRun(source, () => End(key, source));
     }
 

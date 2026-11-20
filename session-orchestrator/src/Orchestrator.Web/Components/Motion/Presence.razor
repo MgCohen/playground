@@ -11,7 +11,8 @@
 }
 
 @code {
-    const string Showing = "is-shown", Leaving = "is-leaving", Gone = "";
+    const string Showing = "is-shown", Gone = "";
+    static readonly string Leaving = MotionSteps.Leave.State;
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
 

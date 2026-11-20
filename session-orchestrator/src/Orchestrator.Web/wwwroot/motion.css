@@ -38,9 +38,9 @@
    settles (each motion of the element and its children ends). The comment is the spec ID of docs/motion-design.html. ===== */
 @property --motion-wait { syntax: "*"; inherits: false; }
 [data-motion~="tab-in"] { --motion-wait: m-rise; } /* T1: only the rise of the blocks, not the other motions of the page */
-[data-motion~="leave"] { } /* M5 */
-[data-motion~="deck-throw"], [data-motion~="deck-tuck"], [data-motion~="deck-back-in"], [data-motion~="deck-arrive"] { /* M1 */
-  --motion-wait: transform m-fly-r m-fly-l m-arrive; }
+[data-motion~="leave"] { --motion-wait: m-fade-out m-down m-lift; } /* M5: the leave of the scrim, the sheet, the toast */
+[data-motion~="deck-throw"], [data-motion~="deck-tuck"] { /* M1 */
+  --motion-wait: transform m-fly-r m-fly-l; }
 
 /* ===== Presence: a block that comes and goes. The wrapper has no box; its children get the phase class of the parent. ===== */
 .presence { display: contents; }

@@ -275,12 +275,28 @@ public static partial class SelfTest
         await Js(w, "document.querySelector('.acts [data-throw]')?.click()");
         await Task.Delay(800);
         var topAfter = await Js(w, "document.querySelector('[data-deck-card] .q, [data-deck-card] h3, [data-deck-card]')?.textContent?.trim().slice(0, 60) ?? ''");
-        var thrown = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Infrastructure.JsTrace>().Lines
+        var thrown = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Contracts.IJsTrace>().Lines
             .Any(l => l.Contains("~=\"deck-throw\"]", StringComparison.Ordinal) && l.Contains("by end", StringComparison.Ordinal));
         Add("deck-throw", thrown && topAfter != topBefore, $"trace of step deck-throw by end {thrown}; top card before \"{topBefore}\", after \"{topAfter}\"");
         await Js(w, $"{Go}('')");
         await Task.Delay(600);
         // The tab move to Home ends about 460 ms after its render. A hide before its end freezes its blocks, and its wait runs to the limit.
+        await Until(async () => await Js(w, "!!document.querySelector('.page.is-tab-in')") == "false", 2000);
+
+        // A hide during a tab move: the hidden page moves nothing, so the wait of the tab move ends "hidden" at once, not at
+        // its limit.
+        // A test motion of 3 s (longer than the fold of the hide) and a wait on it; then the tray hides.
+        await Js(w, "window.__hideWait = null; (e => { e.style.animation = 'm-fade 3s linear'; orchMotion.wait(e, 'settle').then(r => { window.__hideWait = r; e.style.animation = ''; }); })(document.querySelector('.tray-view .page'))");
+        w.Request(TrayRequest.Hide);
+        await Until(() => w.Phase == TrayPhase.Hidden, 3000);
+        var hideWait = "";
+        await Until(async () => (hideWait = await Js(w, "JSON.stringify(window.__hideWait)")) != "null", 2500);
+        Add("hide-during-motion", hideWait.Contains("\"hidden\"", StringComparison.Ordinal),
+            $"a wait on a 3 s motion when the tray hides: {hideWait} (expect by hidden, not limit)");
+        w.Request(TrayRequest.Open);
+        await Until(() => w.Phase == TrayPhase.Open, 4000);
+        await Task.Delay(600);
+        await Js(w, $"{Go}('')");
         await Until(async () => await Js(w, "!!document.querySelector('.page.is-tab-in')") == "false", 2000);
 
         // H4: a new card during a hide: the notice waits for the hide, then the badge comes in and peeks.
@@ -335,17 +351,18 @@ public static partial class SelfTest
         }
 
         // I12: each wait of the run ends by the end of its motion, not by its limit.
-        var trace = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Infrastructure.JsTrace>().Lines;
+        var trace = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Contracts.IJsTrace>().Lines;
         var waits = trace.Where(l => l.Contains("js orchMotion.wait", StringComparison.Ordinal)).ToList();
-        var late = waits.Where(l => l.Contains("by limit", StringComparison.Ordinal) || l.Contains("by missing", StringComparison.Ordinal) || l.Contains(" error js.failed", StringComparison.Ordinal)).ToList();
+        // "by none" on a named target: the step names a motion that did not start (a wrong --motion-wait name). An element
+        // target (a Presence, a page) can have no motion, so its "none" is no defect.
+        var late = waits.Where(l => l.Contains("by limit", StringComparison.Ordinal) || l.Contains("by missing", StringComparison.Ordinal) || l.Contains(" error js.failed", StringComparison.Ordinal)
+            || (l.Contains("by none", StringComparison.Ordinal) && l.Contains("(\"[data-", StringComparison.Ordinal))).ToList();
         // S4: each step of the tray flow runs through the registry (its data-motion target) and ends by the end of its motion.
         // Each step of the registry, except the steps in the list below, each with its reason. A new step is checked at once.
         var notTraced = new Dictionary<string, string>
         {
             ["leave"] = "the target is an element reference, so the trace shows \"element\"",
             ["tab-in"] = "the target is an element reference, so the trace shows \"element\"",
-            ["deck-back-in"] = "the script waits for it after a drag; the self-test has no drag",
-            ["deck-arrive"] = "nothing waits for it",
         };
         var tracedSteps = Orchestrator.Web.Features.Motion.Domain.MotionSteps.All.Select(s => s.Name).Where(n => !notTraced.ContainsKey(n)).ToList();
         var stale = notTraced.Keys.Where(n => Orchestrator.Web.Features.Motion.Domain.MotionSteps.All.All(s => s.Name != n)).ToList();
@@ -356,6 +373,14 @@ public static partial class SelfTest
         var windowLines = trace.Where(l => l.Contains(" window ", StringComparison.Ordinal)).ToList();
         var noWindow = windowSteps.Where(s => !windowLines.Any(l => l.Contains($"window {s}: ", StringComparison.Ordinal) && l.Contains(" gap ", StringComparison.Ordinal))).ToList();
         var gaps = windowLines.Where(l => l.Contains("window badge-show", StringComparison.Ordinal)).Select(l => l[(l.LastIndexOf("gap ", StringComparison.Ordinal) + 4)..].Split(' ')[0]).ToList();
+        // Each window step shows the event of its step, and each panel-show comes directly before a panel-activate.
+        // panel-activate can be "not activated": Windows gives the focus only to the app of the last user input, and the self-test
+        // opens from code. The trace keeps that warning; a show or a hide with a wrong event fails.
+        var wrongEvent = windowLines.Where(l => l.Contains("(expected ", StringComparison.Ordinal) && !l.Contains("panel-activate", StringComparison.Ordinal)).ToList();
+        var order = windowLines.Select(l => l[(l.IndexOf(" window ", StringComparison.Ordinal) + 8)..].Split(':')[0]).ToList();
+        var badOrder = order.Select((s, i) => (s, i)).Where(x => x.s == "panel-show" && (x.i + 1 >= order.Count || order[x.i + 1] != "panel-activate")).Count();
+        noWindow.AddRange(wrongEvent.Select(l => $"wrong event: {l}"));
+        if (badOrder > 0) noWindow.Add($"{badOrder} panel-show with no panel-activate after it");
         Add("window-steps", noWindow.Count == 0, noWindow.Count == 0 ? $"{windowLines.Count} window steps; gaps of the badge-show steps in ms: {string.Join(", ", gaps)}" : $"no window step: {string.Join(", ", noWindow)}");
         Add("no-wait-at-limit", waits.Count >= 10 && late.Count == 0, $"{waits.Count} waits, {late.Count} by limit, missing or error{(late.Count > 0 ? ": " + string.Join(" | ", late.Take(4)) : "")}");
 

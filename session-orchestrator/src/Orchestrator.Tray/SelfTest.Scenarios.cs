@@ -353,7 +353,7 @@ public static partial class SelfTest
         Step($"scenario {name}");
         using var stop = new CancellationTokenSource();
         var phases = Phases(tray, Step, stop.Token);
-        var trace = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Infrastructure.JsTrace>();
+        var trace = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Contracts.IJsTrace>();
         void OnTrace(string line) => Step($"trace {line[13..]}");
         trace.Written += OnTrace;
         await run(tray, Step);

@@ -33,15 +33,16 @@ public interface IWidgetWindow
     Task Enter(string phase);
 
     /// <summary>The phase of the windows: the last phase that <see cref="Enter"/> made (H3: the flow reads it after a fault).</summary>
-    string Phase => TrayPhase.Hidden;
+    string Phase { get; }
 
     /// <summary>The window event of the last <see cref="Enter"/>: "shown", "hidden", "activated" or "not activated".</summary>
-    string LastEvent => "";
+    string LastEvent { get; }
 
     /// <summary>An error of the tray flow: the tray writes it to its fault log (H3: nothing is swallowed).</summary>
-    void Fault(Exception error, string where)
-    {
-    }
+    void Fault(Exception error, string where);
+
+    /// <summary>The fold time of the hover of the badge: the token --t-badge-fold, which the badge page reads (no script call from C#).</summary>
+    void UseBadgeFold(TimeSpan fold);
 
     /// <summary>The badge shows its peek bubble (true) or hides it (false): the click area takes the bubble in or out.</summary>
     void Peek(bool on);

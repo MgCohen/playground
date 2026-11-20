@@ -12,7 +12,9 @@ public sealed record WaitResult(string By, double Ms)
 
     public const string Missing = "missing";
 
-    public bool AtLimit => By is Limit or Missing;
+    public const string None = "none";
+
+    public bool AtLimit => By is Limit or Missing or None;
 
     public override string ToString() => $"by {By} after {Ms} ms";
 }

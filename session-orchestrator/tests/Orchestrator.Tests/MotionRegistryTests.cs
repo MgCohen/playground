@@ -54,7 +54,8 @@ public sealed class MotionRegistryTests
     {
         var css = string.Join(Environment.NewLine, new[] { "Orchestrator.Web/wwwroot/motion.css", "Orchestrator.Web/wwwroot/app.css", "Orchestrator.Tray/wwwroot/tray.css" }
             .Select(f => File.ReadAllText(Path.Combine(Src, f))));
-        var missing = MotionSteps.All.Where(s => !Regex.IsMatch(css, $@"\.{Regex.Escape(s.State)}(?![\w-])")).Select(s => $"{s.Name}: .{s.State}").ToList();
+        var missing = MotionSteps.All.SelectMany(s => s.States.Select(state => (s.Name, State: state)))
+            .Where(s => !Regex.IsMatch(css, $@"\.{Regex.Escape(s.State)}(?![\w-])")).Select(s => $"{s.Name}: .{s.State}").ToList();
         Assert.That(missing, Is.Empty, "a registry row with a state class that no style sheet has");
     }
 
