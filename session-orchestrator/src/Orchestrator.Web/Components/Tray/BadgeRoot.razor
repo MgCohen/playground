@@ -4,7 +4,7 @@
 @using Microsoft.Extensions.DependencyInjection
 @inherits LiveView
 @implements TrayFlow.IBadge
-@inject IJSRuntime JS
+@inject ICommandSender Commands
 @inject IServiceProvider Services
 
 <div class="tray-stage is-@phase">
@@ -14,13 +14,10 @@
 </div>
 
 @code {
-    /// <summary>The time that the peek bubble shows (N2).</summary>
-    public static readonly TimeSpan PeekTime = TimeSpan.FromSeconds(5);
-
     TrayFlow? flow;
     IWidgetWindow? window;
     string phase = TrayPhase.BadgeOut;
-    bool started, spin, peek;
+    bool spin, peek;
     string peekTitle = "", peekSub = "";
     TrayCounts counts = TrayCounts.None;
     int notice;
@@ -33,35 +30,34 @@
         flow?.Attach(this);
     }
 
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender) started = true;
-    }
+    // The counts of the badge. A card that arrives while the tray is closed brings the badge in, spins the ring and peeks, one
+    // time (TrayNotices): each card is done after its notice, and the cards that the panel showed get none.
+    readonly TrayNotices notices = new();
 
-    // The counts of the badge. A new card brings the badge in when the tray is hidden; at the badge it spins the ring and peeks.
     protected override void Load()
     {
         var cards = Board.Cards();
-        var next = TrayCounts.Of(cards);
-        var more = started && next.Total > counts.Total;
-        counts = next;
-        if (!more || flow is null) return;
-        var newest = cards.MaxBy(c => c.Id, StringComparer.Ordinal);
-        _ = InvokeAsync(() => Notice(newest is null ? "" : $"{newest.Label} · {newest.SessionTitle}", newest?.Title ?? ""));
+        counts = TrayCounts.Of(cards);
+        var fresh = notices.Take(cards, flow?.Closed ?? false);
+        if (fresh.Count == 0 || flow is null) return;
+        var newest = fresh.MaxBy(c => c.Id, StringComparer.Ordinal)!;
+        _ = InvokeAsync(() => Notice($"{newest.Label} · {newest.SessionTitle}", newest.Title));
     }
 
     // The window shows with the tab out of view; two frames later the tab slides in.
     public Task In() => InvokeAsync(async () =>
     {
         Set(TrayPhase.BadgeOut);
-        await JS.InvokeVoidAsync("orchTray.frames", 2);
+        await Commands.SendAsync(new MotionWait(null, WaitMode.Event, "frames:2"), default);
         Set(TrayPhase.Badge);
+        // H2: the phase badge comes after the slide of the tab, so the next step never cuts it.
+        await Commands.SendAsync(new MotionWait(MotionSteps.BadgeIn.Target, WaitMode.Step), default);
     });
 
     public Task Out() => InvokeAsync(async () =>
     {
         Set(TrayPhase.BadgeOut);
-        await JS.InvokeVoidAsync("orchTray.end", ".tb-tab", "translate", 500);
+        await Commands.SendAsync(new MotionWait(MotionSteps.BadgeOut.Target, WaitMode.Step), default);
     });
 
     async Task Notice(string title, string sub)
@@ -76,8 +72,9 @@
             window!.Peek(true);
             peek = true;
             StateHasChanged();
-            var shown = Task.Delay(PeekTime);
-            await JS.InvokeVoidAsync("orchTray.end", ".tb-ring", "tb-spin", 1500);
+            // The peek shows for the token --t-peek-show of motion.css (N2).
+            var shown = Task.Delay(await MotionTimes.Of(Commands, "--t-peek-show") ?? TimeSpan.Zero);
+            await Commands.SendAsync(new MotionWait(MotionSteps.Spin.Target, WaitMode.Step), default);
             if (mine != notice) return;
             spin = false;
             StateHasChanged();
@@ -85,7 +82,7 @@
             if (mine != notice) return;
             peek = false;
             StateHasChanged();
-            await JS.InvokeVoidAsync("orchTray.end", ".tb-peek", "opacity", 400);
+            await Commands.SendAsync(new MotionWait(MotionSteps.PeekOut.Target, WaitMode.Step), default);
             if (mine == notice && !peek) window.Peek(false);
         }
         catch (Exception e) when (e is JSException or JSDisconnectedException or TaskCanceledException or InvalidOperationException)

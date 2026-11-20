@@ -60,24 +60,38 @@ public sealed class WidgetWindow : IWidgetWindow
                 case TrayPhase.Start:
                     Badge?.Hide();
                     panel.ShowAtPlace();
+                    LastEvent = panel.Visible ? "shown" : "not shown";
                     break;
                 case TrayPhase.Open:
                     Faults.Trace("panel window activate");
                     panel.Activate();
+                    LastEvent = Form.ActiveForm == panel ? "activated" : "not activated";
                     break;
                 case TrayPhase.BadgeOut:
                     panel.Hide();
                     Badge?.ShowAtPlace();
+                    LastEvent = Badge?.Visible == true && !panel.Visible ? "shown" : "not shown";
                     break;
                 case TrayPhase.Hidden:
                     panel.Hide();
                     Badge?.Hide();
+                    LastEvent = !panel.Visible && Badge?.Visible != true ? "hidden" : "not hidden";
                     break;
             }
             done.SetResult();
         });
         return done.Task;
     }
+
+    public string Phase => Window?.Phase ?? TrayPhase.Hidden;
+
+    /// <summary>
+    /// The window event of the last Enter (S9). Show and Hide raise VisibleChanged at once, so the state after the call is the
+    /// event. The activation is the foreground window after Activate.
+    /// </summary>
+    public string LastEvent { get; private set; } = "";
+
+    public void Fault(Exception error, string where) => Faults.Add(error, where);
 
     public void Peek(bool on) => Badge?.BeginInvoke(() => Badge.Peek(on));
 }

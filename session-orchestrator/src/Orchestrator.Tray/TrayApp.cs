@@ -19,9 +19,15 @@ public sealed partial class TrayApp : ApplicationContext
     readonly Icon dot;
     bool exiting;
 
+    /// <summary>The services of the tray: the views and the Umpire modules.</summary>
+    public IServiceProvider Services { get; }
+
     public TrayApp(IServiceProvider services, string label, bool show, bool pinned, string? placeFile)
     {
+        Services = services;
         dot = Dot(Accent);
+        // The trace of the JS pipeline (each wait, its result and its time) goes to the trace of the window steps.
+        services.GetRequiredService<Orchestrator.Web.Plugins.Js.Infrastructure.JsTrace>().Written += line => Faults.Trace(line);
         Window = new TrayWindow(services, dot, pinned, placeFile);
         var badgeFile = placeFile is null ? null : Path.Combine(Path.GetDirectoryName(placeFile)!, Path.GetFileNameWithoutExtension(placeFile).Replace("place", "badge") + ".txt");
         Badge = new BadgeWindow(services, dot, Window.PanelScreen, badgeFile);

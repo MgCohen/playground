@@ -16,7 +16,7 @@ public sealed class NewSessionFormTests
 {
     static BunitContext Context(Rig rig)
     {
-        var context = new BunitContext();
+        var context = UiContext.New();
         context.Services.AddSingleton(new Board(rig.Store, rig.Supervisor));
         context.Services.AddSingleton(new StreamHub(rig.Store));
         return context;
@@ -36,7 +36,7 @@ public sealed class NewSessionFormTests
     {
         // background (B2) is not in the form yet: the UI views are stream A4. A form session has Remote Control on, the default.
         // type, stream and workflow (C2) are not in the form yet: the form and the API fields are stream E. The old field agent sets the type.
-        using var context = new BunitContext();
+        using var context = UiContext.New();
         var form = context.Render<NewSessionForm>();
         var names = form.FindAll("form [name]").Select(e => e.GetAttribute("name")).ToList();
         Assert.That(names, Is.EquivalentTo(BriefProperties().Where(p => p is not ("allowDefaults" or "background" or "type" or "stream" or "workflow"))));
@@ -47,7 +47,7 @@ public sealed class NewSessionFormTests
     [Test]
     public void Start_is_off_until_the_title_the_goal_and_a_folder_are_set()
     {
-        using var context = new BunitContext();
+        using var context = UiContext.New();
         var form = context.Render<NewSessionForm>();
         bool Off() => form.Find("button[type=submit]").HasAttribute("disabled");
         Assert.That(Off(), Is.True);
@@ -116,7 +116,7 @@ public sealed class NewSessionFormTests
     [Test]
     public void A_refused_start_keeps_the_text()
     {
-        using var context = new BunitContext();
+        using var context = UiContext.New();
         NewSession? sent = null;
         var form = context.Render<NewSessionForm>(p => p.Add(c => c.OnStart, input => { sent = input; return false; }));
         form.Find("#new-title").Input("Kept");
@@ -133,7 +133,7 @@ public sealed class NewSessionFormTests
     [Test]
     public void Each_free_text_field_of_the_form_has_a_mic_button()
     {
-        using var context = new BunitContext();
+        using var context = UiContext.New();
         var cards = new[] { context.Render<NewSessionForm>().Markup };
         foreach (var markup in cards)
         {

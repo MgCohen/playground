@@ -23,7 +23,7 @@ public sealed class RenderViewTests
     sealed class Scene : IDisposable
     {
         public readonly Rig Rig = new();
-        public readonly BunitContext Context = new();
+        public readonly BunitContext Context = UiContext.New();
         public readonly Board Board;
         public readonly Event Event;
         public readonly Dictionary<string, object?> Fields;

@@ -25,14 +25,15 @@
   }).observe(document.documentElement, { childList: true, subtree: true });
   mark(document.documentElement);
 
-  // The longest wait of a block for its motion (--t-limit in motion.css), in ms.
-  function limit() {
-    var v = getComputedStyle(document.documentElement).getPropertyValue("--t-limit").trim();
-    var ms = parseFloat(v);
-    return isNaN(ms) ? 1000 : v.endsWith("ms") ? ms : ms * 1000;
+  // A time token of motion.css (for example "--t-limit"), in ms. An unknown token is 0.
+  function ms(name) {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    var n = parseFloat(v);
+    return isNaN(n) ? 0 : v.endsWith("ms") ? n : n * 1000;
   }
+  function limit() { return ms("--t-limit"); }
 
-  // Resolves when Blazor changes the page, or after 600 ms. V13: watch the body, because Blazor replaces the .app element
+  // Resolves when Blazor changes the page, or after --t-vt-render. V13: watch the body, because Blazor replaces the .app element
   // itself. Not requestAnimationFrame: the browser pauses the rendering during the update of a view transition, so a frame
   // callback waits for the time limit. The next task comes after the Blazor batch of the render.
   function rendered() {
@@ -41,25 +42,70 @@
       function end() { if (!done) { done = true; observer.disconnect(); resolve(); } }
       var observer = new MutationObserver(function () { setTimeout(end, 0); });
       observer.observe(document.body, { childList: true, subtree: true });
-      setTimeout(end, 600);
+      setTimeout(end, ms("--t-vt-render"));
     });
   }
 
   var moves = !!document.startViewTransition && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   window.orchMotion = {
-    // Presence: resolves when each finite CSS animation and transition in the block ends, or after the time limit.
-    // One frame first, so the phase class of the render is in the styles. A hidden page draws no frames and moves no
-    // animation, so it resolves at once; the limit starts before the frame, so a page that hides during the wait ends too.
-    settle: function (el) {
+    // A time token of motion.css in ms, for C# and the other scripts.
+    ms: ms,
+    // The one wait of the motion pipeline (R1, I12). C# sends it as the command MotionWait. The modes:
+    //   settle    each finite CSS animation and transition of the target and its children ends.
+    //   property  the transitions of the properties (or the animations of the names) in arg end, on the target and its
+    //             children. arg is one name or a list ("clip-path scale"). None running: at once.
+    //   time      the time of a token (arg, for example "--t-peek-show").
+    //   event     a DOM event of the target (arg), or "frames:n": n display frames.
+    //   step      a motion step of the registry: the target has data-motion, and its CSS rule owns the wait. The custom
+    //             property --motion-wait names the property (or the animation) to wait for; with no value, the wait settles.
+    // The target is an element or a selector; with no target and mode "settle" or "property", the target is missing. One frame
+    // first, so the state class of the render is in the styles. The result is { by, ms }: by is "end", "cancel" (the browser
+    // stopped a motion: the state changed during the wait), "limit" (--t-limit, or --t-frame-limit for frames), "hidden" (a
+    // hidden page moves nothing) or "missing" (no target).
+    wait: function (target, mode, arg) {
+      mode = String(mode || "settle").toLowerCase();
+      var el = typeof target === "string" ? document.querySelector(target) : target;
+      var start = performance.now();
       return new Promise(function (resolve) {
-        if (document.visibilityState === "hidden") { resolve(); return; }
-        var timer = setTimeout(resolve, limit());
-        requestAnimationFrame(function () {
-          var all = el && el.getAnimations ? el.getAnimations({ subtree: true }) : [];
-          var finite = all.filter(function (a) { return a.effect && a.effect.getComputedTiming().endTime !== Infinity; });
-          Promise.all(finite.map(function (a) { return a.finished.catch(function () { }); })).then(function () { clearTimeout(timer); resolve(); });
-        });
+        var done = false, timer = 0;
+        function finish(by) {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve({ by: by, ms: Math.round(performance.now() - start) });
+        }
+        if (mode === "time") { timer = setTimeout(function () { finish("end"); }, ms(arg)); return; }
+        var frames = mode === "event" && /^frames:\d+$/.test(arg || "") ? parseInt(arg.slice(7), 10) : 0;
+        if (frames > 0) {
+          timer = setTimeout(function () { finish("limit"); }, ms("--t-frame-limit"));
+          var step = function () { if (--frames <= 0) finish("end"); else requestAnimationFrame(step); };
+          requestAnimationFrame(step);
+          return;
+        }
+        if (!el) { finish("missing"); return; }
+        if (mode === "step") {
+          arg = getComputedStyle(el).getPropertyValue("--motion-wait").trim();
+          mode = arg ? "property" : "settle";
+        }
+        if (document.visibilityState === "hidden") { finish("hidden"); return; }
+        timer = setTimeout(function () { finish("limit"); }, limit());
+        if (mode === "event") { el.addEventListener(arg, function () { finish("end"); }, { once: true }); return; }
+        // The state class can come in the render after this call (the render batch and the call are two messages), so with no
+        // motion yet the wait looks again for 2 more frames.
+        var names = String(arg || "").split(/[\s,]+/).filter(Boolean);
+        var look = function (frames) {
+          var all = el.getAnimations ? el.getAnimations({ subtree: true }) : [];
+          var mine = all.filter(function (a) {
+            if (!a.effect || a.effect.getComputedTiming().endTime === Infinity) return false;
+            return mode === "settle" || names.indexOf(a.transitionProperty) >= 0 || names.indexOf(a.animationName) >= 0;
+          });
+          if (mine.length === 0 && frames > 0) { requestAnimationFrame(function () { look(frames - 1); }); return; }
+          var canceled = false;
+          Promise.all(mine.map(function (a) { return a.finished.catch(function () { canceled = true; }); }))
+            .then(function () { finish(canceled ? "cancel" : "end"); });
+        };
+        requestAnimationFrame(function () { look(2); });
       });
     },
     // The nav dot of the app bar: it moves to the center of the current tab item, and fades out on Home. The first place has no
@@ -85,7 +131,7 @@
         t.ready.catch(function () { });
         t.finished.catch(function () { }).finally(function () { root.classList.remove("vt", "vt-back"); });
         // The browser calls the update also for a skipped transition; this limit only keeps a navigation from a wait with no end.
-        setTimeout(started, 300);
+        setTimeout(started, ms("--t-vt-start"));
       });
     }
   };

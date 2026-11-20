@@ -100,7 +100,7 @@ ol, ul { padding-left: 22px; }
 <header>
   <div class="eyebrow">session-orchestrator · orch/visual-review · plan only</div>
   <h1>Motion pipeline (R1): implementation and test plan</h1>
-  <p class="sum">Ten steps make all motion of the tray one pipeline: tokens, one wait utility and a C# registry. Each step is one commit with its own scenario, recording and check. Record all "before" recordings after step S0 and before step S1.</p>
+  <p class="sum">Thirteen steps make all motion of the tray one pipeline: tokens, one wait command on the Umpire pipeline, and a C# registry. Each step is one commit with its own proof. Record all "before" recordings after step S0 and before step S1.</p>
 </header>
 
 <nav class="tabs" role="tablist" aria-label="Plan parts">
@@ -120,16 +120,16 @@ ol, ul { padding-left: 22px; }
       <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
       <rect class="box key" x="10" y="30" width="140" height="70" rx="10"/>
       <text class="t" x="80" y="58" text-anchor="middle">Registry row</text>
-      <text class="s" x="80" y="78" text-anchor="middle">name, state, target</text>
-      <text class="s" x="80" y="92" text-anchor="middle">token, spec ID</text>
+      <text class="s" x="80" y="78" text-anchor="middle">name, state class</text>
+      <text class="s" x="80" y="92" text-anchor="middle">only</text>
       <rect class="box" x="190" y="30" width="140" height="70" rx="10"/>
       <text class="t" x="260" y="58" text-anchor="middle">Set state</text>
       <text class="s" x="260" y="78" text-anchor="middle">C# sets the class</text>
       <text class="s" x="260" y="92" text-anchor="middle">is-open, is-leaving</text>
       <rect class="box" x="370" y="30" width="150" height="70" rx="10"/>
       <text class="t" x="445" y="58" text-anchor="middle">CSS rule + token</text>
-      <text class="s" x="445" y="78" text-anchor="middle">motion.css owns</text>
-      <text class="s" x="445" y="92" text-anchor="middle">all times</text>
+      <text class="s" x="445" y="78" text-anchor="middle">motion.css owns times,</text>
+      <text class="s" x="445" y="92" text-anchor="middle">wait, spec ID</text>
       <rect class="box key" x="560" y="30" width="150" height="70" rx="10"/>
       <text class="t" x="635" y="58" text-anchor="middle">Wait utility</text>
       <text class="s" x="635" y="78" text-anchor="middle">settle · property</text>
@@ -164,7 +164,10 @@ ol, ul { padding-left: 22px; }
     <div class="gate"><b>Record all "before"</b>9 recordings and runs. See the Recordings tab.</div>
     <a href="#s1"><span class="id">S1</span><span class="nm">Motion times as tokens</span><span class="tags"><span class="chip i">I11</span></span></a>
     <a href="#s2"><span class="id">S2</span><span class="nm">Reduced motion as 1 ms</span><span class="tags"><span class="chip i">I13</span></span></a>
-    <a href="#s3"><span class="id">S3</span><span class="nm">One wait utility</span><span class="tags"><span class="chip i">I12</span><span class="chip i">I11</span></span></a>
+    <a href="#u1"><span class="id">U1</span><span class="nm">Umpire SDK in all projects</span><span class="tags"><span class="chip">setup</span></span></a>
+    <a href="#u2"><span class="id">U2</span><span class="nm">Umpire warning list</span><span class="tags"><span class="chip">setup</span></span></a>
+    <a href="#u3"><span class="id">U3</span><span class="nm">Umpire modules in both hosts</span><span class="tags"><span class="chip">setup</span></span></a>
+    <a href="#s3"><span class="id">S3</span><span class="nm">JS commands and the wait command</span><span class="tags"><span class="chip i">I12</span><span class="chip i">I11</span></span></a>
     <a href="#s4"><span class="id">S4</span><span class="nm">C# motion registry</span><span class="tags"><span class="chip i">Q1 B</span><span class="chip i">I9</span></span></a>
     <a href="#s5"><span class="id">S5</span><span class="nm">Fold waits for the panel</span><span class="tags"><span class="chip h">H1</span></span></a>
     <a href="#s6"><span class="id">S6</span><span class="nm">Badge phase after the slide</span><span class="tags"><span class="chip h">H2</span></span></a>
@@ -193,7 +196,8 @@ ol, ul { padding-left: 22px; }
   <div class="tbl"><table>
     <tr><th>Term</th><th>Meaning</th></tr>
     <tr><td>Motion pipeline (R1)</td><td>This work: tokens, wait utility, registry, window steps</td></tr>
-    <tr><td>Registry row</td><td>One motion step as C# data</td></tr>
+    <tr><td>Registry row</td><td>One motion step in C#: the step name and the state class only</td></tr>
+    <tr><td>Motion target</td><td>The element with <code>data-motion="&lt;step name&gt;"</code> in Razor. Its CSS rule owns the token, the wait and the spec ID</td></tr>
     <tr><td>Duration token</td><td>A motion time. Reduced motion sets it to 1 ms</td></tr>
     <tr><td>Dwell token</td><td>A show time (undo, peek). Reduced motion keeps it</td></tr>
     <tr><td>Limit token</td><td>The longest wait: <code>--t-limit</code></td></tr>
@@ -319,23 +323,83 @@ dotnet run -- --selftest before-reduced --reduced</pre>
     </dl>
   </details>
 
+  <details class="step" id="u1">
+    <summary><span class="sid">U1</span><span class="stt">Umpire SDK in all projects</span><span class="chip">setup</span><span class="risk med">risk medium</span></summary>
+    <dl class="sb">
+      <dt>Changes</dt><dd><ul>
+        <li><code>nuget.config</code>: the <code>umpire</code> source for <code>Umpire.*</code>, nuget.org for the rest. The login is in the user profile, not in the repository.</li>
+        <li><code>global.json</code>: <code>msbuild-sdks</code> pins <code>Umpire.Sdk</code> and <code>Umpire.Sdk.Web</code> to <code>0.2.0-preview.11</code>. Preview.11 has the open handler <code>JsCommandHandler&lt;TResult&gt;</code> and <code>IEnvelope&lt;T&gt;</code>.</li>
+        <li><code>.umpireconfig</code> at the project root: <code>umpire.check.mode = "Warn"</code>. Output goes to <code>artifacts~/</code>; add it to <code>.gitignore</code>.</li>
+        <li>Each project gets its Umpire SDK. Web: <code>Umpire.Sdk.Web</code> and the check entry. Tray: Razor SDK plus <code>Umpire.Sdk</code>. Tests: delete the NUnit lines that the SDK gives.</li>
+        <li>Scripts with output paths: <code>install.ps1</code>, <code>scenario.sh</code>, the E2E tests.</li>
+      </ul></dd>
+      <dt>Closes</dt><dd>None. Setup for S3.</dd>
+      <dt>Proof</dt><dd><ul>
+        <li><code>dotnet restore</code> and the build pass, with <code>-p:TreatWarningsAsErrors=false</code>.</li>
+        <li>All 809 unit tests pass, as before the change.</li>
+        <li>The tray starts from <code>artifacts~/</code>; self-test 27 of 28, as before.</li>
+      </ul></dd>
+      <dt>Risk</dt><dd>Medium. The SDK changes the build of each project. Umpire is a preview. If Umpire itself fails, stop and send the build output to the user.</dd>
+      <dt>Undo</dt><dd>Revert the commit.</dd>
+    </dl>
+  </details>
+
+  <details class="step" id="u2">
+    <summary><span class="sid">U2</span><span class="stt">Umpire warning list</span><span class="chip">setup</span><span class="risk low">risk low</span></summary>
+    <dl class="sb">
+      <dt>Changes</dt><dd><ul>
+        <li>Build once with warnings not as errors. Collect each <code>UMP</code> code.</li>
+        <li><code>Directory.Build.props</code>: the codes go to <code>WarningsNotAsErrors</code> and <code>MSBuildWarningsNotAsErrors</code>.</li>
+        <li>Do not fix findings of the existing code.</li>
+      </ul></dd>
+      <dt>Closes</dt><dd>None.</dd>
+      <dt>Proof</dt><dd><ul>
+        <li>The default build passes.</li>
+        <li>The commit text has the count of each code. The count of <code>UMP020202</code> is the size of the migration that remains.</li>
+      </ul></dd>
+      <dt>Risk</dt><dd>Low. Build settings only.</dd>
+      <dt>Undo</dt><dd>Revert the commit.</dd>
+    </dl>
+  </details>
+
+  <details class="step" id="u3">
+    <summary><span class="sid">U3</span><span class="stt">Umpire modules in both hosts</span><span class="chip">setup</span><span class="risk med">risk medium</span></summary>
+    <dl class="sb">
+      <dt>Changes</dt><dd><ul>
+        <li>Web <code>Program.cs</code>, before <code>builder.Build()</code>: <code>new AppHost().Compose(services, configuration, new VsaKernel(), types)</code>.</li>
+        <li>Tray <code>Program.Services(...)</code>: the same call, with an empty configuration.</li>
+        <li>An empty <code>Features/Motion/MotionModule.cs</code>, so that the composition has a module.</li>
+      </ul></dd>
+      <dt>Closes</dt><dd>None. Setup for S3.</dd>
+      <dt>Proof</dt><dd><ul>
+        <li>New unit test <code>Web_host_keeps_its_configuration</code> (<code>WebApplicationFactory</code>): the host starts and reads an <code>appsettings</code> value. Fail first: compose with the Umpire configuration, see FAIL.</li>
+        <li>Both hosts start. The bUnit tests pass. Self-test 27 of 28.</li>
+      </ul></dd>
+      <dt>Risk</dt><dd>Medium. <code>Kernel.Install</code> also registers configuration and logging. It can replace those of ASP.NET with no error. The new test finds it.</dd>
+      <dt>Undo</dt><dd>Revert the commit.</dd>
+    </dl>
+  </details>
+
   <details class="step" id="s3">
-    <summary><span class="sid">S3</span><span class="stt">One wait utility</span><span class="chip i">I12</span><span class="chip i">I11</span><span class="risk med">risk medium</span></summary>
+    <summary><span class="sid">S3</span><span class="stt">JS commands and the wait command</span><span class="chip i">I12</span><span class="chip i">I11</span><span class="risk med">risk medium</span></summary>
     <dl class="sb">
       <dt>Changes</dt><dd><ul>
         <li><code>motion.js</code>: <code>orchMotion.wait(target, mode, arg)</code> with 4 modes (Pipeline tab). One limit: <code>--t-limit</code>. It returns <code>{ by, ms }</code>.</li>
+        <li><code>Plugins/Js</code>: <code>JsCommand&lt;T&gt;</code>, the one open handler <code>JsCommandHandler&lt;TResult&gt;</code> (the JS name from the type, one error rule), <code>JsRunner</code> (renderer dispatcher, "newer call wins"), the trace steps.</li>
+        <li><code>Features/Motion/Slices/Wait</code>: <code>MotionWait</code> and <code>WaitResult</code> only. No handler class. <code>Slices/WaitLimit</code>: the hook that writes a trace line when a limit ends a wait.</li>
         <li>Delete <code>orchTray.end</code> and <code>orchMotion.settle</code>. <code>tray.js</code> keeps only <code>home</code>. The frame wait is event mode <code>frames:2</code>.</li>
-        <li>New <code>Components/Motion/MotionWait.cs</code>: the C# call. It writes a trace line through <code>IMotionTrace</code>; the tray writes it with <code>Faults.Trace</code>.</li>
-        <li>Callers: <code>TrayStage</code>, <code>BadgeRoot</code>, <code>Presence</code>, <code>MainLayout</code>. Same targets as today.</li>
+        <li>Call sites, one commit each: <code>TrayStage</code>, <code>BadgeRoot</code>, <code>Presence</code>, <code>MainLayout</code>. Same targets as today. Delete the local error filter and guard of each site.</li>
       </ul></dd>
       <dt>Closes</dt><dd>I12. The rest of I11: the limits 900, 500, 1500 and 400 ms go.</dd>
       <dt>Proof</dt><dd><ul>
         <li>Scenarios <code>dock-open</code>, <code>badge-peek</code>, <code>page-moves</code>: same frames as "before", ±1 frame.</li>
-        <li>New self-test check <code>no-wait-at-limit</code>: the run has 10 or more wait lines, and 0 end by the limit. Before: no wait lines, FAIL.</li>
+        <li>New unit test <code>MotionWait_with_fake_js</code>: a fake <code>IJSRuntime</code> throws, and the result is an <code>Error</code> with the JS name. Fail first: remove the catch, see FAIL.</li>
+        <li>New unit test <code>R1_folders_have_no_findings</code>: no <code>UMP</code> finding in <code>Plugins/Js</code> or <code>Features/Motion</code>.</li>
+        <li>New self-test check <code>no-wait-at-limit</code>: 10 or more wait lines, and 0 end by the limit. Before: no wait lines, FAIL.</li>
         <li>New unit test <code>One_wait_utility</code>: no <code>orchTray.end</code> and no <code>orchMotion.settle</code> in the source. Before: 7 hits, FAIL.</li>
       </ul></dd>
       <dt>Risk</dt><dd>Medium. A wrong property filter ends a wait at once, and the next window step cuts the motion. The trace shows the ms, the recording shows the cut.</dd>
-      <dt>Undo</dt><dd>Revert the commit. S1 and S2 stay.</dd>
+      <dt>Undo</dt><dd>Revert the commits of the step. U1 to U3 stay.</dd>
     </dl>
   </details>
 
@@ -343,17 +407,23 @@ dotnet run -- --selftest before-reduced --reduced</pre>
     <summary><span class="sid">S4</span><span class="stt">C# motion registry</span><span class="chip i">Q1 B</span><span class="chip i">I9</span><span class="risk med">risk medium</span></summary>
     <dl class="sb">
       <dt>Changes</dt><dd><ul>
-        <li>New <code>Components/Motion/MotionRegistry.cs</code>: one row for each motion step today (Pipeline tab).</li>
-        <li>New <code>MotionPipeline.Run(row)</code>: sets the state, waits as the row says, writes "step &lt;name&gt;: by end in N ms".</li>
+        <li>New <code>Features/Motion/Slices/Registry</code>: one row for each motion step today. A row has only the step name and the state class (Pipeline tab).</li>
+        <li>Razor: each motion target gets <code>data-motion="&lt;step name&gt;"</code>. Targets do not change.</li>
+        <li><code>motion.css</code>: one rule for each step, for example <code>[data-motion="grow"] { --motion-wait: clip-path; }</code>, with the spec ID as a comment. No <code>--motion-wait</code> means settle mode.</li>
+        <li><code>orchMotion.wait</code> finds the target by <code>data-motion</code> and reads <code>--motion-wait</code> from it.</li>
+        <li>A row makes a <code>MotionWait</code> command. The step trace writes "step &lt;name&gt;: by end in N ms".</li>
+        <li>The other JS calls become commands: <code>TrayHome</code>, <code>MotionDot</code>, <code>MotionBegin</code>, <code>MotionMs</code>. No component calls <code>IJSRuntime</code> directly after this step.</li>
         <li><code>TrayStage</code>, <code>BadgeRoot</code>, <code>Presence</code>, <code>MainLayout</code> call steps by row name. Targets do not change.</li>
-        <li>The registry scope follows the answer to the open question (Questions tab).</li>
+        <li>Registry scope: name and state class only. C# has no selector, token, wait mode or spec ID. C# reads a value from the page when it needs one.</li>
       </ul></dd>
       <dt>Closes</dt><dd>Q1 B. Part of I9: stage phases, Presence and the tab change use the registry.</dd>
       <dt>Proof</dt><dd><ul>
         <li>Scenarios <code>dock-open</code>, <code>page-moves</code>: same frames. The trace names each step.</li>
-        <li>New unit test <code>Registry_matches_motion_css</code>: each row token is in motion.css; each duration token has a row; each spec ID is in <code>motion-design.html</code>.</li>
+        <li>New unit test <code>Registry_matches_motion_css</code>: each row name has one <code>data-motion</code> element in Razor and one rule in motion.css. Each <code>data-motion</code> rule has a row. Each spec ID comment is in <code>motion-design.html</code>.</li>
         <li>New self-test check <code>motion-times</code>: for each step, the <code>getAnimations()</code> durations on the target equal the token, ±1 ms.</li>
-        <li>Fail first: these checks need the registry. Change one row token, see FAIL, restore it.</li>
+        <li>Fail first: these checks need the registry. Rename one <code>data-motion</code> value, see FAIL, restore it.</li>
+        <li>New unit test <code>No_direct_js_calls</code>: no <code>IJSRuntime</code> call outside <code>Plugins/Js</code>. Before: about 10 hits, FAIL.</li>
+        <li>New unit test <code>Js_names_exist</code>: the JS name of each command is in <code>motion.js</code> or <code>tray.js</code>. Fail first: rename one function, see FAIL.</li>
       </ul></dd>
       <dt>Risk</dt><dd>Medium. Many call sites change. The rows keep the same targets, so the look stays.</dd>
       <dt>Undo</dt><dd>Revert the commit. S3 stays.</dd>
@@ -364,8 +434,9 @@ dotnet run -- --selftest before-reduced --reduced</pre>
     <summary><span class="sid">S5</span><span class="stt">The fold waits for the panel, not the home button</span><span class="chip h">H1</span><span class="risk low">risk low</span></summary>
     <dl class="sb">
       <dt>Changes</dt><dd><ul>
-        <li>Registry row <code>fold</code>: target <code>.tray-shadow</code>, mode settle. Today: <code>.tray-view .nav2 .home</code>, property scale.</li>
-        <li>No other code change.</li>
+        <li>Razor: move <code>data-motion="fold"</code> to <code>.tray-shadow</code>. Today the wait target is <code>.tray-view .nav2 .home</code>.</li>
+        <li><code>motion.css</code>: the <code>fold</code> rule has no <code>--motion-wait</code>, so the wait uses settle mode. Today: property scale.</li>
+        <li>No C# change.</li>
       </ul></dd>
       <dt>Closes</dt><dd>H1.</dd>
       <dt>Proof</dt><dd><ul>
@@ -373,7 +444,7 @@ dotnet run -- --selftest before-reduced --reduced</pre>
         <li>New self-test check <code>fold-no-app-bar</code>: on <code>events/&lt;id&gt;</code>, dock to phase folded takes at least <code>--t-content-out + --t-shrink</code> (340 ms). Before: near 0 ms, FAIL.</li>
       </ul></dd>
       <dt>Risk</dt><dd>Low. A long view animation can make the fold longer. If the trace shows that, use two property waits: clip-path, then scale.</dd>
-      <dt>Undo</dt><dd>Revert the commit (one row).</dd>
+      <dt>Undo</dt><dd>Revert the commit (one attribute, one CSS rule).</dd>
     </dl>
   </details>
 
@@ -381,7 +452,7 @@ dotnet run -- --selftest before-reduced --reduced</pre>
     <summary><span class="sid">S6</span><span class="stt">The badge phase starts after the slide</span><span class="chip h">H2</span><span class="risk low">risk low</span></summary>
     <dl class="sb">
       <dt>Changes</dt><dd><ul>
-        <li>Registry row <code>badge-in</code>: after <code>is-badge</code>, wait property <code>translate</code> on <code>.tb-tab</code>.</li>
+        <li>Razor: <code>data-motion="badge-in"</code> on <code>.tb-tab</code>. <code>motion.css</code>: <code>--motion-wait: translate</code>. The row <code>badge-in</code> sets <code>is-badge</code>, then waits.</li>
         <li><code>BadgeRoot.In</code> ends after that wait. <code>TrayFlow</code> then sets phase badge, as today.</li>
         <li>Self-test <code>dock</code>: read the tab translate at once, not after 400 ms.</li>
       </ul></dd>
@@ -402,6 +473,7 @@ dotnet run -- --selftest before-reduced --reduced</pre>
         <li><code>TrayFlow.Request</code>: the catch writes a trace line and a fault. Then it sets <code>Phase</code> from the window phase.</li>
         <li><code>IWidgetWindow</code>: a read of the window phase.</li>
         <li><code>TrayFlow.BringBadge</code>: when the flow is busy, it keeps the notice. After the run, if the phase is hidden, the badge comes in.</li>
+        <li>The <code>TrayFlow</code> queue stays plain C#. It orders window requests, not JS calls, so the JS runner does not own it.</li>
         <li><code>BadgeRoot.Notice</code> waits for that task, then spins and peeks.</li>
       </ul></dd>
       <dt>Closes</dt><dd>H3, H4.</dd>
@@ -440,7 +512,7 @@ dotnet run -- --selftest before-reduced --reduced</pre>
     <summary><span class="sid">S9</span><span class="stt">Window steps in the pipeline</span><span class="chip i">I6</span><span class="chip i">I9</span><span class="chip i">I15</span><span class="risk med">risk medium</span></summary>
     <dl class="sb">
       <dt>Changes</dt><dd><ul>
-        <li>Registry rows of kind window: <code>panel-show</code>, <code>panel-activate</code>, <code>badge-show</code>, <code>all-hide</code>.</li>
+        <li>Window rows: <code>panel-show</code>, <code>panel-activate</code>, <code>badge-show</code>, <code>all-hide</code>. C# owns these steps, because C# controls the windows. Each row has the window event to wait for.</li>
         <li><code>TrayFlow</code>: each request is a list of rows (page and window). One entry point runs them.</li>
         <li><code>WidgetWindow.Enter</code>: ends on the window events shown and hidden. The trace has each window step and the window gap in ms.</li>
         <li><code>motion.css</code>: <code>--t-window-gap: 100ms</code>, as a reference value. No code waits for it (I15 stays "later").</li>
@@ -478,24 +550,60 @@ orchMotion.wait(target, "settle")              <span class="c">// all finite ani
 orchMotion.wait(target, "property", "clip-path") <span class="c">// one transition or animation name; none running: ends at once</span>
 orchMotion.wait(null,   "time", "--t-peek-show") <span class="c">// the time of a token</span>
 orchMotion.wait(target, "event", "frames:2")    <span class="c">// a DOM event, or n display frames</span>
-<span class="c">// Result: { by: "end" | "limit" | "hidden" | "missing", ms }</span>
+<span class="c">// Result: { by: "end" | "cancel" | "limit" | "hidden" | "missing", ms }</span>
+<span class="c">// "cancel": the state class changed during the wait, so the browser stopped the motion.</span>
 <span class="c">// by "limit" or "missing": C# writes a trace line with the step name.</span></pre>
+
+  <h2>The C# call: one command on the Umpire pipeline</h2>
+  <pre><span class="c">// Features/Motion/Slices/Wait. The JS name comes from the type: MotionWait → orchMotion.wait.</span>
+public sealed record MotionWait(object Target, WaitMode Mode, string? Arg = null) : JsCommand&lt;WaitResult&gt;;
+
+<span class="c">// Plugins/Js. One open handler for all JS commands. The message closes it: MotionWait gives JsCommandHandler&lt;WaitResult&gt;.</span>
+public sealed class JsCommandHandler&lt;TResult&gt;(IJSRuntime js, JsCalls calls)
+    : CommandHandler&lt;JsCommand&lt;TResult&gt;, TResult&gt; { ... }
+
+services.AddPipeline(new PipelineBuilder&lt;JsCommand&gt;()
+    .Handlers(typeof(JsCommandHandler&lt;&gt;))
+    .HooksOf(typeof(AfterCommandHook&lt;,&gt;))
+    .Runner&lt;JsRunner&gt;()
+    .BeforeStep&lt;JsTraceStart&gt;().AfterStep&lt;JsTraceEnd&gt;());
+
+<span class="c">// A call site. The handler catches JS errors and returns an Error; nothing is swallowed.</span>
+var r = await Commands.SendAsync(new MotionWait(stage, WaitMode.Property, "clip-path"));</pre>
+  <p class="sum"><code>Plugins/Js</code> is the general path for each C# to JS call, not only for motion. A new JS function gets one command record. It needs no handler class (Umpire preview.11).</p>
+
+  <h2>Trade-offs and limits</h2>
+  <div class="tbl"><table>
+    <tr><th>Item</th><th>Effect</th><th>What we do</th></tr>
+    <tr><td>Each wait is one interop call</td><td>Fast in the tray; a network trip in the web server</td><td>Keep tight orders inside one CSS phase</td></tr>
+    <tr><td>One request at a time</td><td>No reversal in the middle of a motion</td><td>Same as today. A dock during a grow waits</td></tr>
+    <tr><td>Pointer motion</td><td>C# cannot follow each frame</td><td>The drag math stays in <code>swipe.js</code></td></tr>
+    <tr><td>A new motion</td><td>A CSS rule, a <code>data-motion</code> attribute and a registry row</td><td>A unit test finds a name with no rule or no row. Later: a source generator makes the rows from the CSS</td></tr>
+    <tr><td>JS name from the type</td><td>A rename breaks the call with no build error</td><td>A unit test finds each name in the scripts</td></tr>
+    <tr><td>Umpire is a preview</td><td>The API can change</td><td>Stay on <code>0.2.0-preview.11</code> until R1 is done</td></tr>
+    <tr><td>No check mode for each folder</td><td>R1 findings are warnings</td><td>Test <code>R1_folders_have_no_findings</code></td></tr>
+    <tr><td>Deck act after the throw (S8)</td><td>Undo and the next card can change</td><td>The bUnit tests of Cards; risk high</td></tr>
+    <tr><td>Springs</td><td><code>cubic-bezier</code> only, no physics</td><td>A CSS limit; no change</td></tr>
+  </table></div>
 
   <h2>The registry row</h2>
   <pre><span class="c">// Components/Motion/MotionRegistry.cs</span>
-public sealed record MotionStep(string Name, MotionKind Kind, string State, string Target,
-    string Token, string Spec, WaitMode Wait, string? Arg = null);
+public sealed record MotionStep(string Name, string State);   <span class="c">// page step</span>
+public sealed record WindowStep(string Name, string Event);   <span class="c">// window step: C# owns it</span>
 
 public static readonly MotionStep[] Steps =
 [
-    new("grow",     MotionKind.Page,   "is-open",   ".tray-panel", "--t-grow",     "G1 · tray", WaitMode.Property, "clip-path"),
-    new("fold",     MotionKind.Page,   "is-folded", ".tray-shadow","--t-shrink",   "G1 · tray", WaitMode.Settle),
-    new("badge-in", MotionKind.Page,   "is-badge",  ".tb-tab",     "--t-badge-in", "N1",        WaitMode.Property, "translate"),
-    new("sheet-out",MotionKind.Page,   "is-leaving",".presence",   "--t-sheet-out","M5",        WaitMode.Settle),
-    new("badge-show",MotionKind.Window,"badge-out", "badge window","--t-window-gap","G1 · tray",WaitMode.Event, "shown"),
-    <span class="c">// ... one row for each motion step</span>
+    new("grow", "is-open"), new("fold", "is-folded"), new("badge-in", "is-badge"), new("sheet-out", "is-leaving"),
+    <span class="c">// ... one row for each page step</span>
 ];</pre>
-  <p class="sum">The rows above show the shape. The <code>fold</code> row is the S5 version.</p>
+  <pre><span class="c">&lt;!-- Razor: the step name marks the target --&gt;</span>
+&lt;div class="tray-panel" data-motion="grow"&gt;
+
+<span class="c">/* motion.css: the CSS owns the token, the wait and the spec ID */</span>
+<span class="c">/* G1 · tray */</span>
+[data-motion="grow"] { --motion-wait: clip-path; transition: clip-path var(--t-grow); }
+[data-motion="fold"] { <span class="c">/* no --motion-wait: settle mode */</span> }</pre>
+  <p class="sum">C# knows only the facts that it uses: the step name and the class that it sets. The <code>fold</code> rule is the S5 version.</p>
 
   <h2>Token classes</h2>
   <div class="tbl"><table>
@@ -511,8 +619,9 @@ public static readonly MotionStep[] Steps =
     <tr><th>Part</th><th>File</th><th>Owner</th></tr>
     <tr><td>Times and curves</td><td><code>motion.css</code></td><td>CSS</td></tr>
     <tr><td>Motion rules</td><td><code>motion.css</code>, <code>tray.css</code>, <code>app.css</code></td><td>CSS</td></tr>
-    <tr><td>Wait utility</td><td><code>motion.js</code></td><td>Small JS</td></tr>
-    <tr><td>Rows and the run</td><td><code>MotionRegistry.cs</code>, <code>MotionPipeline.cs</code></td><td>Razor side (C#)</td></tr>
+    <tr><td>Wait function</td><td><code>motion.js</code></td><td>Small JS</td></tr>
+    <tr><td>JS commands, runner, trace</td><td><code>Plugins/Js</code></td><td>Umpire pipeline (C#)</td></tr>
+    <tr><td>Wait command, registry rows</td><td><code>Features/Motion</code></td><td>Umpire module (C#)</td></tr>
     <tr><td>Window show and hide</td><td><code>WidgetWindow.cs</code></td><td>Tray C#, window only</td></tr>
   </table></div>
 </section>
@@ -520,14 +629,24 @@ public static readonly MotionStep[] Steps =
 <!-- ============ CHECKS ============ -->
 <section class="panel" id="checks" role="tabpanel" aria-labelledby="t-checks" hidden>
   <p class="sum">Each new check fails on the code before its step. If the check needs the code of its step, the fail-first proof is a change of one value: see FAIL, then restore it.</p>
+  <h2>Checks of S1 to S4</h2>
   <div class="tbl"><table>
     <tr><th>Check</th><th>Kind</th><th>Step</th><th>Before the step</th></tr>
     <tr><td><code>Motion_times_are_tokens</code></td><td>unit</td><td>S1</td><td>FAIL: about 20 literals</td></tr>
     <tr><td><code>reduced-flow-time</code></td><td>self-test, <code>--reduced</code></td><td>S2</td><td>FAIL: 900 ms or more</td></tr>
+    <tr><td><code>Web_host_keeps_its_configuration</code></td><td>unit</td><td>U3</td><td>Fail first by the Umpire configuration</td></tr>
+    <tr><td><code>MotionWait_with_fake_js</code></td><td>unit</td><td>S3</td><td>Fail first by no catch</td></tr>
+    <tr><td><code>R1_folders_have_no_findings</code></td><td>unit</td><td>S3</td><td>Fail first by one bad name</td></tr>
     <tr><td><code>no-wait-at-limit</code></td><td>self-test</td><td>S3</td><td>FAIL: no wait lines</td></tr>
     <tr><td><code>One_wait_utility</code></td><td>unit</td><td>S3</td><td>FAIL: 7 old calls</td></tr>
-    <tr><td><code>Registry_matches_motion_css</code></td><td>unit</td><td>S4</td><td>Fail first by a wrong token</td></tr>
+    <tr><td><code>Registry_matches_motion_css</code></td><td>unit</td><td>S4</td><td>Fail first by a renamed <code>data-motion</code></td></tr>
     <tr><td><code>motion-times</code></td><td>self-test</td><td>S4</td><td>Fail first by a wrong token</td></tr>
+    <tr><td><code>No_direct_js_calls</code></td><td>unit</td><td>S4</td><td>FAIL: about 10 calls</td></tr>
+    <tr><td><code>Js_names_exist</code></td><td>unit</td><td>S4</td><td>Fail first by a renamed function</td></tr>
+  </table></div>
+  <h2>Checks of S5 to S9</h2>
+  <div class="tbl"><table>
+    <tr><th>Check</th><th>Kind</th><th>Step</th><th>Before the step</th></tr>
     <tr><td><code>fold-no-app-bar</code></td><td>self-test</td><td>S5</td><td>FAIL: fold near 0 ms</td></tr>
     <tr><td><code>badge-in-ended</code></td><td>self-test</td><td>S6</td><td>FAIL: translate not 0</td></tr>
     <tr><td><code>dock</code> (changed)</td><td>self-test</td><td>S6</td><td>No 400 ms delay before the read</td></tr>
@@ -545,22 +664,31 @@ public static readonly MotionStep[] Steps =
 <!-- ============ QUESTIONS ============ -->
 <section class="panel" id="questions" role="tabpanel" aria-labelledby="t-questions" hidden>
   <div class="q">
-    <h3>Q-R1 · Does the registry own the token values, or only the names?</h3>
-    <p>Step S4 needs the answer. S0 to S3 do not depend on it.</p>
+    <h3>Q-R1 · Registry scope: name and state class only (answers of the user, 2026-11-20)</h3>
+    <p>Second answer: the first row shape had a selector, a token name, a wait mode and a spec ID. These are CSS facts. Now C# has only the step name and the state class. The CSS rule of the <code>data-motion</code> target has the other facts.</p>
+    <p>Answer: use the standard. The values stay in CSS. C# has only the names, to run the steps.</p>
     <div class="tbl"><table>
       <tr><th>Option</th><th>What</th><th>Effect</th></tr>
       <tr><td>A. Names only</td><td>The row names the token. motion.css has the value</td><td>One owner for values. A unit test keeps them equal</td></tr>
       <tr><td>B. Values too</td><td>The row has the value. The build writes the token block of motion.css</td><td>The S1 work moves again. CSS is not the owner</td></tr>
     </table></div>
-    <p><b>Recommendation: A.</b> motion.css stays the one owner of times (I11). It is the same rule as the sizes: the page owns them (I10). Reduced motion stays one CSS rule.</p>
+    <p><b>Reason for A:</b> motion.css stays the one owner of times (I11). It is the same rule as the sizes: the page owns them (I10). Reduced motion stays one CSS rule.</p>
+  </div>
+
+  <div class="q">
+    <h3>Umpire: the full SDK scope (answer of the user, 2026-11-20)</h3>
+    <p>All projects use the Umpire SDK, with its output folder and its package rules. The source is the Umpire guide (https://claude.ai/artifact/QeNDBWEJw4B8iPhPVN9DwN). The R1 folders have zero findings. The existing code keeps its warnings.</p>
   </div>
 
   <h2>Non-goals</h2>
   <ul>
+    <li>No move of the existing code to the VSA layout. Reason: a separate migration plan from the Umpire session does that.</li>
+    <li>No JS command for the window steps. Reason: they are C#, not JS.</li>
     <li>No change of the look of the grow and the dock. Reason: the user approved it (I6).</li>
     <li>No event wait for the window gap. Reason: I15 stays "later". S9 prepares it.</li>
     <li>No rename of the state classes to <code>data-state</code>. Reason: no open issue needs it. The rows name the current classes.</li>
     <li>No size ownership work (I7, I10). Reason: it comes after R1 and uses the wait utility.</li>
+    <li>No source generator in R1. Reason: later work. It will make the JS command records from the scripts and the registry rows from <code>motion.css</code>.</li>
     <li>No change of the <code>LiveView</code> 300 ms load delay. Reason: it groups file events; it is not a motion.</li>
   </ul>
 </section>
@@ -569,7 +697,7 @@ public static readonly MotionStep[] Steps =
 <script>
 (function () {
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs [role="tab"]'));
-  var stepIds = ["s0","s1","s2","s3","s4","s5","s6","s7","s8","s9"];
+  var stepIds = ["s0","s1","s2","u1","u2","u3","s3","s4","s5","s6","s7","s8","s9"];
   function show(id, focusStep) {
     var target = id;
     if (stepIds.indexOf(id) >= 0) target = "steps";
