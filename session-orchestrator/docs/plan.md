@@ -2455,3 +2455,11 @@ Decision: keep the look. The gap between the windows is good. Each value (the wi
 | I8 | Badge click and drag use window messages; `HostInput` reads the point and the button from the message. Demo log: "pointer: not moved". Platform limits, not fixed: the header drag (caption drag), and the badge hover (`TrackMouseEvent` follows the real pointer) |
 | Test gap | `badge-input` reads the hover click area at 200 ms, inside the 300 ms fold delay, so it passes although the hover ended |
 | Tests | Self-test 27 of 28 (I7). Unit tests 809 pass, 0 fail. The 1 failure of the run before did not come back: flaky, not examined |
+
+### Scenario runs for proofs (2026-11-20)
+
+- New run mode `--scenario <name>` (`SelfTest.Scenarios.cs`): a few focused actions, repeated, 5 to 15 s, window messages only. Tool: `spikes/tray-display/tools/scenario.sh <scenario> <name> [seconds]` records it and makes an MP4.
+- I14 proof with the scenario `status-bubble`: fix off, bubble in 6 of 6 frames; fix on, 0 of 6.
+- Finding: with window messages, a hover alone does not show the bubble (WM_MOUSELEAVE comes at once). A click does.
+- Finding (test tooling, not examined): the recorder caught 0 frames in 3 of 8 runs today. The screen was not locked. The next try worked each time.
+- Skill `visual-issue`: rules 7 and 8 (the smallest scenario; before and after with the same scenario).

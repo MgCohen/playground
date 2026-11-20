@@ -601,10 +601,10 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
     <div class="field"><span class="k">Cause</span><div class="v"><p>Probable: the WebView2 setting <code>IsStatusBarEnabled</code> is on (the default). <code>ClearHost</code> does not set it. Not tested.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p><code>web.Settings.IsStatusBarEnabled = false</code> in <code>ClearHost.Start</code>, for both windows. Check: a frame strip of a link hover shows no bubble.</p></div></div>
     <div class="field"><span class="k">Result</span><div class="v">
-      <figure><div class="img"><img src="issues/status-bubble-before.jpg" alt="Nine frames of the sheet stress run, one each second. A small grey bubble with the address is at the bottom left in six frames."></div><figcaption>Before the fix: one frame each second. The bubble is at the bottom left.</figcaption></figure>
+      <figure><div class="img"><img src="issues/status-bubble-before.jpg" alt="Six frames, 700 ms after each tab click, with the fix turned off. A small grey bubble with the address is at the bottom left in each frame."></div><figcaption>Before (fix turned off): scenario <code>status-bubble</code>, 700 ms after each click. The bubble is at the bottom left in 6 of 6 frames.</figcaption></figure>
       <p>Fix: <code>web.Settings.IsStatusBarEnabled = false</code> in <code>ClearHost.Start</code>. Self-test 27 of 28 (only I7). Tests 809 pass, 0 fail.</p>
-      <figure><div class="img"><img src="issues/status-bubble-after.jpg" alt="Nine frames of the same run after the fix, one each second. No bubble at the bottom left."></div><figcaption>After the fix: the same run. No bubble in any frame.</figcaption></figure>
-      <p>The first after run failed two times (0 frames, the tray did not start), probably because the screen was locked. The third run worked.</p>
+      <figure><div class="img"><img src="issues/status-bubble-after.jpg" alt="The same six frames with the fix on. No bubble."></div><figcaption>After (fix on): the same scenario. No bubble in 6 of 6 frames.</figcaption></figure>
+      <p>Scenario <code>status-bubble</code>: 3 times "click cards, wait 1.2 s, click home, wait 1.2 s", about 8 s. A hover alone does not show the bubble with messages, because WM_MOUSELEAVE comes at once (I8). Command: <code>scenario.sh status-bubble before 12</code>.</p>
     </div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we turn off the status bubble?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, turn off.</b> IsStatusBarEnabled = false in ClearHost.Start.</p></div></div></div>
   </section>

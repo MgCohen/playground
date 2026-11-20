@@ -15,6 +15,8 @@ The tracker is `docs/tray-issues.html` (https://claude.ai/artifact/KcP1KAskQiQqi
 4. Do not test causes one after the other. One cause can make many issues, and one issue can have many causes. The user decides when to look for causes.
 5. Look at the frames before you trust a number. A frame counter can give a false alarm (issue I1).
 6. Never use the real pointer of the user. The test runs click with window messages.
+7. Prove an issue with the smallest scenario that shows it: 3 or 4 focused actions, repeated 2 or 3 times, 5 to 15 s. Do not use a long run (the demo, a stress run) as a proof. Add the scenario to `SelfTest.Scenarios.cs` and record it with `spikes/tray-display/tools/scenario.sh <scenario> <name>`.
+8. For a before and after proof, run the same scenario two times: once with the fix turned off, once with the fix on.
 
 ## Steps
 

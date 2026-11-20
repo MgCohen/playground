@@ -80,7 +80,8 @@ public static partial class Program
             {
                 try
                 {
-                    code = args.Contains("--stress") ? await SelfTest.Stress(tray, selfTest, Value(args, "--css"), args.Contains("--opens"), args.Contains("--sheets"))
+                    code = args.Contains("--scenario") ? await SelfTest.Scenario(tray, selfTest, Value(args, "--scenario"))
+                        : args.Contains("--stress") ? await SelfTest.Stress(tray, selfTest, Value(args, "--css"), args.Contains("--opens"), args.Contains("--sheets"))
                         : args.Contains("--demo") ? await SelfTest.Demo(tray, selfTest) : await SelfTest.Run(tray, selfTest, args.Contains("--mouse"));
                 }
                 catch (Exception e)
