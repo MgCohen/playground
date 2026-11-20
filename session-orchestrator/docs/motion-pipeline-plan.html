@@ -346,7 +346,7 @@ dotnet run -- --selftest before-reduced --reduced</pre>
         <li>New <code>Components/Motion/MotionRegistry.cs</code>: one row for each motion step today (Pipeline tab).</li>
         <li>New <code>MotionPipeline.Run(row)</code>: sets the state, waits as the row says, writes "step &lt;name&gt;: by end in N ms".</li>
         <li><code>TrayStage</code>, <code>BadgeRoot</code>, <code>Presence</code>, <code>MainLayout</code> call steps by row name. Targets do not change.</li>
-        <li>The registry scope follows the answer to the open question (Questions tab).</li>
+        <li>Registry scope: names only. A row names its token; <code>motion.css</code> has the value. C# reads a value from the page when it needs one.</li>
       </ul></dd>
       <dt>Closes</dt><dd>Q1 B. Part of I9: stage phases, Presence and the tab change use the registry.</dd>
       <dt>Proof</dt><dd><ul>
@@ -545,14 +545,14 @@ public static readonly MotionStep[] Steps =
 <!-- ============ QUESTIONS ============ -->
 <section class="panel" id="questions" role="tabpanel" aria-labelledby="t-questions" hidden>
   <div class="q">
-    <h3>Q-R1 · Does the registry own the token values, or only the names?</h3>
-    <p>Step S4 needs the answer. S0 to S3 do not depend on it.</p>
+    <h3>Q-R1 · Registry scope: A, names only (default, 2026-11-20)</h3>
+    <p>The user did not answer in time, so the default applies. The user reviews it later. If the user picks B, only step S4 changes.</p>
     <div class="tbl"><table>
       <tr><th>Option</th><th>What</th><th>Effect</th></tr>
       <tr><td>A. Names only</td><td>The row names the token. motion.css has the value</td><td>One owner for values. A unit test keeps them equal</td></tr>
       <tr><td>B. Values too</td><td>The row has the value. The build writes the token block of motion.css</td><td>The S1 work moves again. CSS is not the owner</td></tr>
     </table></div>
-    <p><b>Recommendation: A.</b> motion.css stays the one owner of times (I11). It is the same rule as the sizes: the page owns them (I10). Reduced motion stays one CSS rule.</p>
+    <p><b>Reason for A:</b> motion.css stays the one owner of times (I11). It is the same rule as the sizes: the page owns them (I10). Reduced motion stays one CSS rule.</p>
   </div>
 
   <h2>Non-goals</h2>
