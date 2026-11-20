@@ -198,94 +198,27 @@ html.embed .head { display: none; }
 html.embed body { padding: 0 0 24px; }
 html.embed body::before { display: none; }
 </style>
-<script>if (/[?&]embed\b/.test(location.search)) document.documentElement.classList.add("embed");</script>
 
-<div class="wrap">
-<header class="head">
-  <div class="eyebrow">Session orchestrator · task P · F2 Workflows · 2026-11-20</div>
-  <h1>Workflows Sketches</h1>
-  <p class="intro">Sketches of the eight pages and components of the Workflows feature. Each tab has 2 or 3 variants in the 350 px widget frame, with sample data. The notes give the purpose, the difference between the variants, and the source of each part. Pick a variant for each item, or say the change. The spec of the feature is on the page <a href="https://claude.ai/artifact/Kn888Us7Y4A7MnPTiQNmUj">Advanced Features</a>, tab F2, sub-tab Spec.</p>
-</header>
-
-<nav aria-label="Sketches">
-  <div class="tabs" role="tablist">
-    <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
-    <span class="sep" aria-hidden="true"></span>
-    <button role="tab" data-tab="catalog">Workflows</button>
-    <button role="tab" data-tab="def">Workflow definition</button>
-    <button role="tab" data-tab="stepdef">Step definition</button>
-    <button role="tab" data-tab="runs">Runs</button>
-    <button role="tab" data-tab="run">Run</button>
-    <button role="tab" data-tab="steprun">Step run</button>
-    <span class="sep" aria-hidden="true"></span>
-    <button role="tab" data-tab="runrow">Run row</button>
-    <button role="tab" data-tab="waitcard">Wait card</button>
-  </div>
-  <select id="tab-select" aria-label="Sketch">
-    <option value="overview">Overview</option>
-    <optgroup label="Pages">
-      <option value="catalog">Workflows</option>
-      <option value="def">Workflow definition</option>
-      <option value="stepdef">Step definition</option>
-      <option value="runs">Runs</option>
-      <option value="run">Run</option>
-      <option value="steprun">Step run</option>
-    </optgroup>
-    <optgroup label="Components">
-      <option value="runrow">Run row</option>
-      <option value="waitcard">Wait card</option>
-    </optgroup>
-  </select>
-</nav>
-
-<!-- ============ OVERVIEW ============ -->
-<div class="panel" id="overview">
-  <section class="notes">
-    <h2>The eight items</h2>
-    <div class="tblw"><table class="tbl">
-      <tr><th>Name</th><th>Kind</th><th>Purpose</th><th>Variants</th></tr>
-      <tr><td><a href="#catalog">Workflows</a></td><td>Page</td><td>The list of all workflow definitions</td><td>A list · B cards with a small graph</td></tr>
-      <tr><td><a href="#def">Workflow definition</a></td><td>Page</td><td>One workflow in three views: graph, outline, fields</td><td>The three views (all three ship)</td></tr>
-      <tr><td><a href="#stepdef">Step definition</a></td><td>Panel</td><td>The settings of one step, opened from a node</td><td>A sheet on the graph · B own page</td></tr>
-      <tr><td><a href="#runs">Runs</a></td><td>Page</td><td>The list of all runs, with filters</td><td>A grouped by state · B flat with filters</td></tr>
-      <tr><td><a href="#run">Run</a></td><td>Page</td><td>One run: wait first or graph first, next steps, history</td><td>A wait mode · B check mode, graph · C check mode, outline</td></tr>
-      <tr><td><a href="#steprun">Step run</a></td><td>Panel or page</td><td>One pass of a run through one step</td><td>A facts · B timeline</td></tr>
-      <tr><td><a href="#runrow">Run row</a></td><td>Component</td><td>One line that opens the run page</td><td>A one line · B two lines · C chip</td></tr>
-      <tr><td><a href="#waitcard">Wait card</a></td><td>Component</td><td>What a run needs from you, with its acts</td><td>A approval · B pick · C stuck</td></tr>
-    </table></div>
-  </section>
-  <section class="notes">
-    <h2>How the pages link</h2>
-<pre class="mermaid">
-flowchart LR
-  W["Workflows"] --> D["Workflow definition"]
-  D --> SD["Step definition"]
-  D --> RS["Runs"]
-  W --> RS
-  RS -->|run row| R["Run"]
-  R --> SR["Step run"]
-  R --> D
-  S["Session page, stream bar, Cards"] -->|run row, wait card| R
-</pre>
-  </section>
-  <section class="notes">
-    <h2>Sample data</h2>
-    <ul>
-      <li>One real workflow: <code>planning</code> v1, seven steps, from <code>templates/workflows/planning/workflow.json</code>.</li>
-      <li>Two sample workflows to fill the list: <code>review</code> and <code>code-change</code>. They do not exist yet (C1 roadmap).</li>
-      <li>The main run: <code>planning-3f2a91c0</code>, goal "Plan the review pages", owner [O1] Advanced features, stream P. It waits for your approval of spec v2, at pass 2 of the step "Approve the spec".</li>
-      <li>A second run: <code>planning-8b11e2d4</code>, goal "Plan the tray settings", owner [O3] Tray, stream T. It runs the step "Write the spec".</li>
-    </ul>
-  </section>
-</div>
-
-<!-- ============ WORKFLOWS (catalog) ============ -->
-<div class="panel" id="catalog" hidden>
-  <div class="head"><h2>Workflows</h2><p class="intro">The list of all workflow definitions. Open a workflow from here.</p></div>
-  <div class="draft">
-    <div class="left">
-      <div class="sw" data-sw="catalog"><button data-v="a" aria-pressed="true">A · List</button><button data-v="b" aria-pressed="false">B · Cards with graph</button></div>
-      <div class="phone" data-for="catalog" data-v="a">
+<style>
+/* Rows: one foldable row for each page. Inside, its sketches side by side, scaled down to the row width. */
+body { padding: 12px 12px 24px; }
+.sk-rows { display: grid; gap: 8px; max-width: 1200px; margin: 0 auto; }
+.sk-row { background: var(--surf); border: 1px solid var(--page-line); border-radius: 10px; }
+.sk-row summary { cursor: pointer; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; color: var(--page-tx); }
+.sk-row summary b { font: 600 15px var(--f-body); }
+.sk-row summary span { font-size: 12px; color: var(--page-mu); }
+.sk-row[open] summary { border-bottom: 1px solid var(--page-line); }
+.sk-trio { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 8px; padding: 8px; align-items: start; }
+.sk-cell { margin: 0; min-width: 0; display: grid; gap: 4px; }
+.sk-cell figcaption { font: 500 11px var(--f-mono, monospace); color: var(--page-mu); }
+.sk-fit { min-width: 0; overflow: hidden; }
+.sk-fit > .phone { width: 362px; max-width: none; }
+</style>
+<main class="sk-rows">
+  <details class="sk-row">
+    <summary><b>Workflows</b><span>The list of all workflow definitions · 2 sketches</span></summary>
+    <div class="sk-trio" style="--n:2">
+      <figure class="sk-cell"><figcaption>A · List</figcaption><div class="sk-fit"><div class="phone" data-for="catalog" data-v="a">
         <div class="crd hd"><span class="path"><span class="cur">Workflows</span></span><span class="wb"><i>⌕</i><i>–</i><i>✕</i></span></div>
         <div class="gt"><span>3 workflows</span><span>active runs</span></div>
         <div class="crd rows">
@@ -298,41 +231,21 @@ flowchart LR
           <div class="row"><span class="ring sm" style="--p:.71"><span></span></span><span class="grow"><span class="nm ell">Plan the review pages</span><span class="sub">planning · Approve the spec · 6 min</span></span><span class="pill st-wait">waits</span></div>
           <div class="row"><span class="ring sm" style="--p:.57;--rc:var(--new)"><span></span></span><span class="grow"><span class="nm ell">Plan the tray settings</span><span class="sub">planning · Write the spec</span></span><span class="pill st-run">running</span></div>
         </div>
-      </div>
-      <div class="phone" data-for="catalog" data-v="b" hidden>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Cards with graph</figcaption><div class="sk-fit"><div class="phone" data-for="catalog" data-v="b">
         <div class="crd hd"><span class="path"><span class="cur">Workflows</span></span><span class="wb"><i>⌕</i><i>–</i><i>✕</i></span></div>
         <div class="minis">
           <div class="crd mini"><div class="well" style="padding:4px"><div data-graph="mini"></div></div><span class="nm">planning</span><span class="sub">v1 · 7 steps</span><span class="pill st-wait">2 runs · 1 waits</span></div>
           <div class="crd mini"><div class="well" style="padding:4px"><div data-graph="mini-review"></div></div><span class="nm">review</span><span class="sub">v1 · 6 steps</span><span class="pill st-idle">no runs</span></div>
           <div class="crd mini"><div class="well" style="padding:4px"><div data-graph="mini-code"></div></div><span class="nm">code-change</span><span class="sub">v2 · 5 steps</span><span class="pill st-run">1 run</span></div>
         </div>
-      </div>
+      </div></div></figure>
     </div>
-    <div class="notes">
-      <h3>Variants</h3>
-      <ul>
-        <li><b>A · List.</b> One row for each workflow: name, purpose, version, step count, source (core or store), active runs. Under it, the recent runs as run rows.</li>
-        <li><b>B · Cards with graph.</b> A small graph shows the shape of each workflow. Better to tell workflows apart, but it holds less text.</li>
-      </ul>
-      <p class="rec">Recommendation: A. The list is short for a long time, and the run rows under it give the main path to a run.</p>
-      <h3>Source of each part</h3>
-      <div class="tblw"><table class="tbl">
-        <tr><th>Part</th><th>Source</th></tr>
-        <tr><td>Name, purpose, version, steps</td><td><code>workflow.json</code> of each definition (<code>Home.Workflows</code>)</td></tr>
-        <tr><td>Core or store</td><td>The root of the definition: <code>&lt;home&gt;/templates</code> or <code>&lt;store&gt;/templates</code></td></tr>
-        <tr><td>Active runs, waits</td><td><code>runs/*.json</code> by <code>workflow</code> and <code>status</code> <span class="gapc">(no run API: P-G2)</span></td></tr>
-      </table></div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ WORKFLOW DEFINITION ============ -->
-<div class="panel" id="def" hidden>
-  <div class="head"><h2>Workflow definition</h2><p class="intro">One workflow. The three variants are the three views of the page: all three ship, and a switch at the top changes the view. Graph and outline open the step definition on a click.</p></div>
-  <div class="draft">
-    <div class="left">
-      <div class="sw" data-sw="def"><button data-v="a" aria-pressed="true">A · Graph</button><button data-v="b" aria-pressed="false">B · Outline</button><button data-v="c" aria-pressed="false">C · Fields</button></div>
-      <div class="phone" data-for="def" data-v="a">
+  </details>
+  <details class="sk-row">
+    <summary><b>Workflow definition</b><span>One definition: the steps as a graph, an outline or fields · 3 sketches</span></summary>
+    <div class="sk-trio" style="--n:3">
+      <figure class="sk-cell"><figcaption>A · Graph</figcaption><div class="sk-fit"><div class="phone" data-for="def" data-v="a">
         <div class="crd hd"><span class="path"><span class="cr">Workflows ›</span><span class="cur">planning</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
         <div class="crd pad stack">
           <span class="row"><span class="grow"><span class="nm">planning</span><span class="sub">v1 · core · 7 steps · entry: Read the goal</span></span></span>
@@ -346,8 +259,8 @@ flowchart LR
           <div class="row"><span class="ring sm" style="--p:.71"><span></span></span><span class="grow"><span class="nm ell">Plan the review pages</span><span class="sub">Approve the spec · pass 2</span></span><span class="pill st-wait">waits</span></div>
           <div class="row"><span class="ring sm" style="--p:.57;--rc:var(--new)"><span></span></span><span class="grow"><span class="nm ell">Plan the tray settings</span><span class="sub">Write the spec</span></span><span class="pill st-run">running</span></div>
         </div>
-      </div>
-      <div class="phone" data-for="def" data-v="b" hidden>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Outline</figcaption><div class="sk-fit"><div class="phone" data-for="def" data-v="b">
         <div class="crd hd"><span class="path"><span class="cr">Workflows ›</span><span class="cur">planning</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
         <div class="well seg"><span>Graph</span><span class="on">Outline</span><span>Fields</span></div>
         <div class="crd ol">
@@ -365,8 +278,8 @@ flowchart LR
           <div class="ln c1"><span class="ar">→</span><span class="grow">the verdict is approve: <b>7</b></span></div>
           <div class="ln"><span class="n">7</span><span class="grow"><b>Propose the next tasks</b></span><span class="tag">done step</span></div>
         </div>
-      </div>
-      <div class="phone" data-for="def" data-v="c" hidden>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>C · Fields</figcaption><div class="sk-fit"><div class="phone" data-for="def" data-v="c">
         <div class="crd hd"><span class="path"><span class="cr">Workflows ›</span><span class="cur">planning</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
         <div class="well seg"><span>Graph</span><span>Outline</span><span class="on">Fields</span></div>
         <div class="gt"><span>1 · Read the goal and the docs</span><span>agent</span></div>
@@ -387,35 +300,13 @@ flowchart LR
           <div class="kv"><span class="k">Next</span><span class="v">the verdict is change → 2<br>the verdict is approve → 7</span></div>
         </div>
         <div class="sub" style="padding:0 8px">Steps 2–5 and 7 fold the same way. A tap on a header opens the step definition.</div>
-      </div>
+      </div></div></figure>
     </div>
-    <div class="notes">
-      <h3>The three views</h3>
-      <ul>
-        <li><b>A · Graph.</b> A read-only node graph. Forward edges go down. A loop goes back on the right side, with its condition in a small label. A skip goes on the left. Under the graph, the runs of this workflow as run rows.</li>
-        <li><b>B · Outline.</b> One row for each step, in definition order. The next conditions are rows with an indent: "→" goes forward, "↺" goes back. Easy to read on a phone, and it shows each condition in full.</li>
-        <li><b>C · Fields.</b> The fields of each step, as in <code>workflow.json</code>, in a readable form. The future editor (W-6) edits these same fields.</li>
-      </ul>
-      <p class="rec">Recommendation: open in the Graph view on a wide screen, and in the Outline view on a phone. Remember the last pick of the user.</p>
-      <h3>Source of each part</h3>
-      <div class="tblw"><table class="tbl">
-        <tr><th>Part</th><th>Source</th></tr>
-        <tr><td>Header, done when, entry</td><td><code>workflow.json</code>: <code>name</code>, <code>version</code>, <code>purpose</code>, <code>done</code>, <code>entry</code></td></tr>
-        <tr><td>Graph, outline</td><td><code>steps[].next[]</code> with <code>step</code> and <code>when</code></td></tr>
-        <tr><td>Fields</td><td><code>steps[]</code>: <code>executor</code>, <code>session</code>, <code>instructions</code>, <code>input</code>, <code>output</code>, <code>approval</code>, <code>templates</code>, <code>messages</code>, <code>done</code></td></tr>
-        <tr><td>Versions</td><td>Only the current version and <code>.removed/</code> folders <span class="gapc">(no version list: new gap)</span></td></tr>
-      </table></div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ STEP DEFINITION ============ -->
-<div class="panel" id="stepdef" hidden>
-  <div class="head"><h2>Step definition</h2><p class="intro">The settings of one step. It opens when you click a node in the graph or a row in the outline.</p></div>
-  <div class="draft">
-    <div class="left">
-      <div class="sw" data-sw="stepdef"><button data-v="a" aria-pressed="true">A · Sheet on the graph</button><button data-v="b" aria-pressed="false">B · Own page</button></div>
-      <div class="phone" data-for="stepdef" data-v="a" style="min-height:720px">
+  </details>
+  <details class="sk-row">
+    <summary><b>Step definition</b><span>The settings of one step of a definition · 2 sketches</span></summary>
+    <div class="sk-trio" style="--n:2">
+      <figure class="sk-cell"><figcaption>A · Sheet on the graph</figcaption><div class="sk-fit"><div class="phone" data-for="stepdef" data-v="a" style="min-height:720px">
         <div class="crd hd"><span class="path"><span class="cr">Workflows ›</span><span class="cur">planning</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
         <div class="well seg"><span class="on">Graph</span><span>Outline</span><span>Fields</span></div>
         <div class="crd pad"><div data-graph="def-sel"></div></div>
@@ -433,8 +324,8 @@ flowchart LR
           <div class="kv"><span class="k">Used</span><span class="v">2 runs now · 5 step runs in all</span></div>
           <div class="bar"><span class="btn">Previous step</span><span class="btn">Next step</span></div>
         </div>
-      </div>
-      <div class="phone" data-for="stepdef" data-v="b" hidden>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Own page</figcaption><div class="sk-fit"><div class="phone" data-for="stepdef" data-v="b">
         <div class="crd hd"><span class="path"><span class="cr">planning ›</span><span class="cur">Approve the spec</span></span><span class="wb"><i>‹</i><i>›</i><i>✕</i></span></div>
         <div class="crd pad stack">
           <span class="row"><span class="grow"><span class="sub">Step 6 of 7</span><span class="nm" style="font-size:16px">Approve the spec</span></span><span class="tag h">human</span></span>
@@ -463,32 +354,13 @@ flowchart LR
         </div>
         <div class="gt"><span>Comes from</span></div>
         <div class="crd rows"><div class="row"><span class="mono">←</span><span class="grow"><span class="nm">Write the spec</span><span class="sub">always</span></span></div></div>
-      </div>
+      </div></div></figure>
     </div>
-    <div class="notes">
-      <h3>Variants</h3>
-      <ul>
-        <li><b>A · Sheet on the graph.</b> The sheet slides up over the graph. The graph stays behind it with the selected node marked. Previous and next move through the steps without a close.</li>
-        <li><b>B · Own page.</b> All fields in groups: executor, data, approval, next, comes from. The arrows in the header move to the previous and next step. More room for long instructions.</li>
-      </ul>
-      <p class="rec">Recommendation: A on a phone, and a side panel beside the graph on a wide screen. The user keeps the shape of the workflow in view.</p>
-      <h3>Notes</h3>
-      <ul>
-        <li>"Used" counts the runs and step runs of this step. It links to the Runs page with a filter.</li>
-        <li>"Comes from" is the list of steps whose next points here. It is a query of the definition.</li>
-        <li>The future editor (W-6) makes these fields a form. No drag on the graph.</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- ============ RUNS ============ -->
-<div class="panel" id="runs" hidden>
-  <div class="head"><h2>Runs</h2><p class="intro">The list of all runs. The session page, the stream bar and the Workflows page open it with a filter.</p></div>
-  <div class="draft">
-    <div class="left">
-      <div class="sw" data-sw="runs"><button data-v="a" aria-pressed="true">A · Grouped by state</button><button data-v="b" aria-pressed="false">B · Flat with filters</button></div>
-      <div class="phone" data-for="runs" data-v="a">
+  </details>
+  <details class="sk-row">
+    <summary><b>Runs</b><span>All runs, with their state and wait · 2 sketches</span></summary>
+    <div class="sk-trio" style="--n:2">
+      <figure class="sk-cell"><figcaption>A · Grouped by state</figcaption><div class="sk-fit"><div class="phone" data-for="runs" data-v="a">
         <div class="crd hd"><span class="path"><span class="cur">Runs</span></span><span class="wb"><i>⌕</i><i>–</i><i>✕</i></span></div>
         <div class="gt"><span>Waits for you · 1</span></div>
         <div class="crd rows">
@@ -504,8 +376,8 @@ flowchart LR
           <div class="row"><span class="ring sm" style="--p:1;--rc:var(--done)"><span></span></span><span class="grow"><span class="nm ell">C3 live run</span><span class="sub ell">planning · done · 13 min · 18 Nov</span></span><span class="pill st-done">done</span></div>
           <div class="row"><span class="ring sm" style="--p:.3;--rc:var(--failed)"><span></span></span><span class="grow"><span class="nm ell">Plan the cloud worker</span><span class="sub ell">planning · stopped by you · 17 Nov</span></span><span class="pill st-stop">stopped</span></div>
         </div>
-      </div>
-      <div class="phone" data-for="runs" data-v="b" hidden>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Flat with filters</figcaption><div class="sk-fit"><div class="phone" data-for="runs" data-v="b">
         <div class="crd hd"><span class="path"><span class="cur">Runs</span></span><span class="wb"><i>⌕</i><i>–</i><i>✕</i></span></div>
         <div class="chips"><span class="chip on">All 5</span><span class="chip">Waits 1</span><span class="chip">Running 2</span><span class="chip">Ended 3</span></div>
         <div class="chips"><span class="chip">Workflow ▾</span><span class="chip">Stream ▾</span><span class="chip">Project ▾</span></div>
@@ -516,35 +388,13 @@ flowchart LR
           <div class="row"><span class="grow"><span class="nm ell">C3 live run</span><span class="steps" style="margin:5px 0 3px"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i></span><span class="sub ell">planning · done · 13 min</span></span><span class="pill st-done">done</span></div>
           <div class="row"><span class="grow"><span class="nm ell">Plan the cloud worker</span><span class="steps" style="margin:5px 0 3px"><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i><i></i></span><span class="sub ell">planning · stopped by you</span></span><span class="pill st-stop">stopped</span></div>
         </div>
-      </div>
+      </div></div></figure>
     </div>
-    <div class="notes">
-      <h3>Variants</h3>
-      <ul>
-        <li><b>A · Grouped by state.</b> Three groups: waits for you, running, ended. What needs you is on top. The ended group folds after three rows.</li>
-        <li><b>B · Flat with filters.</b> One list, newest first. Filter chips for state, workflow, stream and project. Each row has a step bar: one segment for each step of the definition.</li>
-      </ul>
-      <p class="rec">Recommendation: A, with the filter chips of B at the top. The groups answer "what needs me", and the chips answer "show me stream P".</p>
-      <h3>Source of each part</h3>
-      <div class="tblw"><table class="tbl">
-        <tr><th>Part</th><th>Source</th></tr>
-        <tr><td>Goal, workflow, step, status</td><td><code>runs/&lt;id&gt;.json</code>: <code>input.goal</code>, <code>workflow</code>, <code>step</code>, <code>status</code>, <code>wait.kind</code></td></tr>
-        <tr><td>"Waits for you"</td><td><code>status</code> = <code>waiting</code> and <code>wait.kind</code> in ask, approval, stuck, with <code>by</code> = user</td></tr>
-        <tr><td>Owner code, stream</td><td>Registry entry of <code>owner</code> <span class="gapc">(no stream on the run: P-G1)</span></td></tr>
-        <tr><td>Step bar, ring</td><td>Definition steps + <code>history[]</code></td></tr>
-      </table></div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ RUN ============ -->
-<div class="panel" id="run" hidden>
-  <div class="head"><h2>Run</h2><p class="intro">One run. B1: two modes that change with the run state. When the run waits for you, the wait card is on top (A). Else the graph is on top (B, or C as an outline).</p></div>
-  <div class="draft">
-    <div class="left">
-      <div class="sw" data-sw="run"><button data-v="a" aria-pressed="true">A · Wait mode</button><button data-v="b" aria-pressed="false">B · Check mode, graph</button><button data-v="c" aria-pressed="false">C · Check mode, outline</button></div>
-      <!-- A: wait mode -->
-      <div class="phone" data-for="run" data-v="a">
+  </details>
+  <details class="sk-row">
+    <summary><b>Run</b><span>One run: where it is, why it waits, and what you can do · 3 sketches</span></summary>
+    <div class="sk-trio" style="--n:3">
+      <figure class="sk-cell"><figcaption>A · Wait mode</figcaption><div class="sk-fit"><div class="phone" data-for="run" data-v="a">
         <div class="crd hd"><span class="path"><span class="cr">Runs ›</span><span class="cur">Plan the review pages</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
         <div class="crd streambar"><b>P</b><span class="grow sub">stream</span><span class="chip">Sessions 3</span><span class="chip">Runs 1</span><span class="chip">PRs 2</span></div>
         <div class="crd pad stack wait">
@@ -566,9 +416,8 @@ flowchart LR
           <div class="crd tli"><span class="row"><b>Record the answer</b><span class="pass">pass 3</span><span class="grow"></span><span class="sub">10:01</span></span><span class="sub">holds: no questions are open</span></div>
         </div>
         <div class="crd bar"><span class="btn">Graph</span><span class="btn">Owner session</span><span class="btn dg" title="Stop the run">■</span></div>
-      </div>
-      <!-- B: check mode, graph -->
-      <div class="phone" data-for="run" data-v="b" hidden>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Check mode, graph</figcaption><div class="sk-fit"><div class="phone" data-for="run" data-v="b">
         <div class="crd hd"><span class="path"><span class="cr">Runs ›</span><span class="cur">Plan the tray settings</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
         <div class="crd streambar"><b>T</b><span class="grow sub">stream</span><span class="chip">Sessions 2</span><span class="chip">Runs 1</span><span class="chip">PRs 0</span></div>
         <div class="crd pad row">
@@ -595,9 +444,8 @@ flowchart LR
           <div class="key"><span><b style="background:var(--new)"></b>agent 10 min</span><span><b style="background:var(--accent)"></b>waited for you 12 min</span></div>
         </div>
         <div class="crd bar"><span class="btn">History</span><span class="btn">Force next</span><span class="btn">Go back</span><span class="btn dg" title="Stop the run">■</span></div>
-      </div>
-      <!-- C: check mode, outline -->
-      <div class="phone" data-for="run" data-v="c" hidden>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>C · Check mode, outline</figcaption><div class="sk-fit"><div class="phone" data-for="run" data-v="c">
         <div class="crd hd"><span class="path"><span class="cr">Runs ›</span><span class="cur">Plan the review pages</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
         <div class="crd pad stack">
           <span class="row"><span class="grow"><span class="sub">planning v1 · owner [O1] · stream P</span><span class="nm" style="font-size:15px">Plan the review pages</span></span><span class="pill st-wait">waits</span></span>
@@ -618,48 +466,13 @@ flowchart LR
           <div class="ln" style="color:var(--muted)"><span>○</span><span class="grow">Propose the next tasks</span><span class="likely">if approve</span></div>
         </div>
         <div class="crd bar"><span class="btn pri">Open the wait</span><span class="btn">Graph</span><span class="btn dg" title="Stop the run">■</span></div>
-      </div>
+      </div></div></figure>
     </div>
-    <div class="notes">
-      <h3>Variants</h3>
-      <ul>
-        <li><b>A · Wait mode.</b> The run waits for you. The wait card is first, with the item to review and the result of each act ("Change → Ask one question"). A step bar with pass counts replaces the graph. The last three step runs give the context.</li>
-        <li><b>B · Check mode, graph.</b> The run does not wait for you. The ring shows the steps on the path to done. The graph shows the path in green, the current step in orange and the next step dashed. Then "why here", "what if", and the time split. The page bar has the control acts of B2.</li>
-        <li><b>C · Check mode, outline.</b> The same facts as B, as one row for each step. The passes and the outputs fold under each step. It shows the time of each step, and who spent it.</li>
-      </ul>
-      <p class="rec">Recommendation: A when the run waits for you. B on a wide screen and C on a phone in check mode. B and C are the same data, so a switch is cheap.</p>
-      <h3>The eight parts of the run page</h3>
-      <div class="tblw"><table class="tbl">
-        <tr><th>Part</th><th>Where</th></tr>
-        <tr><td>1 Path on the graph</td><td>B: green path, pass count in a dark dot</td></tr>
-        <tr><td>2 Why here</td><td>B: the holds of the step run before</td></tr>
-        <tr><td>3 What if</td><td>A: the act line · B: the next steps with ✓ ✕</td></tr>
-        <tr><td>4 Time per step</td><td>B, C: agent time and the time that waited for you</td></tr>
-        <tr><td>5 Step outputs</td><td>A: "Open spec v2" · C: the outputs under each step</td></tr>
-        <tr><td>6 Nested runs</td><td>Not in these samples: a small ring on the node <span class="gapc">(P-G13)</span></td></tr>
-        <tr><td>7 Control acts</td><td>B: Force next, Go back, Stop <span class="gapc">(P-G12)</span></td></tr>
-        <tr><td>8 Changed definition</td><td>Header text "planning v1" turns into "v1 · current v2" when it changes</td></tr>
-      </table></div>
-      <h3>Source of each part</h3>
-      <div class="tblw"><table class="tbl">
-        <tr><th>Part</th><th>Source</th></tr>
-        <tr><td>Wait card</td><td><code>run.wait</code>: <code>kind</code>, <code>text</code>, <code>options</code>, <code>thread</code> → the question envelope</td></tr>
-        <tr><td>Passes, path, times</td><td><code>run.history[]</code>: <code>step</code>, <code>started</code>, <code>ended</code>, <code>holds</code>, <code>next</code></td></tr>
-        <tr><td>Agent time and time for you</td><td>Executor of each step run: <code>ask</code> and approval waits count as "you"</td></tr>
-        <tr><td>Spec v2, diff from v1</td><td><code>run.outputs</code> <span class="gapc">(no output versions yet: Q12 keeps them in history)</span></td></tr>
-        <tr><td>Stream bar</td><td>Owner entry <code>stream</code> (F1)</td></tr>
-      </table></div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ STEP RUN ============ -->
-<div class="panel" id="steprun" hidden>
-  <div class="head"><h2>Step run</h2><p class="intro">One pass of a run through one step. It opens from a history row, an outline row, or a pass count on the graph.</p></div>
-  <div class="draft">
-    <div class="left">
-      <div class="sw" data-sw="steprun"><button data-v="a" aria-pressed="true">A · Facts</button><button data-v="b" aria-pressed="false">B · Timeline</button></div>
-      <div class="phone" data-for="steprun" data-v="a">
+  </details>
+  <details class="sk-row">
+    <summary><b>Step run</b><span>One pass of a run through one step · 2 sketches</span></summary>
+    <div class="sk-trio" style="--n:2">
+      <figure class="sk-cell"><figcaption>A · Facts</figcaption><div class="sk-fit"><div class="phone" data-for="steprun" data-v="a">
         <div class="crd hd"><span class="path"><span class="cr">Plan the review pages ›</span><span class="cur">Approve · pass 1</span></span><span class="wb"><i>‹</i><i>›</i><i>✕</i></span></div>
         <div class="crd pad stack">
           <span class="row"><span class="grow"><span class="sub">Step run 9 of 15 · ask · approval</span><span class="nm" style="font-size:16px">Approve the spec</span></span><span class="pass">pass 1</span></span>
@@ -682,8 +495,8 @@ flowchart LR
         <div class="gt"><span>Went to</span></div>
         <div class="crd rows"><div class="row"><span class="mono" style="color:var(--accent)">↺</span><span class="grow"><span class="nm">Ask one question · pass 3</span><span class="sub">the verdict is change</span></span></div></div>
         <div class="crd bar"><span class="btn">Question card</span><span class="btn">Owner session</span></div>
-      </div>
-      <div class="phone" data-for="steprun" data-v="b" hidden>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Timeline</figcaption><div class="sk-fit"><div class="phone" data-for="steprun" data-v="b">
         <div class="crd hd"><span class="path"><span class="cr">Plan the review pages ›</span><span class="cur">Approve · pass 1</span></span><span class="wb"><i>‹</i><i>›</i><i>✕</i></span></div>
         <div class="crd pad stack">
           <span class="row"><span class="grow"><span class="nm" style="font-size:15px">Approve the spec</span><span class="sub">pass 1 · input spec v1 · output: change</span></span><span class="pill st-done">12 min</span></span>
@@ -696,155 +509,10 @@ flowchart LR
           <div class="crd tli" style="--st:var(--muted)"><span class="row"><b>Run moves</b><span class="grow"></span><span class="sub">10:02</span></span><span class="sub">↺ to Ask one question, pass 3 · one valid next step</span></div>
         </div>
         <div class="crd bar"><span class="btn">Spec v1</span><span class="btn">Event stream</span></div>
-      </div>
+      </div></div></figure>
     </div>
-    <div class="notes">
-      <h3>Variants</h3>
-      <ul>
-        <li><b>A · Facts.</b> Groups of facts: why here, in and out, who, went to. Fast to scan. The arrows in the header move to the step run before and after.</li>
-        <li><b>B · Timeline.</b> The envelopes of the step run in order: start, question, reminder, answer, move. It shows what happened, with each time.</li>
-      </ul>
-      <p class="rec">Recommendation: A as the default, with B behind an "Events" switch. Most visits ask "what came out, and why did it go there".</p>
-      <h3>Source of each part</h3>
-      <div class="tblw"><table class="tbl">
-        <tr><th>Part</th><th>Source</th></tr>
-        <tr><td>Step, times, holds, next</td><td><code>history[i]</code>: <code>step</code>, <code>started</code>, <code>ended</code>, <code>holds</code>, <code>next</code></td></tr>
-        <tr><td>Pass number</td><td>The count of earlier entries of the same step in <code>history</code></td></tr>
-        <tr><td>Output, answer, verdict</td><td><code>history[i]</code>: <code>output</code>, <code>answer</code>, <code>approval</code></td></tr>
-        <tr><td>Question, reminder, voice</td><td>Envelopes of <code>history[i].thread</code>; <code>refs.via</code> for the voice or chat path</td></tr>
-        <tr><td>Session</td><td><code>history[i].session</code></td></tr>
-      </table></div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ RUN ROW ============ -->
-<div class="panel" id="runrow" hidden>
-  <div class="head"><h2>Run row</h2><p class="intro">One line that shows a run and opens the run page. The same idea as the session row. The session page, the stream bar, the Workflows page and the Runs page use it.</p></div>
-  <div class="draft">
-    <div class="left">
-      <div class="sw" data-sw="runrow"><button data-v="a" aria-pressed="true">A · One line</button><button data-v="b" aria-pressed="false">B · Two lines</button><button data-v="c" aria-pressed="false">C · Chip</button></div>
-      <div class="phone" data-for="runrow" data-v="a">
-        <div class="crd hd"><span class="path"><span class="cr">Sessions ›</span><span class="cur">[O1] Advanced features</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
-        <div class="gt"><span>Runs · 2</span></div>
-        <div class="crd rows">
-          <div class="row"><span class="ring sm" style="--p:.71"><span></span></span><span class="grow"><span class="nm ell">Plan the review pages</span><span class="sub ell">planning · Approve the spec</span></span><span class="pill st-wait">waits</span></div>
-          <div class="row"><span class="ring sm" style="--p:1;--rc:var(--done)"><span></span></span><span class="grow"><span class="nm ell">Plan the feature list</span><span class="sub ell">planning · done · 19 Nov</span></span><span class="pill st-done">done</span></div>
-        </div>
-        <div class="gt"><span>Children · 2</span></div>
-        <div class="crd rows">
-          <div class="row"><span class="ring sm" style="--p:.6;--rc:var(--new)"><span></span></span><span class="grow"><span class="nm ell">[O1 C1] Sketch the run page</span><span class="sub ell">worker · running</span></span><span class="pill st-run">running</span></div>
-          <div class="row"><span class="ring sm" style="--p:1;--rc:var(--done)"><span></span></span><span class="grow"><span class="nm ell">[O1 C2] Data gaps</span><span class="sub ell">worker · done</span></span><span class="pill st-done">done</span></div>
-        </div>
-        <div class="sub" style="padding:0 8px">The run rows sit beside the session rows, in the same form.</div>
-      </div>
-      <div class="phone" data-for="runrow" data-v="b" hidden>
-        <div class="crd hd"><span class="path"><span class="cr">Sessions ›</span><span class="cur">[O1] Advanced features</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
-        <div class="gt"><span>Runs · 2</span></div>
-        <div class="crd rows">
-          <div class="row"><span class="grow stack" style="gap:4px"><span class="row" style="gap:6px"><span class="nm ell grow">Plan the review pages</span><span class="pill st-wait">waits · 6 min</span></span><span class="steps"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="c"></i><i></i></span><span class="sub ell">planning · Approve the spec · pass 2 · you approve</span></span></div>
-          <div class="row"><span class="grow stack" style="gap:4px"><span class="row" style="gap:6px"><span class="nm ell grow">Plan the feature list</span><span class="pill st-done">done</span></span><span class="steps"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i></span><span class="sub ell">planning · 41 min · 19 Nov</span></span></div>
-        </div>
-      </div>
-      <div class="phone" data-for="runrow" data-v="c" hidden>
-        <div class="crd hd"><span class="path"><span class="cr">Cards</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
-        <div class="crd pad stack">
-          <span class="sub">Question from [O1] Advanced features</span>
-          <span class="nm">Approve the spec v2?</span>
-          <span class="compact"><span class="dot">6</span><span class="ell">planning · Plan the review pages</span><span class="sub">›</span></span>
-        </div>
-        <div class="crd streambar"><b>P</b><span class="grow"></span><span class="compact"><span class="dot">6</span>run waits</span></div>
-        <div class="sub" style="padding:0 8px">The chip fits inside a card or a bar. The number is the current step.</div>
-      </div>
-    </div>
-    <div class="notes">
-      <h3>Variants</h3>
-      <ul>
-        <li><b>A · One line.</b> A small ring, the goal, the workflow and the current step, and a state pill. The same height as a session row, so the two mix in one list.</li>
-        <li><b>B · Two lines.</b> Adds a step bar and the wait. Better on the Runs page, where there is room.</li>
-        <li><b>C · Chip.</b> A compact link for places with little room: a question card, the stream bar.</li>
-      </ul>
-      <p class="rec">Recommendation: A everywhere in lists, C inside cards and bars. B only if the Runs page picks variant B.</p>
-      <h3>Rules</h3>
-      <ul>
-        <li>A click on any part of the row opens the run page.</li>
-        <li>The pill uses the same colors as the session states: orange waits for you, blue runs, green done, red stopped.</li>
-        <li>The ring shows the steps on the path to done, not the passes.</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- ============ WAIT CARD ============ -->
-<div class="panel" id="waitcard" hidden>
-  <div class="head"><h2>Wait card</h2><p class="intro">What a run needs from you, with its acts. It is on top of the run page in wait mode, and in Cards. A wait of kind <code>ask</code> uses the question card of today. The variants are the three other kinds.</p></div>
-  <div class="draft">
-    <div class="left">
-      <div class="sw" data-sw="waitcard"><button data-v="a" aria-pressed="true">A · Approval</button><button data-v="b" aria-pressed="false">B · Pick</button><button data-v="c" aria-pressed="false">C · Stuck</button></div>
-      <div class="phone" data-for="waitcard" data-v="a">
-        <div class="crd pad stack wait">
-          <span class="row"><span class="pill st-wait">approval · 6 min</span><span class="grow"></span><span class="sub">required</span></span>
-          <span class="sub">planning · Plan the review pages · [O1]</span>
-          <span class="lead">Approve the spec v2</span>
-          <span class="t2">The spec has 4 sections and 8 pages. The change of pass 1 is in section 3.</span>
-          <span class="row"><span class="btn sm">Open spec v2</span><span class="btn sm">Diff from v1</span></span>
-          <div class="crd rows" style="box-shadow:none;border:1px solid var(--line-c);border-radius:var(--r-sm)">
-            <div class="row"><span class="ok">✓</span><span class="grow t2"><b>Approve</b> → Propose the next tasks</span></div>
-            <div class="row"><span style="color:var(--accent);font-weight:700">↺</span><span class="grow t2"><b>Change</b> → Ask one question, pass 3</span></div>
-            <div class="row"><span class="no">✕</span><span class="grow t2"><b>Refuse</b> → the run stops</span></div>
-          </div>
-          <div class="row"><span class="btn pri">Approve</span><span class="btn">Change</span><span class="btn dg" title="Refuse">✕</span></div>
-        </div>
-      </div>
-      <div class="phone" data-for="waitcard" data-v="b" hidden>
-        <div class="crd pad stack wait">
-          <span class="row"><span class="pill st-wait">pick · 2 min</span></span>
-          <span class="sub">code-change · Fix the inbox reminder · [O2 C1]</span>
-          <span class="lead">Two next steps are valid. Pick one.</span>
-          <span class="t2">The step "Test" held: "the tests pass", "the change touches the store".</span>
-          <div class="stack" style="gap:6px">
-            <div class="well opt"><span class="ok">✓</span><span class="grow"><b>Open the PR</b><br><span class="sub">when: the tests pass</span></span></div>
-            <div class="well opt" style="outline:2px solid var(--accent)"><span class="ok">✓</span><span class="grow"><b>Update store.md</b><br><span class="sub">when: the change touches the store</span></span><span class="likely">owner picks</span></div>
-          </div>
-          <span class="sub">The owner session picks if you do not pick in 10 min.</span>
-          <div class="row"><span class="btn pri">Pick</span><span class="btn">Let the owner pick</span></div>
-        </div>
-      </div>
-      <div class="phone" data-for="waitcard" data-v="c" hidden>
-        <div class="crd pad stack wait" style="border-color:var(--failed)">
-          <span class="row"><span class="pill st-stop">stuck · 4 min</span><span class="grow"></span><span class="sub">high</span></span>
-          <span class="sub">planning · Plan the tray settings · [O3]</span>
-          <span class="lead">No next step is valid after "Read the goal"</span>
-          <span class="t2">The step held nothing. Each next step needs a condition:</span>
-          <div class="stack" style="gap:6px">
-            <div class="well opt"><span class="no">✕</span><span class="grow"><b>Ask one question</b><br><span class="sub">needs: questions are open</span></span></div>
-            <div class="well opt"><span class="no">✕</span><span class="grow"><b>Write the spec</b><br><span class="sub">needs: no questions are open</span></span></div>
-          </div>
-          <div class="row"><span class="btn pri">Force a step</span><span class="btn">Ask the owner</span><span class="btn dg" title="Stop the run">■</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="notes">
-      <h3>Variants: the three kinds</h3>
-      <ul>
-        <li><b>A · Approval.</b> The item to review, the open links, and what each verdict does. The verdict buttons are the review acts of today.</li>
-        <li><b>B · Pick.</b> Many next steps are valid. Each option shows its condition. If the owner session already proposed one, it has a mark.</li>
-        <li><b>C · Stuck.</b> No next step is valid. The card shows what each step needs. "Force a step" is the new runner act of B2 (P-G12). This replaces the stuck question of C3-F2.</li>
-      </ul>
-      <p class="rec">Recommendation: all three ship. They share one layout: kind pill, source line, lead, context, options with conditions, acts.</p>
-      <h3>Source of each part</h3>
-      <div class="tblw"><table class="tbl">
-        <tr><th>Part</th><th>Source</th></tr>
-        <tr><td>Kind, text, options</td><td><code>run.wait</code>: <code>kind</code>, <code>text</code>, <code>options</code></td></tr>
-        <tr><td>What each act does</td><td>The <code>next[]</code> of the current step and the verdict facts</td></tr>
-        <tr><td>Acts</td><td><code>orch run step --verdict</code>, <code>--pick</code> <span class="gapc">(over HTTP: P-G2)</span>; force: <span class="gapc">P-G12</span></td></tr>
-        <tr><td>Owner pick after 10 min</td><td><span class="gapc">No timer on a pick today (F7)</span></td></tr>
-      </table></div>
-    </div>
-  </div>
-</div>
-</div>
-
+  </details>
+</main>
 <script>
 (function () {
   // ---- The planning graph, drawn from its definition. ----
@@ -931,36 +599,15 @@ flowchart LR
     else el.innerHTML = draw(STATES[k] || STATES.def, false);
   });
 
-  // ---- Variant switches ----
-  document.querySelectorAll('.sw[data-sw]').forEach(function (sw) {
-    var id = sw.getAttribute('data-sw');
-    sw.querySelectorAll('button').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var v = b.getAttribute('data-v');
-        sw.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
-        document.querySelectorAll('.phone[data-for="' + id + '"]').forEach(function (p) { p.hidden = p.getAttribute('data-v') !== v; });
-      });
+  // ---- Fit: scale each sketch to its cell ----
+  function fit() {
+    document.querySelectorAll('.sk-fit').forEach(function (c) {
+      var ph = c.firstElementChild; if (!c.clientWidth) return;
+      ph.style.zoom = Math.min(1, c.clientWidth / 362);
     });
-  });
-
-  // ---- Tabs ----
-  var tabs = document.querySelectorAll('nav button[data-tab]');
-  var sel = document.getElementById('tab-select');
-  function show(id) {
-    var ok = false; tabs.forEach(function (b) { if (b.dataset.tab === id) ok = true; });
-    if (!ok) id = 'overview';
-    tabs.forEach(function (b) {
-      var on = b.dataset.tab === id;
-      b.setAttribute('aria-selected', on ? 'true' : 'false');
-      document.getElementById(b.dataset.tab).hidden = !on;
-      if (on) b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    });
-    sel.value = id;
   }
-  function go(id) { show(id); try { history.replaceState(null, '', '#' + id); } catch (e) {} }
-  tabs.forEach(function (b) { b.addEventListener('click', function () { go(b.dataset.tab); }); });
-  sel.addEventListener('change', function () { go(sel.value); });
-  window.addEventListener('hashchange', function () { show(location.hash.slice(1)); });
-  show(location.hash.slice(1));
+  document.querySelectorAll('details.sk-row').forEach(function (d) { d.addEventListener('toggle', fit); });
+  window.addEventListener('resize', fit);
+  fit();
 })();
 </script>
