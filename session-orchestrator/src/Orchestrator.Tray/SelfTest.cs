@@ -323,7 +323,13 @@ public static partial class SelfTest
         string[] tracedSteps = ["grow", "fold", "badge-in", "badge-out", "spin", "peek-out"];
         var untraced = tracedSteps.Where(s => !waits.Any(l => l.Contains($"~=\"{s}\"]", StringComparison.Ordinal) && l.Contains("by end", StringComparison.Ordinal))).ToList();
         Add("steps-traced", untraced.Count == 0, untraced.Count == 0 ? $"each step ends by end: {string.Join(", ", tracedSteps)}" : $"no wait by end for: {string.Join(", ", untraced)}");
-        Add("no-wait-at-limit",waits.Count >= 10 && late.Count == 0, $"{waits.Count} waits, {late.Count} by limit, missing or error{(late.Count > 0 ? ": " + string.Join(" | ", late.Take(4)) : "")}");
+        // S9: each window step of the run is in the trace, with its window event and its window gap.
+        string[] windowSteps = ["panel-show", "panel-activate", "badge-show", "all-hide"];
+        var windowLines = trace.Where(l => l.Contains(" window ", StringComparison.Ordinal)).ToList();
+        var noWindow = windowSteps.Where(s => !windowLines.Any(l => l.Contains($"window {s}: ", StringComparison.Ordinal) && l.Contains(" gap ", StringComparison.Ordinal))).ToList();
+        var gaps = windowLines.Where(l => l.Contains("window badge-show", StringComparison.Ordinal)).Select(l => l[(l.LastIndexOf("gap ", StringComparison.Ordinal) + 4)..].Split(' ')[0]).ToList();
+        Add("window-steps", noWindow.Count == 0, noWindow.Count == 0 ? $"{windowLines.Count} window steps; gaps of the badge-show steps in ms: {string.Join(", ", gaps)}" : $"no window step: {string.Join(", ", noWindow)}");
+        Add("no-wait-at-limit", waits.Count >= 10 && late.Count == 0, $"{waits.Count} waits, {late.Count} by limit, missing or error{(late.Count > 0 ? ": " + string.Join(" | ", late.Take(4)) : "")}");
 
         Add("exceptions", Faults.Count == 0, Faults.First ?? "no unhandled exception");
         File.WriteAllText(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));

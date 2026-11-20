@@ -29,6 +29,8 @@
   --t-limit: 1000ms;
   /* Other limits: the start of a view transition, the render in it, and a wait for display frames. */
   --t-vt-start: 300ms; --t-vt-render: 600ms; --t-frame-limit: 100ms;
+  /* A reference value only (I15 later): the window gap of a dock and an open. No code waits for it; the trace shows the real gap. */
+  --t-window-gap: 100ms;
 }
 
 /* ===== The motion steps of the registry (MotionSteps in C#): the element with data-motion is the target of the step, and

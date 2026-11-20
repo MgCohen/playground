@@ -13,6 +13,7 @@ public sealed class JsPlugin : Plugin
     public override void Configure(IServiceCollection services)
     {
         services.AddSingleton<JsTrace>();
+        services.AddSingleton<IJsTrace>(provider => provider.GetRequiredService<JsTrace>());
         services.AddScoped<JsCalls>();
         services.AddPipeline(new PipelineBuilder<JsCommand>()
             .Handlers(typeof(JsCommandHandler<>))

@@ -1,3 +1,7 @@
+using System.Diagnostics;
+using Orchestrator.Web.Features.Motion.Domain;
+using Orchestrator.Web.Plugins.Js.Contracts;
+
 namespace Orchestrator.Web.Components.Tray;
 
 /// <summary>
@@ -39,9 +43,14 @@ public sealed class TrayFlow
     string? pending;
     TaskCompletionSource<bool>? notice;
 
-    public TrayFlow(IWidgetWindow window)
+    readonly IJsTrace? trace;
+    readonly Stopwatch clock = Stopwatch.StartNew();
+    long pageEnd;
+
+    public TrayFlow(IWidgetWindow window, IJsTrace? trace = null)
     {
         this.window = window;
+        this.trace = trace;
         window.Requested += what => _ = Request(what);
     }
 
@@ -116,38 +125,55 @@ public sealed class TrayFlow
         }
     }
 
+    // S9: the one entry of a window step (WindowSteps). The window shows or hides, and the trace has the step, its window event,
+    // its time and the window gap: the time from the end of the last page step.
+    async Task Window(string phase)
+    {
+        var start = clock.ElapsedMilliseconds;
+        await window.Enter(phase);
+        if (WindowSteps.For(phase) is not { } step) return;
+        trace?.Write($"window {step.Name}: {window.LastEvent} in {clock.ElapsedMilliseconds - start} ms, gap {start - pageEnd} ms");
+    }
+
+    // The one entry of a page step: the page plays its motion (through the motion pipeline) and the task ends with it.
+    async Task Page(Func<Task> step)
+    {
+        await step();
+        pageEnd = clock.ElapsedMilliseconds;
+    }
+
     async Task Open()
     {
         if (Phase == TrayPhase.Open) return;
         if (Phase == TrayPhase.Badge)
         {
-            await (await badge.Task).Out();
+            await Page(async () => await (await badge.Task).Out());
             Phase = TrayPhase.BadgeOut;
         }
         var p = await panel.Task;
         // The panel window shows (and the badge window hides) while the page is in the start phase: nothing shows yet.
-        await window.Enter(TrayPhase.Start);
+        await Window(TrayPhase.Start);
         Phase = TrayPhase.Start;
-        await p.Prepare();
-        await window.Enter(TrayPhase.Open);
+        await Page(() => p.Prepare());
+        await Window(TrayPhase.Open);
         Phase = TrayPhase.Open;
-        await p.Grow();
+        await Page(() => p.Grow());
     }
 
     async Task Dock()
     {
         if (Phase != TrayPhase.Open) return;
-        await (await panel.Task).Fold();
+        await Page(async () => await (await panel.Task).Fold());
         Phase = TrayPhase.Folded;
         await ShowBadge();
     }
 
     async Task Hide()
     {
-        if (Phase == TrayPhase.Open) await (await panel.Task).Fold();
-        else if (Phase == TrayPhase.Badge) await (await badge.Task).Out();
+        if (Phase == TrayPhase.Open) await Page(async () => await (await panel.Task).Fold());
+        else if (Phase == TrayPhase.Badge) await Page(async () => await (await badge.Task).Out());
         else if (Phase == TrayPhase.Hidden) return;
-        await window.Enter(TrayPhase.Hidden);
+        await Window(TrayPhase.Hidden);
         Phase = TrayPhase.Hidden;
     }
 
@@ -155,10 +181,10 @@ public sealed class TrayFlow
     async Task ShowBadge()
     {
         var b = await badge.Task;
-        await window.Enter(TrayPhase.BadgeOut);
+        await Window(TrayPhase.BadgeOut);
         Phase = TrayPhase.BadgeOut;
-        await b.In();
-        await window.Enter(TrayPhase.Badge);
+        await Page(() => b.In());
+        await Window(TrayPhase.Badge);
         Phase = TrayPhase.Badge;
     }
 }

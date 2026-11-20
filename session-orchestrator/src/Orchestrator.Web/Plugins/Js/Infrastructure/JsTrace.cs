@@ -1,8 +1,9 @@
 namespace Orchestrator.Web.Plugins.Js.Infrastructure;
 
 using Microsoft.Extensions.Logging;
+using Orchestrator.Web.Plugins.Js.Contracts;
 
-internal sealed class JsTrace(ILogger<JsTrace> log)
+internal sealed class JsTrace(ILogger<JsTrace> log) : IJsTrace
 {
     const int Kept = 500;
 

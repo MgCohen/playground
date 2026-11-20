@@ -35,6 +35,9 @@ public interface IWidgetWindow
     /// <summary>The phase of the windows: the last phase that <see cref="Enter"/> made (H3: the flow reads it after a fault).</summary>
     string Phase => TrayPhase.Hidden;
 
+    /// <summary>The window event of the last <see cref="Enter"/>: "shown", "hidden", "activated" or "not activated".</summary>
+    string LastEvent => "";
+
     /// <summary>An error of the tray flow: the tray writes it to its fault log (H3: nothing is swallowed).</summary>
     void Fault(Exception error, string where)
     {

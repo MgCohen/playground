@@ -74,6 +74,38 @@ public sealed class TrayFlowTests
         return (flow, window, pages);
     }
 
+    sealed class FakeTrace : Orchestrator.Web.Plugins.Js.Contracts.IJsTrace
+    {
+        readonly List<string> lines = [];
+
+        public IReadOnlyList<string> Lines => lines;
+
+        public void Write(string line) => lines.Add(line);
+    }
+
+    [Test]
+    public async Task Open_from_badge_order()
+    {
+        var window = new FakeWindow();
+        var pages = new FakePages(window.Steps);
+        var trace = new FakeTrace();
+        var flow = new TrayFlow(window, trace);
+        flow.Attach((TrayFlow.IPanel)pages);
+        flow.Attach((TrayFlow.IBadge)pages);
+        await flow.Request(TrayRequest.Open);
+        await flow.Request(TrayRequest.Dock);
+        window.Steps.Clear();
+        var before = trace.Lines.Count;
+
+        await flow.Request(TrayRequest.Open);
+
+        Assert.That(window.Steps, Is.EqualTo(new[] { "badge out", "window start", "prepare", "window open", "grow" }),
+            "badge-out, panel-show, prepare, panel-activate, grow");
+        var windowLines = trace.Lines.Skip(before).Select(l => l.Split(':')[0]).ToList();
+        Assert.That(windowLines, Is.EqualTo(new[] { "window panel-show", "window panel-activate" }));
+        Assert.That(trace.Lines.Skip(before), Has.All.Contains("gap"), "each window step has its window gap");
+    }
+
     [Test]
     public async Task Flow_reports_a_page_error()
     {
