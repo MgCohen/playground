@@ -14,6 +14,7 @@ Read these files before you change this project:
 | `docs/ui-architecture.html` | The view architecture, one tab for each part (data, structure, places, start and stop, page moves, component motion, interactions, components, style), each with definition, architecture, guide and quality; the motion flow proposal (https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM) |
 | `docs/tray-testing.html` | How the tray tests work (https://claude.ai/artifact/RLKUe4bnMJj4mDBVLFPcEK) |
 | `docs/tray-issues.html` | The tray issue tracker: report, reproduce once, the user picks (https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s) |
+| `docs/motion-pipeline-plan.html` | The motion pipeline (R1) plan: ten steps, each with its scenario, before and after recordings, checks, risk and undo (https://claude.ai/artifact/G89uZPfkYsVe5kcHn4daaP) |
 
 ## Rules
 
