@@ -53,6 +53,10 @@ public static partial class SelfTest
         Add("start", open && w.Visible && w.Bounds == w.PanelBounds() && stage.Contains("is-open"),
             $"phase {w.Phase}, visible {w.Visible}, window {w.Bounds} (expect {w.PanelBounds()}), stage \"{stage}\", panel {size} CSS px");
 
+        // 1b. R2: the shadow of the open panel is inside the panel window (the page owns the margin, the window takes it).
+        var (panelFit, panelDetail) = await PanelBoxFits(w);
+        Add("panel-box-fits", panelFit, panelDetail);
+
         // 1a. The label in the corner: the run code and the build, visible and not covered (I17).
         var (labelPass, labelMessage) = await LabelCheck(w);
         Add("label", labelPass, labelMessage);
@@ -251,7 +255,7 @@ public static partial class SelfTest
         w.Request(TrayRequest.Open);
         await Until(() => w.Phase == TrayPhase.Open, 4000);
         await Task.Delay(600);
-        var m = (int)(TrayWindow.ShadowMargin * w.DeviceDpi / 96f);
+        var m = w.ShadowMargin;
         Add("saved-place", w.Left + m == place.X && w.Top + m == place.Y, $"panel at {w.Left + m}, {w.Top + m} (expect {place.X}, {place.Y})");
 
         // 10. The pin keeps the window on top; at the badge place the window is always on top.
@@ -422,7 +426,7 @@ public static partial class SelfTest
         var s = w.DeviceDpi / 96f;
         // The header drag: the system move loop moves the window with the pointer.
         var before = w.Location;
-        var grip = new Point(w.Left + (int)((TrayWindow.ShadowMargin + 120) * s), w.Top + (int)((TrayWindow.ShadowMargin + 22) * s));
+        var grip = new Point(w.Left + w.ShadowMargin + (int)(120 * s), w.Top + w.ShadowMargin + (int)(22 * s));
         var dragged = await Drag(w, grip, -120, -80);
         await Task.Delay(400);
         add("mouse-panel-drag", dragged && w.Left - before.X == -120 && w.Top - before.Y == -80, $"moved {w.Left - before.X}, {w.Top - before.Y} (expect -120, -80); press on the window {dragged}");
@@ -506,11 +510,11 @@ public static partial class SelfTest
     }
 
     /// <summary>The alpha of the shadow 8 px left of the panel edge, at the middle height (the mean of 10 rows).</summary>
-    static int Shadow(Bitmap picture, ClearHost w)
+    static int Shadow(Bitmap picture, TrayWindow w)
     {
         using (picture)
         {
-            var x = (int)((TrayWindow.ShadowMargin - 8) * w.DeviceDpi / 96f);
+            var x = w.ShadowMargin - (int)(8 * w.DeviceDpi / 96f);
             var y = picture.Height / 2;
             return (int)Enumerable.Range(y - 5, 10).Average(r => picture.GetPixel(x, r).A);
         }

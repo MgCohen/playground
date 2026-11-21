@@ -21,6 +21,23 @@ public sealed class TraySizeTests
         return css[(open + 1)..css.IndexOf('}', open)];
     }
 
+    /// <summary>
+    /// The tray windows keep no size of the page as a constant. Allowed: the edge gap (a rule of the place on the screen, not a
+    /// size of the page).
+    /// </summary>
+    [Test]
+    public void Tray_window_sizes_come_from_the_page()
+    {
+        string[] allowed = ["Gap"];
+        var constants = new[] { "TrayWindow.cs", "BadgeWindow.cs" }
+            .SelectMany(f => Regex.Matches(File.ReadAllText(Path.Combine(Repo(), "src", "Orchestrator.Tray", f)), @"\bconst\s+(int|float|double)\s+(?<list>[^;]+);")
+                .SelectMany(m => m.Groups["list"].Value.Split(',').Select(d => d.Split('=')[0].Trim()))
+                .Select(name => $"{f}: {name}"))
+            .Where(c => !allowed.Any(a => c.EndsWith(": " + a, StringComparison.Ordinal)))
+            .ToList();
+        Assert.That(constants, Is.Empty, "a size constant in a tray window; the page owns the sizes:\n" + string.Join("\n", constants));
+    }
+
     [Test]
     public void Tray_sizes_are_tokens()
     {

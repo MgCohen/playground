@@ -66,6 +66,22 @@ public static partial class SelfTest
         return (cuts.Count == 0, cuts.Count == 0 ? $"{state}: fits; {all}; {where}" : $"{state}: {string.Join("; ", cuts)}; {all}; {where}");
     }
 
+    /// <summary>
+    /// R2: the shadow box of the open panel (the frame) is inside the panel window, so the window edge cuts no shadow. In CSS px;
+    /// the window is the page.
+    /// </summary>
+    static async Task<(bool Fit, string Detail)> PanelBoxFits(TrayWindow w)
+    {
+        var json = await Js(w, BoxScript.Replace("const o = { tab: box(document.querySelector('.tb-tab'), true), ring: box(document.querySelector('.tb-ring'), false) };",
+            "const o = { frame: box(document.querySelector('.tray-frame'), true), page: [0, 0, innerWidth, innerHeight] };", StringComparison.Ordinal));
+        var boxes = JsonSerializer.Deserialize<Dictionary<string, double[]>>(json);
+        if (boxes is null || !boxes.TryGetValue("frame", out var f) || !boxes.TryGetValue("page", out var p)) return (false, $"no boxes ({json})");
+        string[] sides = ["left", "top", "right", "bottom"];
+        var cuts = sides.Select((side, i) => (side, over: i < 2 ? p[i] - f[i] : f[i] - p[i])).Where(c => c.over > .5).Select(c => $"{c.side} {c.over:0.#} px").ToList();
+        var text = $"frame [{string.Join(" ", f)}], window [{string.Join(" ", p)}] CSS px, margin {w.Sizes?.Margin}";
+        return (cuts.Count == 0, cuts.Count == 0 ? $"fits; {text}" : $"cut: {string.Join(", ", cuts)}; {text}");
+    }
+
     /// <summary>Waits until the tab and its children have no running motion (at most 2 s).</summary>
     static Task<bool> TabSettled(BadgeWindow b) =>
         Until(async () => await Js(b, "document.querySelector('.tb-tab').getAnimations({ subtree: true }).filter(a => a.playState === 'running').length") == "0", 2000);
