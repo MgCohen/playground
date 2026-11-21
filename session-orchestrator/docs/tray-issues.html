@@ -108,7 +108,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i1">I1 · Empty frames at the sheet open  (Not real)</option>
     <option value="i2">I2 · The empty frame detector gives false alarms  (Replicated)</option>
     <option value="i3">I3 · A stress step that misses does not fail the run  (Fixed)</option>
-    <option value="i4">I4 · Sizing issues on the screen  (Reported)</option>
+    <option value="i4">I4 · Sizing issues on the screen  (Closed)</option>
     <option value="i5">I5 · Keyboard and screen reader not tested  (Fixed)</option>
     <option value="i6">I6 · The tray grow (G1) is not reviewed  (Reported)</option>
     <option value="i7">I7 · The badge hover cuts the ring at the left  (Replicated)</option>
@@ -170,7 +170,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i1">I1</a></td><td>Empty frames at the sheet open</td><td><span class="pill no">Not real</span></td><td>Close it, after I2 confirms</td></tr>
         <tr><td><a href="#i2">I2</a></td><td>The empty frame detector gives false alarms</td><td><span class="pill rpl">Replicated</span></td><td>Your decision: new rule</td></tr>
         <tr><td><a href="#i3">I3</a></td><td>A stress step that misses does not fail the run</td><td><span class="pill fix">Fixed</span></td><td>Done: a late press is a warning, a miss fails the run</td></tr>
-        <tr><td><a href="#i4">I4</a></td><td>Sizing issues on the screen</td><td><span class="pill rep">Reported</span></td><td>Your picture or description</td></tr>
+        <tr><td><a href="#i4">I4</a></td><td>Sizing issues on the screen</td><td><span class="pill no">Closed</span></td><td>Closed by you: no proof</td></tr>
         <tr><td><a href="#i5">I5</a></td><td>Keyboard and screen reader not tested</td><td><span class="pill fix">Fixed</span></td><td>Done: 2 key checks. Open: Narrator, a manual step for you</td></tr>
         <tr><td><a href="#i6">I6</a></td><td>The tray grow (G1) is not reviewed</td><td><span class="pill rep">Reported</span></td><td>Look approved; the rest is in R1</td></tr>
         <tr><td><a href="#i7">I7</a></td><td>The badge hover cuts the ring at the left</td><td><span class="pill rpl">Replicated</span></td><td>In R2, after R1</td></tr>
@@ -399,7 +399,7 @@ record = that share for each frame, in place of the mean</pre>
 <!-- I4 -->
 <div class="panel off" id="i4" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill rep">Reported</span><span class="k">source: you · I4</span></div>
+    <div class="meta"><span class="pill no">Closed</span><span class="k">source: you · I4</span></div>
     <h2>I4 · Sizing issues on the screen</h2>
     <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
   </section>
@@ -418,7 +418,7 @@ record = that share for each frame, in place of the mean</pre>
       </table></div>
     </div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>Send a screenshot, or say the page, the part and what is wrong. Then I add a size check for that part to the self-test.</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Which screen and which part showed the sizing issue?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Parked.</b> Parked until there is proof. Hint from the user: it occurred at a quick modal open (the answer sheet).</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Which screen and which part showed the sizing issue?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Parked.</b> Parked until there is proof. Hint from the user: it occurred at a quick modal open (the answer sheet).</p></div><div class="ask"><span class="k">Answer · 2026-11-21</span><p><b>Closed.</b> No proof came. If the problem comes back, open a new issue with a screenshot.</p></div></div></div>
   </section>
 </div>
 
