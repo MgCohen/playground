@@ -126,6 +126,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i19">I19 · The stress run misses 2 presses at the start  (Replicated)</option>
     <option value="i20">I20 · The card filter sheet shows an old count  (Replicated)</option>
     <option value="i21">I21 · A failed badge size report is not tried again  (Replicated)</option>
+    <option value="i22">I22 · The speed dial closes with no motion and a false warning  (Reported)</option>
     <option value="f1">F1 · A blink at the end of the open  (Fixed)</option>
     <option value="f2">F2 · A bigger, darker shadow and an overlap at a tab change  (Fixed)</option>
     <option value="f3">F3 · The tab change was not the spec (T1 C)  (Fixed)</option>
@@ -191,6 +192,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i19">I19</a></td><td>The stress run misses 2 presses at the start</td><td><span class="pill rpl">Replicated</span></td><td>Waits for the architecture review</td></tr>
         <tr><td><a href="#i20">I20</a></td><td>The card filter sheet shows an old count</td><td><span class="pill rpl">Replicated</span></td><td>Your decision</td></tr>
         <tr><td><a href="#i21">I21</a></td><td>A failed badge size report is not tried again</td><td><span class="pill rpl">Replicated</span></td><td>Your decision</td></tr>
+        <tr><td><a href="#i22">I22</a></td><td>The speed dial closes with no motion and a false warning</td><td><span class="pill rep">Reported</span></td><td>Your decision</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f3">F3</a></td><td>The tab change was not the spec (T1 C)</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -249,7 +251,7 @@ Decision     the question for you</pre>
       <li>Done: R1, the motion pipeline (I6 rest, I9, I11, I12, I13). I15 stays open.</li>
       <li>Done: R2, size ownership (I7, I10, I18). Plan and proofs: <a href="https://claude.ai/artifact/UYCh2zPYAwXJijYz9opJCZ">size ownership plan</a>.</li>
       <li>Done: I2 (I1 closed), #60 (source test).</li>
-      <li>Later: I8 (2 platform limits). Waits for the architecture review: I19. Your decision: I20, I21. Closed: I4, I15.</li>
+      <li>Later: I8 (2 platform limits). Waits for the architecture review: I19. Your decision: I20, I21, I22. Closed: I4, I15.</li>
     </ol>
   </section>
 </div>
@@ -809,6 +811,19 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
 19:03:20.115 measures after hover and leave, same text: 0                       ← must be 1 or more
 19:03:20.537 js orchTray.sizes() #19 …                                          ← the control: a new text measures again
 19:03:21.627 measures after text change 2 (control): 1</pre><p>1 of 1 run. The scenario breaks <code>orchTray.shadowBox</code> for one measure. A replacement of <code>orchTray.sizes</code> does not work, because Blazor keeps its own reference to an interop function after the first call.</p></div></div>
+  </section>
+</div>
+<!-- I22 -->
+<div class="panel off" id="i22" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rep">Reported</span><span class="k">source: architecture check of Motion · 2026-11-21</span></div>
+    <h2>I22 · The speed dial closes with no motion and a false warning</h2>
+    <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>The speed dial of the page bar (E-1) opens with a motion, but it closes at once, with no leave motion. Each close also writes a warning line "wait at limit … by none" to the trace, although nothing is wrong.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Found in the code, not seen in a run. <code>PageBar.razor:21</code> puts the dial in a <code>Presence</code>. At a close, <code>Presence</code> sets <code>is-leaving</code> and waits for the step <code>leave</code>. Its step rule names <code>m-fade-out m-down m-lift</code> (<code>motion.css:39</code>), but only the scrim, the sheet and the toast have <code>.is-leaving</code> rules (<code>motion.css:49-51</code>). <code>.dscrim</code> and <code>.dial</code> have only their enter motion (<code>motion.css:63-64</code>). So no animation starts, the wait ends with <code>none</code>, and <code>WaitLimitHook</code> writes the warning.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><p>Not done. Open a page with content actions, open the speed dial, close it, and read the trace for a "by none" line on the leave wait.</p></div></div>
   </section>
 </div>
 <!-- F1 -->
