@@ -181,7 +181,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i12">I12</a></td><td>Two wait rules for "the motion ended"</td><td><span class="pill det">Detected</span></td><td>In R1 (own session)</td></tr>
         <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill det">Detected</span></td><td>In R1 (own session)</td></tr>
         <tr><td><a href="#i14">I14</a></td><td>A browser status bubble shows the link address</td><td><span class="pill fix">Fixed</span></td><td>Before and after videos done</td></tr>
-        <tr><td><a href="#i15">I15</a></td><td>The gap between the two windows is not managed</td><td><span class="pill det">Detected</span></td><td>In R1, later step</td></tr>
+        <tr><td><a href="#i15">I15</a></td><td>The gap between the two windows is not managed</td><td><span class="pill no">Closed</span></td><td>Closed by you: the gap is fine</td></tr>
         <tr><td><a href="#i16">I16</a></td><td>Two sessions cannot test the tray at the same time</td><td><span class="pill fix">Fixed</span></td><td>Done (with I17): test slots and a label on each tray</td></tr>
         <tr><td><a href="#i17">I17</a></td><td>The recorder records 0 frames in some runs</td><td><span class="pill fix">Fixed</span></td><td>Done: a 0-frame run fails at once; independent test instances</td></tr>
         <tr><td><a href="#i18">I18</a></td><td>The window cuts the shadow of the side badge</td><td><span class="pill fix">Fixed</span></td><td>Done in R2: the window fits the shadow boxes</td></tr>
@@ -242,7 +242,7 @@ Decision     the question for you</pre>
       <li>Done: the standalone fixes I14, I8 (part), I5 and I3 (PR #59).</li>
       <li>Done: R1, the motion pipeline (I6 rest, I9, I11, I12, I13). I15 stays open.</li>
       <li>Done: R2, size ownership (I7, I10, I18). Plan and proofs: <a href="https://claude.ai/artifact/UYCh2zPYAwXJijYz9opJCZ">size ownership plan</a>.</li>
-      <li>Later: I1, I2, I15, I8 (2 platform limits), #60. Closed: I4.</li>
+      <li>Later: I1, I2, I8 (2 platform limits), #60. Closed: I4, I15.</li>
     </ol>
   </section>
 </div>
@@ -658,7 +658,7 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
 <!-- I15 -->
 <div class="panel off" id="i15" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill det">Detected</span><span class="k">source: grow review I6 · 2026-11-20</span></div>
+    <div class="meta"><span class="pill no">Closed</span><span class="k">source: grow review I6 · 2026-11-20</span></div>
     <h2>I15 · The gap between the two windows is not managed</h2>
     <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
   </section>
