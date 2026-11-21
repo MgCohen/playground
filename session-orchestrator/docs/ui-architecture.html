@@ -111,7 +111,7 @@ h3 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   <button role="tab" data-tab="components" aria-selected="false">Components</button>
   <button role="tab" data-tab="style" aria-selected="false">Style</button>
   <button role="tab" data-tab="prior" aria-selected="false">Prior art</button>
-  <button role="tab" data-tab="flow" aria-selected="false">Proposal: motion contract</button>
+  <button role="tab" data-tab="flow" aria-selected="false">Motion pipeline</button>
   <button role="tab" data-tab="twowin" aria-selected="false">Proposal: two windows</button>
 </nav>
 
@@ -995,32 +995,129 @@ sequenceDiagram
 
 <!-- MOTION FLOW -->
 <div class="panel off" id="flow" role="tabpanel">
-  <section><h2>Proposal: one motion contract</h2>
-    <h3>Status: implemented in R1 <span class="q good">Good</span></h3>
-    <p class="summary">R1, the motion pipeline, implemented this proposal on 2026-11-20 (PR #58, S0 <code>b254064</code> to S9 <code>8fffc86</code>, review fixes <code>ad459db</code>). R2 did the sizes step. The rules are in the motion guide (<code>docs/motion-guide.html</code>). The proposal below stays as a record.</p>
+  <section><h2>Motion pipeline <span class="q good">Good</span></h2>
+    <p class="summary">One way for each motion: C# sets a state class, a CSS rule with a token moves it, and one wait command reports the end. R1 built it (PR #58, 2026-11-20). The full rules and recipes are in the <a href="https://claude.ai/artifact/A4N6FKvzRUfqCCZsoZVde8">motion guide</a>.</p>
+  </section>
+
+  <section><h3>Known gaps</h3>
+    <p class="summary">Nothing blocks the rating Good. Two small gaps are open. Each gap counts in the part that owns it.</p>
     <div class="scroll"><table>
-      <thead><tr><th>Part</th><th>What R1 built</th><th>File</th></tr></thead>
+      <thead><tr><th>Gap</th><th>Effect</th><th>To close it</th><th>Counted in</th></tr></thead>
       <tbody>
-        <tr><td>Tokens</td><td>All motion times and curves; 1 ms in reduced motion</td><td><code>wwwroot/motion.css</code></td></tr>
-        <tr><td>Registry</td><td>Page steps (name, state classes) and tray window steps (phase, event)</td><td><code>Features/Motion/Domain/MotionSteps.cs</code>, <code>WindowSteps.cs</code></td></tr>
-        <tr><td>Wait</td><td>One command <code>MotionWait</code> with modes Settle, Property, Frames, Step</td><td><code>Features/Motion/Slices/Wait/</code>, <code>wwwroot/motion.js</code></td></tr>
-        <tr><td>Limit trace</td><td>A warning for <code>limit</code>, <code>none</code>, <code>missing</code></td><td><code>Features/Motion/Slices/WaitLimit/WaitLimitHook.cs</code></td></tr>
-        <tr><td>JS calls</td><td>Each C# to JS call is a command record; no component calls <code>IJSRuntime</code></td><td><code>Plugins/Js/</code>, <code>Features/Motion/Slices/*</code></td></tr>
-        <tr><td>Tray order</td><td>One run at a time; page steps and window steps; faults to the fault log (H3)</td><td><code>Components/Tray/TrayFlow.cs</code>, <code>FlowCommands.Must</code></td></tr>
-        <tr><td>Rule tests</td><td>Source and registry tests</td><td><code>tests/Orchestrator.Tests/MotionArchitectureTests.cs</code>, <code>MotionRegistryTests.cs</code></td></tr>
+        <tr><td><b>G1</b> · The deck back-in waits in <code>swipe.js</code>, not through C#</td><td>No trace line and no limit warning for that wait</td><td>Send the back-in as a registry step (<code>deck-back</code>) from <code>Cards.razor</code></td><td>Component motion (P-C3)</td></tr>
+        <tr><td><b>G2</b> · <code>MotionBegin</code> returns when the view transition starts, not when it ends</td><td>C# and the tests cannot wait for the end of a push or a back. The scenario <code>page-moves</code> waits a fixed 800 ms</td><td>Return the <code>finished</code> promise of the transition as a <code>WaitResult</code></td><td>Page moves (P-M2)</td></tr>
       </tbody>
     </table></div>
-    <p><strong>Differences from the proposal:</strong></p>
-    <ul>
-      <li>Q1 was B (registry), but the registry holds only the name and the state classes. The CSS does not come from it. Tests check that the row, the mark and the rule agree.</li>
-      <li>No <code>data-state</code> attribute. Each step has a <code>data-motion</code> target and a step rule with <code>--motion-wait</code>.</li>
-      <li>The wait is <code>orchMotion.wait(target, mode, arg)</code>, not <code>settle(element)</code>. It also ends <code>hidden</code> when the page hides.</li>
-      <li>JS still starts four motions: the view transition, the nav dot, the ring mark and the deck back-in.</li>
-      <li>New: window steps (S9). The trace shows each window event and the window gap.</li>
-      <li>The test step (<code>getAnimations</code> against the tokens) was not reliable (#60). The source test <code>Motion_times_are_tokens</code> replaces it.</li>
-    </ul>
-    <p class="note">Not a motion gap (I19): the grow wait ends correctly (<code>by end</code> after 555 ms). <code>TrayFlow.Open</code> sets the phase <code>open</code> before the grow starts. That gap belongs to Start and stop: there is no "page ready" signal.</p>
+    <p class="note">Related, but not a motion gap: I19. The grow wait ends correctly (<code>by end</code> after 555 ms). <code>TrayFlow.Open</code> sets the phase <code>open</code> before the grow starts, so there is no "page ready" signal. This counts in Start and stop.</p>
   </section>
+
+  <section><h3>Call stack: the tray grow</h3>
+    <p class="summary">One real run (the I19 run, 2026-11-21). The times on the right come from the trace in <code>exceptions.log</code>.</p>
+    <pre class="stack">TrayFlow.Open()                                         <span class="c">Components/Tray/TrayFlow.cs</span>
+├─ Window(Open) → panel-activate                        <span class="c">the panel window gets the focus</span>
+├─ Phase = Open                                         <span class="c">58.571  tray phase open   ← I19: before the grow</span>
+└─ Page(() =&gt; p.Grow())
+   └─ TrayStage.Grow()                                  <span class="c">Components/Tray/TrayStage.razor</span>
+      ├─ Set("open")  → class is-open on the stage      <span class="c">the CSS rule starts the clip-path transition</span>
+      ├─ Commands.Must(new MotionWait(MotionSteps.Grow.Target, WaitMode.Step))
+      │  └─ JsCommandHandler → JsNames: "orchMotion.wait"  <span class="c">Plugins/Js</span>
+      │     └─ orchMotion.wait("[data-motion~="grow"]", "step")   <span class="c">wwwroot/motion.js</span>
+      │        ├─ --motion-wait = "clip-path" → mode property
+      │        ├─ getAnimations({subtree}) → the clip-path transition
+      │        └─ animation.finished → { by: "end", ms: 555 }
+      ├─ WaitLimitHook: a warning only for limit, none, missing
+      ├─ JsTrace                                        <span class="c">59.131  js orchMotion.wait(...) #6: by end after 555 ms</span>
+      └─ ready = true → class is-ready (content fade, ring draw)</pre>
+  </section>
+
+  <section><h3>API</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Shape</th><th>File</th></tr></thead>
+      <tbody>
+        <tr><td>A motion step</td><td><code>record MotionStep(string Name, params string[] States)</code>. <code>Target</code> is <code>[data-motion~="name"]</code></td><td><code>Features/Motion/Domain/MotionStep.cs</code></td></tr>
+        <tr><td>The registry</td><td><code>MotionSteps.Grow</code>, <code>Fold</code>, <code>BadgeIn</code>, <code>BadgeOut</code>, <code>BadgeFold</code>, <code>Spin</code>, <code>PeekOut</code>, <code>TabIn</code>, <code>Leave</code>, <code>DeckThrow</code>, <code>DeckTuck</code></td><td><code>MotionSteps.cs</code></td></tr>
+        <tr><td>Window steps</td><td><code>WindowSteps.PanelShow</code>, <code>PanelActivate</code>, <code>BadgeShow</code>, <code>AllHide</code>: phase and window event</td><td><code>WindowSteps.cs</code></td></tr>
+        <tr><td>The wait</td><td><code>record MotionWait(object? Target, WaitMode Mode, string? Arg = null) : JsCommand&lt;WaitResult&gt;</code></td><td><code>Slices/Wait/MotionWait.cs</code></td></tr>
+        <tr><td>Wait modes</td><td><code>Step</code> (the CSS rule names the wait), <code>Property</code> (property or animation names), <code>Settle</code> (all finite motions), <code>Frames</code> (n frames)</td><td><code>WaitMode.cs</code></td></tr>
+        <tr><td>The result</td><td><code>WaitResult(By, Ms)</code>. <code>By</code>: <code>end</code>, <code>cancel</code>, <code>hidden</code>, <code>limit</code>, <code>none</code>, <code>missing</code>. <code>AtLimit</code> is true for the last 3</td><td><code>WaitResult.cs</code></td></tr>
+        <tr><td>Other commands</td><td><code>MotionBegin(kind)</code> (view transition), <code>MotionDot(nav)</code> (nav dot), <code>MotionMs(token)</code> (a token in ms)</td><td><code>Slices/Begin</code>, <code>Dot</code>, <code>Times</code></td></tr>
+        <tr><td>Send</td><td><code>Commands.SendAsync(cmd)</code> gives a <code>Result</code>. <code>Commands.Must(cmd)</code> in the tray flow makes a failure a flow fault</td><td><code>Plugins/Js</code>, <code>TrayFlow.cs</code></td></tr>
+        <tr><td>CSS side</td><td><code>data-motion="name"</code> on the element, <code>--motion-wait</code> in the step rule, each time a token of <code>motion.css</code></td><td><code>wwwroot/motion.css</code>, <code>tray.css</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section><h3>Use cases</h3>
+    <details class="example" open><summary>The tray grow <span class="d">G1 · page step with a property wait</span></summary><div class="body">
+      <pre class="stack"><span class="c">// TrayStage.razor: the markup names the step</span>
+&lt;div class="tray-panel" data-motion="grow"&gt;
+
+<span class="c">// TrayStage.razor: C# sets the state, then waits for the step</span>
+public Task Grow() =&gt; InvokeAsync(async () =&gt;
+{
+    Set(TrayPhase.Open);
+    await Commands.Must(new MotionWait(MotionSteps.Grow.Target, WaitMode.Step));
+    ready = true;
+    StateHasChanged();
+});
+
+<span class="c">/* tray.css: the step rule names what to wait for; the state rule moves it with tokens */</span>
+[data-motion~="grow"] { --motion-wait: clip-path; }
+.is-open .tray-panel { clip-path: inset(0 round 16px);
+  transition: clip-path var(--t-grow) var(--ease-out) calc(var(--t-ball-in) * .7); }</pre>
+    </div></details>
+    <details class="example"><summary>A sheet leaves <span class="d">M5 · Presence with a step wait</span></summary><div class="body">
+      <pre class="stack"><span class="c">// Presence.razor: the wrapper of each sheet, toast and scrim</span>
+&lt;div class="presence @phase" data-motion="leave" @ref="root"&gt;
+
+<span class="c">// the leave: set is-leaving, wait for the step, then remove the block</span>
+await Commands.SendAsync(new MotionWait(root, WaitMode.Step), default);
+if (phase != Leaving) return;
+phase = Gone;
+StateHasChanged();
+
+<span class="c">/* motion.css */</span>
+[data-motion~="leave"] { --motion-wait: m-fade-out m-down m-lift; }
+
+<span class="c">// trace: js orchMotion.wait(element, Step, null) #13: by end after 222 ms</span></pre>
+    </div></details>
+    <details class="example"><summary>A card throw <span class="d">M1 · deck step with two states</span></summary><div class="body">
+      <pre class="stack"><span class="c">// Cards.razor: the step has two states, out-r and out-l</span>
+await Move(card, MotionSteps.DeckThrow.States[action == card.Right ? 0 : 1], MotionSteps.DeckThrow);
+
+async Task Move(CardView card, string css, MotionStep step)
+{
+    motion = (card.Id, css);
+    StateHasChanged();
+    await Commands.SendAsync(new MotionWait($"[data-card=\"{card.Id}\"]{step.Target}", WaitMode.Step), default);
+    motion = null;
+}</pre>
+    </div></details>
+    <details class="example"><summary>Add a new motion <span class="d">4 steps, and the test that finds each mistake</span></summary><div class="body">
+      <ol>
+        <li>Add a row to <code>MotionSteps</code>: the name and the state class. Test <code>Registry_matches_motion_css</code>.</li>
+        <li>Put <code>data-motion="name"</code> on the element that moves.</li>
+        <li>Write the state rule with tokens, and the step rule with <code>--motion-wait</code>. Tests <code>Each_state_class_has_a_rule</code>, <code>Motion_times_are_tokens</code>.</li>
+        <li>In C#, set the state class, then send <code>new MotionWait(step.Target, WaitMode.Step)</code>. Tests <code>No_direct_js_calls</code>, <code>No_motion_timer_in_scripts</code>.</li>
+      </ol>
+    </div></details>
+  </section>
+
+  <section><h3>Trade-offs</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Decision</th><th>Gain</th><th>Cost</th></tr></thead>
+      <tbody>
+        <tr><td>The registry holds only names and states (Q1, option B)</td><td>One C# list for all steps, and tests check it</td><td>The CSS rules are written by hand. Only the tests link them to the registry</td></tr>
+        <tr><td>CSS owns each time, as a token</td><td>A change of a time is one line in <code>motion.css</code>. Reduced motion is one rule</td><td>C# must ask for a time (<code>MotionMs</code>)</td></tr>
+        <tr><td>The wait reads the real animations (<code>getAnimations</code>)</td><td>No timers. The wait ends with the motion, also when its time changes</td><td>The wait looks for 2 more frames for a state class that comes late. <code>--t-limit</code> stops a wait with no end</td></tr>
+        <tr><td>A source test checks the times, not a runtime test (#60)</td><td>No false alarms</td><td>The test cannot prove which token a motion uses</td></tr>
+        <tr><td>JS starts the view transition</td><td>It uses the browser API</td><td>Its end does not come back to C# (G2)</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section><h3>Record: the proposal of 2026-11-19</h3>
+    <details class="example"><summary>The eight mechanisms before R1, and the contract steps <span class="d">record</span></summary><div class="body">
   <section><h3>Before R1: eight mechanisms</h3>
     <p class="summary">The record of 2026-11-19. The last column shows the state after R1.</p>
     <div class="scroll"><table>
@@ -1057,8 +1154,9 @@ sequenceDiagram
     </table></div>
     <p class="note">Q1 answer (2026-11-20): B, registry. R1 made the registry in steps, with a check for each step. The registry has no token, so the CSS does not come from it.</p>
   </section>
+    </div></details>
+  </section>
 </div>
-
 </div>
 
 <script>
