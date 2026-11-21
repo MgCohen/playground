@@ -1,0 +1,162 @@
+/* The motion layer: all motion tokens (times and curves) and the motion rules of the views. app.css has the layout and the
+   look. A component that moves uses a token from here; a block that comes and goes is in a <Presence> (Components/Motion). */
+:root {
+  --ease-out: cubic-bezier(.2,.8,.2,1); --ease-spring: cubic-bezier(.3,1.45,.5,1);
+  /* Press of a button, the fold of a details row, the draw of a ring. */
+  --t-press: .08s; --t-fold: .26s; --t-chevron: .2s; --t-ring: .9s; --t-count-step: 90ms;
+  /* Sheets and the toast (M5): in and out. */
+  --t-scrim-in: .22s; --t-scrim-out: .2s; --t-sheet-in: .34s; --t-sheet-out: .22s; --t-toast-in: .32s; --t-toast-out: .2s;
+  /* The speed dial: each button comes a step after the one before it. */
+  --t-dial: .22s; --t-dial-step: 40ms; --t-dscrim: .2s; --t-fab: .25s; --ease-fab: cubic-bezier(.3,1.4,.5,1);
+  /* Page moves (T2): the first page fade, a push and a back. */
+  --t-page-in: .18s; --t-push: .3s; --t-back: .28s;
+  /* A tab change (T1, option C): each block rises, a step after the block above it; the nav dot moves with a spring. */
+  --t-tab-block: .3s; --t-tab-step: 40ms; --t-dot: .3s; --t-dot-fade: .2s;
+  /* The deck (M1, M2, M3): a card moves to its slot, springs back, arrives, is thrown, tucks under the pile. */
+  --t-card-move: .32s; --t-card-back: .45s; --t-card-arrive: .42s; --t-card-throw: .3s; --t-card-tuck: .18s;
+  /* A toggle switch. */
+  --t-toggle: .15s;
+  /* The tray (tray.css): the pop of the home ball, the grow and the fold of the panel, the badge, its peek and its ring spin. */
+  --ease-in: cubic-bezier(.32,0,.67,0);
+  --t-ball-in: .3s; --t-ball-out: .18s; --t-grow: .34s; --t-shrink: .24s; --t-content-in: .2s; --t-content-out: .1s;
+  --t-badge-in: .26s; --t-badge-out: .2s; --t-badge-hover: .28s; --t-badge-wait: .35s; --t-badge-text: .18s; --t-badge-text-wait: .43s;
+  --t-peek-in: .26s; --t-peek-out: .2s; --t-spin: .8s; --ease-spin: cubic-bezier(.4,0,.2,1);
+  /* Dwell times: how long a thing shows. Reduced motion keeps them. */
+  --t-undo: 5s; --t-peek-show: 5s;
+  /* The longest wait of a <Presence> for the end of its motion: a motion that does not run stops no block. */
+  --t-limit: 1000ms;
+  /* Other limits: the start of a view transition, the render in it, and a wait for display frames. */
+  --t-vt-start: 300ms; --t-vt-render: 600ms; --t-frame-limit: 100ms;
+  /* A reference value only (I15 later): the window gap of a dock and an open. No code waits for it; the trace shows the real gap. */
+  --t-window-gap: 100ms;
+}
+
+/* ===== The motion steps of the registry (MotionSteps in C#): the element with data-motion is the target of the step, and
+   its rule owns the wait: --motion-wait names the property or the animation that ends the step; with no value the step
+   settles (each motion of the element and its children ends). The comment is the spec ID of docs/motion-design.html. ===== */
+@property --motion-wait { syntax: "*"; inherits: false; }
+[data-motion~="tab-in"] { --motion-wait: m-rise; } /* T1: only the rise of the blocks, not the other motions of the page */
+[data-motion~="leave"] { --motion-wait: m-fade-out m-down m-lift; } /* M5: the leave of the scrim, the sheet, the toast */
+[data-motion~="deck-throw"], [data-motion~="deck-tuck"] { /* M1 */
+  --motion-wait: transform m-fly-r m-fly-l; }
+
+/* ===== Presence: a block that comes and goes. The wrapper has no box; its children get the phase class of the parent. ===== */
+.presence { display: contents; }
+
+/* ===== M5: sheets and toast ===== */
+.scrim { animation: m-fade var(--t-scrim-in) ease backwards; }
+.sheet { animation: m-up var(--t-sheet-in) var(--ease-out) backwards; }
+.is-leaving > .scrim { animation: m-fade-out var(--t-scrim-out) ease both; }
+.is-leaving > .sheet { animation: m-down var(--t-sheet-out) ease-in both; }
+.is-leaving > .toast { animation: m-lift var(--t-toast-out) ease-in both; }
+.toast:not(.inline) { overflow: hidden; animation: m-drop var(--t-toast-in) var(--ease-spring) backwards; }
+.toast .ubar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--accent); transform-origin: left; animation: m-count var(--t-undo) linear both; }
+@keyframes m-fade { from { opacity: 0; } }
+@keyframes m-fade-out { to { opacity: 0; } }
+@keyframes m-up { from { transform: translateY(105%); } }
+@keyframes m-down { to { transform: translateY(105%); } }
+@keyframes m-drop { from { transform: translate(-50%, -140%); } }
+@keyframes m-lift { to { transform: translate(-50%, -140%); opacity: 0; } }
+@keyframes m-count { to { transform: scaleX(0); } }
+
+/* ===== The speed dial of the page bar (E-1) ===== */
+.dscrim { animation: m-fade var(--t-dscrim) ease backwards; }
+.dial .btn { animation: m-dial var(--t-dial) var(--ease-out) backwards; animation-delay: calc(var(--n, 0) * var(--t-dial-step)); }
+.cfab .ic { transition: transform var(--t-fab) var(--ease-fab); }
+/* S1 and S2: a button of the page bar, of the speed dial and of the card action row goes a little smaller on press. */
+.pagebar .btn:not(:disabled):active, .dial .btn:active, .deck-screen .acts .btn:not(:disabled):active { transform: scale(.96); box-shadow: var(--sh-raise); }
+@keyframes m-dial { from { transform: translateY(14px) scale(.85); opacity: 0; } }
+
+/* ===== M7: small motion ===== */
+/* Press: a raised button goes into the surface. */
+.btn, .chip, .fbtn, .pin, .wbtn, .nav2 .home, .nav2 .it, .seg button, .cfab, .dial .btn { transition: transform var(--t-press), box-shadow var(--t-press), filter var(--t-press); }
+.btn:not(:disabled):active, .chip:active, .fbtn:active, .cfab:active, .dial .btn:active { transform: translateY(1px) scale(.98); box-shadow: var(--sh-carve); }
+/* The home ball is an image: the press moves it down and makes it a little darker. */
+.nav2 .home:active { transform: translateY(1px) scale(.96); filter: brightness(.94); }
+.nav2 .it:active, .seg button:active, .pin:active, .wbtn:active { transform: scale(.92); }
+/* The fold of a details row: the rows open their height (the details content box animates from 0 to auto). */
+.fold > summary .chev { transition: transform var(--t-chevron) var(--ease-out); }
+.fold::details-content { transition: height var(--t-fold) var(--ease-out), content-visibility var(--t-fold) allow-discrete; }
+/* Ring draw: the arcs draw on first show. The deep ring sweeps, so each type starts after the type before it. */
+@property --draw { syntax: "<angle>"; inherits: false; initial-value: 360deg; }
+@property --p { syntax: "<number>"; inherits: true; initial-value: 0; }
+.dring .fill { mask: conic-gradient(#000 var(--draw), transparent 0); animation: m-sweep var(--t-ring) var(--ease-out) backwards; }
+.ring .fill { animation: m-arc var(--t-ring) var(--ease-out) backwards; }
+@keyframes m-sweep { from { --draw: 0deg; } }
+@keyframes m-arc { from { --p: 0; } }
+/* V12: a ring draws only the first time its key (data-ring: an event, a session) shows. motion.js marks a ring with a key
+   that was drawn before (data-drawn), so a tab change back shows it at once and a new row draws one time. */
+[data-drawn] > .fill { animation: none; }
+/* The number of the deep ring counts up on its first show, one step each 90 ms (Home: the waiting cards). The real number
+   stays in the text; during the count it is transparent, and a counter on top of it shows the steps. */
+@property --count { syntax: "<integer>"; inherits: false; initial-value: 0; }
+.ring-n[data-count] { position: relative; display: inline-block; animation: m-count-hold calc(var(--to) * var(--t-count-step)) step-end backwards; }
+.ring-n[data-count]::after { content: counter(n); counter-reset: n var(--count); --count: var(--to); position: absolute; inset: 0; text-align: center; color: var(--text); opacity: 0;
+  animation: m-count-up calc(var(--to) * var(--t-count-step)) steps(var(--to), end) backwards; }
+[data-drawn] .ring-n[data-count], [data-drawn] .ring-n[data-count]::after { animation: none; }
+@keyframes m-count-hold { from { color: transparent; } }
+@keyframes m-count-up { from { --count: 0; opacity: 1; } to { opacity: 1; } }
+
+/* ===== M6: the first page fade ===== */
+/* The page fades, not .app: an animation on .app makes a stacking context, and the backdrop of the app bar then covers the bar. */
+.page { animation: m-fade var(--t-page-in) ease backwards; }
+
+/* ===== T1: a tab change (option C). The old page goes at once; each block of the new page rises 10 px and fades in, a step after
+   the block above it. The header (.hd) and the app bar stay. MainLayout puts is-tab-in on the page in the render of the new page.
+   T2: a push and a back. The motion host (MotionHost.razor) picks the move from the depth of the two pages and starts a view
+   transition: the new page slides in from the right, the old page moves 30 % left and dims; back plays it in reverse. The app
+   bar is its own picture, so it stays. ===== */
+.page.is-tab-in > :not(.hd) > * { animation: m-rise var(--t-tab-block) var(--ease-out) both; }
+.page.is-tab-in > :not(.hd) > :nth-child(2) { animation-delay: calc(1 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(3) { animation-delay: calc(2 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(4) { animation-delay: calc(3 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(5) { animation-delay: calc(4 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(6) { animation-delay: calc(5 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(7) { animation-delay: calc(6 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(8) { animation-delay: calc(7 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(9) { animation-delay: calc(8 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(10) { animation-delay: calc(9 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(11) { animation-delay: calc(10 * var(--t-tab-step)); }
+.page.is-tab-in > :not(.hd) > :nth-child(12) { animation-delay: calc(11 * var(--t-tab-step)); }
+.nav2 .ndot { transition: left var(--t-dot) var(--ease-spring), opacity var(--t-dot-fade) ease; }
+.nav2.jump .ndot { transition: none; }
+html.nav .page { animation: none; }
+.nav2 { view-transition-name: appbar; }
+::view-transition-group(root) { animation-duration: var(--t-push); animation-timing-function: var(--ease-out); }
+.vt::view-transition-old(root) { animation: m-push-old var(--t-push) var(--ease-out) both; }
+.vt::view-transition-new(root) { animation: m-push-new var(--t-push) var(--ease-out) both; }
+.vt-back::view-transition-old(root) { animation: m-pop-old var(--t-back) var(--ease-out) both; z-index: 2; }
+.vt-back::view-transition-new(root) { animation: m-pop-new var(--t-back) var(--ease-out) both; }
+@keyframes m-rise { from { opacity: 0; transform: translateY(10px); } }
+/* T3: the header stays in a push and a back (its own picture, with no motion); the current page title slides in 28 px, and the
+   parent links and their marks slide in 14 px from 30 % opacity, from the right for a push, from the left for a back. */
+.hd { view-transition-name: header; }
+::view-transition-old(header) { animation: none; opacity: 0; }
+::view-transition-new(header) { animation: none; }
+.vt .hd .cur { animation: m-path-cur var(--t-push) var(--ease-out) both; }
+.vt .hd .cr, .vt .hd .psep { animation: m-path-part var(--t-push) var(--ease-out) both; }
+.vt-back .hd .cur { animation-name: m-path-cur-back; }
+.vt-back .hd .cr, .vt-back .hd .psep { animation-name: m-path-part-back; }
+@keyframes m-path-cur { from { transform: translateX(28px); opacity: 0; } }
+@keyframes m-path-cur-back { from { transform: translateX(-28px); opacity: 0; } }
+@keyframes m-path-part { from { transform: translateX(14px); opacity: .3; } }
+@keyframes m-path-part-back { from { transform: translateX(-14px); opacity: .3; } }
+@keyframes m-push-old { to { transform: translateX(-30%); opacity: .5; } }
+@keyframes m-push-new { from { transform: translateX(100%); } }
+@keyframes m-pop-old { to { transform: translateX(100%); } }
+@keyframes m-pop-new { from { transform: translateX(-30%); opacity: .5; } }
+
+/* One switch for all motion (I13): with reduced motion each duration token is 1 ms. Each motion still runs and ends, so each
+   end event comes and each wait ends at once; nothing waits for a limit. The dwell tokens (--t-undo, --t-peek-show) and the
+   limit tokens keep their values. motion.js starts no view transition. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-press: 1ms; --t-fold: 1ms; --t-chevron: 1ms; --t-ring: 1ms; --t-count-step: 1ms; --t-scrim-in: 1ms; --t-scrim-out: 1ms;
+    --t-sheet-in: 1ms; --t-sheet-out: 1ms; --t-toast-in: 1ms; --t-toast-out: 1ms; --t-dial: 1ms; --t-dial-step: 1ms;
+    --t-dscrim: 1ms; --t-fab: 1ms; --t-page-in: 1ms; --t-push: 1ms; --t-back: 1ms; --t-tab-block: 1ms; --t-tab-step: 1ms;
+    --t-dot: 1ms; --t-dot-fade: 1ms; --t-card-move: 1ms; --t-card-back: 1ms; --t-card-arrive: 1ms; --t-card-throw: 1ms;
+    --t-card-tuck: 1ms; --t-toggle: 1ms; --t-ball-in: 1ms; --t-ball-out: 1ms; --t-grow: 1ms;
+    --t-shrink: 1ms; --t-content-in: 1ms; --t-content-out: 1ms; --t-badge-in: 1ms; --t-badge-out: 1ms; --t-badge-hover: 1ms;
+    --t-badge-wait: 1ms; --t-badge-text: 1ms; --t-badge-text-wait: 1ms; --t-peek-in: 1ms; --t-peek-out: 1ms; --t-spin: 1ms;
+  }
+}

@@ -1,0 +1,11 @@
+@* The peek bubble: the newest card, for a short time. *@
+<div class="peek @(On ? "on" : "")">
+    <b>@Title</b>
+    <small>@Sub</small>
+</div>
+
+@code {
+    [Parameter] public bool On { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Sub { get; set; } = "";
+}

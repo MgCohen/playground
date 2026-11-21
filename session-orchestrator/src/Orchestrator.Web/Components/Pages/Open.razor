@@ -1,4 +1,5 @@
 @page "/events/{Id}"
+@attribute [PageDepth(2)]
 @inherits LiveView
 @inject NavigationManager Nav
 @using Orchestrator.Core.Templates
@@ -58,7 +59,7 @@ else
 
     @if (sheet is { } s && card is not null)
     {
-        <AnswerSheet Card="card" Voice="s" OnSend="Send" OnClose="() => sheet = null" />
+        <Presence OnGone="() => sheet = null"><AnswerSheet Card="card" Voice="s" OnSend="Send" /></Presence>
     }
 }
 

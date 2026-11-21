@@ -1,0 +1,58 @@
+/* Spike S5: the full flow with simple shapes. The window is a strip at the right edge of the work area, as high as the work area.
+   The panel is at the bottom, the tab is at the right edge in the middle. Three states on .stage: "" (start), "open", "docked".
+   Each state sets its own transition delays, so CSS orders the steps of each change. No script and no C# timer moves a shape. */
+:root { --surf: #ffffff; --ink: #1b1a18; --muted: #6b6760; --line: #ecebe8; --accent: #ff6a1a; --alt: #6f9cff;
+  --ease-out: cubic-bezier(.33, 1, .68, 1); --ease-in: cubic-bezier(.32, 0, .67, 0); --ease-io: cubic-bezier(.65, 0, .35, 1);
+  --spring: cubic-bezier(.34, 1.56, .64, 1); }
+html, body { margin: 0; height: 100%; background: transparent; color: var(--ink); font: 14px "Segoe UI", sans-serif; overflow: hidden; }
+
+/* One soft shadow for all shapes. */
+.stage { position: absolute; inset: 0; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .22)); }
+
+/* ===== Panel: 350 × 520 at the bottom, 12 px from the right and the bottom. It grows out of the ball and folds back into it. ===== */
+.panel { position: absolute; left: 24px; bottom: 12px; width: 350px; height: 520px; display: flex; flex-direction: column;
+  background: var(--surf); border-radius: 16px; visibility: hidden;
+  /* The ball place: 56 px, centered, 14 px above the bottom of the panel. */
+  clip-path: inset(calc(100% - 70px) calc(50% - 28px) 14px calc(50% - 28px) round 28px); }
+.panel > * { opacity: 0; }
+/* Open: the panel shows when the ball is in place (.28 s), grows in .34 s; the content fades in at the end. */
+.stage.open .panel { visibility: visible; clip-path: inset(0 round 16px);
+  transition: visibility 0s .28s, clip-path .34s var(--ease-out) .28s; }
+.stage.open .panel > * { opacity: 1; transition: opacity .2s ease .5s; }
+/* Docked: the content fades out first, then the panel folds into the ball, then it hides. */
+.stage.docked .panel { transition: clip-path .24s var(--ease-in) .08s, visibility 0s .32s; }
+.stage.docked .panel > * { transition: opacity .1s ease; }
+
+.hd { app-region: drag; -webkit-app-region: drag; display: flex; align-items: center; padding: 10px 10px 10px 16px; font-weight: 600; user-select: none; }
+.hd .title { flex: 1; }
+.hd button { app-region: no-drag; -webkit-app-region: no-drag; width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; }
+.hd button:hover { background: var(--line); color: var(--ink); }
+.body { flex: 1; padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.block { height: 64px; border-radius: 14px; background: var(--line); }
+.bar { flex: none; height: 84px; }
+
+/* ===== Ball: one element. Start: scale 0 at the home place. Open: it pops in, and it is the home button. Docked: it flies to the tab. ===== */
+.ball { position: absolute; left: 171px; bottom: 26px; z-index: 3; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--accent); cursor: pointer; scale: 0; translate: 0 0;
+  transition: background-color .2s ease, box-shadow .15s ease; }
+.ball.alt { background: var(--alt); }
+.stage.open .ball { scale: 1;
+  transition: scale .3s var(--spring), translate .32s var(--ease-io), background-color .2s ease, box-shadow .15s ease; }
+.stage.open .ball:hover { box-shadow: 0 0 0 6px rgba(0, 0, 0, .08); }
+.stage.open .ball:active { scale: .94; transition: scale .08s ease; }
+/* Docked: the ball waits for the fold (.3 s), then it flies to the circle of the tab: 129 px right, to the middle of the strip. */
+.stage.docked .ball { scale: 1; translate: 129px calc(54px - 50vh); transition: translate .34s var(--ease-io) .3s, background-color .2s ease; }
+
+/* ===== Tab: a white block at the screen edge. It slides in when the ball arrives, and out first when the panel opens. ===== */
+.tab { position: absolute; right: 0; top: calc(50vh - 38px); width: 100px; height: 76px; border-radius: 38px 0 0 38px; background: var(--surf);
+  translate: 110% 0; transition: translate .18s var(--ease-in), width .22s var(--ease-out); cursor: pointer; overflow: hidden; }
+.stage.docked .tab { translate: 0 0; transition: translate .28s var(--ease-out) .44s, width .22s var(--ease-out); }
+.tab .txt { position: absolute; left: 22px; top: 18px; white-space: nowrap; opacity: 0; transition: opacity .1s ease; }
+.tab b { display: block; }
+.tab small { color: var(--muted); }
+/* Hover on the tab or on its ball: the tab extends to the left with a text; the pointer out folds it. */
+.stage.docked:has(.tab:hover, .ball:hover) .tab { width: 250px; }
+.stage.docked:has(.tab:hover, .ball:hover) .tab .txt { opacity: 1; transition: opacity .15s ease .08s; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

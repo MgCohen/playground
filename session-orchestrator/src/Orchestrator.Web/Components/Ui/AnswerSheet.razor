@@ -1,6 +1,6 @@
-@inject IJSRuntime JS
-<div class="scrim @(closing ? "closing" : "")" @onclick="Close"></div>
-<div class="crd sheet @(closing ? "closing" : "")" role="dialog" aria-label="@Card.SheetLabel">
+@inject ICommandSender Commands
+<div class="scrim" @onclick="Close"></div>
+<div class="crd sheet" role="dialog" aria-label="@Card.SheetLabel">
     <span class="grab"></span>
     <div><div class="sub">@Card.SheetLabel</div><div class="nm big-q">@Card.Title</div></div>
     @if (Card.Options.Count > 0)
@@ -22,32 +22,21 @@
 </div>
 
 @code {
-    /// <summary>The time of the slide down at close (M5). The parent removes the sheet after it.</summary>
-    public const int CloseMs = 220;
+    /// <summary>The Presence around the sheet: the close is its leave, and its OnGone tells the parent.</summary>
+    [CascadingParameter] public Presence? Presence { get; set; }
 
-    bool closing;
-
-    async Task Close()
-    {
-        if (closing) return;
-        closing = true;
-        StateHasChanged();
-        await Task.Delay(CloseMs);
-        await OnClose.InvokeAsync();
-    }
+    Task Close() => Presence?.Leave() ?? Task.CompletedTask;
 
     [Parameter, EditorRequired] public CardView Card { get; set; } = default!;
     [Parameter] public bool Voice { get; set; }
     [Parameter] public EventCallback<string> OnSend { get; set; }
-    [Parameter] public EventCallback OnClose { get; set; }
 
     string text = "";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        try { await JS.InvokeVoidAsync("orchSpeech.focus", "sheet-text", Voice); }
-        catch (Exception e) when (e is JSException or InvalidOperationException or JSDisconnectedException) { }
+        await Commands.SendAsync(new Orchestrator.Web.Features.Speech.Slices.Focus.SpeechFocus("sheet-text", Voice), default);
     }
 
     Task Send() => OnSend.InvokeAsync(text.Trim());

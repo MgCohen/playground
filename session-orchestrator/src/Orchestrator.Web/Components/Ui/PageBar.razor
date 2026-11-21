@@ -18,8 +18,7 @@
     }
     @if (Content.Count > 0)
     {
-        if (open)
-        {
+        <Presence Shown="open">
             <div class="dscrim" @onclick="() => open = false"></div>
             <div class="dial" role="menu" aria-label="Content actions">
                 @foreach (var (a, n) in PageAct.Ordered(Content).Select((a, n) => (a, n)))
@@ -35,7 +34,7 @@
                     }
                 }
             </div>
-        }
+        </Presence>
         <button type="button" class="cfab @(open ? "open" : "")" aria-label="Content actions" aria-expanded="@(open ? "true" : "false")" @onclick="() => open = !open"><Icon Name="plus" /></button>
     }
 </div>

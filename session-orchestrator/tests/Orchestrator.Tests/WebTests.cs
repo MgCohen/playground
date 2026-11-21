@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Leases;
 using Orchestrator.Store;
@@ -20,6 +21,18 @@ public sealed class WebTests
         Environment.SetEnvironmentVariable("ORCH_STORE", null);
         Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, null);
         return (factory, store);
+    }
+
+    /// <summary>U3: the Umpire composition adds its kernel and modules, and the host keeps its configuration and logging.</summary>
+    [Test]
+    public void Web_host_keeps_its_configuration()
+    {
+        var (factory, _) = Start("keep-me");
+        using var owner = factory;
+        var services = factory.Services;
+        Assert.That(services.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()["ORCH_TOKEN"], Is.EqualTo("keep-me"));
+        Assert.That(services.GetService<Umpire.Kernels.AppTypes>()?.Modules.Select(m => m.Name), Does.Contain("Motion"), "the motion module is composed");
+        Assert.That(services.GetServices<Microsoft.Extensions.Logging.ILoggerProvider>(), Is.Not.Empty, "the log providers of ASP.NET stay");
     }
 
     [Test]

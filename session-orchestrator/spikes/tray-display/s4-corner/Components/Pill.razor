@@ -1,0 +1,23 @@
+@* The hover pill of the closed form: the counts in text. *@
+<div class="pill">
+    <span class="txt">
+        <b>@(Counts.Total == 0 ? "Nothing waits" : $"{Counts.Total} waiting")</b>
+        <small>@Detail</small>
+    </span>
+</div>
+
+@code {
+    [Parameter] public Counts Counts { get; set; } = new(0, 0, 0, 0);
+
+    string Detail
+    {
+        get
+        {
+            var parts = new[] { (Counts.Questions, "question"), (Counts.Reviews, "review"), (Counts.Reports, "report"), (Counts.Blocked, "blocked") }
+                .Where(p => p.Item1 > 0)
+                .Select(p => $"{p.Item1} {p.Item2}{(p.Item1 > 1 && p.Item2 != "blocked" ? "s" : "")}");
+            var text = string.Join(" · ", parts);
+            return text.Length > 0 ? text : "The inbox is clear";
+        }
+    }
+}

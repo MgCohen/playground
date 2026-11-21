@@ -1,5 +1,6 @@
 @page "/settings"
 @inherits LiveView
+@inject ICommandSender Commands
 
 <PageTitle>Settings · orch</PageTitle>
 
@@ -14,7 +15,7 @@
     <h2 class="gt">Display</h2>
     <div class="crd">
         <div class="kv"><span class="k">Theme</span><span>Follows the device: light or dark</span></div>
-        <div class="kv"><span class="k">Undo time</span><span class="mono">@((int)Cards.UndoTime.TotalSeconds) s</span></div>
+        <div class="kv"><span class="k">Undo time</span><span class="mono">@(undo is { } u ? $"{u.TotalSeconds:0.#} s" : "")</span></div>
     </div>
     <div class="empty"><span class="nm">More settings come later</span><span class="sub">For example a form for each message type.</span></div>
 </div>
@@ -22,6 +23,16 @@
 @code {
     string root = "";
     int sessions;
+
+    // The undo time is the token --t-undo of motion.css (I11), so it shows after the first render.
+    TimeSpan? undo;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        undo = await MotionTimes.Of(Commands, "--t-undo");
+        StateHasChanged();
+    }
 
     protected override void Load()
     {

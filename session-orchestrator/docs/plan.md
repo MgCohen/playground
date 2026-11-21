@@ -2264,3 +2264,379 @@ Later (not in the graph):
 | Item | Owner | Content | Start |
 |---|---|---|---|
 | Workflow page | E (UI), with C | A UI page for one workflow run: progress, the graph, the history, the current step on the graph and the possible next steps | Plan and design after C2 |
+
+## Tray display spikes (session "Visual issues review", 2026-11-18)
+
+Goal: find a simpler display for the tray than the four native windows of session V. The visuals are Razor and CSS only; C# does only the window. Code: `spikes/tray-display/`. Results: `spikes/tray-display/results/`.
+
+| Spike | Host | Result |
+|---|---|---|
+| S1 plain window | WinForms + `BlazorWebView`, DWM round corners | Windows draws the round corners and the soft shadow. The drag with `app-region: drag` (`IsNonClientRegionSupportEnabled`) is exact (120, -80 for 120, -80). The CSS open has 0 late frames. `Form.Opacity` fades the web content correctly |
+| S2 transparent window | WebView2 composition controller on DirectComposition, our own `WebViewManager` (about 250 lines) | Blazor runs on the host. The page is see-through to the desktop with a soft CSS shadow. A ball grows into the panel with a CSS `clip-path`: 1 late frame of 160 (24 ms). The window region sets the click area: clicks on the empty parts reach the window below, closed and after a close. The drag with `app-region: drag` through `GetNonClientRegionAtPoint` is exact |
+| S4 corner form | The S2 host | The home ball is one element: closed, it sits at the corner with a CSS count ring; open, CSS moves it to the middle of the app bar (exact: 199, 502 for 199, 502). A hover extends a pill with the counts (56 to 250 px, back to 56). A new card spins the ring and shows a peek bubble, which hides after 5 s. The grow has 0 late frames. A click on the home ball closes the panel. Clicks on the empty parts reach the window below, before and after. No native drawing, no handover between two balls |
+| S5 full flow | The S2 host, a strip at the right edge as high as the work area | The full sequence with simple shapes: the ball pops in, the panel grows out of it, the ball is the home button (a click swaps its color), minimize or a focus loss folds the panel into the ball, the ball flies to a tab at the screen edge, the tab slides in; a hover extends the tab (100 to 250 px, back to 100); a click reverses all. Three states on one element; each state sets its own CSS transition delays, so CSS orders the steps. No C# timer moves a shape. Frames: start 0 late, dock 1 late (28 ms), open again 0 late. Clicks on the empty strip reach the window below |
+| S6 two places | The S2 host; the window moves between the panel place and the badge place while nothing shows | The panel place (header drag) and the badge place (right screen edge, drag up and down only) are separate and each keeps its own value. Dock: fold, ball pops out, window to the badge place, badge slides in. Open: badge slides out, window to the panel place, ball pops in, panel grows. The places chain on `transitionend`. Probe: panel drag exact, badge at the right edge, badge drag -200 for -200, open at the saved panel place, dock at the saved badge place, focus loss docks, 0 late frames. Fault: the badge hover did not show. Measure (no mouse): window, WebView and viewport sizes correct, but `.stage` was 100 × 76 in the badge phase. Cause: the phase class `badge` on the stage matched the component class `.badge`. Fix: phase classes with the prefix `is-`. After the fix the stage is 274 × 124 and the badge is flush right. User check: the flow works; only the first hover after a far drag of the panel was cut. Trace (`results/s6/trace-before-fix.log`): the click area stayed at rest (174 px) because no enter came: the hover flag `over` was still true. Its leave had come while the window was in the panel place, where the badge code does not see it; with the panel near the badge, the leave came after the move and reset the flag, so the drag changed only the timing. Fix: reset the badge input at each place change |
+
+Finding: the first S2 run failed all mouse checks, because a popup of another app was on top. Mouse probes need a free screen. A notification of another app lay over the S5 panel and took a probe click. The probe now clicks only on a point that is on its own window, and its pictures come from the page (`CapturePreviewAsync`), not from the screen. Method finding: a wrong guess (a false mouse leave) cost three runs. Measure first, with no mouse, and fix only the cause that the data shows.
+
+### Tray redesign, step 1: the motion layer
+
+Plan: `docs/tray-redesign-plan.md`. Code: `wwwroot/motion.css` (all motion tokens and rules), `Components/Motion/Presence.razor`, `Components/Motion/MotionHost.razor`, `PageDepth.cs`, `wwwroot/motion.js`.
+
+| Check | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 822 tests, 0 failed (13 skipped as before) |
+| Live, web server on a test store (port 7805, `ASPNETCORE_ENVIRONMENT=Development`) | A tab change gets `vt vt-tab`, a push `vt`, a back `vt-back`; the classes go after the move. A code navigation (`Blazor.navigateTo`) and the back button move too |
+| Live, the close of the filter sheet | `is-leaving`, then the block goes when its motion ends (about 284 ms) |
+
+Findings:
+
+| Finding | Cause | Fix |
+|---|---|---|
+| A leave went back to `is-shown` when its motion ended | The parent rendered again during the wait and passed `Shown = true` (the default); the code read it as "show again" | `Presence` acts only on a change of `Shown`; a bUnit test holds the wait open and renders the parent (it failed before the fix) |
+| A leave never ended in a hidden page | A hidden page draws no frames: the CSS motion does not move and the frame callback never fires; the time limit started only in that callback | The limit starts at once; a page with the state `hidden` ends the wait at once. The hidden browser pane still reports `visible`: there the limit (1000 ms) ends the leave |
+| All static files of the web server came with 0 bytes | No `launchSettings.json`: `dotnet run` starts in Production, which serves only published files | Start a source run with `ASPNETCORE_ENVIRONMENT=Development` |
+| The store IO rule failed on `src/Orchestrator.Tray/Program.cs` | The build time read of the tray instance label (session V) | Allowed, with its reason: it is not store IO |
+
+### Tray redesign, steps 2 to 6: one composition window
+
+Code: `src/Orchestrator.Tray/ClearHost.cs` (composition, input, Blazor bridge), `TrayWindow.cs` (places, click area), `StaticFiles.cs`, `SelfTest.cs`; `src/Orchestrator.Web/Components/Tray/` (stage, badge); `src/Orchestrator.Tray/wwwroot/tray.css` and `tray.js`. Deleted: `EdgeTab`, `GrowShadow`, `BallWindow`, `LayeredForm`, `WidgetForm` and the old self-test groups. Pictures: `docs/screens/tray-redesign/`.
+
+| Check | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | 822 tests, 0 failed |
+| Tray self-test from the build (`--selftest`, no mouse) | 13 of 13: start, home ball on the clip center, sheet in the panel, sheet close, push in the panel, dock (0 late frames of 351), open from the badge, hide, notice with peek, saved place, pin, no exceptions |
+| Tray self-test from a one-file publish (the options of `install.ps1`) | 13 of 13 |
+| Mouse checks (`--mouse`) | Not run: the user was at the PC |
+
+Findings:
+
+| Finding | Cause | Fix |
+|---|---|---|
+| A push moved the panel frame into the margin | The tray rule that stops the root animation had a lower specificity than the push rule of `motion.css` | Same specificity, later in the cascade; a check reads the alpha of the margin in the middle of a push |
+| The app bar had no white bar and faint icons | The view-transition name of the view makes a stacking context; the backdrop outside it lay over all of the view | The backdrop is in the view, fixed to the panel |
+| The panel was a pale box in the fold | Its background faded during the shrink | It fades after the shrink, while the ball still shows |
+| The one-file publish failed (session V code) | `Assembly.Location` is empty in a one-file app (IL3000 is an error) | `Environment.ProcessPath` |
+
+Not checked: the screen reader in composition mode (the host gives no UI Automation provider yet), and a real look at the motion by the user.
+
+User check of the redesigned tray, round 1:
+
+| Finding of the user | Data | Cause | Fix |
+|---|---|---|---|
+| A bigger, darker shadow during a tab move | Shadow alpha 8 px outside the panel: 12 at rest, 23 in each tab move (two copies of 12 give 23) | The old and the new root picture both showed at full opacity, so the shadow showed two times | Only the new root picture shows; a self-test check of each tab move reads the shadow (now 12 in each move) |
+| An overlap at the move to Settings | A picture at 50 ms shows both pages, mixed | A tab move is a cross-fade: the new page fades in while the old page fades out (the old tray had the same timing); the page picture had no background | A fade through: the new page starts when the old page is out (`--t-tab-out` delay, in the tray and the browser); the view has the canvas, so a push covers the old page |
+
+User check of the redesigned tray, round 2 (video):
+
+| Finding of the user | Data | Cause | Fix |
+|---|---|---|---|
+| A blink at the end of the open | 30 fps screen recording with frame times and a window trace: empty frames 0.55 to 0.9 s after an open (20 in 10 opens); no window step at that time. An idle control run: no changed frame in 40 s | The `filter: drop-shadow` on the panel wrapper: the browser draws the filtered panel again at each change, and in the composition window it presented empty frames. Not the cause (tested): the click area change, delegated compositing, `will-change` | The shadow is its own element (`.tray-frame`, a box shadow) that follows the panel clip; the badge uses box shadows. Empty frames: open stress 20 to 0, full stress 16 in 85 s to 0 (one more was a "show desktop" of Windows) |
+| The tab change is not the design | `docs/motion-design.html`: T1, owner pick C | The tray did a fade through of the whole page | T1 C: no view transition for a tab change; each block of the new page rises 10 px in 0.3 s, 40 ms after the block above; the header and the app bar stay; one nav dot moves with a spring and hides on Home |
+| Page text in the ball circle at the start | Frames of the start | The first-load fade of the page (an animation) won over the start phase | No first-load fade in the tray |
+
+Faults found by the new self-test checks: without the filter, the fixed blocks lost their containing block (`contain: layout` on the panel); the content-fade rule of the tray hid the dot motion and showed the dot on Home (the dot keeps its own rules). Self-test: 24 of 24.
+
+Audit of the motion spec (`docs/motion-design.html`; G1 and M6, the grow, stay for a later review with the user):
+
+| Item | Difference in the build | Fix |
+|---|---|---|
+| M1 | A drag throw went to 1.2 x the card width and 30 px down | 360 px past the release point and 60 px down; a button throw keeps 120 % and 30 px |
+| M3 | No opacity for the cards behind; bottom inset 14 px | Opacity 1 - i x 0.22; inset 18 px |
+| M5 | The toast went at once | It lifts out in 200 ms `ease-in` (in a `Presence`); a new toast takes the place of the old one at once |
+| M7 | Chevron 260 ms; no count-up of the ring number | Chevron 200 ms; the Home number counts up, one step each 90 ms, on its first show |
+| N1 | Hover with no wait; flat ring with no gaps; 13 px text; flat shadow; middle place; 280 / 180 ms slide; other spin curve; 4 px drag start | Width after 350 ms in 280 ms, text after 430 ms in 180 ms; SVG arcs with 2.4 px gaps; 12 px text; raised shadow; tab top at 42 %; 260 / 200 ms; spin `(.4,0,.2,1)`; 5 px |
+| N2 | Peek 240 px, uniform scale with a spring | 230 px, `scaleX` from 0.2, in 260 ms `ease-out`, out 200 ms `ease-in` |
+| S1, S2 | Corner button curve, dial scrim, press, skip button width | `(.3,1.4,.5,1)` 250 ms, scrim `rgba(0,0,0,.18)`, press `scale(.96)`, 56 px |
+| T1 | Nav dot 7 px from the bottom | 4 px |
+| T2 | The old page dimmed with brightness; back 300 ms | Opacity 0.5; back 280 ms |
+| T3 | The header moved with the page; only the last parent showed | The header is its own still picture; the title slides 28 px and the links 14 px; the last two parents show |
+| T4 | Window buttons 32 px, 17 px icons, pin on as an orange fill | 30 px, 15 px icons, pin on as the accent color |
+
+Findings of the audit: the draw-once code of the rings marked a ring as drawn when it saw the same element two times, so the first draw never ran (it now remembers each element); in the tray the first show of a ring was in the hidden start, so the ring animations wait for the end of the grow (`is-ready`). Self-test: 26 of 26.
+
+
+### Test guide and issue tracker (2026-11-19)
+
+Two pages: `docs/tray-testing.html` (how the tests work, https://claude.ai/artifact/RLKUe4bnMJj4mDBVLFPcEK) and `docs/tray-issues.html` (one record for each known issue, https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s). The tracker is the source for the status of each tray issue.
+
+| Finding | Data | Result |
+|---|---|---|
+| The empty frames at the sheet open are not real | Run `base-now` (current code, 12 sheet cycles): 5 marks. The strips of the frames around marks 1 and 3 show the tray in the marked frame. Backdrop mean 204.09, marked frames 203.95 and 203.77 | The detector (frame mean = backdrop mean) gives a false alarm when the scrim fade moves the mean through 204. The scrim tests (fade off, about 1 mark) measured the detector, not the tray. Issue I1 "not real", I2 open |
+| A missed stress press does not fail the run | `base-now/stress.txt`: 2 of 48 presses "no element" in cycle 1 | Issue I3 open |
+| The badge hover cuts the ring at the left (I7) | Full demo recording: the ring is cut in half in each hover frame, not at the peek. New check `badge-hover-fits` fails: hover tab 333 CSS px, hover click area 280 + 14, window 332 | CSS sets the hover width with `width: auto` (the text sets it); C# fixes the click area, and the window region clips the drawing. Open: fix option for the user |
+| The demo moves the real pointer (I8) | `full/demo.txt`: header drag, badge hover, badge drag and badge click use `Drag` and `Glide` | Only `Press` reads `NoPointer`. Open |
+
+Working rule for tray issues (from the user, 2026-11-19): a found problem gets a record in `docs/tray-issues.html`, not a fix. Reproduce it one time at most; if that is not clear, record what was tried and stop. The user picks the issue to work on.
+
+View architecture review (2026-11-19): `docs/ui-architecture.html`. Findings, recorded in the tracker as I9 to I12, no fix: eight separate motion mechanisms (stage phases, Presence, tab change, view transition, nav dot, ring draw, deck script, C# timers); sizes kept equal by hand in C# and CSS (cause of I7); motion times outside the tokens (deck, hover fold, undo, wait limits); two wait rules (`orchTray.end` for one property, `orchMotion.settle` for all animations).
+
+Visual issue process (2026-11-19): the project skill `.claude/skills/visual-issue/SKILL.md` gives the rules, the steps, the template and the proof tools for a new tracker record. The proof tools moved from the scratchpad to `spikes/tray-display/tools/` (`at.ps1`, `strip.ps1`, `empty.py`, `sheets.sh`). Next: move the records to a database with a form (artifact `db` capability), when the user decides.
+
+Prior art research (2026-11-19, web): Web Awesome 3, Shoelace 2, Carbon, Fluent UI React v9, Radix, Headless UI, Material 3; short look at Vue, Angular, Framer Motion, Spectrum, MudBlazor. Closest to our setup: Web Awesome 3 (CSS keyframes and tokens, one helper that waits for getAnimations). Patterns that fit: one state attribute, one end helper, a presence part with states, tokens only in CSS, reduced motion as 1 ms durations, a small registry for the deck, sizes as CSS variables from C#. Prior art tab in docs/ui-architecture.html. New tracker record I13: the reduced motion rule (animation and transition none) makes each orchTray.end wait run to its limit.
+
+Proposal (2026-11-19, from the user): the panel and the badge as two windows. Facts: one window does both jobs (9 uses of BadgeMode, one Hits() with a branch for each place, 6 stage phases); faults from the share: the S6 hover flag, I7, I10. The old four-window design failed because its windows showed at the same time and had to look like one; the panel and the badge never show together. Options A (today), B (two windows, one process, shared WebView2 environment), C (two processes), D (native badge). Recommendation: spike S7 for option B first. Tab "Proposal: two windows" in docs/ui-architecture.html; question Q3.
+
+## Tray display spike S7: two windows (2026-11-19)
+
+The user answered Q3: yes, spike first. `spikes/tray-display/s7-two-windows`: the S6 shapes as two composition windows (panel, badge) in one process with one shared WebView2 environment and a C# coordinator; no window moves. Measure mode, no mouse, recorder on the screen. Results in `spikes/tray-display/results/s7`.
+
+| Measure | One window | Two windows |
+|---|---|---|
+| WebView2 processes with the host | 6 | 7 (one more renderer) |
+| Working set / private memory at rest | 415 / 166 MB | 479 / 197 MB |
+| Time to ready | 1.8 s | 1.0 s (both, in parallel) |
+| Badge Show() to first frame | - | 6 to 12 ms |
+| Dock / open | - | 815 to 833 / 866 to 899 ms |
+| GPU process private memory after 10 cycles | not measured | 72 to 202 MB |
+
+Frames: the dock and the open are correct after the first cycle, with no blank or stale frame. Finding, reproduced one time, cause not examined: after the start, the panel does not show on the screen until the first dock and open (two recorder runs); the first dock is also faster (340 ms). Not checked: one-window mode with the recorder. Open question Q4: move the tray to two windows after the two open points.
+
+## Tray: two windows (2026-11-19)
+
+The user answered Q4: move. The panel and the badge are now two windows in one process with one shared WebView2 environment. `ClearHost` takes the root component, has no badge mode, and lets a window keep input (`HostInput`). `TrayWindow` is the panel only; new `BadgeWindow` has the badge place, click areas and input; new `TrayFlow` (web) orders the windows and calls the page motion (`TrayStage`: Prepare, Grow, Fold; new `BadgeRoot`: In, Out, the notice).
+
+| Check | Result |
+|---|---|
+| Self-test | 27 of 28; the fail is `badge-hover-fits` (I7, known). New check `badge-input` (hover and click with window messages) |
+| Tests | 809 pass, 13 skipped. `ArchitectureTests` allows the badge height file in `BadgeWindow.cs` |
+| Start and dock on the screen | Correct in the recorded frames. The S7 start fault does not occur: the panel window shows only after its page is ready |
+| GPU memory | One window before: 269 to 297 MB private during 10 cycles; S7 two windows: 72 to 202 MB. No sign of more |
+
+Found: I14, the browser status bubble ("https://0.0.0.1/") at a link hover. The demo run moved the real pointer again (I8).
+
+## Visual review: answers to the 16 questions (2026-11-20)
+
+| ID | Answer |
+|---|---|
+| I8 | A: all 4 demo steps use window messages |
+| I14 | A: `IsStatusBarEnabled = false` in `ClearHost.Start` |
+| I7 | B: no hard-coded sizes; the page measures and reports, C# sets the click area. Part of the registry work |
+| I10 | A: the page owns all sizes (CSS tokens); C# keeps only the work area, the saved places and the gap |
+| Q1 | B: a motion registry in C# (data-driven) that makes the CSS rules and the checks |
+| I9 | A: the registry design first, for review |
+| I11 | B: all motion times to tokens in `motion.css` now |
+| I12 | One wait utility with modes (settle, property, time), one limit rule, a trace line at a limit |
+| I13 | A: reduced motion as 1 ms durations; self-test with reduced motion emulated |
+| I1, I2 | Later |
+| I3 | Each press waits at most 1 s, then retries up to 3 s; a retry or a miss fails the run |
+| I4 | Parked until proof. Hint: a quick modal open (the answer sheet) |
+| I5 | A: keyboard use is a must; two self-test checks (type, Tab focus); Narrator is manual |
+| I6 | Review the grow together right after the questions; the fix order is decided as we go |
+| Q2 | Keep the skill in this project; later move it to the machine or the orch plugin |
+
+Order: the grow review, then the small fixes (I8, I14, I11, I12, I13, I3, I5), then the registry design (I9, Q1, I7, I10).
+
+Open point: the last full test run had 1 failure in 822 tests. Not examined yet.
+
+### I6 result: the grow review (2026-11-20)
+
+Recording: 10 dock and open cycles with `--stress --opens`, window requests only.
+
+| Step | Measured |
+|---|---|
+| Open from the badge | Badge out 210 ms, gap about 100 ms, ball pop, grow 340 ms; content at about 900 ms |
+| Dock | Content out, shrink, ball out, gap about 100 ms, badge in at about 700 ms |
+
+Decision: keep the look. The gap between the windows is good. Each value (the window gap too) becomes a token, and the window steps go through the one motion pipeline. This goes into I11 (tokens) and the registry design (I9, Q1).
+
+### Rule: one motion pipeline (2026-11-20)
+
+- The windows use the motion pipeline. The pages use the same pipeline.
+- When a window controls its page, it uses that pipeline.
+- One entry point that controls a window and its page together is good, but not a hard need.
+- New issue I15: the gap of about 100 ms between the two windows is not managed. Later: start the next window on the event "the last window is hidden".
+
+### I14 and I8 results (2026-11-20)
+
+| Issue | Result |
+|---|---|
+| I14 | Replicated with `--stress --sheets` (bubble in 6 of 9 frames). Fixed: `IsStatusBarEnabled = false` in `ClearHost.Start`. After video: no bubble in 9 of 9 frames. Two runs before it caught 0 frames (probably a locked screen) |
+| I8 | Badge click and drag use window messages; `HostInput` reads the point and the button from the message. Demo log: "pointer: not moved". Platform limits, not fixed: the header drag (caption drag), and the badge hover (`TrackMouseEvent` follows the real pointer) |
+| Test gap | `badge-input` reads the hover click area at 200 ms, inside the 300 ms fold delay, so it passes although the hover ended |
+| Tests | Self-test 27 of 28 (I7). Unit tests 809 pass, 0 fail. The 1 failure of the run before did not come back: flaky, not examined |
+
+### Scenario runs for proofs (2026-11-20)
+
+- New run mode `--scenario <name>` (`SelfTest.Scenarios.cs`): a few focused actions, repeated, 5 to 15 s, window messages only. Tool: `spikes/tray-display/tools/scenario.sh <scenario> <name> [seconds]` records it and makes an MP4.
+- I14 proof with the scenario `status-bubble`: fix off, bubble in 6 of 6 frames; fix on, 0 of 6.
+- Finding: with window messages, a hover alone does not show the bubble (WM_MOUSELEAVE comes at once). A click does.
+- Finding (test tooling, not examined): the recorder caught 0 frames in 3 of 8 runs today. The screen was not locked. The next try worked each time.
+- I17 result: the cause is the self-test lock. All self-test trays share one lock for each user. If a self-test tray of another session runs, the scenario tray exits at once with code 1, and `scenario.sh` did not see it. Proof: with the lock held by another process, the old start exits with 1.
+- I17 fix: `scenario.sh` starts the tray with `--instance scenario-<pid>`, keeps the tray log in `<name>.tray.txt`, and stops with exit code 1 if the tray fails. The recorder exits with code 3 and writes no GIF if it has 0 frames. Test: recorder with no app, exit 3 at once; 3 scenario runs with the lock held, 230, 89 and 90 frames.
+- I17 decision (the user, 2026-11-20): independent test instances, not one shared lock (I16 option D). Each run has its own lock, WebView2 folder, store, logs, port and place on the screen.
+- I17 test slots: a slot is a strip of the screen, one slot width (460 DIP) wide, from the right edge. A self-test takes the first free slot (one lock for each slot; it waits up to `--slot-wait`, default 120 s, if all are busy). The slot gives the lock, the WebView2 folder (`WebView2.selftest.slot<N>`) and the work area of the panel and the badge. The tray writes `<folder>/instance.json` with the slot and the area to record. `--slot <n>` sets the slot of any tray. A named instance or a self-test with no port gets a free port.
+- I17 recorder: `recorder --area-file <instance.json> scale fps seconds out.gif` waits for the file, records that area and writes `instance.json.ready`. The tray with `--wait-recorder` shows its windows after that file. `scenario.sh` and `sheets.sh` use both, with no fixed area and no `--instance`.
+- I17 label (the user, 2026-11-21): each tray shows "<code> · <build>" in the corner at all times, for example `I17 · 3da7df8`. The code is `--label`, else `--instance`, else `RUN_CODE`, else `tray` (normal tray) or `test`. New self-test check `label` (also at the start of each scenario): the text, fully inside the panel, not covered.
+- I17 run records (the user, 2026-11-21): each test run writes one new file in `%LOCALAPPDATA%\Orchestrator.Tray
+uns` (`<start>-pid<pid>.json`: run, kind, name, code, slot, build, start, seconds, result). The recorder writes `<run>.rec-pid<pid>.json` with the frame count. No shared file, so no two runs write the same file. `tools/runs.sh [yyyymmdd]` counts the runs and the time by code and kind.
+- I17 backdrop (the user, 2026-11-21): no grey backdrop by default, because it is in the way of the user. `--backdrop` (recorder) or `BACKDROP=1` (`scenario.sh`) only for a check that needs it; `sheets.sh` keeps it for the empty frame count.
+- I17 visual test (2026-11-21, `f8532bb`): two `scenario.sh status-bubble` runs at the same time, codes I17a and I17b. Slots 1 and 0, 300 and 289 frames, no overlap, label check PASS in both (text, on top, 4 px below the app bar), `console.txt` has the tray output, 4 run records. The first try (before the label move) found the label under the page content, and an empty tray log.
+- Open (I17): window capture (I16 check) can later replace the area target of the recorder. `--pointer` runs use the one real pointer and cannot run in parallel. The normal self-test (`--selftest` with no scenario) has the `label` check but did not run yet.
+- Skill `visual-issue`: rules 7 and 8 (the smallest scenario; before and after with the same scenario).
+
+## Visual review: I5 keyboard checks (2026-11-20)
+
+- Spike, scenario `keys`: keys posted to the host window do not reach the page. Keys posted to the WebView2 child window (`Chrome_WidgetWin_0`, the focus window of the host thread) do. Tab moves the focus: dictate button, Cancel, Send answer. Not a platform limit.
+- Fault in the first spike run: each letter came 2 times. The message loop makes `WM_CHAR` from `WM_KEYDOWN`, so the test posts only key down and key up.
+- New checks `keys-type` and `keys-tab`. Normal run: both pass, self-test 29 of 30 (only I7 fails).
+- Proof that the checks can fail: with `MoveFocus` off, both still pass (a click into the page gives the focus to WebView2). With the focus on the host window, both fail.
+- Open: the Narrator test, a manual step for the user.
+- I3 answer changed: a retry is a warning with the cause and the wait time in the log. A miss after 3 s fails the run.
+
+## Visual review: I3 press rules (2026-11-20)
+
+- Scenario `late-press` (the sheet cycle, 3 times, page state after each press): 12 of 12 presses did their job, also with the sheet press 100 ms after the tab click. The Cards button comes in less than 100 ms. The stress-run miss occurs only under load.
+- Fix: `Press` waits up to 3 s for its element. After 1 s: a warning with the wait time and the page. After 3 s: a miss. The stress run, the demo and the scenarios end the log with a press summary and exit 1 on a miss.
+- Proof, scenario `press-rules`: a button 1.5 s late gives a warning (1504 ms) and a click; a button that never comes gives a miss (3002 ms) and exit 1. Before the fix: both "no element", exit 0.
+- Self-test 29 of 30 (only I7).
+- Finding: the self-test lock is the same for all worktrees. When another session runs a self-test tray, a second one stops with "The tray app already runs". Use `--instance <name>` for a separate lock. Both trays open at the same screen place, so a run during a recording of another session shows in that recording.
+- Finding: `dotnet run --no-build` waited more than 60 s when another session used the MSBuild nodes. The built exe starts at once.
+
+## Motion pipeline (R1): results (2026-11-20)
+
+All 13 steps of `docs/motion-pipeline-plan.html` are done, one commit for each (S0 b254064 to S9 8fffc86). Unit tests: 843 pass (809 before R1). Tray self-test: 34 of 35; only `badge-hover-fits` fails (I7, size work, not R1).
+
+| Step | Proof: before → after |
+|---|---|
+| S1 tokens (I11) | `Motion_times_are_tokens`: 19 literals → 0. deck, peek, dock, page frames equal to before |
+| S2 reduced motion (I13) | dock with reduced motion: 1030 ms → 61 ms; open 46 ms |
+| U1 to U3 Umpire | All projects on Umpire.Sdk 0.2.0-preview.11, output in `artifacts~/`. Existing findings stay warnings: UMP0101xx about 4700, UMP020202 95 |
+| S3 one wait (I12) | 7 old wait calls → 0; self-test 32 waits, 0 at the limit |
+| S4 registry | registry row = step name + state class; `data-motion` and `--motion-wait` in CSS; no component calls `IJSRuntime` |
+| S5 fold (H1) | fold on a page with no app bar: 928 ms (limit) → 342 ms |
+| S6 badge-in (H2) | tab translate at phase badge: 103 to 110 % → 0 |
+| S7 flow (H3, H4) | badge after a notice during a hide: 0 of 3 → 3 of 3; flow errors go to the fault log |
+| S8 deck | swipe.js timers 4 → 0; tuck 184 ms, throw 305 ms by end; frames equal to before |
+| S9 window steps | window steps in the trace with event and gap; gap 0 to 10 ms in a dock |
+
+Findings:
+
+- Umpire gap: the VSA rule UMP020301 asks for one handler in the slice of each command. It does not know the open handler `JsCommandHandler<TResult>` of preview.11. Each JS command record gives this finding. The test `R1_folders_have_no_findings` allows only this one.
+- Umpire gap: the analyzers ignore an `.editorconfig` severity, and there is no check mode for each folder. So the R1 folders cannot make their findings errors; a test builds the web project and reads them.
+- Umpire guide versus Umpire docs: the guide pins the SDK in `global.json`; the docs (`umpire init`) say to put the version in the project SDK line. The projects use the SDK line.
+- A JS wait can run before Blazor puts the state class in the page (two messages). The wait looks again for 2 frames when it finds no motion.
+- A settle of the whole panel reached the 1000 ms limit once (a long view animation). The fold waits for `clip-path scale` instead.
+- `dock-open-reduced-before` from S0 had no reduced motion: `scenario.sh` passes no `--reduced`. Now a scenario name that ends with `-reduced` turns it on; the before was recorded again from the S0 commit.
+- Recordings S4 to S8 had a dim screen: a Windows dialog was in front. The final recordings with no dialog: dock-open steps 1 to 4 differ at most 2.0 of 255, deck-throw-tuck 4.1, page-moves steps 1 to 9 1.9. The recordings of dock-open (12 s) and page-moves (14 s) end before the last steps, so compare only those steps.
+- `motion-times` (plan S4) is not done: with the registry of the name and the state class only, C# has no token to compare. `steps-traced` checks that each step ends by the end of its motion.
+
+### Badge notice: one notice for each new card (2026-11-20)
+
+Request of the user: a notice comes only for a card that arrives while the tray is closed (hidden or at the badge), one time; then the card is done. `TrayNotices` holds the rule; `TrayFlow.Closed` says if the tray is closed (a hide or a dock that runs counts as closed, an open that runs as open). Before: a notice came for each rise of the card count, and the peek showed the card with the highest id, which could be an old card. Proof: scenario `notice-once` (card A while the panel shows: no peek at the dock; card B at the badge: peek; after open and dock: no peek); 3 new unit tests, 846 pass; self-test 34 of 35.
+
+## Merge of R1 into the visual review (2026-11-20)
+
+- Merged PR #58 (R1, last commit 28ee630) into `orch/visual-review`. Conflicts in `plan.md` and `SelfTest.Scenarios.cs`: both sides kept.
+- Unit tests: 846, 833 pass, 13 skipped, 0 fail. Build output is now `artifacts~/bin`.
+- Self-test: 35 of 37. `badge-hover-fits` (I7, known). New: `no-wait-at-limit` fails in 2 of 2 runs: `orchMotion.wait(element, Step, null) #82: by limit after 1001 ms`. R1 alone had 34 of 35 with this check green, so the merge causes it. Possible cause, not proved: the I5 key checks run in the open sheet and move the focus into it. Not fixed: waits for the decision of the user.
+- Review of R1 by the user: the window gap of 0 to 10 ms is fine. The Umpire SDK work was approved; the full migration to Umpire comes after the visual issues. Ignore the UMP warnings until then.
+- `motion-times` is not done: GitHub issue #60. C# owns only the names, so the proposed check runs in the page (token value against `getAnimations()`).
+- Cause of the `no-wait-at-limit` fault: wait #82 is the `tab-in` wait of Home after the deck-throw check, not the sheet close. The test hid the panel a fixed 600 ms after the tab move. At the hide, the tab move had 12 to 16 ms left (`getAnimations()`: the last `m-rise` at 444 to 448 of 460 ms). If the render came late, the fold hid the window before the end, the blocks stopped, and the wait ran to its limit. The I5 key checks are not the cause: the race is in the test of R1 also.
+- Fix (test only): before the hide, the self-test waits until `.page.is-tab-in` goes. Result: 2 runs, 35 of 36 each, only `badge-hover-fits` (I7) fails; unit tests 846, 833 pass, 13 skipped, 0 fail.
+- Open finding, not changed: if the window hides before a tab move ends (a tab click, then a hide at once), the `tab-in` wait runs to its 1 s limit. The user sees no fault. A change of the settle rule in `motion.js` is an R1 product change and needs a decision.
+- Merge fix result (e29fefe): the cause was a race in the self-test (hide 600 ms after the tab move to Home), not the I5 key checks. Self-test 36 of 37. Product question open (to R1): a hide during a tab move holds the tab-in wait to its limit.
+- New issue I18 (user): the window cuts the shadow of the side badge. Proposed for R2.
+- Test time (from the result files): one recorded scenario 20 to 28 s, one self-test 35 to 45 s, one R1 step proof 1.5 to 3.5 min. R1: about 25 min of runs; this session: about 1 h. Repeats: `dock-open` recorded 9 times in R1, the full self-test after each step. Proposed: a test inventory and a run log.
+
+### R1 code review: fixes (2026-11-20)
+
+All findings of the review of 45bd266..28ee630 are fixed on `orch/motion-review-fixes` (from `orch/visual-review`). Unit tests 851 pass; self-test 37 of 38 (only I7), two runs.
+
+| # | Fix |
+|---|---|
+| 1 | The deck moves the card of the act (by `data-card`), and waits on that card |
+| 2 | No undo time from the page (or 0): the act runs at once, the toast has no Undo, the trace has a warning. No peek time: a fault |
+| 3 | The tray steps send with `Must`: a JS error throws, so the flow writes a fault (H3 in the real flow). JS errors are warnings in the log |
+| 4 | The badge page reads `--t-badge-fold` and gives it to the window (`UseBadgeFold`); no `ExecuteScriptAsync` |
+| 5 | `MotionStep(Name, States)`; the components set the class from the row; the throw has `out-r` and `out-l`; the rows `deck-back-in`, `deck-arrive` go |
+| 6 | `WindowStep.Event` is checked: another event is a warning; `window-steps` fails on a wrong show or hide and checks the order |
+| 7 | The window gap counts from the start of the run |
+| 8 | The hook, the tray and the self-test use `IJsTrace` (with `Warn`, `Written`); `TrayHome` is in `Features/Tray` |
+| 9 | `IWidgetWindow.Phase`, `LastEvent`, `Fault` have no default |
+| 10 | Dead code goes: the badge catch filter (now a fault), the second undo read, the JS modes time and DOM event (`Frames` stays), `Function` has a test |
+| 11 | `JsCalls` cancels after the lock |
+| P1 | A wait that names motions and finds none ends `none`; a defect on a named step |
+| P2 | `leave` waits for `m-fade-out m-down m-lift`, `tab-in` for `m-rise` |
+| P3 | The rule "all flow calls on the UI thread" is in the flow comment |
+| P4 | `JsonException` is in the catch list |
+| P5 | A drag during a C# motion goes back and keeps no stamp |
+| Hidden | A wait ends `hidden` when the page hides. The WebView2 controller now follows the window (`IsVisible`); before, a hidden window kept the page "visible", so a wait ran to its limit. New check `hide-during-motion` (530 ms, by hidden) |
+
+Umpire conflicts (report, no workaround): a helper class in a slice is denied (UMP020101), so `MotionTimes` stays in `Components/Motion`.
+
+## Visual review: I16 window capture check (2026-11-21)
+
+- Scope: I16 does only the window capture check. I17 owns the test instances, the lock and the start order in `scenario.sh`. The lock analysis (causes and option D) went to I17 as a note.
+- Tool: `spikes/window-capture/` (Windows.Graphics.Capture, `GraphicsCaptureItem` for one window).
+- Tray window (composition mode, WebView2): the capture shows the full panel with correct transparency. It works when another window covers the tray and when the tray is at x = -3000. A minimized tray gives 0 frames.
+- The yellow border can be turned off (`IsBorderRequired = false`). Border on: 10403 yellow pixels at the edge; border off: 4.
+- Stream: main screen 147 frames in 4 s; a layered test window at x = -3000, 114 frames in 4 s, no frame lost. A window that draws with paint messages gives 1 frame off the screen (no paint message).
+- Not tested: tray motion while covered or off the screen.
+- Decision of the user: keep the normal screen recorder. Window capture is not used now.
+
+- Merge of I17 into `orch/visual-review` (2026-11-21): 851 unit tests, 0 fail. Normal self-test 38 of 39: the new `label` check passes; only `badge-hover-fits` (I7) fails. I16 and I17 are on the tracker as fixed.
+- I5: the user removed the Narrator step (2026-11-21). Accessibility is not a requirement now. The keyboard checks stay.
+
+- Test inventory (`docs/test-inventory.md`): kept as a record. The user studies it later. No recommendation is applied now.
+
+## Size ownership (R2): results (2026-11-21)
+
+All 6 steps of `docs/size-ownership-plan.html` (https://claude.ai/artifact/UYCh2zPYAwXJijYz9opJCZ) are done, one commit for each (S0 6dbcdb1 to S4 35736ea, then cec1654). The user approved the plan; Q1 is option B (the plan text). Unit tests 853, 0 fail. Self-test 41 of 41; `--reduced` 42 of 42. I7, I10 and I18 are fixed.
+
+| Step | Proof: before → after |
+|---|---|
+| S0 proof base | `badge-box-fits` FAIL in 3 states: rest tab shadow 9 px below the window; hover ring cut 33 px, tab shadow 52 px; peek bubble 0.6 px. The values equal the calculation from `tray.css` |
+| S1 tokens and report | `Tray_sizes_are_tokens`: 7 literals → 0. The report equals the test measure (rest [251 11 345 105], hover [-14.2 11 345 105]) |
+| S2 badge window (I7, I18) | `badge-box-fits` PASS in 3 states. Scenario `badge-states` off and on: ring and shadow cut → no cut |
+| S3 hover fold | Timer 300 ms → step `badge-fold` (by end after 278 ms). `badge-fold-area`: 0 cut samples; fail-first with a 50 ms delay: 515 |
+| S4 panel window (I10) | `Tray_window_sizes_come_from_the_page`: 8 constants before R2 → 0. `panel-box-fits` PASS (fail-first with an 8 px margin). Panel picture: mean difference 0.2 of 255 |
+
+Findings:
+
+- The window region clips the drawing, so a click area smaller than a drawn part cuts it. The click area now includes the shadow: a click on the shadow of the tab opens the panel.
+- `badge-input` read the hover click area 200 ms after a posted move. With no 300 ms timer, the area was small again: a posted move cannot hold the hover (I8). The check reads the area when the hover starts.
+- A measure that sets styles on the real element stopped the slide of the tab (`badge-in` wait ended `none`). `orchTray.sizes` measures a hidden copy.
+- The size report must come before the spin starts. With reduced motion, a report between the spin render and its wait let the 1 ms spin end first (`none`).
+- The `--reduced` self-test of `orch/visual-review` never ended: a picture of the panel 180 ms after the dock threw `E_UNEXPECTED` (the panel was hidden after a 60 ms dock), and the process did not exit. Fixed in the self-test. Open: an exception in the self-test does not end the process.
+- Two of my script edits wrote a backspace character in place of `\b` (Python string escapes). A test pattern then matched nothing and passed. Check new test patterns with a fail-first run.
+- Test tools: `scenario.sh` has `INSTANCE` (the built exe with `--instance`) and `SCALE` (1 for a check of a few pixels).
+
+### #60 motion-times: spike result (not reliable, stopped)
+
+- Method: the page keeps each motion that a wait saw (`orchMotion.times`). C# compares each duration and delay with the token values of `motion.css` (±1 ms).
+- 1 self-test run: 36 motions, 10 fail. All 10 are false alarms:
+  - Stagger delays (120, 160 ms) and the grow delay (210 ms = `--t-ball-in` × .7) are `calc` of a token, not a token.
+  - The ring count (630 ms) is a step count × `--t-count-step`.
+  - 3000 ms is the test animation of the check `hide-during-motion`.
+- Many passes match a token by chance: 300 ms matches 6 tokens, 200 ms matches 8. Delay 80 ms (2 × `--t-tab-step`) matches `--t-press`.
+- Result: a match against "any token" cannot find a wrong time. A real check needs to know which token each motion uses.
+- The code is on branch `orch/spike-60-motion-times` (not merged), with the data in `docs/spike-60-motion-times.json`.
+- Decision of the user: option B. #60 is closed by the source test `Motion_times_are_tokens` (`MotionArchitectureTests`), with its 3 gaps fixed:
+  - It reads each whole CSS declaration, also on more lines, with comments removed.
+  - It reads inline styles (`style="…"`) in `.razor` and `.html` files.
+  - It reads style values that scripts set (`e.style.animation = '…'`, `setProperty('transition', '…')`).
+- Proof: 3 bad lines (a 2-line CSS declaration, a Razor inline style, a script style) each fail with file and line; without them, the test passes.
+
+### I2 and I1: key backdrop for the empty frame count
+
+- Decision of the user: a backdrop color that the tray never draws. Rule: key share above 98 %.
+- Recorder: `--backdrop-key` (#FF00FF), the key share of each frame (3rd column of the times file), and the backdrop stays directly under the lowest tray window (before, other windows could cover it, and the share was 0 in all frames).
+- `empty.py` key rule: a blink is a key share above 98 % after a tray frame, with the tray back later. `strip.ps1 -Key` shows it.
+- Results, same sheet run: base 0 blinks (tray frame 40.8 %, highest tray frame 94.3 %); blink on purpose (`body:has(.scrim) { opacity: 0 }`) 11 of 11.
+- I1 closed. New finding I19: each sheet stress run misses 2 presses at the start (4 of 4 runs).
+
+### I19: the first cycle of the sheet stress run fails (replicated, not fixed)
+
+- Replicated 1 of 1 with no recorder (`--instance I19 --selftest <folder> --demo --stress --sheets`, 50 s, exit 1).
+- History: all 24 sheet runs with window message clicks fail the first cycle (19 runs on 19 Nov, before I3, logged as "no element" and not counted). 0 of 8 runs with the real pointer fail; their first press comes 606 to 857 ms after the start, not 87 to 98 ms.
+- Time order: phase `open` at 58.571, first press at 58.702, the grow motion ends at 59.131. Probable cause: the press comes in the grow motion. Not proved.
+- Data gaps: no log that the page got a click or which element got it; no check that a navigation press changed the page; no motion state at a press.
+- Decision of the user: no fix now. I19 is one symptom of 3 missing contracts (the page lifecycle with a "ready" signal, an input pipeline that confirms each click, one trace). It waits for the architecture review, which sets the next focus. The Tracing part of `docs/ui-architecture.html` records the current traces and their gaps.
+
+### Architecture page: part template and code review (2026-11-21)
+
+- The part tabs of `docs/ui-architecture.html` use one template (Template tab, skill `architecture-part`). The Motion tab is the example. Non-part tabs (Overview, Prior art, proposals) keep a free format.
+- 9 part tabs were rebuilt from a code review, then checked again by independent agents that read the code first. Each claim was checked in the code; wrong claims were dropped (for example, the tray live mode with no tick is a design decision, not a gap).
+- Ratings: Page moves and Motion Good; Data, Structure, Places, Start and stop, Interactions, Components and Style Mixed; Tracing Weak.
+- Defects found in the code (records only, not fixed): `Cards.razor:66` gives `FilterSheet` no `OnChange`; `BadgeRoot` sets `reported` before the measure, so a failed size report is not tried again.

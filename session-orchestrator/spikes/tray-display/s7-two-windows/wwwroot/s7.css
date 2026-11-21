@@ -1,0 +1,51 @@
+/* Spike S7: the panel and the badge in two windows. The panel window has the phases is-start, is-open, is-folded; the badge
+   window has is-badge-out and is-badge. Each phase sets its own transition delays. Box shadows only: a filter on a large
+   area makes empty frames in a composition window (session finding F1). */
+:root { --surf: #ffffff; --ink: #1b1a18; --muted: #6b6760; --line: #ecebe8; --accent: #ff6a1a; --alt: #6f9cff;
+  --q: #ff6a1a; --r: #6f9cff; --p: #8fd94f; --shadow: 0 6px 14px rgba(0, 0, 0, .22);
+  --ease-out: cubic-bezier(.33, 1, .68, 1); --ease-in: cubic-bezier(.32, 0, .67, 0); --spring: cubic-bezier(.34, 1.56, .64, 1); }
+html, body { margin: 0; height: 100%; background: transparent; color: var(--ink); font: 14px "Segoe UI", sans-serif; overflow: hidden; }
+.stage { position: absolute; inset: 0; }
+
+/* ===== The panel window: the panel with a 24 px margin for the shadow ===== */
+.panel-layer { position: absolute; inset: 24px; }
+.panel { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--surf); border-radius: 16px; visibility: hidden;
+  clip-path: inset(calc(100% - 70px) calc(50% - 28px) 14px calc(50% - 28px) round 28px); }
+.panel > * { opacity: 0; }
+.stage.is-open .panel { visibility: visible; clip-path: inset(0 round 16px); transition: visibility 0s .22s, clip-path .34s var(--ease-out) .22s; }
+.stage.is-open .panel > * { opacity: 1; transition: opacity .2s ease .44s; }
+.stage.is-folded .panel { transition: clip-path .24s var(--ease-in) .08s, visibility 0s .32s; }
+.stage.is-folded .panel > * { transition: opacity .1s ease; }
+
+.hd { app-region: drag; -webkit-app-region: drag; display: flex; align-items: center; padding: 10px 10px 10px 16px; font-weight: 600; user-select: none; }
+.hd .title { flex: 1; }
+.hd button { app-region: no-drag; -webkit-app-region: no-drag; width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; }
+.hd button:hover { background: var(--line); color: var(--ink); }
+.body { flex: 1; padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.block { height: 64px; border-radius: 14px; background: var(--line); }
+.bar { flex: none; height: 84px; }
+
+.ball { position: absolute; left: calc(50% - 28px); bottom: 14px; z-index: 3; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--accent); box-shadow: var(--shadow); cursor: pointer; scale: 0; transition: scale .18s var(--ease-in) .3s, background-color .2s ease; }
+.ball.alt { background: var(--alt); }
+.stage.is-open .ball { scale: 1; transition: scale .3s var(--spring), background-color .2s ease; }
+
+/* ===== The badge window: a strip at the right screen edge ===== */
+.badge-layer { position: absolute; inset: 0; }
+.badge { position: absolute; right: 0; top: 24px; width: 100px; height: 76px; border-radius: 38px 0 0 38px; background: var(--surf); box-shadow: var(--shadow);
+  overflow: hidden; cursor: pointer; translate: 110% 0; transition: translate .18s var(--ease-in), width .22s var(--ease-out); }
+.stage.is-badge .badge { translate: 0 0; transition: translate .28s var(--ease-out), width .22s var(--ease-out); }
+.stage.is-badge .badge:hover { width: 250px; }
+.ring { position: absolute; left: 10px; top: 10px; width: 56px; height: 56px; border-radius: 50%;
+  background: conic-gradient(var(--q) 0 50%, var(--r) 0 80%, var(--p) 0); }
+.ring::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--surf); }
+.ring i { position: absolute; inset: 13px; z-index: 1; border-radius: 50%; background: var(--accent); }
+.badge .txt { position: absolute; left: 80px; top: 18px; white-space: nowrap; opacity: 0; transition: opacity .1s ease; }
+.badge .txt b { display: block; }
+.badge .txt small { color: var(--muted); }
+.stage.is-badge .badge:hover .txt { opacity: 1; transition: opacity .15s ease .08s; }
+
+/* The panel shadow: on the panel itself, so it follows the clip. */
+.panel-layer::before { content: ""; position: absolute; inset: 0; border-radius: 16px; box-shadow: var(--shadow); opacity: 0; transition: opacity .1s ease; }
+.stage.is-open .panel-layer::before { opacity: 1; transition: opacity .2s ease .4s; }

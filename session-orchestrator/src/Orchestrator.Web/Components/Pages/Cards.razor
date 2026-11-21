@@ -1,5 +1,7 @@
 @page "/cards"
 @inherits LiveView
+@inject ICommandSender Commands
+@inject Orchestrator.Web.Plugins.Js.Contracts.IJsTrace Trace
 
 <PageTitle>Cards · orch</PageTitle>
 
@@ -17,7 +19,7 @@
         <div class="pile">
             @foreach (var (c, i) in visible.Take(3).Select((c, i) => (c, i)))
             {
-                <article class="crd pcard @(i > 0 ? "behind" : Arrives(c) ? "arrive" : "")" style="--i:@i" data-deck-card="@(i == 0)" aria-hidden="@(i > 0 ? "true" : null)" @key="c.Id">
+                <article class="crd pcard @CardClass(c, i)" style="--i:@i" data-deck-card="@(i == 0)" data-card="@c.Id" data-motion="deck-throw deck-tuck" aria-hidden="@(i > 0 ? "true" : null)" @key="c.Id">
                     @if (i == 0)
                     {
                         @* V17: no native link drag, or the drag of the browser cancels the swipe. *@
@@ -48,21 +50,25 @@
     }
 </div>
 
-@if (toast is { } t)
+@if (toastView is { } t)
 {
+    @* M5: a new toast takes the place of the old one at once (@key); the last toast lifts out when it goes. *@
+    <Presence Shown="toast is not null" OnGone="() => toastView = null">
     <div class="toast" role="status" @key="t"><span class="grow">@t.Text</span>@if (t.Undo is not null) {<button type="button" @onclick="Undo">Undo</button>@if (pending is not null) {<i class="ubar" aria-hidden="true"></i>}}</div>
+    </Presence>
 }
 @if (sheet is { } s)
 {
-    <AnswerSheet Card="s.Card" Voice="s.Voice" OnSend="text => SendSheet(s.Card, text)" OnClose="() => sheet = null" />
+    <Presence OnGone="() => sheet = null"><AnswerSheet Card="s.Card" Voice="s.Voice" OnSend="text => SendSheet(s.Card, text)" /></Presence>
 }
 @if (filterOpen)
 {
-    <FilterSheet Filter="filter" Sessions="FilterSessions" Show="@($"Show {Visible().Count} cards")" OnClose="() => filterOpen = false" />
+    <Presence OnGone="() => filterOpen = false"><FilterSheet Filter="filter" Sessions="FilterSessions" Show="@($"Show {Visible().Count} cards")" /></Presence>
 }
 
 @code {
-    public static readonly TimeSpan UndoTime = TimeSpan.FromSeconds(5);
+    /// <summary>The undo time of an act: the token --t-undo of motion.css, read once from the page.</summary>
+    TimeSpan? undoTime;
 
     static readonly string[] Chips = ["All", "Questions", "Reviews", "Reports"];
 
@@ -78,7 +84,18 @@
     string group = "All";
     bool filterOpen;
     (CardView Card, bool Voice)? sheet;
-    Toast? toast;
+    // The toast of the page: setting it shows it, null starts its leave. The toast on the screen stays until its leave ends.
+    Toast? toast
+    {
+        get => toastNow;
+        set
+        {
+            toastNow = value;
+            if (value is not null) toastView = value;
+        }
+    }
+
+    Toast? toastNow, toastView;
     Pending? pending;
 
     CardView? Top => visible.Count > 0 ? visible[0] : null;
@@ -91,7 +108,11 @@
 
     bool Arrives(CardView card) => lastPile.Count > 0 && !lastPile.Contains(card.Id);
 
-    protected override void OnAfterRender(bool firstRender) => lastPile = visible.Take(3).Select(c => c.Id).ToHashSet();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        lastPile = visible.Take(3).Select(c => c.Id).ToHashSet();
+        if (firstRender) undoTime ??= await MotionTimes.Of(Commands, "--t-undo");
+    }
 
     IReadOnlyDictionary<string, string> ChipLabels => new Dictionary<string, string>
     {
@@ -140,8 +161,26 @@
         }).ToList();
     }
 
-    void Do(CardView card, CardAction action)
+    // M1, M2 (S8): the motion class of the card of the act (out-r, out-l or tuck), by its id: a card that arrives during the
+    // motion takes the top slot, but not the class. C# starts the motion, waits for its end through the motion pipeline, then
+    // does the act. A second act during the motion does nothing.
+    (string Id, string Css)? motion;
+
+    string CardClass(CardView card, int slot) =>
+        motion is { } m && m.Id == card.Id ? m.Css : slot > 0 ? "behind" : Arrives(card) ? "arrive" : "";
+
+    async Task Move(CardView card, string css, MotionStep step)
     {
+        motion = (card.Id, css);
+        StateHasChanged();
+        await Commands.SendAsync(new MotionWait($"[data-card=\"{card.Id}\"]{step.Target}", WaitMode.Step), default);
+        motion = null;
+    }
+
+    async Task Do(CardView card, CardAction action)
+    {
+        if (motion is not null) return;
+        if (Throws(action) is not null) await Move(card, MotionSteps.DeckThrow.States[action == card.Right ? 0 : 1], MotionSteps.DeckThrow);
         switch (action.Do)
         {
             case CardDo.Type: sheet = (card, false); break;
@@ -166,8 +205,16 @@
         var cancel = new CancellationTokenSource();
         var p = new Pending(card.Id, work, done, cancel);
         pending = p;
+        if (undoTime is not { } undo)
+        {
+            // No undo time from the page: the act runs at once, and the toast offers no undo that does nothing.
+            Trace.Warn("cards: the page gave no --t-undo, so the act has no undo");
+            Run(p);
+            toast ??= new Toast($"{done} (no undo)", null);
+            return;
+        }
         toast = new Toast(done, Undo);
-        _ = Task.Delay(UndoTime, cancel.Token).ContinueWith(task =>
+        _ = Task.Delay(undo, cancel.Token).ContinueWith(task =>
         {
             if (task.IsCanceled) return;
             InvokeAsync(() =>
@@ -214,8 +261,10 @@
     List<string>? skipUndo;
 
     /// <summary>Skip moves the card to the end of the pile. A card that arrives later goes after it.</summary>
-    void Skip(CardView card)
+    async Task Skip(CardView card)
     {
+        if (motion is not null) return;
+        await Move(card, MotionSteps.DeckTuck.State, MotionSteps.DeckTuck);
         Flush();
         skipUndo = [.. order];
         order.Remove(card.Id);

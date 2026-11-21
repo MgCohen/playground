@@ -6,6 +6,16 @@
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Version>0.1.0</Version>
+    <!-- The output of each project goes to artifacts~/ (the Umpire layout). Set here, before each platform SDK, so the tray
+         (Razor SDK first, Umpire after it) uses the same folder. -->
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts~</ArtifactsPath>
+    <!-- The Umpire findings of the existing code stay warnings (U2): the format rules (UMP0101xx) and the unmapped types of the
+         web block (UMP020202). Their count is the size of the VSA migration that remains. Any other finding is an error, so the
+         R1 folders (Plugins/Js, Features/Motion) stay clean. -->
+    <UmpireExistingFindings>UMP010101;UMP010102;UMP010103;UMP010104;UMP010105;UMP010106;UMP020202</UmpireExistingFindings>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);$(UmpireExistingFindings)</WarningsNotAsErrors>
+    <MSBuildWarningsNotAsErrors>$(MSBuildWarningsNotAsErrors);$(UmpireExistingFindings)</MSBuildWarningsNotAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <AssemblyMetadata Include="OrchHome" Value="$(MSBuildThisFileDirectory)" />

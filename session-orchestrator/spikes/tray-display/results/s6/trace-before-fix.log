@@ -1,0 +1,83 @@
+01:16:32.431 [panel place] go to the panel place: {X=1963,Y=676,Width=597,Height=852} (saved panel none, saved badge top none)
+01:16:32.453 [panel place] click area: {X=0,Y=0,Width=597,Height=852} (window 597 x 852)
+01:16:32.517 [panel place] start: screens \\.\DISPLAY1 {X=0,Y=0,Width=2560,Height=1600} work {X=0,Y=0,Width=2560,Height=1528}
+01:16:43.177 [panel place] leave not seen by the badge code (over stays False) at {X=2495,Y=780}
+01:16:43.192 [panel place] leave not seen by the badge code (over stays False) at {X=2510,Y=767}
+01:16:43.732 [panel place] leave not seen by the badge code (over stays False) at {X=2463,Y=772}
+01:16:44.096 [badge place] go to the badge place: {X=2149,Y=671,Width=411,Height=186} (saved panel none, saved badge top none)
+01:16:44.100 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)
+01:16:44.106 [badge place] leave (over was False) at {X=1968,Y=1055}
+01:16:44.107 [badge place] hover off: click area to rest in 260 ms
+01:16:44.380 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)
+01:16:44.910 [badge place] enter (over was False) at {X=2387,Y=826}
+01:16:44.911 [badge place] hover on: click area to the hover width
+01:16:44.911 [badge place] click area: {X=0,Y=0,Width=411,Height=186} (window 411 x 186)
+01:16:44.915 [badge place] first move in the badge place, over is already true: no enter, the click area stays as it is
+01:16:46.147 [panel place] go to the panel place: {X=1963,Y=676,Width=597,Height=852} (saved panel none, saved badge top none)
+01:16:46.151 [panel place] click area: {X=0,Y=0,Width=597,Height=852} (window 597 x 852)
+01:16:46.156 [panel place] leave not seen by the badge code (over stays True) at {X=2472,Y=754}
+01:16:46.425 [panel place] leave not seen by the badge code (over stays True) at {X=2404,Y=755}
+01:16:48.857 [panel place] panel drag end: {X=153,Y=253}
+01:16:50.344 [badge place] go to the badge place: {X=2149,Y=671,Width=411,Height=186} (saved panel {X=153,Y=253}, saved badge top none)
+01:16:50.347 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)
+01:16:50.351 [badge place] leave (over was True) at {X=678,Y=321}
+01:16:50.352 [badge place] hover off: click area to rest in 260 ms
+01:16:50.626 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)
+01:16:51.705 [badge place] enter (over was False) at {X=2389,Y=737}
+01:16:51.707 [badge place] hover on: click area to the hover width
+01:16:51.707 [badge place] click area: {X=0,Y=0,Width=411,Height=186} (window 411 x 186)
+01:16:51.711 [badge place] first move in the badge place, over is already true: no enter, the click area stays as it is
+01:16:53.183 [panel place] go to the panel place: {X=153,Y=253,Width=597,Height=852} (saved panel {X=153,Y=253}, saved badge top none)
+01:16:53.187 [panel place] click area: {X=0,Y=0,Width=597,Height=852} (window 597 x 852)
+01:16:53.193 [panel place] leave not seen by the badge code (over stays True) at {X=2515,Y=775}
+01:16:54.060 [panel place] leave not seen by the badge code (over stays True) at {X=407,Y=359}
+01:16:55.240 [panel place] panel drag end: {X=1444,Y=595}
+01:16:56.527 [panel place] leave not seen by the badge code (over stays True) at {X=1995,Y=683}
+01:16:56.557 [panel place] leave not seen by the badge code (over stays True) at {X=2047,Y=744}
+01:16:56.895 [badge place] go to the badge place: {X=2149,Y=671,Width=411,Height=186} (saved panel {X=1444,Y=595}, saved badge top none)
+01:16:56.899 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)
+01:16:56.903 [badge place] leave (over was True) at {X=2028,Y=729}
+01:16:56.904 [badge place] hover off: click area to rest in 260 ms
+01:16:57.173 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)
+01:16:57.541 [badge place] enter (over was False) at {X=2386,Y=741}
+01:16:57.541 [badge place] hover on: click area to the hover width
+01:16:57.542 [badge place] click area: {X=0,Y=0,Width=411,Height=186} (window 411 x 186)
+01:16:57.548 [badge place] first move in the badge place, over is already true: no enter, the click area stays as it is
+01:16:58.352 [panel place] go to the panel place: {X=1444,Y=595,Width=597,Height=852} (saved panel {X=1444,Y=595}, saved badge top none)
+01:16:58.355 [panel place] click area: {X=0,Y=0,Width=597,Height=852} (window 597 x 852)
+01:16:58.360 [panel place] leave not seen by the badge code (over stays True) at {X=2491,Y=760}
+01:16:59.137 [panel place] leave not seen by the badge code (over stays True) at {X=1847,Y=703}
+01:17:00.265 [panel place] panel drag end: {X=134,Y=599}
+01:17:00.907 [panel place] leave not seen by the badge code (over stays True) at {X=689,Y=678}
+01:17:00.930 [panel place] leave not seen by the badge code (over stays True) at {X=760,Y=678}
+01:17:01.271 [badge place] go to the badge place: {X=2149,Y=671,Width=411,Height=186} (saved panel {X=134,Y=599}, saved badge top none)
+01:17:01.275 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)
+01:17:01.280 [badge place] first move in the badge place, over is already true: no enter, the click area stays as it is
+01:17:05.063 [badge place] leave (over was True) at {X=2474,Y=865}
+01:17:05.064 [badge place] hover off: click area to rest in 260 ms
+01:17:05.327 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)
+01:17:05.708 [badge place] enter (over was False) at {X=2466,Y=855}
+01:17:05.709 [badge place] hover on: click area to the hover width
+01:17:05.710 [badge place] click area: {X=0,Y=0,Width=411,Height=186} (window 411 x 186)
+01:17:12.893 [badge place] leave (over was True) at {X=2456,Y=859}
+01:17:12.894 [badge place] hover off: click area to rest in 260 ms
+01:17:13.169 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)
+01:17:14.018 [badge place] enter (over was False) at {X=2444,Y=854}
+01:17:14.019 [badge place] hover on: click area to the hover width
+01:17:14.020 [badge place] click area: {X=0,Y=0,Width=411,Height=186} (window 411 x 186)
+01:17:14.435 [panel place] go to the panel place: {X=134,Y=599,Width=597,Height=852} (saved panel {X=134,Y=599}, saved badge top none)
+01:17:14.439 [panel place] click area: {X=0,Y=0,Width=597,Height=852} (window 597 x 852)
+01:17:14.444 [panel place] leave not seen by the badge code (over stays True) at {X=2451,Y=791}
+01:17:15.953 [panel place] leave not seen by the badge code (over stays True) at {X=651,Y=708}
+01:17:16.767 [badge place] go to the badge place: {X=2149,Y=671,Width=411,Height=186} (saved panel {X=134,Y=599}, saved badge top none)
+01:17:16.771 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)
+01:17:16.775 [badge place] leave (over was True) at {X=648,Y=683}
+01:17:16.776 [badge place] hover off: click area to rest in 260 ms
+01:17:17.051 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)
+01:17:17.896 [badge place] enter (over was False) at {X=2425,Y=856}
+01:17:17.897 [badge place] hover on: click area to the hover width
+01:17:17.898 [badge place] click area: {X=0,Y=0,Width=411,Height=186} (window 411 x 186)
+01:17:17.903 [badge place] first move in the badge place, over is already true: no enter, the click area stays as it is
+01:17:19.966 [badge place] leave (over was True) at {X=2405,Y=863}
+01:17:19.967 [badge place] hover off: click area to rest in 260 ms
+01:17:20.233 [badge place] click area: {X=237,Y=0,Width=174,Height=186} (window 411 x 186)

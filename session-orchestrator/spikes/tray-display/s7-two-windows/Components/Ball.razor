@@ -1,0 +1,6 @@
+@* The home ball of the open panel: a click swaps its color. *@
+<button type="button" class="ball @(alt ? "alt" : "")" aria-label="Home" @onclick="() => alt = !alt"></button>
+
+@code {
+    bool alt;
+}

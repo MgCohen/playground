@@ -1,0 +1,165 @@
+{
+  "mode": "two windows",
+  "panelReadyMs": 994,
+  "badgeReadyMs": 995,
+  "memoryAtRest": {
+    "processes": 7,
+    "workingSetMb": 479,
+    "privateMb": 197,
+    "rows": [
+      {
+        "kind": "host",
+        "pid": 224924,
+        "workingSetMb": 79,
+        "privateMb": 21
+      },
+      {
+        "kind": "Renderer",
+        "pid": 194592,
+        "workingSetMb": 54,
+        "privateMb": 23
+      },
+      {
+        "kind": "Utility",
+        "pid": 203268,
+        "workingSetMb": 40,
+        "privateMb": 12
+      },
+      {
+        "kind": "Renderer",
+        "pid": 210864,
+        "workingSetMb": 55,
+        "privateMb": 23
+      },
+      {
+        "kind": "Gpu",
+        "pid": 222940,
+        "workingSetMb": 107,
+        "privateMb": 72
+      },
+      {
+        "kind": "Utility",
+        "pid": 249480,
+        "workingSetMb": 20,
+        "privateMb": 7
+      },
+      {
+        "kind": "Browser",
+        "pid": 250600,
+        "workingSetMb": 121,
+        "privateMb": 36
+      }
+    ]
+  },
+  "cycles": [
+    {
+      "dockMs": 340,
+      "openMs": 899,
+      "badgeShowToVisibleMs": null,
+      "badgeShowToFrameMs": null
+    },
+    {
+      "dockMs": 823,
+      "openMs": 875,
+      "badgeShowToVisibleMs": 6,
+      "badgeShowToFrameMs": 11
+    },
+    {
+      "dockMs": 815,
+      "openMs": 886,
+      "badgeShowToVisibleMs": 6,
+      "badgeShowToFrameMs": 11
+    },
+    {
+      "dockMs": 833,
+      "openMs": 881,
+      "badgeShowToVisibleMs": 7,
+      "badgeShowToFrameMs": 10
+    },
+    {
+      "dockMs": 819,
+      "openMs": 871,
+      "badgeShowToVisibleMs": 6,
+      "badgeShowToFrameMs": 10
+    },
+    {
+      "dockMs": 818,
+      "openMs": 885,
+      "badgeShowToVisibleMs": 5,
+      "badgeShowToFrameMs": 9
+    },
+    {
+      "dockMs": 816,
+      "openMs": 882,
+      "badgeShowToVisibleMs": 4,
+      "badgeShowToFrameMs": 11
+    },
+    {
+      "dockMs": 821,
+      "openMs": 874,
+      "badgeShowToVisibleMs": 4,
+      "badgeShowToFrameMs": 6
+    },
+    {
+      "dockMs": 827,
+      "openMs": 866,
+      "badgeShowToVisibleMs": 6,
+      "badgeShowToFrameMs": 12
+    },
+    {
+      "dockMs": 822,
+      "openMs": 868,
+      "badgeShowToVisibleMs": 4,
+      "badgeShowToFrameMs": 7
+    }
+  ],
+  "memoryAfterCycles": {
+    "processes": 7,
+    "workingSetMb": 639,
+    "privateMb": 338,
+    "rows": [
+      {
+        "kind": "host",
+        "pid": 224924,
+        "workingSetMb": 88,
+        "privateMb": 27
+      },
+      {
+        "kind": "Renderer",
+        "pid": 194592,
+        "workingSetMb": 60,
+        "privateMb": 24
+      },
+      {
+        "kind": "Utility",
+        "pid": 203268,
+        "workingSetMb": 42,
+        "privateMb": 12
+      },
+      {
+        "kind": "Renderer",
+        "pid": 210864,
+        "workingSetMb": 66,
+        "privateMb": 27
+      },
+      {
+        "kind": "Gpu",
+        "pid": 222940,
+        "workingSetMb": 237,
+        "privateMb": 202
+      },
+      {
+        "kind": "Utility",
+        "pid": 249480,
+        "workingSetMb": 20,
+        "privateMb": 7
+      },
+      {
+        "kind": "Browser",
+        "pid": 250600,
+        "workingSetMb": 122,
+        "privateMb": 36
+      }
+    ]
+  }
+}

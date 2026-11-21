@@ -1,0 +1,16 @@
+{
+  "closedClickOnEmptyReachesBack": true,
+  "hoverPillWidth": "250",
+  "afterHoverPillWidth": "56",
+  "peekShows": "true",
+  "peekHidesAfter5s": "true",
+  "growFrames": {
+    "count": 170,
+    "mean": 4.1,
+    "longest": 19.9,
+    "late": 0
+  },
+  "homeBallVersusBarMiddle": "{\u0022ballX\u0022:199,\u0022ballY\u0022:502,\u0022gapX\u0022:199,\u0022gapY\u0022:502}",
+  "homeClickCloses": "true",
+  "closedAgainClickOnEmptyReachesBack": true
+}

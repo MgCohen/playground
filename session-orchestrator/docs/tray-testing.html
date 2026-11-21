@@ -1,0 +1,349 @@
+<title>Tray Test Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one topic for each tab, the visual first. Same tokens as the internals page. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --warn: #9a6200; --code-bg: #eef1f3; --agent: #7a3fa0;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f; --agent: #c99be6; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f; --agent: #c99be6; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 70ch; }
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+nav button { flex: none; white-space: nowrap; font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 24px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 12px; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+td code { white-space: nowrap; }
+pre.stack { margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg); white-space: pre; }
+pre .c { color: var(--muted); }
+pre .k { color: var(--accent); }
+pre .a { color: var(--agent); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.grid2 > * { min-width: 0; }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 70ch; }
+.tag { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.code { color: var(--accent); border-color: var(--accent); }
+.tag.agent { color: var(--agent); border-color: var(--agent); }
+.tag.user { color: var(--warn); border-color: var(--warn); }
+details.example { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+details.example > summary { cursor: pointer; padding: 12px 14px; font-family: var(--font-display); font-weight: 500; font-size: 16px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+details.example > summary .d { font-family: var(--font-body); font-size: 14px; font-weight: 400; color: var(--muted); }
+details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.card .big { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+.where { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.steps { counter-reset: s; display: flex; flex-direction: column; gap: 8px; }
+.steps > details { counter-increment: s; }
+.steps > details > summary::before { content: counter(s); font-family: var(--font-mono); font-size: 12px; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--accent); color: var(--accent); display: inline-grid; place-items: center; flex: none; }
+.steps > details > summary { align-items: center; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · orch/visual-review</div>
+  <h1>Tray Test Guide</h1>
+  <p class="summary">How the tests of the tray work: what a check is, how the data flows, and where the agent decides. Each tab has one topic. Start with the overview.</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+  <button role="tab" data-tab="flow" aria-selected="false">Data flow</button>
+  <button role="tab" data-tab="stack" aria-selected="false">Call stack</button>
+  <button role="tab" data-tab="click" aria-selected="false">Example: a click</button>
+  <button role="tab" data-tab="motion" aria-selected="false">Example: a motion</button>
+  <button role="tab" data-tab="define" aria-selected="false">Define and run</button>
+  <button role="tab" data-tab="limits" aria-selected="false">Limits</button>
+</nav>
+
+<!-- OVERVIEW -->
+<div class="panel" id="overview" role="tabpanel">
+  <section>
+    <h2>Four test runs, one app</h2>
+    <p class="summary">All runs start the real tray app (<code>Orchestrator.Tray</code>) with a flag. The app drives itself, then writes files. Nothing is a mock.</p>
+    <div class="grid2">
+      <div class="card"><span class="where">--selftest &lt;folder&gt;</span><span class="big">Self-test</span><p>28 checks with pass or fail. It reads the page and the window. No pointer. About 40 s.</p><p><span class="tag code">automated</span></p></div>
+      <div class="card"><span class="where">--selftest &lt;folder&gt; --mouse</span><span class="big">Mouse checks</span><p>4 more checks with the real pointer: panel drag, badge hover, badge drag, badge click.</p><p><span class="tag code">automated</span> <span class="tag user">uses your mouse</span></p></div>
+      <div class="card"><span class="where">--selftest &lt;folder&gt; --demo</span><span class="big">Demo</span><p>The full flow, slow, for a video. A step log, no pass or fail. Window messages only: the log ends with "pointer: not moved". The header drag is skipped (platform limit).</p><p><span class="tag code">automated</span> <span class="tag agent">agent looks</span></p></div>
+      <div class="card"><span class="where">--demo --stress [--sheets | --opens] [--css rule]</span><span class="big">Stress plus recorder</span><p>The same action many times. A screen recorder counts empty frames. One CSS rule can go in, as an experiment.</p><p><span class="tag code">automated</span> <span class="tag agent">agent decides</span></p></div>
+    </div>
+  </section>
+  <section>
+    <h2>What is a check?</h2>
+    <p>A check is one line in <code>SelfTest.cs</code>: a name, a pass rule and a message with the measured values.</p>
+<pre class="stack"><span class="k">Add</span>(<span class="k">"sheet-in-panel"</span>,                       <span class="c">// name</span>
+    Ints(scrim).All(v =&gt; v == 0),               <span class="c">// pass rule: all differences are 0</span>
+    $"scrim minus panel [left, top, width, height] = {scrim}");  <span class="c">// message: the data</span></pre>
+    <p>The result goes to <code>selftest.json</code> and to the console as <code>PASS</code> or <code>FAIL</code>.</p>
+  </section>
+  <section>
+    <h2>Who does what</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Step</th><th>Who</th></tr></thead>
+      <tbody>
+        <tr><td>Start the app, do the steps, measure, write the files</td><td><span class="tag code">automated</span></td></tr>
+        <tr><td>Pass or fail of a self-test check</td><td><span class="tag code">automated</span></td></tr>
+        <tr><td>Count of empty frames in a recording</td><td><span class="tag code">automated</span> (script <code>empty.py</code>)</td></tr>
+        <tr><td>Which check to write, and its pass rule</td><td><span class="tag agent">agent</span></td></tr>
+        <tr><td>Which CSS rule to try in a stress run (the hypothesis)</td><td><span class="tag agent">agent</span></td></tr>
+        <tr><td>Read the pictures and the video, and compare with the spec</td><td><span class="tag agent">agent</span> and <span class="tag user">you</span></td></tr>
+        <tr><td>Accept a look or a motion</td><td><span class="tag user">you</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The checks prove facts that have a number: a size, a place, a phase, an alpha value, a frame count. They do not prove that a motion looks correct. That part is a human or agent review of pictures and video.</p>
+  </section>
+</div>
+
+<!-- FLOW -->
+<div class="panel off" id="flow" role="tabpanel">
+  <section>
+    <h2>Self-test: the data flow</h2>
+    <p class="summary">The test code runs inside the tray process. It reads three sources: the window, the page and a picture of the page.</p>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  A["Program.cs<br/>--selftest folder"] --> B["TrayApp<br/>test store"]
+  B --> C["SelfTest.Run"]
+  C -->|"w.Request(Dock)<br/>Go('cards')"| D["Tray window<br/>C#"]
+  C -->|"Js(script)<br/>ExecuteScriptAsync"| E["Page in WebView2<br/>DOM, CSS"]
+  C -->|"Picture()<br/>CapturePreviewAsync"| F["PNG of the page<br/>pixel alpha"]
+  D -->|"Phase, Bounds,<br/>HitArea"| G["Check<br/>name, pass, data"]
+  E -->|"sizes, classes,<br/>computed style"| G
+  F -->|"alpha at a point"| G
+  G --> H["selftest.json<br/>PNG files"]
+  H --> I["Agent reads<br/>the results"]
+</pre></div>
+  </section>
+  <section>
+    <h2>Stress run plus recorder: the data flow</h2>
+    <p class="summary">Two processes run at the same time. The clock time joins their logs.</p>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  R["recorder.exe<br/>30 fps, 66 s"] -->|"CopyFromScreen"| S["GIF frames"]
+  R --> T["times.txt<br/>time + mean value"]
+  X["Tray --stress --sheets<br/>optional --css rule"] -->|"window messages<br/>click, click, click"| Y["Tray window"]
+  X --> L["stress.txt<br/>time + step"]
+  T --> E["empty.py"]
+  L --> E
+  E --> O["N empty frames<br/>and the step before each"]
+  O --> AG["Agent: hypothesis,<br/>next --css rule"]
+  AG -.->|"next run"| X
+</pre></div>
+    <p class="note">An empty frame is a frame in which the tray is not on the screen, but the frames before and after show it. The recorder sees what Windows really shows. The self-test picture (<code>CapturePreviewAsync</code>) does not see empty frames, because it asks the page for a new picture.</p>
+  </section>
+</div>
+
+<!-- STACK -->
+<div class="panel off" id="stack" role="tabpanel">
+  <section>
+    <h2>One check: <code>sheet-in-panel</code></h2>
+    <p class="summary">The answer sheet must cover the panel only, not the window margin with the shadow.</p>
+<pre class="stack">Program.Main(args)                         <span class="c">src/Orchestrator.Tray/Program.cs</span>
+└─ SelfTest.Run(tray, folder, mouse)       <span class="c">SelfTest.cs</span>
+   ├─ Js(w, "Go('cards')")                 <span class="c">clicks a temporary link: the Blazor router opens Cards</span>
+   ├─ Until(".acts [data-act=left]" exists, 3000 ms)
+   ├─ Js(w, "...click()")                  <span class="c">DOM click on the answer button</span>
+   ├─ Until(".presence .scrim" exists, 3000 ms)
+   ├─ Task.Delay(500)                      <span class="c">wait for the end of the motion</span>
+   ├─ Js(w, scrim rect - panel rect)       <span class="c">→ [0,0,0,0]</span>
+   └─ Add("sheet-in-panel", all == 0, data)
+      └─ checks.Add + Console "PASS ..."   <span class="c">→ selftest.json</span></pre>
+  </section>
+  <section>
+    <h2>One press in a stress run</h2>
+<pre class="stack">SelfTest.Stress(tray, folder, css, sheets: true)   <span class="c">SelfTest.Demo.cs</span>
+├─ Js(w, "append &lt;style&gt;css&lt;/style&gt;")           <span class="c">only with --css: the experiment</span>
+└─ for 12 cycles
+   └─ Act(log, w, ".acts [data-act=left]")
+      └─ Press(w, selector)
+         ├─ Center(w, selector)            <span class="c">getBoundingClientRect → screen point (DPI scale)</span>
+         ├─ NoPointer (default)
+         │  ├─ PostMessage(WM_MOUSEMOVE)
+         │  ├─ PostMessage(WM_LBUTTONDOWN)  <span class="c">same input that ClearHost forwards to the page</span>
+         │  └─ PostMessage(WM_LBUTTONUP)
+         └─ --pointer: Glide + mouse_event  <span class="c">real pointer, only if the point is on the tray window</span>
+      └─ log "HH:mm:ss.fff selector: clicked"  <span class="c">→ stress.txt</span></pre>
+  </section>
+</div>
+
+<!-- EXAMPLE CLICK -->
+<div class="panel off" id="click" role="tabpanel">
+  <section>
+    <h2>Worked example: does a tab click put the nav dot under the tab?</h2>
+    <p class="summary">Spec T1: one nav dot moves under the current tab with a spring, and it hides on Home. Open each step.</p>
+    <div class="steps">
+      <details class="example" open><summary>Write the rule as numbers <span class="d"><span class="tag agent">agent</span></span></summary><div class="body">
+        <ul><li>On a tab: the dot center minus the tab center = 0 px, and opacity 1.</li><li>On Home: opacity 0.</li></ul>
+      </div></details>
+      <details class="example"><summary>Do the click <span class="d"><span class="tag code">automated</span></span></summary><div class="body">
+<pre class="stack">await Js(w, $"{Go}('{item}')");   <span class="c">// the router opens the tab, as a user click does</span>
+await Task.Delay(700);            <span class="c">// the spring ends</span></pre>
+      </div></details>
+      <details class="example"><summary>Measure in the page <span class="d"><span class="tag code">automated</span></span></summary><div class="body">
+<pre class="stack">const d = nav.querySelector('.ndot'), on = nav.querySelector('.it.on');
+return { off: d.classList.contains('off'),
+         opacity: +getComputedStyle(d).opacity,
+         dx: Math.round(dotCenter - tabCenter) };</pre>
+      </div></details>
+      <details class="example"><summary>Pass or fail <span class="d"><span class="tag code">automated</span></span></summary><div class="body">
+<pre class="stack">PASS dot-cards: dot {"off":false,"opacity":1,"dx":0}
+PASS dot-home:  dot {"off":true,"opacity":0,"dx":null}</pre>
+      </div></details>
+      <details class="example"><summary>What it does not prove <span class="d"><span class="tag user">you</span></span></summary><div class="body">
+        <p>The end state is correct. The spring path between the two places is not measured. A video shows it.</p>
+      </div></details>
+    </div>
+  </section>
+</div>
+
+<!-- EXAMPLE MOTION -->
+<div class="panel off" id="motion" role="tabpanel">
+  <section>
+    <h2>Worked example: does the sheet open blink?</h2>
+    <p class="summary">The question: in a sheet open, does Windows show a frame with no tray? Open each step.</p>
+    <div class="steps">
+      <details class="example" open><summary>Start the recorder <span class="d"><span class="tag code">automated</span></span></summary><div class="body">
+<pre class="stack">recorder 1640 160 920 1368 0.2 30 66 out.gif
+<span class="c">#        x    y   width height scale fps seconds</span></pre>
+        <p>A grey backdrop window covers the area. Each frame gets a time and its mean color value.</p>
+      </div></details>
+      <details class="example"><summary>Run the stress <span class="d"><span class="tag code">automated</span></span></summary><div class="body">
+<pre class="stack">Orchestrator.Tray --selftest out --demo --stress --sheets
+<span class="c"># 12 cycles: Cards tab, answer (sheet opens), scrim click (sheet closes), Home</span></pre>
+      </div></details>
+      <details class="example"><summary>Find the empty frames <span class="d"><span class="tag code">automated</span></span></summary><div class="body">
+<pre class="stack">empty.py out.gif.times.txt out/stress.txt 60
+<span class="c"># a frame is empty if its mean = the mean of the first frame (backdrop only)
+# and the frame before it was not empty</span>
+6 empty frames in 60 s
+  14:38:04.225   86 ms after .acts [data-act="left"]
+  14:38:14.280  109 ms after .acts [data-act="left"]
+  ...</pre>
+      </div></details>
+      <details class="example"><summary>Make a hypothesis and test it <span class="d"><span class="tag agent">agent</span></span></summary><div class="body">
+        <p>The agent picks one cause and turns it off with one CSS rule. Then it runs the same stress.</p>
+<pre class="stack">--css ".scrim { animation: none !important; }"
+<span class="a">result: about 1 empty frame in 60 s, not 5 to 6</span></pre>
+        <p>The agent read this as "the scrim fade is the cause". That was wrong: see the next step.</p>
+      </div></details>
+      <details class="example"><summary>Look at the frames <span class="d"><span class="tag agent">agent</span> <span class="tag user">you</span></span></summary><div class="body">
+        <p>A strip of the five frames around each empty frame shows what the number means. Here the strips showed the tray in each "empty" frame. The scrim fade moved the frame mean through the backdrop mean. The detector was wrong, not the tray.</p>
+        <p class="note">Lesson: look at the frames before you test causes. The issue tracker (I1, I2) has the strips.</p>
+      </div></details>
+    </div>
+  </section>
+</div>
+
+<!-- DEFINE -->
+<div class="panel off" id="define" role="tabpanel">
+  <section>
+    <h2>Add a check</h2>
+    <ol>
+      <li>Open <code>src/Orchestrator.Tray/SelfTest.cs</code>, method <code>Run</code>.</li>
+      <li>Do the action: <code>w.Request(...)</code> for the window, <code>Js(w, $"{Go}('path')")</code> for a page.</li>
+      <li>Wait for a state with <code>Until(...)</code>, not only with a delay.</li>
+      <li>Measure with <code>Js</code>, the window fields or <code>Picture</code>.</li>
+      <li>Call <code>Add(name, rule, data)</code>. Put the measured values in the message.</li>
+    </ol>
+<pre class="stack"><span class="c">// Template</span>
+await Js(w, $"{Go}('cards')");
+await Until(async () =&gt; await Js(w, "!!document.querySelector('.x')") == "true", 3000);
+var v = await Js(w, "Math.round(document.querySelector('.x').getBoundingClientRect().width)");
+Add("x-width", v == "280", $"width {v} (expect 280)");</pre>
+    <p class="note">A new check must fail first. Revert the fix, run the check, see FAIL, then restore the fix and see PASS.</p>
+  </section>
+  <section>
+    <h2>Run the tests</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Run</th><th>Command (in <code>src/Orchestrator.Tray</code>)</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td>Self-test</td><td><code>dotnet run -- --selftest out</code></td><td><code>out/selftest.json</code>, PNG files, exit 0 or 1</td></tr>
+        <tr><td>Mouse checks</td><td><code>dotnet run -- --selftest out --mouse</code></td><td>The same, plus 4 checks</td></tr>
+        <tr><td>Demo</td><td><code>dotnet run -- --selftest out --demo</code></td><td><code>out/demo.txt</code></td></tr>
+        <tr><td>Sheet stress</td><td><code>sheets.sh name ["css rule"]</code></td><td>GIF, <code>.times.txt</code>, <code>stress.txt</code>, empty frame list</td></tr>
+        <tr><td>Video</td><td><code>recorder mp4 in.gif out.mp4 30</code></td><td>MP4 for the phone</td></tr>
+        <tr><td>Scenario proof</td><td><code>scenario.sh scenario name [seconds]</code></td><td>GIF, MP4, <code>name.rec.txt</code>, <code>name.tray.txt</code>. Exit code 1: the tray failed. Exit code 3: the recorder caught no frame</td></tr>
+      </tbody>
+    </table></div>
+    <p>The test store is a new copy for each run, so the panel and the badge start at their home places. The recorder is in <code>spikes/tray-display/recorder</code>. The scripts <code>sheets.sh</code>, <code>empty.py</code>, <code>strip.ps1</code> and <code>at.ps1</code> are in <code>spikes/tray-display/tools</code>. To report an issue, use the project skill <code>visual-issue</code>.</p>
+    <p>Each self-test takes a free test slot: its own lock, WebView2 folder and strip of the screen (460 DIP wide, from the right edge). It writes <code>instance.json</code> with the slot and the area to record. <code>scenario.sh</code> and <code>sheets.sh</code> start the recorder with <code>--area-file</code> (no grey backdrop by default; <code>--backdrop</code> or <code>BACKDROP=1</code> only for a check that needs it, and <code>sheets.sh</code> uses it for the empty frame count) and the tray with <code>--wait-recorder</code>, so two sessions can record at the same time (I17). If the recorded area does not change, the recorder writes no GIF and exits with code 3.</p>
+    <p>Each tray shows its run code and build in the corner, for example <code>I17 · 3da7df8</code> (set <code>RUN_CODE</code>). Each run writes its own run record in <code>%LOCALAPPDATA%\Orchestrator.Trayuns</code>; <code>runs.sh [day]</code> shows the number of runs and the time.</p>
+  </section>
+</div>
+
+<!-- LIMITS -->
+<div class="panel off" id="limits" role="tabpanel">
+  <section>
+    <h2>What the tests do not see</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Gap</th><th>Effect</th><th>Possible fix</th></tr></thead>
+      <tbody>
+        <tr><td>A window message cannot drive the caption drag of Windows</td><td>The demo skips the header drag</td><td>Only <code>--mouse</code> tests it, with your pointer</td></tr>
+        <tr><td>Windows sends WM_MOUSELEAVE by the real pointer (<code>TrackMouseEvent</code>)</td><td>A badge hover with messages ends at once</td><td>Only <code>--mouse</code> tests the hover. Recorded in I8</td></tr>
+        <tr><td>The self-test picture is from the page, not from the screen</td><td>It does not see empty frames or composition faults</td><td>Use the recorder for each motion check</td></tr>
+        <tr><td>A stress step that finds no element logs "no element" and continues</td><td>A run can count frames for steps that did not occur</td><td>Count the misses; fail the run if one step misses</td></tr>
+        <tr><td>The empty frame rule uses the mean color of the frame</td><td>A fade can give the backdrop mean: false empty frames (issue I2)</td><td>Count the pixels with the backdrop color in the tray area</td></tr>
+        <tr><td>Fixed delays between steps</td><td>A slow machine can measure in the middle of a motion</td><td>Wait for <code>transitionend</code> or a phase</td></tr>
+        <tr><td>No check of the motion path, only of the end state</td><td>A wrong curve or duration passes</td><td>Sample <code>getAnimations()</code> times against the spec tokens</td></tr>
+        <tr><td>Keyboard input and the screen reader in composition mode</td><td>Not tested</td><td>Add a keyboard check with window key messages</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The agent loop failed when a fix was tried before a measurement showed the cause. The rule: one hypothesis, one CSS rule or one code change, one run, one number. Record each result in the issue tracker.</p>
+  </section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["overview", "flow", "stack", "click", "motion", "define", "limits"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "overview";
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
+    document.querySelectorAll("nav button").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false"); });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>

@@ -1,0 +1,56 @@
+:root { --canvas: #e6e3de; --surf: #fdfdfc; --sunken: #d6d2cc; --ink: #1b1a18; --muted: #5f5b55; --accent: #ff6a1a;
+  --q: #ff6a1a; --r: #6f9cff; --p: #8fd94f; --b: #ff5c5c; --ease-out: cubic-bezier(.33, 1, .68, 1); --spring: cubic-bezier(.34, 1.56, .64, 1); }
+@media (prefers-color-scheme: dark) { :root { --canvas: #161618; --surf: #222225; --sunken: #34343a; --ink: #f2f1ee; --muted: #a29e98; } }
+html, body { margin: 0; height: 100%; background: transparent; color: var(--ink); font: 14px "Segoe UI", sans-serif; overflow: hidden; }
+
+/* The stage: all shapes, with one soft shadow. The 24 px margin around it is room for the shadow. */
+.stage { position: absolute; inset: 24px; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .22)); }
+
+/* The panel grows out of the ball: its clip goes from the ball circle to the full rounded panel. */
+.panel { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--canvas); border-radius: 16px;
+  clip-path: inset(calc(100% - 56px) 0 0 calc(100% - 56px) round 28px); transition: clip-path .32s var(--ease-out); }
+.stage.open .panel { clip-path: inset(0 round 16px); }
+.hd, .body, .bar > i { opacity: 0; transition: opacity .15s ease; }
+.stage.open .hd, .stage.open .body, .stage.open .bar > i { opacity: 1; transition: opacity .2s ease .12s; }
+.hd { app-region: drag; -webkit-app-region: drag; display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 16px; font-weight: 600; user-select: none; }
+.hd .title { flex: 1; }
+.hd button { app-region: no-drag; -webkit-app-region: no-drag; width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 16px; cursor: pointer; }
+.hd button:hover { background: var(--surf); color: var(--ink); }
+.body { flex: 1; overflow: auto; padding: 0 16px 8px; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; }
+
+/* The app bar: two items and a free place in the middle for the home ball. */
+.bar { flex: none; height: 84px; display: flex; align-items: center; justify-content: space-around; padding: 0 24px; }
+.bar > i { width: 36px; height: 36px; border-radius: 12px; background: var(--sunken); }
+.bar > .gap { width: 56px; background: none; }
+
+/* The home ball: one element. Closed, it is the ball at the corner; open, it is the home button in the app bar. */
+.home { position: absolute; right: 0; bottom: 0; z-index: 3; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--surf); cursor: pointer; transition: transform .32s var(--ease-out); }
+.stage.open .home { transform: translate(-147px, -14px); }
+.ring { position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(var(--q) 0 var(--a1), var(--r) 0 var(--a2), var(--p) 0 var(--a3), var(--b) 0 var(--a4), var(--sunken) 0);
+  mask: radial-gradient(circle closest-side, transparent 78%, #000 80%); }
+.core { position: absolute; inset: 13px; border-radius: 50%; background: var(--accent); box-shadow: inset 0 -2px 4px rgba(0, 0, 0, .15); }
+.home.spin .ring { animation: spin .8s cubic-bezier(.65, 0, .35, 1); }
+@keyframes spin { to { rotate: 1turn; } }
+
+/* The pill: a hover on the closed ball extends it to the left with the counts. */
+.pill { position: absolute; right: 0; bottom: 0; z-index: 2; width: 56px; height: 56px; border-radius: 28px; background: var(--surf);
+  overflow: hidden; transition: width .22s var(--ease-out), opacity .15s ease; }
+.pill .txt { position: absolute; left: 16px; top: 9px; white-space: nowrap; opacity: 0; transition: opacity .12s ease; }
+.pill b { display: block; font-size: 14px; }
+.pill small { color: var(--muted); font-size: 12px; }
+.stage:not(.open):has(.home:hover) .pill { width: 250px; }
+.stage:not(.open):has(.home:hover) .pill .txt { opacity: 1; transition: opacity .15s ease .08s; }
+.stage.open .pill { opacity: 0; }
+
+/* The peek bubble: a new card while closed. It comes out of the ball and goes back after 5 s. */
+.peek { position: absolute; right: 0; bottom: 68px; z-index: 2; max-width: 240px; padding: 9px 14px; border-radius: 16px; background: var(--surf);
+  transform-origin: bottom right; transform: scale(.4); opacity: 0; transition: transform .2s var(--ease-out), opacity .15s ease; pointer-events: none; }
+.peek.on { transform: none; opacity: 1; transition: transform .3s var(--spring), opacity .2s ease; }
+.peek b { display: block; white-space: nowrap; }
+.peek small { color: var(--muted); white-space: nowrap; }
+
+.row { display: flex; align-items: center; gap: 12px; background: var(--surf); border-radius: 14px; padding: 12px; }
+.circle { flex: none; border-radius: 50%; background: var(--accent); }
+.meter { font: 12px Consolas, monospace; color: var(--muted); }

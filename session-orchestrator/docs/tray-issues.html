@@ -1,0 +1,933 @@
+<title>Tray Issue Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky page picker, one issue for each page, the same template in each. Same tokens as the test guide. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --warn: #9a6200; --code-bg: #eef1f3;
+  --s-rep: #9a6200; --s-det: #2f5fb3; --s-rpl: #7a3fa0; --s-fix: #2b7a3d; --s-no: #6b7480;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f;
+    --s-rep: #e0a548; --s-det: #7fa8ee; --s-rpl: #c99be6; --s-fix: #6cc483; --s-no: #9aa6b0; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f;
+  --s-rep: #e0a548; --s-det: #7fa8ee; --s-rpl: #c99be6; --s-fix: #6cc483; --s-no: #9aa6b0; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 70ch; }
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap; }
+nav button { font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 10px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+nav .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.picker { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: center; }
+.picker label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.picker select { font: 500 15px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; min-width: 0; flex: 1; max-width: 560px; }
+.picker select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+td a { color: var(--accent); font-weight: 500; }
+.panel { display: flex; flex-direction: column; gap: 20px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 10px; }
+section + section { border-top: 1px solid var(--line); padding-top: 20px; }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+pre.stack { margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg); white-space: pre; }
+pre .c { color: var(--muted); }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 70ch; }
+.pill { font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; border: 1px solid currentColor; white-space: nowrap; }
+.rep { color: var(--s-rep); } .det { color: var(--s-det); } .rpl { color: var(--s-rpl); } .fix { color: var(--s-fix); } .no { color: var(--s-no); }
+.bg-rep { background: var(--s-rep); } .bg-det { background: var(--s-det); } .bg-rpl { background: var(--s-rpl); } .bg-fix { background: var(--s-fix); } .bg-no { background: var(--s-no); }
+.track { display: flex; gap: 0; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12px; }
+.track span { padding: 4px 12px; border: 1px solid var(--line); color: var(--muted); background: var(--panel); }
+.track span:first-child { border-radius: 6px 0 0 6px; } .track span:last-child { border-radius: 0 6px 6px 0; }
+.track span + span { border-left: none; }
+.track span.done { color: var(--fg); background: var(--accent-soft); }
+.track span.now { color: var(--accent); border-color: var(--accent); font-weight: 500; }
+.track span.x { text-decoration: line-through; }
+.meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.meta .k { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.field { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding-block: 10px; border-bottom: 1px solid var(--line); }
+.field > * { min-width: 0; }
+.field > .k { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+.field > .v { display: flex; flex-direction: column; gap: 8px; }
+@media (max-width: 600px) { .field { grid-template-columns: 1fr; gap: 4px; } }
+figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+figure .img { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+figure img { display: block; max-width: none; height: 240px; }
+figcaption { font-size: 13px; color: var(--muted); max-width: 70ch; }
+details.more { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+details.more > summary { cursor: pointer; padding: 10px 14px; font-family: var(--font-display); font-weight: 500; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.ask { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+.ask .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · orch/visual-review</div>
+  <h1>Tray Issue Tracker</h1>
+  <p class="summary">The known problems of the tray, one tab for each. Each issue has its own page: pick it in the list. We discuss one issue at a time.</p>
+</header>
+
+<div class="picker">
+  <label for="pick">Page</label>
+  <select id="pick">
+    <option value="about">Overview: all issues</option>
+    <option value="questions">Questions and answers (0 open)</option>
+    <option value="inventory">Inventory: architecture or standalone</option>
+    <option value="i1">I1 · Empty frames at the sheet open  (Closed)</option>
+    <option value="i2">I2 · The empty frame detector gives false alarms  (Fixed)</option>
+    <option value="i3">I3 · A stress step that misses does not fail the run  (Fixed)</option>
+    <option value="i4">I4 · Sizing issues on the screen  (Closed)</option>
+    <option value="i5">I5 · Keyboard and screen reader not tested  (Fixed)</option>
+    <option value="i6">I6 · The tray grow (G1) is not reviewed  (Fixed)</option>
+    <option value="i7">I7 · The badge hover cuts the ring at the left  (Fixed)</option>
+    <option value="i8">I8 · The demo moves your real pointer in 4 steps  (Partly fixed)</option>
+    <option value="i9">I9 · Eight motion mechanisms, no single flow  (Fixed)</option>
+    <option value="i10">I10 · Sizes in two places (C# and CSS)  (Fixed)</option>
+    <option value="i11">I11 · Motion times outside the tokens  (Fixed)</option>
+    <option value="i12">I12 · Two wait rules for "the motion ended"  (Fixed)</option>
+    <option value="i13">I13 · Reduced motion makes the tray waits run to their limit  (Fixed)</option>
+    <option value="i14">I14 · A browser status bubble shows the link address  (Fixed)</option>
+    <option value="i15">I15 · The gap between the two windows is not managed  (Detected)</option>
+    <option value="i16">I16 · Two sessions cannot test the tray at the same time  (Fixed)</option>
+    <option value="i17">I17 · The recorder records 0 frames in some runs  (Fixed)</option>
+    <option value="i18">I18 · The window cuts the shadow of the side badge  (Fixed)</option>
+    <option value="i19">I19 · The stress run misses 2 presses at the start  (Replicated)</option>
+    <option value="i20">I20 · The card filter sheet shows an old count  (Replicated)</option>
+    <option value="i21">I21 · A failed badge size report is not tried again  (Replicated)</option>
+    <option value="i22">I22 · The speed dial closes with no motion and a false warning  (Reported)</option>
+    <option value="f1">F1 · A blink at the end of the open  (Fixed)</option>
+    <option value="f2">F2 · A bigger, darker shadow and an overlap at a tab change  (Fixed)</option>
+    <option value="f3">F3 · The tab change was not the spec (T1 C)  (Fixed)</option>
+    <option value="f4">F4 · Page text in the ball circle at the start  (Fixed)</option>
+    <option value="f5">F5 · Sheets lost their place after the shadow fix  (Fixed)</option>
+    <option value="f6">F6 · The ring draw and the count-up did not run  (Fixed)</option>
+  </select>
+</div>
+
+<!-- ABOUT -->
+<div class="panel" id="about" role="tabpanel">
+  <section>
+    <h2>What this page is for</h2>
+    <p>One record for each problem. Each record shows the proof, the cause and the proposed fix. We stop at each issue and decide together. This stops the loop of fixes for problems that nobody proved.</p>
+  </section>
+  <section>
+    <h2>Working rule</h2>
+    <ol>
+      <li>When you or a test find a problem, write a record. Do not fix it.</li>
+      <li>Try to reproduce it one time. If the reproduction or the error is clear, add the proof.</li>
+      <li>If it is not clear after one try, record what was tried and stop.</li>
+      <li>You pick which issue we work on, and when.</li>
+    </ol>
+    <p class="note">Reason: one cause can make many issues, and one issue can have many causes. We see this only when all records are side by side. A fix loop on one issue hides that.</p>
+  </section>
+  <section>
+    <h2>Status flow</h2>
+    <div class="track"><span class="rep">Reported</span><span class="det">Detected</span><span class="rpl">Replicated</span><span class="fix">Fixed</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Status</th><th>Meaning</th><th>Needed to go to the next status</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill rep">Reported</span></td><td>You saw it, or the agent saw it once</td><td>A test or a picture that shows it</td></tr>
+        <tr><td><span class="pill det">Detected</span></td><td>A test or a review found it</td><td>A run that shows it again, with a number</td></tr>
+        <tr><td><span class="pill rpl">Replicated</span></td><td>It comes back on each run. We know the cause, or we test causes one at a time</td><td>A fix, and the same run shows the number is correct</td></tr>
+        <tr><td><span class="pill fix">Fixed</span></td><td>The same test passes. A check stops a return</td><td>-</td></tr>
+        <tr><td><span class="pill no">Not real</span></td><td>The proof was wrong. The record stays, as a lesson</td><td>-</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>All issues</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>ID</th><th>Issue</th><th>Status</th><th>Next step</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#i1">I1</a></td><td>Empty frames at the sheet open</td><td><span class="pill no">Closed</span></td><td>Closed: the I2 detector gives 0 on the sheet run</td></tr>
+        <tr><td><a href="#i2">I2</a></td><td>The empty frame detector gives false alarms</td><td><span class="pill fix">Fixed</span></td><td>Done: key backdrop and pixel share rule</td></tr>
+        <tr><td><a href="#i3">I3</a></td><td>A stress step that misses does not fail the run</td><td><span class="pill fix">Fixed</span></td><td>Done: a late press is a warning, a miss fails the run</td></tr>
+        <tr><td><a href="#i4">I4</a></td><td>Sizing issues on the screen</td><td><span class="pill no">Closed</span></td><td>Closed by you: no proof</td></tr>
+        <tr><td><a href="#i5">I5</a></td><td>Keyboard and screen reader not tested</td><td><span class="pill fix">Fixed</span></td><td>Done: 2 key checks. Screen reader: not needed now</td></tr>
+        <tr><td><a href="#i6">I6</a></td><td>The tray grow (G1) is not reviewed</td><td><span class="pill fix">Fixed</span></td><td>R1</td></tr>
+        <tr><td><a href="#i7">I7</a></td><td>The badge hover cuts the ring at the left</td><td><span class="pill fix">Fixed</span></td><td>Done in R2: the page reports the hover box</td></tr>
+        <tr><td><a href="#i8">I8</a></td><td>The demo moves your real pointer in 4 steps</td><td><span class="pill rpl">Partly fixed</span></td><td>Done: the badge steps. Open: the header drag and the badge hover (platform limits)</td></tr>
+        <tr><td><a href="#i9">I9</a></td><td>Eight motion mechanisms, no single flow</td><td><span class="pill fix">Fixed</span></td><td>R1</td></tr>
+        <tr><td><a href="#i10">I10</a></td><td>Sizes in two places (C# and CSS)</td><td><span class="pill fix">Fixed</span></td><td>Done in R2: the page owns each size</td></tr>
+        <tr><td><a href="#i11">I11</a></td><td>Motion times outside the tokens</td><td><span class="pill fix">Fixed</span></td><td>R1</td></tr>
+        <tr><td><a href="#i12">I12</a></td><td>Two wait rules for "the motion ended"</td><td><span class="pill fix">Fixed</span></td><td>R1</td></tr>
+        <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill fix">Fixed</span></td><td>R1</td></tr>
+        <tr><td><a href="#i14">I14</a></td><td>A browser status bubble shows the link address</td><td><span class="pill fix">Fixed</span></td><td>Before and after videos done</td></tr>
+        <tr><td><a href="#i15">I15</a></td><td>The gap between the two windows is not managed</td><td><span class="pill no">Closed</span></td><td>Closed by you: the gap is fine</td></tr>
+        <tr><td><a href="#i16">I16</a></td><td>Two sessions cannot test the tray at the same time</td><td><span class="pill fix">Fixed</span></td><td>Done (with I17): test slots and a label on each tray</td></tr>
+        <tr><td><a href="#i17">I17</a></td><td>The recorder records 0 frames in some runs</td><td><span class="pill fix">Fixed</span></td><td>Done: a 0-frame run fails at once; independent test instances</td></tr>
+        <tr><td><a href="#i18">I18</a></td><td>The window cuts the shadow of the side badge</td><td><span class="pill fix">Fixed</span></td><td>Done in R2: the window fits the shadow boxes</td></tr>
+        <tr><td><a href="#i19">I19</a></td><td>The stress run misses 2 presses at the start</td><td><span class="pill rpl">Replicated</span></td><td>Waits for the architecture review</td></tr>
+        <tr><td><a href="#i20">I20</a></td><td>The card filter sheet shows an old count</td><td><span class="pill rpl">Replicated</span></td><td>Your decision</td></tr>
+        <tr><td><a href="#i21">I21</a></td><td>A failed badge size report is not tried again</td><td><span class="pill rpl">Replicated</span></td><td>Your decision</td></tr>
+        <tr><td><a href="#i22">I22</a></td><td>The speed dial closes with no motion and a false warning</td><td><span class="pill rep">Reported</span></td><td>Your decision</td></tr>
+        <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
+        <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
+        <tr><td><a href="#f3">F3</a></td><td>The tab change was not the spec (T1 C)</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
+        <tr><td><a href="#f4">F4</a></td><td>Page text in the ball circle at the start</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
+        <tr><td><a href="#f5">F5</a></td><td>Sheets lost their place after the shadow fix</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
+        <tr><td><a href="#f6">F6</a></td><td>The ring draw and the count-up did not run</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>Record template</h2>
+<pre class="stack">ID and title
+Status       Reported | Detected | Replicated | Fixed | Not real
+Source       you | self-test | stress run | review
+What         one sentence: what is wrong, where
+Proof        picture, video or data, with the run name
+Replicate    the command, and the number it gives
+Cause        known (with the data) | not known (what we tested)
+Proposal     the fix, and the check that proves it
+Decision     the question for you</pre>
+  </section>
+</div>
+
+<!-- QUESTIONS -->
+<div class="panel off" id="questions" role="tabpanel">
+  <section>
+    <h2>Questions and answers</h2>
+    <p class="summary">Open questions: 0. All 16 questions got an answer on 2026-11-20. Each issue page records its answer. A new question goes in this table first.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>ID</th><th>Answer</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>I8</td><td><b>A.</b> All 4 demo steps use window messages. The header drag can move the window in code.</td><td><a href="#i8">I8</a></td></tr>
+        <tr><td>I14</td><td><b>A, turn off.</b> IsStatusBarEnabled = false in ClearHost.Start.</td><td><a href="#i14">I14</a></td></tr>
+        <tr><td>I7</td><td><b>B, measure on demand.</b> No hard-coded sizes. The page measures its sizes and reports them; C# sets the click area from them. Part of the registry work (I9).</td><td><a href="#i7">I7</a></td></tr>
+        <tr><td>I10</td><td><b>A, the page.</b> The page owns all sizes (CSS tokens) and reports them to C#. C# keeps only the work area, the saved places and the gap.</td><td><a href="#i10">I10</a></td></tr>
+        <tr><td>Q1</td><td><b>B, registry.</b> A motion registry in C# (data-driven) that makes the CSS rules and the checks.</td><td>Architecture, motion contract</td></tr>
+        <tr><td>I9</td><td><b>A, design first.</b> First a registry design on the architecture page, for review. Then I7 and I10 as parts of it.</td><td><a href="#i9">I9</a></td></tr>
+        <tr><td>I11</td><td><b>B, tokens now.</b> Move all motion times to tokens in motion.css now, as a separate fix.</td><td><a href="#i11">I11</a></td></tr>
+        <tr><td>I12</td><td><b>One utility, many modes.</b> One wait utility with modes: settle (other animations), property, and time. One limit rule from a token, and a trace line when a limit ends a wait. It replaces orchTray.end and orchMotion.settle.</td><td><a href="#i12">I12</a></td></tr>
+        <tr><td>I13</td><td><b>A.</b> In reduced motion, the duration tokens become 1 ms. Run the self-test with reduced motion emulated.</td><td><a href="#i13">I13</a></td></tr>
+        <tr><td>I2</td><td><b>Later.</b> Discuss later.</td><td><a href="#i2">I2</a></td></tr>
+        <tr><td>I1</td><td><b>Later.</b> Discuss with I2 later.</td><td><a href="#i1">I1</a></td></tr>
+        <tr><td>I3</td><td><b>Wait 1 s, then retry.</b> Each press waits at most 1 s for its element. If it is missing, retry up to 3 s. A retry or a miss is a failure, and the run exits with 1.</td><td><a href="#i3">I3</a></td></tr>
+        <tr><td>I4</td><td><b>Parked.</b> Parked until there is proof. Hint from the user: it occurred at a quick modal open (the answer sheet).</td><td><a href="#i4">I4</a></td></tr>
+        <tr><td>I5</td><td><b>A, a must.</b> Keyboard use is a must. Add two self-test checks: type in the reply box, and Tab moves the focus. A failure is a must-fix issue. Narrator is a manual step for the user.</td><td><a href="#i5">I5</a></td></tr>
+        <tr><td>I6</td><td><b>Reviewed: keep the look.</b> The grow, the ball and the gap of about 100 ms between the two windows are good (the gap is ideal). All values must be tokens and go through the one motion pipeline, the window steps too. Proof: recording of 2026-11-20, 10 dock and open cycles.</td><td><a href="#i6">I6</a></td></tr>
+        <tr><td>Q2</td><td><b>Project for now.</b> Keep the skill in this project. Later move it to a general place: the machine, or the orch plugin.</td><td>Skill</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>Order of the work</h2>
+    <ol>
+      <li>Done: the grow review (I6). Keep the look; make all values tokens.</li>
+      <li>Done: the standalone fixes I14, I8 (part), I5 and I3 (PR #59).</li>
+      <li>Done: R1, the motion pipeline (I6 rest, I9, I11, I12, I13). I15 stays open.</li>
+      <li>Done: R2, size ownership (I7, I10, I18). Plan and proofs: <a href="https://claude.ai/artifact/UYCh2zPYAwXJijYz9opJCZ">size ownership plan</a>.</li>
+      <li>Done: I2 (I1 closed), #60 (source test).</li>
+      <li>Later: I8 (2 platform limits). Waits for the architecture review: I19. Your decision: I20, I21, I22. Closed: I4, I15.</li>
+    </ol>
+  </section>
+</div>
+
+<!-- inventory -->
+<div class="panel off" id="inventory" role="tabpanel">
+  <section>
+    <h2>Inventory: architecture or standalone</h2>
+    <p class="summary">8 of 15 open issues are symptoms of two architecture problems. Fix them inside the refactor, not one by one. 2 issues are standalone. 5 are test tooling or have no proof. Made on 2026-11-20 by an agent that did not see our classification; claims checked in the code.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Issue</th><th>Problem</th><th>Class</th><th>Root cause</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#i9">I9</a></td><td>Eight motion mechanisms</td><td>R1</td><td>No shared start and wait contract</td></tr>
+        <tr><td><a href="#i11">I11</a></td><td>Times outside tokens</td><td>R1 (part safe now)</td><td>Old code came before the motion layer</td></tr>
+        <tr><td><a href="#i12">I12</a></td><td>Two wait rules</td><td>R1</td><td><code>orchTray.end</code> has a property name and fixed limits</td></tr>
+        <tr><td><a href="#i13">I13</a></td><td>Reduced motion waits to the limit</td><td>R1</td><td><code>transition: none</code> removes the end events</td></tr>
+        <tr><td><a href="#i15">I15</a></td><td>Window gap not managed</td><td>R1</td><td><code>WidgetWindow.Enter</code> has no shown or hidden event</td></tr>
+        <tr><td><a href="#i6">I6</a></td><td>Grow review (rest)</td><td>R1</td><td>Look approved; tokens and window steps go to R1</td></tr>
+        <tr><td><a href="#i7">I7</a></td><td>Hover cuts the ring</td><td>R2</td><td>Click area is a C# constant; the width is CSS <code>auto</code></td></tr>
+        <tr><td><a href="#i10">I10</a></td><td>Sizes in C# and CSS</td><td>R2</td><td>Two owners for each size</td></tr>
+        <tr><td><a href="#i14">I14</a></td><td>Status bubble</td><td>Standalone</td><td><code>IsStatusBarEnabled</code> not set</td></tr>
+        <tr><td><a href="#i8">I8</a></td><td>Demo moves the real pointer</td><td>Standalone</td><td><code>Drag</code> and <code>Glide</code> ignore <code>NoPointer</code>; <code>HostInput</code> reads <code>Cursor.Position</code></td></tr>
+        <tr><td><a href="#i3">I3</a></td><td>A missed press does not fail the run</td><td>Test tooling</td><td><code>Act</code> has no pass rule</td></tr>
+        <tr><td><a href="#i5">I5</a></td><td>No keyboard check</td><td>Test tooling</td><td>No check sends keys</td></tr>
+        <tr><td><a href="#i1">I1</a></td><td>False empty frames</td><td>Test tooling</td><td>The detector, not the tray</td></tr>
+        <tr><td><a href="#i2">I2</a></td><td>Detector false alarms</td><td>Test tooling</td><td>Frame mean, not pixel share</td></tr>
+        <tr><td><a href="#i4">I4</a></td><td>Sizing issue</td><td>No proof</td><td>Not known</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>Refactor groups</h2>
+    <p>R1 and R2 were G1 and G2. The new names keep them apart from the grow spec G1 in <code>motion-design.html</code>.</p>
+    <details class="example" open><summary>R1 · Motion pipeline · L · I6, I9, I11, I12, I13, I15</summary><div class="body">
+      <p>Covers: P-D1, P-SS1, P-M1, P-C1, P-C2, P-St1, P-St2, and the motion contract. The refactor must:</p>
+      <ol><li>Put all times in tokens.</li><li>Make one wait utility: settle, property, time, event; a limit from a token; a trace line at a limit.</li><li>Use 1 ms durations for reduced motion.</li><li>Make the window steps pipeline steps with end events (shown, first frame, hidden).</li><li>Add the C# registry: state, target, token, spec ID, and the checks.</li></ol>
+    </div></details>
+    <details class="example" open><summary>R2 · Size ownership · M · I7, I10 · after R1</summary><div class="body">
+      <p>Covers: P-P1 (reversed: the page owns the sizes), P-P2, P-D2. The refactor must:</p>
+      <ol><li>The page measures the tab widths (rest, hover, peek), the shadow margin and the panel size.</li><li>The page reports them to C#.</li><li><code>Hits()</code> uses only the reported values.</li><li>The 300 ms hover fold timer becomes "report after the motion ends" (needs the R1 wait).</li><li>A check compares each drawn size with its click area.</li></ol>
+    </div></details>
+  </section>
+  <section>
+    <h2>Safe to fix now</h2>
+    <ul><li><b>I14</b>: one line in <code>ClearHost.Start</code>. Done.</li><li><b>I8</b>: test helpers, and <code>HostInput</code> reads the point from the message. R2 does not change the drag code. Done, except the 2 platform limits.</li><li><b>I3, I5</b>: self-test only. Done.</li></ul>
+    <p>Not now: I11 and I12 are the base of R1. Do them as R1 step 1 and 2, with the final API.</p>
+  </section>
+  <section>
+    <h2>Hidden defects found (no record before; all in R1)</h2>
+    <ul>
+      <li><code>TrayStage.Fold</code> waits on <code>.nav2 .home</code>. A page with no app bar ends the wait at once.</li>
+      <li><code>BadgeRoot.In</code> sets <code>Badge</code> after 2 frames, before the slide ends. The self-test passes too early.</li>
+      <li><code>TrayFlow.Request</code> catches JS errors with no report; <code>Phase</code> can stay out of date.</li>
+      <li><code>BringBadge</code> drops a notice when the flow is busy.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Conflicts to decide</h2>
+    <ul>
+      <li>Q1 registry: does it own the token values, or only the names? If the values, the I11 work moves again.</li>
+      <li>P-P1 and P-SS1 on the architecture page are out of date after the I7, I10 and I12 answers.</li>
+      <li>"Gap" has two meanings: 12 px at the screen edge, and about 100 ms between windows. Each needs its own term.</li>
+      <li>No record yet: P-S1 (hidden views load), and the order of <code>tray.css</code> over <code>motion.css</code>.</li>
+    </ul>
+  </section>
+</div>
+
+<!-- I1 -->
+<div class="panel off" id="i1" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill no">Closed</span><span class="k">source: stress run · I1</span></div>
+    <h2>I1 · Empty frames at the sheet open</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done x">Replicated</span><span class="now">Closed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>The detector counted 5 to 6 empty frames in 60 s of sheet opens and closes. Each one was 70 to 110 ms after a sheet open or close.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+      <figure><div class="img"><img src="issues/sheet-open-false-empty.jpg" alt="Five frames of a sheet open. The frame marked EMPTY shows the tray with the sheet."></div>
+        <figcaption>Run <code>base-now</code>, sheet open. The frame marked EMPTY shows the tray. It is not empty.</figcaption></figure>
+      <figure><div class="img"><img src="issues/sheet-close-false-empty.jpg" alt="Five frames of a sheet close. The frame marked EMPTY shows the tray."></div>
+        <figcaption>Run <code>base-now</code>, sheet close. The same: the tray is on the screen.</figcaption></figure>
+    </div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v">
+<pre class="stack">sheets.sh base-now
+<span class="c"># base-now: 5 empty frames in 60 s
+# backdrop mean 204.09; the marked frames 203.95 and 203.77</span></pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. The scrim fade makes the tray area darker or lighter in steps. One step has a mean near the backdrop mean (204), so the detector marks it. See I2.</p>
+      <p>This also explains the old test: with no scrim fade, the mean jumps past 204, so the count went to about 1.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>No change to the tray. Keep the scrim fade as the spec says. Close I1 when the new detector (I2) gives 0 on the same run.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we close I1 after the I2 check gives 0?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Later.</b> Discuss with I2 later.</p></div><div class="ask"><span class="k">Answer · 2026-11-21</span><p>Do the I2 fix (key backdrop). Close I1 when it gives 0.</p></div></div></div>
+    <div class="field"><span class="k">Result</span><div class="v"><p>The I2 detector gives 0 blinks on the sheet run (11 sheet opens and closes). I1 is closed: the tray never showed an empty frame.</p></div></div>
+  </section>
+</div>
+
+<!-- I2 -->
+<div class="panel off" id="i2" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review of the proof · I2</span></div>
+    <h2>I2 · The empty frame detector gives false alarms</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p><code>empty.py</code> marks a frame as empty when its mean color is within 0.6 of the backdrop mean. A frame with the tray can have the same mean.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>The two strips on <a href="#i1">I1</a>: both marked frames show the tray. 5 of 5 marks in <code>base-now</code> are near a sheet motion.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">strip.ps1 -Gif base-now.gif -Times base-now.gif.times.txt -Nth 1..5</pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. One mean value for the full frame cannot tell "no tray" from "tray with a different shade".</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v">
+      <p>Change the rule: a frame is empty when almost all pixels in the tray area have the backdrop color.</p>
+<pre class="stack">empty  = share of pixels with color #CCCCCC (±3) in the panel area &gt; 98 %
+record = that share for each frame, in place of the mean</pre>
+      <p>Proof that the new rule works:</p>
+      <ol><li>The old open blink (the real one, see <a href="#f1">F1</a>) still gives an empty frame.</li><li>The <code>base-now</code> run gives 0.</li></ol>
+    </div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I change the detector to the pixel share rule, and test it on the old and new runs?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Later.</b> Discuss later.</p></div><div class="ask"><span class="k">Answer · 2026-11-21</span><p>Use a backdrop color that the tray never draws, so it never matches. Rule: share above 98 %.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><ul><li>Recorder: <code>--backdrop-key</code> draws the backdrop in <code>#FF00FF</code>. Each frame writes the share of pixels that are exactly that color (3rd column of the times file).</li><li>Recorder: the backdrop stays directly under the lowest tray window. Before, other windows of the screen could cover it.</li><li><code>empty.py</code>: a blink is a frame with a key share above 98 %, after a tray frame, with the tray back later. The end of the run is no blink.</li><li><code>sheets.sh</code> uses the key backdrop and the built exe with <code>INSTANCE</code>.</li></ul></div></div>
+    <div class="field"><span class="k">Result</span><div class="v"><p>Same sheet run, fix on:</p><ul><li>Base: 0 blinks. A tray frame has a key share of 40.8 %. The highest share of a tray frame is 94.3 % (only the sheet shows).</li><li>Blink on purpose (<code>body:has(.scrim) { opacity: 0 }</code>): 11 blinks for 11 sheet opens, each 35 to 72 ms after the open.</li></ul></div></div>
+  </section>
+</div>
+
+<!-- I3 -->
+<div class="panel off" id="i3" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: stress log · I3</span></div>
+    <h2>I3 · A stress step that misses does not fail the run</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>If a press finds no element, the run logs "no element" and continues. The frame count then covers steps that did not occur.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+<pre class="stack"><span class="c"># base-now/stress.txt, cycle 1</span>
+14:59:05.670 .acts [data-act="left"]: no element .acts [data-act="left"]
+14:59:06.573 .presence .scrim: no element .presence .scrim
+<span class="c"># 46 presses clicked, 2 missed. Run h-sheet: the same misses in cycle 1.</span></pre></div></div>
+    <div class="field"><span class="k">Small scenario</span><div class="v"><p>Scenario <code>late-press</code> (the sheet cycle, 3 times, with the page state after each press): 12 of 12 presses did their job, even with the sheet press 100 ms after the tab click. The button comes in less than 100 ms. The miss occurs only under load (the recorder ran in the stress run), so the proof makes the cases on purpose.</p></div></div>
+    <div class="field"><span class="k">Result</span><div class="v">
+      <p>Scenario <code>press-rules</code>: test buttons that the scenario adds to the page.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Case</th><th>Before</th><th>After</th></tr></thead>
+        <tbody>
+          <tr><td>Normal button</td><td>clicked</td><td>clicked</td></tr>
+          <tr><td>Button 1.5 s late</td><td>"no element", no click</td><td>clicked after 1504 ms, warning</td></tr>
+          <tr><td>Button never comes</td><td>"no element"</td><td>miss after 3002 ms</td></tr>
+          <tr><td>Exit code</td><td>0</td><td>1</td></tr>
+        </tbody>
+      </table></div>
+<pre class="stack">presses: 1 warnings, 1 misses
+  WARNING #t-late: the element came after 1506 ms (limit 1000 ms); page /
+  MISS #t-never: no element after 3057 ms; page /</pre>
+      <p>The rule is in <code>Press</code>, so the stress run, the demo and the scenarios use it. Self-test: 29 of 30 (only I7 fails).</p>
+    </div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. <code>Act</code> writes the result but has no pass rule. In cycle 1 the Cards page is not ready 700 ms after the tab click.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>Wait for the element with <code>Until</code> before the press, up to 3 s.</li><li>Count the misses. Exit 1 if one press misses.</li></ol></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I make a missed press fail the run?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Wait 1 s, then retry.</b> Each press waits at most 1 s for its element. If it is missing, retry up to 3 s. A miss after 3 s is a failure, and the run exits with 1.</p><p><b>Change, 2026-11-20:</b> a retry is a warning, not a failure. The run continues. The log line gives the cause and the wait time, and the summary gives the count of warnings. A late element is not acceptable, so each warning is a record to examine later.</p></div></div></div>
+  </section>
+</div>
+
+<!-- I4 -->
+<div class="panel off" id="i4" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill no">Closed</span><span class="k">source: you · I4</span></div>
+    <h2>I4 · Sizing issues on the screen</h2>
+    <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>You saw sizing issues on the screen that I showed. We do not know which screen or which part yet.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>None yet.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v">
+      <p>Not known. Possible causes, not tested:</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Possible cause</th><th>What it looks like</th></tr></thead>
+        <tbody>
+          <tr><td>Test CSS of the runs <code>h-noscroll</code> and <code>h-nocontain</code></td><td>Content cut at the bottom; the dark scrim larger than the panel</td></tr>
+          <tr><td>The recorder backdrop</td><td>A plain grey rectangle, 920 × 1368 px, at the right side of the screen</td></tr>
+          <tr><td>A real fault in the tray</td><td>Wrong size in a normal run</td></tr>
+        </tbody>
+      </table></div>
+    </div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>Send a screenshot, or say the page, the part and what is wrong. Then I add a size check for that part to the self-test.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Which screen and which part showed the sizing issue?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Parked.</b> Parked until there is proof. Hint from the user: it occurred at a quick modal open (the answer sheet).</p></div><div class="ask"><span class="k">Answer · 2026-11-21</span><p><b>Closed.</b> No proof came. If the problem comes back, open a new issue with a screenshot.</p></div></div></div>
+  </section>
+</div>
+
+<!-- I5 -->
+<div class="panel off" id="i5" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review · I5</span></div>
+    <h2>I5 · Keyboard and screen reader not tested</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>The tray window uses composition mode. The host forwards mouse input to the page. No test checks key input or the screen reader.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>No check in <code>SelfTest.cs</code> sends a key. Not tried by hand.</p></div></div>
+    <div class="field"><span class="k">Spike</span><div class="v"><p>Scenario <code>keys</code> (window messages, the pointer does not move). The keyboard works. Real keys go to the focus window of the host thread: the WebView2 child window <code>Chrome_WidgetWin_0</code>, not the host. Posted keys use the same path, so this is not a platform limit.</p>
+<pre class="stack">keys to the host window       box = ''
+keys to Chrome_WidgetWin_0    box = 'xyz'
+Tab 1, 2, 3                   dictate button (aria-label), Cancel, Send answer</pre></div></div>
+    <div class="field"><span class="k">Result</span><div class="v">
+      <p>Two self-test checks: <code>keys-type</code> and <code>keys-tab</code>. Proof that they can fail:</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Run</th><th>keys-type</th><th>keys-tab</th></tr></thead>
+        <tbody>
+          <tr><td>Normal</td><td>Pass</td><td>Pass</td></tr>
+          <tr><td><code>MoveFocus</code> off</td><td>Pass</td><td>Pass</td></tr>
+          <tr><td>Focus on the host window (a test break)</td><td>Fail: box empty</td><td>Fail: focus stays in the box</td></tr>
+        </tbody>
+      </table></div>
+      <p><code>MoveFocus</code> is not the only path: a click into the page gives the focus to WebView2. Self-test: 29 of 30 (only I7 fails).</p>
+    </div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>A check: focus the reply box, send key messages, read the box value.</li><li>A check: Tab key moves the focus to the next button.</li><li>A manual test with Narrator, once.</li></ol></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Is keyboard input in the tray a need now, or later?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, a must.</b> Keyboard use is a must. Add two self-test checks: type in the reply box, and Tab moves the focus. A failure is a must-fix issue. Narrator is a manual step for the user.</p></div><div class="ask"><span class="k">Answer · 2026-11-21</span><p><b>No screen reader test now.</b> Accessibility is not a requirement at this time. The keyboard checks stay.</p></div></div></div>
+  </section>
+</div>
+
+<!-- I6 -->
+<div class="panel off" id="i6" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: you · I6</span></div>
+    <h2>I6 · The tray grow (G1) is not reviewed</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>All motion follows <code>docs/motion-design.html</code>, except the grow from the ball to the panel (G1 and M6). You asked to review it together later.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Not a fault. An open review item.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>I send an MP4 of the grow, frame by frame next to the spec. We then pick the changes.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: When do we review the grow: now, or after I1 to I4?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Reviewed: keep the look.</b> The grow, the ball and the gap of about 100 ms between the two windows are good (the gap is ideal). All values must be tokens and go through the one motion pipeline, the window steps too. Proof: recording of 2026-11-20, 10 dock and open cycles.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R1 S1 and S9: each grow value is a token of <code>motion.css</code>, and the window steps go through the pipeline. You approved the look before R1.</p></div></div>
+  </section>
+</div>
+
+<!-- I7 -->
+<div class="panel off" id="i7" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: you, in the demo · I7</span></div>
+    <h2>I7 · The badge hover cuts the ring at the left</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>At a hover, the badge tab extends to the left with the counts. The left part of the tab, with the ring, is cut off.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+      <figure><div class="img"><img src="issues/badge-hover-cut.jpg" alt="Five frames of the badge. In the hover frames the ring at the left end of the tab is cut in half."></div>
+        <figcaption>Run <code>full</code> (demo). Frame 1: the badge at rest, correct. Frames 2, 3 and 5: the hover, the ring cut in half. Frame 4: the peek is on (the click area is the full window), the ring shows.</figcaption></figure>
+<pre class="stack">FAIL badge-hover-fits: tab width at the hover 333 CSS px,
+     click area of the hover 280 (+ 14 margin), window 332;
+     text "4 questions · 1 review · 2 reports · 1 blocked"</pre></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">Orchestrator.Tray --selftest out     <span class="c"># check badge-hover-fits: FAIL</span></pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v">
+      <p>Known. Two sizes do not agree:</p>
+      <ul><li>CSS: the hover width is <code>width: auto</code>, so the text sets it. With this text it is 333 px.</li>
+      <li>C#: the click area of the hover is fixed at 280 + 14 px. The window region is the click area, and Windows also clips the drawing to it.</li></ul>
+      <p>The result: 39 px at the left are cut. The window (332 px) is also 1 px too narrow.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v">
+      <div class="scroll"><table>
+        <thead><tr><th>Option</th><th>Change</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td>CSS: hover width fixed at 280 px (the spec N1 value); the text ends with "…" if it is too long</td><td>One size in two places. Long counts are cut</td></tr>
+          <tr><td>B</td><td>The page sends its tab width to C#; the click area and the window follow it</td><td>No text cut. More code, and the window size changes</td></tr>
+          <tr><td>C</td><td>A shorter text: "4 q · 1 rev · 2 rep · 1 blk"</td><td>Fits now, but a large count can still overflow</td></tr>
+        </tbody>
+      </table></div>
+      <p>The check <code>badge-hover-fits</code> proves the fix. It is in the self-test now and fails.</p>
+    </div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Which option: A, B or C? Recommendation: A, because the spec gives 280 px and the size stays in one token.</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>B, measure on demand.</b> No hard-coded sizes. The page measures its sizes and reports them; C# sets the click area from them. Part of the registry work (I9).</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R2, option B. The page measures the shadow box of the tab at the hover (<code>orchTray.sizes</code>) and reports it. The window size and the click area of the hover come from it. The window owns the hover; the page draws it (class <code>is-hover</code>) and reports the end of the fold (step <code>badge-fold</code>), so the click area stays wide until the fold ends.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Scenario <code>badge-states</code>, fix off and on: at the hover the ring is cut by 33 px (off), and shows in full (on). Check <code>badge-box-fits</code>: FAIL in rest, hover and peek before; PASS after. Check <code>badge-fold-area</code>: 0 cut samples in the fold (fail-first with a 50 ms delay: 515 cut samples). Self-test 41 of 41, <code>--reduced</code> 42 of 42.</p></div></div>
+  </section>
+</div>
+
+<!-- I8 -->
+<div class="panel off" id="i8" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rpl">Partly fixed</span><span class="k">source: demo log · I8</span></div>
+    <h2>I8 · The demo moves your real pointer in 4 steps</h2>
+    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>Window messages are the default for clicks. But the header drag, the badge hover, the badge drag and the badge click of the demo still use the real pointer.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+<pre class="stack"><span class="c"># full/demo.txt</span>
+15:09:36.551 drag the header: True        <span class="c">Drag() = SetCursorPos + mouse_event</span>
+15:09:39.818 hover the badge: tab width 68  <span class="c">Glide() = SetCursorPos; measured before the 350 ms wait</span>
+15:09:43.507 drag the badge up: True
+15:09:51.238 click the badge: True</pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. Only <code>Press</code> reads <code>NoPointer</code>. <code>Drag</code> and <code>Glide</code> do not.</p><p>Replicated: the demo of 2026-11-19 (two windows) moved the pointer again in the same 4 steps.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>Send the drag and hover as window messages too, or skip these steps with no pointer.</li><li>Measure the hover width after the 350 ms wait.</li></ol></div></div>
+    <div class="field"><span class="k">Result</span><div class="v">
+      <p>2026-11-20, demo with window messages: the log ends with "pointer: not moved".</p>
+      <div class="scroll"><table><thead><tr><th>Step</th><th>Result</th></tr></thead><tbody>
+        <tr><td>Badge click</td><td>Fixed: window messages</td></tr>
+        <tr><td>Badge drag</td><td>Fixed: window messages. <code>HostInput</code> now reads the point and the button from the message (log: "badge drag end: top 400")</td></tr>
+        <tr><td>Header drag</td><td>Skipped. Platform limit: only the real pointer drives the caption drag of Windows</td></tr>
+        <tr><td>Badge hover</td><td>Does not hold. Platform limit: <code>TrackMouseEvent</code> follows the real pointer, so Windows sends WM_MOUSELEAVE at once (tab width 68, not 280)</td></tr>
+      </tbody></table></div>
+      <p>Open: the two platform limits. Think about them later. Test gap found: the self-test check <code>badge-input</code> reads the hover click area after 200 ms, inside the 300 ms fold delay, so it passes although the hover already ended.</p>
+    </div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I change the 4 steps to window messages?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A.</b> All 4 demo steps use window messages. The header drag can move the window in code.</p></div></div></div>
+  </section>
+</div>
+
+<!-- I9 -->
+<div class="panel off" id="i9" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review of the view code · I9</span></div>
+    <h2>I9 · Eight motion mechanisms, no single flow</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>Stage phases, Presence, tab change, view transition, nav dot, ring draw, deck script and C# timers each start a motion and wait for its end in their own way.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Fact of the code, from the review on the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">view architecture page</a> (Findings tab). No reproduction needed.</p><p>The table on the Motion paths tab lists the eight mechanisms, with the file and the wait of each.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. Each mechanism was added for one feature. No shared rule for start and wait.</p></div></div>
+    <div class="field"><span class="k">Possible effect</span><div class="v"><p>A fix in one path does not reach the others. One fault can come from two paths at the same time.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>A design pass on one motion flow: one way to start, one way to wait, one place for times.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we do the design pass before we fix I7, I10, I11 and I12?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, design first.</b> First a registry design on the architecture page, for review. Then I7 and I10 as parts of it.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R1 S3 to S9: one motion pipeline. C# sends each motion as a step of the registry <code>MotionSteps</code>, and the deck and the window steps use it too.</p></div></div>
+  </section>
+</div>
+
+<!-- I10 -->
+<div class="panel off" id="i10" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review of the view code · I10</span></div>
+    <h2>I10 · Sizes in two places (C# and CSS)</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>Some sizes of the tray are C# constants and also CSS values. Nothing keeps them equal.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Fact of the code, from the review on the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">view architecture page</a> (Findings tab). No reproduction needed.</p><pre class="stack">C#  TrayWindow   ShadowMargin 24   BadgeWindow   TabRest 68   TabMargin 14   TabWide 280   BadgeWidth 332
+CSS tray.css     inset: 24px       width: 68px  top: 14px      width: auto   (none)</pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. C# needs the sizes for the window and the click area. CSS needs them for the drawing.</p></div></div>
+    <div class="field"><span class="k">Possible effect</span><div class="v"><p>The click area and the drawing disagree. I7 is one known result.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>One source for each size: the page measures and sends it to C#, or C# sends its values to the page as CSS variables.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Which side owns the sizes: the page or C#?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, the page.</b> The page owns all sizes (CSS tokens) and reports them to C#. C# keeps only the work area, the saved places and the gap.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R2, option A. <code>tray.css</code> has a token for each size that a window needs: <code>--tray-panel-w</code>, <code>--tray-panel-h</code>, <code>--tray-margin</code>, <code>--badge-tab</code>, <code>--badge-tab-top</code>. The page reports them and the measured boxes (<code>TraySizes</code>). <code>TrayWindow</code> and <code>BadgeWindow</code> keep no size constant; C# keeps only the edge gap, the work area and the saved places.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Unit tests: <code>Tray_sizes_are_tokens</code> (7 literals before, 0 after) and <code>Tray_window_sizes_come_from_the_page</code> (8 constants before R2, 0 after). Check <code>panel-box-fits</code>: the shadow of the open panel is inside its window (fail-first with an 8 px margin). The panel window keeps its size and place.</p></div></div>
+  </section>
+</div>
+
+<!-- I11 -->
+<div class="panel off" id="i11" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review of the view code · I11</span></div>
+    <h2>I11 · Motion times outside the tokens</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>The rule is that all motion tokens are in <code>motion.css</code>. Some times are fixed numbers in other files.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Fact of the code, from the review on the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">view architecture page</a> (Findings tab). No reproduction needed.</p><ul><li><code>app.css</code>: deck .32 s, .45 s, .42 s, .3 s, .18 s; toggle .15 s.</li><li><code>swipe.js</code>: 300, 180, 450, 60 ms, equal to <code>app.css</code> by hand.</li><li>Undo: 5 s in <code>motion.css</code> and 5 s in <code>Cards.UndoTime</code> (C#).</li><li><code>TrayWindow</code>: 300 ms hover fold; the token <code>--t-badge-hover</code> is 0.28 s.</li><li><code>TrayStage</code>: wait limits 900, 500, 1500, 400 ms.</li></ul></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. The deck and the window code came before the motion layer.</p></div></div>
+    <div class="field"><span class="k">Possible effect</span><div class="v"><p>A change of one value makes a wait end too early or too late.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>Move each time to a token. Scripts and C# read the token, or wait for the motion end.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Part of the design pass of I9, or a separate fix?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>B, tokens now.</b> Move all motion times to tokens in motion.css now, as a separate fix.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R1 S1 and S3: each motion time is a token of <code>motion.css</code>. The source test <code>Motion_times_are_tokens</code> fails on a time literal (#60 closed its 3 gaps).</p></div></div>
+  </section>
+</div>
+
+<!-- I12 -->
+<div class="panel off" id="i12" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review of the view code · I12</span></div>
+    <h2>I12 · Two wait rules for "the motion ended"</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p><code>orchTray.end</code> waits for one named property of one element. <code>orchMotion.settle</code> waits for all animations of a subtree.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Fact of the code, from the review on the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">view architecture page</a> (Findings tab). No reproduction needed.</p><pre class="stack">orchTray.end(".tray-panel", "clip-path", 900)   <span class="c">// TrayStage</span>
+orchMotion.settle(root)                         <span class="c">// Presence, MainLayout</span></pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known. The tray stage has its own script (<code>tray.js</code>).</p></div></div>
+    <div class="field"><span class="k">Possible effect</span><div class="v"><p>A wrong property name waits for the full limit, with no error. The flow then looks slow, but no test fails.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>One wait helper for all: <code>settle</code>, with a log line when the limit ends a wait.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Part of the design pass of I9?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>One utility, many modes.</b> One wait utility with modes: settle (other animations), property, and time. One limit rule from a token, and a trace line when a limit ends a wait. It replaces orchTray.end and orchMotion.settle.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R1 S3: one wait, <code>orchMotion.wait</code>, with the modes settle, property, frames and step. <code>orchTray.end</code> is removed.</p></div></div>
+  </section>
+</div>
+
+<!-- I13 -->
+<div class="panel off" id="i13" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review, prior art · I13</span></div>
+    <h2>I13 · Reduced motion makes the tray waits run to their limit</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>With the Windows setting for reduced motion, each wait of the tray stage can run to its full time limit. The open then can take 900 ms more, with no motion on the screen.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Fact of the code. Not run.</p>
+<pre class="stack">motion.css   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+tray.js      end(): waits for transitionend of one property, or for the limit
+TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transition: no event: 900 ms</span></pre></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><p>Not tried. A run of the self-test with the CSS media emulated as reduced would show it.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known from the code. <code>orchMotion.settle</code> is safe: with no animation it ends at once. <code>orchTray.end</code> is not.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p>Prior art (Fluent, Shoelace): set the duration tokens to 1 ms in place of <code>none</code>, so the end events still come. Or use one wait helper (I12).</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Part of the motion flow design (I9)?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A.</b> In reduced motion, the duration tokens become 1 ms. Run the self-test with reduced motion emulated.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R1 S2: reduced motion sets each duration token to 1 ms, so each end event comes. The test <code>Reduced_motion_sets_each_duration_token_to_1ms</code> checks it.</p></div></div>
+  </section>
+</div>
+
+<!-- I14 -->
+<div class="panel off" id="i14" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: demo recording · I14</span></div>
+    <h2>I14 · A browser status bubble shows the link address</h2>
+    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>When the pointer is on a link, a small grey bubble with "https://0.0.0.1/" shows at the bottom left of the panel. It is the status bubble of the browser, with the internal address of the app.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+      <figure><div class="img"><img src="issues/status-bubble.jpg" alt="Two frames of the panel at a dock. A grey bubble with the text https://0.0.0.1/ is at the bottom left."></div>
+        <figcaption>Run <code>tw-demo</code>, the start of the dock: the pointer is on the header. The bubble is at the bottom left.</figcaption></figure>
+    </div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><p>Replicated 2026-11-20: <code>--stress --sheets</code> (window messages). The bubble shows in 6 of 9 frames, one each second.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Probable: the WebView2 setting <code>IsStatusBarEnabled</code> is on (the default). <code>ClearHost</code> does not set it. Not tested.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><p><code>web.Settings.IsStatusBarEnabled = false</code> in <code>ClearHost.Start</code>, for both windows. Check: a frame strip of a link hover shows no bubble.</p></div></div>
+    <div class="field"><span class="k">Result</span><div class="v">
+      <figure><div class="img"><img src="issues/status-bubble-before.jpg" alt="Six frames, 700 ms after each tab click, with the fix turned off. A small grey bubble with the address is at the bottom left in each frame."></div><figcaption>Before (fix turned off): scenario <code>status-bubble</code>, 700 ms after each click. The bubble is at the bottom left in 6 of 6 frames.</figcaption></figure>
+      <p>Fix: <code>web.Settings.IsStatusBarEnabled = false</code> in <code>ClearHost.Start</code>. Self-test 27 of 28 (only I7). Tests 809 pass, 0 fail.</p>
+      <figure><div class="img"><img src="issues/status-bubble-after.jpg" alt="The same six frames with the fix on. No bubble."></div><figcaption>After (fix on): the same scenario. No bubble in 6 of 6 frames.</figcaption></figure>
+      <p>Scenario <code>status-bubble</code>: 3 times "click cards, wait 1.2 s, click home, wait 1.2 s", about 8 s. A hover alone does not show the bubble with messages, because WM_MOUSELEAVE comes at once (I8). Command: <code>scenario.sh status-bubble before 12</code>.</p>
+    </div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we turn off the status bubble?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, turn off.</b> IsStatusBarEnabled = false in ClearHost.Start.</p></div></div></div>
+  </section>
+</div>
+
+<!-- I15 -->
+<div class="panel off" id="i15" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill no">Closed</span><span class="k">source: grow review I6 · 2026-11-20</span></div>
+    <h2>I15 · The gap between the two windows is not managed</h2>
+    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>At each change between the badge window and the panel window, the screen shows nothing for about 100 ms. The look is good. But no code or token sets this time.</p></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v">
+      <figure><div class="img"><img src="issues/window-gap-dock.jpg" alt="Nine frames of a dock: the content fades, the card shrinks into the ball, the ball goes, two empty frames, then the badge slides in."></div>
+        <figcaption>A dock from the <code>--stress --opens</code> recording. The ball goes at about 500 ms. The badge comes at about 700 ms. The frames between are empty.</figcaption></figure>
+    </div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><p>Seen in all 10 cycles of the recording, at the open and at the dock.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Probable: the time that Windows takes to hide one window and show the other, plus two frame waits in <code>TrayFlow</code>. On a slow computer it can be longer. Not measured.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><ul><li>Simple: start the next window when the event "the last window is hidden" comes. The gap then does not matter.</li><li>Later: if all window steps are tokens, add the tokens to get the expected time, and use a timer.</li></ul></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Later.</b> Keep it simple now. Record it, and fix it with events in a later step.</p></div></div></div>
+  </section>
+</div>
+
+
+<!-- I16 -->
+<div class="panel off" id="i16" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: visual review · 2026-11-20</span></div>
+    <h2>I16 · Two sessions cannot test the tray at the same time</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>All self-test trays used one lock for each user. A second test tray stopped at once with "The tray app already runs". With <code>--instance</code>, both trays opened at the same screen place, so a recording could show the tray of another session.</p></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>Done in I17: each run takes a free test slot (a strip of the screen) with its own lock, WebView2 folder, store, logs and place. The recorder records the area of that slot. Each tray shows a label "code · build" at all times.</p></div></div>
+    <div class="field"><span class="k">Window capture check</span><div class="v"><p>Windows.Graphics.Capture records the tray window when it is covered or off the screen (114 frames in 4 s at x = -3000), but not when it is minimized. The yellow border can be turned off. Decision: keep the screen recorder now. The spike is in <code>spikes/window-capture/</code>.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>I16 does only the window capture check; I17 does the independent test instances.</b></p></div></div></div>
+  </section>
+</div>
+
+<!-- I17 -->
+<div class="panel off" id="i17" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: visual review · 2026-11-20</span></div>
+    <h2>I17 · The recorder records 0 frames in some runs</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>The recorder recorded 0 frames in 3 of 8 scenario runs, with no error.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known: the shared self-test lock. When a test tray of another session ran, the scenario tray stopped at once with exit 1. <code>scenario.sh</code> sent the tray output to <code>/dev/null</code>, so nobody saw it.</p></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><ul><li>The recorder exits with code 3 and writes no GIF if it has 0 frames.</li><li><code>scenario.sh</code> keeps the tray log and stops with exit 1 if the tray fails.</li><li>Independent test instances in test slots (see I16), a label on each tray, and one run record for each run.</li></ul></div></div>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Two <code>scenario.sh status-bubble</code> runs at the same time (I17a, I17b): slots 1 and 0, 300 and 289 frames, no overlap, label check pass in both. On the merge (<code>orch/visual-review</code>): 851 unit tests, 0 fail; self-test 38 of 39, the <code>label</code> check passes, only I7 fails.</p></div></div>
+  </section>
+</div>
+
+<!-- I18 -->
+<div class="panel off" id="i18" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: you · 2026-11-20</span></div>
+    <h2>I18 · The window cuts the shadow of the side badge</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>The shadow of the side badge is often longer than its window. The window edge cuts the shadow, and the cut looks bad. You see it often, but not each time.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Known: two owners for one size, as in I7. C# sets the window size and the click area. CSS sets the shadow. The R2 inventory names "the shadow margin" as one of the sizes that the page must measure and report.</p></div></div>
+    <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>A scenario that shows the badge at rest, at the hover and at the peek, and a strip of each state.</li><li>A self-test check: the shadow box of the tab is inside the window.</li><li>The fix goes into R2: the page reports the shadow margin, and the window size uses it.</li></ol></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p>I18 goes into R2, with I7 (the user).</p></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R2. The page reports the shadow box of the tab (rest, hover) and of the peek bubble. The badge window is as large as all boxes together; the click area is the box of the current state. The window is 9 px taller (at 1.0 DPI) than before.</p></div></div>
+    <div class="field"><span class="k">Result</span><div class="v"><p>Measured before the fix: the tab shadow ends 9 px below the window at rest, hover and peek; the bubble shadow 0.6 px below. Scenario <code>badge-states</code>, fix off and on: straight shadow edges (off), soft shadow edges (on). Check <code>badge-box-fits</code> passes in each state.</p></div></div>
+  </section>
+</div>
+<!-- I19 -->
+<div class="panel off" id="i19" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rpl">Replicated</span><span class="k">source: I2 sheet runs · 2026-11-21</span></div>
+    <h2>I19 · The stress run misses 2 presses at the start</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="now">Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>In each sheet stress run with window message clicks, the first press (<code>.nav2 a[href="cards"]</code>) says "clicked", but the page stays <code>/</code>. The next 2 presses (<code>.acts [data-act="left"]</code>, <code>.presence .scrim</code>) then miss after 3 s. The later 11 cycles pass. The run ends with exit 1.</p></div></div>
+    <div class="field"><span class="k">How often</span><div class="v"><table>
+      <tr><th>Runs</th><th>Click</th><th>Start to first press</th><th>First cycle</th></tr>
+      <tr><td>19 sheet runs, 19 Nov (before I3)</td><td>window messages</td><td>87 to 98 ms</td><td>19 of 19 fail, logged as "no element", not counted</td></tr>
+      <tr><td>4 sheet runs (I2) and 1 run with no recorder, 21 Nov</td><td>window messages</td><td>87 to 98 ms</td><td>5 of 5 fail, counted as MISS</td></tr>
+      <tr><td>8 stress runs, 19 Nov</td><td>real pointer</td><td>606 to 857 ms</td><td>0 of 8 fail</td></tr>
+    </table><p>The recorder has no effect: the run with no recorder fails the same.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">artifacts~/bin/Orchestrator.Tray/debug/Orchestrator.Tray.exe --instance I19 --selftest &lt;folder&gt; --demo --stress --sheets
+# exit 1; stress.txt: presses: 0 warnings, 2 misses (50 s, no recorder)</pre></div></div>
+    <div class="field"><span class="k">Time order</span><div class="v"><pre class="stack">13:39:58.571  tray phase open           ← Stress() starts here
+13:39:58.608  stress start
+13:39:58.702  press cards: clicked      ← 131 ms after open, in the grow motion
+13:39:59.131  grow motion ends (555 ms)
+13:40:02.410  MISS .acts …  page /
+13:40:06.331  MISS .presence .scrim  page /
+13:40:07.129  cycle 2: all presses pass</pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Not proved. Probable: the stress run starts at the phase <code>open</code>, but the grow motion of the panel continues 555 ms after it. The first press comes in the grow motion, and the page does not navigate. Not examined: where the click goes, and if the page gets it. The code agrees: <code>TrayFlow.Open</code> sets <code>Phase = TrayPhase.Open</code> (<code>TrayFlow.cs</code> line 179) before it starts <code>Grow()</code> (line 180).</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p>Not fixed now (the user, 2026-11-21). I19 is one symptom of 3 missing contracts:</p><ul>
+      <li>The page lifecycle: no signal means "the page is ready". The phase <code>open</code> comes before the end of the open motion.</li>
+      <li>The input pipeline: no part confirms that the page got a click.</li>
+      <li>The trace: the steps of one run go to 4 files, with no shared id.</li>
+    </ul><p>A fix of the test driver only hides the symptom. I19 waits for the architecture review, which sets the next focus. The review uses the new Tracing part of the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">architecture page</a>. When that work is done, the sheet stress run must pass with 0 misses, and the trace must show why a press failed at that press.</p></div></div>
+    <div class="field"><span class="k">Data gaps</span><div class="v"><ul>
+      <li>A press logs "clicked" when the messages are posted. Nothing logs that the page got the click, or which element got it.</li>
+      <li>A navigation press has no check that the page changed. The miss shows 2 presses later, at a different element.</li>
+      <li>The stress log has no motion state at a press. The phase trace is in a different file (<code>exceptions.log</code>).</li>
+      <li>Before I3, a missing element was only a log line. The failure was in 19 runs and nobody saw it.</li>
+    </ul></div></div>
+  </section>
+</div>
+<!-- I20 -->
+<div class="panel off" id="i20" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rpl">Replicated</span><span class="k">source: architecture check of Interactions · 2026-11-21</span></div>
+    <h2>I20 · The card filter sheet shows an old count</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="now">Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>On the Cards page, a change in the filter sheet does not update the button "Show N cards" or the pile behind the sheet. They update only when the sheet closes. The Stream page does not have this problem.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Found in the code, not seen in a run. <code>Cards.razor:66</code> gives <code>FilterSheet</code> no <code>OnChange</code>. <code>FilterSheet.Set</code> (<code>FilterSheet.razor:53-57</code>) changes the filter, then calls the empty callback, so Cards does not render again. <code>StreamPage.razor:40</code> gives <code>OnChange="Load"</code>.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">Orchestrator.Tray.exe --instance I20 --selftest &lt;folder&gt; --scenario filter-count
+19:02:12.991 button before: Show 8 cards
+19:02:13.161 hide the first session: clicked (window messages)
+19:02:14.070 button after the change: Show 8 cards        ← must be 7
+19:02:16.143 button after a new open (the real count): Show 7 cards</pre><p>1 of 1 run. The pictures show the switch of "Docs cleanup" off and the button still at 8.</p></div></div>
+  </section>
+</div>
+<!-- I21 -->
+<div class="panel off" id="i21" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rpl">Replicated</span><span class="k">source: architecture check of Places · 2026-11-21</span></div>
+    <h2>I21 · A failed badge size report is not tried again</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="now">Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>If the badge page fails to measure its sizes once, the badge window keeps its old size and click area until the badge text changes. The fault log has the line "badge sizes".</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Found in the code, not seen in a run. <code>BadgeRoot.ReportSizes</code> (<code>BadgeRoot.razor:141-152</code>) sets <code>reported = text</code> before the measure. When <code>TraySizes</code> fails, the catch writes a fault, but <code>reported</code> already has the new text. The next render with the same text returns at once, so the measure does not run again.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">Orchestrator.Tray.exe --instance I21 --selftest &lt;folder&gt; --scenario badge-size-retry
+19:03:16.578 WARN js orchTray.sizes() #12: error js.failed … test: no measure   ← the measure fails once (fault "badge sizes")
+19:03:17.645 restore the measure
+19:03:17.661 … 19:03:18.889  3 badge-fold waits: the badge renders again (hover, leave)
+19:03:20.115 measures after hover and leave, same text: 0                       ← must be 1 or more
+19:03:20.537 js orchTray.sizes() #19 …                                          ← the control: a new text measures again
+19:03:21.627 measures after text change 2 (control): 1</pre><p>1 of 1 run. The scenario breaks <code>orchTray.shadowBox</code> for one measure. A replacement of <code>orchTray.sizes</code> does not work, because Blazor keeps its own reference to an interop function after the first call.</p></div></div>
+  </section>
+</div>
+<!-- I22 -->
+<div class="panel off" id="i22" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rep">Reported</span><span class="k">source: architecture check of Motion · 2026-11-21</span></div>
+    <h2>I22 · The speed dial closes with no motion and a false warning</h2>
+    <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>The speed dial of the page bar (E-1) opens with a motion, but it closes at once, with no leave motion. Each close also writes a warning line "wait at limit … by none" to the trace, although nothing is wrong.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Found in the code, not seen in a run. <code>PageBar.razor:21</code> puts the dial in a <code>Presence</code>. At a close, <code>Presence</code> sets <code>is-leaving</code> and waits for the step <code>leave</code>. Its step rule names <code>m-fade-out m-down m-lift</code> (<code>motion.css:39</code>), but only the scrim, the sheet and the toast have <code>.is-leaving</code> rules (<code>motion.css:49-51</code>). <code>.dscrim</code> and <code>.dial</code> have only their enter motion (<code>motion.css:63-64</code>). So no animation starts, the wait ends with <code>none</code>, and <code>WaitLimitHook</code> writes the warning.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><p>Not done. Open a page with content actions, open the speed dial, close it, and read the trace for a "by none" line on the leave wait.</p></div></div>
+  </section>
+</div>
+<!-- F1 -->
+<div class="panel off" id="f1" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: fixed earlier · F1</span></div>
+    <h2>F1 · A blink at the end of the open</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">Proof</span><div class="v"><figure><div class="img"><img src="issues/open-real-empty.jpg" alt="Frames 14 to 20 of an open. Frame 18 shows only the grey backdrop."></div><figcaption>Frame 18 is really empty: only the backdrop, no tray.</figcaption></figure></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p><code>filter: drop-shadow</code> on the panel wrapper.</p></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>The shadow is its own element (<code>.tray-frame</code>).</p></div></div>
+    <div class="field"><span class="k">Check</span><div class="v"><p>Open stress: 20 empty frames to 0. Check it again with the new detector of I2.</p></div></div>
+  </section>
+</div>
+
+<!-- F2 -->
+<div class="panel off" id="f2" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: fixed earlier · F2</span></div>
+    <h2>F2 · A bigger, darker shadow and an overlap at a tab change</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Reported by you in the first video.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Two pictures of the page in the view transition, each with a shadow.</p></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>One shadow; a tab change uses no view transition.</p></div></div>
+    <div class="field"><span class="k">Check</span><div class="v"><p>Checks <code>tab-*-to-*</code>: shadow alpha in the move is not more than rest + 6.</p></div></div>
+  </section>
+</div>
+
+<!-- F3 -->
+<div class="panel off" id="f3" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: fixed earlier · F3</span></div>
+    <h2>F3 · The tab change was not the spec (T1 C)</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Reported by you: the motion between tabs was not the motion page.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>The tray did a fade-through of the full page.</p></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>Each block rises 10 px in 0.3 s, 40 ms after the block above; one nav dot.</p></div></div>
+    <div class="field"><span class="k">Check</span><div class="v"><p>Checks <code>dot-*</code>.</p></div></div>
+  </section>
+</div>
+
+<!-- F4 -->
+<div class="panel off" id="f4" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: fixed earlier · F4</span></div>
+    <h2>F4 · Page text in the ball circle at the start</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Frames of the start.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>The first-load fade of the page won over the start phase.</p></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>No first-load fade in the tray.</p></div></div>
+    <div class="field"><span class="k">Check</span><div class="v"><p>Frames of the start.</p></div></div>
+  </section>
+</div>
+
+<!-- F5 -->
+<div class="panel off" id="f5" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: fixed earlier · F5</span></div>
+    <h2>F5 · Sheets lost their place after the shadow fix</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Found by the self-test.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Without the filter, the fixed blocks had no containing block.</p></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p><code>contain: layout</code> on the panel.</p></div></div>
+    <div class="field"><span class="k">Check</span><div class="v"><p>Check <code>sheet-in-panel</code>.</p></div></div>
+  </section>
+</div>
+
+<!-- F6 -->
+<div class="panel off" id="f6" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: fixed earlier · F6</span></div>
+    <h2>F6 · The ring draw and the count-up did not run</h2>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">Proof</span><div class="v"><p>Found in the spec audit.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>The draw-once code saw one element two times; in the tray the first show was hidden.</p></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>A WeakSet, and the <code>is-ready</code> pause.</p></div></div>
+    <div class="field"><span class="k">Check</span><div class="v"><p>Check <code>ring-count-up</code>.</p></div></div>
+  </section>
+</div>
+</div>
+
+<script>
+(function () {
+  var pick = document.getElementById("pick");
+  var names = Array.prototype.map.call(pick.options, function (o) { return o.value; });
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "about";
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
+    pick.value = name;
+  }
+  pick.addEventListener("change", function () { location.hash = pick.value; show(pick.value); window.scrollTo(0, 0); });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); window.scrollTo(0, 0); });
+  show(location.hash.slice(1));
+})();
+</script>
