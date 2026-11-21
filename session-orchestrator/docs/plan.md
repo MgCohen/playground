@@ -2601,3 +2601,14 @@ Findings:
 - The `--reduced` self-test of `orch/visual-review` never ended: a picture of the panel 180 ms after the dock threw `E_UNEXPECTED` (the panel was hidden after a 60 ms dock), and the process did not exit. Fixed in the self-test. Open: an exception in the self-test does not end the process.
 - Two of my script edits wrote a backspace character in place of `\b` (Python string escapes). A test pattern then matched nothing and passed. Check new test patterns with a fail-first run.
 - Test tools: `scenario.sh` has `INSTANCE` (the built exe with `--instance`) and `SCALE` (1 for a check of a few pixels).
+
+### #60 motion-times: spike result (not reliable, stopped)
+
+- Method: the page keeps each motion that a wait saw (`orchMotion.times`). C# compares each duration and delay with the token values of `motion.css` (±1 ms).
+- 1 self-test run: 36 motions, 10 fail. All 10 are false alarms:
+  - Stagger delays (120, 160 ms) and the grow delay (210 ms = `--t-ball-in` × .7) are `calc` of a token, not a token.
+  - The ring count (630 ms) is a step count × `--t-count-step`.
+  - 3000 ms is the test animation of the check `hide-during-motion`.
+- Many passes match a token by chance: 300 ms matches 6 tokens, 200 ms matches 8. Delay 80 ms (2 × `--t-tab-step`) matches `--t-press`.
+- Result: a match against "any token" cannot find a wrong time. A real check needs to know which token each motion uses.
+- The code is on branch `orch/spike-60-motion-times` (not merged), with the data in `docs/spike-60-motion-times.json`.
