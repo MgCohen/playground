@@ -301,9 +301,12 @@ Add("x-width", v == "280", $"width {v} (expect 280)");</pre>
         <tr><td>Demo</td><td><code>dotnet run -- --selftest out --demo</code></td><td><code>out/demo.txt</code></td></tr>
         <tr><td>Sheet stress</td><td><code>sheets.sh name ["css rule"]</code></td><td>GIF, <code>.times.txt</code>, <code>stress.txt</code>, empty frame list</td></tr>
         <tr><td>Video</td><td><code>recorder mp4 in.gif out.mp4 30</code></td><td>MP4 for the phone</td></tr>
+        <tr><td>Scenario proof</td><td><code>scenario.sh scenario name [seconds]</code></td><td>GIF, MP4, <code>name.rec.txt</code>, <code>name.tray.txt</code>. Exit code 1: the tray failed. Exit code 3: the recorder caught no frame</td></tr>
       </tbody>
     </table></div>
     <p>The test store is a new copy for each run, so the panel and the badge start at their home places. The recorder is in <code>spikes/tray-display/recorder</code>. The scripts <code>sheets.sh</code>, <code>empty.py</code>, <code>strip.ps1</code> and <code>at.ps1</code> are in <code>spikes/tray-display/tools</code>. To report an issue, use the project skill <code>visual-issue</code>.</p>
+    <p>Each self-test takes a free test slot: its own lock, WebView2 folder and strip of the screen (460 DIP wide, from the right edge). It writes <code>instance.json</code> with the slot and the area to record. <code>scenario.sh</code> and <code>sheets.sh</code> start the recorder with <code>--area-file</code> (no grey backdrop by default; <code>--backdrop</code> or <code>BACKDROP=1</code> only for a check that needs it, and <code>sheets.sh</code> uses it for the empty frame count) and the tray with <code>--wait-recorder</code>, so two sessions can record at the same time (I17). If the recorded area does not change, the recorder writes no GIF and exits with code 3.</p>
+    <p>Each tray shows its run code and build in the corner, for example <code>I17 · 3da7df8</code> (set <code>RUN_CODE</code>). Each run writes its own run record in <code>%LOCALAPPDATA%\Orchestrator.Trayuns</code>; <code>runs.sh [day]</code> shows the number of runs and the time.</p>
   </section>
 </div>
 

@@ -75,7 +75,6 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .path .cur { margin: 0; font: 700 15px/1.2 var(--f-body); color: var(--text); flex: 0 0 auto; max-width: 62%; overflow: hidden; text-overflow: ellipsis; }
 /* V14: the title of a tab page has the bold body font, as the title of a sub-page (.path .cur). */
 /* The label of a named tray instance: small and quiet, in the bottom right corner below the app bar. */
-.hd .inst { position: fixed; right: 10px; bottom: max(2px, env(safe-area-inset-bottom, 0px)); z-index: 12; font-size: 9px; color: var(--muted); opacity: .8; white-space: nowrap; pointer-events: none; }
 .title { font: 700 18px/1.1 var(--f-body); letter-spacing: -.01em; margin: 0; }
 .disp { font-family: var(--f-disp); font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
 .gt { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--canvas-tx); margin: 4px 6px -4px; }

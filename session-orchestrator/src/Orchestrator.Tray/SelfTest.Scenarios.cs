@@ -351,6 +351,9 @@ public static partial class SelfTest
             lock (log) log.Add($"{DateTime.Now:HH:mm:ss.fff} {text}");
         }
         Step($"scenario {name}");
+        // I17: the label in the corner shows the run code and the build, so a recording shows which session owns the tray.
+        var (labelPass, labelMessage) = await LabelCheck(w);
+        Step($"label: {(labelPass ? "PASS" : "FAIL")} {labelMessage}");
         using var stop = new CancellationTokenSource();
         var phases = Phases(tray, Step, stop.Token);
         var trace = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Contracts.IJsTrace>();
@@ -362,7 +365,7 @@ public static partial class SelfTest
         trace.Written -= OnTrace;
         Step(Cursor.Position == pointer ? "pointer: not moved" : $"pointer: moved from {pointer} to {Cursor.Position}");
         File.WriteAllLines(Path.Combine(folder, "scenario.txt"), log.Concat(PressSummary()));
-        return Faults.Count == 0 && PressMisses.Count == 0 ? 0 : 1;
+        return Faults.Count == 0 && PressMisses.Count == 0 && labelPass ? 0 : 1;
     }
 
     /// <summary>

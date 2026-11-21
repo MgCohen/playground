@@ -53,6 +53,10 @@ public static partial class SelfTest
         Add("start", open && w.Visible && w.Bounds == w.PanelBounds() && stage.Contains("is-open"),
             $"phase {w.Phase}, visible {w.Visible}, window {w.Bounds} (expect {w.PanelBounds()}), stage \"{stage}\", panel {size} CSS px");
 
+        // 1a. The label in the corner: the run code and the build, visible and not covered (I17).
+        var (labelPass, labelMessage) = await LabelCheck(w);
+        Add("label", labelPass, labelMessage);
+
         // 1b. The number of the Home ring counts up on its first show: the rule is valid (an invalid steps() drops the animation).
         var count = await Js(w, "(e => e ? [getComputedStyle(e, '::after').animationName, getComputedStyle(e, '::after').animationTimingFunction, e.textContent].join(' | ') : 'none')(document.querySelector('.ring-n[data-count]'))");
         var probe = await Js(w, """
@@ -177,7 +181,7 @@ public static partial class SelfTest
         // H2: at phase badge the slide of the tab has ended, so the read needs no delay.
         var tab = await Js(b, "getComputedStyle(document.querySelector('.tb-tab')).translate");
         Add("badge-in-ended", tab is "none" or "0px" or "0px 0px", $"tab translate at the first read with phase badge: {tab} (expect 0)");
-        var area = Screen.FromRectangle(b.Bounds).WorkingArea;
+        var area = Slot.Area(Screen.FromRectangle(b.Bounds));
         await Task.Delay(400);
         (await Picture(b)).Save(Path.Combine(folder, "3-badge.png"));
         Add("dock", docked && !w.Visible && b.Visible && b.Bounds == b.PlaceBounds() && b.Right == area.Right && tab is "none" or "0px" or "0px 0px",
@@ -418,7 +422,7 @@ public static partial class SelfTest
         var top = b.Top;
         var moved = await Drag(b, ring, 0, -150);
         await Task.Delay(300);
-        add("mouse-badge-drag", moved && b.Top - top == -150 && b.Right == Screen.FromRectangle(b.Bounds).WorkingArea.Right && w.Phase == TrayPhase.Badge,
+        add("mouse-badge-drag", moved && b.Top - top == -150 && b.Right == Slot.Area(Screen.FromRectangle(b.Bounds)).Right && w.Phase == TrayPhase.Badge,
             $"moved {b.Top - top} (expect -150), right edge {b.Right}, phase {w.Phase}");
 
         ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));

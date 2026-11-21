@@ -64,7 +64,7 @@ public sealed class BadgeWindow : ClearHost
     /// <summary>The badge window: at the right edge of the work area, at the saved height (N1: else the tab top at 42 % of the height).</summary>
     public Rectangle PlaceBounds()
     {
-        var area = screen().WorkingArea;
+        var area = Slot.Area(screen());
         var size = new Size((int)(BadgeWidth * Dpi), (int)(BadgeHeight * Dpi));
         var y = Math.Clamp(top ?? area.Top + (int)(area.Height * .42) - (int)(TabMargin * Dpi), area.Top, Math.Max(area.Top, area.Bottom - size.Height));
         return new Rectangle(area.Right - size.Width, y, size.Width, size.Height);
@@ -106,7 +106,7 @@ public sealed class BadgeWindow : ClearHost
                     // N1: a move of 5 px starts the drag; a smaller move is still a click.
                     if (!dragging && Math.Abs(dy) < 5 * DeviceDpi / 96) return true;
                     dragging = true;
-                    var area = Screen.FromHandle(Handle).WorkingArea;
+                    var area = Slot.Area(Screen.FromHandle(Handle));
                     Top = Math.Clamp(downTop + dy, area.Top, Math.Max(area.Top, area.Bottom - Height));
                     return true;
                 }

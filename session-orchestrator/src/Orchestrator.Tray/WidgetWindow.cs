@@ -27,7 +27,7 @@ public sealed class WidgetWindow : IWidgetWindow
 
     public bool Pinned => Window?.Pinned ?? false;
 
-    /// <summary>The label of a named instance (--instance), for example "v · 838b208"; null for the normal tray.</summary>
+    /// <summary>The label in the corner of the panel: the run code and the build, for example "I17 · 838b208" or "tray · 838b208".</summary>
     public string? Label { get; set; }
 
     /// <summary>False for a start with --hidden: only the tray icon shows.</summary>

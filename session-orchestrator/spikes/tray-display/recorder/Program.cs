@@ -13,8 +13,9 @@ namespace Recorder;
 
 /// <summary>
 /// Records one screen area as a looping GIF: a picture at a fixed rate, with the pointer drawn in, made smaller by a scale.
-/// A plain backdrop window covers the area behind the recorded windows (they must be on top), so no other window shows. The
-/// frames at the start that do not change (the time before the recorded app shows) go. The WPF GIF encoder writes the frames;
+/// With --backdrop, a plain grey window covers the area behind the recorded windows (they must be on top), so no other window
+/// shows; use it only when a check needs it (an empty frame count, a shadow at the edge). With no backdrop, the screen stays as it
+/// is and the user can work. The frames at the start that do not change (the time before the recorded app shows) go. The WPF GIF encoder writes the frames;
 /// then the file gets the delay of each frame and the loop block.
 /// </summary>
 static partial class Program
@@ -26,32 +27,47 @@ static partial class Program
         if (args.Length == 4 && args[0] == "mp4") return Mp4(args[1], args[2], int.Parse(args[3])).GetAwaiter().GetResult();
         // "trim in.gif out.gif fps": the frames at the end that do not change go.
         if (args.Length == 4 && args[0] == "trim") return Trim(args[1], args[2], int.Parse(args[3]));
-        if (args.Length < 8)
+        // The target: "x y width height" (a fixed screen area) or "--area-file file" (the area that a test tray writes for its slot).
+        // A later target can be one window (window capture); the rest of the arguments stay the same.
+        var withBackdrop = args.Contains("--backdrop");
+        args = args.Where(a => a != "--backdrop").ToArray();
+        var fileTarget = args.Length >= 1 && args[0] == "--area-file";
+        if (args.Length < (fileTarget ? 6 : 8))
         {
-            Console.Error.WriteLine("Usage: recorder x y width height scale fps seconds out.gif");
+            Console.Error.WriteLine("Usage: recorder [--backdrop] (x y width height | --area-file instance.json) scale fps seconds out.gif");
             return 2;
         }
         SetProcessDpiAwarenessContext(-4); // Per monitor v2: the area is in real screen pixels.
-        var area = new Rectangle(int.Parse(args[0]), int.Parse(args[1]), int.Parse(args[2]), int.Parse(args[3]));
-        var scale = double.Parse(args[4], System.Globalization.CultureInfo.InvariantCulture);
-        var fps = int.Parse(args[5]);
-        var seconds = double.Parse(args[6], System.Globalization.CultureInfo.InvariantCulture);
-        var output = Path.GetFullPath(args[7]);
+        string? ready = null;
+        string? run = null;
+        Rectangle area;
+        if (fileTarget)
+        {
+            if (AreaFromFile(args[1], TimeSpan.FromSeconds(180)) is not { } found)
+            {
+                Console.Error.WriteLine($"no area: {args[1]} did not come in 180 s. Did the test tray start?");
+                return 4;
+            }
+            (area, run) = found;
+            ready = args[1] + ".ready";
+            args = args[2..];
+        }
+        else
+        {
+            area = new Rectangle(int.Parse(args[0]), int.Parse(args[1]), int.Parse(args[2]), int.Parse(args[3]));
+            args = args[4..];
+        }
+        var scale = double.Parse(args[0], System.Globalization.CultureInfo.InvariantCulture);
+        var fps = int.Parse(args[1]);
+        var seconds = double.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture);
+        var output = Path.GetFullPath(args[3]);
+        Console.WriteLine($"area {area.X} {area.Y} {area.Width} {area.Height}");
         var size = new Size((int)(area.Width * scale), (int)(area.Height * scale));
         var frames = new List<byte[]>();
         var times = new List<string>();
-        var backdrop = new Thread(() =>
-        {
-            using var form = new Form
-            {
-                FormBorderStyle = FormBorderStyle.None, StartPosition = FormStartPosition.Manual, Bounds = area,
-                BackColor = Color.FromArgb(0xcc, 0xcc, 0xcc), ShowInTaskbar = false,
-            };
-            Application.Run(form);
-        }) { IsBackground = true };
-        backdrop.SetApartmentState(ApartmentState.STA);
-        backdrop.Start();
-        Thread.Sleep(500);
+        if (withBackdrop) StartBackdrop(area);
+        // The test tray waits for this file (--wait-recorder), so the recording has the first show of its windows.
+        if (ready is not null) File.WriteAllText(ready, DateTime.Now.ToString("HH:mm:ss.fff"));
         byte[]? first = null;
         var clock = System.Diagnostics.Stopwatch.StartNew();
         var step = 1000.0 / fps;
@@ -80,6 +96,13 @@ static partial class Program
             times.Add(DateTime.Now.ToString("HH:mm:ss.fff") + " " + Mean(small).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
         }
         Console.WriteLine($"{frames.Count} frames in {clock.Elapsed.TotalSeconds:0.0} s");
+        Record(run, output, frames.Count, clock.Elapsed.TotalSeconds, frames.Count == 0 ? 3 : 0);
+        // I17: no frame means that the area did not change, so the recorded app did not show. Fail at once with no empty GIF.
+        if (frames.Count == 0)
+        {
+            Console.Error.WriteLine("no frame: the area did not change. Did the recorded app start and show in the area?");
+            return 3;
+        }
         // The time of each frame, for a match with a trace of the recorded app.
         File.WriteAllLines(output + ".times.txt", times);
         var encoder = new GifBitmapEncoder();
@@ -89,6 +112,55 @@ static partial class Program
         File.WriteAllBytes(output, Loop(gif.ToArray(), (int)Math.Round(100.0 / fps)));
         Console.WriteLine($"{output}: {new FileInfo(output).Length / 1024} KB");
         return 0;
+    }
+
+    /// <summary>
+    /// The record of this recording: one new file for each recording in %LOCALAPPDATA%\Orchestrator.Tray\runs, next to the record of
+    /// the tray run (the same run id). The file name has the process id of the recorder, so no two recorders write the same file.
+    /// </summary>
+    static void Record(string? run, string output, int frames, double seconds, int result)
+    {
+        try
+        {
+            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Orchestrator.Tray", "runs");
+            Directory.CreateDirectory(folder);
+            var id = run ?? $"{DateTime.Now:yyyyMMdd-HHmmss.fff}-pid{Environment.ProcessId}";
+            var file = Path.Combine(folder, $"{id}.rec-pid{Environment.ProcessId}.json");
+            File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(new
+            {
+                run = id, source = "recorder", kind = "recording", name = Path.GetFileNameWithoutExtension(output),
+                end = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff"), seconds = Math.Round(seconds, 1), frames, result,
+            }));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine($"warning: no run record: {e.Message}");
+        }
+    }
+
+    /// <summary>Waits for the instance file of a test tray and reads its area and run id. Null when the file does not come in time.</summary>
+    static (Rectangle Area, string? Run)? AreaFromFile(string file, TimeSpan wait)
+    {
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        while (clock.Elapsed < wait)
+        {
+            if (File.Exists(file))
+            {
+                try
+                {
+                    using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(file));
+                    var a = json.RootElement.GetProperty("area");
+                    var run = json.RootElement.TryGetProperty("run", out var r) ? r.GetString() : null;
+                    return (new Rectangle(a.GetProperty("x").GetInt32(), a.GetProperty("y").GetInt32(), a.GetProperty("width").GetInt32(), a.GetProperty("height").GetInt32()), run);
+                }
+                catch (IOException)
+                {
+                    // The tray writes the file at this time: read it again.
+                }
+            }
+            Thread.Sleep(50);
+        }
+        return null;
     }
 
     static async Task<int> Mp4(string input, string output, int fps)
@@ -157,6 +229,23 @@ static partial class Program
         File.WriteAllBytes(output, Loop(gif.ToArray(), (int)Math.Round(100.0 / fps)));
         Console.WriteLine($"{decoder.Frames.Count} frames to {last + 1}; {output}: {new FileInfo(output).Length / 1024} KB");
         return 0;
+    }
+
+    /// <summary>The grey backdrop window behind the recorded windows, on its own UI thread; it shows 500 ms before the first frame.</summary>
+    static void StartBackdrop(Rectangle area)
+    {
+        var backdrop = new Thread(() =>
+        {
+            using var form = new Form
+            {
+                FormBorderStyle = FormBorderStyle.None, StartPosition = FormStartPosition.Manual, Bounds = area,
+                BackColor = Color.FromArgb(0xcc, 0xcc, 0xcc), ShowInTaskbar = false,
+            };
+            Application.Run(form);
+        }) { IsBackground = true };
+        backdrop.SetApartmentState(ApartmentState.STA);
+        backdrop.Start();
+        Thread.Sleep(500);
     }
 
     /// <summary>The mean of the blue channel of each 8th pixel: a frame with no recorded window has the level of the backdrop.</summary>

@@ -80,14 +80,14 @@ public sealed class TrayWindow : ClearHost
     /// <summary>The click area: the panel with its shadow, cut to the work area.</summary>
     void Hits()
     {
-        var work = Screen.FromRectangle(Bounds).WorkingArea;
+        var work = Slot.Area(Screen.FromRectangle(Bounds));
         SetHitArea(Rectangle.Intersect(new Rectangle(Point.Empty, Size), new Rectangle(work.X - Left, work.Y - Top, work.Width, work.Height)));
     }
 
     /// <summary>The size of the panel window at the DPI: the panel is at most the work area height less the gap above and below.</summary>
     Size PanelSize()
     {
-        var area = PanelScreen().WorkingArea;
+        var area = Slot.Area(PanelScreen());
         var panelHeight = Math.Min((int)(PanelHeight * Dpi), area.Height - (int)(2 * Gap * Dpi));
         return new Size((int)((PanelWidth + 2 * ShadowMargin) * Dpi), panelHeight + (int)(2 * ShadowMargin * Dpi));
     }
@@ -96,7 +96,7 @@ public sealed class TrayWindow : ClearHost
     public Rectangle PanelBounds()
     {
         var size = PanelSize();
-        var area = PanelScreen().WorkingArea;
+        var area = Slot.Area(PanelScreen());
         var m = (int)(ShadowMargin * Dpi);
         var g = (int)(Gap * Dpi);
         var inner = new Size(size.Width - 2 * m, size.Height - 2 * m);
