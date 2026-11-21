@@ -1,0 +1,42 @@
+{
+  "rows": [
+    {
+      "id": "treepage",
+      "name": "Git tree · the run page",
+      "why": "The tree fills the screen, oldest at the top. The Next bar shows the ways out of the current step. A tap on a row opens a sheet over the dimmed tree, which does not move. The sheet shows the result and the actions, with a step back.",
+      "sketches": [
+        {
+          "file": "tree3-page-a.svg",
+          "caption": "W4 at Review · full tree, Next bar"
+        },
+        {
+          "file": "tree3-page-b.svg",
+          "caption": "Tap on Test pass 1 · overlay sheet"
+        },
+        {
+          "file": "tree3-page-c.svg",
+          "caption": "W3 at Answer · question round 3"
+        }
+      ]
+    },
+    {
+      "id": "treelong",
+      "name": "Git tree · a long run",
+      "why": "A long run has 34 step runs, 3 Review rounds and 2 step backs. Done parts fold into one row, or the whole tree stays open with a position bar. Step backs and failures stay visible in all three forms.",
+      "sketches": [
+        {
+          "file": "tree3-long-a.svg",
+          "caption": "Done parts folded · fits one screen"
+        },
+        {
+          "file": "tree3-long-b.svg",
+          "caption": "All open · middle · position bar"
+        },
+        {
+          "file": "tree3-long-c.svg",
+          "caption": "One attempt per step back · dots"
+        }
+      ]
+    }
+  ]
+}

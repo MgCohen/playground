@@ -1,0 +1,23 @@
+{
+  "rows": [
+    {
+      "id": "treeback",
+      "name": "Git tree · a step back",
+      "why": "The user sent run #14 back from Review to Split tasks. Each variation shows where the run jumped from, where it jumped to, who did it, and that the old rows stay as history with their outputs.",
+      "sketches": [
+        {
+          "file": "tree3-back-a.svg",
+          "caption": "new lane forks from the old row"
+        },
+        {
+          "file": "tree3-back-b.svg",
+          "caption": "jump row · main lane stays straight"
+        },
+        {
+          "file": "tree3-back-c.svg",
+          "caption": "old path folds into one side row"
+        }
+      ]
+    }
+  ]
+}

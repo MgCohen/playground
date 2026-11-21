@@ -49,7 +49,7 @@ html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden;
 .onebox svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; display: block; }
 </style>
 <main class="rows" id="rows">
-  <p class="intro">Round 2: mobile only. Four concepts, each in three variations (a, b, c). Each variation shows two runs: Feature delivery (run #14, waits for your review) and Planning (run #7, waits for your answer in question round 3). Loops stay on the right side of the page.</p>
+  <p class="intro">Round 3 is the Git tree only: the run page, a step back, and a long run. Round 2: mobile only. Four concepts, each in three variations (a, b, c). Each variation shows two runs: Feature delivery (run #14, waits for your review) and Planning (run #7, waits for your answer in question round 3). Loops stay on the right side of the page.</p>
   <div class="legend">
     <span><i style="background:var(--ag)"></i>agent</span><span><i style="background:var(--hu)"></i>human</span><span><i style="background:var(--tl)"></i>tool</span>
     <span><i style="background:var(--now)"></i>now and next</span><span><i style="background:var(--ok)"></i>passed</span><span><i style="background:var(--bad)"></i>failed</span>
@@ -233,7 +233,72 @@ html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden;
  }
 ];
 
+  // ---- Round 3: the Git tree, redesigned. Rows from run-views/r3/*.json ----
+  var R3 = [
+ {
+  "id": "treepage",
+  "name": "Git tree · the run page",
+  "why": "The tree fills the screen, oldest at the top. The Next bar shows the ways out of the current step. A tap on a row opens a sheet over the dimmed tree, which does not move. The sheet shows the result and the actions, with a step back.",
+  "sketches": [
+   {
+    "file": "tree3-page-a.svg",
+    "caption": "W4 at Review · full tree, Next bar"
+   },
+   {
+    "file": "tree3-page-b.svg",
+    "caption": "Tap on Test pass 1 · overlay sheet"
+   },
+   {
+    "file": "tree3-page-c.svg",
+    "caption": "W3 at Answer · question round 3"
+   }
+  ]
+ },
+ {
+  "id": "treeback",
+  "name": "Git tree · a step back",
+  "why": "The user sent run #14 back from Review to Split tasks. Each variation shows where the run jumped from, where it jumped to, who did it, and that the old rows stay as history with their outputs.",
+  "sketches": [
+   {
+    "file": "tree3-back-a.svg",
+    "caption": "new lane forks from the old row"
+   },
+   {
+    "file": "tree3-back-b.svg",
+    "caption": "jump row · main lane stays straight"
+   },
+   {
+    "file": "tree3-back-c.svg",
+    "caption": "old path folds into one side row"
+   }
+  ]
+ },
+ {
+  "id": "treelong",
+  "name": "Git tree · a long run",
+  "why": "A long run has 34 step runs, 3 Review rounds and 2 step backs. Done parts fold into one row, or the whole tree stays open with a position bar. Step backs and failures stay visible in all three forms.",
+  "sketches": [
+   {
+    "file": "tree3-long-a.svg",
+    "caption": "Done parts folded · fits one screen"
+   },
+   {
+    "file": "tree3-long-b.svg",
+    "caption": "All open · middle · position bar"
+   },
+   {
+    "file": "tree3-long-c.svg",
+    "caption": "One attempt per step back · dots"
+   }
+  ]
+ }
+];
+
   var ROWS = [];
+  R3.forEach(function (r) {
+    ROWS.push({ group: 'Round 3 · Git tree', id: r.id, name: r.name, tag: 'mobile · Git tree', why: r.why,
+      s: r.sketches.map(function (s, i) { return ['abc'[i], s.caption, img('r3/' + s.file, r.name + ', ' + s.caption)]; }) });
+  });
   R2.forEach(function (c) {
     WF.forEach(function (w) {
       ROWS.push({ group: 'Round 2', id: c.id + w[0], name: c.name + ' · ' + w[1], tag: c.tag, why: c.why,
