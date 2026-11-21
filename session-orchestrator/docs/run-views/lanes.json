@@ -1,0 +1,19 @@
+{
+  "name": "Swimlanes with time",
+  "tag": "wide screen · timeline",
+  "why": "A Gantt view of the run. Each lane is one executor: Agent, Human, Tool. Each step run is a bar in time order, so loops show as repeated bars. A NOW line ends the time axis, with dashed next bars. A small graph strip shows the whole workflow. Best for time and who works. Weak for the graph shape.",
+  "sketches": [
+    {
+      "file": "lanes-a.svg",
+      "caption": "W4 Feature delivery, as it opens"
+    },
+    {
+      "file": "lanes-b.svg",
+      "caption": "Tap on Test: drawer with 2 passes"
+    },
+    {
+      "file": "lanes-c.svg",
+      "caption": "W3 Planning: question loop ×3"
+    }
+  ]
+}

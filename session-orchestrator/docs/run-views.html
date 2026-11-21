@@ -39,7 +39,10 @@ body { margin: 0; padding: 12px 12px 24px; background: var(--page); color: var(-
 .cell { margin: 0; display: grid; gap: 4px; min-width: 0; }
 .cell figcaption { font: 500 10px var(--f-mono); color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .box { background: var(--cell); border: 1px solid var(--line); border-radius: 8px; cursor: zoom-in; overflow: hidden; }
-.box svg { width: 100%; height: auto; display: block; }
+.box svg, .box img { width: 100%; height: auto; display: block; }
+.grid.panel3 { grid-template-columns: repeat(3, minmax(0, 260px)); }
+.grid.wide3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.group { margin: 10px 4px 0; font: 600 12px var(--f-mono); color: var(--mu); text-transform: uppercase; letter-spacing: .06em; }
 /* Sketch parts */
 svg text { font-family: var(--f-body); fill: var(--tx); }
 svg .mu { fill: var(--mu); } svg .mono { font-family: var(--f-mono); }
@@ -71,6 +74,7 @@ svg .mu { fill: var(--mu); } svg .mono { font-family: var(--f-mono); }
 .lb rect { fill: var(--cell); stroke: var(--line); } .lb text { font-size: 9px; fill: var(--mu); }
 html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: var(--page); }
 .onebox { position: fixed; inset: 0; cursor: zoom-out; padding: 2vmin; display: grid; place-items: center; }
+.onebox img { max-width: 100%; max-height: 100%; display: block; }
 .onebox svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; display: block; }
 </style>
 <main class="rows" id="rows">
@@ -410,6 +414,20 @@ html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden;
       why: 'The timeline on the left and the graph on the right, with the loop on a circle. A tap on a timeline row marks its step in the graph. A tap on a node opens its last pass in the timeline. Best for: history and shape side by side. Weak for: a narrow panel.',
       s: [['a', 'The run now', function () { return s6('now'); }], ['b', 'Tap: Test pass 1 in the timeline', function () { return s6('test'); }]] }
   ];
+
+  // ---- Concept rows: SVG files in run-views/, one concept for each row. ----
+  var CONCEPTS = [
+{"id": "tree", "kind": "panel3", "name": "Git tree, full page", "tag": "side panel · vertical commit graph", "why": "The whole page is a commit graph like git log --graph. Each row is one step run. Parallel tasks and loops get colored lanes that merge back, so there are no back arrows. Dashed branches show the ways out of the current step. Best for dense history and loops. Weak for the full shape of the definition.", "sketches": [{"file": "tree-a.svg", "caption": "W4 as it opens: Review is now"}, {"file": "tree-b.svg", "caption": "Tap on Test: modal with both passes"}, {"file": "tree-c.svg", "caption": "W3: question loop, round 3"}]},
+{"id": "split", "kind": "panel3", "name": "Graph on top, data below", "tag": "side panel · vertical · two pages", "why": "The top half shows the whole graph top-down, with each loop on a ring and its exit off the ring. The bottom half shows plain data of one step run, its ways out as buttons, and a prev/next pager. A tap on a node opens a step page with all passes. Best for calm review. Weak for very large graphs.", "sketches": [{"file": "split-a.svg", "caption": "W4 opens: Review now, data below"}, {"file": "split-b.svg", "caption": "Step page: Test, 2 passes"}, {"file": "split-c.svg", "caption": "W3: question loop, round 3"}]},
+{"id": "metro", "kind": "panel3", "name": "Metro map", "tag": "side panel · vertical", "why": "The run is a subway trip. The main line runs top to bottom, parallel tasks are three lines between two interchanges, and a loop is a ring line with a visit count. You see where you are and the next stops. Best for a narrow panel and a quick read. Weak for big graphs with many crossing edges.", "sketches": [{"file": "metro-a.svg", "caption": "W4 trip: you are at Review"}, {"file": "metro-b.svg", "caption": "Station card: Test, 2 visits"}, {"file": "metro-c.svg", "caption": "W3 trip: ring line in round 3"}]},
+{"id": "canvas", "kind": "wide3", "name": "Full-screen canvas map", "tag": "wide screen · canvas", "why": "The graph fills the page like a design canvas. Each loop sits on its own circle. Floating cards show the run, the map and the current step with its ways out. Walk the history with previous and next. Best for big graphs and loops. Weak for small screens and for long step details.", "sketches": [{"file": "canvas-a.svg", "caption": "W4 opens: Review now, two ways out"}, {"file": "canvas-b.svg", "caption": "Tap on Test: popover with 2 passes"}, {"file": "canvas-c.svg", "caption": "W3: question loop in round 3"}]},
+{"id": "lanes", "kind": "wide3", "name": "Swimlanes with time", "tag": "wide screen · timeline", "why": "A Gantt view of the run. Each lane is one executor: Agent, Human, Tool. Each step run is a bar in time order, so loops show as repeated bars. A NOW line ends the time axis, with dashed next bars. A small graph strip shows the whole workflow. Best for time and who works. Weak for the graph shape.", "sketches": [{"file": "lanes-a.svg", "caption": "W4 Feature delivery, as it opens"}, {"file": "lanes-b.svg", "caption": "Tap on Test: drawer with 2 passes"}, {"file": "lanes-c.svg", "caption": "W3 Planning: question loop ×3"}]},
+{"id": "rail", "kind": "wide3", "name": "Graph as a rail in a document page", "tag": "wide screen · document + rail", "why": "The page is a readable report of the run. Each step run is a section with real output. A narrow graph rail on the left stays fixed. It shows done, now and next steps and the part in view. A tap on a rail step jumps to its sections. Best for reading and review. Weak for big or wide graphs.", "sketches": [{"file": "rail-a.svg", "caption": "W4 opens at Review, the action"}, {"file": "rail-b.svg", "caption": "Tap Test: both passes in view"}, {"file": "rail-c.svg", "caption": "W3: Ask loop, answer round 3"}]}
+];
+  CONCEPTS.forEach(function (c) {
+    ROWS.push({ id: c.id, name: c.name, kind: c.kind, tag: c.tag, why: c.why,
+      s: c.sketches.map(function (s, i) { return ['abc'[i], s.caption, function () { return '<img src="run-views/' + s.file + '" alt="' + esc(c.name + ', ' + s.caption) + '">'; }]; }) });
+  });
 
   var one = new URLSearchParams(location.search).get('one');
   if (one) {

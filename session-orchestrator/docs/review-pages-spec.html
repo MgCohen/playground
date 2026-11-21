@@ -1006,7 +1006,7 @@ flowchart TD
     var known = e.source === zf.contentWindow;
     document.querySelectorAll('.sketch-frame').forEach(function (f) { if (e.source === f.contentWindow) known = true; });
     if (!known) return;
-    if (d.sk === 'open' && d.page === 'runs' && /^[a-z]{2}-[ab]$/.test(d.id)) { zf.src = 'run-views.html?one=' + d.id; zoom.hidden = false; }
+    if (d.sk === 'open' && d.page === 'runs' && /^[a-z]{2,8}-[abc]$/.test(d.id)) { zf.src = 'run-views.html?one=' + d.id; zoom.hidden = false; }
     else if (d.sk === 'open' && d.page === 'graphs' && /^w[1-9]-[a-z]$/.test(d.id)) { zf.src = 'workflow-graphs.html?one=' + d.id; zoom.hidden = false; }
     else if (d.sk === 'open' && /^[a-z]+-[a-c]$/.test(d.id)) { zf.src = 'workflows-sketches.html?one=' + d.id; zoom.hidden = false; }
     if (d.sk === 'close') unzoom();

@@ -1,0 +1,19 @@
+{
+  "name": "Git tree, full page",
+  "tag": "side panel · vertical commit graph",
+  "why": "The whole page is a commit graph like git log --graph. Each row is one step run. Parallel tasks and loops get colored lanes that merge back, so there are no back arrows. Dashed branches show the ways out of the current step. Best for dense history and loops. Weak for the full shape of the definition.",
+  "sketches": [
+    {
+      "file": "tree-a.svg",
+      "caption": "W4 as it opens: Review is now"
+    },
+    {
+      "file": "tree-b.svg",
+      "caption": "Tap on Test: modal with both passes"
+    },
+    {
+      "file": "tree-c.svg",
+      "caption": "W3: question loop, round 3"
+    }
+  ]
+}
