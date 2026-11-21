@@ -33,7 +33,7 @@ C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the U
 
 ### Architecture part tabs
 
-Before you write or change a part tab of `docs/ui-architecture.html`, use the skill `architecture-part` (`.claude/skills/architecture-part/SKILL.md`). Start from the Template tab of the page. The Motion tab is the filled example.
+Before you write or change a part tab of `docs/ui-architecture.html`, use the skill `architecture-part` (`.claude/skills/architecture-part/SKILL.md`). Start from the Template tab of the page. The Motion tab is the filled example. Only part tabs use the template. The Overview, research, proposals and other context tabs keep a free format.
 
 ### Working with motion
 

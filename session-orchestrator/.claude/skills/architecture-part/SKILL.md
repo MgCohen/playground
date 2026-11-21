@@ -7,6 +7,10 @@ description: Write or update one part tab of docs/ui-architecture.html (for exam
 
 A part tab shows one part of the view: its review, how it works, its code, its API and its requirements. All part tabs use the same format.
 
+## Which tabs use this template
+
+Only part tabs: one part of the view, with code that you can review (for example Motion, Places, Tracing). Other tabs keep their own free format and do not follow this skill: the Overview, research (Prior art), high-level proposals, decision records, and context, explanation or question tabs.
+
 ## Start
 
 1. Copy the Template tab of the page (`<div class="panel off" id="template">`).
