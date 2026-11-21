@@ -1,0 +1,366 @@
+{
+  "panel": {
+    "tokens": {
+      "--t-badge-out": 200,
+      "--t-dial-step": 40,
+      "--t-dial": 220,
+      "--t-scrim-out": 200,
+      "--t-fold": 260,
+      "--t-badge-in": 260,
+      "--t-card-move": 320,
+      "--t-dot": 300,
+      "--t-chevron": 200,
+      "--t-window-gap": 100,
+      "--t-push": 300,
+      "--t-card-tuck": 180,
+      "--t-card-arrive": 420,
+      "--t-peek-in": 260,
+      "--t-limit": 1000,
+      "--t-sheet-out": 220,
+      "--t-page-in": 180,
+      "--t-dscrim": 200,
+      "--t-scrim-in": 220,
+      "--t-badge-hover": 280,
+      "--t-peek-show": 5000,
+      "--t-card-back": 450,
+      "--t-tab-block": 300,
+      "--t-grow": 340,
+      "--t-fab": 250,
+      "--t-badge-text": 180,
+      "--t-back": 280,
+      "--t-peek-out": 200,
+      "--t-shrink": 240,
+      "--t-press": 80,
+      "--t-ball-out": 180,
+      "--t-tab-step": 40,
+      "--t-card-throw": 300,
+      "--t-badge-text-wait": 430,
+      "--t-undo": 5000,
+      "--t-frame-limit": 100,
+      "--t-vt-render": 600,
+      "--t-ball-in": 300,
+      "--t-spin": 800,
+      "--t-sheet-in": 340,
+      "--t-toast-out": 200,
+      "--t-dot-fade": 200,
+      "--t-vt-start": 300,
+      "--t-toggle": 150,
+      "--t-content-in": 200,
+      "--t-toast-in": 320,
+      "--t-count-step": 90,
+      "--t-content-out": 100,
+      "--t-ring": 900,
+      "--t-badge-wait": 350
+    },
+    "seen": [
+      {
+        "step": "grow",
+        "motion": "clip-path",
+        "target": "div.tray-panel",
+        "duration": 340,
+        "delay": 210
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "div.bar",
+        "duration": 300,
+        "delay": 0
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "div.pile",
+        "duration": 300,
+        "delay": 40
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "div.acts",
+        "duration": 300,
+        "delay": 80
+      },
+      {
+        "step": "leave",
+        "motion": "m-fade-out",
+        "target": "div.scrim",
+        "duration": 200,
+        "delay": 0
+      },
+      {
+        "step": "leave",
+        "motion": "m-down",
+        "target": "div.crd",
+        "duration": 220,
+        "delay": 0
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "div.tl",
+        "duration": 300,
+        "delay": 40
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "label.well",
+        "duration": 300,
+        "delay": 0
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "div.crd",
+        "duration": 300,
+        "delay": 40
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "div.crd",
+        "duration": 300,
+        "delay": 80
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "details.crd",
+        "duration": 300,
+        "delay": 120
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "details.crd",
+        "duration": 300,
+        "delay": 160
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "h2.gt",
+        "duration": 300,
+        "delay": 0
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "h2.gt",
+        "duration": 300,
+        "delay": 80
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "div.crd",
+        "duration": 300,
+        "delay": 120
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "div.empty",
+        "duration": 300,
+        "delay": 160
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "a.crd",
+        "duration": 300,
+        "delay": 0
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "details.crd",
+        "duration": 300,
+        "delay": 40
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "a.crd",
+        "duration": 300,
+        "delay": 80
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "h2.gt",
+        "duration": 300,
+        "delay": 120
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-rise",
+        "target": "div.crd",
+        "duration": 300,
+        "delay": 160
+      },
+      {
+        "step": "fold",
+        "motion": "clip-path",
+        "target": "div.tray-panel",
+        "duration": 240,
+        "delay": 100
+      },
+      {
+        "step": "fold",
+        "motion": "scale",
+        "target": "a.home",
+        "duration": 180,
+        "delay": 340
+      },
+      {
+        "step": "deck-throw deck-tuck",
+        "motion": "transform",
+        "target": "article.crd",
+        "duration": 180,
+        "delay": 0
+      },
+      {
+        "step": "deck-throw deck-tuck",
+        "motion": "m-fly-r",
+        "target": "article.crd",
+        "duration": 300,
+        "delay": 0
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-fade",
+        "target": "main.page",
+        "duration": 3000,
+        "delay": 0
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-sweep",
+        "target": "span.fill",
+        "duration": 900,
+        "delay": 0
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-count-hold",
+        "target": "span.disp",
+        "duration": 630,
+        "delay": 0
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-count-up",
+        "target": "span.disp",
+        "duration": 630,
+        "delay": 0
+      },
+      {
+        "step": "tab-in",
+        "motion": "m-arc",
+        "target": "span.fill",
+        "duration": 900,
+        "delay": 0
+      }
+    ]
+  },
+  "badge": {
+    "tokens": {
+      "--t-badge-out": 200,
+      "--t-dial-step": 40,
+      "--t-dial": 220,
+      "--t-scrim-out": 200,
+      "--t-fold": 260,
+      "--t-badge-in": 260,
+      "--t-card-move": 320,
+      "--t-dot": 300,
+      "--t-peek-in": 260,
+      "--t-window-gap": 100,
+      "--t-push": 300,
+      "--t-card-tuck": 180,
+      "--t-chevron": 200,
+      "--t-card-arrive": 420,
+      "--t-limit": 1000,
+      "--t-sheet-out": 220,
+      "--t-page-in": 180,
+      "--t-dscrim": 200,
+      "--t-scrim-in": 220,
+      "--t-badge-hover": 280,
+      "--t-peek-show": 5000,
+      "--t-card-back": 450,
+      "--t-tab-block": 300,
+      "--t-grow": 340,
+      "--t-badge-text": 180,
+      "--t-fab": 250,
+      "--t-back": 280,
+      "--t-peek-out": 200,
+      "--t-shrink": 240,
+      "--t-press": 80,
+      "--t-ball-out": 180,
+      "--t-card-throw": 300,
+      "--t-tab-step": 40,
+      "--t-badge-text-wait": 430,
+      "--t-vt-render": 600,
+      "--t-frame-limit": 100,
+      "--t-ball-in": 300,
+      "--t-spin": 800,
+      "--t-undo": 5000,
+      "--t-sheet-in": 340,
+      "--t-toast-out": 200,
+      "--t-dot-fade": 200,
+      "--t-vt-start": 300,
+      "--t-toggle": 150,
+      "--t-content-in": 200,
+      "--t-toast-in": 320,
+      "--t-count-step": 90,
+      "--t-content-out": 100,
+      "--t-ring": 900,
+      "--t-badge-wait": 350
+    },
+    "seen": [
+      {
+        "step": "badge-in badge-out",
+        "motion": "translate",
+        "target": "div.tb-tab",
+        "duration": 260,
+        "delay": 0
+      },
+      {
+        "step": "badge-fold",
+        "motion": "width",
+        "target": "div.tb-tab",
+        "duration": 280,
+        "delay": 0
+      },
+      {
+        "step": "badge-fold",
+        "motion": "opacity",
+        "target": "span.tb-txt",
+        "duration": 180,
+        "delay": 0
+      },
+      {
+        "step": "badge-in badge-out",
+        "motion": "translate",
+        "target": "div.tb-tab",
+        "duration": 200,
+        "delay": 0
+      },
+      {
+        "step": "spin",
+        "motion": "tb-spin",
+        "target": "svg",
+        "duration": 800,
+        "delay": 0
+      },
+      {
+        "step": "peek-out",
+        "motion": "opacity",
+        "target": "div.tb-peek",
+        "duration": 200,
+        "delay": 0
+      }
+    ]
+  }
+}

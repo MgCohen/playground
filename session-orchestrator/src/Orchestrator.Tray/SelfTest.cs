@@ -415,6 +415,7 @@ public static partial class SelfTest
         if (badOrder > 0) noWindow.Add($"{badOrder} panel-show with no panel-activate after it");
         Add("window-steps", noWindow.Count == 0, noWindow.Count == 0 ? $"{windowLines.Count} window steps; gaps of the badge-show steps in ms: {string.Join(", ", gaps)}" : $"no window step: {string.Join(", ", noWindow)}");
         Add("no-wait-at-limit", waits.Count >= 10 && late.Count == 0, $"{waits.Count} waits, {late.Count} by limit, missing or error{(late.Count > 0 ? ": " + string.Join(" | ", late.Take(4)) : "")}");
+        await MotionTimes(folder, [("panel", w), ("badge", b)], Add);
 
         Add("exceptions", Faults.Count == 0, Faults.First ?? "no unhandled exception");
         File.WriteAllText(Path.Combine(folder, "selftest.json"), JsonSerializer.Serialize(checks, new JsonSerializerOptions { WriteIndented = true }));

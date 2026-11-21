@@ -46,11 +46,31 @@
     });
   }
 
+  // #60: each motion that a wait saw, once for each step, motion and time, for the check motion-times.
+  var seen = {};
+  function see(el, a) {
+    var t = a.effect.getTiming();
+    var step = (el.getAttribute && el.getAttribute("data-motion")) || "";
+    var who = a.effect.target ? a.effect.target.tagName.toLowerCase() + (a.effect.target.className && a.effect.target.className.baseVal === undefined ? "." + String(a.effect.target.className).trim().split(/\s+/)[0] : "") : "";
+    var m = { step: step, motion: a.animationName || a.transitionProperty || "?", target: who, duration: Math.round(Number(t.duration) || 0), delay: Math.round(t.delay || 0) };
+    var key = m.step + "|" + m.motion + "|" + m.target + "|" + m.duration + "|" + m.delay;
+    if (!seen[key] && Object.keys(seen).length < 300) seen[key] = m;
+  }
+
+  // #60: the motions that the waits saw, and the time tokens of motion.css in ms. The check motion-times compares them.
+  function times() {
+    var tokens = {};
+    var root = getComputedStyle(document.documentElement);
+    for (var i = 0; i < root.length; i++) if (root[i].indexOf("--t-") === 0) tokens[root[i]] = ms(root[i]);
+    return { tokens: tokens, seen: Object.keys(seen).map(function (k) { return seen[k]; }) };
+  }
+
   var moves = !!document.startViewTransition && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   window.orchMotion = {
     // A time token of motion.css in ms, for C# and the other scripts.
     ms: ms,
+    times: times,
     // The one wait of the motion pipeline (R1, I12). C# sends it as the command MotionWait. The modes:
     //   settle    each finite CSS animation and transition of the target and its children ends.
     //   property  the transitions of the properties (or the animations of the names) in arg end, on the target and its
@@ -107,6 +127,7 @@
           });
           if (mine.length === 0 && frames > 0) { requestAnimationFrame(function () { look(frames - 1); }); return; }
           if (mine.length === 0) { finish(mode === "settle" ? "end" : "none"); return; }
+          mine.forEach(function (a) { see(el, a); });
           var canceled = false;
           Promise.all(mine.map(function (a) { return a.finished.catch(function () { canceled = true; }); }))
             .then(function () { finish(canceled ? "cancel" : "end"); });
