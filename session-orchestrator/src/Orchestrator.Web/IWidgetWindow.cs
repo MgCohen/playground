@@ -44,6 +44,9 @@ public interface IWidgetWindow
     /// <summary>The fold time of the hover of the badge: the token --t-badge-fold, which the badge page reads (no script call from C#).</summary>
     void UseBadgeFold(TimeSpan fold);
 
+    /// <summary>R2: the sizes that the page of the window measured (orchTray.sizes). The window takes its size and click area from them.</summary>
+    void UseSizes(Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult sizes);
+
     /// <summary>The badge shows its peek bubble (true) or hides it (false): the click area takes the bubble in or out.</summary>
     void Peek(bool on);
 }

@@ -3,6 +3,10 @@
    is-start, is-open, is-folded, is-badge-out, is-badge, is-hidden. Each phase sets its own transition delays, so CSS orders the
    steps of a change. All times and curves are tokens of motion.css. */
 
+/* ===== The sizes of the tray (R2): the page owns each size. tray.js measures the parts and reports them to the windows
+   (orchTray.sizes); C# sets the window size and the click area from the report. ===== */
+:root { --tray-panel-w: 350px; --tray-panel-h: 720px; --tray-margin: 24px; --badge-tab: 68px; --badge-tab-top: 14px; }
+
 /* ===== The page: transparent; the panel is the view ===== */
 html, body { height: 100%; overflow: hidden; background: transparent; }
 html { scrollbar-gutter: auto; }
@@ -22,7 +26,7 @@ html { scrollbar-gutter: auto; }
 /* ===== The stage, the shadow and the panel ===== */
 /* --hx and --hy: the center of the home button in the panel (tray.js measures it before each open and fold). */
 .tray-stage { position: fixed; inset: 0; --hx: calc(50% - 3px); --hy: calc(100% - 54px); }
-.tray-shadow { position: absolute; inset: 24px; }
+.tray-shadow { position: absolute; inset: var(--tray-margin); }
 /* The frame: the one shadow of the panel, as its own element under the panel. No filter: a filter makes the browser draw the
    whole panel again into one surface at each change, and in a composition window that showed empty frames. The frame follows
    the panel clip: a circle around the ball at the start and the end, the full panel when open. */
@@ -106,8 +110,8 @@ html { scrollbar-gutter: auto; }
 .tbadge { position: absolute; inset: 0; }
 /* The tab: round at the left, flush with the screen edge at the right. At rest it shows the ring only; a hover extends it to the
    width of its text. */
-.tb-tab { position: absolute; right: 0; top: 14px; height: 68px; width: 68px; display: flex; align-items: center; overflow: hidden; white-space: nowrap;
-  border-radius: 34px 0 0 34px; background: var(--surf); box-shadow: var(--sh-raise), 0 8px 18px -8px rgba(0, 0, 0, .4); cursor: pointer; translate: 110% 0;
+.tb-tab { position: absolute; right: 0; top: var(--badge-tab-top); height: var(--badge-tab); width: var(--badge-tab); display: flex; align-items: center; overflow: hidden; white-space: nowrap;
+  border-radius: calc(var(--badge-tab) / 2) 0 0 calc(var(--badge-tab) / 2); background: var(--surf); box-shadow: var(--sh-raise), 0 8px 18px -8px rgba(0, 0, 0, .4); cursor: pointer; translate: 110% 0;
   transition: translate var(--t-badge-out) var(--ease-in), width var(--t-badge-hover) var(--ease-out); }
 .is-badge .tb-tab { translate: 0 0; transition: translate var(--t-badge-in) var(--ease-out), width var(--t-badge-hover) var(--ease-out); }
 /* The hover preview waits, so a quick click opens the panel with no preview first. The pointer away folds it at once. */
@@ -123,7 +127,7 @@ html { scrollbar-gutter: auto; }
 .tb-txt small { font-size: 12px; color: var(--muted); }
 .is-badge .tb-tab:hover .tb-txt { opacity: 1; transition-delay: var(--t-badge-text-wait); }
 /* The peek bubble: the newest card comes out of the tab to the left, and goes back after a short time. */
-.tb-peek { position: absolute; right: 78px; top: 48px; translate: 0 -50%; max-width: 230px; padding: 9px 14px; border-radius: 16px; background: var(--surf);
+.tb-peek { position: absolute; right: calc(var(--badge-tab) + 10px); top: calc(var(--badge-tab-top) + var(--badge-tab) / 2); translate: 0 -50%; max-width: 230px; padding: 9px 14px; border-radius: 16px; background: var(--surf);
   box-shadow: var(--sh-raise), 0 10px 22px -10px rgba(0, 0, 0, .45);
   display: grid; gap: 1px; white-space: nowrap; overflow: hidden; pointer-events: none; transform-origin: right center; scale: .2 1; opacity: 0;
   transition: scale var(--t-peek-out) var(--ease-in), opacity var(--t-peek-out) var(--ease-in); }

@@ -206,6 +206,7 @@ public static partial class SelfTest
             w.Request(TrayRequest.Dock);
             await Until(() => w.Phase == TrayPhase.Badge, 4000);
             await Task.Delay(1500);
+            step($"size report of the badge page: {b.Sizes}");
             await Log("rest");
             step("hover on");
             b.HoldHover(true);

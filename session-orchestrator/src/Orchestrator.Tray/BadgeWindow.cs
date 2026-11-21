@@ -38,6 +38,11 @@ public sealed class BadgeWindow : ClearHost
 
     float Dpi => DeviceDpi / 96f;
 
+    /// <summary>R2: the last sizes that the page of this window measured (orchTray.sizes), in CSS px.</summary>
+    public Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult? Sizes { get; private set; }
+
+    public void UseSizes(Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult sizes) => Sizes = sizes;
+
     /// <summary>Shows the badge window at its place, with no input from the last time (no hover, no press).</summary>
     public void ShowAtPlace()
     {

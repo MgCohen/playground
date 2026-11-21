@@ -37,7 +37,9 @@
     // The fold time of the hover of the badge window: the token --t-badge-fold, read once from this page.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || window is null) return;
+        if (window is null) return;
+        await ReportSizes();
+        if (!firstRender) return;
         if (await MotionTimes.Of(Commands, "--t-badge-fold") is { } fold) window.UseBadgeFold(fold);
         else window.Fault(new InvalidOperationException("The page gave no --t-badge-fold."), "badge window");
     }
@@ -98,6 +100,25 @@
         {
             // The notice runs on its own (no caller waits for it), so its error goes to the fault log of the tray.
             window?.Fault(e, "badge notice");
+        }
+    }
+
+    // R2: the sizes of the badge depend on its text (the hover counts, the peek bubble). After a render with a new text, the page
+    // measures again and the window takes the new sizes.
+    string reported = "";
+
+    async Task ReportSizes()
+    {
+        var text = $"{counts.Headline}|{counts.Detail}|{peekTitle}|{peekSub}";
+        if (text == reported) return;
+        reported = text;
+        try
+        {
+            window!.UseSizes(await Commands.Must(new Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizes()));
+        }
+        catch (Exception e)
+        {
+            window!.Fault(e, "badge sizes");
         }
     }
 

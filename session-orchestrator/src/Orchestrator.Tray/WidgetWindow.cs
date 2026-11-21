@@ -95,5 +95,13 @@ public sealed class WidgetWindow : IWidgetWindow
 
     public void UseBadgeFold(TimeSpan fold) => Badge?.BeginInvoke(() => Badge.UseFold(fold));
 
+    /// <summary>R2: a report with badge boxes comes from the badge page; a report with none comes from the panel page.</summary>
+    public void UseSizes(Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult sizes)
+    {
+        Faults.Trace($"sizes: {sizes}");
+        if (sizes.Rest is null) Window?.BeginInvoke(() => Window.UseSizes(sizes));
+        else Badge?.BeginInvoke(() => Badge.UseSizes(sizes));
+    }
+
     public void Peek(bool on) => Badge?.BeginInvoke(() => Badge.Peek(on));
 }

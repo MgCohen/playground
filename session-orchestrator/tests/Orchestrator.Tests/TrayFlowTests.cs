@@ -46,6 +46,8 @@ public sealed class TrayFlowTests
         public void UseBadgeFold(TimeSpan fold) { }
 
         public void Peek(bool on) { }
+
+        public void UseSizes(Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult sizes) { }
     }
 
     sealed class FakePages(List<string> steps) : TrayFlow.IPanel, TrayFlow.IBadge

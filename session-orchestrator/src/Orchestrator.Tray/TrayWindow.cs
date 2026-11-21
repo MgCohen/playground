@@ -77,6 +77,11 @@ public sealed class TrayWindow : ClearHost
 
     float Dpi => DeviceDpi / 96f;
 
+    /// <summary>R2: the last sizes that the page of this window measured (orchTray.sizes), in CSS px.</summary>
+    public Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult? Sizes { get; private set; }
+
+    public void UseSizes(Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult sizes) => Sizes = sizes;
+
     /// <summary>The click area: the panel with its shadow, cut to the work area.</summary>
     void Hits()
     {
