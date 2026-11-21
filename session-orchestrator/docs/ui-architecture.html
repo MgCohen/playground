@@ -123,6 +123,8 @@ p code, li code, summary code, td code { overflow-wrap: anywhere; }
 .zoomview .hint { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; color: #fff; font-size: 12px; }
 
 
+table.rating td, table.rating th { white-space: nowrap; }
+table.rating { width: auto; }
 /* part template v3: each foldable header has 2 lines of one line each; tags at the right end; open shows the full text */
 details.example.f > summary { display: block; padding: 10px 14px; list-style: none; }
 details.example.f > summary::-webkit-details-marker { display: none; }
@@ -176,7 +178,7 @@ details.example.f[open] > summary .l2 { height: auto; white-space: normal; }
 <header>
   <div class="eyebrow">session-orchestrator · orch/visual-review</div>
   <h1>Orch View Architecture</h1>
-  <p class="summary">How the views of the tray and of the web UI are built today. One tab for each part. Each part tab has the same four sections: how it is defined, its architecture, a guide, and its quality.</p>
+  <p class="summary">How the views of the tray and of the web UI are built today. One tab for each part. Each part tab has the same sections: Review, Architecture, Definition, Key code, Call stacks, API, Quick guide and Requirements.</p>
 </header>
 
 <nav role="tablist" aria-label="Sections">
@@ -219,20 +221,23 @@ flowchart TB
   </section>
   <section>
     <h2>Quality of each part</h2>
-    <p class="summary">My rating from the code review and the tests, again after R1 and R2 (2026-11-21). Before: 3 Good, 6 Mixed, 1 Weak. Now (rebuilt in the part template, 2026-11-21): 6 Good, 4 Mixed, 1 Weak. An issue counts only in the part that owns its cause; other parts have a Dependency item.</p>
-    <div class="scroll"><table>
-      <thead><tr><th>Part</th><th>Quality</th><th>Reason</th><th>Issues</th></tr></thead>
+    <p class="summary">The rating of each part tab, the number of Gap items in its Review, and the open issues that it owns. Click a name to open the tab. Good: one way, tested. Mixed: works, with gaps. Weak: known faults.</p>
+    <div class="scroll"><table class="rating">
+      <thead><tr><th>Tab</th><th>Rating</th><th>Gaps</th><th>Open issues</th></tr></thead>
       <tbody>
-        <tr><td>Data</td><td><span class="q good">Good</span></td><td>Card types, page depth, motion steps, looks and tray sizes are data, and tests check each one. 4 small gaps: the size report has no source, the card type is a string, and the test tools copy the slot width and the window step names</td><td>-</td></tr>
-        <tr><td>Structure</td><td><span class="q mixed">Mixed</span></td><td>One set of views in two hosts, and one tested path from C# to JS. The hidden views still load (V-F2), the two hosts register the view services twice, and only Features/ and Plugins/ are slices</td><td>-</td></tr>
-        <tr><td>Places</td><td><span class="q good">Good</span></td><td>The page owns each size. Tests and self-test checks show that each drawn part fits its click area. 4 gaps come from the code and the tests only</td><td>-</td></tr>
-        <tr><td>Start and stop</td><td><span class="q mixed">Mixed</span></td><td>One request at a time, and one traced entry for each window step and page step. No "page ready" signal; the tests wait for the phase and a fixed time</td><td>I19</td></tr>
-        <tr><td>Page moves</td><td><span class="q good">Good</span></td><td>One rule (page depth), tested with 14 cases. All times are tokens. The tab-in wait shows as "element" in the trace, and no check reads the tab rise</td><td>-</td></tr>
-        <tr><td>Motion</td><td><span class="q good">Good</span></td><td>One start rule, one wait and one registry, with tests (R1). Small gaps: the deck back-in has no trace, the view transition gives no end to C#, 9 shared rules are in app.css</td><td>-</td></tr>
-        <tr><td>Interactions</td><td><span class="q mixed">Mixed</span></td><td>Real and posted input take one path. The key and badge checks pass. Nothing confirms that the page got a click, the swipe has no check, and 2 platform limits remain</td><td>I8</td></tr>
-        <tr><td>Tracing</td><td><span class="q weak">Weak</span></td><td>5 writers, 6 files, free text with no common id. The page writes no input. The full trace is on only with --demo or a named instance</td><td>-</td></tr>
-        <tr><td>Components</td><td><span class="q good">Good</span></td><td>Small components, no direct JS call, Presence for each block that comes and goes, bUnit tests. Gaps: Ui components that read data, a large Cards.razor, logic types in Components</td><td>-</td></tr>
-        <tr><td>Style</td><td><span class="q mixed">Mixed</span></td><td>Theme, motion and size tokens with tests, and reduced motion. Tray overrides win by load order, specificity and !important, with no check. 11 color literals</td><td>-</td></tr>
+        <tr><td><a href="#data" data-go="data">Data</a></td><td><span class="q good">Good</span></td><td>4</td><td>-</td></tr>
+        <tr><td><a href="#structure" data-go="structure">Structure</a></td><td><span class="q mixed">Mixed</span></td><td>3</td><td>-</td></tr>
+        <tr><td><a href="#places" data-go="places">Places</a></td><td><span class="q good">Good</span></td><td>4</td><td>-</td></tr>
+        <tr><td><a href="#startstop" data-go="startstop">Start and stop</a></td><td><span class="q mixed">Mixed</span></td><td>3</td><td>I19</td></tr>
+        <tr><td><a href="#moves" data-go="moves">Page moves</a></td><td><span class="q good">Good</span></td><td>2</td><td>-</td></tr>
+        <tr><td><a href="#flow" data-go="flow">Motion</a></td><td><span class="q good">Good</span></td><td>3</td><td>-</td></tr>
+        <tr><td><a href="#input" data-go="input">Interactions</a></td><td><span class="q mixed">Mixed</span></td><td>3</td><td>I8</td></tr>
+        <tr><td><a href="#trace" data-go="trace">Tracing</a></td><td><span class="q weak">Weak</span></td><td>6</td><td>-</td></tr>
+        <tr><td><a href="#components" data-go="components">Components</a></td><td><span class="q good">Good</span></td><td>4</td><td>-</td></tr>
+        <tr><td><a href="#style" data-go="style">Style</a></td><td><span class="q mixed">Mixed</span></td><td>3</td><td>-</td></tr>
+        <tr><td><a href="#prior" data-go="prior">Prior art</a></td><td><span class="tag">research</span></td><td>-</td><td>-</td></tr>
+        <tr><td><a href="#twowin" data-go="twowin">Proposal: two windows</a></td><td><span class="tag">design record</span></td><td>-</td><td>-</td></tr>
+        <tr><td><a href="#template" data-go="template">Template</a></td><td><span class="tag">template</span></td><td>-</td><td>-</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -4619,6 +4624,13 @@ flowchart TB
       if (window.scrollY > top && bar <= 1) window.scrollTo(0, top);
       b.scrollIntoView({ block: "nearest", inline: "nearest" });
     });
+  });
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("a[data-go]");
+    if (!a) return;
+    e.preventDefault();
+    var b = document.querySelector('nav button[data-tab="' + a.dataset.go + '"]');
+    if (b) b.click();
   });
   window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
   (function () {
