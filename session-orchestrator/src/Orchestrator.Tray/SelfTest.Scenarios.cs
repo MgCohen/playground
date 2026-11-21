@@ -239,6 +239,67 @@ public static partial class SelfTest
             }
         },
 
+        // I20 (replicate only): on Cards, a change in the filter sheet must update the "Show N cards" button at once.
+        ["filter-count"] = async (tray, step) =>
+        {
+            var w = tray.Window;
+            await Js(w, $"{Go}('cards')");
+            await Until(async () => await Js(w, "!!document.querySelector('.fbtn')") == "true", 3000);
+            await Task.Delay(800);
+            const string label = "(document.querySelector('.sheet .btn.pri') || {}).textContent";
+            const string pile = "document.querySelectorAll('[data-deck-card]').length";
+            step($"cards on the page: {await Js(w, pile)}");
+            step($"open the filter: {await Press(w, ".fbtn")}");
+            await Task.Delay(900);
+            step($"button before: {await Js(w, label)}");
+            Shot(await Picture(w), "i20-1-open.png");
+            step($"hide the first session: {await Press(w, ".sheet input.tg")}");
+            await Task.Delay(900);
+            step($"button after the change: {await Js(w, label)}");
+            step($"cards on the page after the change: {await Js(w, pile)}");
+            Shot(await Picture(w), "i20-2-changed.png");
+            step($"close the sheet: {await Press(w, ".sheet .btn.pri")}");
+            await Task.Delay(900);
+            step($"cards on the page after the close: {await Js(w, pile)}");
+            Shot(await Picture(w), "i20-3-closed.png");
+            step($"open the filter again: {await Press(w, ".fbtn")}");
+            await Task.Delay(900);
+            step($"button after a new open (the real count): {await Js(w, label)}");
+            Shot(await Picture(w), "i20-4-reopen.png");
+        },
+
+        // I21 (replicate only): a failed badge size report must be tried again. The measure fails once, then a render with the same
+        // text (a hover) must measure again. A second text change is the control.
+        ["badge-size-retry"] = async (tray, step) =>
+        {
+            var w = tray.Window;
+            var b = tray.Badge;
+            w.Request(TrayRequest.Dock);
+            await Until(() => w.Phase == TrayPhase.Badge, 4000);
+            await Task.Delay(1200);
+            var count = 0;
+            var trace = tray.Services.GetRequiredService<Orchestrator.Web.Plugins.Js.Contracts.IJsTrace>();
+            void OnLine(string line) { if (line.Contains("orchTray.sizes", StringComparison.Ordinal)) count++; }
+            trace.Written += OnLine;
+            step($"break the measure: {await Js(b, "(window.__box = orchTray.shadowBox, orchTray.shadowBox = function () { throw new Error('test: no measure'); }, 'broken')")}");
+            PostCard(tray, "I21 first text change");
+            await Task.Delay(1500);
+            step($"measures after text change 1 (fails): {count}; faults {Faults.Count}");
+            step($"restore the measure: {await Js(b, "(orchTray.shadowBox = window.__box, 'restored')")}");
+            count = 0;
+            var ring = b.PointToScreen(b.RingPoint());
+            await Hover(b, ring);
+            await Task.Delay(1200);
+            await Leave(b, new Point(ring.X - 300, ring.Y + 100));
+            await Task.Delay(1200);
+            step($"measures after hover and leave, same text (expected 1 or more, I21 gives 0): {count}");
+            count = 0;
+            PostCard(tray, "I21 second text change");
+            await Task.Delay(1500);
+            step($"measures after text change 2 (control): {count}");
+            trace.Written -= OnLine;
+        },
+
         // The reference look of the tab move, the sheet, the push and the back move.
         ["page-moves"] = async (tray, step) =>
         {
@@ -360,9 +421,19 @@ public static partial class SelfTest
         return session;
     }
 
+    /// <summary>The folder of the running scenario, for its pictures.</summary>
+    static string? scenarioFolder;
+
+    /// <summary>Saves a picture of the page to the folder of the running scenario.</summary>
+    static void Shot(Bitmap picture, string name)
+    {
+        using (picture) if (scenarioFolder is not null) picture.Save(Path.Combine(scenarioFolder, name));
+    }
+
     public static async Task<int> Scenario(TrayApp tray, string folder, string? name)
     {
         Directory.CreateDirectory(folder);
+        scenarioFolder = folder;
         if (name is null || !Scenarios.TryGetValue(name, out var run))
         {
             File.WriteAllText(Path.Combine(folder, "scenario.txt"), $"no scenario '{name}'; names: {string.Join(", ", Scenarios.Keys)}");

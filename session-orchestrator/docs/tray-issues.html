@@ -124,8 +124,8 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i17">I17 · The recorder records 0 frames in some runs  (Fixed)</option>
     <option value="i18">I18 · The window cuts the shadow of the side badge  (Fixed)</option>
     <option value="i19">I19 · The stress run misses 2 presses at the start  (Replicated)</option>
-    <option value="i20">I20 · The card filter sheet shows an old count  (Reported)</option>
-    <option value="i21">I21 · A failed badge size report is not tried again  (Reported)</option>
+    <option value="i20">I20 · The card filter sheet shows an old count  (Replicated)</option>
+    <option value="i21">I21 · A failed badge size report is not tried again  (Replicated)</option>
     <option value="f1">F1 · A blink at the end of the open  (Fixed)</option>
     <option value="f2">F2 · A bigger, darker shadow and an overlap at a tab change  (Fixed)</option>
     <option value="f3">F3 · The tab change was not the spec (T1 C)  (Fixed)</option>
@@ -189,8 +189,8 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i17">I17</a></td><td>The recorder records 0 frames in some runs</td><td><span class="pill fix">Fixed</span></td><td>Done: a 0-frame run fails at once; independent test instances</td></tr>
         <tr><td><a href="#i18">I18</a></td><td>The window cuts the shadow of the side badge</td><td><span class="pill fix">Fixed</span></td><td>Done in R2: the window fits the shadow boxes</td></tr>
         <tr><td><a href="#i19">I19</a></td><td>The stress run misses 2 presses at the start</td><td><span class="pill rpl">Replicated</span></td><td>Waits for the architecture review</td></tr>
-        <tr><td><a href="#i20">I20</a></td><td>The card filter sheet shows an old count</td><td><span class="pill rep">Reported</span></td><td>Your decision</td></tr>
-        <tr><td><a href="#i21">I21</a></td><td>A failed badge size report is not tried again</td><td><span class="pill rep">Reported</span></td><td>Your decision</td></tr>
+        <tr><td><a href="#i20">I20</a></td><td>The card filter sheet shows an old count</td><td><span class="pill rpl">Replicated</span></td><td>Your decision</td></tr>
+        <tr><td><a href="#i21">I21</a></td><td>A failed badge size report is not tried again</td><td><span class="pill rpl">Replicated</span></td><td>Your decision</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f3">F3</a></td><td>The tab change was not the spec (T1 C)</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -778,27 +778,37 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
 <!-- I20 -->
 <div class="panel off" id="i20" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill rep">Reported</span><span class="k">source: architecture check of Interactions · 2026-11-21</span></div>
+    <div class="meta"><span class="pill rpl">Replicated</span><span class="k">source: architecture check of Interactions · 2026-11-21</span></div>
     <h2>I20 · The card filter sheet shows an old count</h2>
-    <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="now">Replicated</span><span>Fixed</span></div>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p>On the Cards page, a change in the filter sheet does not update the button "Show N cards" or the pile behind the sheet. They update only when the sheet closes. The Stream page does not have this problem.</p></div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Found in the code, not seen in a run. <code>Cards.razor:66</code> gives <code>FilterSheet</code> no <code>OnChange</code>. <code>FilterSheet.Set</code> (<code>FilterSheet.razor:53-57</code>) changes the filter, then calls the empty callback, so Cards does not render again. <code>StreamPage.razor:40</code> gives <code>OnChange="Load"</code>.</p></div></div>
-    <div class="field"><span class="k">Replicate</span><div class="v"><p>Not done. Open Cards, open the filter sheet, change a session or a group, and read the count on the button.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">Orchestrator.Tray.exe --instance I20 --selftest &lt;folder&gt; --scenario filter-count
+19:02:12.991 button before: Show 8 cards
+19:02:13.161 hide the first session: clicked (window messages)
+19:02:14.070 button after the change: Show 8 cards        ← must be 7
+19:02:16.143 button after a new open (the real count): Show 7 cards</pre><p>1 of 1 run. The pictures show the switch of "Docs cleanup" off and the button still at 8.</p></div></div>
   </section>
 </div>
 <!-- I21 -->
 <div class="panel off" id="i21" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill rep">Reported</span><span class="k">source: architecture check of Places · 2026-11-21</span></div>
+    <div class="meta"><span class="pill rpl">Replicated</span><span class="k">source: architecture check of Places · 2026-11-21</span></div>
     <h2>I21 · A failed badge size report is not tried again</h2>
-    <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="now">Replicated</span><span>Fixed</span></div>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p>If the badge page fails to measure its sizes once, the badge window keeps its old size and click area until the badge text changes. The fault log has the line "badge sizes".</p></div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Found in the code, not seen in a run. <code>BadgeRoot.ReportSizes</code> (<code>BadgeRoot.razor:141-152</code>) sets <code>reported = text</code> before the measure. When <code>TraySizes</code> fails, the catch writes a fault, but <code>reported</code> already has the new text. The next render with the same text returns at once, so the measure does not run again.</p></div></div>
-    <div class="field"><span class="k">Replicate</span><div class="v"><p>Not done. A test can make <code>TraySizes</code> fail once (for example, a JS error), then render the badge again with the same text and read whether a second measure runs.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">Orchestrator.Tray.exe --instance I21 --selftest &lt;folder&gt; --scenario badge-size-retry
+19:03:16.578 WARN js orchTray.sizes() #12: error js.failed … test: no measure   ← the measure fails once (fault "badge sizes")
+19:03:17.645 restore the measure
+19:03:17.661 … 19:03:18.889  3 badge-fold waits: the badge renders again (hover, leave)
+19:03:20.115 measures after hover and leave, same text: 0                       ← must be 1 or more
+19:03:20.537 js orchTray.sizes() #19 …                                          ← the control: a new text measures again
+19:03:21.627 measures after text change 2 (control): 1</pre><p>1 of 1 run. The scenario breaks <code>orchTray.shadowBox</code> for one measure. A replacement of <code>orchTray.sizes</code> does not work, because Blazor keeps its own reference to an interop function after the first call.</p></div></div>
   </section>
 </div>
 <!-- F1 -->
