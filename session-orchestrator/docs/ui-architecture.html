@@ -116,8 +116,11 @@ p code, li code, summary code, td code { overflow-wrap: anywhere; }
 .hljs-title, .hljs-title.class_, .hljs-title.function_, .hljs-type, .hljs-selector-class, .hljs-selector-attr { color: var(--part); }
 .hljs-attr, .hljs-attribute, .hljs-property, .hljs-variable, .hljs-params { color: var(--ok); }
 .box.zoom { cursor: zoom-in; }
-.zoomview { position: fixed; inset: 0; z-index: 50; background: var(--bg); padding: 16px; cursor: zoom-out; overflow: auto; }
-.zoomview svg { display: block; margin: auto; max-width: none !important; height: auto; }
+.zoomview { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.zoomview .stage { background: var(--panel); border-radius: 12px; padding: 12px; width: min(96vw, 1100px); max-height: 90vh; overflow: hidden; touch-action: none; position: relative; }
+.zoomview .stage svg { display: block; width: 100% !important; max-width: none !important; height: auto; max-height: calc(90vh - 24px); transform-origin: 0 0; }
+.zoomview .close { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--fg); font-size: 22px; line-height: 1; cursor: pointer; z-index: 51; }
+.zoomview .hint { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; color: #fff; font-size: 12px; }
 
 
 /* part template v3: each foldable header has 2 lines of one line each; tags at the right end; open shows the full text */
@@ -988,47 +991,6 @@ WARN js orchMotion.wait(...) #6: error js.failed: ...</code></pre>
 <p>The motion rules of the shared views are in <code>motion.css</code>. The rules for one host are in the sheet of that host. A host sheet changes a shared rule only in a known order.</p><p><strong>Design:</strong> <code>motion.css</code> and <code>tray.css</code>.</p><p><strong>Not covered:</strong> 9 shared rules are in <code>app.css</code> (G3). The tray changes shared rules only by specificity, with no check (G4).</p>
 </div></details>
 </div></details>
-<details class="sec"><summary><h3>History: the proposal before R1</h3></summary><div class="sec-body">
-<p class="summary">The proposal of 2026-11-19 that R1 built. It is history only: the 8 mechanisms before R1, and the contract steps with their state.</p>
-
-  <section><h3>Before R1: eight mechanisms</h3>
-    <p class="summary">The record of 2026-11-19. The last column shows the state after R1.</p>
-    <div class="scroll"><table>
-      <thead><tr><th>#</th><th>Mechanism</th><th>Starts</th><th>Waits with</th><th>Time limit</th><th>After R1</th></tr></thead>
-      <tbody>
-        <tr><td>1</td><td>Stage phase class</td><td><span class="tag cs">C#</span> <code>Set(phase)</code></td><td><code>orchTray.end</code> (one property)</td><td>900, 500, 1500, 400 ms in C#</td><td>Steps <code>grow</code>, <code>fold</code>, <code>badge-in</code>, <code>badge-out</code></td></tr>
-        <tr><td>2</td><td>Presence</td><td><span class="tag cs">C#</span> <code>is-leaving</code></td><td><code>orchMotion.settle</code> (all animations)</td><td><code>--t-limit</code></td><td>Step <code>leave</code></td></tr>
-        <tr><td>3</td><td>Tab change</td><td><span class="tag cs">C#</span> <code>is-tab-in</code></td><td><code>orchMotion.settle</code></td><td><code>--t-limit</code></td><td>Step <code>tab-in</code></td></tr>
-        <tr><td>4</td><td>View transition</td><td><span class="tag js">JS</span> <code>orchMotion.begin</code></td><td>MutationObserver + <code>setTimeout</code></td><td>300, 600 ms in JS</td><td>Command <code>MotionBegin</code>; tokens <code>--t-vt-start</code>, <code>--t-vt-render</code></td></tr>
-        <tr><td>5</td><td>Nav dot</td><td><span class="tag js">JS</span> <code>orchMotion.dot</code></td><td>None</td><td>-</td><td>Command <code>MotionDot</code>; no wait</td></tr>
-        <tr><td>6</td><td>Ring draw once</td><td><span class="tag js">JS</span> MutationObserver</td><td>None</td><td>-</td><td>No change</td></tr>
-        <tr><td>7</td><td>Deck</td><td><span class="tag js">JS</span> <code>swipe.js</code></td><td>Events + <code>setTimeout</code></td><td>300, 180, 450, 60 ms in JS</td><td>Steps <code>deck-throw</code>, <code>deck-tuck</code>; back-in in JS</td></tr>
-        <tr><td>8</td><td>C# timers</td><td><span class="tag cs">C#</span> <code>Task.Delay</code></td><td>-</td><td>300 ms, 5 s, 5 s</td><td>Tokens <code>--t-undo</code>, <code>--t-peek-show</code>; hover timer is step <code>badge-fold</code> (R2)</td></tr>
-      </tbody>
-    </table></div>
-  </section>
-  <section><h3>The contract, in steps</h3>
-    <p class="summary">This proposal covers more than one part. The part tabs show their own proposals, with the step number of this contract.</p>
-    <ol>
-      <li><strong>Define (done in R1 S1, <code>8e9b5b3</code>):</strong> each motion is one CSS rule with a token, started by one state class. No time outside <code>motion.css</code>.</li>
-      <li><strong>Start (done in R1 S4, <code>e6ce000</code>, other way):</strong> C# sets the state class (phase, presence, tab, deck state). JS starts only the view transition, which needs the browser API.</li>
-      <li><strong>Wait (done in R1 S3, <code>a85f3dd</code>):</strong> one helper, <code>orchMotion.settle(element)</code>, for all waits. It writes a trace line when the limit ends a wait, so a wrong wait shows.</li>
-      <li><strong>Sizes (done in R2, <code>d46516c</code> to <code>35736ea</code>):</strong> one owner. C# writes its constants to the page as CSS variables at the start, or the page measures and reports.</li>
-      <li><strong>Deck (done in R1 S8, <code>e684621</code>):</strong> <code>swipe.js</code> keeps only the pointer math. The throw, the tuck and the back-in become state classes with tokens, and the wait is <code>settle</code>.</li>
-      <li><strong>Reduced motion (done in R1 S2, <code>08596f1</code>):</strong> the duration tokens go to 1 ms, so the end events still come (Fluent, Shoelace).</li>
-      <li><strong>Test (not done, replaced, #60):</strong> one check reads all running animations (<code>getAnimations</code>) and compares their times with the tokens.</li>
-    </ol>
-    <div class="scroll"><table>
-      <thead><tr><th>Option</th><th>What</th><th>Size</th></tr></thead>
-      <tbody>
-        <tr><td>A. Step by step</td><td>The 6 points above, one at a time, each with its check. The look does not change</td><td>Small steps, low risk</td></tr>
-        <tr><td>B. Motion registry</td><td>A C# list of motions (name, state, target, token, spec ID). The CSS and the checks come from it</td><td>Larger. Data-driven, as you plan for the UI</td></tr>
-      </tbody>
-    </table></div>
-    <p class="note">Q1 answer (2026-11-20): B, registry. R1 made the registry in steps, with a check for each step. The registry has no token, so the CSS does not come from it.</p>
-  </section>
-    
-</div></details>
   </section>
 </div>
 
@@ -1494,22 +1456,59 @@ sequenceDiagram
   document.querySelectorAll("nav button").forEach(function (b) { b.addEventListener("click", function () { setTimeout(update, 0); }); });
   window.addEventListener("load", update);
   setTimeout(update, 0);
-  // Zoom: a click on a graph shows it in the full window; a click or Escape closes it.
+  // Zoom: a click on a graph opens it in a view that fits the screen. Pinch (or the mouse wheel) zooms, a drag moves it,
+  // a double click resets it. The close button, a click outside the graph, Escape or the back button closes it.
+  function closeZoom(fromBack) {
+    var v = document.querySelector(".zoomview");
+    if (!v) return;
+    v.remove();
+    if (!fromBack && history.state && history.state.zoom) history.back();
+  }
+  window.addEventListener("popstate", function () { closeZoom(true); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeZoom(false); });
   document.addEventListener("click", function (e) {
+    if (document.querySelector(".zoomview")) return;
     var box = e.target.closest && e.target.closest(".box.zoom");
-    var open = document.querySelector(".zoomview");
-    if (open) { open.remove(); return; }
     if (!box || !box.querySelector("svg")) return;
-    var view = document.createElement("div");
-    view.className = "zoomview";
-    var svg = box.querySelector("svg").cloneNode(true), vb = svg.viewBox && svg.viewBox.baseVal;
-    // Full size: at least the window width, and at least 1.5 times the drawn size; a larger graph scrolls.
-    var w = vb && vb.width ? Math.max(window.innerWidth - 32, vb.width * 1.5) : window.innerWidth - 32;
-    svg.style.width = w + "px";
-    svg.removeAttribute("height");
-    view.appendChild(svg);
+    var view = document.createElement("div"), stage = document.createElement("div"), close = document.createElement("button"), hint = document.createElement("div");
+    view.className = "zoomview"; stage.className = "stage"; close.className = "close"; hint.className = "hint";
+    close.type = "button"; close.setAttribute("aria-label", "Close"); close.textContent = "×";
+    hint.textContent = "Pinch or scroll to zoom. Drag to move. Double click to reset.";
+    var svg = box.querySelector("svg").cloneNode(true);
+    svg.removeAttribute("height"); svg.style.maxWidth = "none";
+    stage.appendChild(svg); view.appendChild(stage); view.appendChild(close); view.appendChild(hint);
     document.body.appendChild(view);
+    history.pushState({ zoom: true }, "");
+    close.addEventListener("click", function () { closeZoom(false); });
+    view.addEventListener("click", function (ev) { if (ev.target === view) closeZoom(false); });
+    var k = 1, x = 0, y = 0, points = new Map(), start = null;
+    function apply() { svg.style.transform = "translate(" + x + "px," + y + "px) scale(" + k + ")"; }
+    function clamp(v) { return Math.min(6, Math.max(1, v)); }
+    function zoomAt(f, cx, cy) {
+      var r = stage.getBoundingClientRect(), px = cx - r.left, py = cy - r.top, nk = clamp(k * f);
+      x = px - (px - x) * nk / k; y = py - (py - y) * nk / k; k = nk;
+      if (k === 1) { x = 0; y = 0; }
+      apply();
+    }
+    stage.addEventListener("wheel", function (ev) { ev.preventDefault(); zoomAt(Math.exp(-ev.deltaY * 0.002), ev.clientX, ev.clientY); }, { passive: false });
+    stage.addEventListener("dblclick", function () { k = 1; x = 0; y = 0; apply(); });
+    stage.addEventListener("pointerdown", function (ev) { stage.setPointerCapture(ev.pointerId); points.set(ev.pointerId, [ev.clientX, ev.clientY]); start = null; });
+    stage.addEventListener("pointermove", function (ev) {
+      if (!points.has(ev.pointerId)) return;
+      var old = points.get(ev.pointerId);
+      points.set(ev.pointerId, [ev.clientX, ev.clientY]);
+      if (points.size === 2) {
+        var p = Array.from(points.values()), d = Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]);
+        var mx = (p[0][0] + p[1][0]) / 2, my = (p[0][1] + p[1][1]) / 2;
+        if (start) zoomAt(d / start, mx, my);
+        start = d;
+      } else if (points.size === 1 && k > 1) {
+        x += ev.clientX - old[0]; y += ev.clientY - old[1]; apply();
+      }
+    });
+    function up(ev) { points.delete(ev.pointerId); start = null; }
+    stage.addEventListener("pointerup", up);
+    stage.addEventListener("pointercancel", up);
   });
-  document.addEventListener("keydown", function (e) { var v = document.querySelector(".zoomview"); if (e.key === "Escape" && v) v.remove(); });
 })();
 </script>
