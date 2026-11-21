@@ -161,7 +161,7 @@ ol, ul { padding-left: 22px; }
     <tr><td>hover, text 333 px</td><td class="n">x −14–332, y 11–105</td><td class="n">x 38–332, y 0–96</td><td>52 px at the left, ring cut (I7); 9 px bottom</td></tr>
     <tr><td>peek</td><td class="n">bubble y about 17–99</td><td class="n">x 0–332, y 0–96</td><td>about 3 px at the bubble bottom; 9 px at the tab</td></tr>
   </table></div>
-  <p class="note">These values are calculations from the CSS shadows (<code>--sh-raise</code>: <code>0 10px 21px -8px</code> gives 23 px below the tab). S0 measures them in the real page before any fix.</p>
+  <p class="note">S0 measured these values in the real page: they equal the calculation from the CSS shadows (<code>--sh-raise</code>: <code>0 10px 21px -8px</code> gives 23 px below the tab). The peek bubble ends at 96.6 px (0.6 px cut).</p>
 
   <h2>Terms</h2>
   <div class="tbl"><table>
@@ -244,7 +244,7 @@ artifacts~/bin/Orchestrator.Tray/debug/Orchestrator.Tray.exe --instance R2 --sel
         <li>C#: the record <code>TraySizes : JsCommand&lt;TraySizeReport&gt;</code> in <code>Features/Tray/Slices/</code>; <code>IWidgetWindow.UseSizes(report)</code>.</li>
         <li><code>BadgeRoot</code>, <code>TrayRoot</code>: send the report on the first render and after a change of the counts or the peek text. C# logs it and does not use it yet.</li>
       </ul></dd>
-      <dt>Before</dt><dd><code>Tray_sizes_are_tokens</code> FAIL: <code>tray.css</code> has 5 size literals (<code>inset: 24px</code>, <code>68px</code> ×2, <code>top: 14px</code>, <code>height: 68px</code>).</dd>
+      <dt>Before</dt><dd><code>Tray_sizes_are_tokens</code> FAIL: <code>tray.css</code> has 7 size literals (<code>inset</code>, the tab <code>top</code>, <code>height</code>, <code>width</code>, <code>border-radius</code>, the bubble <code>right</code>, <code>top</code>).</dd>
       <dt>After</dt><dd>The unit test passes. The self-test log has one report. Its values equal the S0 boxes ±1 px.</dd>
       <dt>Checks</dt><dd>Unit tests (<code>Js_names_exist</code> finds <code>orchTray.sizes</code>). One self-test.</dd>
       <dt>Risk</dt><dd>Low. A wrong token name gives a size of 0. The unit test and the report log show it.</dd>
