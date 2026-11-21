@@ -119,14 +119,18 @@ p code, li code, summary code, td code { overflow-wrap: anywhere; }
 .zoomview { position: fixed; inset: 0; z-index: 50; background: var(--bg); padding: 16px; cursor: zoom-out; overflow: auto; }
 .zoomview svg { display: block; margin: auto; max-width: none !important; height: auto; }
 
-/* part template v2: each foldable header has 2 lines of one line each */
+
+/* part template v3: each foldable header has 2 lines of one line each; tags at the right end; open shows the full text */
 details.example.f > summary { display: block; padding: 10px 14px; list-style: none; }
 details.example.f > summary::-webkit-details-marker { display: none; }
 details.example.f > summary .l1 { display: flex; gap: 8px; align-items: center; min-width: 0; height: 24px; }
 details.example.f > summary .l1 > * { flex-shrink: 0; }
-details.example.f > summary .l1 .t { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-weight: 500; font-size: 15px; }
+details.example.f > summary .l1 .t { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-weight: 500; font-size: 15px; }
 details.example.f > summary .l2 { display: block; height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 13px; font-family: var(--font-body); }
 .rs.api { background: var(--muted); }
+details.example.f[open] > summary .l1 { height: auto; align-items: flex-start; }
+details.example.f[open] > summary .l1 .t { white-space: normal; }
+details.example.f[open] > summary .l2 { height: auto; white-space: normal; }
 </style>
 
 <div class="wrap">
@@ -552,44 +556,43 @@ flowchart LR
   </section>
   <section class="secs">
 <details class="sec" open><summary><h3>Review</h3></summary><div class="sec-body">
-<p class="summary">Good: what works, and what it solved. Gap: what to fix here. Dependency: a problem of another part that affects this part. Trade-off: a cost that a decision accepted; no fix is planned.</p>
-<details class="example f"><summary><span class="l1"><span class="rs ok">Good</span><span class="t">One way for each motion step</span></span><span class="l2">R1 replaced 8 mechanisms with one</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">One way for each motion step</span><span class="rs ok">Good</span></span><span class="l2">R1 replaced 8 mechanisms with one</span></summary><div class="body">
 <p>C# sets a state class, a CSS rule with tokens moves the element, and one wait reports the end. The old fixed waits in C# (900, 500, 1500, 400 ms) are gone.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs ok">Good</span><span class="t">Tests guard each rule</span></span><span class="l2">7 source and registry tests, 3 self-test checks</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">Tests guard each rule</span><span class="rs ok">Good</span></span><span class="l2">7 source and registry tests, 3 self-test checks</span></summary><div class="body">
 <p><code>Registry_matches_motion_css</code>, <code>Each_state_class_has_a_rule</code>, <code>Motion_times_are_tokens</code>, <code>Reduced_motion_sets_each_duration_token_to_1ms</code>, <code>No_motion_timer_in_scripts</code>, <code>No_direct_js_calls</code>, <code>Js_names_exist</code>. Self-test checks <code>steps-traced</code>, <code>deck-throw</code>, <code>no-wait-at-limit</code>.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs ok">Good</span><span class="t">Reduced motion works</span></span><span class="l2">I13 solved: 1 ms tokens keep the end events</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">Reduced motion works</span><span class="rs ok">Good</span></span><span class="l2">I13 solved: 1 ms tokens keep the end events</span></summary><div class="body">
 <p>Each duration token is 1 ms, so each end event comes and no wait runs to its limit.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs ok">Good</span><span class="t">The trace found I19</span></span><span class="l2">the wait line showed the grow end after the phase</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">The trace found I19</span><span class="rs ok">Good</span></span><span class="l2">the wait line showed the grow end after the phase</span></summary><div class="body">
 <p>The wait line <code>by end after 555 ms</code> showed that the grow ended 560 ms after the phase <code>open</code>. Without the trace of the pipeline, this cause was not visible.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs ok">Good</span><span class="t">Tray rules are in tray.css</span></span><span class="l2">host boundary: only the tray host loads them</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">Tray rules are in tray.css</span><span class="rs ok">Good</span></span><span class="l2">host boundary: only the tray host loads them</span></summary><div class="body">
 <p><code>tray.css</code> is in the tray project, and only the tray host loads it. The web app has no tray. In <code>motion.css</code>, the grow and badge rules would load in the web app with no use.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs no">Gap</span><span class="t">G1 · The deck back-in waits in JS, not through C#</span></span><span class="l2">no trace line and no limit warning (M-R5)</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">G1 · The deck back-in waits in JS, not through C#</span><span class="rs no">Gap</span></span><span class="l2">no trace line and no limit warning (M-R5)</span></summary><div class="body">
 <p><code>swipe.js</code> calls <code>orchMotion.wait</code> directly. The wait has no trace line and no limit warning.</p><p><strong>To close it:</strong> send the back-in as a registry step from <code>Cards.razor</code>.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs no">Gap</span><span class="t">G2 · The view transition gives no end to C#</span></span><span class="l2">MotionBegin returns at the start (M-R2)</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">G2 · The view transition gives no end to C#</span><span class="rs no">Gap</span></span><span class="l2">MotionBegin returns at the start (M-R2)</span></summary><div class="body">
 <p><code>MotionBegin</code> returns at the start of a push or a back. C# and the tests cannot wait for the end. The scenario <code>page-moves</code> waits a fixed 800 ms.</p><p><strong>To close it:</strong> return the <code>finished</code> promise of the transition as a <code>WaitResult</code>. Also counted in Page moves (P-M2).</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs no">Gap</span><span class="t">G3 · 9 shared motion rules are still in app.css</span></span><span class="l2">deck, toggle, speed dial: an R1 scope leftover (M-R8)</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">G3 · 9 shared motion rules are still in app.css</span><span class="rs no">Gap</span></span><span class="l2">deck, toggle, speed dial: an R1 scope leftover (M-R8)</span></summary><div class="body">
 <p>The deck (<code>.pcard</code> move, throw, tuck, back-in, arrive), the toggle (<code>.tg</code>) and the speed dial button (<code>.cfab</code>). R1 S1 decided: "the deck, the toggle and the undo bar use the tokens. The rules stay in app.css." R1 was about times and waits, and the deck kept its look with no risk. No later step was planned.</p><p><strong>To close it:</strong> move the motion parts of these rules to <code>motion.css</code>. The deck rules mix layout and motion in the same selectors, so the move splits them.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs no">Gap</span><span class="t">G4 · Tray rules change shared rules only by specificity</span></span><span class="l2">no order and no check (M-R8)</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">G4 · Tray rules change shared rules only by specificity</span><span class="rs no">Gap</span></span><span class="l2">no order and no check (M-R8)</span></summary><div class="body">
 <p>Some <code>tray.css</code> rules change rules of <code>motion.css</code>, for example <code>.vt::view-transition-old(page)</code>. They win only because their selectors are more specific. A change of a selector in <code>motion.css</code> can change a tray motion with no warning.</p><p><strong>To close it:</strong> one <code>@layer</code> order (shared, then host), and a test of the order. Also counted in Style (P-St3).</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs dep">Dependency</span><span class="t">I19 · The phase is open before the grow ends</span></span><span class="l2">owned by Start and stop; no "page ready" signal</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">I19 · The phase is open before the grow ends</span><span class="rs dep">Dependency</span></span><span class="l2">owned by Start and stop; no "page ready" signal</span></summary><div class="body">
 <p><code>TrayFlow.Open</code> sets <code>Phase = Open</code> (line 179) before the grow starts (line 180). The motion is correct, but a test that waits for the phase presses during the grow.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs part">Trade-off</span><span class="t">The registry holds only names and states</span></span><span class="l2">Q1, option B: the CSS is written by hand</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">The registry holds only names and states</span><span class="rs part">Trade-off</span></span><span class="l2">Q1, option B: the CSS is written by hand</span></summary><div class="body">
 <p><strong>Gain:</strong> one C# list for all steps, checked by tests.</p><p><strong>Cost:</strong> the CSS rules are written by hand. Only the tests link them to the registry.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs part">Trade-off</span><span class="t">The wait reads the real animations</span></span><span class="l2">no timers; up to 3 frames to find a late state</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">The wait reads the real animations</span><span class="rs part">Trade-off</span></span><span class="l2">no timers; up to 3 frames to find a late state</span></summary><div class="body">
 <p><strong>Gain:</strong> no timers, and the wait follows a changed time.</p><p><strong>Cost:</strong> up to 3 frames to find a state class that comes late.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs part">Trade-off</span><span class="t">A source test checks the times</span></span><span class="l2">#60: no runtime test; it cannot prove which token</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">A source test checks the times</span><span class="rs part">Trade-off</span></span><span class="l2">#60: no runtime test; it cannot prove which token</span></summary><div class="body">
 <p><strong>Gain:</strong> no false alarms.</p><p><strong>Cost:</strong> the test cannot prove which token a motion uses.</p>
 </div></details>
 </div></details>
@@ -649,7 +652,7 @@ flowchart TB
    └─ JsTraceEnd          after step: one trace line with name, arguments, result, time</code></pre>
 </div></details>
 <details class="sec"><summary><h3>Definition</h3></summary><div class="sec-body">
-<details class="example f" open><summary><span class="l1"><span class="tag cs">C#</span><span class="t">The registry</span></span><span class="l2">11 steps: state class, target, call site</span></summary><div class="body">
+<details class="example f" open><summary><span class="l1"><span class="t">The registry</span><span class="tag cs">C#</span></span><span class="l2">11 steps: state class, target, call site</span></summary><div class="body">
 <p class="file">MotionSteps.cs and the call sites</p>
 <pre class="code"><code class="language-plaintext">step         state class    target                        call site
 grow         is-open        TrayStage.razor  .tray-panel  TrayStage.Grow (Must)
@@ -667,7 +670,7 @@ leave        is-leaving     Presence.razor   .presence    Presence leave
 deck-throw   out-r, out-l   Cards.razor      .pcard       Cards.Move
 deck-tuck    tuck           Cards.razor      .pcard       Cards.Move</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag css">CSS</span><span class="tag js">JS</span><span class="t">Motions with no step</span></span><span class="l2">nothing waits for them: CSS only, or JS</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">Motions with no step</span><span class="tag css">CSS</span><span class="tag js">JS</span></span><span class="l2">nothing waits for them: CSS only, or JS</span></summary><div class="body">
 <pre class="code"><code class="language-plaintext">motion                started by                                  file
 press, row fold       CSS :active, details[open]                  motion.css
 ← JS starts it (M-R3)
@@ -681,12 +684,12 @@ deck back-in          swipe.js adds back-in, waits in JS          swipe.js, app.
 deck arrive           Cards.razor adds arrive                     app.css
 undo bar              m-count with --t-undo; C# reads the token   Cards.razor, Settings.razor</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag css">CSS</span><span class="t">The CSS contract</span></span><span class="l2">data-motion, --motion-wait, --t-* tokens</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">The CSS contract</span><span class="tag css">CSS</span></span><span class="l2">data-motion, --motion-wait, --t-* tokens</span></summary><div class="body">
 <ul><li><code>data-motion="name"</code> on the element that moves (more names with spaces).</li><li><code>--motion-wait</code> in the step rule: the property or animation names. No value: the wait settles.</li><li>Each time is a <code>--t-*</code> token of <code>motion.css</code>. Reduced motion sets each duration token to 1 ms.</li><li>Shared rules are in <code>motion.css</code>. Rules for one host are in the sheet of that host (<code>tray.css</code>).</li></ul>
 </div></details>
 </div></details>
 <details class="sec"><summary><h3>Key code</h3></summary><div class="sec-body">
-<details class="example f" open><summary><span class="l1"><span class="tag css">CSS</span><span class="t">The tokens</span></span><span class="l2">:root, prefers-reduced-motion</span></summary><div class="body">
+<details class="example f" open><summary><span class="l1"><span class="t">The tokens</span><span class="tag css">CSS</span></span><span class="l2">:root, prefers-reduced-motion</span></summary><div class="body">
 <p class="file">src/Orchestrator.Web/wwwroot/motion.css</p>
 <pre class="code"><code class="language-css">:root {
   --ease-out: cubic-bezier(.2,.8,.2,1); --ease-spring: cubic-bezier(.3,1.45,.5,1);
@@ -705,7 +708,7 @@ undo bar              m-count with --t-undo; C# reads the token   Cards.razor, S
   }
 }</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag css">CSS</span><span class="t">Step rules and state rules</span></span><span class="l2">[data-motion~=…], .is-open .tray-panel</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">Step rules and state rules</span><span class="tag css">CSS</span></span><span class="l2">[data-motion~=…], .is-open .tray-panel</span></summary><div class="body">
 <p class="file">src/Orchestrator.Web/wwwroot/motion.css</p>
 <pre class="code"><code class="language-css">/* ← not inherited: each target owns its wait */
 @property --motion-wait { syntax: &quot;*&quot;; inherits: false; }
@@ -718,7 +721,7 @@ undo bar              m-count with --t-undo; C# reads the token   Cards.razor, S
 .is-open .tray-panel { clip-path: inset(0 round 16px);
   transition: clip-path var(--t-grow) var(--ease-out) calc(var(--t-ball-in) * .7); }</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag cs">C#</span><span class="t">The step and the registry</span></span><span class="l2">MotionStep, MotionSteps</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">The step and the registry</span><span class="tag cs">C#</span></span><span class="l2">MotionStep, MotionSteps</span></summary><div class="body">
 <p class="file">src/Orchestrator.Web/Features/Motion/Domain/MotionStep.cs</p>
 <pre class="code"><code class="language-csharp">public sealed record MotionStep(string Name, params string[] States)
 {
@@ -739,7 +742,7 @@ undo bar              m-count with --t-undo; C# reads the token   Cards.razor, S
     public static IReadOnlyList&lt;MotionStep&gt; All { get; } = [Grow, Fold, BadgeIn, ...];
 }</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag cs">C#</span><span class="t">The wait command and its result</span></span><span class="l2">MotionWait, WaitMode, WaitResult</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">The wait command and its result</span><span class="tag cs">C#</span></span><span class="l2">MotionWait, WaitMode, WaitResult</span></summary><div class="body">
 <p class="file">src/Orchestrator.Web/Features/Motion/Slices/Wait/</p>
 <pre class="code"><code class="language-csharp">// ← Target: an ElementReference or a selector
 public sealed record MotionWait(object? Target, WaitMode Mode, string? Arg = null) : JsCommand&lt;WaitResult&gt;;
@@ -754,7 +757,7 @@ public sealed record WaitResult(string By, double Ms)
     public override string ToString() =&gt; $&quot;by {By} after {Ms} ms&quot;;
 }</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag cs">C#</span><span class="t">Call site: the tray grow</span></span><span class="l2">TrayStage.Grow</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">Call site: the tray grow</span><span class="tag cs">C#</span></span><span class="l2">TrayStage.Grow</span></summary><div class="body">
 <p class="file">src/Orchestrator.Web/Components/Tray/TrayStage.razor</p>
 <pre class="code"><code class="language-csharp">public Task Grow() =&gt; InvokeAsync(async () =&gt;
 {
@@ -767,7 +770,7 @@ public sealed record WaitResult(string By, double Ms)
     StateHasChanged();
 });</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag cs">C#</span><span class="t">Call site: a card throw</span></span><span class="l2">Cards.Move</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">Call site: a card throw</span><span class="tag cs">C#</span></span><span class="l2">Cards.Move</span></summary><div class="body">
 <p class="file">src/Orchestrator.Web/Components/Pages/Cards.razor</p>
 <pre class="code"><code class="language-csharp">async Task Move(CardView card, string css, MotionStep step)
 {
@@ -778,7 +781,7 @@ public sealed record WaitResult(string By, double Ms)
     motion = null;
 }</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag js">JS</span><span class="t">Call site: the deck back-in</span></span><span class="l2">swipe.js reset (gap G1)</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">Call site: the deck back-in</span><span class="tag js">JS</span></span><span class="l2">swipe.js reset (gap G1)</span></summary><div class="body">
 <p class="file">src/Orchestrator.Web/wwwroot/swipe.js</p>
 <pre class="code"><code class="language-javascript">function reset(card) {
   card.classList.remove(&quot;drag&quot;);
@@ -789,7 +792,7 @@ public sealed record WaitResult(string By, double Ms)
   orchMotion.wait(card, &quot;property&quot;, &quot;transform&quot;).then(function () { card.classList.remove(&quot;back-in&quot;); });
 }</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag cs">C#</span><span class="t">The JS pipeline</span></span><span class="l2">JsPlugin, JsCommandHandler, JsNames</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">The JS pipeline</span><span class="tag cs">C#</span></span><span class="l2">JsPlugin, JsCommandHandler, JsNames</span></summary><div class="body">
 <p class="file">src/Orchestrator.Web/Plugins/Js/JsPlugin.cs</p>
 <pre class="code"><code class="language-csharp">services.AddPipeline(new PipelineBuilder&lt;JsCommand&gt;()
     .Handlers(typeof(JsCommandHandler&lt;&gt;))
@@ -809,7 +812,7 @@ return await InvokeAsync(name, call.Token, arguments);</code></pre>
 <pre class="code"><code class="language-csharp">// ← the first word is the JS object
 return $&quot;orch{words[0]}.{char.ToLowerInvariant(rest[0])}{rest[1..]}&quot;;</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag js">JS</span><span class="t">The wait in the page</span></span><span class="l2">orchMotion.wait</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">The wait in the page</span><span class="tag js">JS</span></span><span class="l2">orchMotion.wait</span></summary><div class="body">
 <p class="file">src/Orchestrator.Web/wwwroot/motion.js</p>
 <pre class="code"><code class="language-javascript">if (mode === &quot;step&quot;) {
   arg = getComputedStyle(el).getPropertyValue(&quot;--motion-wait&quot;).trim();
@@ -830,7 +833,7 @@ var look = function (frames) {
 };
 requestAnimationFrame(function () { look(2); });</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag cs">C#</span><span class="t">The trace line and the limit warning</span></span><span class="l2">JsTraceEnd, WaitLimitHook</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">The trace line and the limit warning</span><span class="tag cs">C#</span></span><span class="l2">JsTraceEnd, WaitLimitHook</span></summary><div class="body">
 <p class="file">src/Orchestrator.Web/Plugins/Js/Infrastructure/JsTraceEnd.cs</p>
 <pre class="code"><code class="language-csharp">var line = $&quot;js {name}({arguments}) #{envelope.Id}: {Outcome(envelope)} in {ms} ms&quot;;
 if (error is not null &amp;&amp; error.Code != JsErrors.Canceled) trace.Warn(line); else trace.Write(line);</code></pre>
@@ -840,7 +843,7 @@ if (error is not null &amp;&amp; error.Code != JsErrors.Canceled) trace.Warn(lin
 </div></details>
 </div></details>
 <details class="sec"><summary><h3>Call stacks</h3></summary><div class="sec-body">
-<details class="example f" open><summary><span class="l1"><span class="tag cs">C#</span><span class="t">The tray grow</span></span><span class="l2">entry: TrayFlow.Open; Must in the tray flow</span></summary><div class="body">
+<details class="example f" open><summary><span class="l1"><span class="t">The tray grow</span><span class="tag cs">C#</span></span><span class="l2">entry: TrayFlow.Open; Must in the tray flow</span></summary><div class="body">
 <p><strong>Context:</strong> the tray opens. The entry point is <code>TrayFlow.Open</code> in C#.</p>
 <p><strong>Call stack</strong></p>
 <pre class="code"><code class="language-plaintext">TrayFlow.Open()                               TrayFlow.cs:166
@@ -858,7 +861,7 @@ if (error is not null &amp;&amp; error.Code != JsErrors.Canceled) trace.Warn(lin
 <pre class="code"><code class="language-plaintext">13:39:58.571 tray phase open (from start)
 13:39:59.130 js orchMotion.wait(&quot;[data-motion~=&quot;grow&quot;]&quot;, Step, null) #6: by end after 555 ms in 555 ms</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag cs">C#</span><span class="t">A sheet leaves</span></span><span class="l2">entry: Presence.Leave; SendAsync</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">A sheet leaves</span><span class="tag cs">C#</span></span><span class="l2">entry: Presence.Leave; SendAsync</span></summary><div class="body">
 <p><strong>Context:</strong> the user closes the answer sheet. The entry point is <code>Presence.Leave()</code>.</p>
 <p><strong>Call stack</strong></p>
 <pre class="code"><code class="language-plaintext">Presence.Leave()                              Presence.razor
@@ -872,7 +875,7 @@ if (error is not null &amp;&amp; error.Code != JsErrors.Canceled) trace.Warn(lin
 <p><strong>Output</strong></p>
 <pre class="code"><code class="language-plaintext">13:40:09.938 js orchMotion.wait(element, Step, null) #13: by end after 222 ms in 223 ms</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag cs">C#</span><span class="t">A tab change</span></span><span class="l2">entry: MainLayout; a wait with a Key</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">A tab change</span><span class="tag cs">C#</span></span><span class="l2">entry: MainLayout; a wait with a Key</span></summary><div class="body">
 <p><strong>Context:</strong> the user opens the Cards tab. The entry point is <code>MainLayout</code>, at the change of the page address.</p>
 <p><strong>Call stack</strong></p>
 <pre class="code"><code class="language-plaintext">MainLayout.OnParametersSet                    MainLayout.razor
@@ -885,7 +888,7 @@ if (error is not null &amp;&amp; error.Code != JsErrors.Canceled) trace.Warn(lin
 <p><strong>Output</strong></p>
 <pre class="code"><code class="language-plaintext">13:40:08.431 js orchMotion.wait(element, Step, null) #8: by end after 385 ms in 406 ms</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag cs">C#</span><span class="t">A card throw</span></span><span class="l2">entry: Cards.Do; a step with 2 states</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">A card throw</span><span class="tag cs">C#</span></span><span class="l2">entry: Cards.Do; a step with 2 states</span></summary><div class="body">
 <p><strong>Context:</strong> the user acts on a card. The entry point is <code>Cards.Do</code>.</p>
 <p><strong>Call stack</strong></p>
 <pre class="code"><code class="language-plaintext">Cards.Do(card, action)                        Cards.razor
@@ -926,7 +929,7 @@ if (error is not null &amp;&amp; error.Code != JsErrors.Canceled) trace.Warn(lin
 </div></details>
 </div></details>
 <details class="sec"><summary><h3>Quick guide</h3></summary><div class="sec-body">
-<details class="example f" open><summary><span class="l1"><span class="tag cs">C#</span><span class="tag css">CSS</span><span class="tag">Razor</span><span class="t">Add a motion: define it, call it</span></span><span class="l2">a registry row, 2 CSS rules, a wait in C#</span></summary><div class="body">
+<details class="example f" open><summary><span class="l1"><span class="t">Add a motion: define it, call it</span><span class="tag cs">C#</span><span class="tag css">CSS</span><span class="tag">Razor</span></span><span class="l2">a registry row, 2 CSS rules, a wait in C#</span></summary><div class="body">
 <p>1. Name the step in C#: one row of the registry.</p>
 <p class="file">src/Orchestrator.Web/Features/Motion/Domain/MotionSteps.cs</p>
 <pre class="code"><code class="language-csharp">// ← name &quot;leave&quot;, state class &quot;is-leaving&quot;
@@ -947,7 +950,7 @@ phase = Leaving;
 // ← ends when the motion ends
 await Commands.SendAsync(new MotionWait(root, WaitMode.Step), default);</code></pre>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="tag">text</span><span class="t">Read a failed wait</span></span><span class="l2">the trace lines for limit, none, missing, error</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">Read a failed wait</span><span class="tag">text</span></span><span class="l2">the trace lines for limit, none, missing, error</span></summary><div class="body">
 <p class="file">Example lines in the real format of the code</p>
 <pre class="code"><code class="language-plaintext">← the motion did not end in --t-limit
 WARN wait at limit #6: Step  on [data-motion~=&quot;grow&quot;]: by limit after 1000 ms
@@ -961,28 +964,28 @@ WARN js orchMotion.wait(...) #6: error js.failed: ...</code></pre>
 <p>The full rules, the recipes and the limits are in the <a href="https://claude.ai/artifact/A4N6FKvzRUfqCCZsoZVde8">motion guide</a>.</p>
 </div></details>
 <details class="sec"><summary><h3>Requirements</h3></summary><div class="sec-body">
-<details class="example f"><summary><span class="l1"><span class="rs ok">Covered</span><span class="t">M-R1 · One owner for each time</span></span><span class="l2">motion.css tokens; test Motion_times_are_tokens</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">M-R1 · One owner for each time</span><span class="rs ok">Covered</span></span><span class="l2">motion.css tokens; test Motion_times_are_tokens</span></summary><div class="body">
 <p>Each motion time and curve is a token of <code>motion.css</code>. No view file has a time literal.</p><p><strong>Design:</strong> the <code>--t-*</code> tokens. The source test <code>Motion_times_are_tokens</code> fails on a literal, with file and line.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs part">Partly</span><span class="t">M-R2 · One wait for "the motion ended"</span></span><span class="l2">orchMotion.wait; not the view transition end (G2)</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">M-R2 · One wait for "the motion ended"</span><span class="rs part">Partly</span></span><span class="l2">orchMotion.wait; not the view transition end (G2)</span></summary><div class="body">
 <p>Each wait uses the real end of the motion, not a timer.</p><p><strong>Design:</strong> <code>MotionWait</code> and <code>orchMotion.wait</code> with <code>getAnimations</code>. The test <code>No_motion_timer_in_scripts</code> fails on a timer.</p><p><strong>Not covered:</strong> the end of a view transition (G2).</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs part">Partly</span><span class="t">M-R3 · C# owns when, CSS owns how</span></span><span class="l2">registry and step rules; JS starts 2 motions</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">M-R3 · C# owns when, CSS owns how</span><span class="rs part">Partly</span></span><span class="l2">registry and step rules; JS starts 2 motions</span></summary><div class="body">
 <p>C# starts a motion with a state class. CSS moves it. Both use the step name.</p><p><strong>Design:</strong> <code>MotionSteps</code>, <code>data-motion</code>, <code>--motion-wait</code>. The tests <code>Registry_matches_motion_css</code> and <code>Each_state_class_has_a_rule</code> link them.</p><p><strong>Not covered:</strong> JS starts 2 motions: the deck back-in (a pointer response) and the ring repeat mark (<code>data-drawn</code>).</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs ok">Covered</span><span class="t">M-R4 · Reduced motion keeps the end events</span></span><span class="l2">1 ms tokens; test Reduced_motion_sets_each…</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">M-R4 · Reduced motion keeps the end events</span><span class="rs ok">Covered</span></span><span class="l2">1 ms tokens; test Reduced_motion_sets_each…</span></summary><div class="body">
 <p>A wait must not run to its limit with reduced motion.</p><p><strong>Design:</strong> each duration token is 1 ms, not <code>none</code>. The test <code>Reduced_motion_sets_each_duration_token_to_1ms</code>.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs part">Partly</span><span class="t">M-R5 · Each wait has a trace</span></span><span class="l2">JsTraceEnd, WaitLimitHook; not the deck back-in (G1)</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">M-R5 · Each wait has a trace</span><span class="rs part">Partly</span></span><span class="l2">JsTraceEnd, WaitLimitHook; not the deck back-in (G1)</span></summary><div class="body">
 <p>Each wait writes its name, target, result and time. A wait at its limit writes a warning.</p><p><strong>Design:</strong> <code>JsTraceEnd</code> and <code>WaitLimitHook</code>.</p><p><strong>Not covered:</strong> the deck back-in (G1).</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs ok">Covered</span><span class="t">M-R6 · No component calls JS directly</span></span><span class="l2">JsCommand; tests No_direct_js_calls, Js_names_exist</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">M-R6 · No component calls JS directly</span><span class="rs ok">Covered</span></span><span class="l2">JsCommand; tests No_direct_js_calls, Js_names_exist</span></summary><div class="body">
 <p>Each C# to JS call is a command record that goes through the pipeline.</p><p><strong>Design:</strong> <code>JsCommand</code>. The tests <code>No_direct_js_calls</code> and <code>Js_names_exist</code>.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs ok">Covered</span><span class="t">M-R7 · A newer call wins</span></span><span class="l2">JsCommand.Key and JsCalls</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">M-R7 · A newer call wins</span><span class="rs ok">Covered</span></span><span class="l2">JsCommand.Key and JsCalls</span></summary><div class="body">
 <p>A second wait for the same thing cancels the first one, so an old wait does not change a new state.</p><p><strong>Design:</strong> <code>JsCommand.Key</code> and <code>JsCalls</code>. The tab change uses <code>Key = MotionSteps.TabIn.Name</code>.</p>
 </div></details>
-<details class="example f"><summary><span class="l1"><span class="rs part">Partly</span><span class="t">M-R8 · Each motion rule has one home</span></span><span class="l2">shared in motion.css, host rules in the host sheet, a known order</span></summary><div class="body">
+<details class="example f"><summary><span class="l1"><span class="t">M-R8 · Each motion rule has one home</span><span class="rs part">Partly</span></span><span class="l2">shared in motion.css, host rules in the host sheet, a known order</span></summary><div class="body">
 <p>The motion rules of the shared views are in <code>motion.css</code>. The rules for one host are in the sheet of that host. A host sheet changes a shared rule only in a known order.</p><p><strong>Design:</strong> <code>motion.css</code> and <code>tray.css</code>.</p><p><strong>Not covered:</strong> 9 shared rules are in <code>app.css</code> (G3). The tray changes shared rules only by specificity, with no check (G4).</p>
 </div></details>
 </div></details>
