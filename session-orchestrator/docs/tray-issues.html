@@ -171,7 +171,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i2">I2</a></td><td>The empty frame detector gives false alarms</td><td><span class="pill rpl">Replicated</span></td><td>Your decision: new rule</td></tr>
         <tr><td><a href="#i3">I3</a></td><td>A stress step that misses does not fail the run</td><td><span class="pill fix">Fixed</span></td><td>Done: a late press is a warning, a miss fails the run</td></tr>
         <tr><td><a href="#i4">I4</a></td><td>Sizing issues on the screen</td><td><span class="pill no">Closed</span></td><td>Closed by you: no proof</td></tr>
-        <tr><td><a href="#i5">I5</a></td><td>Keyboard and screen reader not tested</td><td><span class="pill fix">Fixed</span></td><td>Done: 2 key checks. Open: Narrator, a manual step for you</td></tr>
+        <tr><td><a href="#i5">I5</a></td><td>Keyboard and screen reader not tested</td><td><span class="pill fix">Fixed</span></td><td>Done: 2 key checks. Screen reader: not needed now</td></tr>
         <tr><td><a href="#i6">I6</a></td><td>The tray grow (G1) is not reviewed</td><td><span class="pill rep">Reported</span></td><td>Look approved; the rest is in R1</td></tr>
         <tr><td><a href="#i7">I7</a></td><td>The badge hover cuts the ring at the left</td><td><span class="pill rpl">Replicated</span></td><td>In R2, after R1</td></tr>
         <tr><td><a href="#i8">I8</a></td><td>The demo moves your real pointer in 4 steps</td><td><span class="pill rpl">Partly fixed</span></td><td>Done: the badge steps. Open: the header drag and the badge hover (platform limits)</td></tr>
@@ -446,10 +446,10 @@ Tab 1, 2, 3                   dictate button (aria-label), Cancel, Send answer</
           <tr><td>Focus on the host window (a test break)</td><td>Fail: box empty</td><td>Fail: focus stays in the box</td></tr>
         </tbody>
       </table></div>
-      <p><code>MoveFocus</code> is not the only path: a click into the page gives the focus to WebView2. Self-test: 29 of 30 (only I7 fails). Open: the Narrator test, a manual step for you.</p>
+      <p><code>MoveFocus</code> is not the only path: a click into the page gives the focus to WebView2. Self-test: 29 of 30 (only I7 fails).</p>
     </div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><ol><li>A check: focus the reply box, send key messages, read the box value.</li><li>A check: Tab key moves the focus to the next button.</li><li>A manual test with Narrator, once.</li></ol></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Is keyboard input in the tray a need now, or later?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, a must.</b> Keyboard use is a must. Add two self-test checks: type in the reply box, and Tab moves the focus. A failure is a must-fix issue. Narrator is a manual step for the user.</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Is keyboard input in the tray a need now, or later?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, a must.</b> Keyboard use is a must. Add two self-test checks: type in the reply box, and Tab moves the focus. A failure is a must-fix issue. Narrator is a manual step for the user.</p></div><div class="ask"><span class="k">Answer · 2026-11-21</span><p><b>No screen reader test now.</b> Accessibility is not a requirement at this time. The keyboard checks stay.</p></div></div></div>
   </section>
 </div>
 
