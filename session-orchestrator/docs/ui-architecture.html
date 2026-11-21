@@ -134,6 +134,18 @@ details.example.f > summary .l2 { display: block; height: 20px; overflow: hidden
 details.example.f[open] > summary .l1 { height: auto; align-items: flex-start; }
 details.example.f[open] > summary .l1 .t { white-space: normal; }
 details.example.f[open] > summary .l2 { height: auto; white-space: normal; }
+
+/* part template v3: each foldable header has 2 lines of one line each; tags at the right end; open shows the full text */
+details.example.f > summary { display: block; padding: 10px 14px; list-style: none; }
+details.example.f > summary::-webkit-details-marker { display: none; }
+details.example.f > summary .l1 { display: flex; gap: 8px; align-items: center; min-width: 0; height: 24px; }
+details.example.f > summary .l1 > * { flex-shrink: 0; }
+details.example.f > summary .l1 .t { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-weight: 500; font-size: 15px; }
+details.example.f > summary .l2 { display: block; height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 13px; font-family: var(--font-body); }
+.rs.api { background: var(--muted); }
+details.example.f[open] > summary .l1 { height: auto; align-items: flex-start; }
+details.example.f[open] > summary .l1 .t { white-space: normal; }
+details.example.f[open] > summary .l2 { height: auto; white-space: normal; }
 </style>
 
 <div class="wrap">
@@ -157,6 +169,7 @@ details.example.f[open] > summary .l2 { height: auto; white-space: normal; }
   <button role="tab" data-tab="style" aria-selected="false">Style</button>
   <button role="tab" data-tab="prior" aria-selected="false">Prior art</button>
   <button role="tab" data-tab="twowin" aria-selected="false">Proposal: two windows</button>
+  <button role="tab" data-tab="template" aria-selected="false">Template</button>
 </nav>
 
 <!-- OVERVIEW -->
@@ -602,56 +615,97 @@ flowchart LR
 <details class="sec"><summary><h3>Architecture</h3></summary><div class="sec-body">
 <h4>Outside: how a component uses it</h4>
 <div class="box zoom"><pre class="mermaid">
-flowchart TB
-  C["Component<br/>Razor or TrayFlow"] -->|"1. set state class"| D["DOM element<br/>data-motion=name"]
-  D -->|"2. state rule"| M["CSS motion<br/>tokens of motion.css"]
-  C -->|"3. MotionWait(target, Step)"| P["Motion pipeline"]
-  M -.->|"animation end"| P
-  P -->|"4. WaitResult"| C
-  C -->|"5. next state"| D
+sequenceDiagram
+  participant C as Component (C#)
+  participant R as Blazor renderer
+  participant P as Motion pipeline
+  participant B as Browser (DOM, CSS)
+  C->>C: set state field
+  C->>R: StateHasChanged()
+  R-)B: render batch, state class
+  alt one method: TrayStage.Grow, Cards.Move
+    C->>+P: await Must(MotionWait)
+    Note over R,B: the call can reach JS first
+  else two methods: Presence, MainLayout
+    R->>C: OnAfterRenderAsync
+    C->>+P: await SendAsync(MotionWait)
+  end
+  Note over C: suspended, thread free
+  B->>B: CSS motion runs
+  B--)P: motions finish
+  P-->>-C: WaitResult {By, Ms}
+  C->>R: next state, StateHasChanged()
 </pre></div>
-<pre class="code"><code class="language-plaintext">Component (Razor or TrayFlow)
-  ← C# owns WHEN a motion starts
-  1. set a state class
-  ← CSS owns HOW and HOW LONG (tokens)
-  2. a CSS rule moves the element
-  3. Commands.SendAsync(new MotionWait(target, WaitMode.Step))
-  ← end, cancel, hidden, limit, none, missing
-  4. WaitResult { By, Ms }
-  5. continue: remove the block, set the next phase</code></pre>
+<p>The component does not touch the DOM. The state class reaches the browser in a Blazor render batch, and the wait is a separate JS call. In pattern A the two messages can arrive in either order: <code>Cards.Move</code> calls from an event handler, so the call goes before the batch. <code>orchMotion.wait</code> looks for the motion during 3 frames to cover this case (<code>wwwroot/motion.js:98-114</code>).</p>
+<p class="file">Paths relative to src/Orchestrator.Web/</p>
+<pre class="code"><code class="language-plaintext">A. One method: set the state, then await in the same method
+TrayFlow.Open → await Page(() =&gt; p.Grow())                          Components/Tray/TrayFlow.cs:180
+← runs on the renderer context
+└─ TrayStage.Grow → InvokeAsync(async () =&gt; …)                      Components/Tray/TrayStage.razor:62
+   ← message 1: a render batch with is-open
+   ├─ Set(TrayPhase.Open): phase = &quot;open&quot;; StateHasChanged()        :64, :81-86
+   ← message 2: the JS call. The one await
+   ├─ await Commands.Must(new MotionWait(MotionSteps.Grow.Target, WaitMode.Step))   :66
+   ← runs after the grow ends
+   └─ ready = true; StateHasChanged()                                :67-68
+
+B. Two methods: set the state, render, then await after the render
+Presence.OnParametersSet or Leave() → StartLeave()                 Components/Motion/Presence.razor:44, :52, :58-63
+← Blazor renders; the class is in the DOM
+└─ phase = &quot;is-leaving&quot;; settle = true
+← the flag settle links the two methods
+Presence.OnAfterRenderAsync                                         :66
+← the one await
+├─ await Commands.SendAsync(new MotionWait(root, WaitMode.Step))   :71
+└─ phase = Gone; StateHasChanged(); OnGone; left.TrySetResult()    :73-76</code></pre>
 <h4>Inside: the black box after the call</h4>
 <div class="box zoom"><pre class="mermaid">
-flowchart TB
-  S["ICommandSender<br/>SendAsync or Must"] --> TS["JsTraceStart<br/>start time"]
-  TS --> H["JsCommandHandler"]
-  H --> N["JsNames<br/>MotionWait to orchMotion.wait"]
-  H --> K["JsCalls<br/>newer Key cancels older"]
-  H --> JS["IJSRuntime"]
-  JS --> W["orchMotion.wait<br/>motion.js"]
-  W -->|"Step"| V["read --motion-wait"]
-  V --> A["getAnimations<br/>up to 3 frames"]
-  A -->|"finished"| R["by end or cancel"]
-  A -->|"no match"| R2["by none"]
-  W -->|"time limit"| R3["by limit"]
-  W -->|"page hidden"| R4["by hidden"]
-  R & R2 & R3 & R4 --> HK["WaitLimitHook<br/>warn on limit, none, missing"]
-  HK --> TE["JsTraceEnd<br/>one trace line"]
-  TE --> S
+sequenceDiagram
+  participant C as Caller (C#)
+  participant P as JS pipeline (C#)
+  participant I as IJSRuntime
+  participant W as orchMotion.wait (JS)
+  participant A as Browser animations
+  C->>+P: SendAsync(MotionWait)
+  P->>P: JsTraceStart: keep time
+  P->>P: handler: JsNames, JsCalls
+  P->>+I: await InvokeAsync
+  I-)W: interop message
+  Note over C,I: all C# frames wait on one Task
+  W->>W: one frame, then look
+  W->>A: getAnimations(subtree)
+  A--)W: finished promises
+  Note over W: or limit timer, or hidden
+  W--)I: resolve {by, ms}
+  I-->>-P: WaitResult or exception
+  P->>P: catch: js.failed, js.canceled
+  P->>P: WaitLimitHook, JsTraceEnd
+  P-->>-C: Result of WaitResult
 </pre></div>
-<pre class="code"><code class="language-plaintext">ICommandSender.SendAsync(MotionWait)
-└─ JS pipeline (Plugins/Js/JsPlugin.cs)
-   ├─ JsTraceStart        before step: keeps the start time
-   ← JsNames: type name → JS name
-   ├─ JsCommandHandler    MotionWait → &quot;orchMotion.wait&quot;(target, &quot;Step&quot;, null)
-   │  ├─ JsCalls          a newer call with the same Key cancels the older one
-   │  └─ IJSRuntime.InvokeAsync&lt;WaitResult&gt;
-   │     └─ motion.js  orchMotion.wait
-   │        ├─ Step: read --motion-wait of the target → Property or Settle
-   │        ├─ look up to 3 frames for the animations (the state class can come late)
-   ← or the --t-limit timer, or &quot;hidden&quot;
-   │        └─ Promise.all(animation.finished) → { by, ms }
-   ├─ hooks               WaitLimitHook: a warning if By is limit, none or missing
-   └─ JsTraceEnd          after step: one trace line with name, arguments, result, time</code></pre>
+<p>The pipeline is a set of nested frames around one await, not a chain of stages. <code>JsTraceStart</code>, <code>JsNames</code> and <code>JsCalls</code> run and return before the JS call. <code>WaitLimitHook</code> and <code>JsTraceEnd</code> run after the JS promise resolves. The order of the hook and <code>JsTraceEnd</code> comes from their use, because the Umpire source is not in the repository: <code>JsTraceEnd</code> reads <code>envelope.Result</code>, so it runs last.</p>
+<p class="file">Paths relative to src/Orchestrator.Web/</p>
+<pre class="code"><code class="language-plaintext">ICommandSender.SendAsync(MotionWait)                                Plugins/Js/JsPlugin.cs:18-22 (Umpire pipeline)
+├─ before the await: synchronous, on the caller context
+│  ├─ JsTraceStart.BeforeAsync: Items[&quot;js.start&quot;] = timestamp       Plugins/Js/Infrastructure/JsTraceStart.cs:15-19
+│  └─ JsCommandHandler.HandleAsync                                  Plugins/Js/Handlers/Commands/JsCommandHandler.cs:13
+← helper calls; they return
+│     ├─ JsNames.NameOf → &quot;orchMotion.wait&quot;; ArgumentsOf → (target, &quot;Step&quot;, null)   :16-17
+│     ├─ Items[&quot;js.name&quot;], Items[&quot;js.arguments&quot;]                    :18-19
+← a newer call with the same Key cancels the older one
+│     └─ JsCalls.Start(Key, envelope.Cancellation)                  :20
+← the only await; each C# frame above waits on it
+├─ AWAIT js.InvokeAsync&lt;WaitResult&gt;(&quot;orchMotion.wait&quot;, token, arguments)   :37
+│  └─ JS event loop: orchMotion.wait(target, mode, arg)             wwwroot/motion.js:69-115
+│     ├─ frames: count arg frames, or --t-frame-limit → &quot;limit&quot;     :83-88
+│     ├─ no element → &quot;missing&quot;; step: read --motion-wait → property or settle   :90-94
+│     ├─ page hidden → &quot;hidden&quot;; --t-limit timer → &quot;limit&quot;          :95-97
+│     ├─ one frame, then up to 2 more frames: getAnimations({ subtree: true })   :101-114
+│     └─ Promise.all(animation.finished) → &quot;end&quot; or &quot;cancel&quot;; no match → &quot;end&quot; (settle) or &quot;none&quot;
+└─ after the await: the continuation
+   ├─ JsCommandHandler catch: Error &quot;js.failed&quot; or &quot;js.canceled&quot;    JsCommandHandler.cs:25-30
+   ├─ JsRun.Dispose → JsCalls.End                                   Plugins/Js/Infrastructure/JsRun.cs:7-11
+   ├─ AfterCommandHook: WaitLimitHook warns if AtLimit             Features/Motion/Slices/WaitLimit/WaitLimitHook.cs:10-18
+   └─ JsTraceEnd.AfterAsync: one trace line, name, arguments, result, ms   Plugins/Js/Infrastructure/JsTraceEnd.cs:11-29</code></pre>
 </div></details>
 <details class="sec"><summary><h3>Definition</h3></summary><div class="sec-body">
 <details class="example f" open><summary><span class="l1"><span class="t">The registry</span><span class="tag cs">C#</span></span><span class="l2">11 steps: state class, target, call site</span></summary><div class="body">
@@ -1403,11 +1457,147 @@ sequenceDiagram
 </div>
 
 
+
+<!-- TEMPLATE -->
+<div class="panel off" id="template" role="tabpanel">
+  <!-- Copy this panel to start a part tab. Replace each ‹ › placeholder with real content. Delete the HTML comments. -->
+  <section><h2>‹Part name› <span class="q good">‹Good›</span></h2>
+    <!-- Rating: class q good, q mixed or q weak; the text is Good, Mixed or Weak. -->
+    <p class="summary">‹One sentence: what the part does, and how it does it.›</p>
+  </section>
+  <section class="secs">
+<details class="sec" open><summary><h3>Review</h3></summary><div class="sec-body">
+<p class="summary">The findings about the part, good and bad. One item for each finding.</p>
+<!-- One label for each item: Good (rs ok), Gap (rs no), Dependency (rs dep), Trade-off (rs part). Put the Good items first, then Gap, Dependency, Trade-off. -->
+<details class="example f" open><summary><span class="l1"><span class="t">‹Short name of what works›</span><span class="rs ok">Good</span></span><span class="l2">‹one line: what it solved or made possible›</span></summary><div class="body">
+<p>‹The proof: the code, the test or the trace line that shows it.›</p>
+</div></details>
+<details class="example f"><summary><span class="l1"><span class="t">G1 · ‹Short name of the gap›</span><span class="rs no">Gap</span></span><span class="l2">‹one line: the effect›</span></summary><div class="body">
+<p>‹What is wrong, where it is, and what it causes.›</p><p><strong>To close it:</strong> ‹the change that removes the gap›</p>
+</div></details>
+<details class="example f"><summary><span class="l1"><span class="t">‹Issue ID› · ‹Short name of the problem›</span><span class="rs dep">Dependency</span></span><span class="l2">‹one line: the part that owns the cause›</span></summary><div class="body">
+<p>‹How the problem of the other part shows in this part.›</p>
+</div></details>
+<details class="example f"><summary><span class="l1"><span class="t">‹Short name of the decision›</span><span class="rs part">Trade-off</span></span><span class="l2">‹one line: the gain and the cost›</span></summary><div class="body">
+<p><strong>Gain:</strong> ‹what the decision gives›</p><p><strong>Cost:</strong> ‹what the decision accepts›</p>
+</div></details>
+</div></details>
+<details class="sec"><summary><h3>Architecture</h3></summary><div class="sec-body">
+<p class="summary">How the part works: the view of a caller (Outside), and the work after the call (Inside). Each view has a flow graph and a text call tree.</p>
+<h4>Outside: how a caller uses it</h4>
+<div class="box zoom"><pre class="mermaid">
+flowchart TB
+  C["‹Caller›<br/>‹file or unit›"] -->|"1. ‹first action›"| P["‹Entry point of the part›"]
+  P -->|"2. ‹what the part does›"| X["‹Other part or resource›"]
+  X -.->|"‹signal back›"| P
+  P -->|"3. ‹result›"| C
+</pre></div>
+<pre class="code"><code class="language-plaintext">‹Caller›
+  ← ‹note about the line below›
+  1. ‹first action of the caller›
+  2. ‹what the part does›
+  3. ‹what the caller gets back›</code></pre>
+<h4>Inside: the black box after the call</h4>
+<div class="box zoom"><pre class="mermaid">
+flowchart TB
+  E["‹Entry point›"] --> U1["‹First internal unit›<br/>‹its job›"]
+  U1 --> U2["‹Next internal unit›"]
+  U2 -->|"‹condition A›"| R1["‹Result A›"]
+  U2 -->|"‹condition B›"| R2["‹Result B›"]
+  R1 & R2 --> E
+</pre></div>
+<pre class="code"><code class="language-plaintext">‹EntryPoint()›                 ‹File.ext›
+└─ ‹next call›                 ‹its job›
+   ├─ ‹internal unit›          ‹its job›
+   ← ‹note about the line below›
+   │  └─ ‹nested call›         ‹its job›
+   └─ ‹last unit›              ‹the result›</code></pre>
+</div></details>
+<details class="sec"><summary><h3>Definition</h3></summary><div class="sec-body">
+<p class="summary">The names, units and rules that the part owns, and how they relate. One item for each.</p>
+<!-- Language tags at the right end: tag cs (C#), tag css (CSS), tag js (JS), tag (Razor, text, other). One tag for each language of the item. -->
+<details class="example f" open><summary><span class="l1"><span class="t">‹Name of the concept›</span><span class="tag cs">‹C#›</span></span><span class="l2">‹one line: what it holds or decides›</span></summary><div class="body">
+<p class="file">‹src/path/to/File.ext›</p>
+<pre class="code"><code class="language-plaintext">‹name›         ‹role›                 ‹owner file›
+‹name›         ‹role›                 ‹owner file›
+← ‹note about the line below›
+‹name›         ‹role›                 ‹owner file›</code></pre>
+</div></details>
+</div></details>
+<details class="sec"><summary><h3>Key code</h3></summary><div class="sec-body">
+<p class="summary">The real code that does the main work of the part. One item for each unit.</p>
+<!-- Language tags at the right end: tag cs (C#), tag css (CSS), tag js (JS), tag (Razor, text, other). One tag for each language of the item. -->
+<!-- Code class: language-csharp, language-javascript, language-css, language-xml or language-plaintext. Note line: "// ← " in C# and JS, "/* ← ... */" in CSS, an XML comment that starts with "←" in XML and Razor, "← " in plaintext. -->
+<details class="example f" open><summary><span class="l1"><span class="t">‹What the code does›</span><span class="tag cs">‹C#›</span></span><span class="l2">‹ClassName, MethodName›</span></summary><div class="body">
+<p class="file">‹src/path/to/File.ext›</p>
+<pre class="code"><code class="language-csharp">// ← ‹note about the line below›
+‹the real code line from the source›
+‹the next real code line›</code></pre>
+</div></details>
+</div></details>
+<details class="sec"><summary><h3>Call stacks</h3></summary><div class="sec-body">
+<p class="summary">The real paths through the part, from an entry point to the output. One item for each path.</p>
+<!-- Language tags at the right end: tag cs (C#), tag css (CSS), tag js (JS), tag (Razor, text, other). One tag for each language of the item. -->
+<details class="example f" open><summary><span class="l1"><span class="t">‹Name of the path›</span><span class="tag cs">‹C#›</span></span><span class="l2">‹one line: the entry point and the kind of call›</span></summary><div class="body">
+<p><strong>Context:</strong> ‹when this path runs›. The entry point is <code>‹EntryPoint›</code>.</p>
+<p><strong>Call stack</strong></p>
+<pre class="code"><code class="language-plaintext">‹EntryPoint()›                 ‹File.ext:line›
+├─ ‹first call›                ‹what it does›
+← ‹note about the line below›
+├─ ‹next call›                 ‹File.ext:line›
+│  └─ ‹nested call›            ‹what it does›
+│  ← ‹the value that comes back›
+└─ ‹last call›                 ‹the result›</code></pre>
+<p><strong>Output</strong></p>
+<pre class="code"><code class="language-plaintext">‹hh:mm:ss.fff› ‹the real trace line›
+‹hh:mm:ss.fff› ‹the next real trace line›</code></pre>
+</div></details>
+</div></details>
+<details class="sec"><summary><h3>API</h3></summary><div class="sec-body">
+<p class="summary">The main entry points of the part: the methods, types and messages that a caller uses. One item for each.</p>
+<!-- Left chip: one kind word that is always true for the item, from the code. Class rs api. -->
+<details class="example f" open><summary><span class="l1"><span class="rs api">‹kind›</span><span class="t">‹Name(Parameters)›</span></span><span class="l2">‹one line: what a caller gets from it›</span></summary><div class="body">
+<ul><li><code>‹Parameter›</code>: ‹what it means, and its values›</li><li><code>‹Parameter›</code>: ‹what it means, and its values›</li><li>‹The result, or the effect, that the caller gets›</li></ul>
+</div></details>
+</div></details>
+<details class="sec"><summary><h3>Quick guide</h3></summary><div class="sec-body">
+<p class="summary">The common tasks of a user of the part, as numbered steps with real code. One item for each task.</p>
+<!-- Language tags at the right end: tag cs (C#), tag css (CSS), tag js (JS), tag (Razor, text, other). One tag for each language of the item. -->
+<details class="example f" open><summary><span class="l1"><span class="t">‹Do a common task›</span><span class="tag cs">‹C#›</span></span><span class="l2">‹one line: the files or the units that change›</span></summary><div class="body">
+<p>1. ‹First action.›</p>
+<p class="file">‹src/path/to/File.ext›</p>
+<pre class="code"><code class="language-csharp">// ← ‹note about the line below›
+‹the real code line from the source›
+‹the next real code line›</code></pre>
+<p>2. ‹Next action.›</p>
+<p class="file">‹src/path/to/Other.ext›</p>
+<pre class="code"><code class="language-csharp">// ← ‹note about the line below›
+‹the real code line from the source›
+‹the next real code line›</code></pre>
+</div></details>
+<p>‹Link to related documentation, if any. Delete this line if none.›</p>
+</div></details>
+<details class="sec"><summary><h3>Requirements</h3></summary><div class="sec-body">
+<p class="summary">What the part must do. One item for each requirement, with its status and its design.</p>
+<!-- One status for each item: Covered (rs ok), Partly (rs part), Not covered (rs no). The index is the part letter, then R and a number. -->
+<details class="example f" open><summary><span class="l1"><span class="t">‹X›-R1 · ‹Short statement of the requirement›</span><span class="rs ok">Covered</span></span><span class="l2">‹one line: the design and the test›</span></summary><div class="body">
+<p>‹The requirement in detail.›</p><p><strong>Design:</strong> ‹how the code meets it, and the test that checks it›</p>
+</div></details>
+<details class="example f"><summary><span class="l1"><span class="t">‹X›-R2 · ‹Short statement of the requirement›</span><span class="rs part">Partly</span></span><span class="l2">‹one line: the design, and what is missing›</span></summary><div class="body">
+<p>‹The requirement in detail.›</p><p><strong>Design:</strong> ‹how the code meets it, and the test that checks it›</p><p><strong>Not covered:</strong> ‹what is missing, and the gap ID›</p>
+</div></details>
+<details class="example f"><summary><span class="l1"><span class="t">‹X›-R3 · ‹Short statement of the requirement›</span><span class="rs no">Not covered</span></span><span class="l2">‹one line: the gap that tracks it›</span></summary><div class="body">
+<p>‹The requirement in detail.›</p><p><strong>Design:</strong> ‹none in the code; the planned design, and the gap ID›</p>
+</div></details>
+</div></details>
+  </section>
+</div>
+
 </div>
 
 <script>
 (function () {
-  var names = ["overview", "data", "structure", "places", "startstop", "moves", "flow", "input", "trace", "components", "style", "prior", "twowin"];
+  var names = ["overview", "data", "structure", "places", "startstop", "moves", "flow", "input", "trace", "components", "style", "prior", "twowin", "template"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "overview";
     names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });

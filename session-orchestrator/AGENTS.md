@@ -31,6 +31,10 @@ C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the U
 
 ## UI
 
+### Architecture part tabs
+
+Before you write or change a part tab of `docs/ui-architecture.html`, use the skill `architecture-part` (`.claude/skills/architecture-part/SKILL.md`). Start from the Template tab of the page. The Motion tab is the filled example.
+
 ### Working with motion
 
 Before you add, change or use a motion of the web pages or the tray, read the motion guide: https://claude.ai/artifact/A4N6FKvzRUfqCCZsoZVde8 (source `docs/motion-guide.html`). After a change of the pipeline, update the guide and publish it again to the same URL.
