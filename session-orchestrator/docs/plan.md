@@ -2481,3 +2481,14 @@ Decision: keep the look. The gap between the windows is good. Each value (the wi
 - Self-test 29 of 30 (only I7).
 - Finding: the self-test lock is the same for all worktrees. When another session runs a self-test tray, a second one stops with "The tray app already runs". Use `--instance <name>` for a separate lock. Both trays open at the same screen place, so a run during a recording of another session shows in that recording.
 - Finding: `dotnet run --no-build` waited more than 60 s when another session used the MSBuild nodes. The built exe starts at once.
+
+## Visual review: I16 window capture check (2026-11-21)
+
+- Scope: I16 does only the window capture check. I17 owns the test instances, the lock and the start order in `scenario.sh`. The lock analysis (causes and option D) went to I17 as a note.
+- Tool: `spikes/window-capture/` (Windows.Graphics.Capture, `GraphicsCaptureItem` for one window).
+- Tray window (composition mode, WebView2): the capture shows the full panel with correct transparency. It works when another window covers the tray and when the tray is at x = -3000. A minimized tray gives 0 frames.
+- The yellow border can be turned off (`IsBorderRequired = false`). Border on: 10403 yellow pixels at the edge; border off: 4.
+- Stream: main screen 147 frames in 4 s; a layered test window at x = -3000, 114 frames in 4 s, no frame lost. A window that draws with paint messages gives 1 frame off the screen (no paint message).
+- Not tested: tray motion while covered or off the screen.
+- Decision of the user: keep the normal screen recorder. Window capture is not used now.
+
