@@ -195,6 +195,32 @@ public static partial class SelfTest
             }
         },
 
+        // I7, I18: the badge at rest, at the hover and at the peek. The hover is held through the window (HoldHover), not with posted
+        // pointer messages (I8). Each state logs the window, the click area and the boxes of the page (badge-box-fits).
+        ["badge-states"] = async (tray, step) =>
+        {
+            var w = tray.Window;
+            var b = tray.Badge;
+            async Task Log(string state) => step($"{state}: window {b.Bounds}, {BoxesFit(b, state, await BadgeBoxes(b)).Detail}");
+            step("dock");
+            w.Request(TrayRequest.Dock);
+            await Until(() => w.Phase == TrayPhase.Badge, 4000);
+            await Task.Delay(1500);
+            await Log("rest");
+            step("hover on");
+            b.HoldHover(true);
+            await Task.Delay(1500);
+            await Log("hover");
+            step("hover off");
+            b.HoldHover(false);
+            await Task.Delay(1000);
+            await Log("rest after the hover");
+            step($"post a card: {PostCard(tray, "Badge states card")}");
+            await Task.Delay(1500);
+            await Log("peek");
+            await Task.Delay(4500);
+        },
+
         // The reference look of the throw and the tuck of the deck.
         ["deck-throw-tuck"] = async (tray, step) =>
         {

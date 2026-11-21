@@ -187,15 +187,18 @@ public static partial class SelfTest
         Add("dock", docked && !w.Visible && b.Visible && b.Bounds == b.PlaceBounds() && b.Right == area.Right && tab is "none" or "0px" or "0px 0px",
             $"phase {w.Phase}, panel window shows {w.Visible}, badge window {b.Bounds} (expect {b.PlaceBounds()}), right edge {b.Right} = {area.Right}, tab translate {tab}, click area {b.HitArea}; frames of the fold {await Frames(w)}");
 
-        // 5b. The wide tab of the hover fits in the click area of the hover (the window region clips the drawing too). The hover
-        // width is the width of the tab with "width: auto", the same rule as :hover.
-        var fit = await Js(b, """
-            (e => { const old = e.style.width; e.style.transition = 'none'; e.style.width = 'auto';
-              const v = Math.round(e.getBoundingClientRect().width); e.style.width = old; e.style.transition = ''; return v; })(document.querySelector('.tb-tab'))
-            """);
+        // 5b. I7, I18: the shadow box and the ring of the badge are inside the click area (the window region clips the drawing too),
+        // at rest and at the hover. The peek follows in step 8; the check badge-box-fits comes after it.
+        var fits = new List<(bool Fit, string Detail)> { BoxesFit(b, "rest", await BadgeBoxes(b)) };
+        b.HoldHover(true);
+        await Task.Delay(400);
+        await TabSettled(b);
+        fits.Add(BoxesFit(b, "hover", await BadgeBoxes(b)));
         var counts = await Js(b, "document.querySelector('.tb-txt small')?.textContent ?? ''");
-        Add("badge-hover-fits", int.TryParse(fit, out var wideTab) && wideTab <= BadgeWindow.TabWide,
-            $"tab width at the hover {fit} CSS px, click area of the hover {BadgeWindow.TabWide} (+ {BadgeWindow.TabMargin} margin), window {BadgeWindow.BadgeWidth}; text \"{counts}\"");
+        b.HoldHover(false);
+        await Task.Delay(400);
+        await TabSettled(b);
+        await Task.Delay(400);
 
         // 6. Open from the badge: back at the panel place.
         w.Request(TrayRequest.Open);
@@ -222,6 +225,10 @@ public static partial class SelfTest
         var peek = await Js(b, "!!document.querySelector('.tb-peek.on')");
         (await Picture(b)).Save(Path.Combine(folder, "4-peek.png"));
         var wideArea = b.HitArea.Width;
+        // The peek state of badge-box-fits: after the spin, while the bubble shows.
+        await TabSettled(b);
+        fits.Add(BoxesFit(b, "peek", await BadgeBoxes(b)));
+        Add("badge-box-fits", fits.All(f => f.Fit), $"{string.Join(" | ", fits.Select(f => f.Detail))}; hover text \"{counts}\"");
         var peekGone = await Until(async () => await Js(b, "!!document.querySelector('.tb-peek.on')") == "false", 7000);
         await Task.Delay(800);
         Add("notice", session is not null && noticed && b.Visible && peek == "true" && wideArea == b.Width && peekGone && b.HitArea.Width < b.Width,

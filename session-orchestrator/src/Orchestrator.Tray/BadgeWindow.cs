@@ -78,6 +78,17 @@ public sealed class BadgeWindow : ClearHost
         SetHitArea(new Rectangle(Width - w, 0, w, Height));
     }
 
+    /// <summary>
+    /// Test seam: holds the hover of the badge (true) or ends it (false), with no real pointer and no posted message. The window
+    /// and the page both see the hover, as with a real pointer on the ring.
+    /// </summary>
+    internal void HoldHover(bool on)
+    {
+        over = on;
+        PointerAt(on ? new Point(Width - (int)(34 * Dpi), (int)((TabMargin + 34) * Dpi)) : null);
+        Hover(on);
+    }
+
     void Hover(bool on)
     {
         hover = on;
