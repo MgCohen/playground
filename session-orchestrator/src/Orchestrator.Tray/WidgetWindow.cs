@@ -23,7 +23,21 @@ public sealed class WidgetWindow : IWidgetWindow
         }
     }
 
-    public BadgeWindow? Badge { get; set; }
+    BadgeWindow? badge;
+
+    public BadgeWindow? Badge
+    {
+        get => badge;
+        set
+        {
+            badge = value;
+            if (badge is not null) badge.Hovered += on => BadgeHovered?.Invoke(on);
+        }
+    }
+
+    public event Action<bool>? BadgeHovered;
+
+    public void BadgeFolded() => Badge?.BeginInvoke(() => Badge.HoverEnded());
 
     public bool Pinned => Window?.Pinned ?? false;
 
@@ -93,7 +107,6 @@ public sealed class WidgetWindow : IWidgetWindow
 
     public void Fault(Exception error, string where) => Faults.Add(error, where);
 
-    public void UseBadgeFold(TimeSpan fold) => Badge?.BeginInvoke(() => Badge.UseFold(fold));
 
     /// <summary>R2: a report with badge boxes comes from the badge page; a report with none comes from the panel page.</summary>
     public void UseSizes(Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult sizes)

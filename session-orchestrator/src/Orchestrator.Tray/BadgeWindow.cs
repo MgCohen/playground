@@ -14,11 +14,6 @@ public sealed class BadgeWindow : ClearHost
     int? top;
     bool hover, peek;
 
-    // The fold of the hover: the token --t-badge-fold of motion.css. The badge page reads it (BadgeRoot) and gives it here.
-    TimeSpan fold;
-
-    public void UseFold(TimeSpan time) => fold = time;
-
     public BadgeWindow(IServiceProvider services, Icon icon, Func<Screen> screen, string? topFile) : base(services, typeof(Orchestrator.Web.Components.Tray.BadgeRoot))
     {
         this.screen = screen;
@@ -125,22 +120,31 @@ public sealed class BadgeWindow : ClearHost
     void Hits() => SetHitArea(AreaOf(hover, peek));
 
     /// <summary>
-    /// Test seam: holds the hover of the badge (true) or ends it (false), with no real pointer and no posted message. The window
-    /// and the page both see the hover, as with a real pointer on the ring.
+    /// Test seam: holds the hover of the badge (true) or ends it (false), with no real pointer and no posted message (I8: with a
+    /// posted move, Windows ends the hover at once). It takes the same path as a real hover.
     /// </summary>
     internal void HoldHover(bool on)
     {
         over = on;
-        PointerAt(on ? RingPoint() : null);
         Hover(on);
     }
 
+    /// <summary>The hover of the window starts (true) or ends (false). The page draws it (the class is-hover of the tab).</summary>
+    public event Action<bool>? Hovered;
+
+    // The window owns the hover (Q1 of R2): one source for the click area and the look. At the start of a hover the click area
+    // gets wide at once; at the end it stays wide until the page reports the end of the fold (HoverEnded).
     void Hover(bool on)
     {
         hover = on;
         if (on) Hits();
-        // The fold of the hover ends before the click area gets small again.
-        else _ = Task.Delay(fold).ContinueWith(_ => BeginInvoke(() => { if (!hover) Hits(); }), TaskScheduler.Default);
+        Hovered?.Invoke(on);
+    }
+
+    /// <summary>The page reports that the fold of the hover ended (step badge-fold): the click area gets small again.</summary>
+    public void HoverEnded()
+    {
+        if (!hover) Hits();
     }
 
     Point? down;

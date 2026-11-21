@@ -195,10 +195,21 @@ public static partial class SelfTest
         await TabSettled(b);
         fits.Add(BoxesFit(b, "hover", await BadgeBoxes(b)));
         var counts = await Js(b, "document.querySelector('.tb-txt small')?.textContent ?? ''");
+        // S3 of R2: at the end of the hover, the click area stays wide until the fold ends. Each sample during the fold must fit.
         b.HoldHover(false);
-        await Task.Delay(400);
-        await TabSettled(b);
-        await Task.Delay(400);
+        var samples = 0;
+        var foldCuts = new List<string>();
+        var hoverEnd = System.Diagnostics.Stopwatch.StartNew();
+        while (hoverEnd.ElapsedMilliseconds < 700)
+        {
+            var (fit, detail) = BoxesFit(b, $"fold {hoverEnd.ElapsedMilliseconds} ms", await BadgeBoxes(b));
+            samples++;
+            if (!fit) foldCuts.Add(detail);
+        }
+        var small = await Until(() => b.HitArea.Width == b.AreaOf(false, false).Width, 1000);
+        Add("badge-fold-area", foldCuts.Count == 0 && small,
+            $"{samples} samples in the fold, {foldCuts.Count} with a cut{(foldCuts.Count > 0 ? ": " + string.Join(" | ", foldCuts.Take(2)) : "")}; click area at rest after the fold {small} ({b.HitArea.Width})");
+        await Task.Delay(300);
 
         // 6. Open from the badge: back at the panel place.
         w.Request(TrayRequest.Open);
@@ -258,9 +269,14 @@ public static partial class SelfTest
         var client = b.RingPoint();
         var lp = (nint)((client.Y << 16) | (client.X & 0xffff));
         var atRest = b.HitArea.Width;
+        // The click area at the start of the hover. A posted move cannot hold the hover: Windows sends WM_MOUSELEAVE at once (I8),
+        // so the test reads the area when the window starts the hover, not some time later.
+        var hover = 0;
+        void Started(bool on) { if (on && hover == 0) hover = b.HitArea.Width; }
+        b.Hovered += Started;
         _ = PostMessageBadge(b.Handle, 0x200, 0, lp);
         await Task.Delay(200);
-        var hover = b.HitArea.Width;
+        b.Hovered -= Started;
         _ = PostMessageBadge(b.Handle, 0x201, 1, lp);
         await Task.Delay(60);
         _ = PostMessageBadge(b.Handle, 0x202, 0, lp);

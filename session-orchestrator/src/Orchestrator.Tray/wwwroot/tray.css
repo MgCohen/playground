@@ -115,7 +115,7 @@ html { scrollbar-gutter: auto; }
   transition: translate var(--t-badge-out) var(--ease-in), width var(--t-badge-hover) var(--ease-out); }
 .is-badge .tb-tab { translate: 0 0; transition: translate var(--t-badge-in) var(--ease-out), width var(--t-badge-hover) var(--ease-out); }
 /* The hover preview waits, so a quick click opens the panel with no preview first. The pointer away folds it at once. */
-.is-badge .tb-tab:hover { width: auto; transition-delay: 0s, var(--t-badge-wait); }
+.is-badge .tb-tab.is-hover { width: auto; transition-delay: 0s, var(--t-badge-wait); }
 /* The ring of the waiting cards by type: one conic gradient, 6 px wide, 6 px from the edge of the tab. */
 .tb-ring { position: absolute; left: 6px; top: 6px; width: 56px; height: 56px; }
 .tbadge.spin .tb-ring { animation: tb-spin var(--t-spin) var(--ease-spin); }
@@ -125,7 +125,7 @@ html { scrollbar-gutter: auto; }
 .tb-txt { margin: 0 14px 0 72px; display: grid; gap: 1px; font-size: 12px; opacity: 0; transition: opacity var(--t-badge-text) ease; }
 .tb-txt b { font-weight: 700; color: var(--text); }
 .tb-txt small { font-size: 12px; color: var(--muted); }
-.is-badge .tb-tab:hover .tb-txt { opacity: 1; transition-delay: var(--t-badge-text-wait); }
+.is-badge .tb-tab.is-hover .tb-txt { opacity: 1; transition-delay: var(--t-badge-text-wait); }
 /* The peek bubble: the newest card comes out of the tab to the left, and goes back after a short time. */
 .tb-peek { position: absolute; right: calc(var(--badge-tab) + 10px); top: calc(var(--badge-tab-top) + var(--badge-tab) / 2); translate: 0 -50%; max-width: 230px; padding: 9px 14px; border-radius: 16px; background: var(--surf);
   box-shadow: var(--sh-raise), 0 10px 22px -10px rgba(0, 0, 0, .45);
@@ -140,4 +140,6 @@ html { scrollbar-gutter: auto; }
 [data-motion~="fold"] { --motion-wait: clip-path scale; } /* G1 · tray: the panel clip and the ball, also with no app bar (H1) */
 [data-motion~="badge-in"], [data-motion~="badge-out"] { --motion-wait: translate; } /* N1 · minimize */
 [data-motion~="spin"] { --motion-wait: tb-spin; } /* N2 · notify */
+[data-motion~="badge-fold"] { --motion-wait: ; } /* N1 · minimize: the fold of the hover; no value, so the wait settles (the
+   width, the text fade, a spin), and a hover that ends before the tab grows ends the wait at once */
 [data-motion~="peek-out"] { --motion-wait: opacity; } /* N2 · notify */

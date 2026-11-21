@@ -41,8 +41,11 @@ public interface IWidgetWindow
     /// <summary>An error of the tray flow: the tray writes it to its fault log (H3: nothing is swallowed).</summary>
     void Fault(Exception error, string where);
 
-    /// <summary>The fold time of the hover of the badge: the token --t-badge-fold, which the badge page reads (no script call from C#).</summary>
-    void UseBadgeFold(TimeSpan fold);
+    /// <summary>The hover of the badge window starts (true) or ends (false). The window owns it; the badge page draws it.</summary>
+    event Action<bool>? BadgeHovered;
+
+    /// <summary>The badge page reports the end of the fold of the hover (step badge-fold): the click area gets small again.</summary>
+    void BadgeFolded();
 
     /// <summary>R2: the sizes that the page of the window measured (orchTray.sizes). The window takes its size and click area from them.</summary>
     void UseSizes(Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult sizes);

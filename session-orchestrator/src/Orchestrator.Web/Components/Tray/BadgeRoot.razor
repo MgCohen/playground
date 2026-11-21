@@ -9,7 +9,7 @@
 
 <div class="tray-stage is-@phase">
     <div class="tray-badge-layer">
-        <TrayBadge Counts="counts" Spin="spin" Peek="peek" PeekTitle="@peekTitle" PeekSub="@peekSub" />
+        <TrayBadge Hover="hovered" Counts="counts" Spin="spin" Peek="peek" PeekTitle="@peekTitle" PeekSub="@peekSub" />
     </div>
 </div>
 
@@ -28,20 +28,46 @@
         flow = Services.GetService<TrayFlow>();
         base.OnInitialized();
         flow?.Attach(this);
+        if (window is not null) window.BadgeHovered += OnHover;
     }
 
     // The counts of the badge. A card that arrives while the tray is closed brings the badge in, spins the ring and peeks, one
     // time (TrayNotices): each card is done after its notice, and the cards that the panel showed get none.
     readonly TrayNotices notices = new();
 
-    // The fold time of the hover of the badge window: the token --t-badge-fold, read once from this page.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (window is null) return;
         await ReportSizes();
-        if (!firstRender) return;
-        if (await MotionTimes.Of(Commands, "--t-badge-fold") is { } fold) window.UseBadgeFold(fold);
-        else window.Fault(new InvalidOperationException("The page gave no --t-badge-fold."), "badge window");
+    }
+
+    // The hover of the badge: the window owns it, this page draws it (is-hover). At the end of a hover the page waits for the
+    // fold (step badge-fold), then the window makes the click area small. A newer hover makes an older fold report nothing.
+    bool hovered;
+    int hovers;
+
+    void OnHover(bool on) => _ = InvokeAsync(async () =>
+    {
+        hovered = on;
+        var mine = ++hovers;
+        StateHasChanged();
+        if (on) return;
+        try
+        {
+            await Commands.Must(new MotionWait(MotionSteps.BadgeFold.Target, WaitMode.Step));
+            if (mine == hovers && !hovered) window!.BadgeFolded();
+        }
+        catch (Exception e)
+        {
+            window!.Fault(e, "badge fold");
+            window.BadgeFolded();
+        }
+    });
+
+    public override void Dispose()
+    {
+        if (window is not null) window.BadgeHovered -= OnHover;
+        base.Dispose();
     }
 
     protected override void Load()

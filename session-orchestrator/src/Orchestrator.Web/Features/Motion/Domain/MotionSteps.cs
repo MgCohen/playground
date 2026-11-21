@@ -12,6 +12,8 @@ public static class MotionSteps
 
     public static readonly MotionStep Spin = new("spin", "spin");
 
+    public static readonly MotionStep BadgeFold = new("badge-fold", "is-hover");
+
     public static readonly MotionStep PeekOut = new("peek-out", "on");
 
     public static readonly MotionStep TabIn = new("tab-in", "is-tab-in");
@@ -23,5 +25,5 @@ public static class MotionSteps
     public static readonly MotionStep DeckTuck = new("deck-tuck", "tuck");
 
     public static IReadOnlyList<MotionStep> All { get; } =
-        [Grow, Fold, BadgeIn, BadgeOut, Spin, PeekOut, TabIn, Leave, DeckThrow, DeckTuck];
+        [Grow, Fold, BadgeIn, BadgeOut, BadgeFold, Spin, PeekOut, TabIn, Leave, DeckThrow, DeckTuck];
 }

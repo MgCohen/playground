@@ -211,16 +211,6 @@ public partial class ClearHost : Form
         controller!.SendMouseInput(k, keys, data, p);
     }
 
-    /// <summary>
-    /// Test seam: sends a pointer move at a client point (or a leave for null) to the page, with no mouse tracking. So Windows
-    /// sends no WM_MOUSELEAVE, and the page keeps its hover until the next call. A posted WM_MOUSEMOVE cannot do this (I8).
-    /// </summary>
-    internal void PointerAt(Point? client)
-    {
-        if (controller is null) return;
-        controller.SendMouseInput(client is null ? CoreWebView2MouseEventKind.Leave : CoreWebView2MouseEventKind.Move, CoreWebView2MouseEventVirtualKeys.None, 0, client ?? Point.Empty);
-    }
-
     /// <summary>The end of a drag of the window with the system move loop (a header drag).</summary>
     public event Action? MoveEnded;
 

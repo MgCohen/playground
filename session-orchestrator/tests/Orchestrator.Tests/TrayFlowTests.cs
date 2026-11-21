@@ -43,7 +43,9 @@ public sealed class TrayFlowTests
             _ => "hidden",
         };
 
-        public void UseBadgeFold(TimeSpan fold) { }
+        public event Action<bool>? BadgeHovered { add { } remove { } }
+
+        public void BadgeFolded() { }
 
         public void Peek(bool on) { }
 
