@@ -18,6 +18,11 @@ else
             <div class="tray-frame"></div>
             <div class="tray-panel" data-motion="grow">
                 <div class="tray-view">@ChildContent</div>
+                @if (window?.Label is { } label)
+                {
+                    @* I17: the run code and build of the tray, at all times, in the bottom-left corner below the app bar. *@
+                    <span class="run-label mono" title="Run code and build">@label</span>
+                }
             </div>
         </div>
     </div>

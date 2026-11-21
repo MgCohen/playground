@@ -34,6 +34,7 @@ public static partial class Program
         {
             // I17: each self-test has its own slot: its own lock, WebView2 folder and place on the screen. Two sessions can test at the same time.
             Directory.CreateDirectory(selfTest);
+            ConsoleCopy.Start(Path.Combine(selfTest, "console.txt"));
             var wait = TimeSpan.FromSeconds(int.TryParse(Value(args, "--slot-wait"), out var sw) && sw >= 0 ? sw : 120);
             if (Slot.Take(() => tray?.ShowFromAnyThread(), wanted, wait) is not { } taken)
             {

@@ -21,11 +21,6 @@
             <h1 class="cur">@Title</h1>
         </nav>
     }
-    @if (window?.Label is { } label)
-    {
-        @* Each tray shows its run code and build at all times, so the user sees which session owns a tray on the screen. *@
-        <span class="inst mono" title="Run code and build">@label</span>
-    }
     @if (window is not null)
     {
         <span class="wb">
