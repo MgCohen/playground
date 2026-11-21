@@ -186,7 +186,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i16">I16</a></td><td>Two sessions cannot test the tray at the same time</td><td><span class="pill fix">Fixed</span></td><td>Done (with I17): test slots and a label on each tray</td></tr>
         <tr><td><a href="#i17">I17</a></td><td>The recorder records 0 frames in some runs</td><td><span class="pill fix">Fixed</span></td><td>Done: a 0-frame run fails at once; independent test instances</td></tr>
         <tr><td><a href="#i18">I18</a></td><td>The window cuts the shadow of the side badge</td><td><span class="pill fix">Fixed</span></td><td>Done in R2: the window fits the shadow boxes</td></tr>
-        <tr><td><a href="#i19">I19</a></td><td>The stress run misses 2 presses at the start</td><td><span class="pill rpl">Replicated</span></td><td>Your decision</td></tr>
+        <tr><td><a href="#i19">I19</a></td><td>The stress run misses 2 presses at the start</td><td><span class="pill rpl">Replicated</span></td><td>Waits for the architecture review</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f3">F3</a></td><td>The tab change was not the spec (T1 C)</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -245,7 +245,7 @@ Decision     the question for you</pre>
       <li>Done: R1, the motion pipeline (I6 rest, I9, I11, I12, I13). I15 stays open.</li>
       <li>Done: R2, size ownership (I7, I10, I18). Plan and proofs: <a href="https://claude.ai/artifact/UYCh2zPYAwXJijYz9opJCZ">size ownership plan</a>.</li>
       <li>Done: I2 (I1 closed), #60 (source test).</li>
-      <li>Later: I8 (2 platform limits), I19. Closed: I4, I15.</li>
+      <li>Later: I8 (2 platform limits). Waits for the architecture review: I19. Closed: I4, I15.</li>
     </ol>
   </section>
 </div>
@@ -753,6 +753,11 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
 13:40:06.331  MISS .presence .scrim  page /
 13:40:07.129  cycle 2: all presses pass</pre></div></div>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Not proved. Probable: the stress run starts at the phase <code>open</code>, but the grow motion of the panel continues 555 ms after it. The first press comes in the grow motion, and the page does not navigate. Not examined: where the click goes, and if the page gets it.</p></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p>Not fixed now (the user, 2026-11-21). I19 is one symptom of 3 missing contracts:</p><ul>
+      <li>The page lifecycle: no signal means "the page is ready". The phase <code>open</code> comes before the end of the open motion.</li>
+      <li>The input pipeline: no part confirms that the page got a click.</li>
+      <li>The trace: the steps of one run go to 4 files, with no shared id.</li>
+    </ul><p>A fix of the test driver only hides the symptom. I19 waits for the architecture review, which sets the next focus. The review uses the new Tracing part of the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">architecture page</a>. When that work is done, the sheet stress run must pass with 0 misses, and the trace must show why a press failed at that press.</p></div></div>
     <div class="field"><span class="k">Data gaps</span><div class="v"><ul>
       <li>A press logs "clicked" when the messages are posted. Nothing logs that the page got the click, or which element got it.</li>
       <li>A navigation press has no check that the page changed. The miss shows 2 presses later, at a different element.</li>

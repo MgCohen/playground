@@ -2632,4 +2632,4 @@ Findings:
 - History: all 24 sheet runs with window message clicks fail the first cycle (19 runs on 19 Nov, before I3, logged as "no element" and not counted). 0 of 8 runs with the real pointer fail; their first press comes 606 to 857 ms after the start, not 87 to 98 ms.
 - Time order: phase `open` at 58.571, first press at 58.702, the grow motion ends at 59.131. Probable cause: the press comes in the grow motion. Not proved.
 - Data gaps: no log that the page got a click or which element got it; no check that a navigation press changed the page; no motion state at a press.
-
+- Decision of the user: no fix now. I19 is one symptom of 3 missing contracts (the page lifecycle with a "ready" signal, an input pipeline that confirms each click, one trace). It waits for the architecture review, which sets the next focus. The Tracing part of `docs/ui-architecture.html` records the current traces and their gaps.

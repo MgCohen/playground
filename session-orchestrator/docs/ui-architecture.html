@@ -107,6 +107,7 @@ h3 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   <button role="tab" data-tab="moves" aria-selected="false">Page moves</button>
   <button role="tab" data-tab="cmotion" aria-selected="false">Component motion</button>
   <button role="tab" data-tab="input" aria-selected="false">Interactions</button>
+  <button role="tab" data-tab="trace" aria-selected="false">Tracing</button>
   <button role="tab" data-tab="components" aria-selected="false">Components</button>
   <button role="tab" data-tab="style" aria-selected="false">Style</button>
   <button role="tab" data-tab="prior" aria-selected="false">Prior art</button>
@@ -131,6 +132,9 @@ flowchart TB
   SS --> F["Motion flow<br/>(no single flow today)"]
   PM --> F
   CM --> F
+  SS -.-> TR["Tracing<br/>steps, input, runs"]
+  PM -.-> TR
+  IN -.-> TR
 </pre></div>
   </section>
   <section>
@@ -146,6 +150,7 @@ flowchart TB
         <tr><td>Page moves</td><td><span class="q good">Good</span></td><td>One rule (page depth). Checks for each tab and the push</td><td>I11 (JS limits)</td></tr>
         <tr><td>Component motion</td><td><span class="q mixed">Mixed</span></td><td>Presence is one way for come and go. The deck has its own script</td><td>I9, I11</td></tr>
         <tr><td>Interactions</td><td><span class="q mixed">Mixed</span></td><td>Mouse input works and has 4 checks. No keyboard test. Badge input in C#, deck in JS</td><td>I5, I8</td></tr>
+        <tr><td>Tracing</td><td><span class="q weak">Weak</span></td><td>8 sources, 6 files, free text with no ids. Page moves and input have no trace. A run needs a merge by hand</td><td>I19</td></tr>
         <tr><td>Components</td><td><span class="q good">Good</span></td><td>Small components, parameters in, events out</td><td>-</td></tr>
         <tr><td>Style</td><td><span class="q mixed">Mixed</span></td><td>Color tokens with a dark theme. Motion literals outside the tokens. Tray rules win over motion rules by specificity</td><td>I11</td></tr>
         <tr><td>Motion flow</td><td><span class="q weak">Weak</span></td><td>Eight mechanisms. Two wait rules</td><td>I9, I12</td></tr>
@@ -487,6 +492,83 @@ flowchart LR
   </section>
   <section><h3>Quality <span class="q mixed">Mixed</span></h3>
     <ul><li>Good: 4 mouse checks pass (panel drag, badge hover, badge drag, badge click).</li><li>Gap: no keyboard or screen reader test (I5).</li><li>Gap: the demo drag and hover use the real pointer (I8).</li></ul>
+  </section>
+</div>
+
+<!-- TRACING -->
+<div class="panel off" id="trace" role="tabpanel">
+  <section><h2>Tracing: steps, input, runs</h2>
+    <p class="summary">The data that shows what the view did and when: for a test, for a fault, and for the check of a fix. Added after I19: the time order of one failed press was in 3 files, and the page did not log the click.</p>
+    <h3>Defined as</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Trace</th><th>Writer</th><th>File</th><th>On when</th><th>Format</th></tr></thead>
+      <tbody>
+        <tr><td>Window steps: phase, show, activate, click area, sizes, drag end</td><td><code>Faults.Trace</code> <span class="tag cs">C#</span></td><td><code>exceptions.log</code> (self-test), <code>tray.&lt;name&gt;.log</code></td><td>Named instance, or <code>--demo</code></td><td>Free text, time, thread</td></tr>
+        <tr><td>JS commands: each call, its result and its time; wait limit warnings</td><td><code>IJsTrace</code> <span class="tag cs">C#</span></td><td>Memory (500 lines), <code>ILogger</code> at Debug. The tray copies each line to <code>Faults.Trace</code></td><td>Always in memory. The web host does not show Debug</td><td>Free text, call number <code>#n</code></td></tr>
+        <tr><td>Exceptions</td><td><code>Faults.Add</code> <span class="tag cs">C#</span></td><td>The same file as the window steps</td><td>Always</td><td>Full exception text</td></tr>
+        <tr><td>Test steps and presses</td><td><code>SelfTest</code> <code>Step</code>, <code>Act</code> <span class="tag cs">C#</span></td><td><code>scenario.txt</code>, <code>stress.txt</code>, <code>demo.txt</code></td><td>Test runs</td><td>Free text. "clicked" means "messages posted"</td></tr>
+        <tr><td>Phases in a scenario</td><td><code>SelfTest.Phases</code> <span class="tag cs">C#</span></td><td><code>scenario.txt</code></td><td>Scenarios only</td><td>A poll each 10 ms, not an event</td></tr>
+        <tr><td>Console output</td><td><code>ConsoleCopy</code> <span class="tag cs">C#</span></td><td><code>console.txt</code></td><td>Self-test</td><td>Standard output</td></tr>
+        <tr><td>Run records</td><td><code>RunRecord</code> <span class="tag cs">C#</span></td><td><code>%LOCALAPPDATA%\Orchestrator.Tray\runs\*.json</code></td><td>Each test run</td><td>JSON: kind, name, build, time, result</td></tr>
+        <tr><td>Frames</td><td>The recorder (spike) <span class="tag cs">C#</span></td><td><code>&lt;name&gt;.gif.times.txt</code></td><td>Recorded runs</td><td>Time, mean, key share</td></tr>
+        <tr><td>Page enter and leave, navigation, clicks that the page gets, <code>swipe.js</code>, the web pages in a browser</td><td>None</td><td>-</td><td>-</td><td>-</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Architecture</h3>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  W["Tray windows<br/>phase, show, sizes"] --> FT["Faults.Trace"]
+  J["JS commands<br/>orchMotion, orchTray"] --> JT["IJsTrace"] --> FT
+  EX["Exceptions"] --> FA["Faults.Add"]
+  FT --> L1["exceptions.log"]
+  FA --> L1
+  ST["Self-test steps, presses"] --> L2["scenario.txt, stress.txt, demo.txt"]
+  PH["Phase poll 10 ms"] --> L2
+  JT -.->|"scenarios only"| L2
+  CO["Console"] --> L3["console.txt"]
+  RR["RunRecord"] --> L4["runs/*.json"]
+  RC["Recorder"] --> L5["times.txt"]
+  PG["Page: navigation, clicks, swipe"] -.->|"no trace"| X["-"]
+</pre></div>
+  </section>
+  <section><h3>Guide</h3>
+    <p class="summary">How to read one test run today.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Question</th><th>Read</th></tr></thead>
+      <tbody>
+        <tr><td>Did the run pass? Which build?</td><td><code>runs/*.json</code></td></tr>
+        <tr><td>Which press failed?</td><td>The press summary at the end of <code>stress.txt</code>, <code>scenario.txt</code> or <code>demo.txt</code></td></tr>
+        <tr><td>What did the windows and the motions do at that time?</td><td><code>exceptions.log</code>. Match the times by hand</td></tr>
+        <tr><td>Did a frame show a blink?</td><td><code>times.txt</code> with <code>tools/empty.py</code></td></tr>
+        <tr><td>Did the page get the click?</td><td>No data</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-T1 · One trace event <span class="d">I19</span></summary><div class="body">
+      <p>Each source writes the same event: time, source, kind, id, target, result. One file for each run, in time order. Free text lines become fields.</p>
+      <p><strong>Check:</strong> a run gives one trace file, and a script reads it with no parse of free text.</p>
+    </div></details>
+    <details class="example prop"><summary>P-T2 · One id from the request to the end <span class="d">I19</span></summary><div class="body">
+      <p>A page move, a window open and a press each get an id. Each step writes it: request, accepted, rendered, motion end, ready.</p>
+      <p><strong>Check:</strong> for each id, the trace shows each step, or the step where it stopped.</p>
+    </div></details>
+    <details class="example prop"><summary>P-T3 · The page confirms each input <span class="d">I19</span></summary><div class="body">
+      <p>The page writes each click, key and swipe that it gets: the element, and the page path before and after.</p>
+      <p><strong>Check:</strong> the first press of I19 shows where the click went.</p>
+    </div></details>
+    <details class="example prop"><summary>P-T4 · Events, not polls, and always on in tests</summary><div class="body">
+      <p>The phase change is an event in the trace, not a poll each 10 ms. Each test run writes the full trace, not only <code>--demo</code> and named instances.</p>
+      <p><strong>Check:</strong> the scenarios and the stress runs have the same trace.</p>
+    </div></details>
+    <details class="example prop"><summary>P-T5 · Each failure path counts</summary><div class="body">
+      <p>No failure is only a log line. Before I3, a missing element was a log line, and 19 runs hid I19.</p>
+      <p><strong>Check:</strong> a test of each failure path makes the run fail.</p>
+    </div></details>
+  </section>
+  <section><h3>Quality <span class="q weak">Weak</span></h3>
+    <ul><li>Good: each test run has a run record, and the JS commands have their times.</li><li>Gap: 8 sources, 6 files, free text, no shared id.</li><li>Gap: page moves, navigation and input have no trace.</li><li>Gap: the full trace is on only for <code>--demo</code> and named instances.</li></ul>
   </section>
 </div>
 
