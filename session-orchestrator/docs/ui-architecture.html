@@ -38,7 +38,7 @@ p, li { max-width: 70ch; }
 p { margin: 0; }
 ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
 .summary { color: var(--muted); max-width: 70ch; }
-nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+nav { overscroll-behavior-x: contain; user-select: none; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
 nav button { flex: none; white-space: nowrap; font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
 nav button:hover { color: var(--fg); background: var(--code-bg); }
 nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
@@ -1414,9 +1414,36 @@ sequenceDiagram
     document.querySelectorAll("nav button").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false"); });
   }
   document.querySelectorAll("nav button").forEach(function (b) {
-    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+    b.addEventListener("click", function () {
+      if (b.dataset.dragged) { delete b.dataset.dragged; return; }
+      history.replaceState(history.state, "", "#" + b.dataset.tab);
+      show(b.dataset.tab);
+      // Keep the place: go up only to the tab bar, and only if the page is below it.
+      var nav = document.querySelector("nav"), head = document.querySelector("header"), top = head.getBoundingClientRect().bottom + window.scrollY;
+      var bar = nav.getBoundingClientRect().top;
+      if (window.scrollY > top && bar <= 1) window.scrollTo(0, top);
+      b.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
   });
   window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  (function () {
+    var nav = document.querySelector("nav"), down = null;
+    nav.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "touch") return;
+      down = { x: e.clientX, left: nav.scrollLeft, moved: false, target: e.target.closest("button") };
+    });
+    window.addEventListener("pointermove", function (e) {
+      if (!down) return;
+      var dx = e.clientX - down.x;
+      if (!down.moved && Math.abs(dx) < 5) return;
+      down.moved = true;
+      nav.scrollLeft = down.left - dx;
+    });
+    window.addEventListener("pointerup", function () {
+      if (down && down.moved && down.target) down.target.dataset.dragged = "1";
+      down = null;
+    });
+  })();
   show(location.hash.slice(1));
 })();
 </script>
@@ -1458,11 +1485,17 @@ sequenceDiagram
   setTimeout(update, 0);
   // Zoom: a click on a graph opens it in a view that fits the screen. Pinch (or the mouse wheel) zooms, a drag moves it,
   // a double click resets it. The close button, a click outside the graph, Escape or the back button closes it.
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  var zoomY = 0;
   function closeZoom(fromBack) {
     var v = document.querySelector(".zoomview");
     if (!v) return;
     v.remove();
     if (!fromBack && history.state && history.state.zoom) history.back();
+    // The page stays where it was: no jump to the anchor or to the top.
+    window.scrollTo(0, zoomY);
+    requestAnimationFrame(function () { window.scrollTo(0, zoomY); });
+    setTimeout(function () { window.scrollTo(0, zoomY); }, 60);
   }
   window.addEventListener("popstate", function () { closeZoom(true); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeZoom(false); });
@@ -1477,6 +1510,7 @@ sequenceDiagram
     var svg = box.querySelector("svg").cloneNode(true);
     svg.removeAttribute("height"); svg.style.maxWidth = "none";
     stage.appendChild(svg); view.appendChild(stage); view.appendChild(close); view.appendChild(hint);
+    zoomY = window.scrollY;
     document.body.appendChild(view);
     history.pushState({ zoom: true }, "");
     close.addEventListener("click", function () { closeZoom(false); });
