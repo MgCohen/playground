@@ -129,7 +129,7 @@ flowchart TB
   S --> PM["Page moves<br/>tab, push, back"]
   C --> CM["Component motion<br/>sheets, press, rings, deck"]
   C --> IN["Interactions<br/>mouse, drag, swipe"]
-  SS --> F["Motion flow<br/>(no single flow today)"]
+  SS --> F["Motion flow<br/>one pipeline (R1)"]
   PM --> F
   CM --> F
   SS -.-> TR["Tracing<br/>steps, input, runs"]
@@ -139,21 +139,21 @@ flowchart TB
   </section>
   <section>
     <h2>Quality of each part</h2>
-    <p class="summary">My rating from the code review and the tests. Good: one way, tested. Mixed: works, but has more than one way or gaps. Weak: known faults.</p>
+    <p class="summary">My rating from the code review and the tests, again after R1 and R2 (2026-11-21). Before: 3 Good, 6 Mixed, 1 Weak. Now: 6 Good, 4 Mixed, 1 Weak (Tracing, new). Good: one way, tested. Mixed: works, but has more than one way or gaps. Weak: known faults.</p>
     <div class="scroll"><table>
       <thead><tr><th>Part</th><th>Quality</th><th>Reason</th><th>Issues</th></tr></thead>
       <tbody>
-        <tr><td>Data</td><td><span class="q mixed">Mixed</span></td><td>Cards, actions and page depth are data. Motion and sizes are not</td><td>I10, I11</td></tr>
-        <tr><td>Structure</td><td><span class="q good">Good</span></td><td>One set of views in two hosts. Clear layers</td><td>-</td></tr>
-        <tr><td>Places</td><td><span class="q mixed">Mixed</span></td><td>Two windows, each with one place and one input rule. Sizes in C# and CSS. The badge hover is cut</td><td>I7, I10</td></tr>
-        <tr><td>Start and stop</td><td><span class="q mixed">Mixed</span></td><td>The chain works and has checks. Own wait helper with fixed limits. Grow not reviewed</td><td>I6, I11, I12</td></tr>
-        <tr><td>Page moves</td><td><span class="q good">Good</span></td><td>One rule (page depth). Checks for each tab and the push</td><td>I11 (JS limits)</td></tr>
-        <tr><td>Component motion</td><td><span class="q mixed">Mixed</span></td><td>Presence is one way for come and go. The deck has its own script</td><td>I9, I11</td></tr>
-        <tr><td>Interactions</td><td><span class="q mixed">Mixed</span></td><td>Mouse input works and has 4 checks. No keyboard test. Badge input in C#, deck in JS</td><td>I5, I8</td></tr>
+        <tr><td>Data</td><td><span class="q good">Good</span></td><td>Cards, actions, page depth, motion steps and tray sizes are data, and tests check them. The test slot width is a C# constant</td><td>-</td></tr>
+        <tr><td>Structure</td><td><span class="q good">Good</span></td><td>One set of views in two hosts. Feature slices, and one path from C# to JS. The Umpire VSA check runs after each build. Hidden views still load (V-F2)</td><td>-</td></tr>
+        <tr><td>Places</td><td><span class="q good">Good</span></td><td>The page owns each size and reports it. Each window has one place and one input rule. Tested by TraySizeTests and the box-fits checks</td><td>-</td></tr>
+        <tr><td>Start and stop</td><td><span class="q mixed">Mixed</span></td><td>One wait, one step registry, traced window steps. No "page ready" signal: the phase open comes before the end of the grow</td><td>I19</td></tr>
+        <tr><td>Page moves</td><td><span class="q good">Good</span></td><td>One rule (page depth). All times are tokens. The push and the back give no end to C#</td><td>I19 (data gap)</td></tr>
+        <tr><td>Component motion</td><td><span class="q good">Good</span></td><td>One way for each step: a state class from MotionSteps, a token, and orchMotion.wait. Tested by the registry and source tests. The deck back-in waits in JS with no trace</td><td>-</td></tr>
+        <tr><td>Interactions</td><td><span class="q mixed">Mixed</span></td><td>Real and posted messages take one path. Key and badge checks pass. No confirm that the page got a click. The card swipe has no check</td><td>I8, I19</td></tr>
         <tr><td>Tracing</td><td><span class="q weak">Weak</span></td><td>8 sources, 6 files, free text with no ids. Page moves and input have no trace. A run needs a merge by hand</td><td>I19</td></tr>
-        <tr><td>Components</td><td><span class="q good">Good</span></td><td>Small components, parameters in, events out</td><td>-</td></tr>
-        <tr><td>Style</td><td><span class="q mixed">Mixed</span></td><td>Color tokens with a dark theme. Motion literals outside the tokens. Tray rules win over motion rules by specificity</td><td>I11</td></tr>
-        <tr><td>Motion flow</td><td><span class="q weak">Weak</span></td><td>Eight mechanisms. Two wait rules</td><td>I9, I12</td></tr>
+        <tr><td>Components</td><td><span class="q good">Good</span></td><td>Small components, parameters in, events out. One wait command for all motion</td><td>-</td></tr>
+        <tr><td>Style</td><td><span class="q mixed">Mixed</span></td><td>Motion times and tray sizes are tokens, and tests check them. Motion rules are in 3 files. Tray overrides win by specificity, with no check</td><td>-</td></tr>
+        <tr><td>Motion flow</td><td><span class="q mixed">Mixed</span></td><td>R1 made one start rule, one wait and one registry, with tests. The open phase comes before the grow ends, and no signal tells that the page is ready</td><td>I19</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -171,9 +171,12 @@ flowchart TB
         <tr><td>The board</td><td><code>Board.Cards()</code>, sessions, events from the store</td><td><code>Board.cs</code></td></tr>
         <tr><td>A page level</td><td><code>[PageDepth(1, Query = "session")]</code> on the page class</td><td><code>PageDepth.cs</code></td></tr>
         <tr><td>A message look</td><td>A render kind maps to a Look component (pill, list, steps ...)</td><td><code>Components/Ui/Looks</code>, <code>docs/render-design.html</code></td></tr>
-        <tr><td>A tray phase</td><td>A string constant, and a CSS class with the same name</td><td><code>TrayPhase</code>, <code>tray.css</code></td></tr>
-        <tr><td>A motion time</td><td>A CSS token</td><td><code>motion.css</code></td></tr>
-        <tr><td>A size of the tray</td><td>A C# constant and a CSS value, not linked</td><td><code>TrayWindow.cs</code>, <code>BadgeWindow.cs</code>, <code>tray.css</code></td></tr>
+        <tr><td>A tray phase</td><td>A string constant, and a CSS class with the prefix <code>is-</code></td><td><code>TrayPhase</code> in <code>IWidgetWindow.cs</code>, <code>tray.css</code></td></tr>
+        <tr><td>A motion step</td><td><code>MotionStep(Name, States)</code>, 11 rows in <code>MotionSteps.All</code>. The target is the element with <code>data-motion</code>. Its CSS rule owns the wait (<code>--motion-wait</code>) and the spec ID</td><td><code>Features/Motion/Domain/MotionSteps.cs</code>, <code>motion.css</code>, <code>tray.css</code></td></tr>
+        <tr><td>A window step</td><td><code>WindowStep(Name, Phase, Event)</code>, 4 rows: panel-show, panel-activate, badge-show, all-hide</td><td><code>Features/Motion/Domain/WindowSteps.cs</code></td></tr>
+        <tr><td>A wait</td><td><code>MotionWait(Target, WaitMode, Arg)</code>; <code>WaitMode</code> = Settle, Property, Frames, Step. One JS wait: <code>orchMotion.wait</code></td><td><code>Features/Motion/Slices/Wait</code>, <code>motion.js</code></td></tr>
+        <tr><td>A motion time</td><td>A CSS token. C# reads it from the page with <code>MotionTimes.Of</code> (command <code>MotionMs</code>)</td><td><code>motion.css</code>, <code>Components/Motion/MotionTimes.cs</code></td></tr>
+        <tr><td>A size of the tray</td><td>A CSS token. <code>orchTray.sizes()</code> measures the page and reports <code>TraySizesResult</code>. The window uses it through <code>UseSizes</code></td><td><code>tray.css</code>, <code>tray.js</code>, <code>Features/Tray/Slices/Sizes</code>, <code>IWidgetWindow.cs</code></td></tr>
       </tbody>
     </table></div>
   </section>
@@ -182,27 +185,48 @@ flowchart TB
 flowchart LR
   ST["Store files"] --> B["Board<br/>CardView, sessions"]
   B --> LV["LiveView.Load()"]
-  LV --> P["Page markup"]
+  LV --> P["Page markup<br/>data-motion"]
+  REG["MotionSteps<br/>name, state class"] --> P
   P --> CSS["CSS classes<br/>is-phase, is-leaving"]
-  CSS --> M["Motion rules<br/>tokens"]
+  CSS --> M["Motion rules<br/>tokens, --motion-wait"]
+  M --> W["orchMotion.wait"]
+  TK["tray.css size tokens"] --> SZ["orchTray.sizes()"]
+  SZ --> WIN["IWidgetWindow.UseSizes<br/>window size, click area"]
 </pre></div>
   </section>
   <section><h3>Guide</h3>
-    <ol><li>A new card type: add its group, label and two actions in <code>Ui.cs</code>. The deck, the ring and the badge read it.</li><li>A new page level: put <code>[PageDepth]</code> on the page. The motion host picks the move.</li><li>A new time: add a token to <code>motion.css</code>.</li></ol>
+    <ol>
+      <li>A new card type: add its group, label and two actions in <code>Ui.cs</code>. The deck, the ring and the badge read it.</li>
+      <li>A new page level: put <code>[PageDepth]</code> on the page. The motion host selects the move.</li>
+      <li>A new time: add a token to <code>motion.css</code>. If it is a duration, add it to the reduced motion rule with 1 ms.</li>
+      <li>A new motion step: add a row to <code>MotionSteps</code>, a <code>data-motion</code> target and a step rule with a spec ID. Follow <code>docs/motion-guide.html</code>.</li>
+      <li>A new tray size: add a token to <code>tray.css</code> and read it in <code>orchTray.sizes()</code>. Do not add a size constant to a window.</li>
+    </ol>
   </section>
   <section><h3>Proposals</h3>
-    <details class="example prop"><summary>P-D1 · A motion registry in C# <span class="d">I9</span></summary><div class="body">
-      <p>A C# list of motions: name, state, target, token, spec ID. The CSS rules and the checks come from it. This is option B of the motion contract.</p>
-      <p><strong>Check:</strong> a test compares the registry with the running animations.</p>
+    <details class="example prop"><summary>P-D1 · A motion registry in C# (done in R1) <span class="d">I9</span></summary><div class="body">
+      <p>Done in R1 S4 (commit <code>e6ce000</code>): <code>Features/Motion/Domain/MotionSteps.cs</code> and <code>data-motion</code> targets.</p>
+      <p>A row has only the name and the state class. The CSS rule owns the wait and the spec ID.</p>
+      <p><strong>Check:</strong> <code>MotionRegistryTests.Registry_matches_motion_css</code> and <code>Each_state_class_has_a_rule</code>.</p>
     </div></details>
-    <details class="example prop"><summary>P-D2 · Sizes as data <span class="d">I10 · contract step 4</span></summary><div class="body">
-      <p>Each tray size has one owner. See P-P1.</p>
-      <p><strong>Check:</strong> see P-P1.</p>
+    <details class="example prop"><summary>P-D2 · Sizes as data (done in R2) <span class="d">I10 · contract step 4</span></summary><div class="body">
+      <p>Done in R2 S1 to S4 (merge <code>8ca9db4</code>): the page owns each size and reports it with <code>orchTray.sizes()</code>.</p>
+      <p><strong>Check:</strong> <code>TraySizeTests.Tray_window_sizes_come_from_the_page</code> and <code>Tray_sizes_are_tokens</code>.</p>
+    </div></details>
+    <details class="example prop"><summary>P-D3 · The test slot width from the page sizes <span class="d">I16 follow-up</span></summary><div class="body">
+      <p><code>Slot.Width = 460</code> in <code>Slot.cs</code> is a size in C#. No link to <code>--tray-panel-w</code> and <code>--tray-margin</code> exists. A wider panel token can make two test trays overlap.</p>
+      <p>Make the slot width from the panel token, the margin and <code>TrayWindow.Gap</code>. Or add a check.</p>
+      <p><strong>Check:</strong> a test reads the tray.css tokens and asserts <code>Slot.Width</code> ≥ panel width + 2 × margin + <code>Gap</code>.</p>
     </div></details>
     <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
-  <section><h3>Quality <span class="q mixed">Mixed</span></h3>
-    <ul><li>Good: card types, actions and page depth are data. One change reaches all views.</li><li>Gap: no motion is data. A motion is a CSS rule plus a wait in code (I9).</li><li>Gap: sizes have two owners (I10).</li></ul>
+  <section><h3>Quality <span class="q good">Good</span></h3>
+    <ul>
+      <li>Good: card types, actions and page depth are data. One change reaches all views.</li>
+      <li>Good: each motion step is a registry row with a target and a CSS rule (I9 done in R1). Tests compare the three.</li>
+      <li>Good: each tray size has one owner, the page (I10 done in R2). Tests find size constants in the windows.</li>
+      <li>Small gap: the test slot width is a C# constant with no check (P-D3). It touches the test tooling only.</li>
+    </ul>
   </section>
 </div>
 
@@ -210,7 +234,7 @@ flowchart LR
 <div class="panel off" id="structure" role="tabpanel">
   <section><h2>Structure: hosts, layout and pages</h2>
     <h3>Defined as</h3>
-    <p>Razor components. The web server root is <code>App.razor</code>. The tray root is <code>TrayRoot</code> (the stage around the same <code>Routes</code>).</p>
+    <p>Razor components. The web server root is <code>App.razor</code>. The tray root is <code>TrayRoot</code> (the stage around the same <code>Routes</code>). The logic that is not markup is in vertical slices under <code>Features/</code>. The Umpire VSA check examines these slices after each build.</p>
   </section>
   <section><h3>Architecture</h3>
     <div class="box"><pre class="mermaid">
@@ -229,21 +253,27 @@ flowchart TB
   R2 --> L
   L --> P["Pages<br/>@page, LiveView"]
   P --> C["Components"]
+  C --> F["Features/*/Slices<br/>JS command records"]
+  F --> JS["Plugins/Js<br/>one pipeline, trace"]
+  JS --> S["motion.js, tray.js, speech.js"]
 </pre></div>
     <div class="scroll"><table>
       <thead><tr><th>Layer</th><th>Files</th><th>Owns</th><th>Kind</th></tr></thead>
       <tbody>
-        <tr><td>Windows</td><td><code>ClearHost.cs</code>, <code>TrayWindow.cs</code> (panel), <code>BadgeWindow.cs</code> (badge)</td><td>Place, size, click area, mouse input; one shared WebView2 environment</td><td><span class="tag cs">C#</span></td></tr>
-        <tr><td>Window contract</td><td><code>IWidgetWindow.cs</code></td><td>Requests, <code>Enter(phase)</code>, <code>Peek</code></td><td><span class="tag cs">C#</span></td></tr>
-        <tr><td>Flow and pages</td><td><code>TrayFlow.cs</code>, <code>TrayStage.razor</code>, <code>BadgeRoot.razor</code>, <code>tray.css</code>, <code>tray.js</code></td><td>The order of the windows; the panel motion; the badge motion and the notice</td><td><span class="tag cs">C#</span> <span class="tag css">CSS</span> <span class="tag js">JS</span></td></tr>
+        <tr><td>Windows</td><td><code>ClearHost.cs</code>, <code>TrayWindow.cs</code> (panel), <code>BadgeWindow.cs</code> (badge), <code>WidgetWindow.cs</code>, <code>Slot.cs</code></td><td>Place, click area, mouse input; one shared WebView2 environment. The size comes from the page (<code>UseSizes</code>). A test tray uses its slot strip of the screen</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Window contract</td><td><code>IWidgetWindow.cs</code></td><td>Requests, <code>Enter(phase)</code>, <code>Phase</code>, <code>LastEvent</code>, <code>Fault</code>, <code>UseSizes</code>, <code>BadgeFolded</code>, <code>Peek</code>, <code>Label</code></td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Flow and pages</td><td><code>TrayFlow.cs</code>, <code>TrayStage.razor</code>, <code>BadgeRoot.razor</code>, <code>tray.css</code>, <code>tray.js</code></td><td>The order of the windows; the panel motion; the badge motion and the notice; the size report</td><td><span class="tag cs">C#</span> <span class="tag css">CSS</span> <span class="tag js">JS</span></td></tr>
         <tr><td>Layout</td><td><code>MainLayout</code>, <code>AppBar</code>, <code>MotionHost</code></td><td>Page frame, tab change, push and back</td><td><span class="tag cs">C#</span> <span class="tag js">JS</span></td></tr>
         <tr><td>Pages</td><td><code>Components/Pages/*</code></td><td>Data (<code>Load</code>), blocks, sheets</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Features</td><td><code>Features/Motion</code>, <code>Features/Tray</code>, <code>Features/Speech</code> (each a <code>Module</code> with <code>Domain/</code> and <code>Slices/</code>)</td><td>The motion registry, the window steps, the JS command records (<code>MotionWait</code>, <code>MotionMs</code>, <code>TraySizes</code> ...), the wait limit hook</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>JS plugin</td><td><code>Plugins/Js</code> (<code>JsPlugin</code>, <code>JsCommandHandler</code>, <code>JsNames</code>, <code>JsTrace</code>)</td><td>The only C# to JS path. A record name maps to a JS function: <code>MotionWait</code> → <code>orchMotion.wait</code>. Each call has a trace line</td><td><span class="tag cs">C#</span> <span class="tag js">JS</span></td></tr>
       </tbody>
     </table></div>
   </section>
   <section><h3>Guide: anatomy of a page</h3>
 <pre class="stack"><span class="k">@page</span> "/cards"                 <span class="c">// route; [PageDepth] for a page below a tab</span>
 <span class="k">@inherits</span> LiveView               <span class="c">// Load() on each store change (300 ms batch) and each 10 s</span>
+<span class="k">@inject</span> ICommandSender Commands  <span class="c">// each JS call is a command record (Plugins/Js), never IJSRuntime</span>
 
 &lt;PageHeader Title="Cards" /&gt;     <span class="c">// title or path (T3); window buttons in the tray</span>
 &lt;div class="deck-screen"&gt; ... &lt;/div&gt;   <span class="c">// the blocks: each child rises at a tab change</span>
@@ -252,16 +282,26 @@ flowchart TB
 {
     &lt;Presence OnGone="() =&gt; sheet = null"&gt;&lt;AnswerSheet ... /&gt;&lt;/Presence&gt;
 }</pre>
+    <ol>
+      <li>A new JS call: add a record <code>XxxYyy : JsCommand&lt;T&gt;</code> in <code>Features/&lt;Feature&gt;/Slices/&lt;Slice&gt;/</code>.</li>
+      <li>Add the function <code>window.orchXxx = { yyy: ... }</code> to a script.</li>
+      <li>Send the record with <code>Commands.SendAsync</code>. For a tray flow step, use <code>Commands.Must</code> (<code>FlowCommands.cs</code>).</li>
+    </ol>
   </section>
   <section><h3>Proposals</h3>
     <details class="example prop"><summary>P-S1 · Load the hidden views only while the widget shows <span class="d">V-F2</span></summary><div class="body">
-      <p>The hidden Blazor views load after each store change. Stop the load while the tray is hidden or at the badge.</p>
+      <p>The hidden Blazor views load after each store change. <code>LiveView.Reload</code> has no check of the phase. Stop the load while the tray is hidden or at the badge.</p>
       <p><strong>Check:</strong> a count of <code>Load</code> calls while the tray is hidden is 0.</p>
     </div></details>
     <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
   <section><h3>Quality <span class="q good">Good</span></h3>
-    <ul><li>One set of views for both hosts.</li><li>Known gap from the V session (V-F2): the hidden views still load after each store change.</li></ul>
+    <ul>
+      <li>One set of views for both hosts.</li>
+      <li>One path from C# to JS. <code>MotionRegistryTests.No_direct_js_calls</code> and <code>Js_names_exist</code> test it.</li>
+      <li>The Umpire VSA check runs after the build (<code>Orchestrator.Web.csproj</code>). The old findings stay warnings (<code>Directory.Build.props</code>).</li>
+      <li>Known gap from the V session (V-F2): the hidden views still load after each store change.</li>
+    </ul>
   </section>
 </div>
 
@@ -270,46 +310,66 @@ flowchart TB
   <section><h2>Places: the two windows, their sizes and click areas</h2>
     <h3>Defined as</h3>
     <div class="grid2">
-      <div class="card"><span class="where">panel window</span><span class="big">350 × 720 + 24 px margin</span><p>A free point. A header drag moves it. Phases: start, open, folded.</p></div>
-      <div class="card"><span class="where">badge window</span><span class="big">332 × 96 at the right edge</span><p>A saved height. A drag moves it up and down. Always on top. Phases: badge-out, badge.</p></div>
+      <div class="card"><span class="where">panel window</span><span class="big">page size + 2 × margin</span><p>The page reports <code>--tray-panel-w</code> (350 px), <code>--tray-panel-h</code> (720 px) and <code>--tray-margin</code> (24 px). The height is at most the work area less 2 × <code>Gap</code> (12 px). A free point. A header drag moves it. Phases: start, open, folded.</p></div>
+      <div class="card"><span class="where">badge window</span><span class="big">the union of the page boxes</span><p>The page reports the shadow boxes of the tab at rest, at the hover and of the peek bubble. At the right edge, at a saved height (default: the tab top at 42 % of the work area). A drag moves it up and down. Always on top. Phases: badge-out, badge.</p></div>
       <div class="card"><span class="where">hidden</span><span class="big">no window</span><p>The tray icon opens it again.</p></div>
     </div>
   </section>
   <section><h3>Architecture</h3>
     <div class="box"><pre class="mermaid">
 flowchart LR
-  F["Form<br/>WS_EX_NOREDIRECTIONBITMAP"] --> D["DirectComposition"]
-  D --> V["WebView2<br/>composition controller"]
-  V --> P["Page<br/>transparent body"]
-  F -->|"SetWindowRgn"| R["Region: takes clicks<br/>and clips the drawing"]
+  T["tray.css tokens<br/>--tray-panel-w, --tray-panel-h,<br/>--tray-margin, --badge-tab, --badge-tab-top"] --> S["orchTray.sizes()<br/>tokens and shadow boxes"]
+  S -->|"TraySizes (JS command)"| P["TrayStage, BadgeRoot"]
+  P -->|"IWidgetWindow.UseSizes"| W["WidgetWindow"]
+  W --> TW["TrayWindow<br/>PanelBounds, Hits"]
+  W --> BW["BadgeWindow<br/>WindowSize, AreaOf"]
+  TW -->|"SetHitArea"| R["Region: takes clicks<br/>and clips the drawing"]
+  BW -->|"SetHitArea"| R
+  F["Form<br/>WS_EX_NOREDIRECTIONBITMAP"] --> D["DirectComposition"] --> V["WebView2<br/>composition controller"]
 </pre></div>
     <div class="scroll"><table>
       <thead><tr><th>State</th><th>Click area</th><th>Set by</th></tr></thead>
       <tbody>
-        <tr><td>Panel window</td><td>The full window, cut to the work area</td><td><code>TrayWindow.Hits()</code></td></tr>
-        <tr><td>Badge window at rest</td><td>68 + 14 px from the right edge</td><td><code>BadgeWindow.Hits()</code></td></tr>
-        <tr><td>Badge hover</td><td>280 + 14 px; back to rest 300 ms after the leave</td><td><code>BadgeWindow.Hover</code>, <code>Task.Delay(300)</code></td></tr>
-        <tr><td>Badge peek</td><td>The full window (332 px)</td><td><code>Peek(true)</code></td></tr>
+        <tr><td>Panel window</td><td>The full window (panel and shadow margin), cut to the work area</td><td><code>TrayWindow.Hits()</code></td></tr>
+        <tr><td>Badge window at rest</td><td>The rest box of the tab (<code>Sizes.Rest</code>)</td><td><code>BadgeWindow.AreaOf(false, false)</code></td></tr>
+        <tr><td>Badge hover</td><td>The hover box (<code>Sizes.Hover</code>), at once at the start. At the end, it stays wide until the page reports the end of the step <code>badge-fold</code></td><td><code>BadgeWindow.Hover</code>, <code>HoverEnded</code> (R2 S3, Q1 option B)</td></tr>
+        <tr><td>Badge peek</td><td>The tab box and the bubble box (<code>Sizes.Bubble</code>)</td><td><code>Peek(true)</code>, after <code>BadgeRoot.ReportSizes</code></td></tr>
       </tbody>
     </table></div>
+    <p class="note">Without a size report, <code>ShowAtPlace</code> writes a fault and the window stays hidden.</p>
   </section>
   <section><h3>Guide</h3>
-    <ol><li>A new size: change the C# constant in <code>TrayWindow</code> or <code>BadgeWindow</code> and the CSS value in <code>tray.css</code>. Both, by hand.</li><li>Add a self-test check that compares the drawn size with the click area (as <code>badge-hover-fits</code>).</li></ol>
+    <ol>
+      <li>A new size of a part: add a token in <code>:root</code> of <code>tray.css</code> and use it in the rule. <code>TraySizeTests.Tray_sizes_are_tokens</code> fails on a px literal.</li>
+      <li>If a window needs the size, add it to <code>orchTray.sizes()</code> and to <code>TraySizesResult</code>.</li>
+      <li>Do not add a size constant to <code>TrayWindow</code> or <code>BadgeWindow</code>. Only <code>Gap</code> is allowed (<code>Tray_window_sizes_come_from_the_page</code>).</li>
+      <li>If a new text changes a badge size, <code>BadgeRoot.ReportSizes</code> measures again after the render.</li>
+      <li>Keep each drawn part inside its box. The self-test checks <code>panel-box-fits</code>, <code>badge-box-fits</code> and <code>badge-fold-area</code>.</li>
+    </ol>
     <p class="note">The click area is also the visible area. A part outside the region does not show.</p>
   </section>
   <section><h3>Proposals</h3>
-    <details class="example prop"><summary>P-P1 · Sizes from C# as CSS variables <span class="d">I7, I10 · contract step 4</span></summary><div class="body">
-      <p><code>TrayWindow</code> and <code>BadgeWindow</code> write their constants on their pages as custom properties (<code>--tab-rest</code>, <code>--tab-wide</code>, <code>--shadow</code>). <code>tray.css</code> uses only these. The hover width is fixed at <code>--tab-wide</code> (I7 option A).</p>
-      <p><strong>Check:</strong> <code>badge-hover-fits</code> passes.</p>
+    <details class="example prop"><summary>P-P1 · Sizes from one owner (done in R2) <span class="d">I7, I10 · contract step 4</span></summary><div class="body">
+      <p>Done in R2 with option B of I7 (measure on demand), not with CSS variables from C#. The page owns each size and reports it. The windows take the report.</p>
+      <p><strong>Done in:</strong> <code>d46516c</code> (S1, size tokens and report), <code>037fe64</code> (S2, badge), <code>35736ea</code> (S4, panel); merge <code>8ca9db4</code>.</p>
     </div></details>
-    <details class="example prop"><summary>P-P2 · A check for each size pair <span class="d">I10 · contract step 6</span></summary><div class="body">
-      <p>One self-test check reads each drawn size and compares it with the click area.</p>
-      <p><strong>Check:</strong> the check fails when one value changes.</p>
+    <details class="example prop"><summary>P-P2 · A check for each size pair (done in R2) <span class="d">I10 · contract step 6</span></summary><div class="body">
+      <p>The self-test compares each drawn box with the click area: <code>panel-box-fits</code>, <code>badge-box-fits</code> (rest, hover, peek), <code>badge-fold-area</code>. <code>TraySizeTests</code> fails on a size literal.</p>
+      <p><strong>Done in:</strong> <code>6dbcdb1</code> (S0, badge-states and badge-box-fits), <code>0e20864</code> (S3), <code>tests/Orchestrator.Tests/TraySizeTests.cs</code>.</p>
+    </div></details>
+    <details class="example prop"><summary>P-P3 · Keep the badge window in the work area after a new size <span class="d">new · code review</span></summary><div class="body">
+      <p><code>BadgeWindow.UseSizes</code> keeps the top and the right edge. It does not clamp the window to the work area, as <code>PlaceBounds</code> does. A taller bubble near the bottom can go past the work area. This comes from the code. No run showed it.</p>
+      <p><strong>Check:</strong> a self-test step drags the badge to the bottom, posts a card with a long title, and checks <code>b.Bottom &lt;= area.Bottom</code>.</p>
     </div></details>
     <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
-  <section><h3>Quality <span class="q mixed">Mixed</span></h3>
-    <ul><li>Better since the two windows: each window has one place, one size and one input rule. No window moves between places.</li><li>I7: the badge hover is 333 px wide, the click area is 294 px. The ring is cut.</li><li>I10: five sizes have two owners.</li></ul>
+  <section><h3>Quality <span class="q good">Good</span></h3>
+    <ul>
+      <li>One owner for each size: the page. Each window has one place and one input rule.</li>
+      <li>Tested: <code>TraySizeTests</code> and the self-test checks <code>panel-box-fits</code>, <code>badge-box-fits</code>, <code>badge-fold-area</code>, <code>saved-place</code>.</li>
+      <li>I7, I10 and I18 are fixed in R2. No open issue.</li>
+      <li>Small gap: the badge window has no clamp after a new size (P-P3).</li>
+    </ul>
   </section>
 </div>
 
@@ -317,7 +377,15 @@ flowchart LR
 <div class="panel off" id="startstop" role="tabpanel">
   <section><h2>Start and stop: open, fold, dock, hide</h2>
     <h3>Defined as</h3>
-    <p><code>TrayFlow</code> (<code>Open</code>, <code>Dock</code>, <code>Hide</code>, <code>BringBadge</code>) orders the two windows. The pages play the motion: <code>TrayStage</code> (<code>Prepare</code>, <code>Grow</code>, <code>Fold</code>) and <code>BadgeRoot</code> (<code>In</code>, <code>Out</code>, the notice). Each one sets phase classes; CSS orders the steps inside one window with transition delays.</p>
+    <p><code>TrayFlow</code> (<code>Request</code>: <code>Open</code>, <code>Dock</code>, <code>Hide</code>; and <code>BringBadge</code>) orders the two windows. Each step goes through one entry: <code>Page(step)</code> for a page motion, <code>Window(phase)</code> for a window step. The pages play the motion: <code>TrayStage</code> (<code>Prepare</code>, <code>Grow</code>, <code>Fold</code>) and <code>BadgeRoot</code> (<code>In</code>, <code>Out</code>, the notice). Each page step sets a phase class and waits with <code>MotionWait</code>, which runs <code>orchMotion.wait</code>.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Registry</th><th>Entries</th><th>File</th></tr></thead>
+      <tbody>
+        <tr><td>Motion steps of the flow</td><td><code>grow</code> (clip-path), <code>fold</code> (clip-path scale), <code>badge-in</code>, <code>badge-out</code> (translate)</td><td><code>Features/Motion/Domain/MotionSteps.cs</code>, <code>--motion-wait</code> in <code>tray.css</code></td></tr>
+        <tr><td>Window steps</td><td><code>panel-show</code> (start, shown), <code>panel-activate</code> (open, activated), <code>badge-show</code> (badge-out, shown), <code>all-hide</code> (hidden)</td><td><code>Features/Motion/Domain/WindowSteps.cs</code></td></tr>
+        <tr><td>Times</td><td><code>--t-ball-in</code>, <code>--t-grow</code>, <code>--t-content-in</code>, <code>--t-content-out</code>, <code>--t-shrink</code>, <code>--t-ball-out</code>, <code>--t-badge-in</code>, <code>--t-badge-out</code>; limits <code>--t-limit</code> (1000 ms), <code>--t-frame-limit</code> (100 ms)</td><td><code>wwwroot/motion.css</code></td></tr>
+      </tbody>
+    </table></div>
   </section>
   <section><h3>Architecture: open</h3>
     <div class="box"><pre class="mermaid">
@@ -327,13 +395,14 @@ sequenceDiagram
   participant S as TrayStage (panel page)
   participant B as BadgeRoot (badge page)
   opt from the badge
-    F->>B: Out(): the tab slides out
+    F->>B: Out(): is-badge-out, wait step badge-out
   end
-  F->>W: Enter(start): badge window hides, panel window shows
-  F->>S: Prepare(): is-start, ball center, 2 frames
-  F->>W: Enter(open): Activate()
-  F->>S: Grow(): is-open, wait for the clip, is-ready
-  Note over S: ball pops 0.30 s, clip grows 0.34 s after 0.21 s, content fades 0.20 s
+  F->>W: Window(start): badge window hides, panel window shows (panel-show)
+  F->>S: Prepare(): is-start, TrayHome, wait 2 frames
+  F->>W: Window(open): Activate() (panel-activate)
+  Note over F: Phase = open here, before the grow (I19)
+  F->>S: Grow(): is-open, wait step grow, is-ready
+  Note over S: ball pops 0.30 s, clip grows 0.34 s after 0.21 s, content fades 0.20 s after 0.50 s
 </pre></div>
     <h3>Architecture: dock and hide</h3>
     <div class="box"><pre class="mermaid">
@@ -342,33 +411,50 @@ sequenceDiagram
   participant W as WidgetWindow (C#)
   participant S as TrayStage (panel page)
   participant B as BadgeRoot (badge page)
-  F->>S: Fold(): is-folded, wait for the ball
-  Note over S: content fades 0.10 s, clip folds 0.24 s, ball out 0.18 s
+  F->>S: Fold(): TrayHome, is-folded, wait step fold
+  Note over S: content fades 0.10 s, clip folds 0.24 s after 0.10 s, ball out 0.18 s after 0.34 s
   alt dock
-    F->>W: Enter(badge-out): panel window hides, badge window shows
-    F->>B: In(): is-badge-out, 2 frames, is-badge (tab slides in 0.26 s)
-    F->>W: Enter(badge)
+    F->>W: Window(badge-out): panel window hides, badge window shows (badge-show)
+    F->>B: In(): is-badge-out, 2 frames, is-badge, wait step badge-in (0.26 s)
+    F->>W: Window(badge)
   else hide
-    F->>W: Enter(hidden): both windows hide
+    F->>W: Window(hidden): both windows hide (all-hide)
   end
 </pre></div>
+    <p class="note">Each window step writes one trace line: its event, its time and the gap from the last page step. A wrong event is a warning. A wait that ends by its limit is a warning (<code>WaitLimitHook</code>).</p>
   </section>
   <section><h3>Guide</h3>
-    <ol><li>One request runs at a time (<code>TrayFlow.Request</code>). A request during a run waits; only the last one runs.</li><li>A new step inside one window: a CSS transition with a delay token in <code>tray.css</code>.</li><li>A new step between the windows: a call to <code>window.Enter(phase)</code> in <code>TrayFlow</code>, after the page motion ends.</li></ol>
+    <ol>
+      <li>Read the <a href="https://claude.ai/artifact/A4N6FKvzRUfqCCZsoZVde8">motion guide</a> first (<code>docs/motion-guide.html</code>).</li>
+      <li>One request runs at a time (<code>TrayFlow.Request</code>). A request during a run waits. Only the last one runs. A notice waits for the end of the run (H4).</li>
+      <li>A new step inside one window: add a <code>MotionStep</code> to <code>MotionSteps</code>. Put <code>data-motion</code> on the element. Give it a <code>--motion-wait</code> rule in <code>tray.css</code>.</li>
+      <li>Wait with <code>Commands.Must(new MotionWait(step.Target, WaitMode.Step))</code>. Use the time tokens of <code>motion.css</code>.</li>
+      <li>A new step between the windows: call <code>Window(phase)</code> in <code>TrayFlow</code> after the page step. Add a <code>WindowStep</code> with its expected event.</li>
+      <li>Do not use <code>Task.Delay</code> or a time literal. <code>MotionArchitectureTests</code> and <code>MotionRegistryTests</code> fail on them.</li>
+    </ol>
   </section>
   <section><h3>Proposals</h3>
-    <details class="example prop"><summary>P-SS1 · One wait helper for the stage <span class="d">I12, I13 · contract step 3</span></summary><div class="body">
-      <p><code>TrayStage</code> waits with <code>orchMotion.settle</code> on the changed element. <code>orchTray.end</code> and its fixed limits go.</p>
-      <p><strong>Check:</strong> the open, the fold and the dock times stay the same; a trace line shows each wait that ends by its limit.</p>
+    <details class="example prop"><summary>P-SS1 · One wait helper for the stage (done in R1) <span class="d">I12, I13 · contract step 3</span></summary><div class="body">
+      <p>Done. <code>TrayStage</code> and <code>BadgeRoot</code> wait with <code>MotionWait</code> (<code>orchMotion.wait</code>, modes settle, property, frames, step). <code>orchTray.end</code> and its fixed limits are gone. One limit token: <code>--t-limit</code>. Reduced motion sets each duration to 1 ms.</p>
+      <p><strong>Done in:</strong> <code>a85f3dd</code> (S3, one wait command), <code>e6ce000</code> (S4, registry), <code>08596f1</code> (S2, reduced motion). Checks: <code>no-wait-at-limit</code>, <code>steps-traced</code>, <code>dock-open-reduced</code>.</p>
     </div></details>
-    <details class="example prop"><summary>P-SS2 · Review the grow with you <span class="d">I6</span></summary><div class="body">
-      <p>An MP4 of the grow, frame by frame next to the spec G1 and M6.</p>
-      <p><strong>Check:</strong> your approval.</p>
+    <details class="example prop"><summary>P-SS2 · Review the grow with you (done) <span class="d">I6</span></summary><div class="body">
+      <p>Done. You approved the look on 2026-11-20. The values went to tokens and the window steps went into the pipeline in R1.</p>
+      <p><strong>Done in:</strong> <code>docs/tray-issues.html</code> (order of the work: "the grow review (I6)"), <code>8fffc86</code> (S9, window steps).</p>
+    </div></details>
+    <details class="example prop"><summary>P-SS3 · A "page ready" signal after the grow <span class="d">I19 · new</span></summary><div class="body">
+      <p><code>TrayFlow.Open</code> sets <code>Phase = open</code> before <code>Grow()</code>. The grow ends about 555 ms later. Only the page knows the end (<code>is-ready</code>). Give the flow a ready phase or event after <code>Page(Grow)</code>. The self-test and the stress run wait for it, not for the phase open and a fixed delay.</p>
+      <p><strong>Check:</strong> a <code>TrayFlowTests</code> test shows ready after the end of <code>Grow</code>. The sheet stress run (<code>--stress --sheets</code>) has 0 misses.</p>
     </div></details>
     <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
   <section><h3>Quality <span class="q mixed">Mixed</span></h3>
-    <ul><li>Good: checks for start, dock, open from the badge, hide, notice, saved place.</li><li>Gap: waits use <code>orchTray.end</code> with fixed limits 900, 500, 1500, 400 ms (I11, I12).</li><li>Open: the grow is not reviewed with you (I6).</li></ul>
+    <ul>
+      <li>Good: one wait, one step registry, one window step entry with a trace line. Errors go to the fault log (H3).</li>
+      <li>Tested: <code>TrayFlowTests</code> and the self-test checks <code>start</code>, <code>dock</code>, <code>open-from-badge</code>, <code>hide</code>, <code>hide-during-motion</code>, <code>notice</code>, <code>notice-while-busy</code>, <code>fold-no-app-bar</code>, <code>window-steps</code>, <code>no-wait-at-limit</code>.</li>
+      <li>Gap: no "page ready" signal. The phase open comes before the end of the grow (I19, P-SS3).</li>
+      <li>Gap: the self-test waits for the phase, then a fixed <code>Task.Delay(900)</code>.</li>
+    </ul>
   </section>
 </div>
 
@@ -376,94 +462,145 @@ sequenceDiagram
 <div class="panel off" id="moves" role="tabpanel">
   <section><h2>Page moves: tab change, push, back</h2>
     <h3>Defined as</h3>
-    <p>The page depth of the two addresses (<code>PageDepth.Move</code>): 0 to 0 is a tab change, deeper is a push, less deep is a back.</p>
+    <p>The page depth of the two addresses (<code>PageDepth.Move</code>): 0 to 0 is a tab change, deeper is a push, less deep is a back. A page gives its depth with <code>[PageDepth(n)]</code>. A query can give another depth (<code>StreamPage</code>: <code>Query = "session"</code>).</p>
   </section>
   <section><h3>Architecture</h3>
     <div class="box"><pre class="mermaid">
 flowchart LR
   N["Link click<br/>or code"] --> H["MotionHost<br/>LocationChanging"]
-  H -->|"tab"| L["MainLayout<br/>is-tab-in"] --> R["Blocks rise<br/>T1 C"]
-  H -->|"push / back"| J["orchMotion.begin"] --> VT["View transition<br/>T2, T3"]
+  N --> L["MainLayout<br/>OnParametersSet"]
+  L -->|"tab"| TI["is-tab-in<br/>MotionWait step tab-in"] --> R["Blocks rise<br/>T1 C"]
+  H -->|"push / back"| J["MotionBegin<br/>orchMotion.begin"] --> VT["View transition<br/>T2, T3"]
 </pre></div>
     <div class="scroll"><table>
       <thead><tr><th>Move</th><th>Motion</th><th>Ends with</th></tr></thead>
       <tbody>
-        <tr><td>Tab change</td><td>Each block rises 10 px in 0.3 s, 40 ms after the block above; the nav dot moves</td><td><code>orchMotion.settle</code> removes <code>is-tab-in</code></td></tr>
-        <tr><td>Push</td><td>New page in from the right, old page 30 % left at opacity 0.5; header path slides</td><td>The view transition</td></tr>
-        <tr><td>Back</td><td>The reverse, 0.28 s</td><td>The view transition</td></tr>
+        <tr><td>Tab change</td><td>Each block rises 10 px in 0.3 s (<code>--t-tab-block</code>), 40 ms (<code>--t-tab-step</code>) after the block above. The nav dot moves (<code>MotionDot</code>)</td><td><code>MotionWait</code> step <code>tab-in</code> (<code>--motion-wait: m-rise</code>) removes <code>is-tab-in</code>. A newer tab change cancels the wait (key <code>tab-in</code>)</td></tr>
+        <tr><td>Push</td><td>New page in from the right, old page 30 % left at opacity 0.5, 0.3 s (<code>--t-push</code>). The header path slides</td><td>The view transition. C# gets no end</td></tr>
+        <tr><td>Back</td><td>The reverse, 0.28 s (<code>--t-back</code>)</td><td>The view transition. C# gets no end</td></tr>
       </tbody>
     </table></div>
+    <p class="note"><code>orchMotion.begin</code> resolves when the browser has the picture of the old page. Its limits are tokens: <code>--t-vt-start</code> (300 ms) and <code>--t-vt-render</code> (600 ms).</p>
   </section>
   <section><h3>Guide</h3>
-    <ol><li>A new page below a tab: give it <code>[PageDepth(1)]</code>. The push and the back come with no more code.</li><li>In the tray, the view (<code>.tray-view</code>) moves inside the panel. The panel and its shadow stay.</li></ol>
+    <ol>
+      <li>A new page below a tab: give it <code>[PageDepth(1)]</code>. The push and the back come with no more code.</li>
+      <li>In the tray, the view (<code>.tray-view</code>, <code>view-transition-name: page</code>) moves inside the panel. The panel and its shadow stay.</li>
+      <li>Change a time only in <code>motion.css</code>. <code>MotionArchitectureTests</code> fails on a time literal.</li>
+    </ol>
   </section>
   <section><h3>Proposals</h3>
-    <details class="example prop"><summary>P-M1 · View transition limits as tokens <span class="d">I11 · contract step 1</span></summary><div class="body">
-      <p>The 300 and 600 ms limits in <code>motion.js</code> read a token from <code>motion.css</code>.</p>
-      <p><strong>Check:</strong> no number of milliseconds in <code>motion.js</code>.</p>
+    <details class="example prop"><summary>P-M1 · View transition limits as tokens (done in R1) <span class="d">I11 · contract step 1</span></summary><div class="body">
+      <p>Done. <code>motion.js</code> reads <code>--t-vt-start</code> and <code>--t-vt-render</code> from <code>motion.css</code> with <code>ms()</code>. No number of milliseconds is in <code>motion.js</code>.</p>
+      <p><strong>Done in:</strong> <code>8e9b5b3</code> (S1, motion times as tokens). Check: <code>MotionArchitectureTests.Motion_times_are_tokens</code>.</p>
+    </div></details>
+    <details class="example prop"><summary>P-M2 · An end signal for the push and the back <span class="d">I19 data gap · new</span></summary><div class="body">
+      <p>C# does not know when a push or a back ends. A navigation press has no check that the page changed (I19). The <code>page-moves</code> scenario waits a fixed 800 ms after each press. Let <code>MotionBegin</code> (or a second command) report the end of the view transition, with a trace line.</p>
+      <p><strong>Check:</strong> the trace shows one end line for each push and back. The <code>page-moves</code> scenario waits for it and has no <code>Task.Delay(800)</code>.</p>
     </div></details>
     <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
   <section><h3>Quality <span class="q good">Good</span></h3>
-    <ul><li>Good: one rule for all moves. Checks <code>tab-*-to-*</code>, <code>dot-*</code>, <code>page-move-in-panel</code>, <code>header-path-motion</code>.</li><li>Gap: the JS limits 300 and 600 ms are outside the tokens (I11).</li></ul>
+    <ul>
+      <li>Good: one rule for all moves. All times are tokens (I11 done in R1). The tab change goes through the step registry.</li>
+      <li>Tested: <code>MotionTests</code> (page depth) and the self-test checks <code>tab-*-to-*</code>, <code>dot-*</code>, <code>page-move-in-panel</code>, <code>header-path-motion</code>.</li>
+      <li>Gap: the push and the back give no end to C# (P-M2). This is one data gap of I19.</li>
+      <li>Gap: the trace shows the <code>tab-in</code> target as "element", so <code>steps-traced</code> skips it.</li>
+    </ul>
   </section>
 </div>
 
 <!-- COMPONENT MOTION -->
 <div class="panel off" id="cmotion" role="tabpanel">
-  <section><h2>Component motion: sheets, toast, press, rings, deck</h2>
+  <section><h2>Component motion: sheets, toast, press, rings, deck, badge</h2>
     <h3>Defined as</h3>
-    <p>A token and a rule in <code>motion.css</code>, started by a state class. Exception: the deck motion is in <code>app.css</code> and <code>swipe.js</code>.</p>
+    <p>A token in <code>motion.css</code> and a rule, started by a state class. The rules are in <code>motion.css</code>, in <code>app.css</code> (the deck) and in <code>tray.css</code> (the tray). Only <code>motion.css</code> has times.</p>
+    <p>A motion that C# waits for is a step. A step has a row in <code>MotionSteps</code>, a <code>data-motion</code> target and a step rule with <code>--motion-wait</code>.</p>
 <pre class="stack"><span class="c">/* token */</span>                 --t-sheet-out: .22s;
 <span class="c">/* rule (M5) */</span>            .is-leaving &gt; .sheet { animation: m-down var(--t-sheet-out) ease-in both; }
-<span class="c">/* state */</span>               Presence sets is-leaving, then orchMotion.settle waits</pre>
+<span class="c">/* step rule */</span>             [data-motion~="leave"] { --motion-wait: m-fade-out m-down m-lift; }
+<span class="c">/* registry */</span>              MotionSteps.Leave = new("leave", "is-leaving");
+<span class="c">/* state, wait */</span>           Presence sets MotionSteps.Leave.State, then sends MotionWait(root, WaitMode.Step)</pre>
   </section>
   <section><h3>Architecture</h3>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  C["Component<br/>sets State of the row"] --> R["CSS rule<br/>token of motion.css"]
+  C --> W["MotionWait(target, Step)"] --> J["orchMotion.wait<br/>reads --motion-wait"]
+  J --> B["WaitResult<br/>end, cancel, none, limit, hidden"]
+  B -->|"limit, none, missing"| H["WaitLimitHook<br/>warning in IJsTrace"]
+</pre></div>
     <div class="scroll"><table>
       <thead><tr><th>Motion</th><th>Spec</th><th>Start</th><th>Wait</th></tr></thead>
       <tbody>
-        <tr><td>Sheet, toast, speed dial</td><td>M5, E-1</td><td><code>Presence</code> phase class</td><td><code>orchMotion.settle</code></td></tr>
+        <tr><td>Sheet, toast, speed dial</td><td>M5, E-1</td><td><code>Presence</code> sets <code>is-leaving</code></td><td>Step <code>leave</code></td></tr>
         <tr><td>Press, fold of a row, chevron</td><td>M7, S1, S2</td><td>CSS <code>:active</code>, <code>details</code></td><td>None</td></tr>
-        <tr><td>Ring draw, count-up</td><td>M7, V12</td><td>First show; <code>motion.js</code> marks a repeat</td><td>None</td></tr>
-        <tr><td>Nav dot</td><td>T1</td><td><code>orchMotion.dot</code> sets <code>--dx</code></td><td>None</td></tr>
-        <tr><td>Deck throw, tuck, back-in, arrive</td><td>M1 to M3</td><td><code>swipe.js</code> classes</td><td>Events + <code>setTimeout</code></td></tr>
-        <tr><td>Badge spin, peek</td><td>N1, N2</td><td><code>TrayStage</code> classes</td><td><code>orchTray.end</code></td></tr>
+        <tr><td>Ring draw, count-up</td><td>M7, V12</td><td>First show; <code>motion.js</code> marks a repeat with <code>data-drawn</code></td><td>None</td></tr>
+        <tr><td>Nav dot</td><td>T1</td><td><code>AppBar</code> sends <code>MotionDot</code>; <code>orchMotion.dot</code> sets <code>--dx</code></td><td>None</td></tr>
+        <tr><td>Deck throw, tuck</td><td>M1, M2</td><td><code>Cards.razor</code> sets <code>out-r</code>, <code>out-l</code> or <code>tuck</code> on the card of the act</td><td>Steps <code>deck-throw</code>, <code>deck-tuck</code></td></tr>
+        <tr><td>Deck back-in</td><td>M3</td><td><code>swipe.js</code> sets <code>back-in</code> (pointer response)</td><td><code>orchMotion.wait(card, "property", "transform")</code> in JS</td></tr>
+        <tr><td>Deck arrive</td><td>M3</td><td><code>Cards.razor</code> sets <code>arrive</code></td><td>None</td></tr>
+        <tr><td>Undo bar</td><td>M5</td><td><code>m-count</code> with <code>--t-undo</code></td><td>C# reads <code>--t-undo</code> (<code>MotionTimes.Of</code>)</td></tr>
+        <tr><td>Badge spin, peek</td><td>N2</td><td><code>BadgeRoot</code> sets <code>spin</code>, <code>on</code></td><td>Steps <code>spin</code>, <code>peek-out</code>; show time <code>--t-peek-show</code></td></tr>
+        <tr><td>Badge hover fold</td><td>N1</td><td><code>BadgeRoot</code> sets <code>is-hover</code> from the window hover</td><td>Step <code>badge-fold</code>, then the click area gets small</td></tr>
       </tbody>
     </table></div>
   </section>
   <section><h3>Guide</h3>
-    <ol><li>A block that comes and goes: put it in a <code>&lt;Presence&gt;</code>. Write the in and out rules in <code>motion.css</code> with <code>.is-leaving</code>.</li><li>A child that closes itself: call <code>Presence.Leave()</code> from the cascading value.</li></ol>
+    <p class="summary">The full recipes are in the motion guide (<code>docs/motion-guide.html</code>).</p>
+    <ol>
+      <li>A block that comes and goes: put it in a <code>&lt;Presence&gt;</code>. Write the in and out rules in <code>motion.css</code> with <code>.is-leaving</code>.</li>
+      <li>A child that closes itself: call <code>Presence.Leave()</code> from the cascading value.</li>
+      <li>A motion that nothing waits for: write the rule with tokens. Set the state class. Add no wait and no registry row.</li>
+      <li>A motion that C# waits for: add a row to <code>MotionSteps</code> and to <code>All</code>. Mark the target with <code>data-motion</code>. Write the step rule with its spec ID.</li>
+      <li>In C#, set the class from the row, render, then send <code>MotionWait(target, WaitMode.Step)</code>. In the tray flow, send with <code>Commands.Must</code>.</li>
+      <li>A time: add a token <code>--t-&lt;thing&gt;</code> to <code>motion.css</code>. Add a duration token with <code>1ms</code> to the reduced motion block.</li>
+    </ol>
   </section>
   <section><h3>Proposals</h3>
-    <details class="example prop"><summary>P-C1 · One state attribute <span class="d">I9 · contract step 2</span></summary><div class="body">
+    <details class="example prop"><summary>P-C1 · One state attribute <span class="d">I9 · contract step 2 · not done, R1 took another way</span></summary><div class="body">
       <p>C# renders <code>data-state</code> (open, closed, leaving) on each part that moves, as Radix and Headless UI do. All motion CSS keys on it.</p>
+      <p><strong>R1:</strong> the registry names the state classes of each step (<code>MotionStep.States</code>). The test <code>Each_state_class_has_a_rule</code> checks them. Motions with no wait keep free classes (<code>behind</code>, <code>arrive</code>, <code>back-in</code>, <code>drag</code>, <code>jump</code>).</p>
       <p><strong>Check:</strong> a search finds no other state class for motion.</p>
     </div></details>
-    <details class="example prop"><summary>P-C2 · The deck as state classes <span class="d">I9, I11 · contract step 5</span></summary><div class="body">
-      <p><code>swipe.js</code> keeps only the pointer math. The throw, the tuck and the back-in are state classes with tokens. The wait is <code>settle</code>.</p>
-      <p><strong>Check:</strong> no <code>setTimeout</code> with a motion time in <code>swipe.js</code>.</p>
+    <details class="example prop"><summary>P-C2 · The deck as state classes (done in R1) <span class="d">I9, I11 · contract step 5</span></summary><div class="body">
+      <p>Done in R1 S8 (<code>e684621</code>) and review fix 5 (<code>ad459db</code>). <code>swipe.js</code> keeps the pointer math. <code>Cards.razor</code> sets the throw and the tuck and waits for the step.</p>
+      <p><strong>Check:</strong> <code>No_motion_timer_in_scripts</code> (<code>MotionRegistryTests.cs</code>) passes. Self-test check <code>deck-throw</code> passes.</p>
+    </div></details>
+    <details class="example prop"><summary>P-C3 · A trace for the back-in wait <span class="d">new · gap of R1</span></summary><div class="body">
+      <p><code>swipe.js</code> calls <code>orchMotion.wait</code> directly, not through <code>MotionWait</code>. Thus <code>WaitLimitHook</code> does not see it. A back-in at the limit writes no warning.</p>
+      <p>Make the back-in a JS-side warning at <code>limit</code>, or send it as a step from C#.</p>
+      <p><strong>Check:</strong> a back-in with a wrong <code>--motion-wait</code> name writes one warning line in the trace.</p>
     </div></details>
     <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
-  <section><h3>Quality <span class="q mixed">Mixed</span></h3>
-    <ul><li>Good: Presence is one way for come and go, with a bUnit test.</li><li>Gap: the deck is its own state machine, with literal times (I9, I11).</li></ul>
+  <section><h3>Quality <span class="q good">Good</span></h3>
+    <ul>
+      <li>Good: one way for each step: a state class from the registry, a token, and one wait (<code>orchMotion.wait</code>).</li>
+      <li>Good: tests <code>Registry_matches_motion_css</code>, <code>Each_state_class_has_a_rule</code>, <code>Motion_times_are_tokens</code>, <code>Reduced_motion_sets_each_duration_token_to_1ms</code>. Self-test checks <code>steps-traced</code>, <code>deck-throw</code>, <code>no-wait-at-limit</code>.</li>
+      <li>Good: Presence has a bUnit test.</li>
+      <li>Gap: the deck back-in waits in JS, with no trace at the limit (P-C3).</li>
+      <li>Gap: the rules are in three style sheets (<code>motion.css</code>, <code>app.css</code>, <code>tray.css</code>). The tokens are in one.</li>
+    </ul>
   </section>
 </div>
 
 <!-- INTERACTIONS -->
 <div class="panel off" id="input" role="tabpanel">
-  <section><h2>Interactions: mouse, drag, hover, swipe</h2>
+  <section><h2>Interactions: mouse, drag, hover, swipe, keys</h2>
     <h3>Defined as</h3>
     <div class="scroll"><table>
       <thead><tr><th>Input</th><th>Handled by</th><th>Kind</th></tr></thead>
       <tbody>
-        <tr><td>Mouse on the page</td><td><code>ClearHost</code> forwards WM_MOUSE* to WebView2</td><td><span class="tag cs">C#</span></td></tr>
-        <tr><td>Header drag</td><td><code>app-region: drag</code> → HTCAPTION → system move loop</td><td><span class="tag css">CSS</span> <span class="tag cs">C#</span></td></tr>
-        <tr><td>Badge click, drag, hover</td><td><code>BadgeWindow.HostInput</code> (the page gets no click); 5 px drag start</td><td><span class="tag cs">C#</span></td></tr>
-        <tr><td>Badge hover look</td><td>CSS <code>:hover</code> with waits</td><td><span class="tag css">CSS</span></td></tr>
-        <tr><td>Card swipe</td><td><code>swipe.js</code> pointer events; it clicks the action buttons</td><td><span class="tag js">JS</span></td></tr>
+        <tr><td>Mouse on the page</td><td><code>ClearHost.Forward</code> sends WM_MOUSE* to <code>WebView2.SendMouseInput</code>; <code>TrackMouseEvent</code> for the leave</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Header drag</td><td><code>app-region: drag</code> → HTCAPTION → system move loop; <code>MoveEnded</code> at WM_EXITSIZEMOVE</td><td><span class="tag css">CSS</span> <span class="tag cs">C#</span></td></tr>
+        <tr><td>Badge click, drag</td><td><code>BadgeWindow.HostInput</code> (the page gets no click); 5 px drag start; the point comes from the message</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Badge hover</td><td>The window owns the hover (R2). <code>BadgeRoot</code> draws <code>is-hover</code>. After step <code>badge-fold</code>, the click area gets small</td><td><span class="tag cs">C#</span> <span class="tag css">CSS</span></td></tr>
+        <tr><td>Card swipe</td><td><code>swipe.js</code> pointer events; it clicks the action buttons. <code>Cards.razor</code> plays the throw and the tuck</td><td><span class="tag js">JS</span> <span class="tag cs">C#</span></td></tr>
         <tr><td>Buttons, links</td><td>Blazor events; the router</td><td><span class="tag cs">C#</span></td></tr>
-        <tr><td>Keyboard</td><td>Not checked in composition mode</td><td>-</td></tr>
+        <tr><td>Keyboard</td><td>Keys go to the WebView2 child window (<code>Chrome_WidgetWin_0</code>). <code>ClearHost</code> calls <code>MoveFocus</code></td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Dictation</td><td><code>speech.js</code> (Web Speech API); no speech support hides the mic buttons</td><td><span class="tag js">JS</span></td></tr>
+        <tr><td>Test input</td><td>Window messages by default (<code>SelfTest.NoPointer</code>); <code>--pointer</code> and <code>--mouse</code> use the real pointer</td><td><span class="tag cs">C#</span></td></tr>
       </tbody>
     </table></div>
   </section>
@@ -471,27 +608,54 @@ flowchart LR
     <div class="box"><pre class="mermaid">
 flowchart LR
   OS["Windows input"] --> CH["ClearHost.WndProc"]
+  ST["SelfTest Press<br/>PostMessage"] --> CH
   CH -->|"panel window"| WV["WebView2.SendMouseInput"] --> PG["Page events"]
-  CH -->|"badge window"| BM["BadgeWindow.HostInput<br/>click, drag, hover"] --> TW["Request(Open), save height"]
-  PG --> SW["swipe.js<br/>card drag"] --> BT["Action button click"] --> BZ["Blazor"]
+  CH -->|"badge window"| BM["BadgeWindow.HostInput<br/>click, drag, hover"]
+  BM -->|"click"| TW["Request(Open)"]
+  BM -->|"hover"| BR["BadgeRoot is-hover<br/>step badge-fold"] --> BF["BadgeFolded<br/>small click area"]
+  PG --> SW["swipe.js<br/>card drag"] --> BT["Action button click"] --> BZ["Blazor<br/>Cards.razor"]
+  KB["Keys"] --> CW["Chrome_WidgetWin_0"] --> PG
 </pre></div>
+    <p class="note">Gap (I19): a test press logs "clicked" when the window messages are posted. Nothing confirms that the page got the click, or which element got it.</p>
   </section>
   <section><h3>Guide</h3>
-    <ol><li>A click target in the tray: a normal button. The host forwards the click.</li><li>A drag area: <code>app-region: drag</code>; its buttons <code>app-region: no-drag</code>.</li><li>A test click: window messages (<code>Press</code> in the self-test), not the real pointer.</li></ol>
+    <ol>
+      <li>A click target in the tray: a normal button. The host forwards the click.</li>
+      <li>A drag area: <code>app-region: drag</code>; its buttons <code>app-region: no-drag</code>.</li>
+      <li>A test click: <code>Press</code> in the self-test. It waits 1 s for the element. Later is a warning. No element after 3 s is a miss, and the run fails (I3).</li>
+      <li>A test key: post key messages to the focus window of the host thread, not to the host window.</li>
+      <li>A test hover of the badge: use <code>BadgeWindow.HoldHover</code>. A posted move cannot hold the hover (I8).</li>
+    </ol>
   </section>
   <section><h3>Proposals</h3>
-    <details class="example prop"><summary>P-I1 · A keyboard check <span class="d">I5</span></summary><div class="body">
-      <p>Focus the reply box, send key messages, read the value. The Tab key moves the focus.</p>
-      <p><strong>Check:</strong> two new self-test checks pass.</p>
+    <details class="example prop"><summary>P-I1 · A keyboard check (done) <span class="d">I5</span></summary><div class="body">
+      <p>Done before R1 in <code>3558d55</code>. Self-test checks <code>keys-type</code> and <code>keys-tab</code> (<code>SelfTest.cs</code>). Screen reader: not needed now (the user, 2026-11-21).</p>
+      <p><strong>Check:</strong> the two self-test checks pass.</p>
     </div></details>
-    <details class="example prop"><summary>P-I2 · Demo drag and hover with window messages <span class="d">I8</span></summary><div class="body">
-      <p><code>Drag</code> and <code>Glide</code> also use window messages, as <code>Press</code> does.</p>
-      <p><strong>Check:</strong> the pointer does not move in a demo run.</p>
+    <details class="example prop"><summary>P-I2 · Demo drag and hover with window messages (partly done) <span class="d">I8</span></summary><div class="body">
+      <p>Done in <code>4643d50</code>: the badge click and the badge drag use window messages. <code>HostInput</code> reads the point from the message.</p>
+      <p>Open: two platform limits. Only the real pointer drives a caption drag, so the demo skips the header drag. <code>TrackMouseEvent</code> follows the real pointer, so a posted hover does not hold.</p>
+      <p><strong>Check:</strong> the demo log ends with "pointer: not moved" (<code>SelfTest.Demo.cs</code>).</p>
+    </div></details>
+    <details class="example prop"><summary>P-I3 · A press confirms the click <span class="d">I19 · new</span></summary><div class="body">
+      <p>The page writes one trace line for each click it gets, with the element. <code>Press</code> waits for that line. A navigation press also checks that the page changed.</p>
+      <p><strong>Check:</strong> in the sheet stress run, a press that the page does not get fails at that press, with its element and the motion state.</p>
+    </div></details>
+    <details class="example prop"><summary>P-I4 · A swipe check <span class="d">new · test gap</span></summary><div class="body">
+      <p>The self-test throws a card with <code>.click()</code> on the action button. No check drags a card, so <code>swipe.js</code> has no test.</p>
+      <p>Post a pointer drag on the top card with window messages: right past 90 px, and down past 110 px.</p>
+      <p><strong>Check:</strong> a new check <code>deck-swipe</code> sees step <code>deck-throw</code> and step <code>deck-tuck</code> by end, and a new top card.</p>
     </div></details>
     <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
   <section><h3>Quality <span class="q mixed">Mixed</span></h3>
-    <ul><li>Good: 4 mouse checks pass (panel drag, badge hover, badge drag, badge click).</li><li>Gap: no keyboard or screen reader test (I5).</li><li>Gap: the demo drag and hover use the real pointer (I8).</li></ul>
+    <ul>
+      <li>Good: a real and a posted message take the same path in <code>HostInput</code>.</li>
+      <li>Good: self-test checks <code>badge-input</code>, <code>badge-fold-area</code>, <code>keys-type</code>, <code>keys-tab</code>. With <code>--mouse</code>: 4 checks with the real pointer.</li>
+      <li>Gap: no part confirms that the page got a click (I19).</li>
+      <li>Gap: the card swipe has no check (P-I4).</li>
+      <li>Gap: the demo header drag and the badge hover need the real pointer (I8, platform limits).</li>
+    </ul>
   </section>
 </div>
 
@@ -576,37 +740,47 @@ flowchart LR
 <div class="panel off" id="components" role="tabpanel">
   <section><h2>Components</h2>
     <h3>Defined as</h3>
-    <p>Razor components with parameters in and event callbacks out. A view with live data inherits <code>LiveView</code>.</p>
+    <p>Razor components with parameters in and event callbacks out. A view with live data inherits <code>LiveView</code>. A component that moves has a <code>data-motion</code> target and a row in <code>MotionSteps</code>.</p>
     <div class="scroll"><table>
       <thead><tr><th>Group</th><th>Components</th><th>Rule</th></tr></thead>
       <tbody>
         <tr><td>Ui</td><td><code>PageHeader</code>, <code>AppBar</code>, <code>PageBar</code>, <code>Ring</code>, <code>DeepRing</code>, <code>KindRing</code>, <code>EventRow</code>, <code>SessionRow</code>, <code>SessionTree</code>, <code>CardPreview</code>, <code>AnswerSheet</code>, <code>FilterSheet</code>, <code>Seg</code>, <code>Pill</code>, <code>Progress</code>, <code>Icon</code>, <code>DocBody</code>, <code>FactValue</code></td><td>Parameters in, events out</td></tr>
         <tr><td>Ui/Looks</td><td><code>PillLook</code>, <code>ListLook</code>, <code>StepsLook</code>, <code>WellLook</code>, <code>ProgressLook</code>, <code>CodeLook</code>, <code>TextLook</code>, <code>LinksLook</code>, <code>ChipsLook</code></td><td>One look for each render kind of a message</td></tr>
         <tr><td>Cards</td><td><code>NewSessionForm</code>, <code>Mic</code></td><td>Forms</td></tr>
-        <tr><td>Motion</td><td><code>Presence</code>, <code>MotionHost</code></td><td>The only Razor parts that wait for motion</td></tr>
-        <tr><td>Tray</td><td><code>TrayRoot</code>, <code>TrayStage</code>, <code>TrayBadge</code></td><td>Only in the tray host</td></tr>
+        <tr><td>Motion</td><td><code>Presence</code>, <code>MotionHost</code>; helpers <code>MotionTimes</code>, <code>FlowCommands</code></td><td>Presence: a block that comes and goes (step <code>leave</code>). MotionHost: a push and a back</td></tr>
+        <tr><td>Tray</td><td><code>TrayRoot</code>, <code>TrayStage</code>, <code>BadgeRoot</code>, <code>TrayBadge</code></td><td>Only in the tray host</td></tr>
       </tbody>
     </table></div>
+    <p>Each wait for motion is one command, <code>MotionWait</code>. Five Razor files send it: <code>MainLayout</code>, <code>Presence</code>, <code>Cards</code>, <code>TrayStage</code>, <code>BadgeRoot</code>.</p>
   </section>
   <section><h3>Architecture: the frame of each page</h3>
     <div class="tree">
       <details open><summary><span class="n">MainLayout</span><span class="d">.app</span></summary>
-        <details class="leaf"><summary><span class="n">main.page</span><span class="d">the page; is-tab-in during a tab change</span></summary></details>
+        <details class="leaf"><summary><span class="n">main.page</span><span class="d">the page; data-motion="tab-in", is-tab-in during a tab change</span></summary></details>
         <details><summary><span class="n">AppBar</span><span class="d">nav.nav2, view-transition-name: appbar</span></summary>
-          <div class="more">Cards, Stream, Home ball, Sessions, Settings, and one nav dot. The home ball is also the ball of the tray grow and fold.</div>
+          <div class="more">Cards, Stream, Home ball, Sessions, Settings, and one nav dot (<code>MotionDot</code>). The home ball is also the ball of the tray grow and fold.</div>
         </details>
-        <details class="leaf"><summary><span class="n">MotionHost</span><span class="d">no markup; starts a push or a back</span></summary></details>
+        <details class="leaf"><summary><span class="n">MotionHost</span><span class="d">no markup; starts a push or a back (MotionBegin)</span></summary></details>
       </details>
     </div>
   </section>
   <section><h3>Guide</h3>
-    <ol><li>A new component: one <code>.razor</code> file in <code>Components/Ui</code>, a comment that names its spec ID, parameters in.</li><li>If it comes and goes, the parent puts it in a <code>Presence</code>.</li></ol>
+    <ol>
+      <li>A new component: one <code>.razor</code> file in <code>Components/Ui</code>, a comment that names its spec ID, parameters in.</li>
+      <li>If it comes and goes, the parent puts it in a <code>Presence</code>.</li>
+      <li>If it has its own motion, add a <code>data-motion</code> target and a <code>MotionSteps</code> row. Wait with <code>MotionWait(el, WaitMode.Step)</code>.</li>
+      <li>If it needs a motion time in C#, read the token with <code>MotionTimes.Of</code>. Do not write a time literal.</li>
+    </ol>
   </section>
   <section><h3>Proposals</h3>
     <p>None.</p>
   </section>
   <section><h3>Quality <span class="q good">Good</span></h3>
-    <ul><li>Small and clear. bUnit tests for the components.</li></ul>
+    <ul>
+      <li>Small and clear. bUnit tests for the components (<code>InboxUiTests</code>, <code>MotionTests</code>, <code>NewSessionFormTests</code>).</li>
+      <li>One wait rule for all components. <code>MotionArchitectureTests</code> finds a time literal in a component.</li>
+      <li>Note: <code>MotionTimes</code> is in <code>Components/Motion</code>, not in a slice. The VSA rules do not allow a helper in a slice.</li>
+    </ul>
   </section>
 </div>
 
@@ -617,34 +791,51 @@ flowchart LR
     <div class="scroll"><table>
       <thead><tr><th>File</th><th>Holds</th><th>Loaded by</th></tr></thead>
       <tbody>
-        <tr><td><code>app.css</code></td><td>Color, shadow, radius and font tokens (light and dark); layout and look; the deck motion</td><td>Both hosts</td></tr>
-        <tr><td><code>motion.css</code></td><td>Motion tokens and motion rules</td><td>Both hosts</td></tr>
-        <tr><td><code>tray.css</code></td><td>Tray page, stage phases, badge; overrides of motion rules</td><td>Tray only</td></tr>
+        <tr><td><code>app.css</code></td><td>Color, shadow, radius and font tokens (light and dark); layout and look; the deck motion rules (with <code>motion.css</code> tokens)</td><td>Both hosts</td></tr>
+        <tr><td><code>motion.css</code></td><td>All motion tokens (times, curves, limits); the step rules (<code>[data-motion~=…]</code>, <code>--motion-wait</code>); the motion rules; reduced motion as 1 ms durations</td><td>Both hosts</td></tr>
+        <tr><td><code>tray.css</code></td><td>Size tokens (<code>--tray-panel-w</code>, <code>--tray-panel-h</code>, <code>--tray-margin</code>, <code>--badge-tab</code>, <code>--badge-tab-top</code>); tray page, stage phases, badge, tray step rules; overrides of motion rules</td><td>Tray only</td></tr>
       </tbody>
     </table></div>
-<pre class="stack">--canvas #e6e3de   --surf #fdfdfc   --accent #ff6a1a     <span class="c">/* Porcelain Orange theme */</span>
+<pre class="stack">--canvas #e6e3de   --surf #fdfdfc   --accent #ff6a1a     <span class="c">/* Porcelain Orange theme, app.css */</span>
 --sh-raise  --sh-carve  --sh-ring                        <span class="c">/* raised cards, carved wells */</span>
---t-sheet-in .34s   --ease-out cubic-bezier(.2,.8,.2,1)  <span class="c">/* motion tokens */</span></pre>
+--t-sheet-in .34s   --ease-out cubic-bezier(.2,.8,.2,1)  <span class="c">/* motion tokens, motion.css */</span>
+--t-limit 1000ms   --t-frame-limit 100ms                 <span class="c">/* wait limits, motion.css */</span>
+--tray-panel-w 350px   --tray-margin 24px                <span class="c">/* size tokens, tray.css */</span></pre>
   </section>
   <section><h3>Architecture</h3>
-    <p>Load order: <code>app.css</code>, then <code>motion.css</code>, then <code>tray.css</code>. A tray rule wins over a motion rule by a more specific selector.</p>
+    <p>Load order: <code>app.css</code>, then <code>motion.css</code>, then <code>tray.css</code> (<code>App.razor</code>, <code>Orchestrator.Tray/wwwroot/index.html</code>). A tray rule wins over a motion rule by a more specific selector. Example: <code>.vt::view-transition-old(page)</code> in <code>tray.css</code>.</p>
   </section>
   <section><h3>Guide</h3>
-    <ol><li>A color: a token in <code>app.css</code>, in light and in dark.</li><li>A time or a curve: a token in <code>motion.css</code>.</li><li>A tray-only change: <code>tray.css</code>, with a selector more specific than the rule in <code>motion.css</code>.</li></ol>
+    <ol>
+      <li>A color: a token in <code>app.css</code>, in light and in dark.</li>
+      <li>A time or a curve: a token in <code>motion.css</code>. Add a duration to the reduced motion rule with 1 ms.</li>
+      <li>A tray size: a token in <code>tray.css</code>. <code>orchTray.sizes()</code> reports it.</li>
+      <li>A tray-only change: <code>tray.css</code>, with a selector more specific than the rule in <code>motion.css</code>.</li>
+    </ol>
   </section>
   <section><h3>Proposals</h3>
-    <details class="example prop"><summary>P-St1 · Reduced motion as 1 ms durations <span class="d">I13 · contract step 3</span></summary><div class="body">
-      <p>The reduced motion rule sets the duration tokens to 1 ms, in place of <code>animation: none</code>. The end events still come.</p>
-      <p><strong>Check:</strong> the self-test with reduced motion has the same phase order, with no wait at its limit.</p>
+    <details class="example prop"><summary>P-St1 · Reduced motion as 1 ms durations (done in R1) <span class="d">I13 · contract step 3</span></summary><div class="body">
+      <p>Done in R1 S2 (commit <code>08596f1</code>): the <code>prefers-reduced-motion</code> rule in <code>motion.css</code> sets each duration token to 1 ms. Dwell times and limits stay.</p>
+      <p><strong>Check:</strong> <code>MotionArchitectureTests.Reduced_motion_sets_each_duration_token_to_1ms</code>. Dock with reduced motion: 1030 ms to 61 ms (<code>docs/plan.md</code>).</p>
     </div></details>
-    <details class="example prop"><summary>P-St2 · Deck times as tokens <span class="d">I11 · contract step 1</span></summary><div class="body">
-      <p>The deck times in <code>app.css</code> move to <code>motion.css</code> tokens.</p>
-      <p><strong>Check:</strong> no motion time literal in <code>app.css</code>.</p>
+    <details class="example prop"><summary>P-St2 · Deck times as tokens (done in R1) <span class="d">I11 · contract step 1</span></summary><div class="body">
+      <p>Done in R1 S1 (commit <code>8e9b5b3</code>): the deck rules in <code>app.css</code> use <code>--t-card-*</code> tokens of <code>motion.css</code>.</p>
+      <p><strong>Check:</strong> <code>MotionArchitectureTests.Motion_times_are_tokens</code> scans all view files, with whole declarations, inline styles and script styles (#60, <code>e180a34</code>).</p>
+    </div></details>
+    <details class="example prop"><summary>P-St3 · Cascade layers in place of specificity <span class="d">new</span></summary><div class="body">
+      <p>A tray override wins only by a more specific selector. An equal selector in a later file changes the result, and no test finds it.</p>
+      <p>Put each file in a layer: <code>@layer app, motion, tray;</code>. Then the layer order decides, not the selector.</p>
+      <p><strong>Check:</strong> a source test asserts that each of the three files puts its rules in its own <code>@layer</code>.</p>
     </div></details>
     <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
   </section>
   <section><h3>Quality <span class="q mixed">Mixed</span></h3>
-    <ul><li>Good: one theme with tokens and a dark mode.</li><li>Gap: motion literals in <code>app.css</code> (I11).</li><li>Risk: the specificity rule is fragile. An equal selector in a later file changes the result.</li></ul>
+    <ul>
+      <li>Good: one theme with tokens and a dark mode.</li>
+      <li>Good: each motion time and each tray size is a token (I11 done in R1, I10 done in R2). Source tests check both.</li>
+      <li>Gap: motion rules are in three files (<code>motion.css</code>, the deck in <code>app.css</code>, the tray in <code>tray.css</code>).</li>
+      <li>Risk: the specificity rule is fragile and has no check (P-St3).</li>
+    </ul>
   </section>
 </div>
 
@@ -805,32 +996,57 @@ sequenceDiagram
 <!-- MOTION FLOW -->
 <div class="panel off" id="flow" role="tabpanel">
   <section><h2>Proposal: one motion contract</h2>
-    <p class="summary">For discussion. No code changes yet. Issues I9, I11, I12 and I13 are about this. The Prior art tab shows where each point comes from.</p>
-    <h3>Today: eight mechanisms</h3>
+    <h3>Status: implemented in R1 <span class="q mixed">Mixed</span></h3>
+    <p class="summary">R1, the motion pipeline, implemented this proposal on 2026-11-20 (PR #58, S0 <code>b254064</code> to S9 <code>8fffc86</code>, review fixes <code>ad459db</code>). R2 did the sizes step. The rules are in the motion guide (<code>docs/motion-guide.html</code>). The proposal below stays as a record.</p>
     <div class="scroll"><table>
-      <thead><tr><th>#</th><th>Mechanism</th><th>Starts</th><th>Waits with</th><th>Time limit</th></tr></thead>
+      <thead><tr><th>Part</th><th>What R1 built</th><th>File</th></tr></thead>
       <tbody>
-        <tr><td>1</td><td>Stage phase class</td><td><span class="tag cs">C#</span> <code>Set(phase)</code></td><td><code>orchTray.end</code> (one property)</td><td>900, 500, 1500, 400 ms in C#</td></tr>
-        <tr><td>2</td><td>Presence</td><td><span class="tag cs">C#</span> <code>is-leaving</code></td><td><code>orchMotion.settle</code> (all animations)</td><td><code>--t-limit</code></td></tr>
-        <tr><td>3</td><td>Tab change</td><td><span class="tag cs">C#</span> <code>is-tab-in</code></td><td><code>orchMotion.settle</code></td><td><code>--t-limit</code></td></tr>
-        <tr><td>4</td><td>View transition</td><td><span class="tag js">JS</span> <code>orchMotion.begin</code></td><td>MutationObserver + <code>setTimeout</code></td><td>300, 600 ms in JS</td></tr>
-        <tr><td>5</td><td>Nav dot</td><td><span class="tag js">JS</span> <code>orchMotion.dot</code></td><td>None</td><td>-</td></tr>
-        <tr><td>6</td><td>Ring draw once</td><td><span class="tag js">JS</span> MutationObserver</td><td>None</td><td>-</td></tr>
-        <tr><td>7</td><td>Deck</td><td><span class="tag js">JS</span> <code>swipe.js</code></td><td>Events + <code>setTimeout</code></td><td>300, 180, 450, 60 ms in JS</td></tr>
-        <tr><td>8</td><td>C# timers</td><td><span class="tag cs">C#</span> <code>Task.Delay</code></td><td>-</td><td>300 ms, 5 s, 5 s</td></tr>
+        <tr><td>Tokens</td><td>All motion times and curves; 1 ms in reduced motion</td><td><code>wwwroot/motion.css</code></td></tr>
+        <tr><td>Registry</td><td>Page steps (name, state classes) and tray window steps (phase, event)</td><td><code>Features/Motion/Domain/MotionSteps.cs</code>, <code>WindowSteps.cs</code></td></tr>
+        <tr><td>Wait</td><td>One command <code>MotionWait</code> with modes Settle, Property, Frames, Step</td><td><code>Features/Motion/Slices/Wait/</code>, <code>wwwroot/motion.js</code></td></tr>
+        <tr><td>Limit trace</td><td>A warning for <code>limit</code>, <code>none</code>, <code>missing</code></td><td><code>Features/Motion/Slices/WaitLimit/WaitLimitHook.cs</code></td></tr>
+        <tr><td>JS calls</td><td>Each C# to JS call is a command record; no component calls <code>IJSRuntime</code></td><td><code>Plugins/Js/</code>, <code>Features/Motion/Slices/*</code></td></tr>
+        <tr><td>Tray order</td><td>One run at a time; page steps and window steps; faults to the fault log (H3)</td><td><code>Components/Tray/TrayFlow.cs</code>, <code>FlowCommands.Must</code></td></tr>
+        <tr><td>Rule tests</td><td>Source and registry tests</td><td><code>tests/Orchestrator.Tests/MotionArchitectureTests.cs</code>, <code>MotionRegistryTests.cs</code></td></tr>
+      </tbody>
+    </table></div>
+    <p><strong>Differences from the proposal:</strong></p>
+    <ul>
+      <li>Q1 was B (registry), but the registry holds only the name and the state classes. The CSS does not come from it. Tests check that the row, the mark and the rule agree.</li>
+      <li>No <code>data-state</code> attribute. Each step has a <code>data-motion</code> target and a step rule with <code>--motion-wait</code>.</li>
+      <li>The wait is <code>orchMotion.wait(target, mode, arg)</code>, not <code>settle(element)</code>. It also ends <code>hidden</code> when the page hides.</li>
+      <li>JS still starts four motions: the view transition, the nav dot, the ring mark and the deck back-in.</li>
+      <li>New: window steps (S9). The trace shows each window event and the window gap.</li>
+      <li>The test step (<code>getAnimations</code> against the tokens) was not reliable (#60). The source test <code>Motion_times_are_tokens</code> replaces it.</li>
+    </ul>
+    <p class="note">Open gap (I19): <code>TrayFlow.Open</code> sets the phase <code>open</code> before the grow motion ends. No signal tells that the page is ready. The stress run starts at the phase <code>open</code>.</p>
+  </section>
+  <section><h3>Before R1: eight mechanisms</h3>
+    <p class="summary">The record of 2026-11-19. The last column shows the state after R1.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Mechanism</th><th>Starts</th><th>Waits with</th><th>Time limit</th><th>After R1</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Stage phase class</td><td><span class="tag cs">C#</span> <code>Set(phase)</code></td><td><code>orchTray.end</code> (one property)</td><td>900, 500, 1500, 400 ms in C#</td><td>Steps <code>grow</code>, <code>fold</code>, <code>badge-in</code>, <code>badge-out</code></td></tr>
+        <tr><td>2</td><td>Presence</td><td><span class="tag cs">C#</span> <code>is-leaving</code></td><td><code>orchMotion.settle</code> (all animations)</td><td><code>--t-limit</code></td><td>Step <code>leave</code></td></tr>
+        <tr><td>3</td><td>Tab change</td><td><span class="tag cs">C#</span> <code>is-tab-in</code></td><td><code>orchMotion.settle</code></td><td><code>--t-limit</code></td><td>Step <code>tab-in</code></td></tr>
+        <tr><td>4</td><td>View transition</td><td><span class="tag js">JS</span> <code>orchMotion.begin</code></td><td>MutationObserver + <code>setTimeout</code></td><td>300, 600 ms in JS</td><td>Command <code>MotionBegin</code>; tokens <code>--t-vt-start</code>, <code>--t-vt-render</code></td></tr>
+        <tr><td>5</td><td>Nav dot</td><td><span class="tag js">JS</span> <code>orchMotion.dot</code></td><td>None</td><td>-</td><td>Command <code>MotionDot</code>; no wait</td></tr>
+        <tr><td>6</td><td>Ring draw once</td><td><span class="tag js">JS</span> MutationObserver</td><td>None</td><td>-</td><td>No change</td></tr>
+        <tr><td>7</td><td>Deck</td><td><span class="tag js">JS</span> <code>swipe.js</code></td><td>Events + <code>setTimeout</code></td><td>300, 180, 450, 60 ms in JS</td><td>Steps <code>deck-throw</code>, <code>deck-tuck</code>; back-in in JS</td></tr>
+        <tr><td>8</td><td>C# timers</td><td><span class="tag cs">C#</span> <code>Task.Delay</code></td><td>-</td><td>300 ms, 5 s, 5 s</td><td>Tokens <code>--t-undo</code>, <code>--t-peek-show</code>; hover timer is step <code>badge-fold</code> (R2)</td></tr>
       </tbody>
     </table></div>
   </section>
   <section><h3>The contract, in steps</h3>
     <p class="summary">This proposal covers more than one part. The part tabs show their own proposals, with the step number of this contract.</p>
     <ol>
-      <li><strong>Define:</strong> each motion is one CSS rule with a token, started by one state class. No time outside <code>motion.css</code>.</li>
-      <li><strong>Start:</strong> C# sets the state class (phase, presence, tab, deck state). JS starts only the view transition, which needs the browser API.</li>
-      <li><strong>Wait:</strong> one helper, <code>orchMotion.settle(element)</code>, for all waits. It writes a trace line when the limit ends a wait, so a wrong wait shows.</li>
-      <li><strong>Sizes:</strong> one owner. C# writes its constants to the page as CSS variables at the start, or the page measures and reports.</li>
-      <li><strong>Deck:</strong> <code>swipe.js</code> keeps only the pointer math. The throw, the tuck and the back-in become state classes with tokens, and the wait is <code>settle</code>.</li>
-      <li><strong>Reduced motion:</strong> the duration tokens go to 1 ms, so the end events still come (Fluent, Shoelace).</li>
-      <li><strong>Test:</strong> one check reads all running animations (<code>getAnimations</code>) and compares their times with the tokens.</li>
+      <li><strong>Define (done in R1 S1, <code>8e9b5b3</code>):</strong> each motion is one CSS rule with a token, started by one state class. No time outside <code>motion.css</code>.</li>
+      <li><strong>Start (done in R1 S4, <code>e6ce000</code>, other way):</strong> C# sets the state class (phase, presence, tab, deck state). JS starts only the view transition, which needs the browser API.</li>
+      <li><strong>Wait (done in R1 S3, <code>a85f3dd</code>):</strong> one helper, <code>orchMotion.settle(element)</code>, for all waits. It writes a trace line when the limit ends a wait, so a wrong wait shows.</li>
+      <li><strong>Sizes (done in R2, <code>d46516c</code> to <code>35736ea</code>):</strong> one owner. C# writes its constants to the page as CSS variables at the start, or the page measures and reports.</li>
+      <li><strong>Deck (done in R1 S8, <code>e684621</code>):</strong> <code>swipe.js</code> keeps only the pointer math. The throw, the tuck and the back-in become state classes with tokens, and the wait is <code>settle</code>.</li>
+      <li><strong>Reduced motion (done in R1 S2, <code>08596f1</code>):</strong> the duration tokens go to 1 ms, so the end events still come (Fluent, Shoelace).</li>
+      <li><strong>Test (not done, replaced, #60):</strong> one check reads all running animations (<code>getAnimations</code>) and compares their times with the tokens.</li>
     </ol>
     <div class="scroll"><table>
       <thead><tr><th>Option</th><th>What</th><th>Size</th></tr></thead>
@@ -839,14 +1055,15 @@ sequenceDiagram
         <tr><td>B. Motion registry</td><td>A C# list of motions (name, state, target, token, spec ID). The CSS and the checks come from it</td><td>Larger. Data-driven, as you plan for the UI</td></tr>
       </tbody>
     </table></div>
-    <p class="note">Open question Q1 on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page</a>: A, B, or A first and B later. Recommendation: A first. Each step removes one mechanism, and the tracker shows which issues it closes.</p>
+    <p class="note">Q1 answer (2026-11-20): B, registry. R1 made the registry in steps, with a check for each step. The registry has no token, so the CSS does not come from it.</p>
   </section>
 </div>
+
 </div>
 
 <script>
 (function () {
-  var names = ["overview", "data", "structure", "places", "startstop", "moves", "cmotion", "input", "components", "style", "prior", "flow", "twowin"];
+  var names = ["overview", "data", "structure", "places", "startstop", "moves", "cmotion", "input", "trace", "components", "style", "prior", "flow", "twowin"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "overview";
     names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });

@@ -110,14 +110,14 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i3">I3 · A stress step that misses does not fail the run  (Fixed)</option>
     <option value="i4">I4 · Sizing issues on the screen  (Closed)</option>
     <option value="i5">I5 · Keyboard and screen reader not tested  (Fixed)</option>
-    <option value="i6">I6 · The tray grow (G1) is not reviewed  (Reported)</option>
+    <option value="i6">I6 · The tray grow (G1) is not reviewed  (Fixed)</option>
     <option value="i7">I7 · The badge hover cuts the ring at the left  (Fixed)</option>
     <option value="i8">I8 · The demo moves your real pointer in 4 steps  (Partly fixed)</option>
-    <option value="i9">I9 · Eight motion mechanisms, no single flow  (Detected)</option>
+    <option value="i9">I9 · Eight motion mechanisms, no single flow  (Fixed)</option>
     <option value="i10">I10 · Sizes in two places (C# and CSS)  (Fixed)</option>
-    <option value="i11">I11 · Motion times outside the tokens  (Detected)</option>
-    <option value="i12">I12 · Two wait rules for "the motion ended"  (Detected)</option>
-    <option value="i13">I13 · Reduced motion makes the tray waits run to their limit  (Detected)</option>
+    <option value="i11">I11 · Motion times outside the tokens  (Fixed)</option>
+    <option value="i12">I12 · Two wait rules for "the motion ended"  (Fixed)</option>
+    <option value="i13">I13 · Reduced motion makes the tray waits run to their limit  (Fixed)</option>
     <option value="i14">I14 · A browser status bubble shows the link address  (Fixed)</option>
     <option value="i15">I15 · The gap between the two windows is not managed  (Detected)</option>
     <option value="i16">I16 · Two sessions cannot test the tray at the same time  (Fixed)</option>
@@ -173,14 +173,14 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i3">I3</a></td><td>A stress step that misses does not fail the run</td><td><span class="pill fix">Fixed</span></td><td>Done: a late press is a warning, a miss fails the run</td></tr>
         <tr><td><a href="#i4">I4</a></td><td>Sizing issues on the screen</td><td><span class="pill no">Closed</span></td><td>Closed by you: no proof</td></tr>
         <tr><td><a href="#i5">I5</a></td><td>Keyboard and screen reader not tested</td><td><span class="pill fix">Fixed</span></td><td>Done: 2 key checks. Screen reader: not needed now</td></tr>
-        <tr><td><a href="#i6">I6</a></td><td>The tray grow (G1) is not reviewed</td><td><span class="pill rep">Reported</span></td><td>Look approved; the rest is in R1</td></tr>
+        <tr><td><a href="#i6">I6</a></td><td>The tray grow (G1) is not reviewed</td><td><span class="pill fix">Fixed</span></td><td>R1</td></tr>
         <tr><td><a href="#i7">I7</a></td><td>The badge hover cuts the ring at the left</td><td><span class="pill fix">Fixed</span></td><td>Done in R2: the page reports the hover box</td></tr>
         <tr><td><a href="#i8">I8</a></td><td>The demo moves your real pointer in 4 steps</td><td><span class="pill rpl">Partly fixed</span></td><td>Done: the badge steps. Open: the header drag and the badge hover (platform limits)</td></tr>
-        <tr><td><a href="#i9">I9</a></td><td>Eight motion mechanisms, no single flow</td><td><span class="pill det">Detected</span></td><td>In R1 (own session)</td></tr>
+        <tr><td><a href="#i9">I9</a></td><td>Eight motion mechanisms, no single flow</td><td><span class="pill fix">Fixed</span></td><td>R1</td></tr>
         <tr><td><a href="#i10">I10</a></td><td>Sizes in two places (C# and CSS)</td><td><span class="pill fix">Fixed</span></td><td>Done in R2: the page owns each size</td></tr>
-        <tr><td><a href="#i11">I11</a></td><td>Motion times outside the tokens</td><td><span class="pill det">Detected</span></td><td>In R1 (own session)</td></tr>
-        <tr><td><a href="#i12">I12</a></td><td>Two wait rules for "the motion ended"</td><td><span class="pill det">Detected</span></td><td>In R1 (own session)</td></tr>
-        <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill det">Detected</span></td><td>In R1 (own session)</td></tr>
+        <tr><td><a href="#i11">I11</a></td><td>Motion times outside the tokens</td><td><span class="pill fix">Fixed</span></td><td>R1</td></tr>
+        <tr><td><a href="#i12">I12</a></td><td>Two wait rules for "the motion ended"</td><td><span class="pill fix">Fixed</span></td><td>R1</td></tr>
+        <tr><td><a href="#i13">I13</a></td><td>Reduced motion makes the tray waits run to their limit</td><td><span class="pill fix">Fixed</span></td><td>R1</td></tr>
         <tr><td><a href="#i14">I14</a></td><td>A browser status bubble shows the link address</td><td><span class="pill fix">Fixed</span></td><td>Before and after videos done</td></tr>
         <tr><td><a href="#i15">I15</a></td><td>The gap between the two windows is not managed</td><td><span class="pill no">Closed</span></td><td>Closed by you: the gap is fine</td></tr>
         <tr><td><a href="#i16">I16</a></td><td>Two sessions cannot test the tray at the same time</td><td><span class="pill fix">Fixed</span></td><td>Done (with I17): test slots and a label on each tray</td></tr>
@@ -462,15 +462,16 @@ Tab 1, 2, 3                   dictate button (aria-label), Cancel, Send answer</
 <!-- I6 -->
 <div class="panel off" id="i6" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill rep">Reported</span><span class="k">source: you · I6</span></div>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: you · I6</span></div>
     <h2>I6 · The tray grow (G1) is not reviewed</h2>
-    <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p>All motion follows <code>docs/motion-design.html</code>, except the grow from the ball to the panel (G1 and M6). You asked to review it together later.</p></div></div>
     <div class="field"><span class="k">Proof</span><div class="v"><p>Not a fault. An open review item.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>I send an MP4 of the grow, frame by frame next to the spec. We then pick the changes.</p></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: When do we review the grow: now, or after I1 to I4?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Reviewed: keep the look.</b> The grow, the ball and the gap of about 100 ms between the two windows are good (the gap is ideal). All values must be tokens and go through the one motion pipeline, the window steps too. Proof: recording of 2026-11-20, 10 dock and open cycles.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R1 S1 and S9: each grow value is a token of <code>motion.css</code>, and the window steps go through the pipeline. You approved the look before R1.</p></div></div>
   </section>
 </div>
 
@@ -546,9 +547,9 @@ Tab 1, 2, 3                   dictate button (aria-label), Cancel, Send answer</
 <!-- I9 -->
 <div class="panel off" id="i9" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill det">Detected</span><span class="k">source: review of the view code · I9</span></div>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review of the view code · I9</span></div>
     <h2>I9 · Eight motion mechanisms, no single flow</h2>
-    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p>Stage phases, Presence, tab change, view transition, nav dot, ring draw, deck script and C# timers each start a motion and wait for its end in their own way.</p></div></div>
@@ -557,6 +558,7 @@ Tab 1, 2, 3                   dictate button (aria-label), Cancel, Send answer</
     <div class="field"><span class="k">Possible effect</span><div class="v"><p>A fix in one path does not reach the others. One fault can come from two paths at the same time.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>A design pass on one motion flow: one way to start, one way to wait, one place for times.</p></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we do the design pass before we fix I7, I10, I11 and I12?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A, design first.</b> First a registry design on the architecture page, for review. Then I7 and I10 as parts of it.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R1 S3 to S9: one motion pipeline. C# sends each motion as a step of the registry <code>MotionSteps</code>, and the deck and the window steps use it too.</p></div></div>
   </section>
 </div>
 
@@ -583,9 +585,9 @@ CSS tray.css     inset: 24px       width: 68px  top: 14px      width: auto   (no
 <!-- I11 -->
 <div class="panel off" id="i11" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill det">Detected</span><span class="k">source: review of the view code · I11</span></div>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review of the view code · I11</span></div>
     <h2>I11 · Motion times outside the tokens</h2>
-    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p>The rule is that all motion tokens are in <code>motion.css</code>. Some times are fixed numbers in other files.</p></div></div>
@@ -594,15 +596,16 @@ CSS tray.css     inset: 24px       width: 68px  top: 14px      width: auto   (no
     <div class="field"><span class="k">Possible effect</span><div class="v"><p>A change of one value makes a wait end too early or too late.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>Move each time to a token. Scripts and C# read the token, or wait for the motion end.</p></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Part of the design pass of I9, or a separate fix?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>B, tokens now.</b> Move all motion times to tokens in motion.css now, as a separate fix.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R1 S1 and S3: each motion time is a token of <code>motion.css</code>. The source test <code>Motion_times_are_tokens</code> fails on a time literal (#60 closed its 3 gaps).</p></div></div>
   </section>
 </div>
 
 <!-- I12 -->
 <div class="panel off" id="i12" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill det">Detected</span><span class="k">source: review of the view code · I12</span></div>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review of the view code · I12</span></div>
     <h2>I12 · Two wait rules for "the motion ended"</h2>
-    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p><code>orchTray.end</code> waits for one named property of one element. <code>orchMotion.settle</code> waits for all animations of a subtree.</p></div></div>
@@ -612,15 +615,16 @@ orchMotion.settle(root)                         <span class="c">// Presence, Mai
     <div class="field"><span class="k">Possible effect</span><div class="v"><p>A wrong property name waits for the full limit, with no error. The flow then looks slow, but no test fails.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>One wait helper for all: <code>settle</code>, with a log line when the limit ends a wait.</p></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Part of the design pass of I9?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>One utility, many modes.</b> One wait utility with modes: settle (other animations), property, and time. One limit rule from a token, and a trace line when a limit ends a wait. It replaces orchTray.end and orchMotion.settle.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R1 S3: one wait, <code>orchMotion.wait</code>, with the modes settle, property, frames and step. <code>orchTray.end</code> is removed.</p></div></div>
   </section>
 </div>
 
 <!-- I13 -->
 <div class="panel off" id="i13" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill det">Detected</span><span class="k">source: review, prior art · I13</span></div>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review, prior art · I13</span></div>
     <h2>I13 · Reduced motion makes the tray waits run to their limit</h2>
-    <div class="track"><span class="done">Reported</span><span class="now">Detected</span><span>Replicated</span><span>Fixed</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p>With the Windows setting for reduced motion, each wait of the tray stage can run to its full time limit. The open then can take 900 ms more, with no motion on the screen.</p></div></div>
@@ -632,6 +636,7 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known from the code. <code>orchMotion.settle</code> is safe: with no animation it ends at once. <code>orchTray.end</code> is not.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>Prior art (Fluent, Shoelace): set the duration tokens to 1 ms in place of <code>none</code>, so the end events still come. Or use one wait helper (I12).</p></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Part of the motion flow design (I9)?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>A.</b> In reduced motion, the duration tokens become 1 ms. Run the self-test with reduced motion emulated.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><p>R1 S2: reduced motion sets each duration token to 1 ms, so each end event comes. The test <code>Reduced_motion_sets_each_duration_token_to_1ms</code> checks it.</p></div></div>
   </section>
 </div>
 
@@ -752,7 +757,7 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
 13:40:02.410  MISS .acts …  page /
 13:40:06.331  MISS .presence .scrim  page /
 13:40:07.129  cycle 2: all presses pass</pre></div></div>
-    <div class="field"><span class="k">Cause</span><div class="v"><p>Not proved. Probable: the stress run starts at the phase <code>open</code>, but the grow motion of the panel continues 555 ms after it. The first press comes in the grow motion, and the page does not navigate. Not examined: where the click goes, and if the page gets it.</p></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Not proved. Probable: the stress run starts at the phase <code>open</code>, but the grow motion of the panel continues 555 ms after it. The first press comes in the grow motion, and the page does not navigate. Not examined: where the click goes, and if the page gets it. The code agrees: <code>TrayFlow.Open</code> sets <code>Phase = TrayPhase.Open</code> (<code>TrayFlow.cs</code> line 179) before it starts <code>Grow()</code> (line 180).</p></div></div>
     <div class="field"><span class="k">Decision</span><div class="v"><p>Not fixed now (the user, 2026-11-21). I19 is one symptom of 3 missing contracts:</p><ul>
       <li>The page lifecycle: no signal means "the page is ready". The phase <code>open</code> comes before the end of the open motion.</li>
       <li>The input pipeline: no part confirms that the page got a click.</li>
