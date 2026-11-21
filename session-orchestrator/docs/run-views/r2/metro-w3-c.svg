@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="720" viewBox="0 0 360 720"><style>
+.page{fill:#fdfdfc}.soft{fill:#f1eee9}.tx{fill:#2a2825}.mu{fill:#6b665f}
+.hl{stroke:rgba(27,26,24,.14);fill:none}.st{fill:#ffffff}
+.trav{stroke:#8d877e;fill:none;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.fut{stroke:#8d877e;stroke-opacity:.28;fill:none;stroke-width:6;stroke-linecap:round}
+.thin{stroke:#8d877e;stroke-opacity:.35;fill:none;stroke-width:2;stroke-dasharray:4 4}
+.lp{stroke:#c2410c;fill:none;stroke-width:3.5;stroke-dasharray:7 4;stroke-linecap:round}
+.lpf{stroke:#c2410c;stroke-opacity:.35;fill:none;stroke-width:3;stroke-dasharray:7 4}
+.lpt{fill:#c2410c}.lpb{fill:#c2410c;fill-opacity:.1;stroke:#c2410c;stroke-opacity:.5}
+.nx{stroke:#7c4dff;fill:none;stroke-width:2;stroke-dasharray:4 3}
+.ag{stroke:#1f5fbf}.hu{stroke:#ff6a1a}.to{stroke:#6b665f}
+.agf{fill:#1f5fbf}.huf{fill:#ff6a1a}.tof{fill:#6b665f}
+.ok{fill:#2f8f5b}.bad{fill:#c23b22}
+.nowf{fill:rgba(124,77,255,.12)}.nowr{stroke:#7c4dff;fill:none;stroke-width:3}.nowt{fill:#7c4dff}
+.nextr{stroke:#7c4dff;fill:none;stroke-width:2;stroke-dasharray:3 3}
+.sel{stroke:#1f5fbf;fill:none;stroke-width:3}.selt{fill:#1f5fbf}
+.card{fill:#fdfdfc;stroke:rgba(27,26,24,.14)}
+.sheet{fill:#ffffff;stroke:rgba(27,26,24,.14)}
+.btnp{fill:rgba(124,77,255,.12);stroke:#7c4dff;stroke-width:1.5;stroke-dasharray:4 3}
+.btn{fill:#fdfdfc;stroke:rgba(27,26,24,.22)}
+.dim{opacity:.45}
+text{font-family:Inter, system-ui, sans-serif}
+.mono{font-family:ui-monospace, monospace}
+@media (prefers-color-scheme: dark){
+.page{fill:#262522}.soft{fill:#2e2c29}.tx{fill:#ece9e4}.mu{fill:#a39d94}
+.hl{stroke:rgba(255,255,255,.12)}.st{fill:#1c1b19}
+.trav,.fut,.thin{stroke:#8a847b}
+.lp,.lpf{stroke:#ff8a4c}.lpt{fill:#ff8a4c}.lpb{fill:#ff8a4c;fill-opacity:.12;stroke:#ff8a4c}
+.nx,.nowr,.nextr{stroke:#a98bff}.nowt{fill:#a98bff}.nowf{fill:rgba(169,139,255,.16)}
+.ag{stroke:#6ea0ff}.hu{stroke:#ff7a33}.to{stroke:#a39d94}
+.agf{fill:#6ea0ff}.huf{fill:#ff7a33}.tof{fill:#a39d94}
+.ok{fill:#5cc28a}.bad{fill:#ff7a66}
+.sel{stroke:#6ea0ff}.selt{fill:#6ea0ff}
+.card{fill:#2e2c29;stroke:rgba(255,255,255,.12)}
+.sheet{fill:#1c1b19;stroke:rgba(255,255,255,.12)}
+.btnp{fill:rgba(169,139,255,.16);stroke:#a98bff}
+.btn{fill:#2e2c29;stroke:rgba(255,255,255,.2)}
+}
+</style><rect class="page" x="0" y="0" width="360" height="720"/><text x="16.0" y="28.0" font-size="13" class="tx" font-weight="700" text-anchor="start">Run #7 · Plan the workflow runner v2</text>
+<text x="16.0" y="45.0" font-size="11" class="mu" text-anchor="start">Planning</text>
+<text x="344.0" y="28.0" font-size="13" class="tx" font-weight="700" text-anchor="end">38m</text>
+<text x="344.0" y="45.0" font-size="10" class="mu" text-anchor="end">elapsed</text>
+<rect x="16.0" y="56.0" width="158.0" height="22.0" rx="11" class="soft"/>
+<circle cx="28.0" cy="67.0" r="4" class="huf"/>
+<text x="37.0" y="70.5" font-size="10" class="tx" font-weight="700" text-anchor="start">Waits for you · Answer</text>
+<text x="344.0" y="70.5" font-size="10" class="mu" text-anchor="end">tool</text>
+<circle cx="315.0" cy="67.0" r="3.5" class="tof"/>
+<text x="304.0" y="70.5" font-size="10" class="mu" text-anchor="end">you</text>
+<circle cx="280.5" cy="67.0" r="3.5" class="huf"/>
+<text x="269.5" y="70.5" font-size="10" class="mu" text-anchor="end">agent</text>
+<circle cx="235.0" cy="67.0" r="3.5" class="agf"/>
+<line x1="0" y1="90" x2="360" y2="90" class="hl" stroke-width="1"/>
+<path d="M160,110 C142,110 142,122 142,134 V220 C142,232 142,244 160,244" class="thin"/>
+<path d="M160,110 V176" class="trav"/>
+<path d="M160,176 V210" class="trav"/>
+<path d="M160,210 V304" class="fut"/>
+<path d="M148,318 H172" class="fut"/>
+<path d="M160,210 C214,210 214,142 160,142" class="lp"/>
+<path d="M200.5,172.0 L202.9,179.2 L198.1,179.2 Z" class="lpt"/>
+<path d="M160,274 C262,274 262,142 160,142" class="lpf"/>
+<rect x="256.0" y="165.0" width="88.0" height="22.0" rx="11" class="lpb"/>
+<text x="300.0" y="180.0" font-size="10" class="lpt" font-weight="700" text-anchor="middle">more · round 3</text>
+<text x="252.0" y="238.0" font-size="10" class="lpt" font-weight="700" text-anchor="start" opacity=".6">change</text>
+<circle cx="160.0" cy="110.0" r="6" class="st ag" stroke-width="3.5"/>
+<g>
+<text x="132.0" y="114.0" font-size="11" text-anchor="end"><tspan class="tx" font-weight="700">Read the goal</tspan><tspan class="ok" font-weight="700">  ✓</tspan></text>
+</g>
+<circle cx="160.0" cy="142.0" r="6" class="st ag" stroke-width="3.5"/>
+<g>
+<text x="132.0" y="146.0" font-size="11" text-anchor="end"><tspan class="tx" font-weight="700">Ask</tspan><tspan class="lpt" font-weight="700">  ×3 </tspan><tspan class="ok" font-weight="700">✓</tspan></text>
+</g>
+<circle cx="160.0" cy="176.0" r="15" class="nowf"/>
+<circle cx="160.0" cy="176.0" r="15" class="nowr"/>
+<circle cx="160.0" cy="176.0" r="6" class="st hu" stroke-width="3.5"/>
+<text x="132.0" y="180.0" font-size="11" class="nowt" font-weight="700" text-anchor="end">Answer</text>
+<circle cx="160.0" cy="210.0" r="12" class="nextr"/>
+<circle cx="160.0" cy="210.0" r="6" class="st ag" stroke-width="3.5"/>
+<g>
+<text x="132.0" y="214.0" font-size="11" text-anchor="end"><tspan class="tx" font-weight="700">Record</tspan><tspan class="lpt" font-weight="700">  ×2</tspan></text>
+</g>
+<circle cx="160.0" cy="244.0" r="6" class="st ag" stroke-width="3.5" opacity=".45"/>
+<text x="132.0" y="248.0" font-size="11" class="tx" font-weight="700" text-anchor="end" opacity=".55">Write the spec</text>
+<circle cx="160.0" cy="274.0" r="6" class="st hu" stroke-width="3.5" opacity=".45"/>
+<text x="132.0" y="278.0" font-size="11" class="tx" font-weight="700" text-anchor="end" opacity=".55">Approve</text>
+<circle cx="160.0" cy="304.0" r="6" class="st ag" stroke-width="3.5" opacity=".45"/>
+<text x="132.0" y="308.0" font-size="11" class="tx" font-weight="700" text-anchor="end" opacity=".55">Propose tasks</text>
+<line x1="0" y1="326" x2="360" y2="326" class="hl" stroke-width="1"/>
+<text x="16.0" y="344.0" font-size="9" class="mu" font-weight="700" text-anchor="start">TRIP</text>
+<text x="344.0" y="344.0" font-size="9" class="mu" text-anchor="end">9 stops · tap one</text>
+<text x="28.0" y="373.0" font-size="10" class="mu mono" text-anchor="end">1</text>
+<circle cx="40.0" cy="369.0" r="4" class="agf"/>
+<text x="52.0" y="373.0" font-size="11" class="tx" font-weight="700" text-anchor="start">Read the goal</text>
+<text x="344.0" y="373.0" font-size="10" text-anchor="end"><tspan class="ok" font-weight="700">✓ </tspan><tspan class="mu">2m · 3 open points</tspan></text>
+<text x="28.0" y="403.0" font-size="10" class="mu mono" text-anchor="end">2</text>
+<circle cx="40.0" cy="399.0" r="4" class="agf"/>
+<text x="52.0" y="403.0" font-size="11" class="tx" font-weight="700" text-anchor="start">Ask · Q1</text>
+<text x="344.0" y="403.0" font-size="10" text-anchor="end"><tspan class="ok" font-weight="700">✓ </tspan><tspan class="mu">Where does a run start?</tspan></text>
+<text x="28.0" y="433.0" font-size="10" class="mu mono" text-anchor="end">3</text>
+<circle cx="40.0" cy="429.0" r="4" class="huf"/>
+<text x="52.0" y="433.0" font-size="11" class="tx" font-weight="700" text-anchor="start">Answer · 1</text>
+<text x="344.0" y="433.0" font-size="10" text-anchor="end"><tspan class="ok" font-weight="700">✓ </tspan><tspan class="mu">4m · From a session</tspan></text>
+<text x="28.0" y="463.0" font-size="10" class="mu mono" text-anchor="end">4</text>
+<circle cx="40.0" cy="459.0" r="4" class="agf"/>
+<text x="52.0" y="463.0" font-size="11" class="tx" font-weight="700" text-anchor="start">Record · 1</text>
+<text x="344.0" y="463.0" font-size="10" text-anchor="end"><tspan class="ok" font-weight="700">✓ </tspan><tspan class="mu">→ more</tspan></text>
+<text x="28.0" y="493.0" font-size="10" class="mu mono" text-anchor="end">5</text>
+<circle cx="40.0" cy="489.0" r="4" class="agf"/>
+<text x="52.0" y="493.0" font-size="11" class="tx" font-weight="700" text-anchor="start">Ask · Q2</text>
+<text x="344.0" y="493.0" font-size="10" text-anchor="end"><tspan class="ok" font-weight="700">✓ </tspan><tspan class="mu">Max loop count?</tspan></text>
+<text x="28.0" y="523.0" font-size="10" class="mu mono" text-anchor="end">6</text>
+<circle cx="40.0" cy="519.0" r="4" class="huf"/>
+<text x="52.0" y="523.0" font-size="11" class="tx" font-weight="700" text-anchor="start">Answer · 2</text>
+<text x="344.0" y="523.0" font-size="10" text-anchor="end"><tspan class="ok" font-weight="700">✓ </tspan><tspan class="mu">3m · 3, then ask</tspan></text>
+<text x="28.0" y="553.0" font-size="10" class="mu mono" text-anchor="end">7</text>
+<circle cx="40.0" cy="549.0" r="4" class="agf"/>
+<text x="52.0" y="553.0" font-size="11" class="tx" font-weight="700" text-anchor="start">Record · 2</text>
+<text x="344.0" y="553.0" font-size="10" text-anchor="end"><tspan class="ok" font-weight="700">✓ </tspan><tspan class="mu">→ more</tspan></text>
+<text x="28.0" y="583.0" font-size="10" class="mu mono" text-anchor="end">8</text>
+<circle cx="40.0" cy="579.0" r="4" class="agf"/>
+<text x="52.0" y="583.0" font-size="11" class="tx" font-weight="700" text-anchor="start">Ask · Q3</text>
+<text x="344.0" y="583.0" font-size="10" text-anchor="end"><tspan class="ok" font-weight="700">✓ </tspan><tspan class="mu">Start a run from the UI?</tspan></text>
+<rect x="10.0" y="594.0" width="340.0" height="30.0" rx="8" class="nowf"/>
+<rect x="10.0" y="594.0" width="3.0" height="30.0" rx="1.5" class="nowt"/>
+<text x="28.0" y="613.0" font-size="10" class="mu mono" text-anchor="end">9</text>
+<circle cx="40.0" cy="609.0" r="4" class="huf"/>
+<text x="52.0" y="613.0" font-size="11" class="nowt" font-weight="700" text-anchor="start">Answer · 3</text>
+<text x="344.0" y="613.0" font-size="10" text-anchor="end"><tspan class="nowt" font-weight="700">● </tspan><tspan class="nowt">you · waits 6m</tspan></text>
+<text x="16.0" y="657.0" font-size="9" class="mu" font-weight="700" text-anchor="start">WAY OUT</text>
+<rect x="80.0" y="636.0" width="119.0" height="32.0" rx="9" class="btnp"/>
+<text x="139.5" y="656.0" font-size="11" class="nowt" font-weight="700" text-anchor="middle">answer → Record</text></svg>

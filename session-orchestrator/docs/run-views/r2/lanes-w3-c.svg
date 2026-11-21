@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 720" width="360" height="720">
+<style>
+text{font-family:Inter,system-ui,sans-serif}
+.mono{font-family:ui-monospace,monospace}
+.page{fill:#fdfdfc}.soft{fill:#f1eee9}.tx{fill:#2a2825}.mu{fill:#6b665f}
+.ln{stroke:rgba(27,26,24,.14);fill:none}
+.edge{stroke:#8d877e;fill:none;stroke-width:1.2}.edgef{fill:#8d877e}
+.loop{stroke:#c2410c;fill:none;stroke-width:1.4;stroke-dasharray:4 3}.loopt{fill:#c2410c}.loops{stroke:#c2410c;fill:#fdfdfc;stroke-width:1.2}
+.ag{fill:#1f5fbf}.hu{fill:#ff6a1a}.to{fill:#6b665f}
+.ags{stroke:#1f5fbf}.hus{stroke:#ff6a1a}.tos{stroke:#6b665f}
+.agt{fill:rgba(31,95,191,.10)}.hut{fill:rgba(255,106,26,.12)}.tot{fill:rgba(107,102,95,.12)}
+.pass{fill:#2f8f5b}.fail{fill:#c23b22}.failr{stroke:#c23b22;stroke-width:2;fill:none}
+.now{stroke:#7c4dff;stroke-width:3;fill:rgba(124,77,255,.12)}.nowr{stroke:#7c4dff;stroke-width:3;fill:none}
+.nowl{stroke:#7c4dff;stroke-width:2;fill:none}.nowt{fill:#7c4dff}
+.next{stroke:#7c4dff;stroke-width:1.5;stroke-dasharray:4 3;fill:none}.nexte{stroke:#7c4dff;stroke-width:1.2;stroke-dasharray:4 3;fill:none}
+.btn{fill:#7c4dff}.btnt{fill:#ffffff}.btno{fill:none;stroke:#7c4dff;stroke-width:1.5}
+.fut{opacity:.4}.rail{stroke-width:2;opacity:.35;fill:none}
+.huchip{fill:rgba(255,106,26,.14);stroke:#ff6a1a}
+.sheet{fill:#fdfdfc;stroke:rgba(27,26,24,.14)}.field{fill:#fdfdfc;stroke:rgba(27,26,24,.25)}
+@media (prefers-color-scheme: dark){
+.page{fill:#262522}.soft{fill:#2e2c29}.tx{fill:#ece9e4}.mu{fill:#a39d94}
+.ln{stroke:rgba(255,255,255,.12)}
+.edge{stroke:#8a847b}.edgef{fill:#8a847b}
+.loop{stroke:#ff8a4c}.loopt{fill:#ff8a4c}.loops{stroke:#ff8a4c;fill:#262522}
+.ag{fill:#6ea0ff}.hu{fill:#ff7a33}.to{fill:#a39d94}
+.ags{stroke:#6ea0ff}.hus{stroke:#ff7a33}.tos{stroke:#a39d94}
+.agt{fill:rgba(110,160,255,.14)}.hut{fill:rgba(255,122,51,.16)}.tot{fill:rgba(163,157,148,.14)}
+.pass{fill:#5cc28a}.fail{fill:#ff7a66}.failr{stroke:#ff7a66}
+.now{stroke:#a98bff;fill:rgba(169,139,255,.16)}.nowr{stroke:#a98bff}.nowl{stroke:#a98bff}.nowt{fill:#a98bff}
+.next{stroke:#a98bff}.nexte{stroke:#a98bff}
+.btn{fill:#a98bff}.btnt{fill:#1b1a18}.btno{stroke:#a98bff}
+.huchip{fill:rgba(255,122,51,.18);stroke:#ff7a33}
+.sheet{fill:#262522;stroke:rgba(255,255,255,.12)}.field{fill:#262522;stroke:rgba(255,255,255,.25)}
+}
+</style>
+<rect x="0" y="0" width="360" height="720" class="page"/>
+<text x="16.0" y="31.0" class="mu" font-size="20" text-anchor="start" >‹</text>
+<text x="34.0" y="28.0" class="tx" font-size="14" text-anchor="start" font-weight="600" >Run #7 · Plan the workflow runner v2</text>
+<text x="34.0" y="46.0" class="mu" font-size="10" text-anchor="start" >Planning · elapsed 38m</text>
+<rect x="34.0" y="56.0" width="173.8" height="24.0" rx="12" class="huchip" />
+<text x="120.9" y="72.0" class="tx" font-size="10" text-anchor="middle" font-weight="600" >Waits for you · Answer Q3</text>
+<line x1="0.0" y1="92.0" x2="360.0" y2="92.0" class="ln" />
+<circle cx="64.0" cy="108.0" r="4" class="ag" />
+<text x="72.0" y="111.5" class="mu" font-size="9" text-anchor="start" >Agent</text>
+<circle cx="111.2" cy="108.0" r="4" class="hu" />
+<text x="119.2" y="111.5" class="mu" font-size="9" text-anchor="start" >Human</text>
+<circle cx="158.4" cy="108.0" r="4" class="to" />
+<text x="166.4" y="111.5" class="mu" font-size="9" text-anchor="start" >Tool</text>
+<line x1="22.0" y1="104.0" x2="22.0" y2="672.0" class="rail ags" />
+<text x="22.0" y="100.0" class="ag" font-size="9" text-anchor="middle" font-weight="600" >A</text>
+<line x1="34.0" y1="104.0" x2="34.0" y2="672.0" class="rail hus" />
+<text x="34.0" y="100.0" class="hu" font-size="9" text-anchor="middle" font-weight="600" >H</text>
+<line x1="46.0" y1="104.0" x2="46.0" y2="672.0" class="rail tos" />
+<text x="46.0" y="100.0" class="to" font-size="9" text-anchor="middle" font-weight="600" >T</text>
+<path d="M22,194 C22,204 34,212 34,222" class="edge" />
+<path d="M34,234 C34,244 22,252 22,262" class="edge" />
+<path d="M22,314 C22,324 34,332 34,342" class="edge" />
+<path d="M34,354 C34,364 22,372 22,382" class="edge" />
+<path d="M22,434 C22,444 34,454 34,464" class="edge" />
+<path d="M34,476 C34,486 22,556 22,566" class="nexte" />
+<path d="M28,572 C38,572 38,652 28,652" class="edge fut" />
+<circle cx="22.0" cy="148.0" r="5.5" class="ag" />
+<text x="62.0" y="146.0" class="tx" font-size="11" text-anchor="start" font-weight="600" >Read the goal</text>
+<text x="296.0" y="146.0" class="mu" font-size="9" text-anchor="end" >2m ✓</text>
+<text x="62.0" y="160.0" class="mu" font-size="9" text-anchor="start" >goal.md · 3 open points</text>
+<circle cx="22.0" cy="188.0" r="5.5" class="ag" />
+<text x="62.0" y="186.0" class="tx" font-size="11" text-anchor="start" font-weight="600" >Ask · Q1</text>
+<text x="296.0" y="186.0" class="mu" font-size="9" text-anchor="end" >✓</text>
+<text x="62.0" y="200.0" class="mu" font-size="9" text-anchor="start" >Where does a run start?</text>
+<circle cx="34.0" cy="228.0" r="5.5" class="hu" />
+<text x="62.0" y="226.0" class="tx" font-size="11" text-anchor="start" font-weight="600" >Answer</text>
+<text x="296.0" y="226.0" class="mu" font-size="9" text-anchor="end" >4m ✓</text>
+<text x="62.0" y="240.0" class="mu" font-size="9" text-anchor="start" >From a session</text>
+<circle cx="22.0" cy="268.0" r="5.5" class="ag" />
+<text x="62.0" y="266.0" class="tx" font-size="11" text-anchor="start" font-weight="600" >Record</text>
+<text x="296.0" y="266.0" class="mu" font-size="9" text-anchor="end" >✓</text>
+<text x="62.0" y="280.0" class="mu" font-size="9" text-anchor="start" >Went to: more</text>
+<circle cx="22.0" cy="308.0" r="5.5" class="ag" />
+<text x="62.0" y="306.0" class="tx" font-size="11" text-anchor="start" font-weight="600" >Ask · Q2</text>
+<text x="296.0" y="306.0" class="mu" font-size="9" text-anchor="end" >✓</text>
+<text x="62.0" y="320.0" class="mu" font-size="9" text-anchor="start" >Max loop count?</text>
+<circle cx="34.0" cy="348.0" r="5.5" class="hu" />
+<text x="62.0" y="346.0" class="tx" font-size="11" text-anchor="start" font-weight="600" >Answer</text>
+<text x="296.0" y="346.0" class="mu" font-size="9" text-anchor="end" >3m ✓</text>
+<text x="62.0" y="360.0" class="mu" font-size="9" text-anchor="start" >3, then ask</text>
+<circle cx="22.0" cy="388.0" r="5.5" class="ag" />
+<text x="62.0" y="386.0" class="tx" font-size="11" text-anchor="start" font-weight="600" >Record</text>
+<text x="296.0" y="386.0" class="mu" font-size="9" text-anchor="end" >✓</text>
+<text x="62.0" y="400.0" class="mu" font-size="9" text-anchor="start" >Went to: more</text>
+<circle cx="22.0" cy="428.0" r="5.5" class="ag" />
+<text x="62.0" y="426.0" class="tx" font-size="11" text-anchor="start" font-weight="600" >Ask · Q3</text>
+<text x="296.0" y="426.0" class="mu" font-size="9" text-anchor="end" >✓</text>
+<text x="62.0" y="440.0" class="mu" font-size="9" text-anchor="start" >Start a run from the UI in v1?</text>
+<circle cx="34.0" cy="470.0" r="6" class="hu" />
+<circle cx="34.0" cy="470.0" r="9" class="nowr" />
+<rect x="58.0" y="452.0" width="238.0" height="94.0" rx="10" class="now" />
+<text x="70.0" y="474.0" class="nowt" font-size="12" text-anchor="start" font-weight="600" >Answer · round 3</text>
+<text x="284.0" y="474.0" class="nowt" font-size="9" text-anchor="end" font-weight="600" >you · 6m</text>
+<text x="70.0" y="491.0" class="tx" font-size="10" text-anchor="start" >Q3: Start a run from the UI in v1?</text>
+<rect x="70.0" y="502.0" width="214.0" height="34.0" rx="8" class="btn" />
+<text x="177.0" y="523.0" class="btnt" font-size="10" text-anchor="middle" font-weight="600" >Write the answer</text>
+<circle cx="22.0" cy="572.0" r="6" class="next" />
+<text x="62.0" y="570.0" class="nowt" font-size="11" text-anchor="start" font-weight="600" >Record</text>
+<text x="62.0" y="584.0" class="mu" font-size="9" text-anchor="start" >Next: more or done</text>
+<g class="fut">
+<circle cx="22.0" cy="612.0" r="5.5" class="ag" />
+<text x="62.0" y="610.0" class="tx" font-size="11" text-anchor="start" font-weight="600" >Ask · Q4</text>
+<text x="62.0" y="624.0" class="mu" font-size="9" text-anchor="start" >If more</text>
+</g>
+<g class="fut">
+<circle cx="22.0" cy="652.0" r="5.5" class="ag" />
+<text x="62.0" y="650.0" class="tx" font-size="11" text-anchor="start" font-weight="600" >Write the spec</text>
+<text x="62.0" y="664.0" class="mu" font-size="9" text-anchor="start" >If done</text>
+</g>
+<line x1="6.0" y1="549.0" x2="352.0" y2="549.0" class="nowl" />
+<rect x="300.0" y="542.0" width="36.0" height="14.0" rx="7" class="btn" />
+<text x="318.0" y="552.5" class="btnt" font-size="9" text-anchor="middle" font-weight="600" >NOW</text>
+<path d="M300,188 C344,188 344,308 304,308" class="loop" />
+<polygon points="305,304.5 305,311.5 300,308" class="loopt"/>
+<rect x="325.3" y="240.0" width="15.4" height="16.0" rx="8" class="loops" />
+<text x="333.0" y="251.5" class="loopt" font-size="9" text-anchor="middle" font-weight="600" >2</text>
+<path d="M300,308 C344,308 344,428 304,428" class="loop" />
+<polygon points="305,424.5 305,431.5 300,428" class="loopt"/>
+<rect x="325.3" y="360.0" width="15.4" height="16.0" rx="8" class="loops" />
+<text x="333.0" y="371.5" class="loopt" font-size="9" text-anchor="middle" font-weight="600" >3</text>
+<text x="180.0" y="704.0" class="mu" font-size="9" text-anchor="middle" >Tap a step to see its runs, input and output.</text>
+</svg>

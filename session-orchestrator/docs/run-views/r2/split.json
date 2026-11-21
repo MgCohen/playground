@@ -1,0 +1,19 @@
+{
+  "name": "Graph on top, data below",
+  "tag": "mobile · split · graph + step run",
+  "why": "The top shows the whole graph top-down, with loops on the right. The bottom shows one step run: its data, its ways out as buttons, and a prev/next pager. It opens on the current step. Best for a calm check of where the run is and what to do. Weak for long graphs.",
+  "variants": [
+    {
+      "v": "a",
+      "label": "60/40, steps with names"
+    },
+    {
+      "v": "b",
+      "label": "40/60, dots, more step data"
+    },
+    {
+      "v": "c",
+      "label": "Full graph, data in a sheet"
+    }
+  ]
+}

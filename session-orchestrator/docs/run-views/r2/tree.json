@@ -1,0 +1,19 @@
+{
+  "name": "Git tree",
+  "tag": "mobile · commit graph",
+  "why": "The page is a commit graph like git log --graph. Each row is one step run. Parallel tasks branch into lanes and merge at the join. A loop pass goes out to a lane on the right and merges back. Best for history, loops and what ran when. Weak for the full shape of the workflow definition.",
+  "variants": [
+    {
+      "v": "a",
+      "label": "oldest first · loop side lane"
+    },
+    {
+      "v": "b",
+      "label": "newest first · loop marker"
+    },
+    {
+      "v": "c",
+      "label": "dense lanes · bottom sheet"
+    }
+  ]
+}

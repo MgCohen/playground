@@ -1,0 +1,19 @@
+{
+  "name": "Metro map",
+  "tag": "mobile · vertical line",
+  "why": "The run is a subway trip. The main line goes straight down. Parallel tasks are short lines between two interchanges. Loops are rings on the right side with a round count. Best for a quick read on a phone. Weak for graphs with many crossing edges.",
+  "variants": [
+    {
+      "v": "a",
+      "label": "Full map, now card, back/next"
+    },
+    {
+      "v": "b",
+      "label": "Short map, tap opens bottom sheet"
+    },
+    {
+      "v": "c",
+      "label": "Compact loops, trip list below"
+    }
+  ]
+}

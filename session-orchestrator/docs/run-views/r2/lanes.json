@@ -1,0 +1,19 @@
+{
+  "name": "Swimlanes, vertical",
+  "tag": "mobile · lanes by executor",
+  "why": "Each executor has a column: Agent, Human, Tool. Time goes down. Each step run is a block in its column, so a loop shows as repeated blocks with a link on the right. A NOW line marks the present. Best for who works and when. Weak for the full graph shape and for steps that never ran.",
+  "variants": [
+    {
+      "v": "a",
+      "label": "Narrow columns, text on the side"
+    },
+    {
+      "v": "b",
+      "label": "Time to scale, bottom sheet"
+    },
+    {
+      "v": "c",
+      "label": "Thin rails, NOW card in the list"
+    }
+  ]
+}

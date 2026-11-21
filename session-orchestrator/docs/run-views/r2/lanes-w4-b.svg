@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 720" width="360" height="720">
+<style>
+text{font-family:Inter,system-ui,sans-serif}
+.mono{font-family:ui-monospace,monospace}
+.page{fill:#fdfdfc}.soft{fill:#f1eee9}.tx{fill:#2a2825}.mu{fill:#6b665f}
+.ln{stroke:rgba(27,26,24,.14);fill:none}
+.edge{stroke:#8d877e;fill:none;stroke-width:1.2}.edgef{fill:#8d877e}
+.loop{stroke:#c2410c;fill:none;stroke-width:1.4;stroke-dasharray:4 3}.loopt{fill:#c2410c}.loops{stroke:#c2410c;fill:#fdfdfc;stroke-width:1.2}
+.ag{fill:#1f5fbf}.hu{fill:#ff6a1a}.to{fill:#6b665f}
+.ags{stroke:#1f5fbf}.hus{stroke:#ff6a1a}.tos{stroke:#6b665f}
+.agt{fill:rgba(31,95,191,.10)}.hut{fill:rgba(255,106,26,.12)}.tot{fill:rgba(107,102,95,.12)}
+.pass{fill:#2f8f5b}.fail{fill:#c23b22}.failr{stroke:#c23b22;stroke-width:2;fill:none}
+.now{stroke:#7c4dff;stroke-width:3;fill:rgba(124,77,255,.12)}.nowr{stroke:#7c4dff;stroke-width:3;fill:none}
+.nowl{stroke:#7c4dff;stroke-width:2;fill:none}.nowt{fill:#7c4dff}
+.next{stroke:#7c4dff;stroke-width:1.5;stroke-dasharray:4 3;fill:none}.nexte{stroke:#7c4dff;stroke-width:1.2;stroke-dasharray:4 3;fill:none}
+.btn{fill:#7c4dff}.btnt{fill:#ffffff}.btno{fill:none;stroke:#7c4dff;stroke-width:1.5}
+.fut{opacity:.4}.rail{stroke-width:2;opacity:.35;fill:none}
+.huchip{fill:rgba(255,106,26,.14);stroke:#ff6a1a}
+.sheet{fill:#fdfdfc;stroke:rgba(27,26,24,.14)}.field{fill:#fdfdfc;stroke:rgba(27,26,24,.25)}
+@media (prefers-color-scheme: dark){
+.page{fill:#262522}.soft{fill:#2e2c29}.tx{fill:#ece9e4}.mu{fill:#a39d94}
+.ln{stroke:rgba(255,255,255,.12)}
+.edge{stroke:#8a847b}.edgef{fill:#8a847b}
+.loop{stroke:#ff8a4c}.loopt{fill:#ff8a4c}.loops{stroke:#ff8a4c;fill:#262522}
+.ag{fill:#6ea0ff}.hu{fill:#ff7a33}.to{fill:#a39d94}
+.ags{stroke:#6ea0ff}.hus{stroke:#ff7a33}.tos{stroke:#a39d94}
+.agt{fill:rgba(110,160,255,.14)}.hut{fill:rgba(255,122,51,.16)}.tot{fill:rgba(163,157,148,.14)}
+.pass{fill:#5cc28a}.fail{fill:#ff7a66}.failr{stroke:#ff7a66}
+.now{stroke:#a98bff;fill:rgba(169,139,255,.16)}.nowr{stroke:#a98bff}.nowl{stroke:#a98bff}.nowt{fill:#a98bff}
+.next{stroke:#a98bff}.nexte{stroke:#a98bff}
+.btn{fill:#a98bff}.btnt{fill:#1b1a18}.btno{stroke:#a98bff}
+.huchip{fill:rgba(255,122,51,.18);stroke:#ff7a33}
+.sheet{fill:#262522;stroke:rgba(255,255,255,.12)}.field{fill:#262522;stroke:rgba(255,255,255,.25)}
+}
+</style>
+<rect x="0" y="0" width="360" height="720" class="page"/>
+<text x="16.0" y="31.0" class="mu" font-size="20" text-anchor="start" >‹</text>
+<text x="34.0" y="28.0" class="tx" font-size="14" text-anchor="start" font-weight="600" >Run #14 · Add export button</text>
+<text x="34.0" y="46.0" class="mu" font-size="10" text-anchor="start" >Feature delivery · elapsed 1h 23m</text>
+<rect x="34.0" y="56.0" width="155.8" height="24.0" rx="12" class="huchip" />
+<text x="111.9" y="72.0" class="tx" font-size="10" text-anchor="middle" font-weight="600" >Waits for you · Review</text>
+<line x1="0.0" y1="92.0" x2="360.0" y2="92.0" class="ln" />
+<rect x="14.0" y="100.0" width="116.0" height="366.0" rx="8" class="soft" />
+<text x="72.0" y="115.0" class="mu" font-size="9" text-anchor="middle" font-weight="600" >Agent</text>
+<rect x="130.0" y="100.0" width="88.0" height="366.0" rx="8" class="soft" />
+<text x="174.0" y="115.0" class="mu" font-size="9" text-anchor="middle" font-weight="600" >Human</text>
+<rect x="218.0" y="100.0" width="100.0" height="366.0" rx="8" class="soft" />
+<text x="268.0" y="115.0" class="mu" font-size="9" text-anchor="middle" font-weight="600" >Tool</text>
+<text x="352.0" y="115.0" class="mu" font-size="9" text-anchor="end" font-weight="600" >Loop</text>
+<line x1="72.0" y1="180.0" x2="72.0" y2="184.0" class="edge" />
+<line x1="36.7" y1="184.0" x2="107.3" y2="184.0" class="edge" />
+<line x1="36.7" y1="184.0" x2="36.7" y2="188.0" class="edge" />
+<line x1="72.0" y1="184.0" x2="72.0" y2="188.0" class="edge" />
+<line x1="107.3" y1="184.0" x2="107.3" y2="188.0" class="edge" />
+<line x1="36.7" y1="227.6" x2="36.7" y2="247.0" class="edge" />
+<line x1="72.0" y1="243.0" x2="72.0" y2="247.0" class="edge" />
+<line x1="107.3" y1="212.0" x2="107.3" y2="247.0" class="edge" />
+<line x1="36.7" y1="247.0" x2="268.0" y2="247.0" class="edge" />
+<line x1="268.0" y1="247.0" x2="268.0" y2="251.0" class="edge" />
+<line x1="72.0" y1="148.0" x2="72.0" y2="156.0" class="edge" />
+<line x1="268.0" y1="275.0" x2="268.0" y2="283.0" class="edge" />
+<path d="M268.0,307.0 C268.0,315.0 72.0,307.0 72.0,315.0" class="edge" />
+<path d="M72.0,339.0 C72.0,347.0 268.0,339.0 268.0,347.0" class="edge" />
+<path d="M268.0,371.0 C268.0,379.0 174.0,371.0 174.0,379.0" class="edge" />
+<path d="M174.0,411.0 C174.0,419.0 268.0,419.0 268.0,427.0" class="nexte" />
+<path d="M174.0,411.0 C174.0,419.0 72.0,419.0 72.0,427.0" class="nexte" />
+<rect x="16.0" y="124.0" width="112.0" height="24.0" rx="6" class="agt" />
+<rect x="16.0" y="124.0" width="3.0" height="24.0" rx="1.5" class="ag" />
+<text x="24.0" y="139.5" class="pass" font-size="9" text-anchor="start" font-weight="600" >✓</text>
+<text x="35.0" y="139.5" class="tx" font-size="10" text-anchor="start" font-weight="600" >Spec</text>
+<text x="122.0" y="139.5" class="mu" font-size="9" text-anchor="end" >4m</text>
+<rect x="16.0" y="156.0" width="112.0" height="24.0" rx="6" class="agt" />
+<rect x="16.0" y="156.0" width="3.0" height="24.0" rx="1.5" class="ag" />
+<text x="24.0" y="171.5" class="pass" font-size="9" text-anchor="start" font-weight="600" >✓</text>
+<text x="35.0" y="171.5" class="tx" font-size="10" text-anchor="start" font-weight="600" >Split</text>
+<text x="122.0" y="171.5" class="mu" font-size="9" text-anchor="end" >1m</text>
+<rect x="20.0" y="188.0" width="33.3" height="39.6" rx="6" class="agt" />
+<rect x="20.0" y="188.0" width="3.0" height="39.6" rx="1.5" class="ag" />
+<text x="26.0" y="202.0" class="tx" font-size="9" text-anchor="start" font-weight="600" >API</text>
+<text x="26.0" y="215.0" class="mu" font-size="9" text-anchor="start" >18m</text>
+<rect x="55.3" y="188.0" width="33.3" height="55.0" rx="6" class="agt" />
+<rect x="55.3" y="188.0" width="3.0" height="55.0" rx="1.5" class="ag" />
+<text x="61.3" y="202.0" class="tx" font-size="9" text-anchor="start" font-weight="600" >UI</text>
+<text x="61.3" y="215.0" class="mu" font-size="9" text-anchor="start" >25m</text>
+<rect x="90.7" y="188.0" width="33.3" height="24.0" rx="6" class="agt" />
+<rect x="90.7" y="188.0" width="3.0" height="24.0" rx="1.5" class="ag" />
+<text x="96.7" y="202.0" class="tx" font-size="9" text-anchor="start" font-weight="600" >Docs</text>
+<rect x="220.0" y="251.0" width="96.0" height="24.0" rx="6" class="tot" />
+<rect x="220.0" y="251.0" width="3.0" height="24.0" rx="1.5" class="to" />
+<text x="228.0" y="266.5" class="pass" font-size="9" text-anchor="start" font-weight="600" >✓</text>
+<text x="239.0" y="266.5" class="tx" font-size="10" text-anchor="start" font-weight="600" >Integrate</text>
+<text x="310.0" y="266.5" class="mu" font-size="9" text-anchor="end" >2m</text>
+<rect x="220.0" y="283.0" width="96.0" height="24.0" rx="6" class="tot" />
+<rect x="220.0" y="283.0" width="3.0" height="24.0" rx="1.5" class="to" />
+<rect x="220.0" y="283.0" width="96.0" height="24.0" rx="6" class="failr" />
+<text x="228.0" y="298.5" class="fail" font-size="9" text-anchor="start" font-weight="600" >✕</text>
+<text x="239.0" y="298.5" class="tx" font-size="10" text-anchor="start" font-weight="600" >Test 1</text>
+<text x="310.0" y="298.5" class="mu" font-size="9" text-anchor="end" >3m</text>
+<rect x="16.0" y="315.0" width="112.0" height="24.0" rx="6" class="agt" />
+<rect x="16.0" y="315.0" width="3.0" height="24.0" rx="1.5" class="ag" />
+<text x="24.0" y="330.5" class="pass" font-size="9" text-anchor="start" font-weight="600" >✓</text>
+<text x="35.0" y="330.5" class="tx" font-size="10" text-anchor="start" font-weight="600" >Fix</text>
+<text x="122.0" y="330.5" class="mu" font-size="9" text-anchor="end" >9m</text>
+<rect x="220.0" y="347.0" width="96.0" height="24.0" rx="6" class="tot" />
+<rect x="220.0" y="347.0" width="3.0" height="24.0" rx="1.5" class="to" />
+<text x="228.0" y="362.5" class="pass" font-size="9" text-anchor="start" font-weight="600" >✓</text>
+<text x="239.0" y="362.5" class="tx" font-size="10" text-anchor="start" font-weight="600" >Test 2</text>
+<text x="310.0" y="362.5" class="mu" font-size="9" text-anchor="end" >3m</text>
+<rect x="132.0" y="379.0" width="84.0" height="32.0" rx="6" class="hut" />
+<rect x="132.0" y="379.0" width="3.0" height="32.0" rx="1.5" class="hu" />
+<rect x="132.0" y="379.0" width="84.0" height="32.0" rx="6" class="nowr" />
+<text x="140.0" y="398.5" class="nowt" font-size="9" text-anchor="start" font-weight="600" >●</text>
+<text x="151.0" y="398.5" class="nowt" font-size="10" text-anchor="start" font-weight="600" >Review</text>
+<rect x="220.0" y="427.0" width="96.0" height="24.0" rx="6" class="next" />
+<text x="228.0" y="442.5" class="nowt" font-size="10" text-anchor="start" font-weight="600" >Release</text>
+<rect x="16.0" y="427.0" width="112.0" height="24.0" rx="6" class="next" />
+<text x="24.0" y="442.5" class="nowt" font-size="10" text-anchor="start" font-weight="600" >Fix 2</text>
+<line x1="8.0" y1="419.0" x2="352.0" y2="419.0" class="nowl" />
+<rect x="16.0" y="412.0" width="36.0" height="14.0" rx="7" class="btn" />
+<text x="34.0" y="422.5" class="btnt" font-size="9" text-anchor="middle" font-weight="600" >NOW</text>
+<path d="M318,295.0 C350,295.0 350,359.0 322,359.0" class="loop" />
+<polygon points="323,355.5 323,362.5 318,359.0" class="loopt"/>
+<rect x="330.0" y="319.0" width="24.0" height="16.0" rx="8" class="loops" />
+<text x="342.0" y="330.5" class="loopt" font-size="9" text-anchor="middle" font-weight="600" >×2</text>
+<rect x="0.0" y="466.0" width="360.0" height="274.0" rx="16" class="sheet" />
+<rect x="160.0" y="474.0" width="40.0" height="4.0" rx="2" class="soft" />
+<rect x="160.0" y="474.0" width="40.0" height="4.0" rx="2" class="mu" opacity=".35"/>
+<text x="16.0" y="504.0" class="tx" font-size="15" text-anchor="start" font-weight="600" >Review</text>
+<text x="344.0" y="504.0" class="nowt" font-size="10" text-anchor="end" font-weight="600" >Now · you · 12m</text>
+<text x="16.0" y="528.0" class="tx" font-size="10" text-anchor="start" >Input: Test pass 2 · 43 passed</text>
+<text x="16.0" y="546.0" class="mu mono" font-size="10" text-anchor="start" >feat/export +628 −58 · 13 files</text>
+<text x="16.0" y="572.0" class="mu" font-size="9" text-anchor="start" font-weight="600" >Ways out</text>
+<rect x="16.0" y="582.0" width="156.0" height="40.0" rx="10" class="btno" />
+<text x="94.0" y="606.0" class="nowt" font-size="11" text-anchor="middle" font-weight="600" >Change → Fix</text>
+<rect x="188.0" y="582.0" width="156.0" height="40.0" rx="10" class="btn" />
+<text x="266.0" y="606.0" class="btnt" font-size="11" text-anchor="middle" font-weight="600" >Approve → Release</text>
+<line x1="0.0" y1="658.0" x2="360.0" y2="658.0" class="ln" />
+<rect x="16.0" y="668.0" width="120.0" height="36.0" rx="10" class="soft" />
+<text x="76.0" y="690.0" class="tx" font-size="10" text-anchor="middle" font-weight="600" >‹ Back in history</text>
+<text x="344.0" y="690.0" class="mu" font-size="9" text-anchor="end" >Tap a block for its info</text>
+</svg>

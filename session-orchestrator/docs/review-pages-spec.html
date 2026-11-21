@@ -411,7 +411,7 @@ sequenceDiagram
   <iframe class="sketch-frame" title="Workflow graph shapes" data-src="workflow-graphs.html" loading="lazy"></iframe>
 </div>
 <div class="sub" id="run/views" hidden>
-  <p class="summary">One run in the middle of its work, in six run views: four for the side panel and two for a wide screen. Each view shows the whole workflow, the current step, its data, and the ways out. The goal: pick the graph shape for the run page, then the preview for the catalog.</p>
+  <p class="summary">The run page on a phone. Round 2 has four concepts: metro map, swimlanes, Git tree, and graph on top with data below. Each concept has three variations, for two runs. Loops stay on the right side. The goal: pick the graph shape for the run page, then the preview for the catalog.</p>
   <iframe class="sketch-frame" title="Run views" data-src="run-views.html" loading="lazy"></iframe>
 </div>
 </div>
@@ -1006,7 +1006,7 @@ flowchart TD
     var known = e.source === zf.contentWindow;
     document.querySelectorAll('.sketch-frame').forEach(function (f) { if (e.source === f.contentWindow) known = true; });
     if (!known) return;
-    if (d.sk === 'open' && d.page === 'runs' && /^[a-z]{2,8}-[abc]$/.test(d.id)) { zf.src = 'run-views.html?one=' + d.id; zoom.hidden = false; }
+    if (d.sk === 'open' && d.page === 'runs' && /^[a-z0-9]{2,10}-[abc]$/.test(d.id)) { zf.src = 'run-views.html?one=' + d.id; zoom.hidden = false; }
     else if (d.sk === 'open' && d.page === 'graphs' && /^w[1-9]-[a-z]$/.test(d.id)) { zf.src = 'workflow-graphs.html?one=' + d.id; zoom.hidden = false; }
     else if (d.sk === 'open' && /^[a-z]+-[a-c]$/.test(d.id)) { zf.src = 'workflows-sketches.html?one=' + d.id; zoom.hidden = false; }
     if (d.sk === 'close') unzoom();
