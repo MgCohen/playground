@@ -2579,3 +2579,25 @@ Umpire conflicts (report, no workaround): a helper class in a slice is denied (U
 - I5: the user removed the Narrator step (2026-11-21). Accessibility is not a requirement now. The keyboard checks stay.
 
 - Test inventory (`docs/test-inventory.md`): kept as a record. The user studies it later. No recommendation is applied now.
+
+## Size ownership (R2): results (2026-11-21)
+
+All 6 steps of `docs/size-ownership-plan.html` (https://claude.ai/artifact/UYCh2zPYAwXJijYz9opJCZ) are done, one commit for each (S0 6dbcdb1 to S4 35736ea, then cec1654). The user approved the plan; Q1 is option B (the plan text). Unit tests 853, 0 fail. Self-test 41 of 41; `--reduced` 42 of 42. I7, I10 and I18 are fixed.
+
+| Step | Proof: before → after |
+|---|---|
+| S0 proof base | `badge-box-fits` FAIL in 3 states: rest tab shadow 9 px below the window; hover ring cut 33 px, tab shadow 52 px; peek bubble 0.6 px. The values equal the calculation from `tray.css` |
+| S1 tokens and report | `Tray_sizes_are_tokens`: 7 literals → 0. The report equals the test measure (rest [251 11 345 105], hover [-14.2 11 345 105]) |
+| S2 badge window (I7, I18) | `badge-box-fits` PASS in 3 states. Scenario `badge-states` off and on: ring and shadow cut → no cut |
+| S3 hover fold | Timer 300 ms → step `badge-fold` (by end after 278 ms). `badge-fold-area`: 0 cut samples; fail-first with a 50 ms delay: 515 |
+| S4 panel window (I10) | `Tray_window_sizes_come_from_the_page`: 8 constants before R2 → 0. `panel-box-fits` PASS (fail-first with an 8 px margin). Panel picture: mean difference 0.2 of 255 |
+
+Findings:
+
+- The window region clips the drawing, so a click area smaller than a drawn part cuts it. The click area now includes the shadow: a click on the shadow of the tab opens the panel.
+- `badge-input` read the hover click area 200 ms after a posted move. With no 300 ms timer, the area was small again: a posted move cannot hold the hover (I8). The check reads the area when the hover starts.
+- A measure that sets styles on the real element stopped the slide of the tab (`badge-in` wait ended `none`). `orchTray.sizes` measures a hidden copy.
+- The size report must come before the spin starts. With reduced motion, a report between the spin render and its wait let the 1 ms spin end first (`none`).
+- The `--reduced` self-test of `orch/visual-review` never ended: a picture of the panel 180 ms after the dock threw `E_UNEXPECTED` (the panel was hidden after a 60 ms dock), and the process did not exit. Fixed in the self-test. Open: an exception in the self-test does not end the process.
+- Two of my script edits wrote a backspace character in place of `\b` (Python string escapes). A test pattern then matched nothing and passed. Check new test patterns with a fail-first run.
+- Test tools: `scenario.sh` has `INSTANCE` (the built exe with `--instance`) and `SCALE` (1 for a check of a few pixels).
