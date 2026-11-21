@@ -1,0 +1,455 @@
+<title>Size Ownership Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column of 980 px max; a sticky tab bar that scrolls to the side; each tab is one panel. Porcelain Orange theme of the tray. */
+:root {
+  --canvas: #e6e3de; --surf: #fdfdfc; --sunk: #f1efeb; --ink: #23201c; --muted: #6b655d; --line: #d3cec6;
+  --accent: #ff6a1a; --accent-ink: #b34408; --ok: #2f7d4f; --warn: #a86a00; --bad: #b3362b;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif; --f-mono: "JetBrains Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --canvas: #1c1a18; --surf: #262320; --sunk: #201e1b; --ink: #ece7e0; --muted: #a39c92; --line: #3a3631;
+  --accent: #ff7a33; --accent-ink: #ffa36e; --ok: #6cc28f; --warn: #e0a640; --bad: #ef7a6e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --canvas: #1c1a18; --surf: #262320; --sunk: #201e1b; --ink: #ece7e0; --muted: #a39c92; --line: #3a3631;
+  --accent: #ff7a33; --accent-ink: #ffa36e; --ok: #6cc28f; --warn: #e0a640; --bad: #ef7a6e; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--canvas); color: var(--ink); font: 15px/1.55 var(--f-body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--canvas); }
+.wrap { max-width: 980px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 60px; }
+header .eyebrow { font: 600 12px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent-ink); }
+h1 { font-size: 30px; line-height: 1.15; margin: 6px 0 8px; text-wrap: balance; font-weight: 700; }
+h2 { font-size: 20px; margin: 28px 0 10px; text-wrap: balance; }
+h3 { font-size: 16px; margin: 18px 0 6px; }
+p { margin: 8px 0; max-width: 68ch; }
+.sum { color: var(--muted); max-width: 72ch; }
+code, .mono { font-family: var(--f-mono); font-size: .88em; }
+:not(pre) > code { background: var(--sunk); border: 1px solid var(--line); border-radius: 5px; padding: 0 4px; overflow-wrap: anywhere; }
+pre { background: var(--surf); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font: 13px/1.5 var(--f-mono); margin: 10px 0; }
+pre .c { color: var(--muted); }
+/* Tabs: one row that scrolls to the side. */
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--canvas); display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity;
+  padding: 10px 0; margin-top: 14px; border-bottom: 1px solid var(--line); scrollbar-width: thin; }
+.tabs button { flex: none; scroll-snap-align: start; font: 600 14px var(--f-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 999px; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
+.tabs button:hover { color: var(--ink); border-color: var(--line); }
+.tabs button[aria-selected="true"] { color: var(--surf); background: var(--ink); }
+.tabs button:focus-visible, .tools button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel[hidden] { display: none; }
+/* Tables scroll in their own box. */
+.tbl { overflow-x: auto; margin: 10px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surf); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { font: 600 12px var(--f-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--sunk); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Chips. */
+.chip { display: inline-block; font: 600 11.5px var(--f-mono); padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); background: var(--sunk); color: var(--ink); white-space: nowrap; }
+.chip.i { border-color: var(--accent); color: var(--accent-ink); background: transparent; }
+.chip.h { border-color: var(--bad); color: var(--bad); background: transparent; }
+.risk { font: 600 11.5px var(--f-mono); padding: 1px 7px; border-radius: 4px; white-space: nowrap; }
+.risk.low { color: var(--ok); border: 1px solid var(--ok); }
+.risk.med { color: var(--warn); border: 1px solid var(--warn); }
+.risk.high { color: var(--bad); border: 1px solid var(--bad); }
+/* The pipeline diagram. */
+.fig { overflow-x: auto; background: var(--surf); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin: 10px 0; }
+.fig svg { display: block; min-width: 860px; width: 100%; height: auto; }
+.fig .box { fill: var(--sunk); stroke: var(--line); stroke-width: 1.2; }
+.fig .box.key { fill: var(--surf); stroke: var(--accent); stroke-width: 1.6; }
+.fig .t { fill: var(--ink); font: 600 13px var(--f-body); }
+.fig .s { fill: var(--muted); font: 11.5px var(--f-mono); }
+.fig .ln { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.fig .ah { fill: var(--muted); }
+.fig .lb { fill: var(--accent-ink); font: 600 11px var(--f-mono); }
+.figt { font: 600 13px var(--f-mono); color: var(--muted); margin: 18px 0 0; }
+/* The step track. */
+.track { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; margin: 10px 0; }
+.track a { display: grid; gap: 4px; text-decoration: none; color: var(--ink); background: var(--surf); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+.track a:hover { border-color: var(--accent); }
+.track .id { font: 700 13px var(--f-mono); color: var(--accent-ink); }
+.track .nm { font-weight: 600; font-size: 14px; line-height: 1.3; }
+.track .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.gate { background: var(--surf); border: 1px dashed var(--accent); border-radius: 10px; padding: 10px; display: grid; gap: 4px; font-size: 13.5px; }
+.gate b { font: 700 13px var(--f-mono); color: var(--accent-ink); }
+/* Step foldables. */
+.tools { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.tools button { font: 600 13px var(--f-body); background: var(--surf); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+details.step { background: var(--surf); border: 1px solid var(--line); border-radius: 12px; margin: 8px 0; }
+details.step > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+details.step > summary::-webkit-details-marker { display: none; }
+details.step > summary::before { content: "+"; font: 700 15px var(--f-mono); color: var(--muted); width: 14px; }
+details.step[open] > summary::before { content: "−"; }
+details.step .sid { font: 700 14px var(--f-mono); color: var(--accent-ink); }
+details.step .stt { font-weight: 600; flex: 1 1 220px; min-width: 0; }
+.sb { padding: 0 14px 14px; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+.sb > dt { font: 600 12px var(--f-mono); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding-top: 2px; }
+.sb > dd { margin: 0; min-width: 0; }
+.sb ul { margin: 0; padding-left: 18px; }
+.sb li { margin: 2px 0; }
+@media (max-width: 560px) { .sb { grid-template-columns: minmax(0, 1fr); } .sb > dt { padding-top: 6px; } }
+.note { border-left: 3px solid var(--accent); background: var(--surf); padding: 10px 14px; border-radius: 0 10px 10px 0; margin: 12px 0; max-width: 72ch; }
+.q { background: var(--surf); border: 1px solid var(--accent); border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
+.q h3 { margin-top: 0; }
+ol, ul { padding-left: 22px; }
+@media (prefers-reduced-motion: no-preference) { .tabs button, .track a { transition: background-color .15s, border-color .15s, color .15s; } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · orch/r2-size-ownership · plan only</div>
+  <h1>Size ownership (R2): implementation and test plan</h1>
+  <p class="sum">Six steps make the page the one owner of each tray size. The page lays out with CSS tokens, measures the shadow box of each part, and reports the boxes to C#. C# sets the window size and the click area from the report, and keeps only the work area, the saved places and the gap.</p>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Plan parts">
+  <button role="tab" id="t-overview" aria-controls="overview" aria-selected="true">Overview</button>
+  <button role="tab" id="t-proofs" aria-controls="proofs" aria-selected="false">Proofs</button>
+  <button role="tab" id="t-steps" aria-controls="steps" aria-selected="false">Steps</button>
+  <button role="tab" id="t-sizes" aria-controls="sizes" aria-selected="false">Sizes</button>
+  <button role="tab" id="t-checks" aria-controls="checks" aria-selected="false">Checks</button>
+  <button role="tab" id="t-questions" aria-controls="questions" aria-selected="false">Questions</button>
+</nav>
+
+<!-- ============ OVERVIEW ============ -->
+<section class="panel" id="overview" role="tabpanel" aria-labelledby="t-overview">
+  <p class="figt">After R2, each size goes from the page to the window in one direction</p>
+  <div class="fig">
+    <svg viewBox="0 0 900 200" role="img" aria-label="Size flow: CSS tokens, page measure, size report, C# window, click area">
+      <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>
+      <rect class="box" x="10" y="50" width="150" height="90" rx="10"/>
+      <text class="t" x="24" y="80">CSS tokens</text><text class="s" x="24" y="102">--tray-panel-w</text><text class="s" x="24" y="120">--badge-tab</text>
+      <rect class="box key" x="190" y="50" width="160" height="90" rx="10"/>
+      <text class="t" x="204" y="80">Page measures</text><text class="s" x="204" y="102">orchTray.sizes</text><text class="s" x="204" y="120">shadow box of each part</text>
+      <rect class="box key" x="380" y="50" width="160" height="90" rx="10"/>
+      <text class="t" x="394" y="80">Size report</text><text class="s" x="394" y="102">rest · hover · peek</text><text class="s" x="394" y="120">panel · margin</text>
+      <rect class="box" x="570" y="50" width="150" height="90" rx="10"/>
+      <text class="t" x="584" y="80">C# window</text><text class="s" x="584" y="102">size = union</text><text class="s" x="584" y="120">+ work area, gap</text>
+      <rect class="box" x="750" y="50" width="140" height="90" rx="10"/>
+      <text class="t" x="764" y="80">Click area</text><text class="s" x="764" y="102">box of the state</text><text class="s" x="764" y="120">Hits()</text>
+      <path class="ln" d="M160 95H188" marker-end="url(#a)"/><path class="ln" d="M350 95H378" marker-end="url(#a)"/>
+      <path class="ln" d="M540 95H568" marker-end="url(#a)"/><path class="ln" d="M720 95H748" marker-end="url(#a)"/>
+      <text class="lb" x="392" y="35">on first render, on new counts or peek text</text>
+      <text class="lb" x="560" y="170">badge-box-fits checks each state</text>
+    </svg>
+  </div>
+
+  <h2>The steps</h2>
+  <div class="track">
+    <a href="#s0"><span class="id">S0</span><span class="nm">Proof base: scenario and box check</span><span class="tags"><span class="chip">test tooling</span></span></a>
+    <a href="#s1"><span class="id">S1</span><span class="nm">Size tokens and the size report</span><span class="tags"><span class="chip i">I10</span></span></a>
+    <a href="#s2"><span class="id">S2</span><span class="nm">Badge window from the report</span><span class="tags"><span class="chip i">I7</span><span class="chip i">I18</span></span></a>
+    <a href="#s3"><span class="id">S3</span><span class="nm">Hover fold waits for the page</span><span class="tags"><span class="chip i">I7</span><span class="chip">Q1</span></span></a>
+    <a href="#s4"><span class="id">S4</span><span class="nm">Panel window from the report</span><span class="tags"><span class="chip i">I10</span></span></a>
+    <a href="#s5"><span class="id">S5</span><span class="nm">Docs and the merge gate</span><span class="tags"><span class="chip">docs</span></span></a>
+  </div>
+
+  <h2>Issues and the step that closes each</h2>
+  <div class="tbl"><table>
+    <tr><th>Issue</th><th>What</th><th>Closed by</th></tr>
+    <tr><td><span class="chip i">I7</span></td><td>The badge hover cuts the ring at the left</td><td>S2 (size), S3 (fold)</td></tr>
+    <tr><td><span class="chip i">I18</span></td><td>The window cuts the shadow of the side badge</td><td>S2</td></tr>
+    <tr><td><span class="chip i">I10</span></td><td>Sizes in C# and CSS</td><td>S1 (badge tokens), S4 (panel); closed at S4</td></tr>
+  </table></div>
+
+  <h2>Cause, from tray.css and BadgeWindow.cs</h2>
+  <p>The window region is the click area, and Windows also clips the drawing to it. C# sets it from constants. The shadows of the tab and the peek bubble are larger than these constants.</p>
+  <div class="tbl"><table>
+    <tr><th>State</th><th>Shadow box (CSS px)</th><th>Click area (CSS px)</th><th>Cut</th></tr>
+    <tr><td>rest</td><td class="n">x 251–332, y 11–105</td><td class="n">x 250–332, y 0–96</td><td>9 px at the bottom (I18)</td></tr>
+    <tr><td>hover, text 333 px</td><td class="n">x −14–332, y 11–105</td><td class="n">x 38–332, y 0–96</td><td>52 px at the left, ring cut (I7); 9 px bottom</td></tr>
+    <tr><td>peek</td><td class="n">bubble y about 17–99</td><td class="n">x 0–332, y 0–96</td><td>about 3 px at the bubble bottom; 9 px at the tab</td></tr>
+  </table></div>
+  <p class="note">These values are calculations from the CSS shadows (<code>--sh-raise</code>: <code>0 10px 21px -8px</code> gives 23 px below the tab). S0 measures them in the real page before any fix.</p>
+
+  <h2>Terms</h2>
+  <div class="tbl"><table>
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td>Shadow box</td><td>The border box of an element plus its outer shadows (offset + blur + spread), in CSS px of the window</td></tr>
+    <tr><td>Size report</td><td>The boxes that the page measures and sends to C#: <code>TraySizes</code></td></tr>
+    <tr><td>Click area</td><td>The window region. It takes the clicks and clips the drawing</td></tr>
+    <tr><td>Badge state</td><td>rest, hover or peek</td></tr>
+    <tr><td>Edge gap</td><td>The 12 px between the panel and the work area edge (C# <code>Gap</code>). Not the window gap of R1</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ PROOFS ============ -->
+<section class="panel" id="proofs" role="tabpanel" aria-labelledby="t-proofs" hidden>
+  <p class="sum">Each fix has one small scenario, recorded with the fix off (the S0 commit) and with the fix on. The runs follow the proof rule of <code>docs/test-inventory.md</code>.</p>
+  <h2>The scenario (S0 adds it)</h2>
+  <div class="tbl"><table>
+    <tr><th>Scenario</th><th>Actions</th><th>Time (s)</th><th>Proves</th></tr>
+    <tr><td><code>badge-states</code></td><td>Long counts (text about 333 px). Dock, rest 1.5 s. Hover on 1.5 s. Hover off 1 s. Post a card, peek 6 s</td><td class="n">11</td><td>I7 (hover), I18 (rest, peek), S3 (fold)</td></tr>
+  </table></div>
+  <p>The scenario holds the hover through the window, not through posted pointer messages. Reason: with posted messages, Windows sends <code>WM_MOUSELEAVE</code> at once (I8 platform limit). The log has, for each state, the window box, the click area and the shadow boxes of the page.</p>
+
+  <h2>The run list</h2>
+  <pre><span class="c"># In session-orchestrator. Build first: dotnet build Orchestrator.slnx -nodeReuse:false
+# scenario.sh runs the built exe with --instance R2 (S0) in a free test slot. BACKDROP=1 shows the shadow at the edge.</span>
+BACKDROP=1 RUN_CODE=R2 spikes/tray-display/tools/scenario.sh badge-states badge-states-off 13   <span class="c"># at S0: fix off</span>
+BACKDROP=1 RUN_CODE=R2 spikes/tray-display/tools/scenario.sh badge-states badge-states-on-S2 13 <span class="c"># at S2: fix on</span>
+BACKDROP=1 RUN_CODE=R2 spikes/tray-display/tools/scenario.sh badge-states badge-states-on-S3 13 <span class="c"># at S3: the fold</span>
+<span class="c"># Self-test, in a test slot:</span>
+artifacts~/bin/Orchestrator.Tray/debug/Orchestrator.Tray.exe --instance R2 --selftest out/r2-S&lt;n&gt;</pre>
+
+  <h2>Expected results</h2>
+  <div class="tbl"><table>
+    <tr><th>Item</th><th>Fix off (S0)</th><th>Fix on</th></tr>
+    <tr><td>Frame at hover</td><td>Ring cut at the left</td><td>Full ring and full tab shadow</td></tr>
+    <tr><td>Frame at rest</td><td>Shadow cut 9 px at the bottom</td><td>The shadow ends inside the window</td></tr>
+    <tr><td>Frame at peek</td><td>Bubble and tab shadows cut at the bottom</td><td>No cut</td></tr>
+    <tr><td><code>badge-box-fits</code></td><td>FAIL in rest, hover, peek</td><td>PASS in each state</td></tr>
+  </table></div>
+
+  <h2>Rules for the proofs</h2>
+  <ul>
+    <li>Send each proof as MP4, with a frame strip of each state (<code>strip.ps1</code>).</li>
+    <li>Use the same scenario and the same seconds for off and on.</li>
+    <li>If the recorder catches 0 frames, run it again. Stop after 3 failed attempts and ask.</li>
+    <li>Click only with window messages. Each log ends with "pointer: not moved".</li>
+  </ul>
+</section>
+
+<!-- ============ STEPS ============ -->
+<section class="panel" id="steps" role="tabpanel" aria-labelledby="t-steps" hidden>
+  <p class="sum">Each step is one commit. Gate for each step: the unit tests and one self-test. A recording only when the step changes a look (S0, S2, S3). Undo for each step: <code>git revert &lt;commit&gt;</code>.</p>
+  <div class="tools"><button type="button" id="open-all">Open all</button><button type="button" id="close-all">Close all</button></div>
+
+  <details class="step" id="s0">
+    <summary><span class="sid">S0</span><span class="stt">Proof base: scenario and box check</span><span class="chip">test tooling</span><span class="risk low">risk low</span></summary>
+    <dl class="sb">
+      <dt>Scenario</dt><dd><code>badge-states</code> (Proofs tab).</dd>
+      <dt>Changes</dt><dd><ul>
+        <li><code>SelfTest.Scenarios.cs</code>: the scenario <code>badge-states</code>, with a box log for each state.</li>
+        <li><code>SelfTest.cs</code>: the check <code>badge-box-fits</code> (Checks tab). It replaces <code>badge-hover-fits</code>, which is its hover part.</li>
+        <li><code>BadgeWindow.cs</code>: a test seam <code>HoldHover(bool)</code>. It sets the hover of the window and ignores <code>WM_MOUSELEAVE</code> while it holds.</li>
+        <li><code>scenario.sh</code>: run the built exe with <code>--instance R2</code>, not <code>dotnet run</code>. Default: no instance, as before.</li>
+      </ul></dd>
+      <dt>Before</dt><dd>Record <code>badge-states-off</code>. One self-test: <code>badge-box-fits</code> FAIL in rest, hover and peek. All other checks as before.</dd>
+      <dt>After</dt><dd>None. No product code changes.</dd>
+      <dt>Checks</dt><dd>Unit tests. One self-test. The measured boxes go into the Overview table in place of the calculations.</dd>
+      <dt>Risk</dt><dd>Low. Test code and one seam. The seam does nothing when the self-test does not call it.</dd>
+      <dt>Undo</dt><dd>Revert the commit.</dd>
+    </dl>
+  </details>
+
+  <details class="step" id="s1">
+    <summary><span class="sid">S1</span><span class="stt">Size tokens and the size report</span><span class="chip i">I10</span><span class="risk low">risk low</span></summary>
+    <dl class="sb">
+      <dt>Scenario</dt><dd>None. The look does not change.</dd>
+      <dt>Changes</dt><dd><ul>
+        <li><code>tray.css</code>: size tokens (Sizes tab). The tab, the ring offset and the panel margin use them.</li>
+        <li><code>tray.js</code>: <code>orchTray.sizes(stage)</code>. It waits for <code>document.fonts.ready</code>, then measures the shadow box of the tab (rest and hover), the ring, the peek bubble and the panel frame.</li>
+        <li>C#: the record <code>TraySizes : JsCommand&lt;TraySizeReport&gt;</code> in <code>Features/Tray/Slices/</code>; <code>IWidgetWindow.UseSizes(report)</code>.</li>
+        <li><code>BadgeRoot</code>, <code>TrayRoot</code>: send the report on the first render and after a change of the counts or the peek text. C# logs it and does not use it yet.</li>
+      </ul></dd>
+      <dt>Before</dt><dd><code>Tray_sizes_are_tokens</code> FAIL: <code>tray.css</code> has 5 size literals (<code>inset: 24px</code>, <code>68px</code> ×2, <code>top: 14px</code>, <code>height: 68px</code>).</dd>
+      <dt>After</dt><dd>The unit test passes. The self-test log has one report. Its values equal the S0 boxes ±1 px.</dd>
+      <dt>Checks</dt><dd>Unit tests (<code>Js_names_exist</code> finds <code>orchTray.sizes</code>). One self-test.</dd>
+      <dt>Risk</dt><dd>Low. A wrong token name gives a size of 0. The unit test and the report log show it.</dd>
+      <dt>Undo</dt><dd>Revert the commit.</dd>
+    </dl>
+  </details>
+
+  <details class="step" id="s2">
+    <summary><span class="sid">S2</span><span class="stt">Badge window from the report</span><span class="chip i">I7</span><span class="chip i">I18</span><span class="risk med">risk medium</span></summary>
+    <dl class="sb">
+      <dt>Scenario</dt><dd><code>badge-states</code>.</dd>
+      <dt>Changes</dt><dd><ul>
+        <li><code>BadgeWindow.cs</code>: no size constants. Window size = the union of the shadow boxes of all badge states, to the next full pixel, at the DPI, limited to the work area. The right edge and the tab top stay at their place.</li>
+        <li><code>Hits()</code>: the click area is the shadow box of the current state (rest, hover, peek).</li>
+        <li>A report while the window shows: the window changes its size at once, anchored at the right edge.</li>
+        <li>No report: a fault, and the badge does not show (the R1 rule for a missing token).</li>
+        <li>Self-test checks <code>badge-input</code>, <code>dock</code>, <code>notice</code> and the mouse helpers read the reported values.</li>
+      </ul></dd>
+      <dt>Before</dt><dd><code>badge-states-off</code>; <code>badge-box-fits</code> FAIL in 3 states.</dd>
+      <dt>After</dt><dd>Record <code>badge-states-on-S2</code>: no cut in the 3 frame strips. <code>badge-box-fits</code> PASS in 3 states. Send off and on to the user (the I7 and I18 proofs).</dd>
+      <dt>Checks</dt><dd>Unit tests. One self-test. One recording.</dd>
+      <dt>Risk</dt><dd>Medium. The window gets about 9 px taller and wider at a long text, and the shadow is part of the click area. A click on the shadow opens the panel, as the 14 px margin does today.</dd>
+      <dt>Undo</dt><dd>Revert the commit.</dd>
+    </dl>
+  </details>
+
+  <details class="step" id="s3">
+    <summary><span class="sid">S3</span><span class="stt">Hover fold waits for the page</span><span class="chip i">I7</span><span class="chip">Q1</span><span class="risk med">risk medium</span></summary>
+    <dl class="sb">
+      <dt>Scenario</dt><dd><code>badge-states</code>, the hover off part.</dd>
+      <dt>Changes (Q1 option B)</dt><dd><ul>
+        <li>The window owns the hover state; the page owns its look. The window sends <code>Hovered(bool)</code>; <code>BadgeRoot</code> sets the class <code>is-hover</code> on the tab. <code>.tb-tab:hover</code> becomes <code>.tb-tab.is-hover</code>.</li>
+        <li>Registry row <code>badge-fold</code> (state <code>is-hover</code>), step rule <code>--motion-wait: width</code> with spec ID N1.</li>
+        <li>At hover off, <code>BadgeRoot</code> waits for the step, then calls <code>IWidgetWindow.HoverEnded()</code>. Only then the click area gets small.</li>
+        <li>Delete the 300 ms timer, <code>UseBadgeFold</code>, <code>UseFold</code> and the token <code>--t-badge-fold</code> (also in the reduced block).</li>
+        <li><code>HoldHover</code> of S0 calls the same hover path.</li>
+      </ul></dd>
+      <dt>Before</dt><dd>Check <code>badge-fold-area</code> FAIL first by one value change: a 50 ms timer cuts the tab while it folds.</dd>
+      <dt>After</dt><dd><code>badge-fold-area</code> PASS: in each frame of the fold, the tab shadow box is inside the click area. <code>steps-traced</code>: <code>badge-fold</code> ends "by end". Record <code>badge-states-on-S3</code>.</dd>
+      <dt>Checks</dt><dd>Unit tests (<code>Registry_matches_motion_css</code>, <code>Reduced_motion_sets_each_duration_token_to_1ms</code>). One self-test. One recording.</dd>
+      <dt>Risk</dt><dd>Medium. The hover depends on a page message. A hover on and off before the fold ends: the window keeps the wide area until the last fold ends.</dd>
+      <dt>Undo</dt><dd>Revert the commit. S2 still works with the timer.</dd>
+    </dl>
+  </details>
+
+  <details class="step" id="s4">
+    <summary><span class="sid">S4</span><span class="stt">Panel window from the report</span><span class="chip i">I10</span><span class="risk med">risk medium</span></summary>
+    <dl class="sb">
+      <dt>Scenario</dt><dd>None. The look does not change. Compare the self-test pictures <code>1-open.png</code> and <code>3-badge.png</code> with S0.</dd>
+      <dt>Changes</dt><dd><ul>
+        <li><code>TrayWindow.cs</code>: no <code>PanelWidth</code>, <code>PanelHeight</code>, <code>ShadowMargin</code>. The window size comes from the panel part of the report. C# keeps <code>Gap</code>, the work area limit and the saved place.</li>
+        <li>The tray flow waits for the panel report before the start phase. No report: a fault.</li>
+        <li>Self-test checks <code>saved-place</code>, <code>page-move-in-panel</code> and the mouse helpers read the reported margin.</li>
+      </ul></dd>
+      <dt>Before</dt><dd><code>Tray_window_sizes_come_from_the_page</code> FAIL: 8 size constants in <code>src/Orchestrator.Tray</code>.</dd>
+      <dt>After</dt><dd>The unit test passes. <code>panel-box-fits</code> PASS. Pictures differ at most 2 of 255 from S0.</dd>
+      <dt>Checks</dt><dd>Unit tests. One self-test.</dd>
+      <dt>Risk</dt><dd>Medium. A late report delays the first show. The self-test check <code>start</code> shows it.</dd>
+      <dt>Undo</dt><dd>Revert the commit.</dd>
+    </dl>
+  </details>
+
+  <details class="step" id="s5">
+    <summary><span class="sid">S5</span><span class="stt">Docs and the merge gate</span><span class="chip">docs</span><span class="risk low">risk low</span></summary>
+    <dl class="sb">
+      <dt>Scenario</dt><dd><code>badge-states</code>: the final baseline.</dd>
+      <dt>Changes</dt><dd><ul>
+        <li><code>docs/plan.md</code>: R2 results. <code>docs/tray-issues.html</code>: I7, I10, I18 fixed, with the proofs.</li>
+        <li><code>docs/motion-guide.html</code>: the step <code>badge-fold</code> and a "Sizes" recipe. Publish it again to the same URL.</li>
+        <li><code>docs/test-inventory.md</code>: the checks of R2.</li>
+      </ul></dd>
+      <dt>Before</dt><dd>None.</dd>
+      <dt>After</dt><dd>Merge gate: all unit tests, the self-test, the <code>--reduced</code> self-test, one recording of <code>badge-states</code>.</dd>
+      <dt>Checks</dt><dd>The merge gate. Then open the PR into <code>orch/visual-review</code>.</dd>
+      <dt>Risk</dt><dd>Low.</dd>
+      <dt>Undo</dt><dd>Revert the commit.</dd>
+    </dl>
+  </details>
+</section>
+
+<!-- ============ SIZES ============ -->
+<section class="panel" id="sizes" role="tabpanel" aria-labelledby="t-sizes" hidden>
+  <h2>Each size and its one owner</h2>
+  <div class="tbl"><table>
+    <tr><th>Size</th><th>Owner</th><th>C# today</th><th>After R2</th></tr>
+    <tr><td>Panel width, height</td><td>CSS token</td><td><code>PanelWidth 350</code>, <code>PanelHeight 720</code></td><td><code>--tray-panel-w</code>, <code>--tray-panel-h</code></td></tr>
+    <tr><td>Panel shadow margin</td><td>CSS token</td><td><code>ShadowMargin 24</code></td><td><code>--tray-margin</code>; check: frame shadow inside</td></tr>
+    <tr><td>Tab at rest</td><td>CSS token</td><td><code>TabRest 68</code></td><td><code>--badge-tab</code></td></tr>
+    <tr><td>Tab top</td><td>CSS token</td><td><code>TabMargin 14</code></td><td><code>--badge-tab-top</code></td></tr>
+    <tr><td>Tab at hover</td><td>Page measure</td><td><code>TabWide 280</code></td><td>Width of the text (<code>width: auto</code>)</td></tr>
+    <tr><td>Badge window</td><td>Page measure</td><td><code>BadgeWidth 332</code>, <code>BadgeHeight 96</code></td><td>Union of the shadow boxes</td></tr>
+    <tr><td>Edge gap, work area</td><td>C#</td><td><code>Gap 12</code></td><td>No change</td></tr>
+  </table></div>
+
+  <h2>The report</h2>
+  <pre><span class="c">// Features/Tray/Slices/Sizes: orchTray.sizes. All boxes in CSS px of the window.</span>
+public sealed record TraySizes(ElementReference Stage) : JsCommand&lt;TraySizeReport&gt;;
+public sealed record TraySizeReport(Box? Panel, double Margin, Box? Rest, Box? Hover, Box? Peek, Box? Ring);
+public sealed record Box(double Left, double Top, double Right, double Bottom);</pre>
+
+  <h2>The measure in the page</h2>
+  <pre><span class="c">// tray.js: the shadow box = the border box + the outer shadows of the computed box-shadow.</span>
+function shadowBox(e) {
+  var r = e.getBoundingClientRect(), b = { l: r.left, t: r.top, r: r.right, b: r.bottom };
+  shadows(getComputedStyle(e).boxShadow).filter(s => !s.inset).forEach(s => {
+    var g = s.blur + s.spread;
+    b.l = Math.min(b.l, r.left + s.x - g); b.r = Math.max(b.r, r.right + s.x + g);
+    b.t = Math.min(b.t, r.top + s.y - g);  b.b = Math.max(b.b, r.bottom + s.y + g);
+  });
+  return b;
+}
+<span class="c">// The hover box: the tab with width auto and no transition, measured and restored in one task (no paint between).</span></pre>
+
+  <h2>Trade-offs and limits</h2>
+  <div class="tbl"><table>
+    <tr><th>Item</th><th>Effect</th></tr>
+    <tr><td>Window grows with the text</td><td>No fixed hover width (I7 answer B). Limit: the work area width</td></tr>
+    <tr><td>Shadow in the click area</td><td>A click on the shadow opens the panel</td></tr>
+    <tr><td>Blur extent</td><td>The full blur radius counts. The visible shadow ends a little earlier</td></tr>
+    <tr><td>Font load</td><td>The measure waits for <code>document.fonts.ready</code></td></tr>
+    <tr><td>Drag code (I8)</td><td>No change</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ CHECKS ============ -->
+<section class="panel" id="checks" role="tabpanel" aria-labelledby="t-checks" hidden>
+  <p class="sum">Each new check fails on the code before its step. If the check needs the code of its step, the fail-first proof is a change of one value: see FAIL, then restore it.</p>
+  <h2>The shadow and ring check: <code>badge-box-fits</code></h2>
+  <p>For each badge state, the self-test measures the boxes with its own script, not with <code>orchTray.sizes</code>. So a defect in the product measure cannot hide a cut.</p>
+  <div class="tbl"><table>
+    <tr><th>State</th><th>How the test gets it</th><th>Boxes</th><th>Pass rule</th></tr>
+    <tr><td>rest</td><td>Dock, wait for the step <code>badge-in</code></td><td>tab shadow box, ring</td><td rowspan="3">Each box inside the click area, and the click area inside the window (CSS px, ±0.5)</td></tr>
+    <tr><td>hover</td><td><code>HoldHover(true)</code>, wait for the tab motion end</td><td>tab shadow box, ring</td></tr>
+    <tr><td>peek</td><td>Post a card, wait for <code>.tb-peek.on</code> and the peek-in end</td><td>tab and bubble shadow boxes, ring</td></tr>
+  </table></div>
+  <p>The detail of a failure names the state, the box, the side and the size of the cut, for example <code>rest: tab shadow bottom 105 &gt; window 96 (9 px)</code>.</p>
+
+  <h2>All checks of R2</h2>
+  <div class="tbl"><table>
+    <tr><th>Check</th><th>Kind</th><th>Step</th><th>Before the step</th></tr>
+    <tr><td><code>badge-box-fits</code></td><td>self-test</td><td>S0, S2</td><td>FAIL in rest, hover, peek</td></tr>
+    <tr><td><code>Tray_sizes_are_tokens</code></td><td>unit</td><td>S1</td><td>FAIL: 5 literals</td></tr>
+    <tr><td><code>badge-fold-area</code></td><td>self-test</td><td>S3</td><td>Fail first by a 50 ms timer</td></tr>
+    <tr><td><code>Registry_matches_motion_css</code></td><td>unit</td><td>S3</td><td>FAIL: no rule for <code>badge-fold</code></td></tr>
+    <tr><td><code>Tray_window_sizes_come_from_the_page</code></td><td>unit</td><td>S4</td><td>FAIL: 8 constants</td></tr>
+    <tr><td><code>panel-box-fits</code></td><td>self-test</td><td>S4</td><td>Fail first by <code>--tray-margin: 8px</code></td></tr>
+  </table></div>
+
+  <h2>Run cost</h2>
+  <p>About 6 self-tests, 4 recordings and one <code>--reduced</code> self-test: about 7 min. No full self-test plus recordings after each small change.</p>
+</section>
+
+<!-- ============ QUESTIONS ============ -->
+<section class="panel" id="questions" role="tabpanel" aria-labelledby="t-questions" hidden>
+  <div class="q">
+    <h3>Q1 · Who owns the hover state of the badge (S3)?</h3>
+    <p>The click area must stay wide until the fold ends. Today a 300 ms C# timer guesses the end. The R1 wait needs a step with a state class, but <code>:hover</code> is not a class.</p>
+    <div class="tbl"><table>
+      <tr><th>Option</th><th>Change</th><th>Effect</th></tr>
+      <tr><td>A</td><td>Keep <code>:hover</code>. The page waits with <code>Settle</code> on the tab, with no registry row</td><td>Smaller change. A wait outside the registry; the self-test hold needs a page seam too</td></tr>
+      <tr><td>B</td><td>The window sends the hover; the page sets <code>is-hover</code>; registry step <code>badge-fold</code></td><td>One hover source for the click area and the look. On the R1 pipeline. The test hold uses the same path</td></tr>
+    </table></div>
+    <p>Recommendation: B. The window already owns the hover for the click area, so one source cannot disagree.</p>
+  </div>
+  <div class="q">
+    <h3>Q2 · Do you approve the plan?</h3>
+    <p>No code changes before the approval. After it, S0 to S5 run in order, one commit each.</p>
+  </div>
+</section>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs [role="tab"]'));
+  var stepIds = ["s0","s1","s2","s3","s4","s5"];
+  function show(id, focusStep) {
+    var target = id;
+    if (stepIds.indexOf(id) >= 0) target = "steps";
+    if (!document.getElementById(target) || !document.getElementById("t-" + target)) target = "overview";
+    tabs.forEach(function (t) {
+      var on = t.getAttribute("aria-controls") === target;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+      if (on) t.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+    if (stepIds.indexOf(id) >= 0) {
+      var d = document.getElementById(id);
+      d.open = true;
+      if (focusStep) d.scrollIntoView({ block: "start" });
+    }
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () { location.hash = t.getAttribute("aria-controls"); });
+    t.addEventListener("keydown", function (e) {
+      var n = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : null;
+      if (n === null) return;
+      var next = tabs[(n + tabs.length) % tabs.length];
+      next.focus();
+      location.hash = next.getAttribute("aria-controls");
+    });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1), true); });
+  show(location.hash.slice(1), true);
+  document.getElementById("open-all").addEventListener("click", function () { document.querySelectorAll("details.step").forEach(function (d) { d.open = true; }); });
+  document.getElementById("close-all").addEventListener("click", function () { document.querySelectorAll("details.step").forEach(function (d) { d.open = false; }); });
+})();
+</script>
