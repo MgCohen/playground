@@ -29,17 +29,20 @@ static partial class Program
         if (args.Length == 4 && args[0] == "trim") return Trim(args[1], args[2], int.Parse(args[3]));
         // The target: "x y width height" (a fixed screen area) or "--area-file file" (the area that a test tray writes for its slot).
         // A later target can be one window (window capture); the rest of the arguments stay the same.
-        var withBackdrop = args.Contains("--backdrop");
-        args = args.Where(a => a != "--backdrop").ToArray();
+        // I2: --backdrop-key uses the key color #FF00FF, which the tray never draws, for the empty frame count.
+        var withKey = args.Contains("--backdrop-key");
+        var withBackdrop = withKey || args.Contains("--backdrop");
+        args = args.Where(a => a is not "--backdrop" and not "--backdrop-key").ToArray();
         var fileTarget = args.Length >= 1 && args[0] == "--area-file";
         if (args.Length < (fileTarget ? 6 : 8))
         {
-            Console.Error.WriteLine("Usage: recorder [--backdrop] (x y width height | --area-file instance.json) scale fps seconds out.gif");
+            Console.Error.WriteLine("Usage: recorder [--backdrop | --backdrop-key] (x y width height | --area-file instance.json) scale fps seconds out.gif");
             return 2;
         }
         SetProcessDpiAwarenessContext(-4); // Per monitor v2: the area is in real screen pixels.
         string? ready = null;
         string? run = null;
+        var pid = 0;
         Rectangle area;
         if (fileTarget)
         {
@@ -48,7 +51,7 @@ static partial class Program
                 Console.Error.WriteLine($"no area: {args[1]} did not come in 180 s. Did the test tray start?");
                 return 4;
             }
-            (area, run) = found;
+            (area, run, pid) = found;
             ready = args[1] + ".ready";
             args = args[2..];
         }
@@ -65,7 +68,7 @@ static partial class Program
         var size = new Size((int)(area.Width * scale), (int)(area.Height * scale));
         var frames = new List<byte[]>();
         var times = new List<string>();
-        if (withBackdrop) StartBackdrop(area);
+        if (withBackdrop) StartBackdrop(area, withKey ? Key : Color.FromArgb(0xcc, 0xcc, 0xcc));
         // The test tray waits for this file (--wait-recorder), so the recording has the first show of its windows.
         if (ready is not null) File.WriteAllText(ready, DateTime.Now.ToString("HH:mm:ss.fff"));
         byte[]? first = null;
@@ -74,12 +77,15 @@ static partial class Program
         for (var n = 0; clock.Elapsed.TotalSeconds < seconds; n++)
         {
             while (clock.Elapsed.TotalMilliseconds < n * step) Thread.Sleep(1);
+            // I2: other windows of the screen can be above the backdrop. Keep it directly under the lowest window of the tray.
+            if (withBackdrop && pid != 0 && n % 10 == 0) UnderTray(pid);
             using var shot = new Bitmap(area.Width, area.Height);
             using (var g = Graphics.FromImage(shot))
             {
                 g.CopyFromScreen(area.Location, Point.Empty, area.Size);
                 Pointer(g, area.Location);
             }
+            var keyShare = KeyShare(shot);
             using var small = new Bitmap(size.Width, size.Height);
             using (var g = Graphics.FromImage(small))
             {
@@ -93,7 +99,8 @@ static partial class Program
             first ??= bytes;
             if (frames.Count == 0 && bytes.AsSpan().SequenceEqual(first)) continue;
             frames.Add(bytes);
-            times.Add(DateTime.Now.ToString("HH:mm:ss.fff") + " " + Mean(small).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+            times.Add(DateTime.Now.ToString("HH:mm:ss.fff") + " " + Mean(small).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
+                + " " + keyShare.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
         }
         Console.WriteLine($"{frames.Count} frames in {clock.Elapsed.TotalSeconds:0.0} s");
         Record(run, output, frames.Count, clock.Elapsed.TotalSeconds, frames.Count == 0 ? 3 : 0);
@@ -139,7 +146,7 @@ static partial class Program
     }
 
     /// <summary>Waits for the instance file of a test tray and reads its area and run id. Null when the file does not come in time.</summary>
-    static (Rectangle Area, string? Run)? AreaFromFile(string file, TimeSpan wait)
+    static (Rectangle Area, string? Run, int Pid)? AreaFromFile(string file, TimeSpan wait)
     {
         var clock = System.Diagnostics.Stopwatch.StartNew();
         while (clock.Elapsed < wait)
@@ -151,7 +158,8 @@ static partial class Program
                     using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(file));
                     var a = json.RootElement.GetProperty("area");
                     var run = json.RootElement.TryGetProperty("run", out var r) ? r.GetString() : null;
-                    return (new Rectangle(a.GetProperty("x").GetInt32(), a.GetProperty("y").GetInt32(), a.GetProperty("width").GetInt32(), a.GetProperty("height").GetInt32()), run);
+                    var pid = json.RootElement.TryGetProperty("pid", out var p) ? p.GetInt32() : 0;
+                    return (new Rectangle(a.GetProperty("x").GetInt32(), a.GetProperty("y").GetInt32(), a.GetProperty("width").GetInt32(), a.GetProperty("height").GetInt32()), run, pid);
                 }
                 catch (IOException)
                 {
@@ -231,16 +239,64 @@ static partial class Program
         return 0;
     }
 
-    /// <summary>The grey backdrop window behind the recorded windows, on its own UI thread; it shows 500 ms before the first frame.</summary>
-    static void StartBackdrop(Rectangle area)
+    static nint backdropHandle;
+
+    /// <summary>Puts the backdrop directly under the lowest visible top window of the tray process, with no activation.</summary>
+    static void UnderTray(int pid)
+    {
+        if (backdropHandle == 0) return;
+        nint lowest = 0;
+        EnumWindows((h, _) =>
+        {
+            GetWindowThreadProcessId(h, out var owner);
+            if (owner == pid && IsWindowVisible(h)) lowest = h;
+            return true;
+        }, 0);
+        // SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_ASYNCWINDOWPOS
+        if (lowest != 0) SetWindowPos(backdropHandle, lowest, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010 | 0x4000);
+    }
+
+    /// <summary>The key color of --backdrop-key (I2). The tray draws no pixel of exactly this color.</summary>
+    static readonly Color Key = Color.FromArgb(0xff, 0x00, 0xff);
+
+    /// <summary>
+    /// The share (0 to 100) of the pixels of the full size frame that are exactly the key color, from each 4th pixel of each
+    /// 4th row. A shadow or a scrim over the key changes the color, so these pixels count as the tray. With no key backdrop, 0.
+    /// </summary>
+    static double KeyShare(Bitmap b)
+    {
+        var data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        try
+        {
+            var px = new byte[data.Stride * b.Height];
+            Marshal.Copy(data.Scan0, px, 0, px.Length);
+            long key = 0, n = 0;
+            for (var y = 0; y < b.Height; y += 4)
+                for (var x = 0; x < b.Width; x += 4)
+                {
+                    var i = y * data.Stride + x * 4;
+                    if (px[i] == Key.B && px[i + 1] == Key.G && px[i + 2] == Key.R) key++;
+                    n++;
+                }
+            return n == 0 ? 0 : 100.0 * key / n;
+        }
+        finally
+        {
+            b.UnlockBits(data);
+        }
+    }
+
+    /// <summary>The backdrop window behind the recorded windows, on its own UI thread; it shows 500 ms before the first frame.</summary>
+    static void StartBackdrop(Rectangle area, Color color)
     {
         var backdrop = new Thread(() =>
         {
-            using var form = new Form
+            var form = new Form
             {
                 FormBorderStyle = FormBorderStyle.None, StartPosition = FormStartPosition.Manual, Bounds = area,
-                BackColor = Color.FromArgb(0xcc, 0xcc, 0xcc), ShowInTaskbar = false,
+                BackColor = color, ShowInTaskbar = false,
             };
+            form.HandleCreated += (_, _) => backdropHandle = form.Handle;
             Application.Run(form);
         }) { IsBackground = true };
         backdrop.SetApartmentState(ApartmentState.STA);
@@ -354,4 +410,20 @@ static partial class Program
     [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetProcessDpiAwarenessContext(nint context);
+
+    delegate bool EnumWindowsProc(nint window, nint data);
+
+    [DllImport("user32.dll")]
+    static extern bool EnumWindows(EnumWindowsProc callback, nint data);
+
+    [LibraryImport("user32.dll")]
+    private static partial uint GetWindowThreadProcessId(nint window, out int process);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool IsWindowVisible(nint window);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool SetWindowPos(nint window, nint after, int x, int y, int width, int height, uint flags);
 }

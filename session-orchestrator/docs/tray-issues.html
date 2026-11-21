@@ -105,8 +105,8 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="about">Overview: all issues</option>
     <option value="questions">Questions and answers (0 open)</option>
     <option value="inventory">Inventory: architecture or standalone</option>
-    <option value="i1">I1 · Empty frames at the sheet open  (Not real)</option>
-    <option value="i2">I2 · The empty frame detector gives false alarms  (Replicated)</option>
+    <option value="i1">I1 · Empty frames at the sheet open  (Closed)</option>
+    <option value="i2">I2 · The empty frame detector gives false alarms  (Fixed)</option>
     <option value="i3">I3 · A stress step that misses does not fail the run  (Fixed)</option>
     <option value="i4">I4 · Sizing issues on the screen  (Closed)</option>
     <option value="i5">I5 · Keyboard and screen reader not tested  (Fixed)</option>
@@ -123,6 +123,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i16">I16 · Two sessions cannot test the tray at the same time  (Fixed)</option>
     <option value="i17">I17 · The recorder records 0 frames in some runs  (Fixed)</option>
     <option value="i18">I18 · The window cuts the shadow of the side badge  (Fixed)</option>
+    <option value="i19">I19 · The stress run misses 2 presses at the start  (Reported)</option>
     <option value="f1">F1 · A blink at the end of the open  (Fixed)</option>
     <option value="f2">F2 · A bigger, darker shadow and an overlap at a tab change  (Fixed)</option>
     <option value="f3">F3 · The tab change was not the spec (T1 C)  (Fixed)</option>
@@ -167,8 +168,8 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <div class="scroll"><table>
       <thead><tr><th>ID</th><th>Issue</th><th>Status</th><th>Next step</th></tr></thead>
       <tbody>
-        <tr><td><a href="#i1">I1</a></td><td>Empty frames at the sheet open</td><td><span class="pill no">Not real</span></td><td>Close it, after I2 confirms</td></tr>
-        <tr><td><a href="#i2">I2</a></td><td>The empty frame detector gives false alarms</td><td><span class="pill rpl">Replicated</span></td><td>Your decision: new rule</td></tr>
+        <tr><td><a href="#i1">I1</a></td><td>Empty frames at the sheet open</td><td><span class="pill no">Closed</span></td><td>Closed: the I2 detector gives 0 on the sheet run</td></tr>
+        <tr><td><a href="#i2">I2</a></td><td>The empty frame detector gives false alarms</td><td><span class="pill fix">Fixed</span></td><td>Done: key backdrop and pixel share rule</td></tr>
         <tr><td><a href="#i3">I3</a></td><td>A stress step that misses does not fail the run</td><td><span class="pill fix">Fixed</span></td><td>Done: a late press is a warning, a miss fails the run</td></tr>
         <tr><td><a href="#i4">I4</a></td><td>Sizing issues on the screen</td><td><span class="pill no">Closed</span></td><td>Closed by you: no proof</td></tr>
         <tr><td><a href="#i5">I5</a></td><td>Keyboard and screen reader not tested</td><td><span class="pill fix">Fixed</span></td><td>Done: 2 key checks. Screen reader: not needed now</td></tr>
@@ -185,6 +186,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i16">I16</a></td><td>Two sessions cannot test the tray at the same time</td><td><span class="pill fix">Fixed</span></td><td>Done (with I17): test slots and a label on each tray</td></tr>
         <tr><td><a href="#i17">I17</a></td><td>The recorder records 0 frames in some runs</td><td><span class="pill fix">Fixed</span></td><td>Done: a 0-frame run fails at once; independent test instances</td></tr>
         <tr><td><a href="#i18">I18</a></td><td>The window cuts the shadow of the side badge</td><td><span class="pill fix">Fixed</span></td><td>Done in R2: the window fits the shadow boxes</td></tr>
+        <tr><td><a href="#i19">I19</a></td><td>The stress run misses 2 presses at the start</td><td><span class="pill rep">Reported</span></td><td>Your decision</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f3">F3</a></td><td>The tab change was not the spec (T1 C)</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -242,7 +244,8 @@ Decision     the question for you</pre>
       <li>Done: the standalone fixes I14, I8 (part), I5 and I3 (PR #59).</li>
       <li>Done: R1, the motion pipeline (I6 rest, I9, I11, I12, I13). I15 stays open.</li>
       <li>Done: R2, size ownership (I7, I10, I18). Plan and proofs: <a href="https://claude.ai/artifact/UYCh2zPYAwXJijYz9opJCZ">size ownership plan</a>.</li>
-      <li>Later: I1, I2, I8 (2 platform limits), #60. Closed: I4, I15.</li>
+      <li>Done: I2 (I1 closed), #60 (source test).</li>
+      <li>Later: I8 (2 platform limits), I19. Closed: I4, I15.</li>
     </ol>
   </section>
 </div>
@@ -313,9 +316,9 @@ Decision     the question for you</pre>
 <!-- I1 -->
 <div class="panel off" id="i1" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill no">Not real</span><span class="k">source: stress run · I1</span></div>
+    <div class="meta"><span class="pill no">Closed</span><span class="k">source: stress run · I1</span></div>
     <h2>I1 · Empty frames at the sheet open</h2>
-    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done x">Replicated</span><span class="now">Not real</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done x">Replicated</span><span class="now">Closed</span></div>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p>The detector counted 5 to 6 empty frames in 60 s of sheet opens and closes. Each one was 70 to 110 ms after a sheet open or close.</p></div></div>
@@ -332,16 +335,17 @@ Decision     the question for you</pre>
     <div class="field"><span class="k">Cause</span><div class="v"><p>Known. The scrim fade makes the tray area darker or lighter in steps. One step has a mean near the backdrop mean (204), so the detector marks it. See I2.</p>
       <p>This also explains the old test: with no scrim fade, the mean jumps past 204, so the count went to about 1.</p></div></div>
     <div class="field"><span class="k">Proposal</span><div class="v"><p>No change to the tray. Keep the scrim fade as the spec says. Close I1 when the new detector (I2) gives 0 on the same run.</p></div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we close I1 after the I2 check gives 0?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Later.</b> Discuss with I2 later.</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do we close I1 after the I2 check gives 0?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Later.</b> Discuss with I2 later.</p></div><div class="ask"><span class="k">Answer · 2026-11-21</span><p>Do the I2 fix (key backdrop). Close I1 when it gives 0.</p></div></div></div>
+    <div class="field"><span class="k">Result</span><div class="v"><p>The I2 detector gives 0 blinks on the sheet run (11 sheet opens and closes). I1 is closed: the tray never showed an empty frame.</p></div></div>
   </section>
 </div>
 
 <!-- I2 -->
 <div class="panel off" id="i2" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill rpl">Replicated</span><span class="k">source: review of the proof · I2</span></div>
+    <div class="meta"><span class="pill fix">Fixed</span><span class="k">source: review of the proof · I2</span></div>
     <h2>I2 · The empty frame detector gives false alarms</h2>
-    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="now">Replicated</span><span>Fixed</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="done">Replicated</span><span class="now">Fixed</span></div>
   </section>
   <section>
     <div class="field"><span class="k">What</span><div class="v"><p><code>empty.py</code> marks a frame as empty when its mean color is within 0.6 of the backdrop mean. A frame with the tray can have the same mean.</p></div></div>
@@ -355,7 +359,9 @@ record = that share for each frame, in place of the mean</pre>
       <p>Proof that the new rule works:</p>
       <ol><li>The old open blink (the real one, see <a href="#f1">F1</a>) still gives an empty frame.</li><li>The <code>base-now</code> run gives 0.</li></ol>
     </div></div>
-    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I change the detector to the pixel share rule, and test it on the old and new runs?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Later.</b> Discuss later.</p></div></div></div>
+    <div class="field"><span class="k">Decision</span><div class="v"><p class="k">Question: Do I change the detector to the pixel share rule, and test it on the old and new runs?</p><div class="ask"><span class="k">Answer · 2026-11-20</span><p><b>Later.</b> Discuss later.</p></div><div class="ask"><span class="k">Answer · 2026-11-21</span><p>Use a backdrop color that the tray never draws, so it never matches. Rule: share above 98 %.</p></div></div></div>
+    <div class="field"><span class="k">Fix</span><div class="v"><ul><li>Recorder: <code>--backdrop-key</code> draws the backdrop in <code>#FF00FF</code>. Each frame writes the share of pixels that are exactly that color (3rd column of the times file).</li><li>Recorder: the backdrop stays directly under the lowest tray window. Before, other windows of the screen could cover it.</li><li><code>empty.py</code>: a blink is a frame with a key share above 98 %, after a tray frame, with the tray back later. The end of the run is no blink.</li><li><code>sheets.sh</code> uses the key backdrop and the built exe with <code>INSTANCE</code>.</li></ul></div></div>
+    <div class="field"><span class="k">Result</span><div class="v"><p>Same sheet run, fix on:</p><ul><li>Base: 0 blinks. A tray frame has a key share of 40.8 %. The highest share of a tray frame is 94.3 % (only the sheet shows).</li><li>Blink on purpose (<code>body:has(.scrim) { opacity: 0 }</code>): 11 blinks for 11 sheet opens, each 35 to 72 ms after the open.</li></ul></div></div>
   </section>
 </div>
 
@@ -720,6 +726,20 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
     <div class="field"><span class="k">Decision</span><div class="v"><p>I18 goes into R2, with I7 (the user).</p></div></div>
     <div class="field"><span class="k">Fix</span><div class="v"><p>R2. The page reports the shadow box of the tab (rest, hover) and of the peek bubble. The badge window is as large as all boxes together; the click area is the box of the current state. The window is 9 px taller (at 1.0 DPI) than before.</p></div></div>
     <div class="field"><span class="k">Result</span><div class="v"><p>Measured before the fix: the tab shadow ends 9 px below the window at rest, hover and peek; the bubble shadow 0.6 px below. Scenario <code>badge-states</code>, fix off and on: straight shadow edges (off), soft shadow edges (on). Check <code>badge-box-fits</code> passes in each state.</p></div></div>
+  </section>
+</div>
+<!-- I19 -->
+<div class="panel off" id="i19" role="tabpanel">
+  <section>
+    <div class="meta"><span class="pill rep">Reported</span><span class="k">source: I2 sheet runs · 2026-11-21</span></div>
+    <h2>I19 · The stress run misses 2 presses at the start</h2>
+    <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
+  </section>
+  <section>
+    <div class="field"><span class="k">What</span><div class="v"><p>In each sheet stress run, the first 2 presses of the first cycle miss: <code>.acts [data-act="left"]</code> and <code>.presence .scrim</code>, each after 3 s, on page <code>/</code>. The first press (<code>.nav2 a[href="cards"]</code>) says "clicked", but the page stays <code>/</code>. The later cycles pass. The run then ends with exit 1.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">INSTANCE=I2 spikes/tray-display/tools/sheets.sh key-base2
+# presses: 0 warnings, 2 misses (4 runs of 4)</pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Not known. Probable: the first press comes before the page is ready for navigation.</p></div></div>
   </section>
 </div>
 <!-- F1 -->

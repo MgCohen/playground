@@ -2617,3 +2617,11 @@ Findings:
   - It reads inline styles (`style="…"`) in `.razor` and `.html` files.
   - It reads style values that scripts set (`e.style.animation = '…'`, `setProperty('transition', '…')`).
 - Proof: 3 bad lines (a 2-line CSS declaration, a Razor inline style, a script style) each fail with file and line; without them, the test passes.
+
+### I2 and I1: key backdrop for the empty frame count
+
+- Decision of the user: a backdrop color that the tray never draws. Rule: key share above 98 %.
+- Recorder: `--backdrop-key` (#FF00FF), the key share of each frame (3rd column of the times file), and the backdrop stays directly under the lowest tray window (before, other windows could cover it, and the share was 0 in all frames).
+- `empty.py` key rule: a blink is a key share above 98 % after a tray frame, with the tray back later. `strip.ps1 -Key` shows it.
+- Results, same sheet run: base 0 blinks (tray frame 40.8 %, highest tray frame 94.3 %); blink on purpose (`body:has(.scrim) { opacity: 0 }`) 11 of 11.
+- I1 closed. New finding I19: each sheet stress run misses 2 presses at the start (4 of 4 runs).

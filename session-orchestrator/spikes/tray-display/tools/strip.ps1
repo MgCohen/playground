@@ -1,12 +1,14 @@
-# Usage: strip.ps1 <gif> <times file> <out.jpg> [nth]: five frames around the nth empty frame (frame mean = the mean of the first frame), side by side.
-param([string]$Gif, [string]$Times, [string]$Out, [int]$Nth = 1)
+# Usage: strip.ps1 <gif> <times file> <out.jpg> [nth] [-Key [-Limit 98]]: five frames around the nth empty frame, side by side.
+# Old rule: the frame mean is the mean of the first frame. -Key (I2): the key share (3rd column) is above the limit after a tray frame.
+param([string]$Gif, [string]$Times, [string]$Out, [int]$Nth = 1, [switch]$Key, [double]$Limit = 98)
 Add-Type -AssemblyName System.Drawing
 $rows = Get-Content $Times | Where-Object { $_.Trim() } | ForEach-Object { , ($_ -split ' ') }
 $empty = [double]$rows[0][1]
 $found = 0; $idx = -1
 for ($i = 1; $i -lt $rows.Count; $i++) {
-  $v = [double]$rows[$i][1]; $p = [double]$rows[$i - 1][1]
-  if ([math]::Abs($v - $empty) -lt 0.6 -and [math]::Abs($p - $empty) -gt 2) { $found++; if ($found -eq $Nth) { $idx = $i; break } }
+  if ($Key) { $blank = [double]$rows[$i][2] -gt $Limit -and [double]$rows[$i - 1][2] -le $Limit }
+  else { $v = [double]$rows[$i][1]; $p = [double]$rows[$i - 1][1]; $blank = [math]::Abs($v - $empty) -lt 0.6 -and [math]::Abs($p - $empty) -gt 2 }
+  if ($blank) { $found++; if ($found -eq $Nth) { $idx = $i; break } }
 }
 if ($idx -lt 0) { "no empty frame"; exit 1 }
 $img = [System.Drawing.Image]::FromFile($Gif)
