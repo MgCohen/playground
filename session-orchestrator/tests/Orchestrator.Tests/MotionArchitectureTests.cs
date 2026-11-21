@@ -8,9 +8,18 @@ namespace Orchestrator.Tests;
 /// </summary>
 public sealed class MotionArchitectureTests
 {
-    /// <summary>A time in a CSS transition or animation declaration that is not zero.</summary>
-    static readonly Regex CssMotion = new(@"\b(transition|animation)(-duration|-delay)?\s*:\s*(?<value>[^;}]*)");
+    /// <summary>A CSS transition or animation declaration. The value can go on more lines (#60).</summary>
+    static readonly Regex CssMotion = new(@"(?<![\w-])(transition|animation)(-duration|-delay)?\s*:\s*(?<value>[^;}""'`]*)");
     static readonly Regex CssTime = new(@"(?<![\w.-])(?<n>\d*\.\d+|\d+)m?s\b");
+
+    /// <summary>A CSS comment. The test replaces it with spaces and keeps its line breaks, so the line numbers stay correct.</summary>
+    static readonly Regex CssComment = new(@"/\*.*?\*/", RegexOptions.Singleline);
+
+    /// <summary>An inline style in markup (#60): style="…".</summary>
+    static readonly Regex InlineStyle = new(@"\bstyle\s*=\s*(?<q>[""'])(?<value>.*?)\k<q>", RegexOptions.Singleline);
+
+    /// <summary>A style value that a script sets (#60): e.style.animation = '…', e.style.transitionDelay = '…', setProperty('transition', '…').</summary>
+    static readonly Regex ScriptStyle = new(@"\.style\.(?<name>transition|animation)(Duration|Delay)?\s*=\s*(?<q>[""'`])(?<value>.*?)\k<q>|setProperty\(\s*[""'](?<name>transition|animation)(-duration|-delay)?[""']\s*,\s*(?<q>[""'`])(?<value>.*?)\k<q>");
 
     /// <summary>A timer or a time limit with a number in a script or in C#.</summary>
     static readonly Regex CodeTime = new(@"setTimeout\([^;]*,\s*(?<n>\d+)\s*\)|TimeSpan\.From(Seconds|Milliseconds)\(\s*(?<n>\d+)|Task\.Delay\(\s*(?<n>\d+)|""orchTray\.end"",[^;]*,\s*(?<n>\d+)\)");
@@ -31,7 +40,7 @@ public sealed class MotionArchitectureTests
         string[] folders = ["Orchestrator.Web/Components", "Orchestrator.Web/wwwroot", "Orchestrator.Tray/wwwroot"];
         foreach (var folder in folders)
             foreach (var path in Directory.EnumerateFiles(Path.Combine(src, folder), "*", SearchOption.AllDirectories))
-                if (Path.GetExtension(path) is ".razor" or ".cs" or ".js" or ".css") yield return path;
+                if (Path.GetExtension(path) is ".razor" or ".cs" or ".js" or ".css" or ".html") yield return path;
         foreach (var name in new[] { "BadgeWindow.cs", "TrayWindow.cs", "WidgetWindow.cs", "ClearHost.cs" })
             yield return Path.Combine(src, "Orchestrator.Tray", name);
     }
@@ -42,20 +51,40 @@ public sealed class MotionArchitectureTests
         foreach (var path in ViewFiles())
         {
             var file = Path.GetRelativePath(Repo(), path).Replace('\\', '/');
-            var lines = File.ReadAllLines(path);
+            var text = File.ReadAllText(path);
+            var lines = text.Split('\n');
             var css = path.EndsWith(".css", StringComparison.Ordinal);
-            for (var i = 0; i < lines.Length; i++)
+            int LineOf(int index) => text[..index].Count(c => c == '\n');
+            // #60: read each whole CSS declaration (it can go on more lines), and the style in markup and in scripts.
+            var at = new SortedSet<int>();
+            if (css)
             {
-                var line = lines[i];
-                var trimmed = line.TrimStart();
-                if (trimmed.StartsWith("//", StringComparison.Ordinal) || trimmed.StartsWith("/*", StringComparison.Ordinal) || trimmed.StartsWith("--", StringComparison.Ordinal)) continue;
-                var found = css
-                    ? CssMotion.Matches(line).SelectMany(m => CssTime.Matches(m.Groups["value"].Value)).Any(t => double.Parse(t.Groups["n"].Value, System.Globalization.CultureInfo.InvariantCulture) > 0)
-                    : CodeTime.Matches(line).Any(m => m.Groups["n"].Value != "0");
-                if (found) yield return (file, i + 1, line.Trim());
+                var plain = CssComment.Replace(text, m => Regex.Replace(m.Value, @"[^\n]", " "));
+                foreach (Match m in CssMotion.Matches(plain))
+                    if (HasTime(m.Groups["value"].Value)) at.Add(LineOf(m.Index));
             }
+            else
+            {
+                foreach (Match s in InlineStyle.Matches(text))
+                    foreach (Match m in CssMotion.Matches(s.Groups["value"].Value))
+                        if (HasTime(m.Groups["value"].Value)) at.Add(LineOf(s.Groups["value"].Index + m.Index));
+                foreach (Match s in ScriptStyle.Matches(text))
+                    if (HasTime(s.Groups["value"].Value)) at.Add(LineOf(s.Index));
+            }
+            if (!css)
+                for (var i = 0; i < lines.Length; i++)
+                {
+                    var trimmed = lines[i].TrimStart();
+                    if (trimmed.StartsWith("//", StringComparison.Ordinal) || trimmed.StartsWith("/*", StringComparison.Ordinal)) continue;
+                    if (CodeTime.Matches(lines[i]).Any(m => m.Groups["n"].Value != "0")) at.Add(i);
+                }
+            foreach (var i in at) yield return (file, i + 1, lines[i].Trim());
         }
     }
+
+    /// <summary>True if the value of a transition or animation has a time that is not zero.</summary>
+    static bool HasTime(string value) =>
+        CssTime.Matches(value).Any(t => double.Parse(t.Groups["n"].Value, System.Globalization.CultureInfo.InvariantCulture) > 0);
 
     [Test]
     public void Motion_times_are_tokens()

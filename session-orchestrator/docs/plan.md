@@ -2612,3 +2612,8 @@ Findings:
 - Many passes match a token by chance: 300 ms matches 6 tokens, 200 ms matches 8. Delay 80 ms (2 × `--t-tab-step`) matches `--t-press`.
 - Result: a match against "any token" cannot find a wrong time. A real check needs to know which token each motion uses.
 - The code is on branch `orch/spike-60-motion-times` (not merged), with the data in `docs/spike-60-motion-times.json`.
+- Decision of the user: option B. #60 is closed by the source test `Motion_times_are_tokens` (`MotionArchitectureTests`), with its 3 gaps fixed:
+  - It reads each whole CSS declaration, also on more lines, with comments removed.
+  - It reads inline styles (`style="…"`) in `.razor` and `.html` files.
+  - It reads style values that scripts set (`e.style.animation = '…'`, `setProperty('transition', '…')`).
+- Proof: 3 bad lines (a 2-line CSS declaration, a Razor inline style, a script style) each fail with file and line; without them, the test passes.
