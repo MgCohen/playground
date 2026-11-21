@@ -2577,3 +2577,5 @@ Umpire conflicts (report, no workaround): a helper class in a slice is denied (U
 
 - Merge of I17 into `orch/visual-review` (2026-11-21): 851 unit tests, 0 fail. Normal self-test 38 of 39: the new `label` check passes; only `badge-hover-fits` (I7) fails. I16 and I17 are on the tracker as fixed.
 - I5: the user removed the Narrator step (2026-11-21). Accessibility is not a requirement now. The keyboard checks stay.
+
+- Test inventory (`docs/test-inventory.md`): kept as a record. The user studies it later. No recommendation is applied now.
