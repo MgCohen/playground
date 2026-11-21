@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workflow Graph Shapes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one foldable row for each sample workflow. Inside, the same graph in four shapes, in four cells of the same size. A tap on a cell opens it large. */
+:root {
+  --page: #efece7; --tx: #2a2825; --mu: #6b665f; --line: rgba(27,26,24,.14); --surf: #fdfdfc; --cell: #f7f5f2;
+  --edge: #8d877e; --back: #c2410c; --skip: #6b665f;
+  --ag: #1f5fbf; --hu: #ff6a1a; --tl: #6b665f; --band-a: rgba(27,26,24,.04); --band-b: rgba(27,26,24,.08);
+  --f-body: "Inter", system-ui, sans-serif; --f-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #1b1a18; --tx: #ece9e4; --mu: #a39d94; --line: rgba(255,255,255,.12); --surf: #262522; --cell: #211f1d;
+  --edge: #8a847b; --back: #ff8a4c; --skip: #a39d94;
+  --ag: #6ea0ff; --hu: #ff7a33; --tl: #a39d94; --band-a: rgba(255,255,255,.03); --band-b: rgba(255,255,255,.07);
+} }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 12px 12px 24px; background: var(--page); color: var(--tx); font: 13px/1.45 var(--f-body); }
+.rows { display: grid; gap: 8px; max-width: 1200px; margin: 0 auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--mu); padding: 2px 4px; align-items: center; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+.legend s { display: inline-block; width: 18px; height: 0; border-top: 2px solid; margin-right: 5px; vertical-align: 3px; text-decoration: none; }
+.row { background: var(--surf); border: 1px solid var(--line); border-radius: 10px; }
+.row summary { cursor: pointer; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; list-style: none; }
+.row summary::-webkit-details-marker { display: none; }
+.row summary::before { content: ""; border-left: 7px solid var(--hu); border-top: 5px solid transparent; border-bottom: 5px solid transparent; align-self: center; transition: transform .15s; }
+.row[open] summary::before { transform: rotate(90deg); }
+.row summary b { font: 600 15px var(--f-body); }
+.row summary span { font-size: 12px; color: var(--mu); }
+.row[open] summary { border-bottom: 1px solid var(--line); }
+.why { margin: 0; padding: 8px 12px 0; max-width: 90ch; }
+.steps { margin: 4px 12px 0; font: 11px/1.5 var(--f-mono); color: var(--mu); }
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+@media (max-width: 640px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cell { margin: 0; display: grid; gap: 4px; min-width: 0; }
+.cell figcaption { font: 500 10px var(--f-mono); color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.box { aspect-ratio: 4 / 3; background: var(--cell); border: 1px solid var(--line); border-radius: 8px; cursor: zoom-in; overflow: hidden; }
+.box svg { width: 100%; height: 100%; display: block; }
+svg text { font-family: var(--f-body); fill: var(--tx); }
+.nd rect, .nd circle { fill: var(--surf); stroke-width: 1.6; }
+.nd.agent rect, .nd.agent circle { stroke: var(--ag); } .nd.human rect, .nd.human circle { stroke: var(--hu); } .nd.tool rect, .nd.tool circle { stroke: var(--tl); }
+.nd.dot.agent circle { fill: var(--ag); } .nd.dot.human circle { fill: var(--hu); } .nd.dot.tool circle { fill: var(--tl); }
+.nd.end rect { stroke-dasharray: 3 2; }
+.nd text { font-size: 10px; font-weight: 500; }
+.nd.dot text { font-size: 9px; paint-order: stroke; stroke: var(--cell); stroke-width: 3px; stroke-linejoin: round; }
+.e { fill: none; stroke: var(--edge); stroke-width: 1.3; }
+.e.back { stroke: var(--back); stroke-dasharray: 4 3; }
+.e.skip { stroke: var(--skip); stroke-dasharray: 2 3; }
+.lb rect { fill: var(--cell); stroke: var(--line); }
+.lb text { font-size: 8.5px; fill: var(--mu); }
+.band.a { fill: var(--band-a); } .band.b { fill: var(--band-b); }
+.bandt { font: 600 9px var(--f-mono); fill: var(--mu); letter-spacing: .06em; text-transform: uppercase; }
+html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: var(--cell); }
+.onebox { position: fixed; inset: 0; cursor: zoom-out; padding: 2vmin; }
+.onebox svg { width: 100%; height: 100%; display: block; }
+</style>
+
+<main class="rows" id="rows">
+  <div class="legend">
+    <span><i style="background:var(--ag)"></i>agent</span><span><i style="background:var(--hu)"></i>human</span><span><i style="background:var(--tl)"></i>tool</span>
+    <span><s style="border-color:var(--back);border-top-style:dashed"></s>loop back</span><span><s style="border-color:var(--skip);border-top-style:dotted"></s>skip ahead</span>
+    <span>Tap a graph to see it large.</span>
+  </div>
+</main>
+
+<script>
+(function () {
+  // ---- The five sample workflows. Node: [id, label, executor, layer, lane, end?]. Edge: [from, to, label?]. ----
+  var W = [
+    { id: 'w1', free: { branch: [0, 0], fix: [1, 0], test: [2, 0], pr: [3, 0], merge: [4, 0] }, name: 'Hotfix', shape: 'Line · 5 steps',
+      why: 'The simplest workflow: one path, no branch, no loop. A small fix from a new branch to the merge, as in the usual GitHub flow.',
+      stages: [['Fix', 0, 1], ['Check', 2, 2], ['Ship', 3, 4]],
+      nodes: [['branch', 'Make branch', 'tool', 0, 0], ['fix', 'Fix the bug', 'agent', 1, 0], ['test', 'Run tests', 'tool', 2, 0], ['pr', 'Open PR', 'agent', 3, 0], ['merge', 'Merge', 'human', 4, 0, 1]],
+      edges: [['branch', 'fix'], ['fix', 'test'], ['test', 'pr'], ['pr', 'merge']] },
+    { id: 'w2', free: { merge: [3.05, 0.55] }, ring: { c: [1, 0.55], r: 1, at: { checks: 180, review: 270, verdict: 0, rework: 90 } }, name: 'PR review', shape: 'One branch, one loop · 5 steps',
+      why: 'The review workflow of the orchestrator. The checks run, an agent reviews, and you give the verdict. "Change" goes to rework and back to the checks. "Approve" goes to the merge.',
+      stages: [['Check', 0, 1], ['Decide', 2, 2], ['Ship', 3, 3]],
+      nodes: [['checks', 'Run checks', 'tool', 0, 0], ['review', 'Review', 'agent', 1, 0], ['verdict', 'Verdict', 'human', 2, 0], ['merge', 'Merge', 'tool', 3, 0, 1], ['rework', 'Rework', 'agent', 3, 1]],
+      edges: [['checks', 'review'], ['review', 'verdict'], ['verdict', 'merge', 'approve'], ['verdict', 'rework', 'change'], ['rework', 'checks', 're-check']] },
+    { id: 'w3', free: { approve: [0.62, 1.0], propose: [1.05, 2.05] }, ring: { c: [1, 1.05], r: 1.05, at: { read: 195, ask: 268, answer: 338, record: 40, spec: 120 } }, bend: { 'record>ask': -0.12 }, name: 'Planning', shape: 'Two loops and a skip · 7 steps',
+      why: 'The planning workflow of this project. The question loop runs until no questions are open. The approval can send the spec back to the questions. With no questions at the start, the run skips to the spec.',
+      stages: [['Read', 0, 0], ['Questions', 1, 3], ['Spec', 4, 5], ['Tasks', 6, 6]],
+      nodes: [['read', 'Read the goal', 'agent', 0, 0], ['ask', 'Ask a question', 'agent', 1, 0], ['answer', 'Answer', 'human', 2, 0], ['record', 'Record', 'agent', 3, 0], ['spec', 'Write the spec', 'agent', 4, 0], ['approve', 'Approve', 'human', 5, 0], ['propose', 'Propose tasks', 'agent', 6, 0, 1]],
+      edges: [['read', 'ask'], ['ask', 'answer'], ['answer', 'record'], ['record', 'ask', 'more'], ['record', 'spec'], ['read', 'spec', 'no questions'], ['spec', 'approve'], ['approve', 'ask', 'change'], ['approve', 'propose', 'approve']] },
+    { id: 'w4', free: { spec: [0, 0.6], split: [0.9, 0.6], api: [1.8, -0.35], ui: [1.8, 0.6], docs: [1.8, 1.55], integ: [2.7, 0.6], release: [6, 0.6] }, ring: { c: [4.3, 0.75], r: 0.8, at: { test: 190, review: 350, fix: 90 } }, bend: { 'test>fix': -0.35 }, name: 'Feature delivery', shape: 'Fan-out, join, two loops · 10 steps',
+      why: 'A feature split into parallel tasks, as the orchestrator splits a goal into child sessions. The tasks join in one branch. A failed test or a "change" verdict goes to the fix step, and the fix goes back to the test.',
+      stages: [['Plan', 0, 1], ['Build', 2, 3], ['Check', 4, 5], ['Ship', 6, 6]],
+      nodes: [['spec', 'Write spec', 'agent', 0, 0], ['split', 'Split tasks', 'agent', 1, 0], ['api', 'API task', 'agent', 2, -1], ['ui', 'UI task', 'agent', 2, 0], ['docs', 'Docs task', 'agent', 2, 1], ['integ', 'Integrate', 'tool', 3, 0], ['test', 'Test', 'tool', 4, 0], ['review', 'Review', 'human', 5, 0], ['fix', 'Fix', 'agent', 5, 1], ['release', 'Release', 'tool', 6, 0, 1]],
+      edges: [['spec', 'split'], ['split', 'api'], ['split', 'ui'], ['split', 'docs'], ['api', 'integ'], ['ui', 'integ'], ['docs', 'integ'], ['integ', 'test'], ['test', 'review', 'pass'], ['test', 'fix', 'fail'], ['review', 'fix', 'change'], ['fix', 'test', 're-test'], ['review', 'release', 'approve']] },
+    { id: 'w5', free: { triage: [0, 1], docs: [1, 0], inv: [1, 1], ask: [1, 2], repro: [2.1, 1], tryfix: [3.1, 1.45], escalate: [2.4, 0], resolve: [4.1, 0.9], close: [2.3, 2.35] }, name: 'Incident triage', shape: 'Open graph · 9 steps, 3 ends',
+      why: 'An on-call incident or a bug report. The agent picks the next step at each node, and most steps can go to most others. The run ends in one of three ends: resolve, escalate or close.',
+      stages: [['Triage', 0, 0], ['Explore', 1, 2], ['Fix', 3, 3], ['End', 4, 4]],
+      nodes: [['triage', 'Triage', 'agent', 0, 0], ['docs', 'Read docs', 'agent', 1, -1], ['inv', 'Investigate', 'agent', 1, 0], ['ask', 'Ask the user', 'human', 1, 1], ['repro', 'Reproduce', 'tool', 2, 0], ['tryfix', 'Try a fix', 'agent', 3, 0], ['escalate', 'Escalate', 'human', 4, -1, 1], ['resolve', 'Resolve', 'human', 4, 0, 1], ['close', 'Close', 'human', 4, 1, 1]],
+      edges: [['triage', 'inv'], ['triage', 'ask'], ['inv', 'docs'], ['docs', 'inv'], ['inv', 'ask'], ['ask', 'inv'], ['inv', 'repro'], ['repro', 'inv', 'no repro'], ['repro', 'tryfix'], ['tryfix', 'repro', 'still fails'], ['tryfix', 'resolve', 'fixed'], ['inv', 'escalate', 'blocked'], ['ask', 'close', 'not a bug']] }
+  ];
+
+  // ---- The four shapes. main = the axis of the flow; cross = the axis of the lanes. ----
+  var V = [
+    { id: 'h', name: 'B · Horizontal boxes', orient: 'h', node: 'box', du: 110, dv: 44, nMain: 86, nCross: 26, elbow: false },
+    { id: 'n', name: 'D · Node graph', orient: 'h', node: 'dot', du: 66, dv: 46, nMain: 14, nCross: 14, elbow: false },
+    { id: 'f', name: 'B2 · Boxes, free layout', free: true, node: 'box', ux: 116, uy: 60, w: 86, h: 26 },
+    { id: 'g', name: 'D2 · Nodes, free layout', free: true, node: 'dot', ux: 84, uy: 60, w: 14, h: 14 }
+  ];
+
+  var uid = 0;
+
+  function renderFree(w, v) {
+    var id = 'g' + (uid++), N = {}, pairs = {};
+    var R = w.ring ? w.ring.r * v.ux : 0, RC = w.ring ? [w.ring.c[0] * v.ux, w.ring.c[1] * v.uy] : [0, 0];
+    function onRing(deg) { var a = deg * Math.PI / 180; return [RC[0] + R * Math.cos(a), RC[1] + R * Math.sin(a)]; }
+    w.nodes.forEach(function (n) {
+      var deg = w.ring && w.ring.at[n[0]], q = deg !== undefined ? onRing(deg) : [w.free[n[0]][0] * v.ux, w.free[n[0]][1] * v.uy];
+      N[n[0]] = { label: n[1], ex: n[2], end: n[5], x: q[0], y: q[1], deg: deg };
+    });
+    function inside(o, pt) {
+      if (v.node === 'dot') return Math.hypot(pt[0] - o.x, pt[1] - o.y) < v.w / 2 + 3;
+      return Math.abs(pt[0] - o.x) < v.w / 2 + 3 && Math.abs(pt[1] - o.y) < v.h / 2 + 3;
+    }
+    function leave(o, deg, dir) { var d = 0; while (d < 170 && inside(o, onRing(deg + dir * d))) d += 0.5; return deg + dir * d; }
+    w.edges.forEach(function (e) { pairs[e[0] + '>' + e[1]] = 1; });
+    var lo = [1e9, 1e9], hi = [-1e9, -1e9];
+    function grow(x, y) { lo[0] = Math.min(lo[0], x); lo[1] = Math.min(lo[1], y); hi[0] = Math.max(hi[0], x); hi[1] = Math.max(hi[1], y); }
+    function trim(n, dx, dy) {
+      var L = Math.hypot(dx, dy) || 1;
+      if (v.node === 'dot') { var k = (v.w / 2 + 3) / L; return [n.x + dx * k, n.y + dy * k]; }
+      var t2 = Math.min((v.w / 2 + 2) / Math.abs(dx || 1e-9), (v.h / 2 + 2) / Math.abs(dy || 1e-9));
+      return [n.x + dx * t2, n.y + dy * t2];
+    }
+    var edges = '', labels = '', nodes = '';
+    w.edges.forEach(function (e) {
+      var a = N[e[0]], b = N[e[1]], key = e[0] + '>' + e[1];
+      var back = w.nodes.filter(function (n) { return n[0] === e[1]; })[0][3] < w.nodes.filter(function (n) { return n[0] === e[0]; })[0][3];
+      if (a.deg !== undefined && b.deg !== undefined && !(w.bend && w.bend[key] !== undefined)) {
+        var dd = ((b.deg - a.deg) % 360 + 540) % 360 - 180, dir = dd > 0 ? 1 : -1;
+        var d0 = leave(a, a.deg, dir), d1 = leave(b, a.deg + dd, -dir), p0 = onRing(d0), p1 = onRing(d1);
+        edges += '<path class="e' + (back ? ' back' : '') + '" d="M' + p0[0].toFixed(1) + ',' + p0[1].toFixed(1) + ' A' + R.toFixed(1) + ',' + R.toFixed(1) + ' 0 0 ' + (dir > 0 ? 1 : 0) + ' ' + p1[0].toFixed(1) + ',' + p1[1].toFixed(1) + '" marker-end="url(#' + id + (back ? 'b' : 'a') + ')"/>';
+        var pm = onRing((d0 + d1) / 2);
+        for (var k2 = 0; k2 <= 8; k2++) { var pk = onRing(d0 + (d1 - d0) * k2 / 8); grow(pk[0], pk[1]); }
+        if (e[2]) {
+          var lw0 = e[2].length * 4.6 + 8;
+          labels += '<g class="lb"><rect x="' + (pm[0] - lw0 / 2).toFixed(1) + '" y="' + (pm[1] - 6.5).toFixed(1) + '" width="' + lw0.toFixed(1) + '" height="13" rx="6.5"/><text x="' + pm[0].toFixed(1) + '" y="' + (pm[1] + 3).toFixed(1) + '" text-anchor="middle">' + e[2] + '</text></g>';
+          grow(pm[0] - lw0 / 2, pm[1] - 7); grow(pm[0] + lw0 / 2, pm[1] + 7);
+        }
+        return;
+      }
+      var dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy);
+      var bend = (w.bend && w.bend[key] !== undefined) ? w.bend[key] : (pairs[e[1] + '>' + e[0]] ? 0.14 : (back ? 0.22 : 0));
+      var cx = (a.x + b.x) / 2 - dy * bend, cy = (a.y + b.y) / 2 + dx * bend;
+      var s = trim(a, cx - a.x, cy - a.y), t2 = trim(b, cx - b.x, cy - b.y);
+      edges += '<path class="e' + (back ? ' back' : '') + '" d="M' + s[0].toFixed(1) + ',' + s[1].toFixed(1) + ' Q' + cx.toFixed(1) + ',' + cy.toFixed(1) + ' ' + t2[0].toFixed(1) + ',' + t2[1].toFixed(1) + '" marker-end="url(#' + id + (back ? 'b' : 'a') + ')"/>';
+      var mx = (s[0] + 2 * cx + t2[0]) / 4, my = (s[1] + 2 * cy + t2[1]) / 4;
+      grow(mx, my);
+      if (e[2]) {
+        var lw = e[2].length * 4.6 + 8;
+        labels += '<g class="lb"><rect x="' + (mx - lw / 2).toFixed(1) + '" y="' + (my - 6.5).toFixed(1) + '" width="' + lw.toFixed(1) + '" height="13" rx="6.5"/><text x="' + mx.toFixed(1) + '" y="' + (my + 3).toFixed(1) + '" text-anchor="middle">' + e[2] + '</text></g>';
+        grow(mx - lw / 2, my - 7); grow(mx + lw / 2, my + 7);
+      }
+    });
+    Object.keys(N).forEach(function (k) {
+      var o = N[k];
+      if (v.node === 'dot') {
+        nodes += '<g class="nd dot ' + o.ex + '"><circle cx="' + o.x + '" cy="' + o.y + '" r="' + (v.w / 2) + '"' + (o.end ? ' stroke-width="3" style="stroke:var(--surf)"' : '') + '/><text x="' + o.x + '" y="' + (o.y + v.h / 2 + 11) + '" text-anchor="middle">' + o.label + '</text></g>';
+        grow(o.x - 30, o.y - v.h / 2); grow(o.x + 30, o.y + v.h / 2 + 14);
+      } else {
+        nodes += '<g class="nd ' + o.ex + (o.end ? ' end' : '') + '"><rect x="' + (o.x - v.w / 2) + '" y="' + (o.y - v.h / 2) + '" width="' + v.w + '" height="' + v.h + '" rx="7"/><text x="' + o.x + '" y="' + (o.y + 3.5) + '" text-anchor="middle">' + o.label + '</text></g>';
+        grow(o.x - v.w / 2, o.y - v.h / 2); grow(o.x + v.w / 2, o.y + v.h / 2);
+      }
+    });
+    var m = 8;
+    var defs = '<defs><marker id="' + id + 'a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="var(--edge)"/></marker>' +
+      '<marker id="' + id + 'b" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="var(--back)"/></marker></defs>';
+    return '<svg viewBox="' + [lo[0] - m, lo[1] - m, hi[0] - lo[0] + 2 * m, hi[1] - lo[1] + 2 * m].map(function (n) { return n.toFixed(1); }).join(' ') + '" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + w.name + ', ' + v.name + '">' + defs + edges + nodes + labels + '</svg>';
+  }
+  function render(w, v) {
+    if (v.free) return renderFree(w, v);
+    var id = 'g' + (uid++);
+    var minLane = Math.min.apply(null, w.nodes.map(function (n) { return n[4]; }));
+    var maxLane = Math.max.apply(null, w.nodes.map(function (n) { return n[4]; }));
+    var N = {};
+    w.nodes.forEach(function (n) {
+      var u = n[3] * v.du, c = (n[4] - minLane) * v.dv;
+      N[n[0]] = { id: n[0], label: n[1], ex: n[2], layer: n[3], lane: n[4], end: n[5], u: u, c: c, um: u + v.nMain / 2, cm: c + v.nCross / 2 };
+    });
+    var crossMin = 0, crossMax = (maxLane - minLane) * v.dv + v.nCross;
+    var lo = { u: 1e9, c: 1e9 }, hi = { u: -1e9, c: -1e9 };
+    function grow(u, c) { lo.u = Math.min(lo.u, u); lo.c = Math.min(lo.c, c); hi.u = Math.max(hi.u, u); hi.c = Math.max(hi.c, c); }
+    function P(u, c) { return v.orient === 'h' ? (u.toFixed(1) + ',' + c.toFixed(1)) : (c.toFixed(1) + ',' + u.toFixed(1)); }
+    function XY(u, c) { return v.orient === 'h' ? [u, c] : [c, u]; }
+    var edges = '', labels = '', nodes = '';
+    var backs = [], skips = [], fwd = [], side = [];
+    var pairs = {};
+    w.edges.forEach(function (e) { pairs[e[0] + '>' + e[1]] = 1; });
+    w.edges.forEach(function (e) {
+      var a = N[e[0]], b = N[e[1]];
+      if (a.layer === b.layer) { if (!(pairs[e[1] + '>' + e[0]] && e[0] > e[1])) side.push(e); return; }
+      if (b.layer < a.layer) { backs.push(e); return; }
+      var blocked = false;
+      if (a.lane === b.lane && b.layer - a.layer > 1) w.nodes.forEach(function (n) { if (n[4] === a.lane && n[3] > a.layer && n[3] < b.layer) blocked = true; });
+      (blocked ? skips : fwd).push(e);
+    });
+    var span = function (e) { return Math.abs(N[e[0]].layer - N[e[1]].layer); };
+    backs.sort(function (x, y) { return span(x) - span(y); });
+    skips.sort(function (x, y) { return span(x) - span(y); });
+    var dotPad = v.node === 'dot' ? 14 : 0;
+    function label(text, u, c) {
+      if (!text) return;
+      var w2 = text.length * 4.6 + 8, xy = XY(u, c);
+      labels += '<g class="lb"><rect x="' + (xy[0] - w2 / 2).toFixed(1) + '" y="' + (xy[1] - 6.5).toFixed(1) + '" width="' + w2.toFixed(1) + '" height="13" rx="6.5"/><text x="' + xy[0].toFixed(1) + '" y="' + (xy[1] + 3).toFixed(1) + '" text-anchor="middle">' + text + '</text></g>';
+      grow(u - (v.orient === 'h' ? w2 / 2 : 7), c - (v.orient === 'h' ? 7 : w2 / 2)); grow(u + (v.orient === 'h' ? w2 / 2 : 7), c + (v.orient === 'h' ? 7 : w2 / 2));
+    }
+    var mk = ' marker-end="url(#' + id + 'a)"', mkb = ' marker-end="url(#' + id + 'b)"';
+    // Forward edges.
+    fwd.forEach(function (e) {
+      var a = N[e[0]], b = N[e[1]];
+      var su = a.u + v.nMain, sc = a.cm, tu = b.u, tc = b.cm, d;
+      if (v.elbow) { var mu = (su + tu) / 2; d = 'M' + P(su, sc) + ' L' + P(mu, sc) + ' L' + P(mu, tc) + ' L' + P(tu - 1, tc); label(e[2], mu, (sc + tc) / 2); }
+      else if (sc === tc) { d = 'M' + P(su, sc) + ' L' + P(tu - 1, tc); label(e[2], (su + tu) / 2, sc); }
+      else { var k = (tu - su) * 0.5; d = 'M' + P(su, sc) + ' C' + P(su + k, sc) + ' ' + P(tu - k, tc) + ' ' + P(tu - 1, tc); label(e[2], (su + tu) / 2, (sc + tc) / 2); }
+      edges += '<path class="e" d="' + d + '"' + mk + '/>';
+    });
+    // Same-layer edges: a short link across the lanes.
+    side.forEach(function (e) {
+      var a = N[e[0]], b = N[e[1]], down = b.c > a.c;
+      var s = down ? a.c + v.nCross : a.c, t = down ? b.c : b.c + v.nCross;
+      var both = pairs[e[1] + '>' + e[0]];
+      var off = v.node === 'dot' ? v.nMain / 2 + 3 : 0;
+      if (v.node === 'dot') { s = down ? a.c + v.nCross + dotPad : a.c; }
+      edges += '<path class="e" d="M' + P(a.um + off, s + (down ? 1 : -1)) + ' L' + P(a.um + off, t + (down ? -1 : 1)) + '"' + mk + (both ? ' marker-start="url(#' + id + 'a)"' : '') + '/>';
+      label(e[2], a.um, (s + t) / 2);
+    });
+    // Skip edges: an arc on the low cross side.
+    skips.forEach(function (e, i) {
+      var a = N[e[0]], b = N[e[1]], depth = 16 + 12 * i, base = crossMin - depth;
+      var d = v.elbow ? 'M' + P(a.um, a.c) + ' L' + P(a.um, base) + ' L' + P(b.um, base) + ' L' + P(b.um, b.c - 1)
+        : 'M' + P(a.um, a.c) + ' C' + P(a.um, base - depth * .3) + ' ' + P(b.um, base - depth * .3) + ' ' + P(b.um, b.c - 1);
+      edges += '<path class="e skip" d="' + d + '"' + mk + '/>';
+      grow(a.um, base - 4); label(e[2], (a.um + b.um) / 2, v.elbow ? base : base + depth * .02 - 0);
+    });
+    // Back edges: an arc on the high cross side.
+    backs.forEach(function (e, i) {
+      var a = N[e[0]], b = N[e[1]], depth = 16 + 12 * i + dotPad, base = crossMax + depth;
+      var sa = a.c + v.nCross + (v.node === 'dot' ? dotPad : 0), sb = b.c + v.nCross + (v.node === 'dot' ? dotPad : 0);
+      var d = v.elbow ? 'M' + P(a.um, sa) + ' L' + P(a.um, base) + ' L' + P(b.um, base) + ' L' + P(b.um, sb + 1)
+        : 'M' + P(a.um, sa) + ' C' + P(a.um, base + depth * .3) + ' ' + P(b.um, base + depth * .3) + ' ' + P(b.um, sb + 1);
+      edges += '<path class="e back" d="' + d + '"' + mkb + '/>';
+      grow(a.um, base + 4); label(e[2], (a.um + b.um) / 2, base);
+    });
+    // Nodes.
+    w.nodes.forEach(function (n) {
+      var o = N[n[0]], xy = XY(o.u, o.c);
+      var W2 = v.orient === 'h' ? v.nMain : v.nCross, H2 = v.orient === 'h' ? v.nCross : v.nMain;
+      if (v.node === 'dot') {
+        nodes += '<g class="nd dot ' + o.ex + '"><circle cx="' + (xy[0] + W2 / 2) + '" cy="' + (xy[1] + H2 / 2) + '" r="' + (W2 / 2) + '"' + (o.end ? ' stroke-width="3" style="stroke:var(--surf)"' : '') + '/>' +
+          '<text x="' + (xy[0] + W2 / 2) + '" y="' + (xy[1] + H2 + 11) + '" text-anchor="middle">' + o.label + '</text></g>';
+        grow(o.u - 22, o.c); grow(o.u + v.nMain + 22, o.c + v.nCross + dotPad);
+      } else {
+        nodes += '<g class="nd ' + o.ex + (o.end ? ' end' : '') + '"><rect x="' + xy[0] + '" y="' + xy[1] + '" width="' + W2 + '" height="' + H2 + '" rx="7"/>' +
+          '<text x="' + (xy[0] + W2 / 2) + '" y="' + (xy[1] + H2 / 2 + 3.5) + '" text-anchor="middle">' + o.label + '</text></g>';
+        grow(o.u, o.c); grow(o.u + v.nMain, o.c + v.nCross);
+      }
+    });
+    // Stage bands: one column for each stage, under all else.
+    var bands = '';
+    if (v.stages) {
+      var gap = (v.du - v.nMain) / 2, top = lo.c - 18, bot = hi.c + 4;
+      w.stages.forEach(function (s, i) {
+        var u0 = s[1] * v.du - gap, u1 = s[2] * v.du + v.nMain + gap;
+        bands += '<rect class="band ' + (i % 2 ? 'b' : 'a') + '" x="' + u0 + '" y="' + top + '" width="' + (u1 - u0) + '" height="' + (bot - top) + '" rx="6"/>' +
+          '<text class="bandt" x="' + (u0 + 6) + '" y="' + (top + 12) + '">' + s[0] + '</text>';
+        grow(u0, top); grow(u1, bot);
+      });
+    }
+    var m = 8, a0 = XY(lo.u, lo.c), a1 = XY(hi.u, hi.c);
+    var x0 = Math.min(a0[0], a1[0]) - m, y0 = Math.min(a0[1], a1[1]) - m, x1 = Math.max(a0[0], a1[0]) + m, y1 = Math.max(a0[1], a1[1]) + m;
+    var defs = '<defs><marker id="' + id + 'a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="var(--edge)"/></marker>' +
+      '<marker id="' + id + 'b" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="var(--back)"/></marker></defs>';
+    return '<svg viewBox="' + [x0, y0, x1 - x0, y1 - y0].map(function (n) { return n.toFixed(1); }).join(' ') + '" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + w.name + ', ' + v.name + '">' +
+      defs + bands + edges + nodes + labels + '</svg>';
+  }
+
+  var one = new URLSearchParams(location.search).get('one');
+  if (one) {
+    var p = one.split('-');
+    var w = W.filter(function (x) { return x.id === p[0]; })[0], v = V.filter(function (x) { return x.id === p[1]; })[0];
+    if (w && v) {
+      document.documentElement.classList.add('one');
+      document.body.innerHTML = '<div class="onebox">' + render(w, v) + '</div>';
+      document.body.firstChild.addEventListener('click', function () { parent.postMessage({ sk: 'close' }, '*'); });
+    }
+    return;
+  }
+
+  var rows = document.getElementById('rows');
+  W.forEach(function (w) {
+    var d = document.createElement('details');
+    d.className = 'row';
+    var cells = V.map(function (v) {
+      return '<figure class="cell"><figcaption>' + v.name + '</figcaption><div class="box" data-one="' + w.id + '-' + v.id + '">' + render(w, v) + '</div></figure>';
+    }).join('');
+    d.innerHTML = '<summary><b>' + w.name + '</b><span>' + w.shape + '</span></summary><p class="why">' + w.why + '</p>' +
+      '<p class="steps">' + w.nodes.map(function (n) { return n[1]; }).join(' · ') + '</p><div class="grid">' + cells + '</div>';
+    rows.appendChild(d);
+  });
+  rows.addEventListener('click', function (e) {
+    var b = e.target.closest('.box');
+    if (b) parent.postMessage({ sk: 'open', page: 'graphs', id: b.dataset.one }, '*');
+  });
+})();
+</script>

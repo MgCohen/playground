@@ -1,0 +1,1021 @@
+<title>Advanced Features</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one feature for each tab. Each feature: summary, logic, capabilities, workflow, data. Same tokens as the design pages. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --warn: #9a6200; --warn-soft: #fbf0dc;
+  --bad: #a3322a; --bad-soft: #f8e3e1; --good: #2f7a3a; --good-soft: #e2f2e4; --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --warn-soft: #33270f;
+    --bad: #ee8a80; --bad-soft: #3a1d1a; --good: #7fcb8a; --good-soft: #17301b; --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --warn-soft: #33270f;
+  --bad: #ee8a80; --bad-soft: #3a1d1a; --good: #7fcb8a; --good-soft: #17301b; --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 72ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
+.summary { color: var(--muted); max-width: 72ch; }
+.status { align-self: flex-start; font: 500 12px var(--font-mono); color: var(--warn); background: var(--warn-soft); border: 1px solid var(--warn); border-radius: 999px; padding: 2px 10px; }
+nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; min-width: 0;
+}
+/* One row of tabs that scrolls to the side. It never wraps, so the header keeps one height when features are added. */
+.tabs { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; min-width: 0; flex: 1;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); padding-right: 28px; }
+.tabs .sep { flex: none; width: 1px; align-self: stretch; background: var(--line); margin: 4px 4px; }
+nav select { display: none; font: 500 14px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; width: 100%; }
+nav select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 600px) { .tabs { display: none; } nav select { display: block; } }
+nav button { flex: none; white-space: nowrap;
+  font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 26px; }
+.panel[hidden] { display: none; }
+section { display: flex; flex-direction: column; gap: 12px; }
+.kicker { font: 500 12px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--panel); }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font: 500 12px var(--font-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--code-bg); }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code, .mono { font-family: var(--font-mono); font-size: 13px; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { margin: 0; }
+pre.mermaid { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+.chip { display: inline-block; font: 500 12px var(--font-mono); border-radius: 999px; padding: 1px 8px; border: 1px solid var(--line); white-space: nowrap; }
+.chip.have { color: var(--good); background: var(--good-soft); border-color: var(--good); }
+.chip.gap { color: var(--bad); background: var(--bad-soft); border-color: var(--bad); }
+.chip.part { color: var(--warn); background: var(--warn-soft); border-color: var(--warn); }
+.feat { display: grid; grid-template-columns: 64px 1fr; gap: 4px 12px; align-items: baseline; }
+.feat .id { font: 600 14px var(--font-mono); color: var(--accent); }
+.q { border-left: 3px solid var(--accent); padding-left: 12px; display: flex; flex-direction: column; gap: 6px; }
+.q b { font-family: var(--font-display); font-weight: 500; }
+.rec { color: var(--accent); }
+/* Sub-tabs: one feature tab holds its spec and its sketches. */
+.subtabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.subtabs button { font: 500 13px var(--font-mono); color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.subtabs button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+.subtabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sub { display: flex; flex-direction: column; gap: 26px; }
+.sub[hidden] { display: none; }
+.zoom { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.72); display: flex; align-items: center; justify-content: center; padding: 2vh 2vw; cursor: zoom-out; }
+.zoom[hidden] { display: none; }
+.zoom iframe { width: 96vw; height: 94vh; border: 0; background: transparent; }
+.sketch-frame { width: 100%; height: 1400px; border: 1px solid var(--line); border-radius: 8px; background: #efece7; display: block; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Session orchestrator · task P · 2026-11-18</div>
+  <h1>Advanced Features</h1>
+</header>
+
+<nav aria-label="Sections">
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button role="tab" data-tab="stream">F1 Stream bar</button>
+    <button role="tab" data-tab="run">F2 Workflows</button>
+    <button role="tab" data-tab="stack">F3 PR stack</button>
+    <button role="tab" data-tab="pr">F4 PR</button>
+    <button role="tab" data-tab="backlog">Backlog F5–F15</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button role="tab" data-tab="flows">User workflows</button>
+    <button role="tab" data-tab="gaps">Data gaps</button>
+    <button role="tab" data-tab="questions">Open questions</button>
+  </div>
+  <label class="mono" for="tab-select" hidden>Section</label>
+  <select id="tab-select" aria-label="Section">
+    <option value="overview">Overview</option>
+    <optgroup label="Features">
+      <option value="stream">F1 Stream bar</option>
+      <option value="run">F2 Workflows</option>
+      <option value="stack">F3 PR stack</option>
+      <option value="pr">F4 PR</option>
+      <option value="backlog">Backlog F5–F15</option>
+    </optgroup>
+    <optgroup label="Across features">
+      <option value="flows">User workflows</option>
+      <option value="gaps">Data gaps</option>
+      <option value="questions">Open questions</option>
+    </optgroup>
+  </select>
+</nav>
+
+<!-- OVERVIEW -->
+<div class="panel" id="overview">
+  <section>
+    <h2>The stream connects the three pages</h2>
+<pre class="mermaid">
+flowchart LR
+  S["Stream C<br/>F1 stream bar"] --> SE["Sessions<br/>(page exists)"]
+  S --> R["Runs"]
+  S --> P["PRs"]
+  R --> RP["F2 Run page"]
+  P --> PS["F3 PR stack page"]
+  PS --> PR["F4 PR page"]
+  RP -->|step session| SE
+  PR -->|task session| SE
+  PR -->|recorded default| Q["Question card<br/>/events/id"]
+  RP -->|wait question| Q
+  PR -.->|made by step| RP
+</pre>
+    <p>A stream is only an id on sessions and envelopes (C1, Q7). No stream record exists. So each page reads the stream id of its object and shows the same stream bar. The dashed link needs data that the store does not have yet.</p>
+  </section>
+
+  <section>
+    <h2>All features</h2>
+    <p class="summary">The full list. One row for each feature. Tap an id to open its tab or its card. "First set" is the work of now; "Backlog" is tracked here, and we work on one item at a time.</p>
+    <div class="scroll"><table>
+      <tr><th>Id</th><th>Feature</th><th>Group</th><th>What it does for the user</th><th>Data</th><th>State</th></tr>
+      <tr><td class="mono"><a href="#stream">F1</a></td><td>Stream bar</td><td>First set</td><td>Shows the stream of the page and moves between its sessions, runs and PRs</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
+      <tr><td class="mono"><a href="#run">F2</a></td><td>Workflows</td><td>First set</td><td>The workflow definitions and their runs: catalog, definition, runs, run, step run. You act on the wait of a run</td><td><span class="chip have">most</span></td><td><span class="chip">spec</span></td></tr>
+      <tr><td class="mono"><a href="#stack">F3</a></td><td>PR stack page</td><td>First set</td><td>Shows the PRs of a stream in their merge order and what waits for you. You review and merge here</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
+      <tr><td class="mono"><a href="#pr">F4</a></td><td>PR page</td><td>First set</td><td>Shows one PR with its task, session, diff, tests and defaults. You give the verdict here</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F5</a></td><td>Status and analytics</td><td>Backlog</td><td>The health of the system and how it changes in time: open sessions, waits, errors</td><td><span class="chip have">most</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F6</a></td><td>Projects</td><td>Backlog</td><td>Groups the work by project (one repository), and by feature inside a project</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F7</a></td><td>Timers and stale reminders</td><td>Backlog</td><td>Tells you about items that nobody touched for a long time. Your own timers</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F8</a></td><td>Multi-project work</td><td>Backlog</td><td>Connects the work of one feature across more than one repository</td><td><span class="chip gap">gap</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F9</a></td><td>Stream page</td><td>Backlog</td><td>One page for a stream: its sessions, runs and PRs together</td><td><span class="chip have">most</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F10</a></td><td>Templates catalog</td><td>Backlog</td><td>Lists the message kinds, modes and workflows. Shows one with its view and fields</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F11</a></td><td>Storage and store</td><td>Backlog</td><td>The store root, version, size and repository health in Settings</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F12</a></td><td>Setup and supervisor</td><td>Backlog</td><td>The supervisor state, the app version, the update check and the cloud workers</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F13</a></td><td>Session status page</td><td>Backlog (Q10: first set?)</td><td>Completes the page of one session: registry, work tree, runs, PRs, questions, state reason</td><td><span class="chip have">most</span></td><td><span class="chip part">built in part</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F14</a></td><td>GitHub overview</td><td>Backlog</td><td>Issues, open PRs, merges, and the commit and CI status of each repository</td><td><span class="chip gap">gap</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#backlog">F15</a></td><td>Change log</td><td>Backlog (Q13: meaning?)</td><td>What changed, by day: merged PRs, decisions, workflow versions, app releases. For each project and stream</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono"><a href="#flows">W1–W3</a></td><td>User workflows</td><td>Across features</td><td>The paths across the pages: answer a run, review a stream, review a default</td><td>—</td><td><span class="chip">spec</span></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Design rules</h2>
+    <ul>
+      <li>Each page shows first what waits for you, then the state, then the history.</li>
+      <li>Each act on a page calls an existing command or API: <code>orch run step</code>, <code>/api/decisions/…/review</code>, <code>orch merge</code>. The page adds no new logic.</li>
+      <li>The store is the source. A page never reads GitHub or git as its source of truth. A live read is only a detail. The one exception is F14: its subject is GitHub (Q11).</li>
+      <li>Each page works in the 350 px widget frame. A wide frame shows more columns.</li>
+      <li>Each feature has at least one dedicated view. The sketches give each view 2 or 3 variants. A part of a view is a block on that view, not a feature.</li>
+    </ul>
+  </section>
+</div>
+
+<!-- F1 STREAM BAR -->
+<div class="panel" id="stream" hidden>
+  <section>
+    <span class="kicker">F1 · summary</span>
+    <h2>Stream bar</h2>
+    <p>One bar at the top of each of the three pages, and of the session page. It names the stream and gives three tabs with counts. A badge shows the number of items that wait for you in this stream.</p>
+<pre class="mermaid">
+flowchart LR
+  B["Stream C · 2 wait for you"] --- T1["Sessions 4"] --- T2["Runs 1"] --- T3["PRs 5"]
+</pre>
+  </section>
+  <section>
+    <span class="kicker">Logic</span>
+    <ul>
+      <li>The page gets the stream id from its object: a session entry (<code>stream</code>), a run (through its owner), a PR (through its session).</li>
+      <li>Sessions: <code>/api/sessions?stream=C</code>, the same as <code>orch tree --stream C</code>.</li>
+      <li>Runs: the runs whose owner is in the stream.</li>
+      <li>PRs: the stack versions of the sessions of the stream.</li>
+      <li>"Waits for you": open questions with <code>needs</code> to the user, PRs in state <code>open</code> with no review, PRs that are ready to merge.</li>
+      <li>An object with no stream shows no bar.</li>
+    </ul>
+  </section>
+  <section>
+    <span class="kicker">Capabilities</span>
+    <div class="grid2">
+      <div class="box"><h3>Show</h3><ul><li>Stream code</li><li>Counts of sessions, runs, PRs</li><li>Count of items that wait for you</li></ul></div>
+      <div class="box"><h3>Do</h3><ul><li>Open a tab: a filtered list</li><li>Open the first item that waits for you</li></ul></div>
+    </div>
+  </section>
+</div>
+
+<!-- F2 WORKFLOW RUN -->
+<div class="panel" id="run" hidden>
+  <div class="subtabs" role="tablist" aria-label="F2 parts">
+    <button role="tab" data-sub="run/spec" aria-selected="true">Spec</button>
+    <button role="tab" data-sub="run/sketches">Sketches</button>
+    <button role="tab" data-sub="run/graphs">Graph shapes</button>
+  </div>
+<div class="sub" id="run/spec">
+  <section>
+    <span class="kicker">F2 · summary</span>
+    <h2>Workflows</h2>
+    <p>The workflow definitions and their runs. A definition is a graph of steps. A run is one execution of a definition, with an owner session and a goal. A step run is one pass of a run through one step. The main page is the run page: it shows the progress, the graph with the current step, the next steps and the history. When the run waits for you, the page shows the wait first and lets you act on it.</p>
+  </section>
+
+  <section>
+    <span class="kicker">Terms</span>
+    <div class="scroll"><table>
+      <tr><th>Term</th><th>Meaning</th><th>Store</th></tr>
+      <tr><td>Definition</td><td>A workflow: its steps, conditions, approvals and definition of done. It has a version</td><td><code>templates/workflows/&lt;name&gt;/workflow.json</code></td></tr>
+      <tr><td>Step</td><td>One node of a definition, with its own settings</td><td><code>steps[]</code></td></tr>
+      <tr><td>Run</td><td>One execution of a definition, with an owner session and a goal</td><td><code>runs/&lt;id&gt;.json</code></td></tr>
+      <tr><td>Step run</td><td>One pass of a run through one step: input, output, session, answer, time. A loop makes a new step run of the same step</td><td><code>run.history[]</code></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <span class="kicker">Inventory · pages and components</span>
+<pre class="mermaid">
+flowchart LR
+  C["Workflows"] --> D["Workflow definition"]
+  D --> SD["Step definition"]
+  C --> RL["Runs"]
+  D --> RL
+  RL --> R["Run"]
+  R --> SR["Step run"]
+  S["Session page, stream bar"] -->|run row| R
+</pre>
+    <div class="scroll"><table>
+      <tr><th>Code</th><th>Name</th><th>Kind</th><th>What you see</th><th>What you do</th><th>When</th></tr>
+      <tr><td class="mono">W-1</td><td>Workflows</td><td>Page</td><td>Each definition: name, purpose, version, number of steps, active runs</td><td>Open a definition</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-2</td><td>Workflow definition</td><td>Page</td><td>One definition in three views: <b>Graph</b> (a node graph, read only), <b>Outline</b> (rows with indents for branches and loops), <b>Definition</b> (the fields of each step). Also the definition of done, the versions and the runs</td><td>Switch the view. Click a node or a row: open its step definition</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-2a</td><td>Step definition</td><td>Sheet on W-2</td><td>The settings of one step: executor, session, instructions, input, output, approval, next conditions</td><td>Later: edit the fields (W-6)</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-3</td><td>Runs</td><td>Page</td><td>All runs: workflow, goal, owner, state, current step, wait, age</td><td>Filter by state, stream, project, workflow. Open a run</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-4</td><td>Run</td><td>Page</td><td>Two modes (B1) and the eight parts below</td><td>Answer, approve, pick, force a next step, go back, stop</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-5</td><td>Step run</td><td>Page or sheet</td><td>One step run: why the run came here, input, output, session, question and answer, time</td><td>Open the output document or the session</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-C1</td><td>Run row</td><td>Component</td><td>One line: workflow, goal, state, current step, wait. Same idea as the session row</td><td>Click: open the run page</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-C2</td><td>Wait card</td><td>Component</td><td>The wait of a run, with its acts. On the run page and in Cards</td><td>Answer, approve, pick</td><td><span class="chip have">first sketches</span></td></tr>
+      <tr><td class="mono">W-6</td><td>Definition editor</td><td>Mode of W-2</td><td>The step fields as a form. No drag on the graph</td><td>Change a step or a condition, check, save as a new version</td><td><span class="chip">later</span></td></tr>
+      <tr><td class="mono">W-7</td><td>New session with a workflow</td><td>Field of the new session form</td><td>A workflow field, as <code>orch new --workflow</code></td><td>Start a session that owns a new run</td><td><span class="chip">later</span></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <span class="kicker">Decisions · Workflows feature, 2026-11-19</span>
+    <div class="scroll"><table>
+      <tr><th>Question</th><th>Answer</th></tr>
+      <tr><td>Name of one pass through a step</td><td>"Step run". A step is the node of the definition</td></tr>
+      <tr><td>Can you start a run from the UI?</td><td>Not in version 1: a run starts from a session. Later: a workflow field on the new session form (W-7)</td></tr>
+      <tr><td>Who owns a run that starts from the UI?</td><td>The new session of the form. It gets the role orchestrator, as <code>orch new --workflow</code> does today</td></tr>
+      <tr><td>Can you edit a definition in the UI?</td><td>Later (W-6). A simple form on the step fields. No drag on the graph</td></tr>
+      <tr><td>How does a definition show?</td><td>Three views: node graph, outline rows with indents, and the step fields. A click on a node opens its step definition</td></tr>
+      <tr><td>How do other pages show runs?</td><td>A one-line run row (W-C1) that opens the run page, as a session row opens the session page</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <span class="kicker">Logic · the states of a run</span>
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  [*] --> running: orch run start
+  running --> waiting: the executor needs input
+  waiting --> running: answer, verdict, pick, step done
+  running --> done: a done step and the definition of done holds
+  waiting --> stopped: orch run stop, refuse
+  running --> stopped: 200 step runs
+  done --> [*]
+  stopped --> [*]
+</pre>
+    <div class="scroll"><table>
+      <tr><th>Wait kind</th><th>Meaning</th><th>Who acts</th><th>Act on the page</th><th>Command</th></tr>
+      <tr><td class="mono">agent</td><td>A session does the step</td><td>The step session</td><td>Open the session</td><td>—</td></tr>
+      <tr><td class="mono">ask</td><td>A question to a human</td><td>You or <code>approval.by</code></td><td>Answer</td><td><code>orch run step --answer</code></td></tr>
+      <tr><td class="mono">approval</td><td>The step needs a verdict</td><td>You</td><td>Approve, change, refuse, skip (skippable only)</td><td><code>--verdict</code>, <code>--skip-approval</code></td></tr>
+      <tr><td class="mono">pick</td><td>Many next steps are valid</td><td>The owner, else you</td><td>Pick a next step</td><td><code>--pick S</code></td></tr>
+      <tr><td class="mono">stuck</td><td>No next step is valid</td><td>You</td><td>Pick a step, or stop</td><td><code>--pick</code>, <code>orch run stop</code></td></tr>
+      <tr><td class="mono">exit</td><td>The exit condition does not hold</td><td>The step session</td><td>Open the session</td><td>—</td></tr>
+      <tr><td class="mono">tool</td><td>A tool runs</td><td>Nobody</td><td>None</td><td>—</td></tr>
+    </table></div>
+    <p><b>Next steps rule (C1 T2).</b> Each next step checks its own <code>when</code> and the entry condition of its target against the holds of the last step run. One valid: go. Many valid: pick. None: stuck. The page shows each candidate with ✓ or ✕ and the condition text.</p>
+  </section>
+
+  <section>
+    <span class="kicker">Decisions · brainstorm 2026-11-19</span>
+    <div class="scroll"><table>
+      <tr><th>#</th><th>Question</th><th>Answer</th></tr>
+      <tr><td class="mono">B1</td><td>Which moment comes first: the wait or the check?</td><td>Two modes that change with the run state. The run waits for you: the wait card is on top and the graph is small. Else: the graph is on top</td></tr>
+      <tr><td class="mono">B2</td><td>Do we add control acts to the runner?</td><td>Yes: "force a next step" and "go back to step X"</td></tr>
+      <tr><td class="mono">Q12</td><td>When a run goes back to step X, what happens to the outputs of the later steps?</td><td>Keep them. A loop is a normal part of the work, not an error: some results need many passes. Each step run is a new node in the history, with its own outputs. Nothing is marked old or removed</td></tr>
+      <tr><td class="mono">B3</td><td>Which parts go into the sketches?</td><td>All parts below go on the F2 view. The ones that need runner work have a mark</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <span class="kicker">Parts of the F2 view</span>
+    <div class="scroll"><table>
+      <tr><th>#</th><th>Part</th><th>What it shows</th><th>Data</th></tr>
+      <tr><td class="mono">1</td><td>Path on the graph</td><td>The path of this run on the definition graph. A loop edge has a neutral pass count, for example "pass 2". A loop is normal, so it has no warning color</td><td><span class="chip have">have</span></td></tr>
+      <tr><td class="mono">2</td><td>Why here</td><td>The conditions that moved the run to the current step, for example "the verdict is change"</td><td><span class="chip have">have</span></td></tr>
+      <tr><td class="mono">3</td><td>What if</td><td>Each next step with ✓ or ✕ and its condition. The likely next step has a mark</td><td><span class="chip have">have</span></td></tr>
+      <tr><td class="mono">4</td><td>Time per step</td><td>Agent time and the time that waited for you, for each step and for the run</td><td><span class="chip have">have</span></td></tr>
+      <tr><td class="mono">5</td><td>Step outputs</td><td>Each output (spec, task list) opens as a document page</td><td><span class="chip part">part</span></td></tr>
+      <tr><td class="mono">6</td><td>Nested runs</td><td>A step that started a child run shows a small ring. A tap opens the child run</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td class="mono">7</td><td>Control acts</td><td>"Force a next step" and "go back to step X", beside "stop"</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td class="mono">8</td><td>Changed definition</td><td>"The run uses v1, the current definition is v2"</td><td><span class="chip have">have</span></td></tr>
+    </table></div>
+
+    <p><b>Progress.</b> Proposal: the passes so far, plus the steps left on the shortest path to a done step. A pass is normal work, not a step back. See Q3.</p>
+  </section>
+
+  <section>
+    <span class="kicker">Capabilities</span>
+    <div class="grid2">
+      <div class="box"><h3>Show</h3><ul>
+        <li>Header: workflow, goal, status, owner, start time, loop count</li>
+        <li>Progress ring or bar</li>
+        <li>Graph: visited path, current node, loops</li>
+        <li>Current step: executor, actor, approval, input, output, wait time</li>
+        <li>Next steps with ✓ or ✕ and the condition</li>
+        <li>History: one row per visit, with session, time, output, answer</li>
+        <li>End reason when done or stopped</li>
+      </ul></div>
+      <div class="box"><h3>Do</h3><ul>
+        <li>Answer the wait question</li>
+        <li>Approve, change, refuse, or skip an approval</li>
+        <li>Pick a next step</li>
+        <li>Stop the run (danger act)</li>
+        <li>Open the owner or a step session</li>
+        <li>Tap a node: show the step runs of that step</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">Workflow · one wait</span>
+<pre class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant P as Run page
+  participant A as API
+  participant R as WorkflowRunner
+  R-->>P: run waits (approval, step spec)
+  P->>U: wait card first, with the step and the spec
+  U->>P: approve
+  P->>A: verdict approve
+  A->>R: orch run step --verdict approve
+  R->>R: next steps: one valid, go to propose
+  R-->>P: run running, step propose
+</pre>
+  </section>
+
+  <section>
+    <span class="kicker">Data</span>
+    <div class="scroll"><table>
+      <tr><th>Part</th><th>Source</th><th>State</th></tr>
+      <tr><td>Header, status, wait</td><td><code>runs/&lt;id&gt;.json</code>: <code>workflow</code>, <code>input</code>, <code>status</code>, <code>step</code>, <code>wait</code></td><td><span class="chip have">have</span></td></tr>
+      <tr><td>Graph</td><td><code>templates/workflows/&lt;name&gt;/workflow.json</code> at <code>run.version</code></td><td><span class="chip have">have</span></td></tr>
+      <tr><td>History</td><td><code>run.history[]</code></td><td><span class="chip have">have</span></td></tr>
+      <tr><td>Next steps ✓ ✕</td><td><code>next[].when</code>, target entry, <code>history[-1].holds</code></td><td><span class="chip have">have</span></td></tr>
+      <tr><td>Stream of the run</td><td>Owner entry <code>stream</code></td><td><span class="chip part">indirect</span></td></tr>
+      <tr><td>Read over HTTP</td><td>Only the generic <code>/api/store/workflow-runs</code></td><td><span class="chip gap">gap</span></td></tr>
+      <tr><td>Act over HTTP</td><td>Only <code>orch run step</code> in the CLI</td><td><span class="chip gap">gap</span></td></tr>
+      <tr><td>Live update</td><td>No envelope when a run changes</td><td><span class="chip gap">gap</span></td></tr>
+    </table></div>
+  </section>
+</div>
+<div class="sub" id="run/sketches" hidden>
+  <p class="summary">One row for each page of F2. Open a row to see its sketches side by side. Pick one sketch for each page.</p>
+  <iframe class="sketch-frame" title="F2 Workflows sketches" data-src="workflows-sketches.html?embed" loading="lazy"></iframe>
+</div>
+<div class="sub" id="run/graphs" hidden>
+  <p class="summary">Five real workflows, from a line to an open graph. Each is drawn as boxes (B) and as nodes (D), once in a line and once in a free layout (B2, D2). In the free layout, each loop sits on a circle, and the exit goes out from the circle. The goal: find a graph shape that also fits a row of the Workflows catalog.</p>
+  <iframe class="sketch-frame" title="Workflow graph shapes" data-src="workflow-graphs.html" loading="lazy"></iframe>
+</div>
+</div>
+
+<!-- F3 PR STACK -->
+<div class="panel" id="stack" hidden>
+  <section>
+    <span class="kicker">F3 · summary</span>
+    <h2>PR stack page</h2>
+    <p>The PRs of one stream, in their merge order. The base is at the bottom. Each PR sits on the PR before it. An integration branch groups PRs of more than one session. Each PR shows its state and its review state. The top of the page lists what waits for you: approve, change, refuse or merge. You review and merge on this page.</p>
+<pre class="mermaid">
+flowchart BT
+  M["main"] --> I["orch/integration-stack · integration"]
+  I --> C5["#28 C5 C3 findings · ready"]
+  C5 --> D1["#29 decision toolu_01 · default · needs review"]
+  D1 --> D2["#30 decision toolu_02 · open"]
+  C5 --> P["#31 P run and PR pages · open"]
+</pre>
+  </section>
+
+  <section>
+    <span class="kicker">Logic · the states of a PR version</span>
+<pre class="mermaid">
+stateDiagram-v2
+  direction LR
+  [*] --> planned: orch stack close
+  [*] --> started: orch decision start
+  planned --> started: orch decision start
+  started --> open: orch decision pr
+  open --> ready: approve
+  open --> open: change, orch stack rebase
+  open --> closed: refuse, or a version below closed
+  ready --> merged: orch merge
+  closed --> [*]
+  merged --> [*]
+</pre>
+    <div class="scroll"><table>
+      <tr><th>Rule</th><th>Effect on the page</th></tr>
+      <tr><td>A version with an answer by <code>policy</code> and no <code>approve</code> review blocks the merge</td><td>Badge "default · needs review". The merge act is off, with the reason</td></tr>
+      <tr><td>A <code>change</code> review blocks the merge</td><td>Badge "change asked". The PR waits for the session</td></tr>
+      <tr><td><code>allowDefaults</code> on the session or a parent permits the merge</td><td>The default badge stays, the merge act is on</td></tr>
+      <tr><td>A refuse closes the version and each version above it</td><td>The page shows the closed PRs struck out, and the planned new versions</td></tr>
+      <tr><td>Merge only through <code>orch merge</code>, never <code>gh pr merge</code></td><td>The merge act calls <code>orch merge</code>. Proposal: only the lowest ready PR (Q4)</td></tr>
+      <tr><td>A <code>merge.block</code> envelope for each blocker</td><td>The page shows the blockers of the last merge attempt</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <span class="kicker">Capabilities</span>
+    <div class="grid2">
+      <div class="box"><h3>Show</h3><ul>
+        <li>"Waits for you" list at the top</li>
+        <li>The stack, base at the bottom</li>
+        <li>Each PR: number, title, session code, state, review state, blockers</li>
+        <li>Integration branches and the PRs they hold</li>
+        <li>Closed and replaced versions, folded</li>
+      </ul></div>
+      <div class="box"><h3>Do</h3><ul>
+        <li>Approve, change or refuse a PR (opens the verdict sheet)</li>
+        <li>Merge the lowest ready PR</li>
+        <li>Open a PR page</li>
+        <li>Open the session of a PR</li>
+        <li>Open the PR on GitHub</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">Workflow · review and merge a stack</span>
+<pre class="mermaid">
+flowchart TD
+  A["Open the PR stack page"] --> B{"Item waits for you?"}
+  B -->|no| Z["Nothing to do"]
+  B -->|yes| C["Open the lowest PR that waits"]
+  C --> D{"Verdict"}
+  D -->|approve| E["orch decision ready · PR ready"]
+  D -->|change| F["Session changes the branch · orch stack rebase"]
+  D -->|refuse| G["orch stack close · the session does it again"]
+  E --> H{"Lowest ready PR and no blocker?"}
+  H -->|yes| I["Merge · orch merge"]
+  H -->|no| B
+  I --> B
+  F --> B
+  G --> B
+</pre>
+  </section>
+
+  <section>
+    <span class="kicker">Data</span>
+    <div class="scroll"><table>
+      <tr><th>Part</th><th>Source</th><th>State</th></tr>
+      <tr><td>Decision PRs and their states</td><td><code>sessions/&lt;id&gt;/stack/&lt;decision&gt;.json</code></td><td><span class="chip have">have</span></td></tr>
+      <tr><td>PR events</td><td><code>branch.create</code>, <code>pr.open</code>, <code>pr.ready</code>, <code>pr.merge</code>, <code>merge.block</code></td><td><span class="chip have">have</span></td></tr>
+      <tr><td>Review state</td><td><code>review</code> envelopes by version id</td><td><span class="chip have">have</span></td></tr>
+      <tr><td>Task PRs (opened with <code>gh pr create</code>)</td><td>None</td><td><span class="chip gap">gap</span></td></tr>
+      <tr><td>Integration branches</td><td>None</td><td><span class="chip gap">gap</span></td></tr>
+      <tr><td>Order across sessions of a stream</td><td>Only the <code>base</code> of each version</td><td><span class="chip part">part</span></td></tr>
+      <tr><td>Stack of a stream over HTTP</td><td>None</td><td><span class="chip gap">gap</span></td></tr>
+    </table></div>
+  </section>
+</div>
+
+<!-- F4 PR -->
+<div class="panel" id="pr" hidden>
+  <section>
+    <span class="kicker">F4 · summary</span>
+    <h2>PR page</h2>
+    <p>One PR with all the facts for a verdict: the task, the session that did it, the diff summary, the tests, and the questions that the policy answered with a default. The review buttons are at the bottom, in the page bar.</p>
+  </section>
+
+  <section>
+    <span class="kicker">Logic · the effect of each verdict</span>
+    <div class="scroll"><table>
+      <tr><th>Act</th><th>API call</th><th>Then</th><th>Stack effect</th></tr>
+      <tr><td>Approve</td><td><code>POST /api/decisions/&lt;s&gt;/&lt;id&gt;/review</code> verdict <code>approve</code></td><td>The session runs <code>orch decision ready</code></td><td>open → ready</td></tr>
+      <tr><td>Change</td><td>Same, verdict <code>change</code>, with text</td><td>The session changes the branch, then <code>orch stack rebase</code></td><td>Stays open. The PRs above get a rebase</td></tr>
+      <tr><td>Refuse</td><td>Same, verdict <code>refuse</code>, with text</td><td>The session runs <code>orch stack close</code> and does the work again</td><td>This PR and the PRs above → closed. New versions → planned</td></tr>
+      <tr><td>Merge</td><td><code>orch merge &lt;pr&gt;</code> (no API yet)</td><td>A refusal posts <code>merge.block</code></td><td>ready → merged</td></tr>
+    </table></div>
+    <p>The review API works for decision PRs only. A task PR has no decision id. See the data gaps.</p>
+  </section>
+
+  <section>
+    <span class="kicker">Capabilities</span>
+    <div class="grid2">
+      <div class="box"><h3>Show</h3><ul>
+        <li>Title, number, branch, base, state</li>
+        <li>Task: goal and done-when from the brief</li>
+        <li>Session: full code, role, state, link</li>
+        <li>Diff summary: files, lines added and removed</li>
+        <li>Tests: pass, fail, skip</li>
+        <li>Recorded defaults: question, default, risk, time</li>
+        <li>Reviews so far, and the merge blockers</li>
+      </ul></div>
+      <div class="box"><h3>Do</h3><ul>
+        <li>Approve</li>
+        <li>Change, with a text (voice or keyboard)</li>
+        <li>Refuse, with a text</li>
+        <li>Merge, when it is the lowest ready PR</li>
+        <li>Open a default question card</li>
+        <li>Open the PR on GitHub</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">Workflow · from default to merge</span>
+<pre class="mermaid">
+sequenceDiagram
+  participant S as Session
+  participant Po as Policy
+  participant St as Store
+  participant U as User on PR page
+  S->>St: question (risk low, default A)
+  Po->>St: answer A after 60 s (by policy)
+  S->>St: orch decision start, then pr: pr.open
+  St-->>U: stack shows "default · needs review"
+  U->>St: review approve
+  St->>S: review delivered
+  S->>St: orch decision ready: pr.ready
+  U->>St: merge (orch merge)
+  St-->>U: pr.merge, version merged
+</pre>
+  </section>
+
+  <section>
+    <span class="kicker">Data</span>
+    <div class="scroll"><table>
+      <tr><th>Part</th><th>Source</th><th>State</th></tr>
+      <tr><td>Task</td><td>Registry entry + <code>brief</code> body</td><td><span class="chip have">have</span></td></tr>
+      <tr><td>Session</td><td><code>session.json</code>, <code>state.json</code></td><td><span class="chip have">have</span></td></tr>
+      <tr><td>Recorded defaults</td><td><code>question</code> + <code>answer by: policy</code> in the decision thread, <code>/api/ledger</code></td><td><span class="chip have">have</span></td></tr>
+      <tr><td>Reviews</td><td><code>review</code> envelopes</td><td><span class="chip have">have</span></td></tr>
+      <tr><td>Diff summary</td><td>None</td><td><span class="chip gap">gap</span></td></tr>
+      <tr><td>Tests</td><td>Only free text in a report</td><td><span class="chip gap">gap</span></td></tr>
+      <tr><td>Run step that made the PR</td><td>None</td><td><span class="chip gap">gap</span></td></tr>
+      <tr><td>Review of a task PR</td><td>The API needs a decision id</td><td><span class="chip gap">gap</span></td></tr>
+    </table></div>
+  </section>
+</div>
+
+<!-- BACKLOG -->
+<div class="panel" id="backlog" hidden>
+  <section>
+    <h2>Backlog</h2>
+    <p class="summary">Later advanced features. This tab records them, so that we can track them. We work on one at a time. When the work on a feature starts, it gets its own tab with all the parts: summary, logic, capabilities, workflow and data.</p>
+    <div class="scroll"><table>
+      <tr><th>Id</th><th>Feature</th><th>What it does for the user</th><th>Data</th><th>State</th></tr>
+      <tr><td class="mono">F5</td><td>Status and analytics</td><td>Shows the health of the system and how it changes in time: open sessions, waits, errors</td><td><span class="chip have">most</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F6</td><td>Projects</td><td>Groups the work by project (one repository), and by feature inside a project</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F7</td><td>Timers and stale reminders</td><td>Tells you about items that nobody touched for a long time</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F8</td><td>Multi-project work</td><td>Connects the work of one feature across more than one repository</td><td><span class="chip gap">gap</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F9</td><td>Stream page</td><td>One page for a stream: its sessions, runs and PRs together ("Later drafts" in ui-drafts)</td><td><span class="chip have">most</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F10</td><td>Templates catalog</td><td>Lists the message kinds, modes and workflows. Shows one with its view and fields</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F11</td><td>Storage and store</td><td>Shows the store root, version, size and repository health in Settings</td><td><span class="chip have">have</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F12</td><td>Setup and supervisor</td><td>Shows the supervisor state, the app version, the update check and the cloud workers</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F14</td><td>GitHub overview</td><td>Issues, open PRs, merges, and the commit and CI status of each repository</td><td><span class="chip gap">gap</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F15</td><td>Change log</td><td>What changed, by day: merged PRs, decisions, workflow versions, app releases</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
+      <tr><td class="mono">F13</td><td>Session status page</td><td>The page of one session. It exists, but it shows little. F13 completes it: registry, work tree, runs, PRs, questions, state reason</td><td><span class="chip have">most</span></td><td><span class="chip part">built in part</span></td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <span class="kicker">F5 · Status and analytics</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>A status page that gives the full picture. The top shows the current state. Under it, charts show how each number goes up and down over the last hours and days.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>Now: open sessions by state (running, idle, stale, forgotten, not responding)</li>
+        <li>Now: open questions, PRs that wait for a review, runs that wait</li>
+        <li>Errors in the last hour and day: <code>turn.fail</code>, <code>delivery.blocked</code>, <code>blocked</code>, <code>state.conflict</code>, <code>merge.block</code></li>
+        <li>Trends: each number over time, with up and down markers</li>
+        <li>Filter by project and by stream</li>
+        <li>Tap a number: the list of items behind it</li>
+      </ul></div>
+      <div class="box"><h3>Logic</h3><ul>
+        <li>Each number is a query of the event stream and the registry. No new record</li>
+        <li>A trend is a count by hour or by day of one envelope kind or one state change</li>
+        <li>When a kind of error repeats more than usual, the page marks the rise</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> envelopes, <code>state.json</code> history, registry</li>
+        <li><span class="chip gap">gap</span> a count API by kind and by time bucket</li>
+        <li><span class="chip gap">gap</span> a cache, so that the page does not read all days each time</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">F6 · Projects</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>A project is one real project with its own repository, for example the VSA template, the VSA Unity package or Arctic. Inside a project, one feature can need many sessions and many PRs. That unit needs its own group, so that you can see all its work together.</p></div>
+      <div class="box"><h3>Proposal: three levels</h3>
+<pre class="mermaid">
+flowchart TD
+  P1["Project · VSA template · one repo"] --> S1["Stream · a big feature"]
+  P1 --> S2["Stream · another feature"]
+  S1 --> T1["Task · one session"]
+  S1 --> T2["Task · one session"]
+  P2["Project · VSA Unity package"] --> S3["Stream"]
+</pre>
+        <p>The C1 stream already groups the work of many sessions. So the proposal is: project → stream → task. See Q8.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>Projects list: each project with its streams, open sessions and PRs that wait</li>
+        <li>Project page: its streams, sessions, runs and PRs</li>
+        <li>New session form: pick the project, then the stream</li>
+        <li>A project filter on each page</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> <code>work.repo</code> and <code>work.cwd</code> in each registry entry</li>
+        <li><span class="chip gap">gap</span> a project record: name, repository, default branch, docs</li>
+        <li><span class="chip gap">gap</span> a <code>project</code> field on the session entry and the envelope</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">F7 · Timers and stale reminders</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>Reminders for items that nobody touched for a long time. Today only questions (10 min, then 60 min) and forgotten sessions get reminders. F7 gives the same rule to each item that waits.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>Stale PR: open, with no review for N hours</li>
+        <li>Stale run: in a wait for N hours</li>
+        <li>Stale session: idle with no report, or done and not archived</li>
+        <li>Stale stream: no envelope for N days</li>
+        <li>A timer that you set on an item: "remind me in 2 hours"</li>
+        <li>A "stale" badge on each page, and a list on the status page (F5)</li>
+        <li>Snooze and dismiss</li>
+      </ul></div>
+      <div class="box"><h3>Logic</h3><ul>
+        <li>The age of an item is the time since its last envelope</li>
+        <li>The limits are settings, as the <code>reminders</code> setting is today</li>
+        <li>One reminder for each stale episode, as <code>forgotten.json</code> does today. A new envelope starts a new episode</li>
+        <li>The watchdog of the supervisor checks the limits on each tick</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> question reminders, forgotten, <code>archive-reminder</code></li>
+        <li><span class="chip gap">gap</span> limits for PRs, runs and streams</li>
+        <li><span class="chip gap">gap</span> a timer record and a snooze record</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">F8 · Multi-project work</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>One feature can need work in more than one repository. Example: the VSA package changes. Then the VSA Unity package uses it as a consumer. Then the work goes back to the VSA package. The sessions and PRs are in different repositories, but they are one piece of work.</p></div>
+      <div class="box"><h3>Proposal</h3>
+<pre class="mermaid">
+flowchart LR
+  subgraph A["Project · VSA (producer)"]
+    A1["PR #12 · new API"]
+    A3["PR #14 · fix from the consumer"]
+  end
+  subgraph B["Project · VSA Unity (consumer)"]
+    B1["PR #7 · use the new API"]
+  end
+  A1 -->|needs| B1
+  B1 -->|finds a problem| A3
+</pre>
+        <p>A stream can hold sessions from more than one project. A PR can name a PR in another repository as "needs". See Q9.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>Stream page and PR stack across repositories, grouped by project</li>
+        <li>"Needs" links between PRs in different repositories</li>
+        <li>Merge order across repositories: the producer first</li>
+        <li>A child session in another repository, with the same stream</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> a stream id on each session, in any repository</li>
+        <li><span class="chip gap">gap</span> PR links across repositories</li>
+        <li><span class="chip gap">gap</span> <code>orch merge</code> knows one repository only</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">F13 · Session status page</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>The page <code>/sessions/{id}</code> exists (<code>SessionStatus.razor</code>), but nobody worked on it after the first version. It is the center of the links: a run step, a PR and the stream bar all open it. So it must show the full session: what it is, where it is in the work, and what waits.</p></div>
+      <div class="box"><h3>Today</h3><ul>
+        <li>Progress ring, name, parent, state pill</li>
+        <li>Counts: cards, events, age</li>
+        <li>Children (flat list), related links from reports</li>
+        <li>Details: id, branch, folder, holder</li>
+        <li>Acts: event stream, message, stop or resume, archive</li>
+      </ul></div>
+      <div class="box"><h3>To add</h3><ul>
+        <li>Stream bar (F1), and the project (F6) later</li>
+        <li>Registry: full code, role, type, workflow, settings and their source (ui-drafts, Draft 2)</li>
+        <li>Work tree: parent and children with their role and state</li>
+        <li>Runs: the run that it owns, the run steps that it does (F2)</li>
+        <li>PRs: its stack versions and task PRs (F3, F4)</li>
+        <li>Open questions and recorded defaults</li>
+        <li>State reason: <code>waitReason</code>, <code>fault</code>, stale or forgotten since when (F7)</li>
+        <li>Last report: state, summary, next steps</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> registry entry, <code>state.json</code>, stack files, envelopes, runs</li>
+        <li><span class="chip part">part</span> runs of a session: a scan of all runs by <code>owner</code> and <code>history[].session</code></li>
+        <li><span class="chip gap">gap</span> task PRs (P-G4)</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">F14 · GitHub overview</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>One page with the GitHub state of each repository that the sessions work in: open issues, open PRs, recent merges, and the commit and CI status of each branch. It shows also the GitHub work that no session made.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>Issues: open, new this week, with labels and the session that works on it</li>
+        <li>PRs: open, draft, ready, review asked, with the <code>[orch]</code> tag</li>
+        <li>Merges: the last merges into the base branch</li>
+        <li>Commit status: the CI result of the head of each open branch (pass, fail, running)</li>
+        <li>Filter by project (F6) and by stream</li>
+        <li>Link each item to its session or its PR page (F4) when one exists</li>
+        <li>Start a session for an issue</li>
+      </ul></div>
+      <div class="box"><h3>Logic</h3><ul>
+        <li>The repositories come from <code>work.repo</code> of the registry entries, and later from the project records (F6)</li>
+        <li>A PR in the store and the same PR on GitHub show as one row. The store gives the session and the review state; GitHub gives the CI and the comments</li>
+        <li>GitHub is a call into another system, not a model provider. So it needs no <code>IProvider</code></li>
+        <li>A cache with a short age keeps the GitHub calls few</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> <code>pr.open</code>, <code>pr.merge</code> envelopes, the PR URL in reports</li>
+        <li><span class="chip gap">gap</span> issues, CI status and comments: only on GitHub</li>
+        <li><span class="chip gap">gap</span> a GitHub reader with a cache (Q11)</li>
+      </ul></div>
+    </div>
+  </section>
+  <section>
+    <span class="kicker">F15 · Change log</span>
+    <div class="grid2">
+      <div class="box"><h3>Summary</h3>
+        <p>One page that tells what changed, newest first, grouped by day. It shows the result of the work, not the work: merged PRs, decisions that apply, new workflow versions and app releases. You read it to catch up after a pause.</p></div>
+      <div class="box"><h3>Capabilities</h3><ul>
+        <li>One entry for each change: time, kind, title, project, stream, session, link</li>
+        <li>Kinds: PR merged, decision applied (answer, default, review verdict), workflow version, app release</li>
+        <li>Filter by project (F6), stream, kind and date</li>
+        <li>"Since my last visit" mark</li>
+        <li>Export one period as Markdown, for example for release notes</li>
+        <li>Each entry opens its PR page (F4), decision or run (F2)</li>
+      </ul></div>
+      <div class="box"><h3>Logic</h3><ul>
+        <li>The page reads the envelopes of the store. It writes nothing. A change log is a filtered view of the event stream</li>
+        <li>Only finished changes show: a merge, not an open PR; an applied decision, not an open question</li>
+        <li>The merge entry takes its text from the PR title and the report summary</li>
+      </ul></div>
+      <div class="box"><h3>Data</h3><ul>
+        <li><span class="chip have">have</span> <code>pr.merge</code>, decision and review envelopes, <code>docs/decisions.md</code></li>
+        <li><span class="chip gap">gap</span> task PRs that merge outside <code>orch merge</code> (P-G4)</li>
+        <li><span class="chip gap">gap</span> workflow versions (P-G14) and an app release record</li>
+      </ul></div>
+    </div>
+  </section>
+</div>
+
+<!-- USER WORKFLOWS -->
+<div class="panel" id="flows" hidden>
+  <section>
+    <h2>User workflows across the pages</h2>
+    <p class="summary">Each workflow starts where the user is: a card in the inbox, or the stream bar. Each ends when nothing waits for the user.</p>
+  </section>
+
+  <section>
+    <span class="kicker">W1 · a run waits for you</span>
+<pre class="mermaid">
+flowchart LR
+  A["Card: run planning waits"] --> B["Run page · wait first"]
+  B --> C["Read the step and its input"]
+  C --> D["Answer, approve or pick"]
+  D --> E["Run moves · graph updates"]
+  E --> F{"Waits again?"}
+  F -->|yes| B
+  F -->|no| G["Back to cards"]
+</pre>
+  </section>
+
+  <section>
+    <span class="kicker">W2 · review a stream</span>
+<pre class="mermaid">
+flowchart LR
+  A["Stream bar · PRs 5 · 2 wait"] --> B["PR stack page"]
+  B --> C["Lowest PR that waits"]
+  C --> D["PR page · task, diff, tests, defaults"]
+  D --> E{"Verdict"}
+  E -->|approve| F["Back to the stack · merge"]
+  E -->|change or refuse| G["The session works · the stack updates"]
+  F --> B
+  G --> B
+</pre>
+  </section>
+
+  <section>
+    <span class="kicker">W3 · review a default</span>
+<pre class="mermaid">
+flowchart LR
+  A["Policy answers with the default"] --> B["Draft PR on orch/decision-id"]
+  B --> C["Stack badge: default · needs review"]
+  C --> D["PR page · the default question first"]
+  D --> E{"Keep the default?"}
+  E -->|yes| F["Approve"]
+  E -->|no| G["Refuse with the other option"]
+</pre>
+  </section>
+
+  <section>
+    <span class="kicker">Proposal · PR review as a workflow definition</span>
+    <p>C1 puts the review workflow and the PR workflow on the roadmap. The rules of F3 and F4 fit the step format of C2. If they become a workflow, the PR page is a run page with a PR view. Proposal only; see Q6.</p>
+<pre class="mermaid">
+flowchart TD
+  O["open · tool: pr.open"] --> T["checks · tool: tests, diff"]
+  T --> R{"review · human · approval required"}
+  R -->|change| W["rework · agent: the task session"]
+  W --> T
+  R -->|refuse| X["close · tool: orch stack close"]
+  R -->|approve| RD["ready · tool: orch decision ready"]
+  RD --> M{"merge · human · lowest ready"}
+  M -->|merged| D(["done"])
+</pre>
+  </section>
+</div>
+
+<!-- DATA GAPS -->
+<div class="panel" id="gaps" hidden>
+  <section>
+    <h2>Data gaps</h2>
+    <p class="summary">Data that the pages need and the store does not have. Session D owns the store code. The same rows are in <code>docs/plan.md</code>, section "P plan".</p>
+    <div class="scroll"><table>
+      <tr><th>Id</th><th>Gap</th><th>Page</th><th>Proposal</th></tr>
+      <tr><td class="mono">P-G1</td><td>A run has no <code>stream</code> field</td><td>F1, F2</td><td>Read it from the owner entry. Or copy it into the run at start</td></tr>
+      <tr><td class="mono">P-G2</td><td>No run API for the UI: list, get, step, stop</td><td>F2</td><td><code>GET /api/runs?stream=</code>, <code>GET /api/runs/&lt;id&gt;</code>, <code>POST /api/runs/&lt;id&gt;/step</code></td></tr>
+      <tr><td class="mono">P-G3</td><td>No envelope when a run changes</td><td>F2</td><td>A <code>run.changed</code> envelope for live update</td></tr>
+      <tr><td class="mono">P-G4</td><td>Task PRs from <code>gh pr create</code> are not in the store</td><td>F3, F4</td><td>A <code>pr.open</code> record for each PR of a session (Q1)</td></tr>
+      <tr><td class="mono">P-G5</td><td>No record of integration branches</td><td>F3</td><td>An integration record: branch, base, the PRs it holds</td></tr>
+      <tr><td class="mono">P-G6</td><td>No stack of a stream over HTTP</td><td>F3</td><td><code>GET /api/stack?stream=</code></td></tr>
+      <tr><td class="mono">P-G7</td><td>No merge over HTTP</td><td>F3, F4</td><td><code>POST /api/prs/&lt;n&gt;/merge</code> that runs the <code>orch merge</code> rules</td></tr>
+      <tr><td class="mono">P-G8</td><td>No diff summary</td><td>F4</td><td>Files and line counts in the <code>pr.open</code> body, or a live <code>git diff --stat</code></td></tr>
+      <tr><td class="mono">P-G9</td><td>No test results</td><td>F4</td><td>A <code>tests</code> field in the report template: pass, fail, skip, command</td></tr>
+      <tr><td class="mono">P-G10</td><td>No link from a PR to the run step that made it</td><td>F2, F4</td><td><code>refs.run</code> and <code>refs.step</code> on <code>pr.open</code></td></tr>
+      <tr><td class="mono">P-G12</td><td>The runner has no "force a next step" and no "go back to step X"</td><td>F2</td><td><code>orch run step --force S</code>, <code>orch run back S</code>, and the same in the run API (P-G2)</td></tr>
+      <tr><td class="mono">P-G13</td><td>No link from a step to the child run that it started</td><td>F2</td><td><code>history[].run</code>: the id of the child run</td></tr>
+      <tr><td class="mono">P-G14</td><td>No list of the versions of a workflow definition</td><td>F2</td><td>Keep each version, or read the <code>.removed/</code> folders as old versions</td></tr>
+      <tr><td class="mono">P-G15</td><td>No timer on a pick wait</td><td>F2, F7</td><td>A pick wait that the owner session takes after a time limit</td></tr>
+      <tr><td class="mono">P-G11</td><td>The review API needs a decision id</td><td>F4</td><td>A review by PR number for a task PR</td></tr>
+    </table></div>
+  </section>
+</div>
+
+<!-- OPEN QUESTIONS -->
+<div class="panel" id="questions" hidden>
+  <section>
+    <h2>Open questions</h2>
+    <p class="summary">Answer in the chat. Start the answer with <code>answer:</code>.</p>
+    <div class="q"><b>Q1. Which PRs show on the PR stack page?</b>
+      <p>The store records only decision PRs. Task PRs from <code>gh pr create</code> are not in the store.</p>
+      <p>Options: (a) decision PRs only; (b) decision PRs and task PRs, with a new record (P-G4); (c) all PRs, read live from GitHub.</p>
+      <p class="rec">Recommendation: (b). The stack shows the real work, and the store stays the source.</p></div>
+    <div class="q"><b>Q2. Do I sketch a full stream page too?</b>
+      <p>The brief names three pages. No stream page exists.</p>
+      <p>Options: (a) only the stream bar on each page; (b) the bar plus one small stream page.</p>
+      <p class="rec">Recommendation: (a). The stream page is a "Later drafts" item of <code>ui-drafts.html</code>.</p></div>
+    <div class="q"><b>Q3. How does the run page measure progress?</b>
+      <p>Loops make "3 of 6" vague.</p>
+      <p>Options: (a) visited steps of the total; (b) done steps on the shortest path to a done step, plus a loop count.</p>
+      <p class="rec">Recommendation: (b). It stays correct after a loop.</p></div>
+    <div class="q"><b>Q4. Which PRs can you merge on the stack page?</b>
+      <p>Options: (a) only the lowest ready PR; (b) any ready PR; (c) also "merge all ready".</p>
+      <p class="rec">Recommendation: (a), through <code>orch merge</code>. The other PRs show why they wait.</p></div>
+    <div class="q"><b>Q5. Which frame do the sketches use?</b>
+      <p>The drafts use the 350 px widget frame.</p>
+      <p>Options: (a) widget only; (b) widget plus one wide variant for each page.</p>
+      <p class="rec">Recommendation: (b). A diff and a stack are easier to read on a wide page.</p></div>
+    <div class="q"><b>Q6. Is PR review a workflow definition?</b>
+      <p>The rules of F3 and F4 fit the step format of C2. As a workflow, the PR page becomes a run page with a PR view.</p>
+      <p>Options: (a) no, keep the review rules in <code>orch</code>; (b) yes, sketch the pages for it and record it as a roadmap item.</p>
+      <p class="rec">Recommendation: (b) as a record only. The sketches show the PR page both ways.</p></div>
+    <div class="q"><b>Q8. What is the unit inside a project, for a big feature?</b>
+      <p>A project is a repository. A big feature has many sessions and PRs. The C1 stream already groups many sessions.</p>
+      <p>Options: (a) the stream is that unit: project → stream → task; (b) a new unit, for example "initiative", between project and stream; (c) the stream stays free, and a project is only a filter.</p>
+      <p class="rec">Recommendation: (a). It adds no new term, and the stream already has its id on each session and envelope.</p></div>
+    <div class="q"><b>Q9. Can one stream span more than one project?</b>
+      <p>Multi-project work (F8) puts the sessions of one feature in different repositories.</p>
+      <p>Options: (a) yes: a stream has one main project, and can hold sessions of other projects; (b) no: one stream for each project, and a link between the streams.</p>
+      <p class="rec">Recommendation: (a). The work is one piece, and the stream bar shows it in one place.</p></div>
+    <div class="q"><b>Q10. Does the session status page (F13) join the first set?</b>
+      <p>The run page and the PR page link to the session page. Today that page does not show runs, PRs or the registry.</p>
+      <p>Options: (a) yes: sketch it with F2–F4; (b) no: keep it in the backlog.</p>
+      <p class="rec">Recommendation: (a). Without it, the links from the new pages open a page with little data.</p></div>
+    <div class="q"><b>Q13. What does the change log (F15) show?</b>
+      <p>Proposal: the finished changes of the work (merges, applied decisions, workflow versions, app releases), for each project and stream. Other options: only the release notes of the orchestrator app, or a feed of all events.</p></div>
+    <div class="q"><b>Q11. Where does the GitHub data of F14 come from?</b>
+      <p>Issues and CI status are only on GitHub. The design rule says that the store is the source.</p>
+      <p>Options: (a) a live read with <code>gh</code> and a short cache, at page open; (b) the supervisor copies the GitHub state into envelopes on a timer; (c) GitHub webhooks through the tunnel (D1).</p>
+      <p class="rec">Recommendation: (a) first. It needs no new store kind. (b) can follow when F5 and F7 need GitHub history.</p></div>
+  </section>
+</div>
+</div>
+
+<div class="zoom" id="zoom" hidden><iframe title="Sketch, large"></iframe></div>
+<script>
+(function () {
+  var tabs = document.querySelectorAll('nav button[data-tab]');
+  var sel = document.getElementById('tab-select');
+  var subs = document.querySelectorAll('[data-sub]');
+  function fit(f) {
+    try {
+      var d = f.contentDocument;
+      var set = function () { var cs = getComputedStyle(d.body); f.style.height = Math.ceil(d.body.getBoundingClientRect().height + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom) + 4) + 'px'; };
+      set();
+      new ResizeObserver(set).observe(d.body);
+    } catch (e) {}
+  }
+  function showSub(tab, sub) {
+    var list = Array.prototype.filter.call(subs, function (b) { return b.dataset.sub.split('/')[0] === tab; });
+    if (!list.length) return;
+    var key = tab + '/' + sub;
+    if (!list.some(function (b) { return b.dataset.sub === key; })) key = list[0].dataset.sub;
+    list.forEach(function (b) {
+      var on = b.dataset.sub === key;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      var pane = document.getElementById(b.dataset.sub);
+      pane.hidden = !on;
+      var f = on && pane.querySelector('iframe[data-src]');
+      if (f && !f.src) { f.addEventListener('load', function () { fit(f); }); f.src = f.dataset.src; }
+    });
+  }
+  function show(hash) {
+    var parts = (hash || '').split('/');
+    var id = parts[0];
+    var found = false;
+    tabs.forEach(function (b) { if (b.dataset.tab === id) found = true; });
+    if (!found) id = 'overview';
+    tabs.forEach(function (b) {
+      var on = b.dataset.tab === id;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      document.getElementById(b.dataset.tab).hidden = !on;
+      if (on) b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    sel.value = id;
+    showSub(id, parts[1] || '');
+  }
+  var zoom = document.getElementById('zoom'), zf = zoom.querySelector('iframe');
+  function unzoom() { zoom.hidden = true; zf.removeAttribute('src'); }
+  window.addEventListener('message', function (e) {
+    var d = e.data || {};
+    var known = e.source === zf.contentWindow;
+    document.querySelectorAll('.sketch-frame').forEach(function (f) { if (e.source === f.contentWindow) known = true; });
+    if (!known) return;
+    if (d.sk === 'open' && d.page === 'graphs' && /^w[1-9]-[a-z]$/.test(d.id)) { zf.src = 'workflow-graphs.html?one=' + d.id; zoom.hidden = false; }
+    else if (d.sk === 'open' && /^[a-z]+-[a-c]$/.test(d.id)) { zf.src = 'workflows-sketches.html?one=' + d.id; zoom.hidden = false; }
+    if (d.sk === 'close') unzoom();
+  });
+  zoom.addEventListener('click', unzoom);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !zoom.hidden) unzoom(); });
+  subs.forEach(function (b) {
+    b.addEventListener('click', function () { go(b.dataset.sub); });
+  });
+  function go(id) { show(id); try { history.replaceState(null, '', '#' + id); } catch (e) {} }
+  sel.addEventListener('change', function () { go(sel.value); });
+  tabs.forEach(function (b) {
+    b.addEventListener('click', function () { go(b.dataset.tab); });
+  });
+  window.addEventListener('hashchange', function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>

@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workflows Sketches</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one tab for each page or component of the Workflows feature (F2). Each tab: a variant switch, a 350 px widget frame in the app look (app.css tokens of ui-drafts.html), and notes beside it. */
+:root {
+  --page: #efece7; --page-tx: #2a2825; --page-mu: #6b665f; --page-line: rgba(27,26,24,.12);
+  --canvas: #e6e3de; --canvas-tx: #45423d; --surf: #fdfdfc; --text: #1b1a18; --tx2: #3a3834; --muted: #5f5b55; --line-c: rgba(27,26,24,.10);
+  --sunken: #dedbd6; --accent: #ff6a1a; --on-accent: #1b1a18; --scrim: rgba(27,26,24,.38);
+  --done: #23733a; --pending: #8a5a0b; --failed: #b3261e; --new: #1f5fbf; --idle: #6b665f;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.63), 0 2px 3px rgba(60,50,40,.06), 0 10px 21px -8px rgba(60,50,40,.24);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.63), 0 2px 6px rgba(60,50,40,.12);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(60,50,40,.18), inset -2px -2px 4px rgba(255,255,255,.57);
+  --f-disp: Doto, "Cascadia Mono", monospace; --f-body: Inter, system-ui, "Segoe UI", sans-serif; --f-mono: "JetBrains Mono", "Cascadia Mono", monospace;
+  --r: 22px; --r-sm: 12px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #101012; --page-tx: #e9e6e1; --page-mu: #a29e97; --page-line: rgba(244,243,241,.12);
+  --canvas: #161618; --canvas-tx: #cfccc6; --surf: #28282d; --text: #f4f3f1; --tx2: #dcd9d4; --muted: #a8a49d; --line-c: rgba(244,243,241,.10);
+  --sunken: #111113; --on-accent: #111111; --scrim: rgba(0,0,0,.55);
+  --done: #7fd18f; --pending: #f0a640; --failed: #f59a9a; --new: #8ab4ff; --idle: #a29e97;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 3px rgba(0,0,0,.2), 0 10px 21px -8px rgba(0,0,0,.45);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 6px rgba(0,0,0,.4);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.05);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --page: #101012; --page-tx: #e9e6e1; --page-mu: #a29e97; --page-line: rgba(244,243,241,.12);
+  --canvas: #161618; --canvas-tx: #cfccc6; --surf: #28282d; --text: #f4f3f1; --tx2: #dcd9d4; --muted: #a8a49d; --line-c: rgba(244,243,241,.10);
+  --sunken: #111113; --on-accent: #111111; --scrim: rgba(0,0,0,.55);
+  --done: #7fd18f; --pending: #f0a640; --failed: #f59a9a; --new: #8ab4ff; --idle: #a29e97;
+  --sh-raise: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 3px rgba(0,0,0,.2), 0 10px 21px -8px rgba(0,0,0,.45);
+  --sh-raise-sm: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 6px rgba(0,0,0,.4);
+  --sh-carve: inset 3.8px 3.8px 8px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.05);
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--page-tx); font: 14px/1.45 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--page); }
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 22px; }
+.eyebrow { font: 500 12px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--page-mu); }
+h1 { font: 800 30px/1.1 var(--f-disp); margin: 0; letter-spacing: .02em; }
+h2 { font: 700 19px/1.25 var(--f-body); margin: 0; text-wrap: balance; }
+h3 { font: 600 12px var(--f-body); text-transform: uppercase; letter-spacing: .07em; color: var(--page-mu); margin: 0; }
+.intro { color: var(--page-mu); max-width: 72ch; margin: 0; }
+a { color: inherit; }
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--page); padding-block: 8px; border-bottom: 1px solid var(--page-line); display: flex; min-width: 0; }
+.tabs { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; min-width: 0; flex: 1; padding-right: 28px;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+.tabs button { flex: none; white-space: nowrap; font: 600 13px var(--f-body); color: var(--page-tx); background: transparent; border: 1px solid var(--page-line); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--page-tx); color: var(--page); border-color: var(--page-tx); }
+.tabs .sep { flex: none; width: 1px; background: var(--page-line); margin: 4px 2px; }
+nav select { display: none; width: 100%; font: 600 14px var(--f-body); color: var(--page-tx); background: var(--page); border: 1px solid var(--page-line); border-radius: 10px; padding: 8px 10px; }
+@media (max-width: 600px) { .tabs { display: none; } nav select { display: block; } }
+button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: grid; gap: 18px; }
+.panel[hidden] { display: none; }
+.head { display: grid; gap: 6px; }
+.draft { display: grid; grid-template-columns: 362px minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 820px) { .draft { grid-template-columns: minmax(0, 1fr); } }
+.left { display: grid; gap: 10px; min-width: 0; }
+.notes { display: grid; gap: 14px; min-width: 0; }
+.notes p, .notes li { margin: 0; max-width: 64ch; }
+.notes ul, .notes ol { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
+.sw { display: flex; gap: 6px; flex-wrap: wrap; }
+.sw button { border: 1px solid var(--page-line); background: transparent; color: var(--page-tx); border-radius: 10px; padding: 7px 12px; font: 600 12.5px var(--f-body); cursor: pointer; text-align: left; }
+.sw button[aria-pressed="true"] { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: -2px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th, .tbl td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--page-line); vertical-align: top; }
+.tbl th { font-weight: 600; color: var(--page-mu); font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; }
+.tblw { overflow-x: auto; }
+code { font: 12px var(--f-mono); }
+.rec { border-left: 3px solid var(--accent); padding-left: 10px; }
+.gapc { color: var(--failed); font-weight: 600; }
+.sample { font: 600 10px var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--page-mu); }
+
+/* ===== The widget frame (the app look) ===== */
+.phone { position: relative; width: 100%; max-width: 362px; background: var(--canvas); border-radius: 18px; padding: 12px 6px 12px 10px; display: grid; gap: 10px; color: var(--text);
+  box-shadow: 0 18px 40px -18px rgba(0,0,0,.45); max-height: 920px; overflow-y: auto; scrollbar-gutter: stable; align-content: start; }
+.phone[hidden] { display: none; }
+.crd { background: var(--surf); box-shadow: var(--sh-raise); border-radius: var(--r); }
+.well { background: var(--sunken); box-shadow: var(--sh-carve); border-radius: var(--r-sm); }
+.hd { display: flex; align-items: center; gap: 6px; min-height: 50px; padding: 6px 8px 6px 14px; }
+.path { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 4px; white-space: nowrap; overflow: hidden; }
+.path .cr { font: 500 12px var(--f-body); color: var(--muted); }
+.path .cur { font: 700 15px var(--f-body); overflow: hidden; text-overflow: ellipsis; }
+.wb { display: flex; gap: 2px; color: var(--muted); }
+.wb i { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; font-style: normal; font-size: 14px; }
+.pad { padding: 12px 14px; }
+.stack { display: grid; gap: 8px; }
+.row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.rows > .row { padding: 10px 14px; }
+.rows > .row + .row { border-top: 1px solid var(--line-c); }
+.grow { flex: 1; min-width: 0; }
+.nm { font-weight: 600; font-size: 13.5px; }
+.ell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.sub { font-size: 11.5px; color: var(--muted); }
+.t2 { font-size: 12.5px; color: var(--tx2); }
+.mono { font: 11.5px var(--f-mono); }
+.disp { font-family: var(--f-disp); font-weight: 800; letter-spacing: .02em; }
+.gt { font: 600 11px var(--f-body); text-transform: uppercase; letter-spacing: .07em; color: var(--canvas-tx); margin: 4px 6px -4px; display: flex; justify-content: space-between; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: var(--st);
+  background: color-mix(in srgb, var(--st) 14%, transparent); border: 1px solid color-mix(in srgb, var(--st) 40%, transparent); white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--st); }
+.st-wait { --st: var(--accent); } .st-run { --st: var(--new); } .st-done { --st: var(--done); } .st-stop { --st: var(--failed); } .st-idle { --st: var(--idle); }
+.ring { --sz: 76px; --th: 10px; width: var(--sz); height: var(--sz); border-radius: 50%; flex: none; display: grid; place-items: center; position: relative;
+  background: conic-gradient(var(--rc, var(--accent)) calc(var(--p) * 1turn), var(--sunken) 0); }
+.ring::after { content: ""; position: absolute; inset: var(--th); border-radius: 50%; background: var(--surf); box-shadow: var(--sh-raise-sm); }
+.ring span { position: relative; z-index: 1; text-align: center; line-height: 1.05; }
+.ring.sm { --sz: 30px; --th: 5px; }
+.kv { display: flex; gap: 10px; padding: 8px 14px; font-size: 12.5px; }
+.kv + .kv { border-top: 1px solid var(--line-c); }
+.kv .k { flex: none; width: 32%; color: var(--muted); }
+.kv .v { min-width: 0; overflow-wrap: anywhere; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { padding: 4px 10px; border-radius: 999px; background: var(--surf); box-shadow: var(--sh-raise-sm); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.chip.on { background: var(--text); color: var(--surf); box-shadow: none; }
+.seg { display: flex; padding: 3px; gap: 3px; }
+.seg span { flex: 1; text-align: center; font: 600 12px var(--f-body); padding: 6px 4px; border-radius: 9px; color: var(--muted); }
+.seg span.on { background: var(--surf); color: var(--text); box-shadow: var(--sh-raise-sm); }
+.bar { display: flex; gap: 8px; padding: 8px; position: sticky; bottom: 0; z-index: 2; }
+.btn { flex: 1; min-height: 40px; border: 0; border-radius: var(--r-sm); background: var(--sunken); color: var(--text); font: 600 13px var(--f-body); display: grid; place-items: center; padding: 0 8px; }
+.btn.pri { background: var(--accent); color: var(--on-accent); flex-grow: 1.5; }
+.btn.dg { flex: 0 0 42px; color: var(--failed); }
+.btn.sm { min-height: 32px; font-size: 12px; flex: none; }
+.ok { color: var(--done); font-weight: 700; }
+.no { color: var(--failed); font-weight: 700; }
+.likely { font: 600 10px var(--f-body); text-transform: uppercase; letter-spacing: .06em; color: var(--accent); }
+.steps { display: flex; gap: 3px; }
+.steps i { flex: 1; height: 8px; border-radius: 999px; background: var(--sunken); box-shadow: var(--sh-carve); position: relative; }
+.steps i.d { background: var(--done); box-shadow: none; }
+.steps i.c { background: var(--accent); box-shadow: none; }
+.steps.lbl { gap: 3px; }
+.steps.lbl i { height: 18px; border-radius: 6px; font: 600 9.5px var(--f-body); font-style: normal; color: var(--on-accent); display: grid; place-items: center; }
+.steps.lbl i:not(.d):not(.c) { color: var(--muted); }
+.split { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--sunken); }
+.split i { display: block; height: 100%; }
+.split .a { background: var(--new); } .split .u { background: var(--accent); }
+.key { display: flex; gap: 12px; font-size: 11px; color: var(--muted); }
+.key b { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
+.tl { position: relative; display: grid; gap: 6px; padding-left: 24px; }
+.tl::before { content: ""; position: absolute; left: 8px; top: 6px; bottom: 6px; width: 3px; border-radius: 2px; background: var(--sunken); box-shadow: var(--sh-carve); }
+.tli { position: relative; padding: 8px 12px; font-size: 12.5px; display: grid; gap: 2px; }
+.tli::before { content: ""; position: absolute; left: -21px; top: 12px; width: 11px; height: 11px; border-radius: 50%; background: var(--st, var(--done)); box-shadow: 0 0 0 3px var(--canvas); }
+.tli.cur { --st: var(--accent); }
+.tli .row { gap: 6px; }
+.pass { font: 600 10px var(--f-mono); color: var(--muted); background: var(--sunken); border-radius: 6px; padding: 1px 5px; white-space: nowrap; }
+.ol { display: grid; }
+.ol .ln { display: flex; gap: 8px; align-items: baseline; padding: 7px 14px; font-size: 12.5px; }
+.ol .ln + .ln { border-top: 1px solid var(--line-c); }
+.ol .ln.c1 { padding-left: 34px; color: var(--tx2); font-size: 12px; }
+.ol .ln .n { flex: none; width: 16px; font: 600 11px var(--f-mono); color: var(--muted); }
+.ol .ln .ar { flex: none; font-family: var(--f-mono); color: var(--muted); }
+.ol .ln.loop .ar { color: var(--accent); }
+.tag { font: 600 9.5px var(--f-body); text-transform: uppercase; letter-spacing: .06em; padding: 1px 6px; border-radius: 6px; background: var(--sunken); color: var(--muted); white-space: nowrap; }
+.tag.h { background: color-mix(in srgb, var(--accent) 18%, var(--surf)); color: var(--text); }
+.scrim { position: absolute; inset: 0; background: var(--scrim); border-radius: 18px; z-index: 3; }
+.sheet { position: absolute; left: 6px; right: 6px; bottom: 6px; z-index: 4; display: grid; gap: 4px; padding-bottom: 6px; max-height: 78%; overflow-y: auto; }
+.grab { width: 40px; height: 5px; border-radius: 3px; background: var(--sunken); margin: 8px auto 2px; display: block; }
+.wait { border: 2px solid var(--accent); }
+.wait .lead { font: 700 15px/1.3 var(--f-body); }
+.opt { display: flex; gap: 8px; align-items: center; padding: 9px 12px; font-size: 12.5px; }
+.minis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mini { padding: 10px; display: grid; gap: 6px; }
+.compact { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; background: var(--surf); box-shadow: var(--sh-raise-sm); font-size: 12px; font-weight: 600; max-width: 100%; }
+.dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font: 700 11px var(--f-body); flex: none; }
+.streambar { display: flex; align-items: center; gap: 6px; padding: 6px 8px 6px 12px; font-size: 12px; }
+.streambar b { font: 700 12px var(--f-mono); }
+.streambar .chip { padding: 3px 8px; font-size: 11.5px; }
+
+/* The step graph */
+.graph { width: 100%; height: auto; display: block; }
+.graph .edge { fill: none; stroke: var(--muted); stroke-width: 1.5; opacity: .45; }
+.graph .edge.went { stroke: var(--done); opacity: 1; }
+.graph .edge.next { stroke: var(--accent); opacity: 1; stroke-dasharray: 4 3; }
+.graph .node rect { fill: var(--surf); stroke: var(--line-c); stroke-width: 1; }
+.graph .node.done rect { fill: color-mix(in srgb, var(--done) 12%, var(--surf)); stroke: var(--done); }
+.graph .node.cur rect { fill: var(--accent); stroke: var(--accent); }
+.graph .node.can rect { stroke: var(--accent); stroke-dasharray: 3 2; }
+.graph .node.sel rect { stroke: var(--text); stroke-width: 2; }
+.graph .node text { fill: var(--text); font: 600 10.5px var(--f-body); }
+.graph .node .ex { font: 500 8.5px var(--f-mono); fill: var(--muted); }
+.graph .node.cur .ex { fill: var(--on-accent); opacity: .8; }
+.graph .node.cur text { fill: var(--on-accent); }
+.graph .pc circle { fill: var(--text); }
+.graph .pc text { fill: var(--surf); font: 700 8.5px var(--f-body); }
+.graph .lp rect { fill: var(--canvas); stroke: var(--line-c); }
+.graph .lp text { fill: var(--muted); font: 600 8.5px var(--f-body); }
+.graph .lp.went text { fill: var(--done); }
+.graph .lp.next text { fill: var(--accent); }
+.graph .entry { fill: var(--muted); font: 600 8.5px var(--f-body); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+/* Embed mode: the F2 tab of Advanced Features shows this page in a frame. The frame has no header and no outer padding. */
+html.embed .head { display: none; }
+html.embed body { padding: 0 0 24px; }
+html.embed body::before { display: none; }
+</style>
+
+<style>
+/* Rows: one foldable row for each page. Inside, its sketches side by side, scaled down to the row width. */
+body { padding: 12px 12px 24px; }
+.sk-rows { display: grid; gap: 8px; max-width: 1200px; margin: 0 auto; }
+.sk-row { background: var(--surf); border: 1px solid var(--page-line); border-radius: 10px; }
+.sk-row summary { cursor: pointer; padding: 10px 12px; display: flex; list-style: none; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; color: var(--page-tx); }
+.sk-row summary::-webkit-details-marker { display: none; }
+.sk-row summary::before { content: ""; width: 0; height: 0; border-left: 7px solid var(--accent); border-top: 5px solid transparent; border-bottom: 5px solid transparent; align-self: center; transition: transform .15s; }
+.sk-row[open] summary::before { transform: rotate(90deg); }
+.sk-row summary b { font: 600 15px var(--f-body); }
+.sk-row summary span { font-size: 12px; color: var(--page-mu); }
+.sk-row[open] summary { border-bottom: 1px solid var(--page-line); }
+.sk-why { margin: 0; padding: 8px 12px 0; font-size: 13px; line-height: 1.45; color: var(--page-tx); max-width: 80ch; }
+.sk-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px; align-items: start; }
+.sk-cell { margin: 0; min-width: 0; display: grid; gap: 4px; }
+.sk-cell figcaption { font: 500 10px var(--f-mono, monospace); color: var(--page-mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-fit { min-width: 0; overflow: hidden; position: relative; }
+.sk-fit > .phone { position: absolute; left: 0; top: 0; width: 362px; max-width: none; max-height: none; overflow: hidden; transform-origin: 0 0; }
+.sk-fit > .phone { grid-template-columns: minmax(0, 1fr); }
+.sk-fit > .phone > * { min-width: 0; }
+.sk-fit { cursor: zoom-in; }
+.sk-fit > .phone { pointer-events: none; }
+/* One mode: the zoom view shows one sketch, scaled to fill the window. */
+html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: transparent; }
+.sk-one { position: fixed; inset: 0; cursor: zoom-out; }
+.sk-one > .phone { position: absolute; left: 0; top: 0; width: 362px; max-width: none; max-height: none; overflow: hidden; transform-origin: 0 0; grid-template-columns: minmax(0, 1fr); pointer-events: none; }
+.sk-one > .phone > * { min-width: 0; }
+</style>
+<main class="sk-rows">
+  <details class="sk-row">
+    <summary><b>Workflows</b><span>The list of all workflow definitions · 2 sketches</span></summary>
+    <p class="sk-why">A catalog of the workflow definitions: what workflows exist and what each one does. You use it to learn and to choose a workflow, not to follow work. In version 1 you cannot start a run here; a run starts from a session. Later, the new session form uses this catalog as its workflow picker. The live work is on the Runs page.</p>
+    <div class="sk-trio" style="--n:2">
+      <figure class="sk-cell"><figcaption>A · List</figcaption><div class="sk-fit"><div class="phone" data-for="catalog" data-v="a">
+        <div class="crd hd"><span class="path"><span class="cur">Workflows</span></span><span class="wb"><i>⌕</i><i>–</i><i>✕</i></span></div>
+        <div class="gt"><span>3 workflows</span><span>active runs</span></div>
+        <div class="crd rows">
+          <div class="row"><span class="grow"><span class="nm">planning</span><span class="sub ell">Turn a goal into an approved spec and a list of tasks</span><span class="sub">v1 · 7 steps · core</span></span><span class="pill st-wait">1 waits</span><span class="disp">2</span></div>
+          <div class="row"><span class="grow"><span class="nm">review</span><span class="sub ell">Review a PR: checks, verdict, rework, merge</span><span class="sub">v1 · 6 steps · store</span></span><span class="disp" style="color:var(--muted)">0</span></div>
+          <div class="row"><span class="grow"><span class="nm">code-change</span><span class="sub ell">Change code on a branch, test it, open a PR</span><span class="sub">v2 · 5 steps · store</span></span><span class="pill st-run">running</span><span class="disp">1</span></div>
+        </div>
+        <div class="gt"><span>Recent runs</span><span>all ›</span></div>
+        <div class="crd rows">
+          <div class="row"><span class="ring sm" style="--p:.71"><span></span></span><span class="grow"><span class="nm ell">Plan the review pages</span><span class="sub">planning · Approve the spec · 6 min</span></span><span class="pill st-wait">waits</span></div>
+          <div class="row"><span class="ring sm" style="--p:.57;--rc:var(--new)"><span></span></span><span class="grow"><span class="nm ell">Plan the tray settings</span><span class="sub">planning · Write the spec</span></span><span class="pill st-run">running</span></div>
+        </div>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Cards with graph</figcaption><div class="sk-fit"><div class="phone" data-for="catalog" data-v="b">
+        <div class="crd hd"><span class="path"><span class="cur">Workflows</span></span><span class="wb"><i>⌕</i><i>–</i><i>✕</i></span></div>
+        <div class="minis">
+          <div class="crd mini"><div class="well" style="padding:4px"><div data-graph="mini"></div></div><span class="nm">planning</span><span class="sub">v1 · 7 steps</span><span class="pill st-wait">2 runs · 1 waits</span></div>
+          <div class="crd mini"><div class="well" style="padding:4px"><div data-graph="mini-review"></div></div><span class="nm">review</span><span class="sub">v1 · 6 steps</span><span class="pill st-idle">no runs</span></div>
+          <div class="crd mini"><div class="well" style="padding:4px"><div data-graph="mini-code"></div></div><span class="nm">code-change</span><span class="sub">v2 · 5 steps</span><span class="pill st-run">1 run</span></div>
+        </div>
+      </div></div></figure>
+    </div>
+  </details>
+  <details class="sk-row">
+    <summary><b>Workflow definition</b><span>One definition: the steps as a graph, an outline or fields · 3 sketches</span></summary>
+    <p class="sk-why">One workflow definition, read only: its steps, its branches and loops, its approvals and its definition of done. You use it to understand how a workflow behaves before or during a run. The three sketches are three views of the same data. A tap on a step opens its step definition.</p>
+    <div class="sk-trio" style="--n:3">
+      <figure class="sk-cell"><figcaption>A · Graph</figcaption><div class="sk-fit"><div class="phone" data-for="def" data-v="a">
+        <div class="crd hd"><span class="path"><span class="cr">Workflows ›</span><span class="cur">planning</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
+        <div class="crd pad stack">
+          <span class="row"><span class="grow"><span class="nm">planning</span><span class="sub">v1 · core · 7 steps · entry: Read the goal</span></span></span>
+          <span class="t2">Turn a goal into an approved spec and a list of next tasks, one question at a time.</span>
+          <span class="sub"><b>Done when:</b> the user approved the spec, and the owner has the list of next tasks.</span>
+        </div>
+        <div class="well seg"><span class="on">Graph</span><span>Outline</span><span>Fields</span></div>
+        <div class="crd pad"><div data-graph="def"></div></div>
+        <div class="gt"><span>Runs · 2</span><span>all ›</span></div>
+        <div class="crd rows">
+          <div class="row"><span class="ring sm" style="--p:.71"><span></span></span><span class="grow"><span class="nm ell">Plan the review pages</span><span class="sub">Approve the spec · pass 2</span></span><span class="pill st-wait">waits</span></div>
+          <div class="row"><span class="ring sm" style="--p:.57;--rc:var(--new)"><span></span></span><span class="grow"><span class="nm ell">Plan the tray settings</span><span class="sub">Write the spec</span></span><span class="pill st-run">running</span></div>
+        </div>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Outline</figcaption><div class="sk-fit"><div class="phone" data-for="def" data-v="b">
+        <div class="crd hd"><span class="path"><span class="cr">Workflows ›</span><span class="cur">planning</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
+        <div class="well seg"><span>Graph</span><span class="on">Outline</span><span>Fields</span></div>
+        <div class="crd ol">
+          <div class="ln"><span class="n">1</span><span class="grow"><b>Read the goal and the docs</b></span><span class="tag">agent</span></div>
+          <div class="ln c1"><span class="ar">→</span><span class="grow">questions are open: <b>2</b></span></div>
+          <div class="ln c1"><span class="ar">→</span><span class="grow">no questions are open: <b>5</b></span></div>
+          <div class="ln"><span class="n">2</span><span class="grow"><b>Ask one question</b></span><span class="tag">agent</span></div>
+          <div class="ln"><span class="n">3</span><span class="grow"><b>Answer</b></span><span class="tag h">human</span></div>
+          <div class="ln"><span class="n">4</span><span class="grow"><b>Record the answer</b></span><span class="tag">agent</span></div>
+          <div class="ln c1 loop"><span class="ar">↺</span><span class="grow">questions are open: back to <b>2</b></span></div>
+          <div class="ln c1"><span class="ar">→</span><span class="grow">no questions are open: <b>5</b></span></div>
+          <div class="ln"><span class="n">5</span><span class="grow"><b>Write the spec</b></span><span class="tag">agent</span></div>
+          <div class="ln"><span class="n">6</span><span class="grow"><b>Approve the spec</b></span><span class="tag h">human · approval</span></div>
+          <div class="ln c1 loop"><span class="ar">↺</span><span class="grow">the verdict is change: back to <b>2</b></span></div>
+          <div class="ln c1"><span class="ar">→</span><span class="grow">the verdict is approve: <b>7</b></span></div>
+          <div class="ln"><span class="n">7</span><span class="grow"><b>Propose the next tasks</b></span><span class="tag">done step</span></div>
+        </div>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>C · Fields</figcaption><div class="sk-fit"><div class="phone" data-for="def" data-v="c">
+        <div class="crd hd"><span class="path"><span class="cr">Workflows ›</span><span class="cur">planning</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
+        <div class="well seg"><span>Graph</span><span>Outline</span><span class="on">Fields</span></div>
+        <div class="gt"><span>1 · Read the goal and the docs</span><span>agent</span></div>
+        <div class="crd">
+          <div class="kv"><span class="k">Session</span><span class="v">owner</span></div>
+          <div class="kv"><span class="k">Instructions</span><span class="v">Read the brief and the project docs. List the open questions that the docs do not answer.</span></div>
+          <div class="kv"><span class="k">Input</span><span class="v">brief, project docs</span></div>
+          <div class="kv"><span class="k">Output</span><span class="v">open questions</span></div>
+          <div class="kv"><span class="k">Next</span><span class="v">questions are open → 2<br>no questions are open → 5</span></div>
+        </div>
+        <div class="gt"><span>6 · Approve the spec</span><span>ask</span></div>
+        <div class="crd">
+          <div class="kv"><span class="k">Instructions</span><span class="v">The user reviews the spec: approve, change or refuse.</span></div>
+          <div class="kv"><span class="k">Input</span><span class="v">spec</span></div>
+          <div class="kv"><span class="k">Output</span><span class="v">verdict</span></div>
+          <div class="kv"><span class="k">Approval</span><span class="v">by the user · required</span></div>
+          <div class="kv"><span class="k">Templates</span><span class="v">review</span></div>
+          <div class="kv"><span class="k">Next</span><span class="v">the verdict is change → 2<br>the verdict is approve → 7</span></div>
+        </div>
+        <div class="sub" style="padding:0 8px">Steps 2–5 and 7 fold the same way. A tap on a header opens the step definition.</div>
+      </div></div></figure>
+    </div>
+  </details>
+  <details class="sk-row">
+    <summary><b>Step definition</b><span>The settings of one step of a definition · 2 sketches</span></summary>
+    <p class="sk-why">The settings of one step: who does it, what it gets, what it makes, the approval and the conditions to the next steps. You open it from the definition page. Later, this is where you edit a step.</p>
+    <div class="sk-trio" style="--n:2">
+      <figure class="sk-cell"><figcaption>A · Sheet on the graph</figcaption><div class="sk-fit"><div class="phone" data-for="stepdef" data-v="a" style="min-height:720px">
+        <div class="crd hd"><span class="path"><span class="cr">Workflows ›</span><span class="cur">planning</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
+        <div class="well seg"><span class="on">Graph</span><span>Outline</span><span>Fields</span></div>
+        <div class="crd pad"><div data-graph="def-sel"></div></div>
+        <div class="scrim"></div>
+        <div class="crd sheet">
+          <span class="grab"></span>
+          <div class="pad stack" style="padding-top:2px">
+            <span class="row"><span class="grow"><span class="sub">Step 6 of 7 · ask</span><span class="nm" style="font-size:16px">Approve the spec</span></span><span class="tag h">approval</span></span>
+            <span class="t2">The user reviews the spec: approve, change or refuse.</span>
+          </div>
+          <div class="kv"><span class="k">Who</span><span class="v">A human: the user</span></div>
+          <div class="kv"><span class="k">Input → output</span><span class="v">spec → verdict</span></div>
+          <div class="kv"><span class="k">Approval</span><span class="v">by the user · required (no skip)</span></div>
+          <div class="kv"><span class="k">Next</span><span class="v">↺ the verdict is change → Ask one question<br>→ the verdict is approve → Propose the next tasks</span></div>
+          <div class="kv"><span class="k">Used</span><span class="v">2 runs now · 5 step runs in all</span></div>
+          <div class="bar"><span class="btn">Previous step</span><span class="btn">Next step</span></div>
+        </div>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Own page</figcaption><div class="sk-fit"><div class="phone" data-for="stepdef" data-v="b">
+        <div class="crd hd"><span class="path"><span class="cr">planning ›</span><span class="cur">Approve the spec</span></span><span class="wb"><i>‹</i><i>›</i><i>✕</i></span></div>
+        <div class="crd pad stack">
+          <span class="row"><span class="grow"><span class="sub">Step 6 of 7</span><span class="nm" style="font-size:16px">Approve the spec</span></span><span class="tag h">human</span></span>
+          <span class="t2">The user reviews the spec: approve, change or refuse.</span>
+        </div>
+        <div class="gt"><span>Executor</span></div>
+        <div class="crd">
+          <div class="kv"><span class="k">Kind</span><span class="v">ask: a question to a human</span></div>
+          <div class="kv"><span class="k">Asks</span><span class="v">the user</span></div>
+          <div class="kv"><span class="k">Templates</span><span class="v">review</span></div>
+        </div>
+        <div class="gt"><span>Data</span></div>
+        <div class="crd">
+          <div class="kv"><span class="k">Input</span><span class="v">spec</span></div>
+          <div class="kv"><span class="k">Output</span><span class="v">verdict</span></div>
+        </div>
+        <div class="gt"><span>Approval</span></div>
+        <div class="crd">
+          <div class="kv"><span class="k">By</span><span class="v">the user</span></div>
+          <div class="kv"><span class="k">Strategy</span><span class="v">required</span></div>
+        </div>
+        <div class="gt"><span>Next</span></div>
+        <div class="crd rows">
+          <div class="row"><span class="mono" style="color:var(--accent)">↺</span><span class="grow"><span class="nm">Ask one question</span><span class="sub">when: the verdict is change</span></span></div>
+          <div class="row"><span class="mono">→</span><span class="grow"><span class="nm">Propose the next tasks</span><span class="sub">when: the verdict is approve</span></span></div>
+        </div>
+        <div class="gt"><span>Comes from</span></div>
+        <div class="crd rows"><div class="row"><span class="mono">←</span><span class="grow"><span class="nm">Write the spec</span><span class="sub">always</span></span></div></div>
+      </div></div></figure>
+    </div>
+  </details>
+  <details class="sk-row">
+    <summary><b>Runs</b><span>All runs, with their state and wait · 2 sketches</span></summary>
+    <p class="sk-why">All the runs, live and old: which workflow, which goal, which owner, the current step and the wait. You use it to see the live work and to find the runs that wait for you. This page is the answer to "what is running now", not the Workflows page.</p>
+    <div class="sk-trio" style="--n:2">
+      <figure class="sk-cell"><figcaption>A · Grouped by state</figcaption><div class="sk-fit"><div class="phone" data-for="runs" data-v="a">
+        <div class="crd hd"><span class="path"><span class="cur">Runs</span></span><span class="wb"><i>⌕</i><i>–</i><i>✕</i></span></div>
+        <div class="gt"><span>Waits for you · 1</span></div>
+        <div class="crd rows">
+          <div class="row"><span class="ring sm" style="--p:.71"><span></span></span><span class="grow"><span class="nm ell">Plan the review pages</span><span class="sub ell">planning · Approve the spec · [O1] · P</span></span><span class="pill st-wait">6 min</span></div>
+        </div>
+        <div class="gt"><span>Running · 2</span></div>
+        <div class="crd rows">
+          <div class="row"><span class="ring sm" style="--p:.57;--rc:var(--new)"><span></span></span><span class="grow"><span class="nm ell">Plan the tray settings</span><span class="sub ell">planning · Write the spec · [O3] · T</span></span><span class="pill st-run">agent</span></div>
+          <div class="row"><span class="ring sm" style="--p:.4;--rc:var(--new)"><span></span></span><span class="grow"><span class="nm ell">Fix the inbox reminder</span><span class="sub ell">code-change · Test · [O2 C1] · A</span></span><span class="pill st-run">agent</span></div>
+        </div>
+        <div class="gt"><span>Ended · 3</span><span>more ›</span></div>
+        <div class="crd rows">
+          <div class="row"><span class="ring sm" style="--p:1;--rc:var(--done)"><span></span></span><span class="grow"><span class="nm ell">C3 live run</span><span class="sub ell">planning · done · 13 min · 18 Nov</span></span><span class="pill st-done">done</span></div>
+          <div class="row"><span class="ring sm" style="--p:.3;--rc:var(--failed)"><span></span></span><span class="grow"><span class="nm ell">Plan the cloud worker</span><span class="sub ell">planning · stopped by you · 17 Nov</span></span><span class="pill st-stop">stopped</span></div>
+        </div>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Flat with filters</figcaption><div class="sk-fit"><div class="phone" data-for="runs" data-v="b">
+        <div class="crd hd"><span class="path"><span class="cur">Runs</span></span><span class="wb"><i>⌕</i><i>–</i><i>✕</i></span></div>
+        <div class="chips"><span class="chip on">All 5</span><span class="chip">Waits 1</span><span class="chip">Running 2</span><span class="chip">Ended 3</span></div>
+        <div class="chips"><span class="chip">Workflow ▾</span><span class="chip">Stream ▾</span><span class="chip">Project ▾</span></div>
+        <div class="crd rows">
+          <div class="row"><span class="grow"><span class="nm ell">Plan the review pages</span><span class="steps" style="margin:5px 0 3px"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="c"></i><i></i></span><span class="sub ell">planning · Approve the spec · pass 2 · 1 h 4 min</span></span><span class="pill st-wait">waits</span></div>
+          <div class="row"><span class="grow"><span class="nm ell">Plan the tray settings</span><span class="steps" style="margin:5px 0 3px"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="c"></i><i></i><i></i></span><span class="sub ell">planning · Write the spec · 22 min</span></span><span class="pill st-run">running</span></div>
+          <div class="row"><span class="grow"><span class="nm ell">Fix the inbox reminder</span><span class="steps" style="margin:5px 0 3px"><i class="d"></i><i class="d"></i><i class="c"></i><i></i><i></i></span><span class="sub ell">code-change · Test · 9 min</span></span><span class="pill st-run">running</span></div>
+          <div class="row"><span class="grow"><span class="nm ell">C3 live run</span><span class="steps" style="margin:5px 0 3px"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i></span><span class="sub ell">planning · done · 13 min</span></span><span class="pill st-done">done</span></div>
+          <div class="row"><span class="grow"><span class="nm ell">Plan the cloud worker</span><span class="steps" style="margin:5px 0 3px"><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i><i></i></span><span class="sub ell">planning · stopped by you</span></span><span class="pill st-stop">stopped</span></div>
+        </div>
+      </div></div></figure>
+    </div>
+  </details>
+  <details class="sk-row">
+    <summary><b>Run</b><span>One run: where it is, why it waits, and what you can do · 3 sketches</span></summary>
+    <p class="sk-why">One run: where it is, why it waits, how it came there and where it can go. You use it to act on a wait (answer, approve, pick) and to check the progress. A run that waits for you opens in wait mode; other runs open in check mode.</p>
+    <div class="sk-trio" style="--n:3">
+      <figure class="sk-cell"><figcaption>A · Wait mode</figcaption><div class="sk-fit"><div class="phone" data-for="run" data-v="a">
+        <div class="crd hd"><span class="path"><span class="cr">Runs ›</span><span class="cur">Plan the review pages</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
+        <div class="crd streambar"><b>P</b><span class="grow sub">stream</span><span class="chip">Sessions 3</span><span class="chip">Runs 1</span><span class="chip">PRs 2</span></div>
+        <div class="crd pad stack wait">
+          <span class="row"><span class="pill st-wait">waits for you · 6 min</span><span class="grow"></span><span class="sub">approval</span></span>
+          <span class="lead">Approve the spec v2</span>
+          <span class="t2">The spec has 4 sections and 8 pages. The change of pass 1 ("add the step run page") is in section 3.</span>
+          <span class="row"><span class="btn sm">Open spec v2</span><span class="btn sm">Diff from v1</span></span>
+          <span class="sub">Approve → Propose the next tasks · Change → Ask one question</span>
+          <div class="row"><span class="btn pri">Approve</span><span class="btn">Change</span><span class="btn dg" title="Refuse">✕</span></div>
+        </div>
+        <div class="crd pad stack">
+          <span class="row"><span class="grow"><span class="sub">planning · step 6 of 7 · pass 2</span></span><span class="sub">1 h 4 min</span></span>
+          <span class="steps lbl"><i class="d">Rd</i><i class="d">Ask ×3</i><i class="d">Ans ×3</i><i class="d">Rec ×3</i><i class="d">Spec ×2</i><i class="c">Appr ×2</i><i>Prop</i></span>
+        </div>
+        <div class="gt"><span>Last step runs</span><span>history ›</span></div>
+        <div class="tl">
+          <div class="crd tli cur"><span class="row"><b>Approve the spec</b><span class="pass">pass 2</span><span class="grow"></span><span class="sub">10:10</span></span><span class="sub">question sent to you</span></div>
+          <div class="crd tli"><span class="row"><b>Write the spec</b><span class="pass">pass 2</span><span class="grow"></span><span class="sub">10:02</span></span><span class="sub">output: spec v2 · 8 min</span></div>
+          <div class="crd tli"><span class="row"><b>Record the answer</b><span class="pass">pass 3</span><span class="grow"></span><span class="sub">10:01</span></span><span class="sub">holds: no questions are open</span></div>
+        </div>
+        <div class="crd bar"><span class="btn">Graph</span><span class="btn">Owner session</span><span class="btn dg" title="Stop the run">■</span></div>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Check mode, graph</figcaption><div class="sk-fit"><div class="phone" data-for="run" data-v="b">
+        <div class="crd hd"><span class="path"><span class="cr">Runs ›</span><span class="cur">Plan the tray settings</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
+        <div class="crd streambar"><b>T</b><span class="grow sub">stream</span><span class="chip">Sessions 2</span><span class="chip">Runs 1</span><span class="chip">PRs 0</span></div>
+        <div class="crd pad row">
+          <span class="ring" style="--p:.57;--rc:var(--new)"><span><span class="disp" style="font-size:17px">4/7</span><br><span class="sub">steps</span></span></span>
+          <span class="grow stack" style="gap:3px">
+            <span class="sub">planning v1 · owner [O3] Tray</span>
+            <span class="nm" style="font-size:15px">Plan the tray settings</span>
+            <span class="row" style="gap:6px"><span class="pill st-run">running · agent</span><span class="sub">22 min</span></span>
+          </span>
+        </div>
+        <div class="crd pad"><div data-graph="run-b"></div></div>
+        <div class="crd pad stack">
+          <span class="row"><span class="grow"><span class="sub">Current step · agent · [O3]</span><span class="nm">Write the spec</span></span><span class="sub">4 min</span></span>
+          <span class="t2"><b>Why here:</b> Record the answer held "no questions are open".</span>
+          <span class="t2"><b>Input:</b> answers, decision rows (2) · <b>Output:</b> spec</span>
+        </div>
+        <div class="gt"><span>What if · next steps</span></div>
+        <div class="crd rows">
+          <div class="row"><span class="ok">✓</span><span class="grow"><span class="nm">Approve the spec</span><span class="sub">always · approval by you</span></span><span class="likely">next</span></div>
+        </div>
+        <div class="gt"><span>Time</span></div>
+        <div class="crd pad stack">
+          <div class="split"><i class="a" style="width:45%"></i><i class="u" style="width:55%"></i></div>
+          <div class="key"><span><b style="background:var(--new)"></b>agent 10 min</span><span><b style="background:var(--accent)"></b>waited for you 12 min</span></div>
+        </div>
+        <div class="crd bar"><span class="btn">History</span><span class="btn">Force next</span><span class="btn">Go back</span><span class="btn dg" title="Stop the run">■</span></div>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>C · Check mode, outline</figcaption><div class="sk-fit"><div class="phone" data-for="run" data-v="c">
+        <div class="crd hd"><span class="path"><span class="cr">Runs ›</span><span class="cur">Plan the review pages</span></span><span class="wb"><i>⋯</i><i>✕</i></span></div>
+        <div class="crd pad stack">
+          <span class="row"><span class="grow"><span class="sub">planning v1 · owner [O1] · stream P</span><span class="nm" style="font-size:15px">Plan the review pages</span></span><span class="pill st-wait">waits</span></span>
+          <div class="split"><i class="a" style="width:39%"></i><i class="u" style="width:61%"></i></div>
+          <div class="key"><span><b style="background:var(--new)"></b>agent 25 min</span><span><b style="background:var(--accent)"></b>waited for you 39 min</span></div>
+        </div>
+        <div class="crd ol">
+          <div class="ln"><span class="ok">✓</span><span class="grow"><b>Read the goal</b></span><span class="sub">1 · 2 min</span></div>
+          <div class="ln"><span class="ok">✓</span><span class="grow"><b>Ask one question</b></span><span class="sub">3 · 3 min</span></div>
+          <div class="ln"><span class="ok">✓</span><span class="grow"><b>Answer</b></span><span class="sub">3 · 27 min you</span></div>
+          <div class="ln c1"><span class="ar">·</span><span class="grow">pass 3: "Show the next steps as a list" · by voice</span></div>
+          <div class="ln"><span class="ok">✓</span><span class="grow"><b>Record the answer</b></span><span class="sub">3 · 3 min</span></div>
+          <div class="ln"><span class="ok">✓</span><span class="grow"><b>Write the spec</b></span><span class="sub">2 · 16 min</span></div>
+          <div class="ln c1"><span class="ar">·</span><span class="grow">pass 2: spec v2 · 8 min</span></div>
+          <div class="ln" style="background:color-mix(in srgb, var(--accent) 12%, transparent)"><span style="color:var(--accent);font-weight:700">●</span><span class="grow"><b>Approve the spec</b></span><span class="sub">2 · 18 min you</span></div>
+          <div class="ln c1"><span class="ar">·</span><span class="grow">pass 1: change, "add the step run page"</span></div>
+          <div class="ln c1"><span class="ar">·</span><span class="grow">pass 2: waits for you · 6 min</span></div>
+          <div class="ln" style="color:var(--muted)"><span>○</span><span class="grow">Propose the next tasks</span><span class="likely">if approve</span></div>
+        </div>
+        <div class="crd bar"><span class="btn pri">Open the wait</span><span class="btn">Graph</span><span class="btn dg" title="Stop the run">■</span></div>
+      </div></div></figure>
+    </div>
+  </details>
+  <details class="sk-row">
+    <summary><b>Step run</b><span>One pass of a run through one step · 2 sketches</span></summary>
+    <p class="sk-why">One pass of a run through one step: the input, the output, the session, the question and answer, and the time. You open it from the history of a run, to see what happened in that pass.</p>
+    <div class="sk-trio" style="--n:2">
+      <figure class="sk-cell"><figcaption>A · Facts</figcaption><div class="sk-fit"><div class="phone" data-for="steprun" data-v="a">
+        <div class="crd hd"><span class="path"><span class="cr">Plan the review pages ›</span><span class="cur">Approve · pass 1</span></span><span class="wb"><i>‹</i><i>›</i><i>✕</i></span></div>
+        <div class="crd pad stack">
+          <span class="row"><span class="grow"><span class="sub">Step run 9 of 15 · ask · approval</span><span class="nm" style="font-size:16px">Approve the spec</span></span><span class="pass">pass 1</span></span>
+          <span class="row"><span class="pill st-done">ended · change</span><span class="sub">09:50 → 10:02 · 12 min</span></span>
+        </div>
+        <div class="gt"><span>Why here</span></div>
+        <div class="crd"><div class="kv"><span class="k">From</span><span class="v">Write the spec, pass 1</span></div><div class="kv"><span class="k">Held</span><span class="v">the spec is ready for review</span></div></div>
+        <div class="gt"><span>In and out</span></div>
+        <div class="crd">
+          <div class="kv"><span class="k">Input</span><span class="v"><u>spec v1</u></span></div>
+          <div class="kv"><span class="k">Output</span><span class="v">verdict: change</span></div>
+          <div class="kv"><span class="k">Text</span><span class="v">"Add the step run page, and keep the outputs of each pass."</span></div>
+        </div>
+        <div class="gt"><span>Who</span></div>
+        <div class="crd">
+          <div class="kv"><span class="k">Asked</span><span class="v">you, in Cards and in [O1]</span></div>
+          <div class="kv"><span class="k">Answered</span><span class="v">you, by voice · 10:02</span></div>
+          <div class="kv"><span class="k">Waited</span><span class="v">12 min for you · 1 reminder</span></div>
+        </div>
+        <div class="gt"><span>Went to</span></div>
+        <div class="crd rows"><div class="row"><span class="mono" style="color:var(--accent)">↺</span><span class="grow"><span class="nm">Ask one question · pass 3</span><span class="sub">the verdict is change</span></span></div></div>
+        <div class="crd bar"><span class="btn">Question card</span><span class="btn">Owner session</span></div>
+      </div></div></figure>
+      <figure class="sk-cell"><figcaption>B · Timeline</figcaption><div class="sk-fit"><div class="phone" data-for="steprun" data-v="b">
+        <div class="crd hd"><span class="path"><span class="cr">Plan the review pages ›</span><span class="cur">Approve · pass 1</span></span><span class="wb"><i>‹</i><i>›</i><i>✕</i></span></div>
+        <div class="crd pad stack">
+          <span class="row"><span class="grow"><span class="nm" style="font-size:15px">Approve the spec</span><span class="sub">pass 1 · input spec v1 · output: change</span></span><span class="pill st-done">12 min</span></span>
+        </div>
+        <div class="tl">
+          <div class="crd tli" style="--st:var(--muted)"><span class="row"><b>Step run starts</b><span class="grow"></span><span class="sub">09:50</span></span><span class="sub">from Write the spec · held "the spec is ready for review"</span></div>
+          <div class="crd tli" style="--st:var(--accent)"><span class="row"><b>Question to you</b><span class="grow"></span><span class="sub">09:50</span></span><span class="sub">"Approve the spec v1?" · approval · required</span></div>
+          <div class="crd tli" style="--st:var(--pending)"><span class="row"><b>Reminder</b><span class="grow"></span><span class="sub">10:00</span></span><span class="sub">question-reminder after 10 min</span></div>
+          <div class="crd tli" style="--st:var(--done)"><span class="row"><b>Your answer</b><span class="grow"></span><span class="sub">10:02</span></span><span class="sub">change · "Add the step run page, and keep the outputs of each pass." · voice</span></div>
+          <div class="crd tli" style="--st:var(--muted)"><span class="row"><b>Run moves</b><span class="grow"></span><span class="sub">10:02</span></span><span class="sub">↺ to Ask one question, pass 3 · one valid next step</span></div>
+        </div>
+        <div class="crd bar"><span class="btn">Spec v1</span><span class="btn">Event stream</span></div>
+      </div></div></figure>
+    </div>
+  </details>
+</main>
+<script>
+(function () {
+  // ---- The planning graph, drawn from its definition. ----
+  var STEPS = [
+    ['read', 'Read the goal', 'agent'], ['ask', 'Ask one question', 'agent'], ['answer', 'Answer', 'ask · human'],
+    ['record', 'Record the answer', 'agent'], ['spec', 'Write the spec', 'agent'], ['approve', 'Approve the spec', 'ask · approval'],
+    ['propose', 'Propose the tasks', 'agent · done']
+  ];
+  // [from, to, short label, kind]: fwd goes down, back goes up on the right, skip goes down on the left.
+  var EDGES = [
+    ['read', 'ask', '', 'fwd'], ['read', 'spec', 'no questions', 'skip'], ['ask', 'answer', '', 'fwd'],
+    ['answer', 'record', '', 'fwd'], ['record', 'ask', 'questions open', 'back'], ['record', 'spec', '', 'fwd'],
+    ['spec', 'approve', '', 'fwd'], ['approve', 'ask', 'change', 'back'], ['approve', 'propose', '', 'fwd']
+  ];
+  var STATES = {
+    def: { nodes: {}, passes: {}, went: [], next: [] },
+    'def-sel': { nodes: { approve: 'sel' }, passes: {}, went: [], next: [] },
+    'run-a': { nodes: { read: 'done', ask: 'done', answer: 'done', record: 'done', spec: 'done', approve: 'cur', propose: 'can' },
+      passes: { ask: 3, answer: 3, record: 3, spec: 2, approve: 2 }, went: ['read-ask', 'ask-answer', 'answer-record', 'record-ask', 'record-spec', 'spec-approve', 'approve-ask'], next: ['approve-propose'],
+      loops: { 'record-ask': 'pass 3', 'approve-ask': 'pass 2' } },
+    'run-b': { nodes: { read: 'done', ask: 'done', answer: 'done', record: 'done', spec: 'cur', approve: 'can' },
+      passes: { ask: 2, answer: 2, record: 2 }, went: ['read-ask', 'ask-answer', 'answer-record', 'record-ask', 'record-spec'], next: ['spec-approve'],
+      loops: { 'record-ask': 'pass 2' } }
+  };
+  var NS = 'http://www.w3.org/2000/svg';
+  function draw(state, mini) {
+    var W = 330, X = 52, NW = 138, NH = 30, GAP = 46, TOP = mini ? 6 : 16;
+    var idx = {}; STEPS.forEach(function (s, i) { idx[s[0]] = i; });
+    function y(i) { return TOP + i * GAP; }
+    var H = TOP + (STEPS.length - 1) * GAP + NH + 8;
+    var o = '<svg class="graph" viewBox="0 0 ' + W + ' ' + H + '" xmlns="' + NS + '" role="img" aria-label="Step graph of the planning workflow">';
+    var labels = '';
+    EDGES.forEach(function (e) {
+      var a = idx[e[0]], b = idx[e[1]], key = e[0] + '-' + e[1];
+      var cls = 'edge' + (state.went.indexOf(key) >= 0 ? ' went' : '') + (state.next.indexOf(key) >= 0 ? ' next' : '');
+      var d, lx, ly;
+      if (e[3] === 'fwd') {
+        d = 'M' + (X + NW / 2) + ',' + (y(a) + NH) + ' L' + (X + NW / 2) + ',' + y(b);
+      } else if (e[3] === 'skip') {
+        var sx = X - 22; d = 'M' + X + ',' + (y(a) + NH / 2) + ' C' + sx + ',' + (y(a) + NH / 2) + ' ' + sx + ',' + (y(a) + NH / 2) + ' ' + sx + ',' + (y(a) + NH) +
+          ' L' + sx + ',' + (y(b)) + ' C' + sx + ',' + (y(b) + NH / 2) + ' ' + sx + ',' + (y(b) + NH / 2) + ' ' + X + ',' + (y(b) + NH / 2);
+        lx = sx; ly = (y(a) + y(b)) / 2 + NH / 2;
+        if (!mini) labels += '<text class="entry" transform="translate(' + (sx - 6) + ',' + ly + ') rotate(-90)" text-anchor="middle">' + e[2] + '</text>';
+      } else {
+        var off = (a - b) * 16 + 4, rx = X + NW + off;
+        d = 'M' + (X + NW) + ',' + (y(a) + NH / 2) + ' C' + rx + ',' + (y(a) + NH / 2) + ' ' + rx + ',' + (y(a) + NH / 2) + ' ' + rx + ',' + (y(a)) +
+          ' L' + rx + ',' + (y(b) + NH) + ' C' + rx + ',' + (y(b) + NH / 2) + ' ' + rx + ',' + (y(b) + NH / 2) + ' ' + (X + NW) + ',' + (y(b) + NH / 2);
+        lx = rx; ly = (y(a) + y(b) + NH) / 2;
+        var txt = (state.loops && state.loops[key]) || e[2];
+        var lc = 'lp' + (state.went.indexOf(key) >= 0 ? ' went' : '');
+        var tw = txt.length * 4.9 + 10;
+        if (!mini) labels += '<g class="' + lc + '"><rect x="' + (lx - tw / 2) + '" y="' + (ly - 8) + '" width="' + tw + '" height="16" rx="8"/><text x="' + lx + '" y="' + (ly + 3) + '" text-anchor="middle">' + txt + '</text></g>';
+      }
+      o += '<path class="' + cls + '" d="' + d + '"/>';
+    });
+    o += labels;
+    STEPS.forEach(function (s, i) {
+      var st = state.nodes[s[0]] || '';
+      o += '<g class="node ' + st + '"><rect x="' + X + '" y="' + y(i) + '" width="' + NW + '" height="' + NH + '" rx="9"/>';
+      if (!mini) {
+        o += '<text x="' + (X + 10) + '" y="' + (y(i) + 13) + '">' + s[1] + '</text>';
+        o += '<text class="ex" x="' + (X + 10) + '" y="' + (y(i) + 24) + '">' + s[2] + '</text>';
+      }
+      o += '</g>';
+      var n = state.passes[s[0]];
+      if (n && n > 1 && !mini) o += '<g class="pc"><circle cx="' + (X + NW - 2) + '" cy="' + (y(i) + 2) + '" r="8"/><text x="' + (X + NW - 2) + '" y="' + (y(i) + 5) + '" text-anchor="middle">' + n + '</text></g>';
+    });
+    if (!mini) o += '<text class="entry" x="' + (X + NW / 2) + '" y="' + (TOP - 5) + '" text-anchor="middle">entry</text>';
+    return o + '</svg>';
+  }
+  function miniShape(n, loops) {
+    var W = 330, H = 46 * n + 10, o = '<svg class="graph" viewBox="0 0 ' + W + ' ' + H + '" xmlns="' + NS + '" role="img" aria-label="Small step graph">';
+    for (var i = 0; i < n; i++) o += '<g class="node"><rect x="52" y="' + (6 + i * 46) + '" width="138" height="30" rx="9"/></g>';
+    for (var j = 0; j < n - 1; j++) o += '<path class="edge" d="M121,' + (36 + j * 46) + ' L121,' + (52 + j * 46) + '"/>';
+    loops.forEach(function (l) { var a = l[0], b = l[1], rx = 190 + (a - b) * 16 + 4;
+      o += '<path class="edge" d="M190,' + (21 + a * 46) + ' L' + rx + ',' + (21 + a * 46) + ' L' + rx + ',' + (21 + b * 46) + ' L190,' + (21 + b * 46) + '"/>'; });
+    return o + '</svg>';
+  }
+  document.querySelectorAll('[data-graph]').forEach(function (el) {
+    var k = el.getAttribute('data-graph');
+    if (k === 'mini') el.innerHTML = draw(STATES.def, true);
+    else if (k === 'mini-review') el.innerHTML = miniShape(6, [[3, 1]]);
+    else if (k === 'mini-code') el.innerHTML = miniShape(5, [[3, 1]]);
+    else el.innerHTML = draw(STATES[k] || STATES.def, false);
+  });
+
+  // ---- Zoom: a click on a sketch asks the parent page to open it large ----
+  var one = new URLSearchParams(location.search).get('one');
+  if (one) {
+    var id = one.split('-');
+    var ph = document.querySelector('.phone[data-for="' + id[0] + '"][data-v="' + id[1] + '"]');
+    document.documentElement.classList.add('one');
+    var box = document.createElement('div'); box.className = 'sk-one';
+    box.appendChild(ph);
+    document.body.innerHTML = ''; document.body.appendChild(box);
+    var place = function () {
+      var w = 362, h = ph.offsetHeight;
+      var s = Math.min(innerWidth / w, innerHeight / h);
+      ph.style.transform = 'scale(' + s + ')';
+      ph.style.left = Math.max(0, (innerWidth - w * s) / 2) + 'px';
+      ph.style.top = Math.max(0, (innerHeight - h * s) / 2) + 'px';
+    };
+    place(); addEventListener('resize', place);
+    box.addEventListener('click', function () { parent.postMessage({ sk: 'close' }, '*'); });
+    return;
+  }
+  document.querySelectorAll('.sk-fit').forEach(function (c) {
+    c.addEventListener('click', function () {
+      var ph = c.firstElementChild;
+      parent.postMessage({ sk: 'open', id: ph.dataset.for + '-' + ph.dataset.v }, '*');
+    });
+  });
+
+  // ---- Fit: scale each sketch to its cell ----
+  function fit() {
+    document.querySelectorAll('.sk-trio').forEach(function (row) {
+      var cells = row.querySelectorAll('.sk-fit');
+      if (!cells.length || !cells[0].clientWidth) return;
+      var s = cells[0].clientWidth / 362, h = 0;
+      cells.forEach(function (c) { c.firstElementChild.style.minHeight = ''; h = Math.max(h, c.firstElementChild.offsetHeight); });
+      cells.forEach(function (c) {
+        var ph = c.firstElementChild;
+        ph.style.minHeight = h + 'px';
+        ph.style.transform = 'scale(' + s + ')';
+        c.style.height = Math.ceil(h * s) + 'px';
+      });
+    });
+  }
+  document.querySelectorAll('details.sk-row').forEach(function (d) { d.addEventListener('toggle', fit); });
+  window.addEventListener('resize', fit);
+  fit();
+})();
+</script>
