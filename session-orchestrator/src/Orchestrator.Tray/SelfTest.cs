@@ -231,8 +231,8 @@ public static partial class SelfTest
         Add("badge-box-fits", fits.All(f => f.Fit), $"{string.Join(" | ", fits.Select(f => f.Detail))}; hover text \"{counts}\"");
         var peekGone = await Until(async () => await Js(b, "!!document.querySelector('.tb-peek.on')") == "false", 7000);
         await Task.Delay(800);
-        Add("notice", session is not null && noticed && b.Visible && peek == "true" && wideArea == b.Width && peekGone && b.HitArea.Width < b.Width,
-            $"session {session}, phase {w.Phase}, badge window shows {b.Visible}, peek {peek}, click area at the peek {wideArea} (window {b.Width}), peek gone {peekGone}, click area after {b.HitArea.Width}");
+        Add("notice", session is not null && noticed && b.Visible && peek == "true" && wideArea == b.AreaOf(false, true).Width && peekGone && b.HitArea.Width < b.Width,
+            $"session {session}, phase {w.Phase}, badge window shows {b.Visible}, peek {peek}, click area at the peek {wideArea} (expect {b.AreaOf(false, true).Width}), peek gone {peekGone}, click area after {b.HitArea.Width}");
 
         // 9. A saved place of the panel: the next open is there.
         var place = new Point(area.Left + 200, area.Top + 120);
@@ -255,7 +255,7 @@ public static partial class SelfTest
         await Until(() => w.Phase == TrayPhase.Badge, 4000);
         await Task.Delay(500);
         var ds = b.DeviceDpi / 96f;
-        var client = new Point(b.Width - (int)(34 * ds), (int)((BadgeWindow.TabMargin + 34) * ds));
+        var client = b.RingPoint();
         var lp = (nint)((client.Y << 16) | (client.X & 0xffff));
         var atRest = b.HitArea.Width;
         _ = PostMessageBadge(b.Handle, 0x200, 0, lp);
@@ -266,7 +266,7 @@ public static partial class SelfTest
         _ = PostMessageBadge(b.Handle, 0x202, 0, lp);
         var opened = await Until(() => w.Phase == TrayPhase.Open, 4000);
         await Task.Delay(600);
-        Add("badge-input", atRest == (int)((BadgeWindow.TabRest + BadgeWindow.TabMargin) * ds) && hover == (int)((BadgeWindow.TabWide + BadgeWindow.TabMargin) * ds) && opened && w.Visible && !b.Visible,
+        Add("badge-input", atRest == b.AreaOf(false, false).Width && hover == b.AreaOf(true, false).Width && opened && w.Visible && !b.Visible,
             $"click area at rest {atRest}, at the hover {hover}; after the click: phase {w.Phase}, panel window shows {w.Visible}, badge window shows {b.Visible}");
 
         if (mouse) await Mouse(w, b, Add);
@@ -414,7 +414,7 @@ public static partial class SelfTest
         w.Request(TrayRequest.Dock);
         await Until(() => w.Phase == TrayPhase.Badge, 4000);
         await Task.Delay(500);
-        var ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
+        var ring = b.PointToScreen(b.RingPoint());
         var on = Own(b, ring);
         SetCursorPos(ring.X, ring.Y);
         await Task.Delay(600);
@@ -423,7 +423,7 @@ public static partial class SelfTest
         SetCursorPos(ring.X - (int)(500 * s), ring.Y);
         await Task.Delay(700);
         var rest = await Js(b, "Math.round(document.querySelector('.tb-tab').getBoundingClientRect().width)");
-        add("mouse-badge-hover", on && int.TryParse(wide, out var a) && a > BadgeWindow.TabRest && rest == BadgeWindow.TabRest.ToString() && area > b.HitArea.Width,
+        add("mouse-badge-hover", on && int.TryParse(wide, out var a) && a > (b.Sizes?.Tab ?? 0) && rest == ((int)(b.Sizes?.Tab ?? 0)).ToString(System.Globalization.CultureInfo.InvariantCulture) && area > b.HitArea.Width,
             $"tab width at the hover {wide}, after {rest}; click area at the hover {area}, after {b.HitArea.Width}; pointer on the window {on}");
 
         var top = b.Top;
@@ -432,7 +432,7 @@ public static partial class SelfTest
         add("mouse-badge-drag", moved && b.Top - top == -150 && b.Right == Slot.Area(Screen.FromRectangle(b.Bounds)).Right && w.Phase == TrayPhase.Badge,
             $"moved {b.Top - top} (expect -150), right edge {b.Right}, phase {w.Phase}");
 
-        ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
+        ring = b.PointToScreen(b.RingPoint());
         var clicked = await Drag(b, ring, 0, 0);
         var opened = await Until(() => w.Phase == TrayPhase.Open, 4000);
         add("mouse-badge-click", clicked && opened, $"phase {w.Phase}; press on the window {clicked}");

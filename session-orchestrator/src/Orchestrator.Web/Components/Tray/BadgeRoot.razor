@@ -81,6 +81,9 @@
             spin = true;
             peekTitle = title;
             peekSub = sub;
+            StateHasChanged();
+            // R2: the bubble has its text before the window takes it into the click area: the page measures it first.
+            await ReportSizes();
             window!.Peek(true);
             peek = true;
             StateHasChanged();

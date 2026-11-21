@@ -146,7 +146,7 @@ public static partial class SelfTest
         // The hover of the badge: the white tab and its ring slide to the left; the pointer away folds it.
         var s = w.DeviceDpi / 96f;
         var b = tray.Badge;
-        var ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
+        var ring = b.PointToScreen(b.RingPoint());
         await Hover(b, ring);
         Step($"hover the badge: tab width {await Js(b, "Math.round(document.querySelector('.tb-tab').getBoundingClientRect().width)")}");
         await Task.Delay(1800);
@@ -154,7 +154,7 @@ public static partial class SelfTest
         await Task.Delay(900);
 
         // A drag of the badge: up and down only, on the right edge.
-        ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
+        ring = b.PointToScreen(b.RingPoint());
         Step($"drag the badge up: {await BadgeDrag(b, ring, -220)}");
         await Task.Delay(1000);
 
@@ -168,7 +168,7 @@ public static partial class SelfTest
         }
 
         // A click on the badge: it slides out, and the panel opens at the place of the header drag.
-        ring = new Point(b.Right - (int)(34 * s), b.Top + (int)((BadgeWindow.TabMargin + 34) * s));
+        ring = b.PointToScreen(b.RingPoint());
         Step($"click the badge: {await BadgeDrag(b, ring, 0)}");
         await Until(() => w.Phase == TrayPhase.Open, 4000);
         await Task.Delay(1500);

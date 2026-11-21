@@ -6,13 +6,15 @@ public sealed record TraySizesResult(
     double PanelWidth,
     double PanelHeight,
     double Margin,
+    double Tab,
+    double TabTop,
     double Width,
     double[]? Rest,
     double[]? Hover,
     double[]? Bubble)
 {
     public override string ToString() =>
-        $"panel {PanelWidth} x {PanelHeight}, margin {Margin}; page width {Width}; "
+        $"panel {PanelWidth} x {PanelHeight}, margin {Margin}; tab {Tab} at {TabTop}; page width {Width}; "
         + $"rest {Text(Rest)}, hover {Text(Hover)}, bubble {Text(Bubble)}";
 
     static string Text(double[]? box) =>

@@ -21,6 +21,7 @@ window.orchTray = {
     var root = getComputedStyle(document.documentElement);
     var token = function (name) { return parseFloat(root.getPropertyValue(name)) || 0; };
     var report = { panelWidth: token("--tray-panel-w"), panelHeight: token("--tray-panel-h"), margin: token("--tray-margin"),
+      tab: token("--badge-tab"), tabTop: token("--badge-tab-top"),
       width: window.innerWidth, rest: null, hover: null, bubble: null };
     var tab = document.querySelector(".tb-tab"), bubble = document.querySelector(".tb-peek");
     if (!tab || tab.getClientRects().length === 0) return report;

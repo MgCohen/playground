@@ -2,15 +2,13 @@ namespace Orchestrator.Tray;
 
 /// <summary>
 /// The badge window: a strip at the right edge of the work area of the panel screen, at a saved height. It is always on top.
-/// The window keeps the left button for itself: a click opens the panel, a drag moves the window up and down. A hover makes
-/// the click area wide, so the tab can extend to the left; the peek bubble makes it the full window. The page (BadgeRoot) has
-/// the look and the motion.
+/// The window keeps the left button for itself: a click opens the panel, a drag moves the window up and down. The page
+/// (BadgeRoot) has the look, the motion and all sizes (R2): it reports the shadow box of the tab at rest and at the hover, and of
+/// the peek bubble. The window is as large as all boxes together; the click area is the box of the current state. The window
+/// region is the click area, and Windows clips the drawing to it, so each drawn part must be inside its box.
 /// </summary>
 public sealed class BadgeWindow : ClearHost
 {
-    /// <summary>The badge window: the bubble, the gap and the tab at its hover width, with a margin for the shadow (tray.css).</summary>
-    public const int BadgeWidth = 332, BadgeHeight = 96, TabRest = 68, TabWide = 280, TabMargin = 14;
-
     readonly Func<Screen> screen;
     readonly string? topFile;
     int? top;
@@ -29,7 +27,8 @@ public sealed class BadgeWindow : ClearHost
         Text = "Orchestrator badge";
         Icon = icon;
         TopMost = true;
-        Bounds = PlaceBounds();
+        // Before the first size report the page has no size yet: the window stays hidden (ShowAtPlace needs a report).
+        Bounds = new Rectangle(Slot.Area(screen()).Right - 1, Slot.Area(screen()).Top, 1, 1);
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += DisplayChanged;
     }
 
@@ -41,7 +40,16 @@ public sealed class BadgeWindow : ClearHost
     /// <summary>R2: the last sizes that the page of this window measured (orchTray.sizes), in CSS px.</summary>
     public Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult? Sizes { get; private set; }
 
-    public void UseSizes(Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult sizes) => Sizes = sizes;
+    /// <summary>R2: new sizes from the page (a new text of the counts or of the bubble). The window keeps its right edge and top.</summary>
+    public void UseSizes(Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult sizes)
+    {
+        if (sizes.Rest is null || sizes.Hover is null) return;
+        Sizes = sizes;
+        if (!Visible) return;
+        var size = WindowSize();
+        Bounds = new Rectangle(Right - size.Width, Top, size.Width, size.Height);
+        Hits();
+    }
 
     /// <summary>Shows the badge window at its place, with no input from the last time (no hover, no press).</summary>
     public void ShowAtPlace()
@@ -50,6 +58,11 @@ public sealed class BadgeWindow : ClearHost
         down = null;
         dragging = false;
         hover = peek = false;
+        if (Sizes is null)
+        {
+            Faults.Add(new InvalidOperationException("The badge page gave no sizes (orchTray.sizes)."), "badge window");
+            return;
+        }
         Bounds = PlaceBounds();
         Hits();
         if (!Visible)
@@ -70,18 +83,46 @@ public sealed class BadgeWindow : ClearHost
     public Rectangle PlaceBounds()
     {
         var area = Slot.Area(screen());
-        var size = new Size((int)(BadgeWidth * Dpi), (int)(BadgeHeight * Dpi));
-        var y = Math.Clamp(top ?? area.Top + (int)(area.Height * .42) - (int)(TabMargin * Dpi), area.Top, Math.Max(area.Top, area.Bottom - size.Height));
+        var size = WindowSize();
+        var tabTop = (int)((Sizes?.TabTop ?? 0) * Dpi);
+        var y = Math.Clamp(top ?? area.Top + (int)(area.Height * .42) - tabTop, area.Top, Math.Max(area.Top, area.Bottom - size.Height));
         return new Rectangle(area.Right - size.Width, y, size.Width, size.Height);
     }
 
-    /// <summary>The click area from the right edge: the tab at rest or at its hover width, or the full window at a peek.</summary>
-    void Hits()
+    /// <summary>The window size: all boxes of the page together, from the right edge, at the DPI, at most the work area.</summary>
+    Size WindowSize()
     {
-        var wide = peek ? BadgeWidth : hover ? TabWide + TabMargin : TabRest + TabMargin;
-        var w = (int)(wide * Dpi);
-        SetHitArea(new Rectangle(Width - w, 0, w, Height));
+        if (Sizes is not { Rest: { } rest, Hover: { } wide } s) return Size;
+        var all = s.Bubble is { } bubble ? Union(Union(rest, wide), bubble) : Union(rest, wide);
+        var area = Slot.Area(screen());
+        return new Size(Math.Min(area.Width, (int)Math.Ceiling((s.Width - all[0]) * Dpi)), Math.Min(area.Height, (int)Math.Ceiling(all[3] * Dpi)));
     }
+
+    static double[] Union(double[] a, double[] b) => [Math.Min(a[0], b[0]), Math.Min(a[1], b[1]), Math.Max(a[2], b[2]), Math.Max(a[3], b[3])];
+
+    /// <summary>
+    /// The click area of a state, in window pixels: the tab box at rest or at the hover, with the bubble box at a peek. The right
+    /// side is the window edge (the tab is flush with the screen edge).
+    /// </summary>
+    public Rectangle AreaOf(bool hovered, bool peeked)
+    {
+        if (Sizes is not { Rest: { } rest, Hover: { } wide } s) return new Rectangle(Point.Empty, Size);
+        var box = hovered ? wide : rest;
+        if (peeked && s.Bubble is { } bubble) box = Union(box, bubble);
+        var left = Math.Max(0, Width - (int)Math.Ceiling((s.Width - box[0]) * Dpi));
+        var topPx = Math.Max(0, (int)Math.Floor(box[1] * Dpi));
+        var bottom = Math.Min(Height, (int)Math.Ceiling(box[3] * Dpi));
+        return Rectangle.FromLTRB(left, topPx, Width, bottom);
+    }
+
+    /// <summary>The center of the ring in window pixels: the middle of the tab at rest (the ring is at the left side of the tab).</summary>
+    public Point RingPoint()
+    {
+        var tab = Sizes?.Tab ?? 0;
+        return new Point(Width - (int)(tab / 2 * Dpi), (int)(((Sizes?.TabTop ?? 0) + tab / 2) * Dpi));
+    }
+
+    void Hits() => SetHitArea(AreaOf(hover, peek));
 
     /// <summary>
     /// Test seam: holds the hover of the badge (true) or ends it (false), with no real pointer and no posted message. The window
@@ -90,7 +131,7 @@ public sealed class BadgeWindow : ClearHost
     internal void HoldHover(bool on)
     {
         over = on;
-        PointerAt(on ? new Point(Width - (int)(34 * Dpi), (int)((TabMargin + 34) * Dpi)) : null);
+        PointerAt(on ? RingPoint() : null);
         Hover(on);
     }
 
