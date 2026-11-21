@@ -15,6 +15,7 @@ Read these files before you change this project:
 | `docs/tray-testing.html` | How the tray tests work (https://claude.ai/artifact/RLKUe4bnMJj4mDBVLFPcEK) |
 | `docs/tray-issues.html` | The tray issue tracker: report, reproduce once, the user picks (https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s) |
 | `docs/motion-pipeline-plan.html` | The motion pipeline (R1) plan: thirteen steps, each with its scenario, before and after recordings, checks, risk and undo (https://claude.ai/artifact/G89uZPfkYsVe5kcHn4daaP) |
+| `docs/size-ownership-plan.html` | The size ownership (R2) plan: the page owns each tray size and reports it; six steps with their proofs (https://claude.ai/artifact/UYCh2zPYAwXJijYz9opJCZ) |
 
 ## Rules
 

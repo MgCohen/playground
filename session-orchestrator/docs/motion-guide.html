@@ -308,9 +308,21 @@ await Commands.SendAsync(new SpeechFocus("sheet-text", true), default);</code></
       <tr><td>Hidden window</td><td>The page follows its window: a hidden window makes the page hidden, so a wait ends <code>hidden</code> at once</td></tr>
       <tr><td>Thread</td><td>All calls of the flow come on the UI thread, so the flow has no lock</td></tr>
       <tr><td>Badge notice</td><td>Only for a card that arrives while the tray is closed (hidden or at the badge), one time (<code>TrayNotices</code>)</td></tr>
+      <tr><td>Badge hover</td><td>The window owns the hover (<code>BadgeHovered</code>); the page draws it with <code>is-hover</code>. At the end of a hover the page waits for the step <code>badge-fold</code> (settle), then calls <code>BadgeFolded</code>: the click area gets small</td></tr>
     </table></div>
 <pre><code>window badge-show: shown in 35 ms, gap 0 ms
 window panel-show: shown in 24 ms, gap 0 ms</code></pre>
+
+    <h2>The sizes of the tray</h2>
+    <p>The page owns each size. The window region is the click area, and Windows clips the drawing to it, so the window must know the size of each drawn part.</p>
+    <div class="box"><table>
+      <tr><th>Part</th><th>Owner</th></tr>
+      <tr><td>Panel size, shadow margin, tab size, tab top</td><td>Tokens in <code>tray.css</code>: <code>--tray-panel-w</code>, <code>--tray-panel-h</code>, <code>--tray-margin</code>, <code>--badge-tab</code>, <code>--badge-tab-top</code></td></tr>
+      <tr><td>Shadow boxes: the tab at rest and at the hover, the peek bubble</td><td><code>orchTray.sizes</code> measures them on a hidden copy; <code>TraySizes</code> sends them</td></tr>
+      <tr><td>Window size, click area</td><td><code>TrayWindow</code>, <code>BadgeWindow</code>, from the report (<code>UseSizes</code>)</td></tr>
+      <tr><td>Edge gap, work area, saved places</td><td>C#</td></tr>
+    </table></div>
+    <p>If you change a size or a shadow of the tab, the bubble or the panel, use the tokens and run the self-test. The checks <code>badge-box-fits</code>, <code>badge-fold-area</code> and <code>panel-box-fits</code> find a cut. Do not add a size constant to a tray window: <code>Tray_window_sizes_come_from_the_page</code> finds it.</p>
 
     <h2>The deck</h2>
     <p><code>swipe.js</code> follows the pointer and clicks the act buttons. C# starts the throw and the tuck (the classes <code>out-r</code>, <code>out-l</code>, <code>tuck</code>) on the card of the act, by its id (<code>data-card</code>), waits for the step <code>deck-throw</code> or <code>deck-tuck</code> on that card, then does the act. A card that arrives during the motion does not get the class. Do not add a timer to <code>swipe.js</code>. The spring back after a short drag and the drop of a new card are motions of the script and of the CSS, with no step.</p>
@@ -321,7 +333,7 @@ window panel-show: shown in 24 ms, gap 0 ms</code></pre>
     <h2>Check a change</h2>
     <ol>
       <li>Run the unit tests: <code>dotnet test --solution Orchestrator.slnx</code>. Set <code>GITHUB_TOKEN</code> (<code>gh auth token</code>) before the first restore.</li>
-      <li>Run the tray self-test: <code>dotnet run --project src/Orchestrator.Tray -- --selftest &lt;folder&gt;</code>. Add <code>--reduced</code> for reduced motion. The folder gets <code>selftest.json</code> (each check with <code>Pass</code> and its message), the pictures and <code>exceptions.log</code>. Only <code>badge-hover-fits</code> (I7) fails today.</li>
+      <li>Run the tray self-test: <code>dotnet run --project src/Orchestrator.Tray -- --selftest &lt;folder&gt;</code>. Add <code>--reduced</code> for reduced motion. The folder gets <code>selftest.json</code> (each check with <code>Pass</code> and its message), the pictures and <code>exceptions.log</code>. All checks pass today, so the exit code can gate a step.</li>
       <li>Record a scenario before and after the change. Do not use the computer during the recording, and close each dialog first: a window in front of the tray changes the frames.</li>
       <li>Read the trace in the log of the scenario.</li>
     </ol>

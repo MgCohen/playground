@@ -10,8 +10,11 @@ namespace Orchestrator.Tray;
 /// </summary>
 public sealed class TrayWindow : ClearHost
 {
-    /// <summary>The panel and the margin around it for its shadow, in logical pixels (tray.css).</summary>
-    public const int PanelWidth = 350, PanelHeight = 720, ShadowMargin = 24, Gap = 12;
+    /// <summary>
+    /// The edge gap: the space between the panel and the edge of the work area, in logical pixels. The window owns it, because
+    /// it is a rule of the place on the screen. The page owns the sizes of the panel and of its shadow margin (R2, tray.css).
+    /// </summary>
+    public const int Gap = 12;
 
     readonly string? placeFile;
     Point? panel;
@@ -25,7 +28,8 @@ public sealed class TrayWindow : ClearHost
         Text = "Orchestrator";
         Icon = icon;
         TopMost = pinned;
-        Bounds = PanelBounds();
+        // Before the first size report the page has no size yet: the window stays hidden (ShowAtPlace needs a report).
+        Bounds = new Rectangle(Slot.Area(PanelScreen()).Right - 1, Slot.Area(PanelScreen()).Bottom - 1, 1, 1);
         MoveEnded += SavePanel;
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += DisplayChanged;
     }
@@ -66,6 +70,11 @@ public sealed class TrayWindow : ClearHost
     /// <summary>Shows the panel window at its place (it shows nothing until the page draws the start phase).</summary>
     public void ShowAtPlace()
     {
+        if (Sizes is null)
+        {
+            Faults.Add(new InvalidOperationException("The panel page gave no sizes (orchTray.sizes)."), "panel window");
+            return;
+        }
         Bounds = PanelBounds();
         Hits();
         if (!Visible)
@@ -76,6 +85,20 @@ public sealed class TrayWindow : ClearHost
     }
 
     float Dpi => DeviceDpi / 96f;
+
+    /// <summary>R2: the last sizes that the page of this window measured (orchTray.sizes), in CSS px.</summary>
+    public Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult? Sizes { get; private set; }
+
+    public void UseSizes(Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult sizes)
+    {
+        Sizes = sizes;
+        if (!Visible) return;
+        Bounds = PanelBounds();
+        Hits();
+    }
+
+    /// <summary>The shadow margin around the panel in window pixels (the token --tray-margin of the page).</summary>
+    public int ShadowMargin => (int)((Sizes?.Margin ?? 0) * Dpi);
 
     /// <summary>The click area: the panel with its shadow, cut to the work area.</summary>
     void Hits()
@@ -88,8 +111,8 @@ public sealed class TrayWindow : ClearHost
     Size PanelSize()
     {
         var area = Slot.Area(PanelScreen());
-        var panelHeight = Math.Min((int)(PanelHeight * Dpi), area.Height - (int)(2 * Gap * Dpi));
-        return new Size((int)((PanelWidth + 2 * ShadowMargin) * Dpi), panelHeight + (int)(2 * ShadowMargin * Dpi));
+        var panelHeight = Math.Min((int)((Sizes?.PanelHeight ?? 0) * Dpi), area.Height - (int)(2 * Gap * Dpi));
+        return new Size((int)((Sizes?.PanelWidth ?? 0) * Dpi) + 2 * ShadowMargin, panelHeight + 2 * ShadowMargin);
     }
 
     /// <summary>The panel window: the saved place of the panel (or its home place above the tray), fit into the work area with the gap.</summary>
@@ -97,7 +120,7 @@ public sealed class TrayWindow : ClearHost
     {
         var size = PanelSize();
         var area = Slot.Area(PanelScreen());
-        var m = (int)(ShadowMargin * Dpi);
+        var m = ShadowMargin;
         var g = (int)(Gap * Dpi);
         var inner = new Size(size.Width - 2 * m, size.Height - 2 * m);
         var p = panel ?? new Point(area.Right - inner.Width - g, area.Bottom - inner.Height - g);
@@ -108,7 +131,7 @@ public sealed class TrayWindow : ClearHost
 
     void SavePanel()
     {
-        var m = (int)(ShadowMargin * Dpi);
+        var m = ShadowMargin;
         panel = new Point(Left + m, Top + m);
         Faults.Trace($"panel drag end: {panel}");
         // A drop at the edge of the work area keeps the gap, so the panel never touches the taskbar.

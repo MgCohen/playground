@@ -21,8 +21,6 @@
   --t-ball-in: .3s; --t-ball-out: .18s; --t-grow: .34s; --t-shrink: .24s; --t-content-in: .2s; --t-content-out: .1s;
   --t-badge-in: .26s; --t-badge-out: .2s; --t-badge-hover: .28s; --t-badge-wait: .35s; --t-badge-text: .18s; --t-badge-text-wait: .43s;
   --t-peek-in: .26s; --t-peek-out: .2s; --t-spin: .8s; --ease-spin: cubic-bezier(.4,0,.2,1);
-  /* The badge window: the click area gets small after the fold of the hover. */
-  --t-badge-fold: .3s;
   /* Dwell times: how long a thing shows. Reduced motion keeps them. */
   --t-undo: 5s; --t-peek-show: 5s;
   /* The longest wait of a <Presence> for the end of its motion: a motion that does not run stops no block. */
@@ -160,6 +158,5 @@ html.nav .page { animation: none; }
     --t-card-tuck: 1ms; --t-toggle: 1ms; --t-ball-in: 1ms; --t-ball-out: 1ms; --t-grow: 1ms;
     --t-shrink: 1ms; --t-content-in: 1ms; --t-content-out: 1ms; --t-badge-in: 1ms; --t-badge-out: 1ms; --t-badge-hover: 1ms;
     --t-badge-wait: 1ms; --t-badge-text: 1ms; --t-badge-text-wait: 1ms; --t-peek-in: 1ms; --t-peek-out: 1ms; --t-spin: 1ms;
-    --t-badge-fold: 1ms;
   }
 }

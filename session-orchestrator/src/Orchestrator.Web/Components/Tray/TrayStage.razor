@@ -46,7 +46,10 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && flow is not null && window!.OpenAtStart) await flow.Request(TrayRequest.Open);
+        if (!firstRender || flow is null) return;
+        // R2: the page owns the sizes; the window takes them before the first show.
+        window!.UseSizes(await Commands.Must(new Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizes()));
+        if (window.OpenAtStart) await flow.Request(TrayRequest.Open);
     }
 
     public Task Prepare() => InvokeAsync(async () =>

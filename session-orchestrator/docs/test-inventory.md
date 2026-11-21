@@ -158,3 +158,16 @@ The user approves a look one time for each motion and each merge, not one time f
 | `--live` mode | The self-test uses mock data only |
 | DPI change, second screen, slot lock, `SingleInstance`, `RunRecord` | No unit test |
 | Known failure `badge-hover-fits` (I7) | Each run ends with exit 1, so the exit code cannot gate a step |
+
+## R2 additions (2026-11-21)
+
+| Check | Kind | What it proves | Issue |
+|---|---|---|---|
+| `badge-box-fits` | self-test | The shadow boxes of the tab and the bubble, and the ring, are inside the click area at rest, hover and peek. It replaces `badge-hover-fits` | I7, I18 |
+| `badge-fold-area` | self-test | No cut in any sample of the hover fold; the click area gets small after the fold | I7 |
+| `panel-box-fits` | self-test | The shadow of the open panel is inside its window | I10 |
+| `Tray_sizes_are_tokens` | unit | `tray.css` lays out the window sizes with tokens | I10 |
+| `Tray_window_sizes_come_from_the_page` | unit | The tray windows keep no size constant, except the edge gap | I10 |
+| `badge-states` | scenario | The badge at rest, hover and peek, with the boxes in the log | I7, I18 |
+
+The known failure `badge-hover-fits` is gone: the self-test exit code can gate a step.

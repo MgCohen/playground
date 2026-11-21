@@ -9,7 +9,7 @@
 
 <div class="tray-stage is-@phase">
     <div class="tray-badge-layer">
-        <TrayBadge Counts="counts" Spin="spin" Peek="peek" PeekTitle="@peekTitle" PeekSub="@peekSub" />
+        <TrayBadge Hover="hovered" Counts="counts" Spin="spin" Peek="peek" PeekTitle="@peekTitle" PeekSub="@peekSub" />
     </div>
 </div>
 
@@ -28,18 +28,46 @@
         flow = Services.GetService<TrayFlow>();
         base.OnInitialized();
         flow?.Attach(this);
+        if (window is not null) window.BadgeHovered += OnHover;
     }
 
     // The counts of the badge. A card that arrives while the tray is closed brings the badge in, spins the ring and peeks, one
     // time (TrayNotices): each card is done after its notice, and the cards that the panel showed get none.
     readonly TrayNotices notices = new();
 
-    // The fold time of the hover of the badge window: the token --t-badge-fold, read once from this page.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || window is null) return;
-        if (await MotionTimes.Of(Commands, "--t-badge-fold") is { } fold) window.UseBadgeFold(fold);
-        else window.Fault(new InvalidOperationException("The page gave no --t-badge-fold."), "badge window");
+        if (window is null) return;
+        await ReportSizes();
+    }
+
+    // The hover of the badge: the window owns it, this page draws it (is-hover). At the end of a hover the page waits for the
+    // fold (step badge-fold), then the window makes the click area small. A newer hover makes an older fold report nothing.
+    bool hovered;
+    int hovers;
+
+    void OnHover(bool on) => _ = InvokeAsync(async () =>
+    {
+        hovered = on;
+        var mine = ++hovers;
+        StateHasChanged();
+        if (on) return;
+        try
+        {
+            await Commands.Must(new MotionWait(MotionSteps.BadgeFold.Target, WaitMode.Step));
+            if (mine == hovers && !hovered) window!.BadgeFolded();
+        }
+        catch (Exception e)
+        {
+            window!.Fault(e, "badge fold");
+            window.BadgeFolded();
+        }
+    });
+
+    public override void Dispose()
+    {
+        if (window is not null) window.BadgeHovered -= OnHover;
+        base.Dispose();
     }
 
     protected override void Load()
@@ -76,10 +104,14 @@
             // The peek shows for the token --t-peek-show of motion.css (N2). No time from the page is a fault, not 0 s.
             var peekTime = await MotionTimes.Of(Commands, "--t-peek-show") ?? throw new InvalidOperationException("The page gave no --t-peek-show.");
             var mine = ++notice;
-            spin = true;
             peekTitle = title;
             peekSub = sub;
+            StateHasChanged();
+            // R2: the bubble has its text before the window takes it into the click area: the page measures it first. The spin
+            // starts after the measure, so its wait (below) comes directly after its render.
+            await ReportSizes();
             window!.Peek(true);
+            spin = true;
             peek = true;
             StateHasChanged();
             var shown = Task.Delay(peekTime);
@@ -98,6 +130,25 @@
         {
             // The notice runs on its own (no caller waits for it), so its error goes to the fault log of the tray.
             window?.Fault(e, "badge notice");
+        }
+    }
+
+    // R2: the sizes of the badge depend on its text (the hover counts, the peek bubble). After a render with a new text, the page
+    // measures again and the window takes the new sizes.
+    string reported = "";
+
+    async Task ReportSizes()
+    {
+        var text = $"{counts.Headline}|{counts.Detail}|{peekTitle}|{peekSub}";
+        if (text == reported) return;
+        reported = text;
+        try
+        {
+            window!.UseSizes(await Commands.Must(new Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizes()));
+        }
+        catch (Exception e)
+        {
+            window!.Fault(e, "badge sizes");
         }
     }
 

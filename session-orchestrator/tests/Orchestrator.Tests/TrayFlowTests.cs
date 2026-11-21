@@ -43,9 +43,13 @@ public sealed class TrayFlowTests
             _ => "hidden",
         };
 
-        public void UseBadgeFold(TimeSpan fold) { }
+        public event Action<bool>? BadgeHovered { add { } remove { } }
+
+        public void BadgeFolded() { }
 
         public void Peek(bool on) { }
+
+        public void UseSizes(Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizesResult sizes) { }
     }
 
     sealed class FakePages(List<string> steps) : TrayFlow.IPanel, TrayFlow.IBadge
