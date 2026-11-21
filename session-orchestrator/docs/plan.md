@@ -2553,3 +2553,14 @@ All findings of the review of 45bd266..28ee630 are fixed on `orch/motion-review-
 | Hidden | A wait ends `hidden` when the page hides. The WebView2 controller now follows the window (`IsVisible`); before, a hidden window kept the page "visible", so a wait ran to its limit. New check `hide-during-motion` (530 ms, by hidden) |
 
 Umpire conflicts (report, no workaround): a helper class in a slice is denied (UMP020101), so `MotionTimes` stays in `Components/Motion`.
+
+## Visual review: I16 window capture check (2026-11-21)
+
+- Scope: I16 does only the window capture check. I17 owns the test instances, the lock and the start order in `scenario.sh`. The lock analysis (causes and option D) went to I17 as a note.
+- Tool: `spikes/window-capture/` (Windows.Graphics.Capture, `GraphicsCaptureItem` for one window).
+- Tray window (composition mode, WebView2): the capture shows the full panel with correct transparency. It works when another window covers the tray and when the tray is at x = -3000. A minimized tray gives 0 frames.
+- The yellow border can be turned off (`IsBorderRequired = false`). Border on: 10403 yellow pixels at the edge; border off: 4.
+- Stream: main screen 147 frames in 4 s; a layered test window at x = -3000, 114 frames in 4 s, no frame lost. A window that draws with paint messages gives 1 frame off the screen (no paint message).
+- Not tested: tray motion while covered or off the screen.
+- Decision of the user: keep the normal screen recorder. Window capture is not used now.
+
