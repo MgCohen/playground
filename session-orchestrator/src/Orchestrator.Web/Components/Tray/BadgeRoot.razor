@@ -1,0 +1,160 @@
+@* The root of the badge window (N1, N2): the tab at the right screen edge with the ring of the waiting cards. Two phases
+   (badge-out, badge), as the class "is-<phase>" (tray.css). A new card brings the badge in when the tray is hidden; at the
+   badge it spins the ring and shows the peek bubble. The tray flow (TrayFlow) orders the windows and calls In and Out. *@
+@using Microsoft.Extensions.DependencyInjection
+@inherits LiveView
+@implements TrayFlow.IBadge
+@inject ICommandSender Commands
+@inject IServiceProvider Services
+
+<div class="tray-stage is-@phase">
+    <div class="tray-badge-layer">
+        <TrayBadge Hover="hovered" Counts="counts" Spin="spin" Peek="peek" PeekTitle="@peekTitle" PeekSub="@peekSub" />
+    </div>
+</div>
+
+@code {
+    TrayFlow? flow;
+    IWidgetWindow? window;
+    string phase = TrayPhase.BadgeOut;
+    bool spin, peek;
+    string peekTitle = "", peekSub = "";
+    TrayCounts counts = TrayCounts.None;
+    int notice;
+
+    protected override void OnInitialized()
+    {
+        window = Services.GetService<IWidgetWindow>();
+        flow = Services.GetService<TrayFlow>();
+        base.OnInitialized();
+        flow?.Attach(this);
+        if (window is not null) window.BadgeHovered += OnHover;
+    }
+
+    // The counts of the badge. A card that arrives while the tray is closed brings the badge in, spins the ring and peeks, one
+    // time (TrayNotices): each card is done after its notice, and the cards that the panel showed get none.
+    readonly TrayNotices notices = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (window is null) return;
+        await ReportSizes();
+    }
+
+    // The hover of the badge: the window owns it, this page draws it (is-hover). At the end of a hover the page waits for the
+    // fold (step badge-fold), then the window makes the click area small. A newer hover makes an older fold report nothing.
+    bool hovered;
+    int hovers;
+
+    void OnHover(bool on) => _ = InvokeAsync(async () =>
+    {
+        hovered = on;
+        var mine = ++hovers;
+        StateHasChanged();
+        if (on) return;
+        try
+        {
+            await Commands.Must(new MotionWait(MotionSteps.BadgeFold.Target, WaitMode.Step));
+            if (mine == hovers && !hovered) window!.BadgeFolded();
+        }
+        catch (Exception e)
+        {
+            window!.Fault(e, "badge fold");
+            window.BadgeFolded();
+        }
+    });
+
+    public override void Dispose()
+    {
+        if (window is not null) window.BadgeHovered -= OnHover;
+        base.Dispose();
+    }
+
+    protected override void Load()
+    {
+        var cards = Board.Cards();
+        counts = TrayCounts.Of(cards);
+        var fresh = notices.Take(cards, flow?.Closed ?? false);
+        if (fresh.Count == 0 || flow is null) return;
+        var newest = fresh.MaxBy(c => c.Id, StringComparer.Ordinal)!;
+        _ = InvokeAsync(() => Notice($"{newest.Label} · {newest.SessionTitle}", newest.Title));
+    }
+
+    // The window shows with the tab out of view; two frames later the tab slides in.
+    public Task In() => InvokeAsync(async () =>
+    {
+        Set(TrayPhase.BadgeOut);
+        await Commands.Must(new MotionWait(null, WaitMode.Frames, "2"));
+        Set(TrayPhase.Badge);
+        // H2: the phase badge comes after the slide of the tab, so the next step never cuts it.
+        await Commands.Must(new MotionWait(MotionSteps.BadgeIn.Target, WaitMode.Step));
+    });
+
+    public Task Out() => InvokeAsync(async () =>
+    {
+        Set(TrayPhase.BadgeOut);
+        await Commands.Must(new MotionWait(MotionSteps.BadgeOut.Target, WaitMode.Step));
+    });
+
+    async Task Notice(string title, string sub)
+    {
+        try
+        {
+            if (counts.Total == 0 || !await flow!.BringBadge()) return;
+            // The peek shows for the token --t-peek-show of motion.css (N2). No time from the page is a fault, not 0 s.
+            var peekTime = await MotionTimes.Of(Commands, "--t-peek-show") ?? throw new InvalidOperationException("The page gave no --t-peek-show.");
+            var mine = ++notice;
+            peekTitle = title;
+            peekSub = sub;
+            StateHasChanged();
+            // R2: the bubble has its text before the window takes it into the click area: the page measures it first. The spin
+            // starts after the measure, so its wait (below) comes directly after its render.
+            await ReportSizes();
+            window!.Peek(true);
+            spin = true;
+            peek = true;
+            StateHasChanged();
+            var shown = Task.Delay(peekTime);
+            await Commands.Must(new MotionWait(MotionSteps.Spin.Target, WaitMode.Step));
+            if (mine != notice) return;
+            spin = false;
+            StateHasChanged();
+            await shown;
+            if (mine != notice) return;
+            peek = false;
+            StateHasChanged();
+            await Commands.Must(new MotionWait(MotionSteps.PeekOut.Target, WaitMode.Step));
+            if (mine == notice && !peek) window.Peek(false);
+        }
+        catch (Exception e)
+        {
+            // The notice runs on its own (no caller waits for it), so its error goes to the fault log of the tray.
+            window?.Fault(e, "badge notice");
+        }
+    }
+
+    // R2: the sizes of the badge depend on its text (the hover counts, the peek bubble). After a render with a new text, the page
+    // measures again and the window takes the new sizes.
+    string reported = "";
+
+    async Task ReportSizes()
+    {
+        var text = $"{counts.Headline}|{counts.Detail}|{peekTitle}|{peekSub}";
+        if (text == reported) return;
+        reported = text;
+        try
+        {
+            window!.UseSizes(await Commands.Must(new Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizes()));
+        }
+        catch (Exception e)
+        {
+            window!.Fault(e, "badge sizes");
+        }
+    }
+
+    void Set(string next)
+    {
+        phase = next;
+        StateHasChanged();
+    }
+}

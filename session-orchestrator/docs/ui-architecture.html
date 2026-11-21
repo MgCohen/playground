@@ -1,0 +1,779 @@
+<title>Orch View Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one part of the view for each tab, the same four sections in each. Same tokens as the test guide. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --warn: #9a6200; --code-bg: #eef1f3; --bad: #b3402f;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f; --bad: #ef8a78; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f; --bad: #ef8a78; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 70ch; }
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+nav button { flex: none; white-space: nowrap; font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 24px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 12px; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+td code { white-space: nowrap; }
+pre.stack { margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg); white-space: pre; }
+pre .c { color: var(--muted); }
+pre .k { color: var(--accent); }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 70ch; }
+.tag { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.cs { color: var(--accent); border-color: var(--accent); }
+.tag.css { color: var(--warn); border-color: var(--warn); }
+.tag.js { color: var(--bad); border-color: var(--bad); }
+.tree { font-family: var(--font-mono); font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+.tree details { margin-left: 16px; }
+.tree > details { margin-left: 0; }
+.tree summary { cursor: pointer; padding: 2px 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
+.tree summary::-webkit-details-marker { display: none; }
+.tree summary::before { content: "▸"; color: var(--muted); width: 10px; flex: none; }
+.tree details[open] > summary::before { content: "▾"; }
+.tree details.leaf > summary::before { content: "·"; }
+.tree .n { color: var(--fg); font-weight: 500; }
+.tree .d { color: var(--muted); font-family: var(--font-body); font-size: 13px; }
+.tree .more { margin: 2px 0 6px 20px; font-family: var(--font-body); font-size: 13px; color: var(--muted); max-width: 70ch; }
+details.example { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+details.example > summary { cursor: pointer; padding: 12px 14px; font-family: var(--font-display); font-weight: 500; font-size: 16px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+details.example > summary .d { font-family: var(--font-body); font-size: 14px; font-weight: 400; color: var(--muted); }
+details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+figure.card { margin: 0; } figure.card img { display: block; max-width: 100%; height: auto; border-radius: 6px; } figure.card figcaption { font-size: 13px; color: var(--muted); }
+.grid2 > * { min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.card .big { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.where { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.find { border-left: 3px solid var(--bad); }
+.q { font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; border: 1px solid currentColor; white-space: nowrap; vertical-align: middle; }
+.q.good { color: var(--accent); } .q.mixed { color: var(--warn); } .q.weak { color: var(--bad); }
+h3 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.prop > summary { font-size: 15px; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · orch/visual-review</div>
+  <h1>Orch View Architecture</h1>
+  <p class="summary">How the views of the tray and of the web UI are built today. One tab for each part. Each part tab has the same four sections: how it is defined, its architecture, a guide, and its quality.</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+  <button role="tab" data-tab="data" aria-selected="false">Data</button>
+  <button role="tab" data-tab="structure" aria-selected="false">Structure</button>
+  <button role="tab" data-tab="places" aria-selected="false">Places</button>
+  <button role="tab" data-tab="startstop" aria-selected="false">Start and stop</button>
+  <button role="tab" data-tab="moves" aria-selected="false">Page moves</button>
+  <button role="tab" data-tab="cmotion" aria-selected="false">Component motion</button>
+  <button role="tab" data-tab="input" aria-selected="false">Interactions</button>
+  <button role="tab" data-tab="components" aria-selected="false">Components</button>
+  <button role="tab" data-tab="style" aria-selected="false">Style</button>
+  <button role="tab" data-tab="prior" aria-selected="false">Prior art</button>
+  <button role="tab" data-tab="flow" aria-selected="false">Proposal: motion contract</button>
+  <button role="tab" data-tab="twowin" aria-selected="false">Proposal: two windows</button>
+</nav>
+
+<!-- OVERVIEW -->
+<div class="panel" id="overview" role="tabpanel">
+  <section>
+    <h2>The parts of the view</h2>
+    <div class="box"><pre class="mermaid">
+flowchart TB
+  D["Data<br/>records, attributes, tokens"] --> S["Structure<br/>hosts, layout, pages"]
+  S --> PL["Places<br/>window, sizes, click area"]
+  S --> C["Components<br/>Ui, Looks, Presence"]
+  C --> ST["Style<br/>app.css tokens"]
+  PL --> SS["Start and stop<br/>open, fold, dock, hide"]
+  S --> PM["Page moves<br/>tab, push, back"]
+  C --> CM["Component motion<br/>sheets, press, rings, deck"]
+  C --> IN["Interactions<br/>mouse, drag, swipe"]
+  SS --> F["Motion flow<br/>(no single flow today)"]
+  PM --> F
+  CM --> F
+</pre></div>
+  </section>
+  <section>
+    <h2>Quality of each part</h2>
+    <p class="summary">My rating from the code review and the tests. Good: one way, tested. Mixed: works, but has more than one way or gaps. Weak: known faults.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Quality</th><th>Reason</th><th>Issues</th></tr></thead>
+      <tbody>
+        <tr><td>Data</td><td><span class="q mixed">Mixed</span></td><td>Cards, actions and page depth are data. Motion and sizes are not</td><td>I10, I11</td></tr>
+        <tr><td>Structure</td><td><span class="q good">Good</span></td><td>One set of views in two hosts. Clear layers</td><td>-</td></tr>
+        <tr><td>Places</td><td><span class="q mixed">Mixed</span></td><td>Two windows, each with one place and one input rule. Sizes in C# and CSS. The badge hover is cut</td><td>I7, I10</td></tr>
+        <tr><td>Start and stop</td><td><span class="q mixed">Mixed</span></td><td>The chain works and has checks. Own wait helper with fixed limits. Grow not reviewed</td><td>I6, I11, I12</td></tr>
+        <tr><td>Page moves</td><td><span class="q good">Good</span></td><td>One rule (page depth). Checks for each tab and the push</td><td>I11 (JS limits)</td></tr>
+        <tr><td>Component motion</td><td><span class="q mixed">Mixed</span></td><td>Presence is one way for come and go. The deck has its own script</td><td>I9, I11</td></tr>
+        <tr><td>Interactions</td><td><span class="q mixed">Mixed</span></td><td>Mouse input works and has 4 checks. No keyboard test. Badge input in C#, deck in JS</td><td>I5, I8</td></tr>
+        <tr><td>Components</td><td><span class="q good">Good</span></td><td>Small components, parameters in, events out</td><td>-</td></tr>
+        <tr><td>Style</td><td><span class="q mixed">Mixed</span></td><td>Color tokens with a dark theme. Motion literals outside the tokens. Tray rules win over motion rules by specificity</td><td>I11</td></tr>
+        <tr><td>Motion flow</td><td><span class="q weak">Weak</span></td><td>Eight mechanisms. Two wait rules</td><td>I9, I12</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+
+<!-- DATA -->
+<div class="panel off" id="data" role="tabpanel">
+  <section><h2>Data: what is defined as data today</h2>
+    <h3>Defined as</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Thing</th><th>Data</th><th>File</th></tr></thead>
+      <tbody>
+        <tr><td>A card</td><td><code>CardView(Card, Type, Group, Label, Title, Right, Left)</code></td><td><code>Ui.cs</code></td></tr>
+        <tr><td>A card action</td><td><code>CardAction(Label, Icon, CardDo, Text)</code>; <code>CardDo</code> = Accept, AcceptText, RefuseText, Type, Speak</td><td><code>Ui.cs</code></td></tr>
+        <tr><td>The board</td><td><code>Board.Cards()</code>, sessions, events from the store</td><td><code>Board.cs</code></td></tr>
+        <tr><td>A page level</td><td><code>[PageDepth(1, Query = "session")]</code> on the page class</td><td><code>PageDepth.cs</code></td></tr>
+        <tr><td>A message look</td><td>A render kind maps to a Look component (pill, list, steps ...)</td><td><code>Components/Ui/Looks</code>, <code>docs/render-design.html</code></td></tr>
+        <tr><td>A tray phase</td><td>A string constant, and a CSS class with the same name</td><td><code>TrayPhase</code>, <code>tray.css</code></td></tr>
+        <tr><td>A motion time</td><td>A CSS token</td><td><code>motion.css</code></td></tr>
+        <tr><td>A size of the tray</td><td>A C# constant and a CSS value, not linked</td><td><code>TrayWindow.cs</code>, <code>BadgeWindow.cs</code>, <code>tray.css</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Architecture</h3>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  ST["Store files"] --> B["Board<br/>CardView, sessions"]
+  B --> LV["LiveView.Load()"]
+  LV --> P["Page markup"]
+  P --> CSS["CSS classes<br/>is-phase, is-leaving"]
+  CSS --> M["Motion rules<br/>tokens"]
+</pre></div>
+  </section>
+  <section><h3>Guide</h3>
+    <ol><li>A new card type: add its group, label and two actions in <code>Ui.cs</code>. The deck, the ring and the badge read it.</li><li>A new page level: put <code>[PageDepth]</code> on the page. The motion host picks the move.</li><li>A new time: add a token to <code>motion.css</code>.</li></ol>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-D1 · A motion registry in C# <span class="d">I9</span></summary><div class="body">
+      <p>A C# list of motions: name, state, target, token, spec ID. The CSS rules and the checks come from it. This is option B of the motion contract.</p>
+      <p><strong>Check:</strong> a test compares the registry with the running animations.</p>
+    </div></details>
+    <details class="example prop"><summary>P-D2 · Sizes as data <span class="d">I10 · contract step 4</span></summary><div class="body">
+      <p>Each tray size has one owner. See P-P1.</p>
+      <p><strong>Check:</strong> see P-P1.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
+  <section><h3>Quality <span class="q mixed">Mixed</span></h3>
+    <ul><li>Good: card types, actions and page depth are data. One change reaches all views.</li><li>Gap: no motion is data. A motion is a CSS rule plus a wait in code (I9).</li><li>Gap: sizes have two owners (I10).</li></ul>
+  </section>
+</div>
+
+<!-- STRUCTURE -->
+<div class="panel off" id="structure" role="tabpanel">
+  <section><h2>Structure: hosts, layout and pages</h2>
+    <h3>Defined as</h3>
+    <p>Razor components. The web server root is <code>App.razor</code>. The tray root is <code>TrayRoot</code> (the stage around the same <code>Routes</code>).</p>
+  </section>
+  <section><h3>Architecture</h3>
+    <div class="box"><pre class="mermaid">
+flowchart TB
+  subgraph Web["Web server · Orchestrator.Web"]
+    A1["App.razor<br/>Blazor Server"] --> R1["Routes"]
+  end
+  subgraph Tray["Tray app · Orchestrator.Tray"]
+    W["TrayWindow : ClearHost<br/>panel window"] --> M["Manager"]
+    M --> TR["TrayRoot"] --> TS["TrayStage"] --> R2["Routes"]
+    BW["BadgeWindow : ClearHost<br/>badge window"] --> M2["Manager"] --> BR["BadgeRoot"]
+    TS -.-> FL["TrayFlow<br/>order of the windows"]
+    BR -.-> FL
+  end
+  R1 --> L["MainLayout<br/>.page, AppBar, MotionHost"]
+  R2 --> L
+  L --> P["Pages<br/>@page, LiveView"]
+  P --> C["Components"]
+</pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Layer</th><th>Files</th><th>Owns</th><th>Kind</th></tr></thead>
+      <tbody>
+        <tr><td>Windows</td><td><code>ClearHost.cs</code>, <code>TrayWindow.cs</code> (panel), <code>BadgeWindow.cs</code> (badge)</td><td>Place, size, click area, mouse input; one shared WebView2 environment</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Window contract</td><td><code>IWidgetWindow.cs</code></td><td>Requests, <code>Enter(phase)</code>, <code>Peek</code></td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Flow and pages</td><td><code>TrayFlow.cs</code>, <code>TrayStage.razor</code>, <code>BadgeRoot.razor</code>, <code>tray.css</code>, <code>tray.js</code></td><td>The order of the windows; the panel motion; the badge motion and the notice</td><td><span class="tag cs">C#</span> <span class="tag css">CSS</span> <span class="tag js">JS</span></td></tr>
+        <tr><td>Layout</td><td><code>MainLayout</code>, <code>AppBar</code>, <code>MotionHost</code></td><td>Page frame, tab change, push and back</td><td><span class="tag cs">C#</span> <span class="tag js">JS</span></td></tr>
+        <tr><td>Pages</td><td><code>Components/Pages/*</code></td><td>Data (<code>Load</code>), blocks, sheets</td><td><span class="tag cs">C#</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Guide: anatomy of a page</h3>
+<pre class="stack"><span class="k">@page</span> "/cards"                 <span class="c">// route; [PageDepth] for a page below a tab</span>
+<span class="k">@inherits</span> LiveView               <span class="c">// Load() on each store change (300 ms batch) and each 10 s</span>
+
+&lt;PageHeader Title="Cards" /&gt;     <span class="c">// title or path (T3); window buttons in the tray</span>
+&lt;div class="deck-screen"&gt; ... &lt;/div&gt;   <span class="c">// the blocks: each child rises at a tab change</span>
+
+@if (sheet is { } s)
+{
+    &lt;Presence OnGone="() =&gt; sheet = null"&gt;&lt;AnswerSheet ... /&gt;&lt;/Presence&gt;
+}</pre>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-S1 · Load the hidden views only while the widget shows <span class="d">V-F2</span></summary><div class="body">
+      <p>The hidden Blazor views load after each store change. Stop the load while the tray is hidden or at the badge.</p>
+      <p><strong>Check:</strong> a count of <code>Load</code> calls while the tray is hidden is 0.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
+  <section><h3>Quality <span class="q good">Good</span></h3>
+    <ul><li>One set of views for both hosts.</li><li>Known gap from the V session (V-F2): the hidden views still load after each store change.</li></ul>
+  </section>
+</div>
+
+<!-- PLACES -->
+<div class="panel off" id="places" role="tabpanel">
+  <section><h2>Places: the two windows, their sizes and click areas</h2>
+    <h3>Defined as</h3>
+    <div class="grid2">
+      <div class="card"><span class="where">panel window</span><span class="big">350 × 720 + 24 px margin</span><p>A free point. A header drag moves it. Phases: start, open, folded.</p></div>
+      <div class="card"><span class="where">badge window</span><span class="big">332 × 96 at the right edge</span><p>A saved height. A drag moves it up and down. Always on top. Phases: badge-out, badge.</p></div>
+      <div class="card"><span class="where">hidden</span><span class="big">no window</span><p>The tray icon opens it again.</p></div>
+    </div>
+  </section>
+  <section><h3>Architecture</h3>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  F["Form<br/>WS_EX_NOREDIRECTIONBITMAP"] --> D["DirectComposition"]
+  D --> V["WebView2<br/>composition controller"]
+  V --> P["Page<br/>transparent body"]
+  F -->|"SetWindowRgn"| R["Region: takes clicks<br/>and clips the drawing"]
+</pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>State</th><th>Click area</th><th>Set by</th></tr></thead>
+      <tbody>
+        <tr><td>Panel window</td><td>The full window, cut to the work area</td><td><code>TrayWindow.Hits()</code></td></tr>
+        <tr><td>Badge window at rest</td><td>68 + 14 px from the right edge</td><td><code>BadgeWindow.Hits()</code></td></tr>
+        <tr><td>Badge hover</td><td>280 + 14 px; back to rest 300 ms after the leave</td><td><code>BadgeWindow.Hover</code>, <code>Task.Delay(300)</code></td></tr>
+        <tr><td>Badge peek</td><td>The full window (332 px)</td><td><code>Peek(true)</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Guide</h3>
+    <ol><li>A new size: change the C# constant in <code>TrayWindow</code> or <code>BadgeWindow</code> and the CSS value in <code>tray.css</code>. Both, by hand.</li><li>Add a self-test check that compares the drawn size with the click area (as <code>badge-hover-fits</code>).</li></ol>
+    <p class="note">The click area is also the visible area. A part outside the region does not show.</p>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-P1 · Sizes from C# as CSS variables <span class="d">I7, I10 · contract step 4</span></summary><div class="body">
+      <p><code>TrayWindow</code> and <code>BadgeWindow</code> write their constants on their pages as custom properties (<code>--tab-rest</code>, <code>--tab-wide</code>, <code>--shadow</code>). <code>tray.css</code> uses only these. The hover width is fixed at <code>--tab-wide</code> (I7 option A).</p>
+      <p><strong>Check:</strong> <code>badge-hover-fits</code> passes.</p>
+    </div></details>
+    <details class="example prop"><summary>P-P2 · A check for each size pair <span class="d">I10 · contract step 6</span></summary><div class="body">
+      <p>One self-test check reads each drawn size and compares it with the click area.</p>
+      <p><strong>Check:</strong> the check fails when one value changes.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
+  <section><h3>Quality <span class="q mixed">Mixed</span></h3>
+    <ul><li>Better since the two windows: each window has one place, one size and one input rule. No window moves between places.</li><li>I7: the badge hover is 333 px wide, the click area is 294 px. The ring is cut.</li><li>I10: five sizes have two owners.</li></ul>
+  </section>
+</div>
+
+<!-- START AND STOP -->
+<div class="panel off" id="startstop" role="tabpanel">
+  <section><h2>Start and stop: open, fold, dock, hide</h2>
+    <h3>Defined as</h3>
+    <p><code>TrayFlow</code> (<code>Open</code>, <code>Dock</code>, <code>Hide</code>, <code>BringBadge</code>) orders the two windows. The pages play the motion: <code>TrayStage</code> (<code>Prepare</code>, <code>Grow</code>, <code>Fold</code>) and <code>BadgeRoot</code> (<code>In</code>, <code>Out</code>, the notice). Each one sets phase classes; CSS orders the steps inside one window with transition delays.</p>
+  </section>
+  <section><h3>Architecture: open</h3>
+    <div class="box"><pre class="mermaid">
+sequenceDiagram
+  participant F as TrayFlow (C#)
+  participant W as WidgetWindow (C#)
+  participant S as TrayStage (panel page)
+  participant B as BadgeRoot (badge page)
+  opt from the badge
+    F->>B: Out(): the tab slides out
+  end
+  F->>W: Enter(start): badge window hides, panel window shows
+  F->>S: Prepare(): is-start, ball center, 2 frames
+  F->>W: Enter(open): Activate()
+  F->>S: Grow(): is-open, wait for the clip, is-ready
+  Note over S: ball pops 0.30 s, clip grows 0.34 s after 0.21 s, content fades 0.20 s
+</pre></div>
+    <h3>Architecture: dock and hide</h3>
+    <div class="box"><pre class="mermaid">
+sequenceDiagram
+  participant F as TrayFlow (C#)
+  participant W as WidgetWindow (C#)
+  participant S as TrayStage (panel page)
+  participant B as BadgeRoot (badge page)
+  F->>S: Fold(): is-folded, wait for the ball
+  Note over S: content fades 0.10 s, clip folds 0.24 s, ball out 0.18 s
+  alt dock
+    F->>W: Enter(badge-out): panel window hides, badge window shows
+    F->>B: In(): is-badge-out, 2 frames, is-badge (tab slides in 0.26 s)
+    F->>W: Enter(badge)
+  else hide
+    F->>W: Enter(hidden): both windows hide
+  end
+</pre></div>
+  </section>
+  <section><h3>Guide</h3>
+    <ol><li>One request runs at a time (<code>TrayFlow.Request</code>). A request during a run waits; only the last one runs.</li><li>A new step inside one window: a CSS transition with a delay token in <code>tray.css</code>.</li><li>A new step between the windows: a call to <code>window.Enter(phase)</code> in <code>TrayFlow</code>, after the page motion ends.</li></ol>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-SS1 · One wait helper for the stage <span class="d">I12, I13 · contract step 3</span></summary><div class="body">
+      <p><code>TrayStage</code> waits with <code>orchMotion.settle</code> on the changed element. <code>orchTray.end</code> and its fixed limits go.</p>
+      <p><strong>Check:</strong> the open, the fold and the dock times stay the same; a trace line shows each wait that ends by its limit.</p>
+    </div></details>
+    <details class="example prop"><summary>P-SS2 · Review the grow with you <span class="d">I6</span></summary><div class="body">
+      <p>An MP4 of the grow, frame by frame next to the spec G1 and M6.</p>
+      <p><strong>Check:</strong> your approval.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
+  <section><h3>Quality <span class="q mixed">Mixed</span></h3>
+    <ul><li>Good: checks for start, dock, open from the badge, hide, notice, saved place.</li><li>Gap: waits use <code>orchTray.end</code> with fixed limits 900, 500, 1500, 400 ms (I11, I12).</li><li>Open: the grow is not reviewed with you (I6).</li></ul>
+  </section>
+</div>
+
+<!-- PAGE MOVES -->
+<div class="panel off" id="moves" role="tabpanel">
+  <section><h2>Page moves: tab change, push, back</h2>
+    <h3>Defined as</h3>
+    <p>The page depth of the two addresses (<code>PageDepth.Move</code>): 0 to 0 is a tab change, deeper is a push, less deep is a back.</p>
+  </section>
+  <section><h3>Architecture</h3>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  N["Link click<br/>or code"] --> H["MotionHost<br/>LocationChanging"]
+  H -->|"tab"| L["MainLayout<br/>is-tab-in"] --> R["Blocks rise<br/>T1 C"]
+  H -->|"push / back"| J["orchMotion.begin"] --> VT["View transition<br/>T2, T3"]
+</pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Move</th><th>Motion</th><th>Ends with</th></tr></thead>
+      <tbody>
+        <tr><td>Tab change</td><td>Each block rises 10 px in 0.3 s, 40 ms after the block above; the nav dot moves</td><td><code>orchMotion.settle</code> removes <code>is-tab-in</code></td></tr>
+        <tr><td>Push</td><td>New page in from the right, old page 30 % left at opacity 0.5; header path slides</td><td>The view transition</td></tr>
+        <tr><td>Back</td><td>The reverse, 0.28 s</td><td>The view transition</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Guide</h3>
+    <ol><li>A new page below a tab: give it <code>[PageDepth(1)]</code>. The push and the back come with no more code.</li><li>In the tray, the view (<code>.tray-view</code>) moves inside the panel. The panel and its shadow stay.</li></ol>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-M1 · View transition limits as tokens <span class="d">I11 · contract step 1</span></summary><div class="body">
+      <p>The 300 and 600 ms limits in <code>motion.js</code> read a token from <code>motion.css</code>.</p>
+      <p><strong>Check:</strong> no number of milliseconds in <code>motion.js</code>.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
+  <section><h3>Quality <span class="q good">Good</span></h3>
+    <ul><li>Good: one rule for all moves. Checks <code>tab-*-to-*</code>, <code>dot-*</code>, <code>page-move-in-panel</code>, <code>header-path-motion</code>.</li><li>Gap: the JS limits 300 and 600 ms are outside the tokens (I11).</li></ul>
+  </section>
+</div>
+
+<!-- COMPONENT MOTION -->
+<div class="panel off" id="cmotion" role="tabpanel">
+  <section><h2>Component motion: sheets, toast, press, rings, deck</h2>
+    <h3>Defined as</h3>
+    <p>A token and a rule in <code>motion.css</code>, started by a state class. Exception: the deck motion is in <code>app.css</code> and <code>swipe.js</code>.</p>
+<pre class="stack"><span class="c">/* token */</span>                 --t-sheet-out: .22s;
+<span class="c">/* rule (M5) */</span>            .is-leaving &gt; .sheet { animation: m-down var(--t-sheet-out) ease-in both; }
+<span class="c">/* state */</span>               Presence sets is-leaving, then orchMotion.settle waits</pre>
+  </section>
+  <section><h3>Architecture</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Motion</th><th>Spec</th><th>Start</th><th>Wait</th></tr></thead>
+      <tbody>
+        <tr><td>Sheet, toast, speed dial</td><td>M5, E-1</td><td><code>Presence</code> phase class</td><td><code>orchMotion.settle</code></td></tr>
+        <tr><td>Press, fold of a row, chevron</td><td>M7, S1, S2</td><td>CSS <code>:active</code>, <code>details</code></td><td>None</td></tr>
+        <tr><td>Ring draw, count-up</td><td>M7, V12</td><td>First show; <code>motion.js</code> marks a repeat</td><td>None</td></tr>
+        <tr><td>Nav dot</td><td>T1</td><td><code>orchMotion.dot</code> sets <code>--dx</code></td><td>None</td></tr>
+        <tr><td>Deck throw, tuck, back-in, arrive</td><td>M1 to M3</td><td><code>swipe.js</code> classes</td><td>Events + <code>setTimeout</code></td></tr>
+        <tr><td>Badge spin, peek</td><td>N1, N2</td><td><code>TrayStage</code> classes</td><td><code>orchTray.end</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Guide</h3>
+    <ol><li>A block that comes and goes: put it in a <code>&lt;Presence&gt;</code>. Write the in and out rules in <code>motion.css</code> with <code>.is-leaving</code>.</li><li>A child that closes itself: call <code>Presence.Leave()</code> from the cascading value.</li></ol>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-C1 · One state attribute <span class="d">I9 · contract step 2</span></summary><div class="body">
+      <p>C# renders <code>data-state</code> (open, closed, leaving) on each part that moves, as Radix and Headless UI do. All motion CSS keys on it.</p>
+      <p><strong>Check:</strong> a search finds no other state class for motion.</p>
+    </div></details>
+    <details class="example prop"><summary>P-C2 · The deck as state classes <span class="d">I9, I11 · contract step 5</span></summary><div class="body">
+      <p><code>swipe.js</code> keeps only the pointer math. The throw, the tuck and the back-in are state classes with tokens. The wait is <code>settle</code>.</p>
+      <p><strong>Check:</strong> no <code>setTimeout</code> with a motion time in <code>swipe.js</code>.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
+  <section><h3>Quality <span class="q mixed">Mixed</span></h3>
+    <ul><li>Good: Presence is one way for come and go, with a bUnit test.</li><li>Gap: the deck is its own state machine, with literal times (I9, I11).</li></ul>
+  </section>
+</div>
+
+<!-- INTERACTIONS -->
+<div class="panel off" id="input" role="tabpanel">
+  <section><h2>Interactions: mouse, drag, hover, swipe</h2>
+    <h3>Defined as</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Input</th><th>Handled by</th><th>Kind</th></tr></thead>
+      <tbody>
+        <tr><td>Mouse on the page</td><td><code>ClearHost</code> forwards WM_MOUSE* to WebView2</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Header drag</td><td><code>app-region: drag</code> → HTCAPTION → system move loop</td><td><span class="tag css">CSS</span> <span class="tag cs">C#</span></td></tr>
+        <tr><td>Badge click, drag, hover</td><td><code>BadgeWindow.HostInput</code> (the page gets no click); 5 px drag start</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Badge hover look</td><td>CSS <code>:hover</code> with waits</td><td><span class="tag css">CSS</span></td></tr>
+        <tr><td>Card swipe</td><td><code>swipe.js</code> pointer events; it clicks the action buttons</td><td><span class="tag js">JS</span></td></tr>
+        <tr><td>Buttons, links</td><td>Blazor events; the router</td><td><span class="tag cs">C#</span></td></tr>
+        <tr><td>Keyboard</td><td>Not checked in composition mode</td><td>-</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Architecture</h3>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  OS["Windows input"] --> CH["ClearHost.WndProc"]
+  CH -->|"panel window"| WV["WebView2.SendMouseInput"] --> PG["Page events"]
+  CH -->|"badge window"| BM["BadgeWindow.HostInput<br/>click, drag, hover"] --> TW["Request(Open), save height"]
+  PG --> SW["swipe.js<br/>card drag"] --> BT["Action button click"] --> BZ["Blazor"]
+</pre></div>
+  </section>
+  <section><h3>Guide</h3>
+    <ol><li>A click target in the tray: a normal button. The host forwards the click.</li><li>A drag area: <code>app-region: drag</code>; its buttons <code>app-region: no-drag</code>.</li><li>A test click: window messages (<code>Press</code> in the self-test), not the real pointer.</li></ol>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-I1 · A keyboard check <span class="d">I5</span></summary><div class="body">
+      <p>Focus the reply box, send key messages, read the value. The Tab key moves the focus.</p>
+      <p><strong>Check:</strong> two new self-test checks pass.</p>
+    </div></details>
+    <details class="example prop"><summary>P-I2 · Demo drag and hover with window messages <span class="d">I8</span></summary><div class="body">
+      <p><code>Drag</code> and <code>Glide</code> also use window messages, as <code>Press</code> does.</p>
+      <p><strong>Check:</strong> the pointer does not move in a demo run.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
+  <section><h3>Quality <span class="q mixed">Mixed</span></h3>
+    <ul><li>Good: 4 mouse checks pass (panel drag, badge hover, badge drag, badge click).</li><li>Gap: no keyboard or screen reader test (I5).</li><li>Gap: the demo drag and hover use the real pointer (I8).</li></ul>
+  </section>
+</div>
+
+<!-- COMPONENTS -->
+<div class="panel off" id="components" role="tabpanel">
+  <section><h2>Components</h2>
+    <h3>Defined as</h3>
+    <p>Razor components with parameters in and event callbacks out. A view with live data inherits <code>LiveView</code>.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Group</th><th>Components</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>Ui</td><td><code>PageHeader</code>, <code>AppBar</code>, <code>PageBar</code>, <code>Ring</code>, <code>DeepRing</code>, <code>KindRing</code>, <code>EventRow</code>, <code>SessionRow</code>, <code>SessionTree</code>, <code>CardPreview</code>, <code>AnswerSheet</code>, <code>FilterSheet</code>, <code>Seg</code>, <code>Pill</code>, <code>Progress</code>, <code>Icon</code>, <code>DocBody</code>, <code>FactValue</code></td><td>Parameters in, events out</td></tr>
+        <tr><td>Ui/Looks</td><td><code>PillLook</code>, <code>ListLook</code>, <code>StepsLook</code>, <code>WellLook</code>, <code>ProgressLook</code>, <code>CodeLook</code>, <code>TextLook</code>, <code>LinksLook</code>, <code>ChipsLook</code></td><td>One look for each render kind of a message</td></tr>
+        <tr><td>Cards</td><td><code>NewSessionForm</code>, <code>Mic</code></td><td>Forms</td></tr>
+        <tr><td>Motion</td><td><code>Presence</code>, <code>MotionHost</code></td><td>The only Razor parts that wait for motion</td></tr>
+        <tr><td>Tray</td><td><code>TrayRoot</code>, <code>TrayStage</code>, <code>TrayBadge</code></td><td>Only in the tray host</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Architecture: the frame of each page</h3>
+    <div class="tree">
+      <details open><summary><span class="n">MainLayout</span><span class="d">.app</span></summary>
+        <details class="leaf"><summary><span class="n">main.page</span><span class="d">the page; is-tab-in during a tab change</span></summary></details>
+        <details><summary><span class="n">AppBar</span><span class="d">nav.nav2, view-transition-name: appbar</span></summary>
+          <div class="more">Cards, Stream, Home ball, Sessions, Settings, and one nav dot. The home ball is also the ball of the tray grow and fold.</div>
+        </details>
+        <details class="leaf"><summary><span class="n">MotionHost</span><span class="d">no markup; starts a push or a back</span></summary></details>
+      </details>
+    </div>
+  </section>
+  <section><h3>Guide</h3>
+    <ol><li>A new component: one <code>.razor</code> file in <code>Components/Ui</code>, a comment that names its spec ID, parameters in.</li><li>If it comes and goes, the parent puts it in a <code>Presence</code>.</li></ol>
+  </section>
+  <section><h3>Proposals</h3>
+    <p>None.</p>
+  </section>
+  <section><h3>Quality <span class="q good">Good</span></h3>
+    <ul><li>Small and clear. bUnit tests for the components.</li></ul>
+  </section>
+</div>
+
+<!-- STYLE -->
+<div class="panel off" id="style" role="tabpanel">
+  <section><h2>Style</h2>
+    <h3>Defined as</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>File</th><th>Holds</th><th>Loaded by</th></tr></thead>
+      <tbody>
+        <tr><td><code>app.css</code></td><td>Color, shadow, radius and font tokens (light and dark); layout and look; the deck motion</td><td>Both hosts</td></tr>
+        <tr><td><code>motion.css</code></td><td>Motion tokens and motion rules</td><td>Both hosts</td></tr>
+        <tr><td><code>tray.css</code></td><td>Tray page, stage phases, badge; overrides of motion rules</td><td>Tray only</td></tr>
+      </tbody>
+    </table></div>
+<pre class="stack">--canvas #e6e3de   --surf #fdfdfc   --accent #ff6a1a     <span class="c">/* Porcelain Orange theme */</span>
+--sh-raise  --sh-carve  --sh-ring                        <span class="c">/* raised cards, carved wells */</span>
+--t-sheet-in .34s   --ease-out cubic-bezier(.2,.8,.2,1)  <span class="c">/* motion tokens */</span></pre>
+  </section>
+  <section><h3>Architecture</h3>
+    <p>Load order: <code>app.css</code>, then <code>motion.css</code>, then <code>tray.css</code>. A tray rule wins over a motion rule by a more specific selector.</p>
+  </section>
+  <section><h3>Guide</h3>
+    <ol><li>A color: a token in <code>app.css</code>, in light and in dark.</li><li>A time or a curve: a token in <code>motion.css</code>.</li><li>A tray-only change: <code>tray.css</code>, with a selector more specific than the rule in <code>motion.css</code>.</li></ol>
+  </section>
+  <section><h3>Proposals</h3>
+    <details class="example prop"><summary>P-St1 · Reduced motion as 1 ms durations <span class="d">I13 · contract step 3</span></summary><div class="body">
+      <p>The reduced motion rule sets the duration tokens to 1 ms, in place of <code>animation: none</code>. The end events still come.</p>
+      <p><strong>Check:</strong> the self-test with reduced motion has the same phase order, with no wait at its limit.</p>
+    </div></details>
+    <details class="example prop"><summary>P-St2 · Deck times as tokens <span class="d">I11 · contract step 1</span></summary><div class="body">
+      <p>The deck times in <code>app.css</code> move to <code>motion.css</code> tokens.</p>
+      <p><strong>Check:</strong> no motion time literal in <code>app.css</code>.</p>
+    </div></details>
+    <p class="summary">The open questions are on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page of the tracker</a>.</p>
+  </section>
+  <section><h3>Quality <span class="q mixed">Mixed</span></h3>
+    <ul><li>Good: one theme with tokens and a dark mode.</li><li>Gap: motion literals in <code>app.css</code> (I11).</li><li>Risk: the specificity rule is fragile. An equal selector in a later file changes the result.</li></ul>
+  </section>
+</div>
+
+<!-- PROPOSAL: TWO WINDOWS -->
+<div class="panel off" id="twowin" role="tabpanel">
+  <section><h2>Proposal: the panel and the badge as two windows</h2>
+    <p class="summary">From your question: do some problems come from one window that is both the panel and the badge? Q3 answered: yes, spike S7 first. Q4 answered: yes, move. The tray has two windows since 2026-11-19 (result at the end of this tab).</p>
+    <h3>Before: one window, two jobs</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Shared part</th><th>How</th><th>Problem that came from it</th></tr></thead>
+      <tbody>
+        <tr><td>One window</td><td>It moves and changes size between the panel place and the badge place, while nothing shows</td><td>Each dock and open must order: motion end, move, next motion</td></tr>
+        <tr><td>One input path</td><td><code>ClearHost</code> has a badge mode: 9 uses of <code>BadgeMode</code> in the tray code</td><td>S6: the hover flag of the badge came back after a stay at the panel place (fixed with <code>ResetBadgeInput</code>)</td></tr>
+        <tr><td>One click area</td><td><code>Hits()</code> has one branch for each place, and fixed badge sizes</td><td>I7: the badge hover is cut; I10: sizes in two places</td></tr>
+        <tr><td>One page and one stage</td><td><code>TrayStage</code> has 6 phases; CSS hides the panel at the badge and the badge at the panel</td><td>Each phase rule must know both forms</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>What the old design teaches</h3>
+    <p>Before the redesign, the tray had four native windows: the widget, its shadow, the home ball and the side badge. The handover of session V lists the main reason for its faults: "four windows that must look like one". The shadow, the ball and the widget show at the same time and must join without a gap.</p>
+    <p class="note">The rule from this: split by what shows at the same time. The panel and the badge never show at the same time, and the dock has no object that flies from one to the other (spec: the panel folds into the ball, the ball pops out, then the badge slides in). So two windows for them do not have the "look like one" problem.</p>
+  </section>
+  <section><h3>Options</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Option</th><th>What</th><th>For</th><th>Against</th></tr></thead>
+      <tbody>
+        <tr><td>A. One window (before)</td><td>No change</td><td>Works; tested</td><td>The shared input, click area and phases stay</td></tr>
+        <tr><td>B. Two windows, one process</td><td>A panel window and a badge window. Each has its own WebView2 controller from one shared <code>CoreWebView2Environment</code>, and its own Blazor root (<code>TrayRoot</code>, <code>BadgeRoot</code>). One coordinator in C# orders them</td><td>Each window has one place, one size, one input rule. No badge mode in <code>ClearHost</code>. The same store and <code>Board</code>, so the counts are equal</td><td>A second WebView2 (memory, start time: not measured). The badge must paint before it slides in</td></tr>
+        <tr><td>C. Two processes</td><td>The badge is its own app</td><td>Full isolation</td><td>Two starts, two tray icons or a link between them. Too much for this need</td></tr>
+        <tr><td>D. A native badge</td><td>GDI or composition drawing in C#, no WebView</td><td>Small and fast</td><td>Custom drawing code, which you did not want; a second style system</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Option B: the dock</h3>
+    <div class="box"><pre class="mermaid">
+sequenceDiagram
+  participant C as Coordinator (C#)
+  participant P as Panel window
+  participant B as Badge window
+  C->>P: fold (state class), wait for the motion end
+  C->>P: Hide()
+  C->>B: Show() at the badge place (badge out of view)
+  C->>B: slide in (state class)
+  Note over P,B: The open is the reverse. No window moves or changes size.
+</pre></div>
+  </section>
+  <section><h3>What changes, what stays</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Option B</th></tr></thead>
+      <tbody>
+        <tr><td><code>ClearHost</code></td><td>Stays, without the badge mode. A small <code>BadgeHost</code> adds the badge input (click, vertical drag, hover)</td></tr>
+        <tr><td><code>TrayWindow</code></td><td>Panel place only</td></tr>
+        <tr><td><code>TrayStage</code></td><td>Panel phases only: start, open, folded, hidden</td></tr>
+        <tr><td><code>TrayBadge</code></td><td>The root of the badge window, with its own phases: out, in, peek</td></tr>
+        <tr><td>Store, <code>Board</code>, CSS tokens, components</td><td>Shared, no change</td></tr>
+        <tr><td>Self-test</td><td>Checks for each window, and one for the order of the dock and the open</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>Spike S7 result (2026-11-19)</h3>
+    <p class="summary">Simple shapes, as S6: two composition windows in one process, one shared WebView2 environment, a C# coordinator. Measure mode, no mouse. Files: <code>spikes/tray-display/s7-two-windows</code>, results in <code>spikes/tray-display/results/s7</code>.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Measure</th><th>One window</th><th>Two windows</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>WebView2 processes (with the host)</td><td>6</td><td>7</td><td>One more renderer</td></tr>
+        <tr><td>Working set at rest</td><td>415 MB</td><td>479 MB</td><td>+64 MB</td></tr>
+        <tr><td>Private memory at rest</td><td>166 MB</td><td>197 MB</td><td>+31 MB</td></tr>
+        <tr><td>Time to ready (both windows)</td><td>1.8 s</td><td>1.0 s</td><td>The two start in parallel; no extra wait</td></tr>
+        <tr><td>Badge: Show() to its first frame</td><td>-</td><td>6 to 12 ms (9 cycles)</td><td>No blank or stale frame in the strips</td></tr>
+        <tr><td>Dock (fold, hide, show, slide in)</td><td>-</td><td>815 to 833 ms</td><td>The sum of the motions; no wait at a limit</td></tr>
+        <tr><td>Open (slide out, hide, show, grow)</td><td>-</td><td>866 to 899 ms</td><td>The same</td></tr>
+        <tr><td>GPU process after 10 cycles</td><td>Not measured</td><td>72 to 202 MB private</td><td>Not compared with one window: open point</td></tr>
+      </tbody>
+    </table></div>
+    <div class="grid2">
+      <figure class="card"><img src="s7/dock.jpg" alt="Six frames of a dock with two windows: the panel folds, the ball shrinks, nothing shows, the badge slides in."><figcaption>Dock 4: the panel folds into the ball, the ball pops out, the badge window shows and its badge slides in.</figcaption></figure>
+      <figure class="card"><img src="s7/open.jpg" alt="Six frames of an open: the badge slides out, then the ball pops in and the panel grows."><figcaption>Open 1: the badge slides out, the panel window shows, the ball pops in, the panel grows.</figcaption></figure>
+    </div>
+    <p class="note">Found, reproduced one time, cause not examined: after the app start, the panel did not show on the screen in two-window mode. The recorder saw no change until the first dock (two runs). The first dock is also faster (340 ms, not 820 ms). After the first dock and open, all cycles are correct. Not checked: the one-window mode with the recorder.</p>
+    <p class="summary">Decision Q4 on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page</a>.</p>
+  </section>
+  <section><h3>The move (2026-11-19)</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Now</th></tr></thead>
+      <tbody>
+        <tr><td><code>ClearHost</code></td><td>One shared WebView2 environment; a root component for each window; no badge mode. A window can keep input for itself (<code>HostInput</code>)</td></tr>
+        <tr><td><code>TrayWindow</code></td><td>The panel window only: its place, its click area, the pin</td></tr>
+        <tr><td><code>BadgeWindow</code></td><td>New: the badge place, its click areas (rest, hover, peek), click, drag and hover</td></tr>
+        <tr><td><code>TrayFlow</code></td><td>New (web): one request at a time; it orders the windows and calls the page motion</td></tr>
+        <tr><td><code>TrayStage</code></td><td>The panel phases only (start, open, folded)</td></tr>
+        <tr><td><code>BadgeRoot</code></td><td>New: the root of the badge window; the counts, the slide, the spin and the peek</td></tr>
+      </tbody>
+    </table></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Check</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Self-test</td><td>27 of 28 pass. The one fail is <code>badge-hover-fits</code> (I7, known, not fixed). New check <code>badge-input</code>: hover and click on the badge window with window messages</td></tr>
+        <tr><td>The start on the screen (S7 open point)</td><td>Correct: the ball pops in and the panel grows. The panel window shows only after its page is ready</td></tr>
+        <tr><td>The dock on the screen</td><td>Correct: fold, ball out, then the badge slides in</td></tr>
+        <tr><td>GPU memory (S7 open point)</td><td>One window before: 269 to 297 MB private in the cycles. Two windows in S7: 72 to 202 MB. No sign that two windows use more</td></tr>
+        <tr><td>Found in the frames</td><td>I14: a browser status bubble ("https://0.0.0.1/") at a link hover</td></tr>
+      </tbody>
+    </table></div>
+    <figure class="card"><img src="s7/two-windows-start.jpg" alt="Six frames of the tray start with two windows: the ball pops in, the panel grows, the content shows."><figcaption>The start of the tray with two windows.</figcaption></figure>
+  </section>
+  <section><h3>The spike plan</h3>
+    <p>Done: see the S7 result above. The plan was a spike (S7) before a decision: two composition windows in one process with one shared environment. It measures the memory of the second WebView2, the time to the first paint of the badge, the frames of the dock and the open, and empty frames with the new detector. Then we compare it with today.</p>
+    <p class="summary">Question Q4 on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page</a>. This proposal also changes the Places, Start and stop, and Interactions tabs. Their proposals P-P1 and P-SS1 become smaller with option B.</p>
+  </section>
+</div>
+
+<!-- PRIOR ART -->
+<div class="panel off" id="prior" role="tabpanel">
+  <section><h2>Prior art: how known libraries build motion</h2>
+    <p class="summary">A web research of design systems and UI libraries, 2026-11-19. Each row links to its source. "Not confirmed" means the source did not show it.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Library</th><th>Where motion runs</th><th>Defined as</th><th>Enter and exit</th><th>End detection</th><th>Reduced motion</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://raw.githubusercontent.com/shoelace-style/webawesome/next/packages/webawesome/src/internal/animate.ts">Web Awesome 3</a></td><td>CSS keyframes; a JS helper adds a class</td><td>CSS tokens (<code>--wa-transition-normal</code>); <code>--show-duration</code>, <code>--hide-duration</code> on each component</td><td><code>animateWithClass(el, "show" | "hide")</code></td><td><code>getAnimations()</code>, then <code>Promise.allSettled(finished)</code></td><td>Helper exists; use not confirmed</td></tr>
+        <tr><td><a href="https://shoelace.style/getting-started/customizing#animations">Shoelace 2</a></td><td>JS, Web Animations API</td><td>JS registry: name to keyframes and options</td><td><code>getAnimation(el, "dialog.show")</code>, <code>animateTo</code></td><td><code>finish</code> or <code>cancel</code> event</td><td>Duration 0</td></tr>
+        <tr><td><a href="https://carbondesignsystem.com/elements/motion/overview/">IBM Carbon</a></td><td>CSS (Sass), JS <code>motion()</code></td><td>6 durations (70 to 700 ms) × 3 curves (standard, entrance, exit) × 2 styles (productive, expressive)</td><td>CSS in each component</td><td>Not confirmed</td><td>Guidance only</td></tr>
+        <tr><td><a href="https://raw.githubusercontent.com/microsoft/fluentui/master/packages/react-components/react-motion/library/src/factories/createPresenceComponent.ts">Fluent UI React v9</a></td><td>JS, Web Animations API</td><td>Motion atoms (keyframes, duration, easing) and <code>motionTokens</code></td><td><code>createPresenceComponent({ enter, exit })</code>, <code>visible</code>, <code>unmountOnExit</code></td><td><code>onfinish</code> of each animation, <code>Promise.all</code></td><td>1 ms duration for each atom</td></tr>
+        <tr><td><a href="https://raw.githubusercontent.com/radix-ui/primitives/main/packages/react/presence/src/presence.tsx">Radix UI</a></td><td>CSS keyframes on <code>[data-state]</code></td><td>The user writes the CSS</td><td><code>Presence</code>: mounted, unmount suspended, unmounted</td><td><code>animationend</code> or <code>animationcancel</code>, with a name check</td><td>User CSS</td></tr>
+        <tr><td><a href="https://github.com/tailwindlabs/headlessui/blob/main/packages/@headlessui-react/src/hooks/use-transition.ts">Headless UI 2</a></td><td>CSS transitions</td><td>The user writes the classes</td><td><code>data-closed</code>, <code>data-enter</code>, <code>data-leave</code></td><td><code>getAnimations()</code>, <code>allSettled(finished)</code>; a parent waits for its children</td><td>User CSS</td></tr>
+        <tr><td><a href="https://github.com/material-components/material-web/blob/main/dialog/internal/dialog.ts">Material 3 (Material Web)</a></td><td>Tokens in CSS; the dialog uses the Web Animations API</td><td>16 durations, 10 easings</td><td><code>getOpenAnimation</code>, <code>getCloseAnimation</code> functions</td><td>Waits for all <code>animate()</code> results</td><td><code>quick</code> property only</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Short look</h3>
+    <ul>
+      <li><a href="https://vuejs.org/guide/built-ins/transition">Vue &lt;Transition&gt;</a>: six classes for enter and leave; Vue detects the end event itself.</li>
+      <li><a href="https://angular.dev/guide/animations">Angular</a>: <code>animate.enter</code> and <code>animate.leave</code> add CSS classes; it waits for the longest animation, with a 4 s fallback.</li>
+      <li><a href="https://motion.dev/docs/react-animate-presence">Framer Motion</a>: <code>AnimatePresence</code> with <code>exit</code> and <code>key</code>; modes sync, wait, popLayout.</li>
+      <li><a href="https://unpkg.com/@spectrum-css/tokens/dist/index.css">Adobe Spectrum</a>: duration and ease tokens as CSS variables.</li>
+      <li><a href="https://docs.dndocs.com/n/MudBlazor/8.0.0/api/MudBlazor.MudPopover.html">MudBlazor</a>: no motion system; <code>Duration</code> and <code>Delay</code> are C# parameters, the same problem as ours. <a href="https://github.com/dotnet/aspnetcore/issues/10389">Blazor has no built-in transitions</a>.</li>
+      <li>Page moves: none of these libraries has its own route transition API.</li>
+    </ul>
+  </section>
+  <section><h3>Closest to us</h3>
+    <p><strong>Web Awesome 3.</strong> It has CSS keyframes and tokens, one small JS helper that adds a class and waits for <code>getAnimations()</code>, and a state class from the host. Our <code>orchMotion.settle</code> is almost the same helper. Next are Radix and Headless UI: the state is in the framework, the motion is in CSS, and one presence part waits.</p>
+  </section>
+  <section><h3>Patterns that fit us</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Pattern</th><th>From</th><th>For us</th><th>Issues</th></tr></thead>
+      <tbody>
+        <tr><td>One state attribute</td><td>Radix, Headless UI</td><td>C# renders <code>data-state="open | closed | leaving"</code>. All motion CSS keys on it</td><td>I9</td></tr>
+        <tr><td>One end helper</td><td>Web Awesome 3, Headless UI</td><td><code>orchMotion.settle</code> for all waits. Remove <code>orchTray.end</code>. C# needs no time</td><td>I11, I12</td></tr>
+        <tr><td>One presence part with states</td><td>Radix</td><td><code>Presence</code>: shown, leaving, gone. With no animation, it goes at once</td><td>I9</td></tr>
+        <tr><td>Tokens only in CSS</td><td>Carbon, Material 3, Spectrum</td><td>A script that needs a time reads the token (<code>getComputedStyle</code>). No copies</td><td>I11</td></tr>
+        <tr><td>Reduced motion in one place</td><td>Fluent, Shoelace</td><td>Set the duration tokens to 1 ms, not <code>animation: none</code>. The end events still come, so the waits do not change</td><td>I13</td></tr>
+        <tr><td>A small registry for the deck</td><td>Shoelace, Fluent atoms</td><td>Named deck motions that read the tokens; <code>swipe.js</code> has no times</td><td>I11</td></tr>
+        <tr><td>Sizes as CSS variables from C#</td><td>Web Awesome (<code>--size</code>)</td><td>C# writes its size constants on the stage as custom properties. CSS uses them</td><td>I7, I10</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Lesson for us (I13): our reduced motion rule is <code>animation: none; transition: none</code>. Then no <code>transitionend</code> comes, and each <code>orchTray.end</code> wait in the tray runs to its full limit (900 ms for the open). Not tested. Recorded in the tracker.</p>
+  </section>
+</div>
+
+<!-- MOTION FLOW -->
+<div class="panel off" id="flow" role="tabpanel">
+  <section><h2>Proposal: one motion contract</h2>
+    <p class="summary">For discussion. No code changes yet. Issues I9, I11, I12 and I13 are about this. The Prior art tab shows where each point comes from.</p>
+    <h3>Today: eight mechanisms</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Mechanism</th><th>Starts</th><th>Waits with</th><th>Time limit</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Stage phase class</td><td><span class="tag cs">C#</span> <code>Set(phase)</code></td><td><code>orchTray.end</code> (one property)</td><td>900, 500, 1500, 400 ms in C#</td></tr>
+        <tr><td>2</td><td>Presence</td><td><span class="tag cs">C#</span> <code>is-leaving</code></td><td><code>orchMotion.settle</code> (all animations)</td><td><code>--t-limit</code></td></tr>
+        <tr><td>3</td><td>Tab change</td><td><span class="tag cs">C#</span> <code>is-tab-in</code></td><td><code>orchMotion.settle</code></td><td><code>--t-limit</code></td></tr>
+        <tr><td>4</td><td>View transition</td><td><span class="tag js">JS</span> <code>orchMotion.begin</code></td><td>MutationObserver + <code>setTimeout</code></td><td>300, 600 ms in JS</td></tr>
+        <tr><td>5</td><td>Nav dot</td><td><span class="tag js">JS</span> <code>orchMotion.dot</code></td><td>None</td><td>-</td></tr>
+        <tr><td>6</td><td>Ring draw once</td><td><span class="tag js">JS</span> MutationObserver</td><td>None</td><td>-</td></tr>
+        <tr><td>7</td><td>Deck</td><td><span class="tag js">JS</span> <code>swipe.js</code></td><td>Events + <code>setTimeout</code></td><td>300, 180, 450, 60 ms in JS</td></tr>
+        <tr><td>8</td><td>C# timers</td><td><span class="tag cs">C#</span> <code>Task.Delay</code></td><td>-</td><td>300 ms, 5 s, 5 s</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+  <section><h3>The contract, in steps</h3>
+    <p class="summary">This proposal covers more than one part. The part tabs show their own proposals, with the step number of this contract.</p>
+    <ol>
+      <li><strong>Define:</strong> each motion is one CSS rule with a token, started by one state class. No time outside <code>motion.css</code>.</li>
+      <li><strong>Start:</strong> C# sets the state class (phase, presence, tab, deck state). JS starts only the view transition, which needs the browser API.</li>
+      <li><strong>Wait:</strong> one helper, <code>orchMotion.settle(element)</code>, for all waits. It writes a trace line when the limit ends a wait, so a wrong wait shows.</li>
+      <li><strong>Sizes:</strong> one owner. C# writes its constants to the page as CSS variables at the start, or the page measures and reports.</li>
+      <li><strong>Deck:</strong> <code>swipe.js</code> keeps only the pointer math. The throw, the tuck and the back-in become state classes with tokens, and the wait is <code>settle</code>.</li>
+      <li><strong>Reduced motion:</strong> the duration tokens go to 1 ms, so the end events still come (Fluent, Shoelace).</li>
+      <li><strong>Test:</strong> one check reads all running animations (<code>getAnimations</code>) and compares their times with the tokens.</li>
+    </ol>
+    <div class="scroll"><table>
+      <thead><tr><th>Option</th><th>What</th><th>Size</th></tr></thead>
+      <tbody>
+        <tr><td>A. Step by step</td><td>The 6 points above, one at a time, each with its check. The look does not change</td><td>Small steps, low risk</td></tr>
+        <tr><td>B. Motion registry</td><td>A C# list of motions (name, state, target, token, spec ID). The CSS and the checks come from it</td><td>Larger. Data-driven, as you plan for the UI</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Open question Q1 on the <a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s#questions">questions page</a>: A, B, or A first and B later. Recommendation: A first. Each step removes one mechanism, and the tracker shows which issues it closes.</p>
+  </section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["overview", "data", "structure", "places", "startstop", "moves", "cmotion", "input", "components", "style", "prior", "flow", "twowin"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "overview";
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
+    document.querySelectorAll("nav button").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false"); });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>

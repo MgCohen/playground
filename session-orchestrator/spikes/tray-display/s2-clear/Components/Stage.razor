@@ -1,0 +1,48 @@
+@* The panel and the ball as one component. Open and close are a CSS class. Before the open, the window takes the clicks on
+   all of the stage; after the close, only on the ball. C# only sets the click area. *@
+@implements IDisposable
+@inject Shell Shell
+
+<div class="stage @(open ? "open" : "")">
+    <div class="panel">
+        <header class="hd">
+            <span class="title">@Title</span>
+            <button type="button" class="close" title="Close" @onclick="Close">×</button>
+        </header>
+        <section class="body">@ChildContent</section>
+    </div>
+    <button type="button" class="ball" aria-label="Open" @onclick="Open"></button>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    bool open;
+
+    protected override void OnInitialized()
+    {
+        Shell.Toggle += Toggle;
+        Shell.SetHits(Shell.BallArea);
+    }
+
+    void Toggle() => _ = InvokeAsync(() => open ? Close() : Open());
+
+    Task Open()
+    {
+        Shell.SetHits(Shell.StageArea);
+        open = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    async Task Close()
+    {
+        open = false;
+        StateHasChanged();
+        await Task.Delay(340);
+        if (!open) Shell.SetHits(Shell.BallArea);
+    }
+
+    public void Dispose() => Shell.Toggle -= Toggle;
+}

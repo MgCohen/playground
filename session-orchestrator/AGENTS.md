@@ -11,6 +11,11 @@ Read these files before you change this project:
 | `docs/how-it-works.html` | How it works today: processes, folders, store files, call stack, sequences (https://claude.ai/artifact/CP2ozBgysFuJSwhrgoHugt) |
 | `docs/session-management.html` | The options for session management, with a worked example each (https://claude.ai/artifact/SRBob5ix2xQ2ArpwDXTJaW) |
 | `docs/setup-options.html` | Install and start options, and the cloud plan (https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX) |
+| `docs/ui-architecture.html` | The view architecture, one tab for each part (data, structure, places, start and stop, page moves, component motion, interactions, components, style), each with definition, architecture, guide and quality; the motion flow proposal (https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM) |
+| `docs/tray-testing.html` | How the tray tests work (https://claude.ai/artifact/RLKUe4bnMJj4mDBVLFPcEK) |
+| `docs/tray-issues.html` | The tray issue tracker: report, reproduce once, the user picks (https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s) |
+| `docs/motion-pipeline-plan.html` | The motion pipeline (R1) plan: thirteen steps, each with its scenario, before and after recordings, checks, risk and undo (https://claude.ai/artifact/G89uZPfkYsVe5kcHn4daaP) |
+| `docs/size-ownership-plan.html` | The size ownership (R2) plan: the page owns each tray size and reports it; six steps with their proofs (https://claude.ai/artifact/UYCh2zPYAwXJijYz9opJCZ) |
 
 ## Rules
 
@@ -23,6 +28,12 @@ Read these files before you change this project:
 ## Stack
 
 C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the UI, NUnit for the tests. Do not add TypeScript or JavaScript, with two exceptions: the plugin hooks (the Claude Code engine runs only TypeScript) and small JavaScript parts of the Blazor UI. `spikes/supervisor-ts/` is the frozen TypeScript supervisor of the spikes. Do not change it.
+
+## UI
+
+### Working with motion
+
+Before you add, change or use a motion of the web pages or the tray, read the motion guide: https://claude.ai/artifact/A4N6FKvzRUfqCCZsoZVde8 (source `docs/motion-guide.html`). After a change of the pipeline, update the guide and publish it again to the same URL.
 
 ## Provider boundary
 
@@ -40,6 +51,7 @@ Follow these rules for each change. The design is on the Engines tab of `docs/se
 | Job | Command |
 |---|---|
 | Build and test | `dotnet test --solution Orchestrator.slnx` |
+| Umpire feed | The Umpire SDK and packages come from GitHub Packages. Set `GITHUB_TOKEN` (`gh auth token`) before the first restore. The build output is in `artifacts~/` |
 | Start the supervisor | `dotnet run --project src/Orchestrator.Web` |
 | Test store and port | Set `ORCH_STORE` and `ORCH_PORT` before the start |
 | Install or update `orch` | `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` |
@@ -54,6 +66,7 @@ Follow these rules for each change. The design is on the Engines tab of `docs/se
 - Ask each question in the full format: the question, the context, a snippet if useful, the options, and your recommendation. Put all open questions one below the other at the end.
 - If you need a permission for project work, you have it. Ask first only for an action outside the project that you cannot undo, or one that the user did not ask for.
 - In spike and test work, do not wait for the user. Run the test, then report the result.
+- If an attempt fails 3 times (the same command, test, recording or fix), stop. Tell the user what you tried and what failed, and ask how to continue.
 - The user reviews defaults later. Prefer a reversible default and a record over a stop.
 - Use a template for each input and output (decision, answer, review, report, update, brief, notice). Templates make the messages the same each time and make the UI easy to build. See `templates/` and the Templates tab of the design page.
 - Show a folder layout as a foldable tree: one line for each folder or file, a short description, and a detail that opens under the line.

@@ -1,0 +1,32 @@
+{
+  "startFrames": {
+    "count": 249,
+    "mean": 4,
+    "longest": 8,
+    "late": 0
+  },
+  "openBallAtHome": "{\u0022x\u0022:199,\u0022y\u0022:53.6666259765625}",
+  "ballClickColor": {
+    "before": "\u0022rgb(255, 106, 26)\u0022",
+    "after": "\u0022rgb(111, 156, 255)\u0022"
+  },
+  "dockFrames": {
+    "count": 291,
+    "mean": 4.1,
+    "longest": 28,
+    "late": 1
+  },
+  "dockedState": "\u0022stage docked\u0022",
+  "dockedEmptyIsOtherWindow": true,
+  "hoverTabWidth": "250",
+  "afterHoverTabWidth": "100",
+  "reopenFrames": {
+    "count": 250,
+    "mean": 4,
+    "longest": 8.6,
+    "late": 0
+  },
+  "reopenedState": "\u0022stage open\u0022",
+  "focusLossDocks": "\u0022stage docked\u0022",
+  "skippedClicks": []
+}

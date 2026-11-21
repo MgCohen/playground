@@ -1,0 +1,18 @@
+@* Measures the time between display frames for 1 s: the mean, the longest frame and the late frames (more than 20 ms). *@
+@inject IJSRuntime Js
+
+<div class="row meter">
+    <button type="button" @onclick="Measure">Measure</button>
+    <span>@text</span>
+</div>
+
+@code {
+    string text = "No measure yet";
+
+    async Task Measure()
+    {
+        text = "Measuring...";
+        var times = await Js.InvokeAsync<double[]>("s2.frames", 1000);
+        text = times.Length == 0 ? "No frames" : $"{times.Length} frames, mean {times.Average():0.0} ms, longest {times.Max():0.0} ms, late {times.Count(t => t > 20)}";
+    }
+}

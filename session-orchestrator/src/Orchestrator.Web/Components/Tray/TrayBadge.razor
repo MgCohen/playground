@@ -1,0 +1,56 @@
+@* The minimized form of the tray (N1, N2): a white tab at the right screen edge with the ring of the waiting cards around the
+   home ball. A hover extends the tab to the left with the counts; the ring is at the left side of the tab, so it moves with it.
+   A new card spins the ring and shows the peek bubble. The click and the drag go to the window (it moves the badge up and down). *@
+<div class="tbadge @(Spin ? MotionSteps.Spin.State : "")" data-motion="badge-fold">
+    <div class="tb-peek @(Peek ? "on" : "")" data-motion="peek-out" aria-live="polite">
+        <b>@PeekTitle</b>
+        @if (PeekSub.Length > 0)
+        {
+            <small>@PeekSub</small>
+        }
+    </div>
+    <div class="tb-tab @(Hover ? MotionSteps.BadgeFold.State : "")" data-motion="badge-in badge-out">
+        @* The ring (N1): 56 px, a 6 px stroke on a gray track, one arc for each type from 12 o'clock, 2.4 px gaps between them. *@
+        <svg class="tb-ring" viewBox="0 0 56 56" aria-hidden="true" data-motion="spin">
+            <circle cx="28" cy="28" r="@Radius" fill="none" stroke="var(--sunken)" stroke-width="@Stroke" />
+            @foreach (var (length, offset, color) in Arcs)
+            {
+                <circle cx="28" cy="28" r="@Radius" fill="none" stroke="@color" stroke-width="@Stroke"
+                        stroke-dasharray="@($"{Ui.Num(length)} {Ui.Num(Circle)}")" stroke-dashoffset="@Ui.Num(offset)" transform="rotate(-90 28 28)" />
+            }
+        </svg>
+        <span class="tb-ball"></span>
+        <span class="tb-txt"><b>@Counts.Headline</b><small>@Counts.Detail</small></span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool Hover { get; set; }
+    [Parameter] public TrayCounts Counts { get; set; } = TrayCounts.None;
+    [Parameter] public bool Spin { get; set; }
+    [Parameter] public bool Peek { get; set; }
+    [Parameter] public string PeekTitle { get; set; } = "";
+    [Parameter] public string PeekSub { get; set; } = "";
+
+    const double Stroke = 6, Radius = (56 - Stroke) / 2;
+    static readonly double Circle = 2 * Math.PI * Radius;
+
+    // One arc for each type with cards, in the order questions, reviews, reports, blocked.
+    IEnumerable<(double Length, double Offset, string Color)> Arcs
+    {
+        get
+        {
+            var total = Counts.Total;
+            if (total == 0) yield break;
+            var gap = total > 1 ? Math.Min(4, Stroke * .4) : 0;
+            var start = 0.0;
+            foreach (var (n, color) in new[] { (Counts.Questions, "var(--b-q)"), (Counts.Reviews, "var(--b-rev)"), (Counts.Reports, "var(--b-rep)"), (Counts.Blocked, "var(--b-blk)") })
+            {
+                if (n == 0) continue;
+                var length = Circle * n / total;
+                yield return (Math.Max(1, length - gap), -start, color);
+                start += length;
+            }
+        }
+    }
+}

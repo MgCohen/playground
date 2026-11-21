@@ -17,6 +17,8 @@ param(
     [switch] $NoStart
 )
 $ErrorActionPreference = 'Stop'
+# The Umpire packages come from GitHub Packages (nuget.config): the restore reads the token from GITHUB_TOKEN.
+if (-not $env:GITHUB_TOKEN) { $env:GITHUB_TOKEN = (gh auth token) }
 $Root = [IO.Path]::GetFullPath($Root)
 $Store = [IO.Path]::GetFullPath($Store)
 $oldStore = Join-Path $PSScriptRoot 'store'

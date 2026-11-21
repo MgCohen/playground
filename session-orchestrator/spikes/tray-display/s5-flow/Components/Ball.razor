@@ -1,0 +1,16 @@
+@* The ball: the home button when open (a click swaps its color), the open control when docked. *@
+<button type="button" class="ball @(alt ? "alt" : "")" aria-label="Home" @onclick="Click"></button>
+
+@code {
+    [Parameter] public bool Docked { get; set; }
+    [Parameter] public EventCallback OnOpen { get; set; }
+
+    bool alt;
+
+    Task Click()
+    {
+        if (Docked) return OnOpen.InvokeAsync();
+        alt = !alt;
+        return Task.CompletedTask;
+    }
+}

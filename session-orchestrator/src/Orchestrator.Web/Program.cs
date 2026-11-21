@@ -30,6 +30,9 @@ builder.Services.AddSingleton(services => new SignIn(services.GetRequiredService
 builder.Services.AddHostedService<TickService>();
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
+// The Umpire modules (Features/, Plugins/) go into the same container. The host keeps its configuration and logging.
+Orchestrator.Web.App.Host.OrchHost.Add(builder.Services, builder.Configuration);
+
 Home.CheckVersion(root, DateTimeOffset.UtcNow);
 var app = builder.Build();
 app.UseMiddleware<SignInMiddleware>();

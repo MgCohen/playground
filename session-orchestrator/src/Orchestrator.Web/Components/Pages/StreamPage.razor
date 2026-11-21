@@ -1,5 +1,6 @@
 @page "/stream"
 @page "/timeline"
+@attribute [PageDepth(0, Query = "session", QueryDepth = 1.5)]
 @inherits LiveView
 
 <PageTitle>Stream · orch</PageTitle>
@@ -36,7 +37,7 @@ else
 
 @if (filterOpen)
 {
-    <FilterSheet Filter="filter" Orders="Orders" Sessions="FilterSessions" Show="@($"Show {events.Count} events")" OnChange="Load" OnClose="() => filterOpen = false" />
+    <Presence OnGone="() => filterOpen = false"><FilterSheet Filter="filter" Orders="Orders" Sessions="FilterSessions" Show="@($"Show {events.Count} events")" OnChange="Load" /></Presence>
 }
 
 @code {

@@ -1,0 +1,35 @@
+{
+  "panel": {
+    "host": {
+      "window": "{X=1963,Y=676,Width=597,Height=852}",
+      "client": "{Width=597, Height=852}",
+      "controllerBounds": "{X=0,Y=0,Width=597,Height=852}",
+      "rasterizationScale": 1.5,
+      "boundsMode": "UseRawPixels",
+      "dpi": 144
+    },
+    "page": "\u0022{\\\u0022inner\\\u0022:[398,568],\\\u0022dpr\\\u0022:1.5,\\\u0022html\\\u0022:[398,568],\\\u0022stage\\\u0022:[0,0,398,568],\\\u0022badge\\\u0022:[0,0,0,0]}\u0022"
+  },
+  "badge": {
+    "host": {
+      "window": "{X=2149,Y=671,Width=411,Height=186}",
+      "client": "{Width=411, Height=186}",
+      "controllerBounds": "{X=0,Y=0,Width=411,Height=186}",
+      "rasterizationScale": 1.5,
+      "boundsMode": "UseRawPixels",
+      "dpi": 144
+    },
+    "page": "\u0022{\\\u0022inner\\\u0022:[274,124],\\\u0022dpr\\\u0022:1.5,\\\u0022html\\\u0022:[274,124],\\\u0022stage\\\u0022:[0,0,274,124],\\\u0022badge\\\u0022:[174,24,100,76]}\u0022"
+  },
+  "badge later": {
+    "host": {
+      "window": "{X=2149,Y=671,Width=411,Height=186}",
+      "client": "{Width=411, Height=186}",
+      "controllerBounds": "{X=0,Y=0,Width=411,Height=186}",
+      "rasterizationScale": 1.5,
+      "boundsMode": "UseRawPixels",
+      "dpi": 144
+    },
+    "page": "\u0022{\\\u0022inner\\\u0022:[274,124],\\\u0022dpr\\\u0022:1.5,\\\u0022html\\\u0022:[274,124],\\\u0022stage\\\u0022:[0,0,274,124],\\\u0022badge\\\u0022:[174,24,100,76]}\u0022"
+  }
+}

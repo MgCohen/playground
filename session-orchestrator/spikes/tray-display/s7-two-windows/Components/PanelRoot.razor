@@ -1,0 +1,49 @@
+@* The root of the panel window: only the panel phases (start, open, folded). The coordinator calls Open and Fold. *@
+@inject Coordinator Co
+@inject IJSRuntime Js
+
+<div class="stage is-@phase">
+    <div class="panel-layer">
+        <div class="panel">
+            <header class="hd">
+                <span class="title">S7 panel</span>
+                <button type="button" class="min" title="Minimize" @onclick="() => Co.Request(Coordinator.Dock)">–</button>
+            </header>
+            <section class="body">
+                @for (var i = 0; i < 4; i++)
+                {
+                    <i class="block"></i>
+                }
+            </section>
+            <nav class="bar"></nav>
+        </div>
+        <Ball />
+    </div>
+</div>
+
+@code {
+    string phase = "start";
+
+    protected override void OnInitialized()
+    {
+        Co.PanelOpen = () => InvokeAsync(Open);
+        Co.PanelFold = () => InvokeAsync(Fold);
+    }
+
+    async Task Open()
+    {
+        phase = "start";
+        StateHasChanged();
+        await Js.InvokeVoidAsync("s7.frames", 2);
+        phase = "open";
+        StateHasChanged();
+        await Js.InvokeVoidAsync("s7.settle", ".stage");
+    }
+
+    async Task Fold()
+    {
+        phase = "folded";
+        StateHasChanged();
+        await Js.InvokeVoidAsync("s7.settle", ".stage");
+    }
+}

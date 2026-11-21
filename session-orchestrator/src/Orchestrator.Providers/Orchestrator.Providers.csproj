@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Umpire.Sdk/0.2.0-preview.11">
   <!--
     The provider boundary. IProvider is the one interface for each function that depends on a session engine.
     Only the folder of a provider knows the names of that engine. See the Engines tab of docs/session-design.html.

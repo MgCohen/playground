@@ -1,0 +1,78 @@
+@* The whole flow: the panel, the ball and the tab. One state. CSS orders the steps of each change (s5.css).
+   C# only sets the click area: the union of both places during a change, and the place of the new state at the end. *@
+@implements IDisposable
+@inject Shell Shell
+
+<div class="stage @State">
+    <div class="panel">
+        <header class="hd">
+            <span class="title">S5 flow</span>
+            <button type="button" class="min" title="Minimize" @onclick="Dock">–</button>
+        </header>
+        <section class="body">
+            @for (var i = 0; i < 4; i++)
+            {
+                <i class="block"></i>
+            }
+        </section>
+        <nav class="bar"></nav>
+    </div>
+    <div class="tab" @onclick="Open">
+        <span class="txt"><b>3 waiting</b><small>2 questions · 1 review</small></span>
+    </div>
+    <Ball Docked="state == Shell.Docked" OnOpen="Open" />
+</div>
+
+@code {
+    string state = "";
+    int run;
+
+    string State => state;
+
+    protected override void OnInitialized()
+    {
+        Shell.Requested += OnRequest;
+        Shell.SetHits(Shell.PanelArea);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool first)
+    {
+        if (!first) return;
+        // The start state is on the screen; then the open plays.
+        await Task.Delay(80);
+        await Open();
+    }
+
+    void OnRequest(string next) => _ = InvokeAsync(async () =>
+    {
+        if (next == Shell.Start)
+        {
+            // The start again, for the probe: no shape, then the open.
+            ++run;
+            state = "";
+            StateHasChanged();
+            await Task.Delay(80);
+            await Open();
+        }
+        else if (next == Shell.Open) await Open();
+        else await Dock();
+    });
+
+    Task Open() => Go(Shell.Open, Shell.PanelArea, 700);
+
+    Task Dock() => Go(Shell.Docked, Shell.TabArea, 800);
+
+    async Task Go(string next, RectangleF area, int ms)
+    {
+        if (state == next) return;
+        var mine = ++run;
+        Shell.SetHits(Shell.PanelArea, Shell.TabArea);
+        state = next;
+        Shell.State = next;
+        StateHasChanged();
+        await Task.Delay(ms);
+        if (mine == run) Shell.SetHits(area);
+    }
+
+    public void Dispose() => Shell.Requested -= OnRequest;
+}

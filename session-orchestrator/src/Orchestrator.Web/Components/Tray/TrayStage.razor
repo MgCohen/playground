@@ -1,0 +1,87 @@
+@* The tray panel: the panel with the views, in the panel window. One phase at a time (start, open, folded), as the class
+   "is-<phase>". CSS orders the steps of each change (tray.css); the tray flow (TrayFlow) orders the windows and calls the
+   motion of this page. The home button of the app bar is the ball of the open and the fold: the panel clip starts and ends
+   as a circle around it. In the web server (no flow) the stage renders only the views. *@
+@using Microsoft.Extensions.DependencyInjection
+@implements TrayFlow.IPanel
+@inject ICommandSender Commands
+@inject IServiceProvider Services
+
+@if (flow is null)
+{
+    @ChildContent
+}
+else
+{
+    <div class="tray-stage is-@phase @(ready ? "is-ready" : "")" @ref="stage">
+        <div class="tray-shadow" data-motion="fold">
+            <div class="tray-frame"></div>
+            <div class="tray-panel" data-motion="grow">
+                <div class="tray-view">@ChildContent</div>
+                @if (window?.Label is { } label)
+                {
+                    @* I17: the run code and build of the tray, at all times, in the bottom-left corner below the app bar. *@
+                    <span class="run-label mono" title="Run code and build">@label</span>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    TrayFlow? flow;
+    IWidgetWindow? window;
+    ElementReference stage;
+    string phase = TrayPhase.Hidden;
+    bool ready;
+
+    protected override void OnInitialized()
+    {
+        window = Services.GetService<IWidgetWindow>();
+        flow = window is null ? null : Services.GetService<TrayFlow>();
+        flow?.Attach(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || flow is null) return;
+        // R2: the page owns the sizes; the window takes them before the first show.
+        window!.UseSizes(await Commands.Must(new Orchestrator.Web.Features.Tray.Slices.Sizes.TraySizes()));
+        if (window.OpenAtStart) await flow.Request(TrayRequest.Open);
+    }
+
+    public Task Prepare() => InvokeAsync(async () =>
+    {
+        Set(TrayPhase.Start);
+        await Home();
+        await Commands.Must(new MotionWait(null, WaitMode.Frames, "2"));
+    });
+
+    public Task Grow() => InvokeAsync(async () =>
+    {
+        Set(TrayPhase.Open);
+        // The grow ends: the first draw of the rings in the view starts now, with the content fade (tray.css, is-ready).
+        await Commands.Must(new MotionWait(MotionSteps.Grow.Target, WaitMode.Step));
+        ready = true;
+        StateHasChanged();
+    });
+
+    public Task Fold() => InvokeAsync(async () =>
+    {
+        await Home();
+        Set(TrayPhase.Folded);
+        await Commands.Must(new MotionWait(MotionSteps.Fold.Target, WaitMode.Step));
+    });
+
+    // The place of the home button in the panel, for the clip circle of the open and the fold (tray.js).
+    Task Home() => Commands.Must(new Orchestrator.Web.Features.Tray.Slices.Home.TrayHome(stage));
+
+    void Set(string next)
+    {
+        if (next != TrayPhase.Open) ready = false;
+        phase = next;
+        StateHasChanged();
+    }
+}

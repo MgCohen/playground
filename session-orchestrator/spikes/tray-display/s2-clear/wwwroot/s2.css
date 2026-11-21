@@ -1,0 +1,30 @@
+:root { --canvas: #e6e3de; --surf: #fdfdfc; --ink: #1b1a18; --muted: #5f5b55; --accent: #ff6a1a; --ease-out: cubic-bezier(.33, 1, .68, 1); }
+@media (prefers-color-scheme: dark) { :root { --canvas: #161618; --surf: #222225; --ink: #f2f1ee; --muted: #a29e98; } }
+/* The page is transparent: the empty parts show the desktop. */
+html, body { margin: 0; height: 100%; background: transparent; color: var(--ink); font: 14px "Segoe UI", sans-serif; overflow: hidden; }
+
+/* The stage: the panel and the ball, with one soft shadow. The 24 px margin around it is room for the shadow. */
+.stage { position: absolute; inset: 24px; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .22)); }
+
+/* The panel grows out of the ball: its clip goes from the ball circle to the full rounded panel. */
+.panel { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--canvas); border-radius: 16px;
+  clip-path: inset(calc(100% - 56px) 0 0 calc(100% - 56px) round 28px); transition: clip-path .32s var(--ease-out); }
+.stage.open .panel { clip-path: inset(0 round 16px); }
+.hd, .body { opacity: 0; transition: opacity .15s ease; }
+.stage.open .hd, .stage.open .body { opacity: 1; transition: opacity .2s ease .12s; }
+
+.hd { app-region: drag; -webkit-app-region: drag; display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 16px; font-weight: 600; user-select: none; }
+.hd .title { flex: 1; }
+.hd button { app-region: no-drag; -webkit-app-region: no-drag; width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 16px; cursor: pointer; }
+.hd button:hover { background: var(--surf); color: var(--ink); }
+.body { flex: 1; overflow: auto; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+/* The ball: the closed form. It fades out while the panel grows out of it. */
+.ball { position: absolute; right: 0; bottom: 0; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%; background: var(--accent);
+  cursor: pointer; transition: opacity .2s ease, transform .2s var(--ease-out); }
+.ball:hover { transform: scale(1.06); }
+.stage.open .ball { opacity: 0; transform: scale(.6); pointer-events: none; }
+
+.row { display: flex; align-items: center; gap: 12px; background: var(--surf); border-radius: 14px; padding: 12px; }
+.circle { flex: none; border-radius: 50%; background: var(--accent); }
+.meter { font: 12px Consolas, monospace; color: var(--muted); }

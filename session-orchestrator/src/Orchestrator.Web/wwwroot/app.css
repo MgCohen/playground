@@ -17,7 +17,6 @@
   --hole-bg: radial-gradient(circle at 35% 28%, #ffffff, #f3f2ef 72%);
   --scrim: rgba(27,26,24,.38);
   --r: 22px; --r-sm: 12px;
-  --ease-out: cubic-bezier(.2,.8,.2,1); --ease-spring: cubic-bezier(.3,1.45,.5,1); --shine: rgba(255,255,255,.55);
   interpolate-size: allow-keywords;
   --f-disp: Inter, system-ui, "Segoe UI", sans-serif; --f-body: Inter, system-ui, "Segoe UI", sans-serif; --f-mono: "JetBrains Mono", "Cascadia Mono", monospace;
   color-scheme: light;
@@ -37,7 +36,7 @@
   --sh-ring: inset 4px 4px 7px rgba(0,0,0,.55), inset -2px -2px 4px rgba(255,255,255,.12);
   --sh-hole: 0 10px 20px rgba(0,0,0,.75), 0 2px 4px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12), inset 0 -4px 8px rgba(0,0,0,.35);
   --hole-bg: radial-gradient(circle at 35% 28%, #3a3a40, #26262a 72%);
-  --scrim: rgba(0,0,0,.55); --shine: rgba(255,255,255,.08);
+  --scrim: rgba(0,0,0,.55);
   color-scheme: dark; } }
 
 * { box-sizing: border-box; }
@@ -76,7 +75,6 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .path .cur { margin: 0; font: 700 15px/1.2 var(--f-body); color: var(--text); flex: 0 0 auto; max-width: 62%; overflow: hidden; text-overflow: ellipsis; }
 /* V14: the title of a tab page has the bold body font, as the title of a sub-page (.path .cur). */
 /* The label of a named tray instance: small and quiet, in the bottom right corner below the app bar. */
-.hd .inst { position: fixed; right: 10px; bottom: max(2px, env(safe-area-inset-bottom, 0px)); z-index: 12; font-size: 9px; color: var(--muted); opacity: .8; white-space: nowrap; pointer-events: none; }
 .title { font: 700 18px/1.1 var(--f-body); letter-spacing: -.01em; margin: 0; }
 .disp { font-family: var(--f-disp); font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
 .gt { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--canvas-tx); margin: 4px 6px -4px; }
@@ -139,7 +137,7 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 46px; padding: 0 14px; border: 0; border-radius: var(--r-sm); background: var(--surf); box-shadow: var(--sh-raise); color: var(--text); font-weight: 600; flex: 1; }
 .btn.pri { background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow); }
 /* S2: the skip button is raised like the other buttons, with a muted icon, so it does not look disabled. */
-.btn.wl { background: var(--surf); box-shadow: var(--sh-raise); color: var(--muted); flex: 0 0 64px; }
+.btn.wl { background: var(--surf); box-shadow: var(--sh-raise); color: var(--muted); flex: 0 0 56px; }
 .btn:disabled, .acts.off .btn { opacity: .38; box-shadow: none; cursor: default; }
 .acts.small .btn { min-height: 38px; flex: 0 1 auto; font-size: 13px; }
 .sticky-acts { position: sticky; bottom: 92px; z-index: 3; margin-top: 4px; }
@@ -170,10 +168,9 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .lgr b { font: 800 15px var(--f-disp); }
 .fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; }
 .fold > summary::-webkit-details-marker { display: none; }
-.fold > summary .chev { padding-right: 12px; transition: transform .26s var(--ease-out); }
+.fold > summary .chev { padding-right: 12px; }
 .fold[open] > summary .chev { transform: rotate(90deg); }
-/* M7 fold: the rows open their height (the details content box animates from 0 to auto). */
-.fold::details-content { height: 0; overflow: clip; transition: height .26s var(--ease-out), content-visibility .26s allow-discrete; }
+.fold::details-content { height: 0; overflow: clip; }
 .fold[open]::details-content { height: auto; }
 .fold > summary > .srow { flex: 1; }
 .foldh { padding: 12px; }
@@ -194,22 +191,22 @@ code { font-family: var(--f-mono); font-size: .92em; }
 /* M3: a real pile. Each card behind is 8 px lower and 4.5 % smaller; when the top card leaves, each card moves up one slot. */
 /* V17: a drag on the card (or on its link) is a swipe, never a native drag of a link or an image. */
 .pcard, .pcard a, .pcard img { -webkit-user-drag: none; }
-.pcard { position: absolute; inset: 0 0 14px; display: flex; flex-direction: column; touch-action: pan-y; user-select: none; will-change: transform; overflow: hidden;
-  transform: translateY(calc(var(--i, 0) * 8px)) scale(calc(1 - var(--i, 0) * .045)); transform-origin: 50% 100%; z-index: calc(10 - var(--i, 0));
-  transition: transform .32s var(--ease-out), opacity .32s var(--ease-out); }
+.pcard { position: absolute; inset: 0 0 18px; display: flex; flex-direction: column; touch-action: pan-y; user-select: none; will-change: transform; overflow: hidden;
+  transform: translateY(calc(var(--i, 0) * 8px)) scale(calc(1 - var(--i, 0) * .045)); transform-origin: 50% 100%; z-index: calc(10 - var(--i, 0)); opacity: calc(1 - var(--i, 0) * .22);
+  transition: transform var(--t-card-move) var(--ease-out), opacity var(--t-card-move) var(--ease-out); }
 .pcard.behind { pointer-events: none; }
 .pcard.drag { transition: none; }
 /* M1: a short drag goes back with a small spring. */
-.pcard.back-in { transition: transform .45s var(--ease-spring); }
+.pcard.back-in { transition: transform var(--t-card-back) var(--ease-spring); }
 /* M3 A: a new top card drops in from the top with a small spring. A throw (below) wins over it. */
-.pcard.arrive { animation: m-arrive .42s var(--ease-spring) backwards; }
+.pcard.arrive { animation: m-arrive var(--t-card-arrive) var(--ease-spring) backwards; }
 /* M1 A: the card keeps the drag place, turns 18° and fades out in the throw direction in 300 ms. */
-.pcard.out-r { animation: m-fly-r .3s var(--ease-out) forwards; }
-.pcard.out-l { animation: m-fly-l .3s var(--ease-out) forwards; }
+.pcard.out-r { --sr: 1; animation: m-fly-r var(--t-card-throw) var(--ease-out) forwards; }
+.pcard.out-l { --sl: 1; animation: m-fly-l var(--t-card-throw) var(--ease-out) forwards; }
 @keyframes m-fly-r { to { transform: translate(var(--fx, 120%), var(--fy, 30px)) rotate(18deg); opacity: 0; } }
 @keyframes m-fly-l { to { transform: translate(var(--fx, -120%), var(--fy, 30px)) rotate(-18deg); opacity: 0; } }
 /* M2 A: skip drops the card 180 ms and tucks it under the pile; it then rises into the last slot. */
-.pcard.tuck { transition: transform .18s ease-in; transform: translateY(68%) scale(.9) !important; z-index: 0 !important; }
+.pcard.tuck { transition: transform var(--t-card-tuck) ease-in; transform: translateY(68%) scale(.9) !important; z-index: 0 !important; }
 @keyframes m-arrive { from { transform: translateY(-40px) scale(.96); opacity: 0; } }
 .card-link { position: absolute; inset: 0; z-index: 1; border-radius: var(--r); }
 .pcard .head { border-bottom: 1px solid var(--line-c); padding: 12px 14px; }
@@ -241,7 +238,7 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .fsec { display: grid; gap: 6px; }
 .fsec .gt { margin: 0; }
 .tg { appearance: none; width: 34px; height: 20px; border-radius: 10px; background: var(--sunken); box-shadow: var(--sh-carve); position: relative; flex: none; margin: 0; cursor: pointer; }
-.tg::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surf); box-shadow: 0 2px 4px rgba(0,0,0,.3); transition: left .15s; }
+.tg::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surf); box-shadow: 0 2px 4px rgba(0,0,0,.3); transition: left var(--t-toggle); }
 .tg:checked { background: var(--accent); box-shadow: inset 2px 2px 4px rgba(0,0,0,.25), var(--sh-glow); }
 .tg:checked::after { left: 17px; }
 .toast { position: fixed; z-index: 15; left: 50%; transform: translateX(-50%); top: calc(12px + env(safe-area-inset-top, 0px)); width: min(520px, calc(100% - 28px));
@@ -254,7 +251,8 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .nav2 .it { width: 46px; height: 46px; display: grid; place-items: center; color: var(--muted); position: relative; }
 .nav2 .ic { width: 22px; height: 22px; }
 .nav2 .it.on { color: var(--text); }
-.nav2 .it.on::after { content: ""; position: absolute; left: 50%; margin-left: -3px; bottom: 1px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.nav2 .ndot { position: absolute; left: var(--dx, 50%); bottom: 4px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--accent); pointer-events: none; }
+.nav2 .ndot.off { opacity: 0; }
 /* V5: the home ball is one image (home-ball.png: a 100 px square with the 62 px ball, its icon and its shadow). The native ball
    of the tray and the edge tab draw the same file. */
 .nav2 .home { width: 62px; height: 62px; margin-top: -30px; border-radius: 50%; position: relative; isolation: isolate; }
@@ -278,68 +276,6 @@ code { font-family: var(--f-mono); font-size: .92em; }
 .primary { min-height: 46px; padding: 0 16px; border: 0; border-radius: var(--r-sm); background: var(--accent); color: var(--on-accent); font-weight: 600; box-shadow: var(--sh-raise); }
 .primary:disabled { opacity: .4; }
 
-/* ===== M5: sheets and toast ===== */
-.scrim { animation: m-fade .22s ease backwards; }
-.sheet { animation: m-up .34s var(--ease-out) backwards; }
-.closing > .scrim, .scrim.closing { animation: m-fade-out .2s ease both; }
-.closing > .sheet, .sheet.closing { animation: m-down .22s ease-in both; }
-.toast:not(.inline) { overflow: hidden; animation: m-drop .32s var(--ease-spring) backwards; }
-.toast .ubar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--accent); transform-origin: left; animation: m-count 5s linear both; }
-@keyframes m-fade { from { opacity: 0; } }
-@keyframes m-fade-out { to { opacity: 0; } }
-@keyframes m-up { from { transform: translateY(105%); } }
-@keyframes m-down { to { transform: translateY(105%); } }
-@keyframes m-drop { from { transform: translate(-50%, -140%); } }
-@keyframes m-count { to { transform: scaleX(0); } }
-
-/* ===== M7: small motion ===== */
-/* Press: a raised button goes into the surface for 80 ms. */
-.btn, .chip, .fbtn, .pin, .wbtn, .nav2 .home, .nav2 .it, .seg button, .cfab, .dial .btn { transition: transform .08s, box-shadow .08s, filter .08s; }
-.btn:not(:disabled):active, .chip:active, .fbtn:active, .cfab:active, .dial .btn:active { transform: translateY(1px) scale(.98); box-shadow: var(--sh-carve); }
-/* The home ball is an image: the press moves it down and makes it a little darker. */
-.nav2 .home:active { transform: translateY(1px) scale(.96); filter: brightness(.94); }
-.nav2 .it:active, .seg button:active, .pin:active, .wbtn:active { transform: scale(.92); }
-/* Ring draw: the arcs draw on first show in 900 ms. The deep ring sweeps, so each type starts after the type before it. */
-@property --draw { syntax: "<angle>"; inherits: false; initial-value: 360deg; }
-@property --p { syntax: "<number>"; inherits: true; initial-value: 0; }
-.dring .fill { mask: conic-gradient(#000 var(--draw), transparent 0); animation: m-sweep .9s var(--ease-out) backwards; }
-.ring .fill { animation: m-arc .9s var(--ease-out) backwards; }
-@keyframes m-sweep { from { --draw: 0deg; } }
-@keyframes m-arc { from { --p: 0; } }
-/* V12: a ring draws only the first time its key (data-ring: an event, a session) shows. motion.js marks a ring with a key
-   that was drawn before (data-drawn), so a tab change back shows it at once and a new row draws one time. */
-[data-drawn] > .fill { animation: none; }
-
-/* ===== M6: loading (tray widget only): a skeleton until Blazor starts, then the content fades in ===== */
-.boot { max-width: 560px; margin: 0 auto; padding: 12px 10px 0; display: flex; flex-direction: column; gap: 10px; min-height: 100dvh; }
-.boot i { display: block; border-radius: var(--r); background: var(--sunken); box-shadow: var(--sh-carve); position: relative; overflow: hidden; flex: none; }
-.boot i::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, var(--shine), transparent); animation: m-shine 1.3s ease-in-out infinite; }
-.boot .b-hd { height: 48px; } .boot .b-ring { height: 150px; } .boot .b-row { height: 64px; } .boot .b-row.s { height: 44px; }
-.boot .b-bar { margin: auto 4px 10px; height: 58px; border-radius: 999px; }
-@keyframes m-shine { to { transform: translateX(100%); } }
-/* The page fades, not .app: an animation on .app makes a stacking context, and the backdrop of the app bar then covers the bar. */
-.page { animation: m-fade .18s ease backwards; }
-
-/* ===== T1 and V13: a tab change is a view transition too (motion.js). The old page fades out in 120 ms; the new page rises
-   10 px and fades in, one time. No block of a page has an entrance animation of its own: the transition does all the motion,
-   so nothing plays again after it. After the first navigation, the page fade of the first load (M6) is off. ===== */
-html.nav .page { animation: none; }
-.vt-tab::view-transition-old(root) { animation: m-fade-out .12s ease both; }
-.vt-tab::view-transition-new(root) { animation: m-rise .26s var(--ease-out) both; }
-@keyframes m-rise { from { opacity: 0; transform: translateY(10px); } }
-
-/* ===== T2: open a document (push). The new page slides in from the right in 300 ms; the old page moves 30 % left and dims.
-   Back plays it in reverse. The app bar is its own picture, so it stays. motion.js starts the view transition. ===== */
-.nav2 { view-transition-name: appbar; }
-::view-transition-group(root) { animation-duration: .3s; animation-timing-function: var(--ease-out); }
-.vt:not(.vt-tab)::view-transition-old(root) { animation: m-push-old .3s var(--ease-out) both; }
-.vt:not(.vt-tab)::view-transition-new(root) { animation: m-push-new .3s var(--ease-out) both; }
-.vt-back::view-transition-old(root) { animation: m-pop-old .3s var(--ease-out) both; z-index: 2; }
-.vt-back::view-transition-new(root) { animation: m-pop-new .3s var(--ease-out) both; }
-@keyframes m-push-old { to { transform: translateX(-30%); filter: brightness(.8); } }
-@keyframes m-push-new { from { transform: translateX(100%); } }
-@keyframes m-pop-old { to { transform: translateX(100%); } }
-@keyframes m-pop-new { from { transform: translateX(-30%); filter: brightness(.8); } }
 
 /* ===== E-1: the page bar and the corner button ===== */
 /* margin-top: auto puts the bar at the bottom of a short page too, so it is always in the same place. */
@@ -356,18 +292,14 @@ body:has(.pagebar.no-app-bar) .nav2 { display: none; }
 .pagebar.no-app-bar { bottom: max(10px, env(safe-area-inset-bottom, 0px)); margin-bottom: 10px; }
 body:has(.pagebar.no-app-bar)::after { height: 84px; }
 /* The corner button floats 10 px above the page bar, at the right. A tap opens the content actions as a speed dial. */
-.cfab { position: absolute; right: 6px; bottom: calc(100% + 10px); z-index: 2; width: 52px; height: 52px; border: 0; border-radius: 50%; display: grid; place-items: center; padding: 0;
+.cfab { position: absolute; right: 6px; bottom: calc(100% + 10px); transition: transform var(--t-fab) var(--ease-fab); z-index: 2; width: 52px; height: 52px; border: 0; border-radius: 50%; display: grid; place-items: center; padding: 0;
   background: var(--accent); color: var(--on-accent); box-shadow: var(--sh-raise), var(--sh-glow), 0 10px 20px -8px rgba(0,0,0,.45); }
-.cfab .ic { width: 22px; height: 22px; transition: transform .25s var(--ease-spring); }
+.cfab .ic { width: 22px; height: 22px; }
 .cfab.open .ic { transform: rotate(45deg); }
-.dscrim { position: fixed; inset: 0; z-index: 1; background: color-mix(in srgb, var(--scrim) 45%, transparent); animation: m-fade .2s ease backwards; }
+.dscrim { position: fixed; inset: 0; z-index: 1; background: rgba(0, 0, 0, .18); }
 .dial { position: absolute; right: 6px; bottom: calc(100% + 72px); z-index: 2; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 8px; }
-.dial .btn { flex: none; min-height: 40px; border-radius: 999px; padding: 0 16px; box-shadow: var(--sh-raise), 0 8px 16px -8px rgba(0,0,0,.4); white-space: nowrap;
-  animation: m-dial .22s var(--ease-out) backwards; animation-delay: calc(var(--n, 0) * 40ms); }
+.dial .btn { flex: none; min-height: 40px; border-radius: 999px; padding: 0 16px; box-shadow: var(--sh-raise), 0 8px 16px -8px rgba(0,0,0,.4); white-space: nowrap; }
 .dial .btn.dg { flex: none; padding: 0 16px; background: var(--surf); }
-@keyframes m-dial { from { transform: translateY(14px) scale(.85); opacity: 0; } }
-
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
 /* R2: blocks of the render model (view.json) */
 .facts { padding: 0; }

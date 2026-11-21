@@ -1,0 +1,119 @@
+@* The whole flow in two places. Inside one place, CSS orders the steps (s6.css). Between the places, the flow waits for the end
+   of the last transition, the window moves while nothing shows, and the next place starts. One request runs at a time. *@
+@implements IDisposable
+@inject Shell Shell
+@inject IJSRuntime Js
+
+<div class="stage is-@phase">
+    <div class="panel-layer">
+        <div class="panel">
+            <header class="hd">
+                <span class="title">S6 places</span>
+                <button type="button" class="min" title="Minimize" @onclick="() => Shell.Request(Shell.Dock)">–</button>
+            </header>
+            <section class="body">
+                @for (var i = 0; i < 4; i++)
+                {
+                    <i class="block"></i>
+                }
+            </section>
+            <nav class="bar"></nav>
+        </div>
+        <Ball />
+    </div>
+    <div class="badge-layer">
+        <div class="badge">
+            <span class="ring"><i></i></span>
+            <span class="txt"><b>3 waiting</b><small>2 questions · 1 review</small></span>
+        </div>
+    </div>
+</div>
+
+@code {
+    string phase = Shell.Start;
+    string? pending;
+    bool busy;
+
+    protected override void OnInitialized() => Shell.Requested += OnRequest;
+
+    protected override async Task OnAfterRenderAsync(bool first)
+    {
+        if (first) await Run(Shell.Open);
+    }
+
+    void OnRequest(string what) => _ = InvokeAsync(() => Run(what));
+
+    // One request at a time; a request during a run waits, and only the last one runs.
+    async Task Run(string what)
+    {
+        if (busy)
+        {
+            pending = what;
+            return;
+        }
+        busy = true;
+        try
+        {
+            if (what == Shell.Open) await Open();
+            else if (what == Shell.Dock) await Dock();
+            else if (what == Shell.Start) await Restart();
+        }
+        finally
+        {
+            busy = false;
+        }
+        if (pending is { } next)
+        {
+            pending = null;
+            await Run(next);
+        }
+    }
+
+    async Task Open()
+    {
+        if (phase == Shell.Open) return;
+        if (phase == Shell.Badge)
+        {
+            await Set("badge-out");
+            await Js.InvokeVoidAsync("s6.end", ".badge", "translate", 400);
+        }
+        if (phase is "badge-out")
+        {
+            await Shell.Place(Shell.PanelPlace);
+            await Set(Shell.Start);
+            await Js.InvokeVoidAsync("s6.frames", 2);
+        }
+        // The first start: the start state must be on the screen before the open.
+        if (phase == Shell.Start) await Js.InvokeVoidAsync("s6.frames", 2);
+        await Set(Shell.Open);
+    }
+
+    async Task Dock()
+    {
+        if (phase != Shell.Open) return;
+        await Set("folded");
+        await Js.InvokeVoidAsync("s6.end", ".ball", "scale", 800);
+        await Shell.Place(Shell.BadgePlace);
+        await Set("badge-out");
+        await Js.InvokeVoidAsync("s6.frames", 2);
+        await Set(Shell.Badge);
+    }
+
+    async Task Restart()
+    {
+        if (phase is Shell.Badge or "badge-out") await Shell.Place(Shell.PanelPlace);
+        await Set(Shell.Start);
+        await Js.InvokeVoidAsync("s6.frames", 2);
+        await Set(Shell.Open);
+    }
+
+    Task Set(string next)
+    {
+        phase = next;
+        Shell.Phase = next;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    public void Dispose() => Shell.Requested -= OnRequest;
+}
