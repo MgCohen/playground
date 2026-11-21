@@ -2575,3 +2575,4 @@ Umpire conflicts (report, no workaround): a helper class in a slice is denied (U
 - Not tested: tray motion while covered or off the screen.
 - Decision of the user: keep the normal screen recorder. Window capture is not used now.
 
+- Merge of I17 into `orch/visual-review` (2026-11-21): 851 unit tests, 0 fail. Normal self-test 38 of 39: the new `label` check passes; only `badge-hover-fits` (I7) fails. I16 and I17 are on the tracker as fixed.
