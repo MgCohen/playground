@@ -2625,3 +2625,11 @@ Findings:
 - `empty.py` key rule: a blink is a key share above 98 % after a tray frame, with the tray back later. `strip.ps1 -Key` shows it.
 - Results, same sheet run: base 0 blinks (tray frame 40.8 %, highest tray frame 94.3 %); blink on purpose (`body:has(.scrim) { opacity: 0 }`) 11 of 11.
 - I1 closed. New finding I19: each sheet stress run misses 2 presses at the start (4 of 4 runs).
+
+### I19: the first cycle of the sheet stress run fails (replicated, not fixed)
+
+- Replicated 1 of 1 with no recorder (`--instance I19 --selftest <folder> --demo --stress --sheets`, 50 s, exit 1).
+- History: all 24 sheet runs with window message clicks fail the first cycle (19 runs on 19 Nov, before I3, logged as "no element" and not counted). 0 of 8 runs with the real pointer fail; their first press comes 606 to 857 ms after the start, not 87 to 98 ms.
+- Time order: phase `open` at 58.571, first press at 58.702, the grow motion ends at 59.131. Probable cause: the press comes in the grow motion. Not proved.
+- Data gaps: no log that the page got a click or which element got it; no check that a navigation press changed the page; no motion state at a press.
+

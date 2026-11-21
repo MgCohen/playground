@@ -123,7 +123,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
     <option value="i16">I16 · Two sessions cannot test the tray at the same time  (Fixed)</option>
     <option value="i17">I17 · The recorder records 0 frames in some runs  (Fixed)</option>
     <option value="i18">I18 · The window cuts the shadow of the side badge  (Fixed)</option>
-    <option value="i19">I19 · The stress run misses 2 presses at the start  (Reported)</option>
+    <option value="i19">I19 · The stress run misses 2 presses at the start  (Replicated)</option>
     <option value="f1">F1 · A blink at the end of the open  (Fixed)</option>
     <option value="f2">F2 · A bigger, darker shadow and an overlap at a tab change  (Fixed)</option>
     <option value="f3">F3 · The tab change was not the spec (T1 C)  (Fixed)</option>
@@ -186,7 +186,7 @@ details.more > .body { padding: 0 14px 14px; display: flex; flex-direction: colu
         <tr><td><a href="#i16">I16</a></td><td>Two sessions cannot test the tray at the same time</td><td><span class="pill fix">Fixed</span></td><td>Done (with I17): test slots and a label on each tray</td></tr>
         <tr><td><a href="#i17">I17</a></td><td>The recorder records 0 frames in some runs</td><td><span class="pill fix">Fixed</span></td><td>Done: a 0-frame run fails at once; independent test instances</td></tr>
         <tr><td><a href="#i18">I18</a></td><td>The window cuts the shadow of the side badge</td><td><span class="pill fix">Fixed</span></td><td>Done in R2: the window fits the shadow boxes</td></tr>
-        <tr><td><a href="#i19">I19</a></td><td>The stress run misses 2 presses at the start</td><td><span class="pill rep">Reported</span></td><td>Your decision</td></tr>
+        <tr><td><a href="#i19">I19</a></td><td>The stress run misses 2 presses at the start</td><td><span class="pill rpl">Replicated</span></td><td>Your decision</td></tr>
         <tr><td><a href="#f1">F1</a></td><td>A blink at the end of the open</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f2">F2</a></td><td>A bigger, darker shadow and an overlap at a tab change</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
         <tr><td><a href="#f3">F3</a></td><td>The tab change was not the spec (T1 C)</td><td><span class="pill fix">Fixed</span></td><td>-</td></tr>
@@ -731,15 +731,34 @@ TrayStage    end(".tray-panel", "clip-path", 900)   <span class="c">// no transi
 <!-- I19 -->
 <div class="panel off" id="i19" role="tabpanel">
   <section>
-    <div class="meta"><span class="pill rep">Reported</span><span class="k">source: I2 sheet runs · 2026-11-21</span></div>
+    <div class="meta"><span class="pill rpl">Replicated</span><span class="k">source: I2 sheet runs · 2026-11-21</span></div>
     <h2>I19 · The stress run misses 2 presses at the start</h2>
-    <div class="track"><span class="now">Reported</span><span>Detected</span><span>Replicated</span><span>Fixed</span></div>
+    <div class="track"><span class="done">Reported</span><span class="done">Detected</span><span class="now">Replicated</span><span>Fixed</span></div>
   </section>
   <section>
-    <div class="field"><span class="k">What</span><div class="v"><p>In each sheet stress run, the first 2 presses of the first cycle miss: <code>.acts [data-act="left"]</code> and <code>.presence .scrim</code>, each after 3 s, on page <code>/</code>. The first press (<code>.nav2 a[href="cards"]</code>) says "clicked", but the page stays <code>/</code>. The later cycles pass. The run then ends with exit 1.</p></div></div>
-    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">INSTANCE=I2 spikes/tray-display/tools/sheets.sh key-base2
-# presses: 0 warnings, 2 misses (4 runs of 4)</pre></div></div>
-    <div class="field"><span class="k">Cause</span><div class="v"><p>Not known. Probable: the first press comes before the page is ready for navigation.</p></div></div>
+    <div class="field"><span class="k">What</span><div class="v"><p>In each sheet stress run with window message clicks, the first press (<code>.nav2 a[href="cards"]</code>) says "clicked", but the page stays <code>/</code>. The next 2 presses (<code>.acts [data-act="left"]</code>, <code>.presence .scrim</code>) then miss after 3 s. The later 11 cycles pass. The run ends with exit 1.</p></div></div>
+    <div class="field"><span class="k">How often</span><div class="v"><table>
+      <tr><th>Runs</th><th>Click</th><th>Start to first press</th><th>First cycle</th></tr>
+      <tr><td>19 sheet runs, 19 Nov (before I3)</td><td>window messages</td><td>87 to 98 ms</td><td>19 of 19 fail, logged as "no element", not counted</td></tr>
+      <tr><td>4 sheet runs (I2) and 1 run with no recorder, 21 Nov</td><td>window messages</td><td>87 to 98 ms</td><td>5 of 5 fail, counted as MISS</td></tr>
+      <tr><td>8 stress runs, 19 Nov</td><td>real pointer</td><td>606 to 857 ms</td><td>0 of 8 fail</td></tr>
+    </table><p>The recorder has no effect: the run with no recorder fails the same.</p></div></div>
+    <div class="field"><span class="k">Replicate</span><div class="v"><pre class="stack">artifacts~/bin/Orchestrator.Tray/debug/Orchestrator.Tray.exe --instance I19 --selftest &lt;folder&gt; --demo --stress --sheets
+# exit 1; stress.txt: presses: 0 warnings, 2 misses (50 s, no recorder)</pre></div></div>
+    <div class="field"><span class="k">Time order</span><div class="v"><pre class="stack">13:39:58.571  tray phase open           ← Stress() starts here
+13:39:58.608  stress start
+13:39:58.702  press cards: clicked      ← 131 ms after open, in the grow motion
+13:39:59.131  grow motion ends (555 ms)
+13:40:02.410  MISS .acts …  page /
+13:40:06.331  MISS .presence .scrim  page /
+13:40:07.129  cycle 2: all presses pass</pre></div></div>
+    <div class="field"><span class="k">Cause</span><div class="v"><p>Not proved. Probable: the stress run starts at the phase <code>open</code>, but the grow motion of the panel continues 555 ms after it. The first press comes in the grow motion, and the page does not navigate. Not examined: where the click goes, and if the page gets it.</p></div></div>
+    <div class="field"><span class="k">Data gaps</span><div class="v"><ul>
+      <li>A press logs "clicked" when the messages are posted. Nothing logs that the page got the click, or which element got it.</li>
+      <li>A navigation press has no check that the page changed. The miss shows 2 presses later, at a different element.</li>
+      <li>The stress log has no motion state at a press. The phase trace is in a different file (<code>exceptions.log</code>).</li>
+      <li>Before I3, a missing element was only a log line. The failure was in 19 runs and nobody saw it.</li>
+    </ul></div></div>
   </section>
 </div>
 <!-- F1 -->
