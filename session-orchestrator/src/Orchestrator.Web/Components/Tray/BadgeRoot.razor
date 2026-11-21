@@ -104,13 +104,14 @@
             // The peek shows for the token --t-peek-show of motion.css (N2). No time from the page is a fault, not 0 s.
             var peekTime = await MotionTimes.Of(Commands, "--t-peek-show") ?? throw new InvalidOperationException("The page gave no --t-peek-show.");
             var mine = ++notice;
-            spin = true;
             peekTitle = title;
             peekSub = sub;
             StateHasChanged();
-            // R2: the bubble has its text before the window takes it into the click area: the page measures it first.
+            // R2: the bubble has its text before the window takes it into the click area: the page measures it first. The spin
+            // starts after the measure, so its wait (below) comes directly after its render.
             await ReportSizes();
             window!.Peek(true);
+            spin = true;
             peek = true;
             StateHasChanged();
             var shown = Task.Delay(peekTime);

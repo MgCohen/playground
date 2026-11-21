@@ -176,7 +176,8 @@ public static partial class SelfTest
         var frames = w.Web!.ExecuteScriptAsync(Meter(1400));
         w.Request(TrayRequest.Dock);
         await Task.Delay(180);
-        (await Picture(w)).Save(Path.Combine(folder, "2-fold-middle.png"));
+        // With reduced motion the dock ends in about 60 ms: the panel window is hidden, and WebView2 takes no picture of it.
+        if (w.Visible) (await Picture(w)).Save(Path.Combine(folder, "2-fold-middle.png"));
         var docked = await Until(() => w.Phase == TrayPhase.Badge, 4000);
         await frames;
         // ExecuteScriptAsync does not wait for the promise of the meter: wait for its result.
