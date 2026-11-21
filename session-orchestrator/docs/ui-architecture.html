@@ -139,7 +139,7 @@ flowchart TB
   </section>
   <section>
     <h2>Quality of each part</h2>
-    <p class="summary">My rating from the code review and the tests, again after R1 and R2 (2026-11-21). Before: 3 Good, 6 Mixed, 1 Weak. Now: 6 Good, 4 Mixed, 1 Weak (Tracing, new). Good: one way, tested. Mixed: works, but has more than one way or gaps. Weak: known faults.</p>
+    <p class="summary">My rating from the code review and the tests, again after R1 and R2 (2026-11-21). Before: 3 Good, 6 Mixed, 1 Weak. Now: 7 Good, 3 Mixed, 1 Weak (Tracing, new). An issue counts only in the part that owns its cause. Good: one way, tested. Mixed: works, but has more than one way or gaps. Weak: known faults.</p>
     <div class="scroll"><table>
       <thead><tr><th>Part</th><th>Quality</th><th>Reason</th><th>Issues</th></tr></thead>
       <tbody>
@@ -153,7 +153,7 @@ flowchart TB
         <tr><td>Tracing</td><td><span class="q weak">Weak</span></td><td>8 sources, 6 files, free text with no ids. Page moves and input have no trace. A run needs a merge by hand</td><td>I19</td></tr>
         <tr><td>Components</td><td><span class="q good">Good</span></td><td>Small components, parameters in, events out. One wait command for all motion</td><td>-</td></tr>
         <tr><td>Style</td><td><span class="q mixed">Mixed</span></td><td>Motion times and tray sizes are tokens, and tests check them. Motion rules are in 3 files. Tray overrides win by specificity, with no check</td><td>-</td></tr>
-        <tr><td>Motion flow</td><td><span class="q mixed">Mixed</span></td><td>R1 made one start rule, one wait and one registry, with tests. The open phase comes before the grow ends, and no signal tells that the page is ready</td><td>I19</td></tr>
+        <tr><td>Motion flow</td><td><span class="q good">Good</span></td><td>R1 made one start rule, one wait and one registry, with tests. One small gap: the deck back-in waits in JS with no trace (P-C3)</td><td>-</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -996,7 +996,7 @@ sequenceDiagram
 <!-- MOTION FLOW -->
 <div class="panel off" id="flow" role="tabpanel">
   <section><h2>Proposal: one motion contract</h2>
-    <h3>Status: implemented in R1 <span class="q mixed">Mixed</span></h3>
+    <h3>Status: implemented in R1 <span class="q good">Good</span></h3>
     <p class="summary">R1, the motion pipeline, implemented this proposal on 2026-11-20 (PR #58, S0 <code>b254064</code> to S9 <code>8fffc86</code>, review fixes <code>ad459db</code>). R2 did the sizes step. The rules are in the motion guide (<code>docs/motion-guide.html</code>). The proposal below stays as a record.</p>
     <div class="scroll"><table>
       <thead><tr><th>Part</th><th>What R1 built</th><th>File</th></tr></thead>
@@ -1019,7 +1019,7 @@ sequenceDiagram
       <li>New: window steps (S9). The trace shows each window event and the window gap.</li>
       <li>The test step (<code>getAnimations</code> against the tokens) was not reliable (#60). The source test <code>Motion_times_are_tokens</code> replaces it.</li>
     </ul>
-    <p class="note">Open gap (I19): <code>TrayFlow.Open</code> sets the phase <code>open</code> before the grow motion ends. No signal tells that the page is ready. The stress run starts at the phase <code>open</code>.</p>
+    <p class="note">Not a motion gap (I19): the grow wait ends correctly (<code>by end</code> after 555 ms). <code>TrayFlow.Open</code> sets the phase <code>open</code> before the grow starts. That gap belongs to Start and stop: there is no "page ready" signal.</p>
   </section>
   <section><h3>Before R1: eight mechanisms</h3>
     <p class="summary">The record of 2026-11-19. The last column shows the state after R1.</p>
