@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run View Sketches</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one foldable row for each run view. Inside, 2 sketches of the same size. A tap on a sketch opens it large. */
+:root {
+  --page: #efece7; --tx: #2a2825; --mu: #6b665f; --line: rgba(27,26,24,.14); --surf: #fdfdfc; --cell: #f7f5f2; --soft: #f1eee9;
+  --edge: #8d877e; --back: #c2410c;
+  --ag: #1f5fbf; --hu: #ff6a1a; --tl: #6b665f;
+  --ok: #2f8f5b; --bad: #c23b22; --now: #7c4dff; --now-soft: rgba(124,77,255,.12); --sel: #1f5fbf; --sel-soft: rgba(31,95,191,.10);
+  --f-body: "Inter", system-ui, sans-serif; --f-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #1b1a18; --tx: #ece9e4; --mu: #a39d94; --line: rgba(255,255,255,.12); --surf: #262522; --cell: #211f1d; --soft: #2e2c29;
+  --edge: #8a847b; --back: #ff8a4c;
+  --ag: #6ea0ff; --hu: #ff7a33; --tl: #a39d94;
+  --ok: #5cc28a; --bad: #ff7a66; --now: #a98bff; --now-soft: rgba(169,139,255,.16); --sel: #6ea0ff; --sel-soft: rgba(110,160,255,.14);
+} }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 12px 12px 24px; background: var(--page); color: var(--tx); font: 13px/1.45 var(--f-body); }
+.rows { display: grid; gap: 8px; max-width: 1200px; margin: 0 auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--mu); padding: 2px 4px; align-items: center; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+.intro { margin: 0; padding: 0 4px; max-width: 90ch; }
+.row { background: var(--surf); border: 1px solid var(--line); border-radius: 10px; }
+.row summary { cursor: pointer; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; list-style: none; }
+.row summary::-webkit-details-marker { display: none; }
+.row summary::before { content: ""; border-left: 7px solid var(--hu); border-top: 5px solid transparent; border-bottom: 5px solid transparent; align-self: center; transition: transform .15s; }
+.row[open] summary::before { transform: rotate(90deg); }
+.row summary b { font: 600 15px var(--f-body); }
+.row summary span { font-size: 12px; color: var(--mu); }
+.row[open] summary { border-bottom: 1px solid var(--line); }
+.why { margin: 0; padding: 8px 12px 0; max-width: 90ch; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+.grid.panel { grid-template-columns: repeat(2, minmax(0, 300px)); }
+.cell { margin: 0; display: grid; gap: 4px; min-width: 0; }
+.cell figcaption { font: 500 10px var(--f-mono); color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.box { background: var(--cell); border: 1px solid var(--line); border-radius: 8px; cursor: zoom-in; overflow: hidden; }
+.box svg { width: 100%; height: auto; display: block; }
+/* Sketch parts */
+svg text { font-family: var(--f-body); fill: var(--tx); }
+svg .mu { fill: var(--mu); } svg .mono { font-family: var(--f-mono); }
+.fr { fill: var(--surf); }
+.bar { fill: var(--soft); }
+.card { fill: var(--surf); stroke: var(--line); }
+.soft { fill: var(--soft); }
+.nowbg { fill: var(--now-soft); stroke: var(--now); stroke-width: 1.4; }
+.selbg { fill: var(--sel-soft); stroke: var(--sel); stroke-width: 1.4; }
+.btn { fill: var(--surf); stroke: var(--line); }
+.btn.pri { fill: var(--now); stroke: none; }
+.btnt { font-size: 11px; font-weight: 600; } .btn.pri + .btnt, .pri-t { fill: #fff; }
+.e { fill: none; stroke: var(--edge); stroke-width: 1.4; }
+.e.done { stroke: var(--tx); stroke-opacity: .55; stroke-width: 1.8; }
+.e.back { stroke: var(--back); stroke-dasharray: 4 3; }
+.e.next { stroke: var(--now); stroke-dasharray: 3 3; stroke-width: 1.6; }
+.e.fut { stroke-opacity: .35; }
+.lane { fill: none; stroke-width: 2.4; stroke-linecap: round; }
+.nd rect { fill: var(--surf); stroke-width: 1.6; }
+.nd.agent rect { stroke: var(--ag); } .nd.human rect { stroke: var(--hu); } .nd.tool rect { stroke: var(--tl); }
+.nd.future { opacity: .4; } .nd.future rect { stroke-dasharray: 3 2; }
+.dot.agent { fill: var(--ag); } .dot.human { fill: var(--hu); } .dot.tool { fill: var(--tl); }
+.ring-now { fill: none; stroke: var(--now); stroke-width: 3; }
+.ring-next { fill: none; stroke: var(--now); stroke-width: 1.4; stroke-dasharray: 3 2; }
+.ring-sel { fill: none; stroke: var(--sel); stroke-width: 2.4; }
+.ok { fill: var(--ok); } .bad { fill: var(--bad); } .nowf { fill: var(--now); }
+.chip { stroke: none; } .chip.ok { fill: color-mix(in srgb, var(--ok) 16%, transparent); } .chip.bad { fill: color-mix(in srgb, var(--bad) 16%, transparent); } .chip.now { fill: var(--now-soft); } .chip.mu { fill: var(--soft); }
+.chipt.ok { fill: var(--ok); } .chipt.bad { fill: var(--bad); } .chipt.now { fill: var(--now); }
+.lb rect { fill: var(--cell); stroke: var(--line); } .lb text { font-size: 9px; fill: var(--mu); }
+html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: var(--page); }
+.onebox { position: fixed; inset: 0; cursor: zoom-out; padding: 2vmin; display: grid; place-items: center; }
+.onebox svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; display: block; }
+</style>
+<main class="rows" id="rows">
+  <p class="intro">One run of the Feature delivery workflow, in the middle of its work. The three tasks are done. The first test failed, the fix passed the second test, and the run now waits for your review verdict. Each row shows one run view: the first sketch shows the run now, the second shows a tap on a node.</p>
+  <div class="legend">
+    <span><i style="background:var(--ag)"></i>agent</span><span><i style="background:var(--hu)"></i>human</span><span><i style="background:var(--tl)"></i>tool</span>
+    <span><i style="background:var(--now)"></i>now and next</span><span><i style="background:var(--ok)"></i>passed</span><span><i style="background:var(--bad)"></i>failed</span>
+    <span>Tap a sketch to see it large.</span>
+  </div>
+</main>
+
+<script>
+(function () {
+  // ---- The run: Feature delivery, run #14. ----
+  var STEP = {
+    spec: ['Write spec', 'agent'], split: ['Split tasks', 'agent'], api: ['API task', 'agent'], ui: ['UI task', 'agent'], docs: ['Docs task', 'agent'],
+    integ: ['Integrate', 'tool'], test: ['Test', 'tool'], review: ['Review', 'human'], fix: ['Fix', 'agent'], release: ['Release', 'tool']
+  };
+  var EDGES = [['spec', 'split'], ['split', 'api'], ['split', 'ui'], ['split', 'docs'], ['api', 'integ'], ['ui', 'integ'], ['docs', 'integ'], ['integ', 'test'],
+    ['test', 'review', 'pass'], ['test', 'fix', 'fail'], ['review', 'fix', 'change'], ['fix', 'test', 're-test'], ['review', 'release', 'approve']];
+  // Step runs, oldest first. lane: 0 main, 1..3 side lanes.
+  var HIST = [
+    { s: 'spec', st: 'ok', t: '4m', out: 'spec.md · 6 parts', lane: 0 },
+    { s: 'split', st: 'ok', t: '1m', out: '3 tasks · 3 sessions', lane: 0 },
+    { s: 'api', st: 'ok', t: '18m', out: '+210 −12 · 4 files', lane: 1 },
+    { s: 'ui', st: 'ok', t: '25m', out: '+340 −40 · 7 files', lane: 2 },
+    { s: 'docs', st: 'ok', t: '6m', out: '+80 · 2 files', lane: 3 },
+    { s: 'integ', st: 'ok', t: '2m', out: '3 branches merged', lane: 0 },
+    { s: 'test', st: 'bad', t: '3m', out: '41 passed · 2 failed', lane: 0, pass: 1 },
+    { s: 'fix', st: 'ok', t: '9m', out: '2 tests fixed · +18 −6', lane: 1 },
+    { s: 'test', st: 'ok', t: '3m', out: '43 passed', lane: 0, pass: 2 },
+    { s: 'review', st: 'now', t: '12m', out: 'Waits for your verdict', lane: 0 }
+  ];
+  var NEXT = [['approve', 'release'], ['change', 'fix']];
+  // Node state for the graph views.
+  var STATE = { spec: 'ok', split: 'ok', api: 'ok', ui: 'ok', docs: 'ok', integ: 'ok', test: 'ok', fix: 'ok', review: 'now', release: 'future' };
+  var COUNT = { test: 2 };
+  var ISNEXT = { release: 1, fix: 1 };
+  var TITLE = 'Run #14 · Add export button';
+
+  // ---- Small SVG helpers ----
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function T(x, y, s, o) { o = o || {}; return '<text x="' + x + '" y="' + y + '"' + (o.c ? ' class="' + o.c + '"' : '') + ' font-size="' + (o.f || 11) + '"' + (o.w ? ' font-weight="' + o.w + '"' : '') + (o.a ? ' text-anchor="' + o.a + '"' : '') + (o.st ? ' style="' + o.st + '"' : '') + '>' + esc(s) + '</text>'; }
+  function Rr(x, y, w, h, c, r) { return '<rect class="' + c + '" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (r === undefined ? 8 : r) + '"/>'; }
+  function chip(x, y, s, k, anchorRight) { var w = s.length * 5.6 + 12; if (anchorRight) x -= w; return Rr(x, y, w, 16, 'chip ' + k, 8) + T(x + w / 2, y + 11.5, s, { f: 9.5, w: 600, a: 'middle', c: 'chipt ' + k }); }
+  function btn(x, y, w, s, pri) { return Rr(x, y, w, 26, 'btn' + (pri ? ' pri' : ''), 7) + T(x + w / 2, y + 17, s, { a: 'middle', c: 'btnt' + (pri ? ' pri-t' : '') }); }
+  function icon(x, y, st) {
+    if (st === 'ok') return '<path d="M' + (x - 3) + ',' + y + ' l2.2,2.4 l4,-4.6" fill="none" stroke="var(--ok)" stroke-width="1.8"/>';
+    if (st === 'bad') return '<path d="M' + (x - 3) + ',' + (y - 3) + ' l6,6 M' + (x + 3) + ',' + (y - 3) + ' l-6,6" stroke="var(--bad)" stroke-width="1.8"/>';
+    if (st === 'now') return '<circle cx="' + x + '" cy="' + y + '" r="3.2" class="nowf"/>';
+    return '';
+  }
+  function head(W, sub) {
+    return Rr(0, 0, W, 52, 'bar', 0) + T(14, 22, TITLE, { f: 13, w: 600 }) + T(14, 39, 'Feature delivery · step 10 of ~11 · 1h 23m', { f: 10.5, c: 'mu' }) +
+      chip(W - 12, 18, 'waits for you', 'now', true) + (sub || '');
+  }
+  var fid = 0;
+  function frame(W, H, body, label) {
+    var u = 'f' + (fid++);
+    body = body.replace(/url\(#m([abn])\)/g, 'url(#' + u + '$1)');
+    return ( '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + esc(label) + '"><defs>' +
+      '<marker id="ma" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="var(--edge)"/></marker>' +
+      '<marker id="mb" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="var(--back)"/></marker>' +
+      '<marker id="mn" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="var(--now)"/></marker>' +
+      '<clipPath id="cp' + W + H + '"><rect width="' + W + '" height="' + H + '"/></clipPath>' +
+      '</defs><g clip-path="url(#cp' + W + H + ')">' + Rr(0, 0, W, H, 'fr', 0) + body + '</g></svg>').replace(/id="m([abn])"/g, 'id="' + u + '$1"').replace(/(clipPath id="|clip-path="url\(#)cp/g, '$1' + u + 'cp');
+  }
+
+  // ---- Graph drawing: boxes or dots on given positions, with run state. ----
+  // P: {step: [x, y]}. o: {box: [w, h]} or {dot: r}, sel: step, labels: true, small: true
+  function graph(P, o) {
+    var s = '', lab = '', nodes = '';
+    function trim(a, b, k) { var dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
+      var t = o.dot ? (o.dot + 4) / L : Math.min((o.box[0] / 2 + 3) / Math.abs(dx || 1e-9), (o.box[1] / 2 + 3) / Math.abs(dy || 1e-9));
+      return k ? [b[0] - dx * t, b[1] - dy * t] : [a[0] + dx * t, a[1] + dy * t]; }
+    EDGES.forEach(function (e) {
+      var a = P[e[0]], b = P[e[1]]; if (!a || !b) return;
+      var back = e[0] === 'fix' || e[0] === 'review' && e[1] === 'fix';
+      var nxt = e[0] === 'review';
+      var done = !nxt && STATE[e[0]] !== 'future' && STATE[e[1]] !== 'future' && !(e[0] === 'test' && e[1] === 'review' && false);
+      var bend = o.bend && o.bend[e[0] + '>' + e[1]] || 0;
+      var dx = b[0] - a[0], dy = b[1] - a[1], cx = (a[0] + b[0]) / 2 - dy * bend, cy = (a[1] + b[1]) / 2 + dx * bend;
+      var p0 = trim(a, [cx, cy], 0), p1 = trim([cx, cy], b, 1);
+      var cls = nxt ? 'e next' : back ? 'e back' : done ? 'e done' : 'e';
+      s += '<path class="' + cls + '" d="M' + p0[0].toFixed(1) + ',' + p0[1].toFixed(1) + ' Q' + cx.toFixed(1) + ',' + cy.toFixed(1) + ' ' + p1[0].toFixed(1) + ',' + p1[1].toFixed(1) + '"' + (o.labels === false ? ' style="stroke-width:1"' : o.thin ? ' style="stroke-width:1.1"' + ' marker-end="url(#' + (nxt ? 'mn' : back ? 'mb' : 'ma') + ')"' : ' marker-end="url(#' + (nxt ? 'mn' : back ? 'mb' : 'ma') + ')"') + '/>';
+      if (e[2] && o.labels !== false && o.elab !== false) {
+        var mx = (p0[0] + 2 * cx + p1[0]) / 4, my = (p0[1] + 2 * cy + p1[1]) / 4, lw = e[2].length * 4.8 + 8;
+        lab += '<g class="lb"><rect x="' + (mx - lw / 2).toFixed(1) + '" y="' + (my - 6.5).toFixed(1) + '" width="' + lw.toFixed(1) + '" height="13" rx="6.5"/><text x="' + mx.toFixed(1) + '" y="' + (my + 3).toFixed(1) + '" text-anchor="middle">' + e[2] + '</text></g>';
+      }
+    });
+    Object.keys(P).forEach(function (k) {
+      var p = P[k], ex = STEP[k][1], st = STATE[k], c = COUNT[k];
+      if (o.dot) {
+        var r = o.dot;
+        if (st === 'now') nodes += '<circle class="ring-now" cx="' + p[0] + '" cy="' + p[1] + '" r="' + (r + 5) + '"/>';
+        if (ISNEXT[k]) nodes += '<circle class="ring-next" cx="' + p[0] + '" cy="' + p[1] + '" r="' + (r + 5) + '"/>';
+        if (o.sel === k) nodes += '<circle class="ring-sel" cx="' + p[0] + '" cy="' + p[1] + '" r="' + (r + 5) + '"/>';
+        nodes += '<circle class="dot ' + ex + '" cx="' + p[0] + '" cy="' + p[1] + '" r="' + r + '"' + (st === 'future' ? ' opacity=".35"' : '') + '/>';
+        if (o.labels !== false) nodes += T(p[0], p[1] + r + 12, STEP[k][0], { f: o.small ? 8.5 : 10, w: 500, a: 'middle', st: 'paint-order:stroke;stroke:var(--surf);stroke-width:3px' });
+        if (c && o.labels !== false) nodes += T(p[0] + r + 2, p[1] - r, '×' + c, { f: 8.5, w: 700, c: 'mu' });
+      } else {
+        var w = o.box[0], h = o.box[1], x = p[0] - w / 2, y = p[1] - h / 2;
+        if (st === 'now') nodes += Rr(x - 4, y - 4, w + 8, h + 8, 'ring-now', 10);
+        if (ISNEXT[k]) nodes += Rr(x - 4, y - 4, w + 8, h + 8, 'ring-next', 10);
+        if (o.sel === k) nodes += Rr(x - 4, y - 4, w + 8, h + 8, 'ring-sel', 10);
+        nodes += '<g class="nd ' + ex + (st === 'future' ? ' future' : '') + '">' + Rr(x, y, w, h, '', 7) + '</g>';
+        nodes += '<rect x="' + x + '" y="' + (y + 4) + '" width="3" height="' + (h - 8) + '" rx="1.5" class="dot ' + ex + '"/>';
+        if (o.data) {
+          var last = HIST.filter(function (hh) { return hh.s === k; }).pop();
+          nodes += T(x + 10, y + 16, STEP[k][0], { f: 11.5, w: 600 }) + icon(x + w - 12, y + 13, last ? last.st : '');
+          nodes += T(x + 10, y + 30, ex + (last ? ' · ' + last.t : ''), { f: 9.5, c: 'mu' });
+          nodes += T(x + 10, y + 45, last ? last.out : (ISNEXT[k] ? 'next if approve' : 'not started'), { f: 9.5, c: last && last.st === 'bad' ? 'bad' : '' });
+          if (c) nodes += chip(x + w - 6, y + h - 20, '×' + c, 'mu', true);
+        } else {
+          nodes += T(p[0] + 2, p[1] + 4, STEP[k][0], { f: 10.5, w: 600, a: 'middle' }) + icon(x + w - 10, p[1], st === 'now' ? 'now' : st === 'future' ? '' : (k === 'test' ? 'ok' : 'ok'));
+          if (c) nodes += T(x + w + 3, y + 2, '×' + c, { f: 9, w: 700, c: 'mu' });
+        }
+      }
+    });
+    return s + nodes + lab;
+  }
+
+  // ---- 1. Timeline, Git style (vertical) ----
+  function timeline(W, open, y0) {
+    var s = '', y = y0 || 66, LX = [22, 36, 50, 64], rowH = 48, ys = [], tx = 84;
+    HIST.forEach(function (h, i) { ys.push(y); y += rowH + (open === i ? 118 : 0); });
+    var ny = y; // next rows start
+    // Lanes: main line, task branches, fix branch.
+    var lc = 'var(--edge)';
+    s += '<path class="lane" stroke="' + lc + '" d="M' + LX[0] + ',' + (ys[0] + 10) + ' V' + (ys[9] + 10) + '"/>';
+    [2, 3, 4].forEach(function (i) { var L = LX[HIST[i].lane];
+      s += '<path class="lane" stroke="' + lc + '" d="M' + LX[0] + ',' + (ys[1] + 10) + ' C' + LX[0] + ',' + (ys[1] + 30) + ' ' + L + ',' + (ys[1] + 20) + ' ' + L + ',' + (ys[1] + 40) + ' V' + (ys[5] - 20) + ' C' + L + ',' + (ys[5] - 4) + ' ' + LX[0] + ',' + (ys[5] - 10) + ' ' + LX[0] + ',' + (ys[5] + 10) + '"/>'; });
+    s += '<path class="lane" stroke="var(--back)" stroke-dasharray="4 3" d="M' + LX[0] + ',' + (ys[6] + 10) + ' C' + LX[0] + ',' + (ys[6] + 28) + ' ' + LX[1] + ',' + (ys[6] + 22) + ' ' + LX[1] + ',' + (ys[7] + 10) + ' C' + LX[1] + ',' + (ys[7] + 30) + ' ' + LX[0] + ',' + (ys[8] - 10) + ' ' + LX[0] + ',' + (ys[8] + 10) + '"/>';
+    HIST.forEach(function (h, i) {
+      var yy = ys[i], cx = LX[h.lane], ex = STEP[h.s][1];
+      if (h.st === 'now') s += Rr(6, yy - 8, W - 12, 40, 'nowbg', 8);
+      if (open === i) s += Rr(6, yy - 8, W - 12, rowH + 118 - 4, 'selbg', 8);
+      s += '<circle cx="' + cx + '" cy="' + (yy + 10) + '" r="6" class="dot ' + ex + '"/>';
+      if (h.st === 'now') s += '<circle cx="' + cx + '" cy="' + (yy + 10) + '" r="10" class="ring-now"/>';
+      s += T(tx, yy + 8, STEP[h.s][0] + (h.pass ? ' · pass ' + h.pass : ''), { f: 12.5, w: 600 });
+      s += T(tx, yy + 23, ex + ' · ' + h.t + ' · ' + h.out, { f: 10, c: h.st === 'bad' ? 'bad' : 'mu' });
+      s += h.st === 'ok' ? icon(W - 22, yy + 9, 'ok') : h.st === 'bad' ? chip(W - 12, yy + 1, 'failed', 'bad', true) : chip(W - 12, yy + 1, 'now · 12m', 'now', true);
+      if (open === i) {
+        var by = yy + 40;
+        s += Rr(tx - 4, by, W - tx - 12, 108, 'card', 7);
+        s += T(tx + 6, by + 17, 'dotnet test · exit 1', { f: 10, c: 'mono' });
+        s += T(tx + 6, by + 34, '✕ Export_EmptyList_ReturnsHeader', { f: 10, c: 'bad mono' });
+        s += T(tx + 6, by + 49, '✕ Export_Unicode_KeepsBytes', { f: 10, c: 'bad mono' });
+        s += T(tx + 6, by + 66, 'Went to: Fix (fail)', { f: 10, c: 'mu' });
+        s += btn(tx + 6, by + 76, 80, 'Open log') + btn(tx + 92, by + 76, 96, 'Open session');
+      }
+    });
+    // Next: the two ways out of the review.
+    s += T(tx, ny + 4, 'NEXT', { f: 9, w: 700, c: 'mu', st: 'letter-spacing:.08em' });
+    NEXT.forEach(function (n, j) {
+      var yy = ny + 14 + j * 40, ex = STEP[n[1]][1];
+      s += '<path class="e next" d="M' + LX[0] + ',' + (ys[9] + 20) + ' C' + LX[0] + ',' + (yy) + ' ' + (LX[0] + j * 14) + ',' + (yy - 4) + ' ' + (LX[0] + j * 14) + ',' + (yy + 4) + '"/>';
+      s += '<circle cx="' + (LX[0] + j * 14) + '" cy="' + (yy + 10) + '" r="6" fill="none" stroke="var(--now)" stroke-width="1.6" stroke-dasharray="3 2"/>';
+      s += T(tx, yy + 8, STEP[n[1]][0], { f: 12, w: 600, st: 'opacity:.75' }) + T(tx, yy + 22, 'if you ' + n[0] + (n[1] === 'fix' ? ' · fix pass 2' : ' · then the run ends'), { f: 10, c: 'mu' });
+    });
+    return { svg: s, end: ny + 94, ys: ys };
+  }
+  function s1a() {
+    var W = 360, H = 720, t = timeline(W, -1);
+    var b = Rr(10, H - 58, W - 20, 48, 'card', 10) + T(22, H - 38, 'Review: approve or change?', { f: 11.5, w: 600 }) + T(22, H - 22, 'Test pass 2 passed · 43 tests', { f: 10, c: 'mu' }) + btn(W - 160, H - 47, 70, 'Change') + btn(W - 84, H - 47, 66, 'Approve', 1);
+    return frame(W, H, head(W) + t.svg + b, 'Timeline, the run now');
+  }
+  function s1b() {
+    var W = 360, H = 720, t = timeline(W, 6, 66 - 150);
+    return frame(W, H, t.svg + head(W), 'Timeline, Test pass 1 opened');
+  }
+
+  // ---- 2. Vertical graph with a bottom sheet ----
+  var PV = { spec: [180, 84], split: [180, 128], api: [88, 176], ui: [180, 176], docs: [272, 176], integ: [180, 224], test: [180, 272], review: [180, 330], fix: [300, 301], release: [180, 388] };
+  function sheet(W, H, y, body) { return Rr(0, y, W, H - y + 10, 'card', 16) + Rr(W / 2 - 18, y + 7, 36, 4, 'soft', 2) + body; }
+  function s2a() {
+    var W = 360, H = 720, y = 428;
+    var g = graph(PV, { box: [84, 28], bend: { 'fix>test': -0.25, 'test>fix': 0.12, 'review>fix': 0.2 } });
+    var b = sheet(W, H, y,
+      T(18, y + 36, 'Review', { f: 15, w: 700 }) + chip(W - 14, y + 24, 'now · 12m', 'now', true) + T(18, y + 54, 'human · you · step 10', { f: 10.5, c: 'mu' }) +
+      Rr(14, y + 66, W - 28, 64, 'soft', 8) + T(24, y + 84, 'Input', { f: 9, w: 700, c: 'mu' }) + T(24, y + 100, 'Test pass 2 passed · 43 tests', { f: 11 }) + T(24, y + 116, 'Branch feat/export · +628 −58 · 13 files', { f: 11 }) +
+      T(18, y + 152, 'WHERE IT CAN GO', { f: 9, w: 700, c: 'mu', st: 'letter-spacing:.08em' }) +
+      Rr(14, y + 162, W - 28, 36, 'card', 8) + T(26, y + 184, 'approve → Release', { f: 11.5, w: 600 }) + T(W - 26, y + 184, 'run ends', { f: 10, c: 'mu', a: 'end' }) +
+      Rr(14, y + 204, W - 28, 36, 'card', 8) + T(26, y + 226, 'change → Fix', { f: 11.5, w: 600 }) + T(W - 26, y + 226, 'fix pass 2', { f: 10, c: 'mu', a: 'end' }) +
+      btn(14, y + 252, 160, 'Change') + btn(186, y + 252, 160, 'Approve', 1));
+    return frame(W, H, head(W) + g + b, 'Vertical graph, the run now');
+  }
+  function s2b() {
+    var W = 360, H = 720, y = 428;
+    var g = graph(PV, { box: [84, 28], sel: 'test', bend: { 'fix>test': -0.25, 'test>fix': 0.12, 'review>fix': 0.2 } });
+    var b = sheet(W, H, y,
+      T(18, y + 36, 'Test', { f: 15, w: 700 }) + chip(W - 14, y + 24, '2 passes', 'mu', true) + T(18, y + 54, 'tool · dotnet test', { f: 10.5, c: 'mu' }) +
+      Rr(14, y + 66, W - 28, 58, 'card', 8) + icon(30, y + 82, 'bad') + T(44, y + 86, 'Pass 1 · 3m · 41 passed · 2 failed', { f: 11, w: 600 }) + T(44, y + 104, 'went to Fix (fail)', { f: 10, c: 'mu' }) + T(W - 26, y + 104, 'Open', { f: 10.5, w: 600, a: 'end', st: 'fill:var(--sel)' }) +
+      Rr(14, y + 130, W - 28, 58, 'card', 8) + icon(30, y + 146, 'ok') + T(44, y + 150, 'Pass 2 · 3m · 43 passed', { f: 11, w: 600 }) + T(44, y + 168, 'went to Review (pass)', { f: 10, c: 'mu' }) + T(W - 26, y + 168, 'Open', { f: 10.5, w: 600, a: 'end', st: 'fill:var(--sel)' }) +
+      T(18, y + 210, 'STEP SETTINGS', { f: 9, w: 700, c: 'mu', st: 'letter-spacing:.08em' }) + T(18, y + 228, 'pass → Review · fail → Fix · max 3 passes', { f: 11 }) +
+      btn(14, y + 252, W - 28, 'Back to now'));
+    return frame(W, H, head(W) + g + b, 'Vertical graph, Test opened');
+  }
+
+  // ---- 3. Horizontal graph that pans, with a minimap ----
+  var U = { spec: [0, 0], split: [1, 0], api: [2, -1], ui: [2, 0], docs: [2, 1], integ: [3, 0], test: [4, 0], review: [5, 0], release: [6, 0], fix: [4.5, 1.25] };
+  function place(u, ox, oy, dx, dy) { var P = {}; Object.keys(u).forEach(function (k) { P[k] = [ox + u[k][0] * dx, oy + u[k][1] * dy]; }); return P; }
+  function minimap(x, y, w, h, vx) {
+    var P = place(U, x + 14, y + h / 2 - 2, (w - 28) / 6, (h - 16) / 3);
+    var s = Rr(x, y, w, h, 'soft', 8) + graph(P, { dot: 3.2, labels: false });
+    var vw = w * 0.42; s += '<rect x="' + (x + vx * (w - vw)) + '" y="' + (y + 3) + '" width="' + vw + '" height="' + (h - 6) + '" rx="5" fill="none" stroke="var(--sel)" stroke-width="1.5"/>';
+    return s;
+  }
+  function s3(view) {
+    var W = 360, H = 720, top = 58, gh = 250;
+    var ox = view === 'now' ? 180 - 5 * 112 : 30, P = place(U, ox, top + 110, 112, 62);
+    var g = graph(P, { box: [86, 28], bend: { 'fix>test': -0.3, 'test>fix': 0.1, 'review>fix': 0.15 } });
+    var s = '<g>' + g + '</g>' + Rr(0, top + gh, W, H, 'fr', 0) + minimap(12, top + gh + 8, W - 24, 44, view === 'now' ? 1 : 0);
+    var y = top + gh + 64;
+    if (view === 'now') {
+      s += Rr(12, y, W - 24, 112, 'nowbg', 10) + T(26, y + 24, 'Review', { f: 15, w: 700 }) + chip(W - 24, y + 12, 'now · 12m', 'now', true) +
+        T(26, y + 42, 'human · you · input: Test pass 2, 43 passed', { f: 10.5, c: 'mu' }) + btn(26, y + 72, 140, 'change → Fix') + btn(W - 26 - 154, y + 72, 154, 'approve → Release', 1);
+      s += T(16, y + 140, 'LAST STEPS', { f: 9, w: 700, c: 'mu', st: 'letter-spacing:.08em' });
+      [[8, 'Test · pass 2'], [7, 'Fix'], [6, 'Test · pass 1'], [5, 'Integrate']].forEach(function (r, i) {
+        var h = HIST[r[0]], yy = y + 152 + i * 40; s += Rr(12, yy, W - 24, 34, 'card', 7) + icon(28, yy + 17, h.st) + T(42, yy + 15, r[1], { f: 11.5, w: 600 }) + T(42, yy + 28, h.t + ' · ' + h.out, { f: 9.5, c: h.st === 'bad' ? 'bad' : 'mu' });
+      });
+    } else {
+      s += Rr(12, y, W - 24, 92, 'selbg', 10) + T(26, y + 24, 'Split tasks', { f: 15, w: 700 }) + icon(W - 30, y + 20, 'ok') + T(26, y + 42, 'agent · 1m · 3 tasks · 3 sessions', { f: 10.5, c: 'mu' }) +
+        btn(26, y + 56, 120, 'Open session') + btn(154, y + 56, 120, 'Open output');
+      s += btn(W / 2 - 60, top + gh - 40, 120, '◎ Back to now', 1);
+    }
+    return frame(W, H, head(W) + s, view === 'now' ? 'Horizontal pan, the run now' : 'Horizontal pan, moved to the start');
+  }
+
+  // ---- 4. Focus: now in the center, the past above, the ways out below ----
+  var UR = { spec: [0, 0.6], split: [0.9, 0.6], api: [1.8, -0.3], ui: [1.8, 0.6], docs: [1.8, 1.5], integ: [2.7, 0.6], test: [3.6, 0.6], review: [5.2, 0.45], fix: [4.4, 1.5], release: [6.2, 0.45] };
+  function s4(f) {
+    var W = 360, H = 720, top = 58;
+    var P = place(UR, 26, top + 22, 49, 42);
+    var s = Rr(10, top + 6, W - 20, 120, 'soft', 10) + graph(P, { dot: 6, small: true, elab: false, thin: true, sel: f === 'test' ? 'test' : null, bend: { 'fix>test': -0.3, 'test>fix': 0.1, 'review>fix': -0.2 } });
+    var y = top + 140;
+    function card(yy, k, line1, line2, cls, w, x) { x = x || 12; w = w || W - 24; return Rr(x, yy, w, 52, cls || 'card', 9) + '<circle cx="' + (x + 16) + '" cy="' + (yy + 26) + '" r="6" class="dot ' + STEP[k][1] + '"/>' + T(x + 30, yy + 22, line1, { f: 12, w: 600 }) + T(x + 30, yy + 38, line2, { f: 9.5, c: 'mu' }); }
+    function arrow(yy) { return '<path class="e done" d="M' + (W / 2) + ',' + yy + ' v18" marker-end="url(#ma)"/>'; }
+    if (f === 'now') {
+      s += T(14, y + 8, 'CAME FROM', { f: 9, w: 700, c: 'mu', st: 'letter-spacing:.08em' });
+      s += card(y + 14, 'test', 'Test · pass 2', '3m · 43 passed · pass', 'card') + icon(W - 30, y + 40, 'ok');
+      s += arrow(y + 70);
+      s += Rr(12, y + 94, W - 24, 150, 'nowbg', 12) + '<circle cx="34" cy="' + (y + 122) + '" r="9" class="dot human"/><circle cx="34" cy="' + (y + 122) + '" r="14" class="ring-now"/>' +
+        T(58, y + 120, 'Review', { f: 17, w: 700 }) + T(58, y + 137, 'human · you · waits 12m', { f: 10.5, c: 'mu' }) +
+        T(26, y + 166, 'Branch feat/export · +628 −58 · 13 files', { f: 11 }) + T(26, y + 184, 'Spec: export the list as CSV and JSON', { f: 11 }) +
+        T(26, y + 202, 'Open: diff · spec · test log', { f: 11, st: 'fill:var(--sel)' }) + T(26, y + 228, 'Pick one way out below.', { f: 10, c: 'mu' });
+      s += T(14, y + 268, 'WHERE IT CAN GO', { f: 9, w: 700, c: 'mu', st: 'letter-spacing:.08em' });
+      s += '<path class="e next" d="M' + (W / 2) + ',' + (y + 244) + ' C' + (W / 2) + ',' + (y + 262) + ' 96,' + (y + 262) + ' 96,' + (y + 276) + '" marker-end="url(#mn)"/>' +
+        '<path class="e next" d="M' + (W / 2) + ',' + (y + 244) + ' C' + (W / 2) + ',' + (y + 262) + ' 264,' + (y + 262) + ' 264,' + (y + 276) + '" marker-end="url(#mn)"/>';
+      s += Rr(12, y + 280, 162, 96, 'card', 10) + T(24, y + 300, 'change', { f: 9.5, w: 700, c: 'mu' }) + '<circle cx="30" cy="' + (y + 320) + '" r="6" class="dot agent"/>' + T(42, y + 324, 'Fix · pass 2', { f: 12, w: 600 }) + T(24, y + 344, 'then Test pass 3', { f: 9.5, c: 'mu' }) + btn(24, y + 350 - 0, 138, 'Change…');
+      s += Rr(186, y + 280, 162, 96, 'nowbg', 10) + T(198, y + 300, 'approve', { f: 9.5, w: 700, c: 'mu' }) + '<circle cx="204" cy="' + (y + 320) + '" r="6" class="dot tool"/>' + T(216, y + 324, 'Release', { f: 12, w: 600 }) + T(198, y + 344, 'then the run ends', { f: 9.5, c: 'mu' }) + btn(198, y + 350, 138, 'Approve', 1);
+      s += Rr(12, y + 392, W - 24, 34, 'soft', 8) + T(26, y + 413, 'History · 10 step runs', { f: 11, w: 600 }) + T(W - 26, y + 413, '▸', { f: 12, a: 'end' });
+    } else {
+      s += T(14, y + 8, 'CAME FROM', { f: 9, w: 700, c: 'mu', st: 'letter-spacing:.08em' });
+      s += card(y + 14, 'integ', 'Integrate', 'into pass 1', 'card', 162) + card(y + 14, 'fix', 'Fix', 'into pass 2', 'card', 162, 186);
+      s += arrow(y + 70);
+      s += Rr(12, y + 94, W - 24, 132, 'selbg', 12) + '<circle cx="34" cy="' + (y + 122) + '" r="9" class="dot tool"/>' +
+        T(58, y + 120, 'Test', { f: 17, w: 700 }) + T(58, y + 137, 'tool · dotnet test · 2 passes', { f: 10.5, c: 'mu' }) +
+        icon(30, y + 164, 'bad') + T(44, y + 168, 'Pass 1 · 41 passed · 2 failed', { f: 11 }) +
+        icon(30, y + 188, 'ok') + T(44, y + 192, 'Pass 2 · 43 passed', { f: 11 }) + T(26, y + 214, 'Open: log of pass 1 · log of pass 2', { f: 11, st: 'fill:var(--sel)' });
+      s += T(14, y + 250, 'WENT TO', { f: 9, w: 700, c: 'mu', st: 'letter-spacing:.08em' });
+      s += card(y + 258, 'fix', 'Fix', 'after pass 1 · fail', 'card', 162) + card(y + 258, 'review', 'Review', 'after pass 2 · now', 'nowbg', 162, 186);
+      s += btn(12, y + 330, W - 24, '◎ Back to now', 1);
+    }
+    return frame(W, H, head(W) + s, f === 'now' ? 'Focus, the run now' : 'Focus, Test opened');
+  }
+
+  // ---- 5. Wide: horizontal graph with data cards ----
+  function s5(sel) {
+    var W = 960, H = 600;
+    var P = place(U, 70, 196, 136, 84);
+    P.fix = [P.test[0] + 68, 196 + 112];
+    var g = graph(P, { box: [114, 58], data: true, sel: sel === 'test' ? 'test' : null, bend: { 'fix>test': -0.25, 'test>fix': -0.05, 'review>fix': 0.1 } });
+    var y = 372, s = Rr(0, y, W, H - y, 'soft', 0);
+    if (sel === 'now') {
+      s += T(20, y + 30, 'Review', { f: 17, w: 700 }) + chip(96, y + 17, 'now · 12m', 'now') + T(20, y + 50, 'human · you · step 10 of ~11', { f: 11, c: 'mu' });
+      s += Rr(20, y + 64, 420, 112, 'card', 10) + T(34, y + 86, 'INPUT', { f: 9, w: 700, c: 'mu' }) + T(34, y + 106, 'Test pass 2 passed · 43 tests', { f: 12 }) + T(34, y + 126, 'Branch feat/export · +628 −58 · 13 files', { f: 12 }) + T(34, y + 146, 'Open: diff · spec · test log', { f: 12, st: 'fill:var(--sel)' });
+      s += Rr(456, y + 64, 484, 112, 'card', 10) + T(470, y + 86, 'WHERE IT CAN GO', { f: 9, w: 700, c: 'mu' }) +
+        T(470, y + 112, 'approve → Release · then the run ends', { f: 12, w: 600 }) + T(470, y + 136, 'change → Fix · fix pass 2, then Test pass 3', { f: 12, w: 600 }) +
+        btn(470, y + 146, 120, 'Change…') + btn(600, y + 146, 120, 'Approve', 1);
+    } else {
+      s += T(20, y + 30, 'Test', { f: 17, w: 700 }) + chip(66, y + 17, '2 passes', 'mu') + T(20, y + 50, 'tool · dotnet test · pass → Review · fail → Fix · max 3 passes', { f: 11, c: 'mu' });
+      var cols = [20, 90, 170, 250, 430, 620];
+      s += Rr(20, y + 64, 920, 112, 'card', 10);
+      ['PASS', 'STATE', 'TIME', 'RESULT', 'WENT TO', ''].forEach(function (c, i) { s += T(cols[i] + 14, y + 86, c, { f: 9, w: 700, c: 'mu' }); });
+      [[1, 'bad', 'failed', '3m', '41 passed · 2 failed', 'Fix (fail)'], [2, 'ok', 'passed', '3m', '43 passed', 'Review (pass)']].forEach(function (r, i) {
+        var yy = y + 112 + i * 30;
+        s += T(cols[0] + 14, yy, String(r[0]), { f: 12, w: 600 }) + icon(cols[1] + 18, yy - 4, r[1]) + T(cols[1] + 28, yy, r[2], { f: 12, c: r[1] }) + T(cols[2] + 14, yy, r[3], { f: 12 }) + T(cols[3] + 14, yy, r[4], { f: 12 }) + T(cols[4] + 14, yy, r[5], { f: 12 }) + T(cols[5] + 14, yy, 'Open log · Open session', { f: 12, st: 'fill:var(--sel)' });
+      });
+    }
+    return frame(W, H, head(W) + '<g>' + g + '</g>' + s, sel === 'now' ? 'Wide graph, the run now' : 'Wide graph, Test opened');
+  }
+
+  // ---- 6. Wide: timeline left, graph right ----
+  var UC = { spec: [0, 0.6], split: [0.9, 0.6], api: [1.8, -0.35], ui: [1.8, 0.6], docs: [1.8, 1.55], integ: [2.7, 0.6] };
+  function s6(sel) {
+    var W = 960, H = 600, LW = 360;
+    var t = timeline(LW, sel === 'test' ? 6 : -1, 66);
+    var s = '<g>' + t.svg + '</g>';
+    s += '<line x1="' + LW + '" y1="52" x2="' + LW + '" y2="' + H + '" stroke="var(--line)"/>';
+    var P = place(UC, LW + 44, 200, 84, 100);
+    var cx = LW + 44 + 4.6 * 84, cy = 200 + 0.6 * 100, R = 84;
+    function on(d) { var a = d * Math.PI / 180; return [cx + R * Math.cos(a), cy + R * Math.sin(a)]; }
+    P.test = on(185); P.review = on(355); P.fix = on(95); P.release = [cx + R - 4, cy - R - 30];
+    var g = graph(P, { dot: 11, sel: sel === 'test' ? 'test' : null, bend: { 'test>review': -0.42, 'review>fix': -0.42, 'fix>test': -0.42, 'test>fix': 0.1 } });
+    s += T(LW + 24, 82, 'GRAPH', { f: 9, w: 700, c: 'mu', st: 'letter-spacing:.08em' }) + g;
+    var y = 440;
+    if (sel === 'now') {
+      s += Rr(LW + 20, y, W - LW - 40, 130, 'nowbg', 12) + T(LW + 38, y + 28, 'Review', { f: 16, w: 700 }) + T(LW + 38, y + 46, 'human · you · waits 12m · input: Test pass 2, 43 passed', { f: 11, c: 'mu' }) +
+        T(LW + 38, y + 72, 'approve → Release, then the run ends', { f: 12, w: 600 }) + T(LW + 38, y + 92, 'change → Fix pass 2, then Test pass 3', { f: 12, w: 600 }) +
+        btn(W - 290, y + 88, 120, 'Change…') + btn(W - 160, y + 88, 120, 'Approve', 1);
+    } else {
+      s += Rr(LW + 20, y, W - LW - 40, 130, 'selbg', 12) + T(LW + 38, y + 28, 'Test · pass 1 of 2', { f: 16, w: 700 }) + T(LW + 38, y + 46, 'The graph marks the step. The timeline opens the pass.', { f: 11, c: 'mu' }) +
+        T(LW + 38, y + 72, 'Came from Integrate · went to Fix (fail)', { f: 12, w: 600 }) + T(LW + 38, y + 92, '41 passed · 2 failed · 3m', { f: 12, c: 'bad' }) + btn(W - 160, y + 88, 120, '◎ Back to now', 1);
+    }
+    return frame(W, H, head(W) + s, sel === 'now' ? 'Timeline and graph, the run now' : 'Timeline and graph, Test pass 1 opened');
+  }
+
+  // ---- Rows ----
+  var ROWS = [
+    { id: 'tl', name: 'Timeline, Git style', kind: 'panel', tag: 'side panel · vertical',
+      why: 'Each step run is one row, the oldest at the top, as in a Git log. The parallel tasks show as lanes that branch and join. A loop does not go back up: the fix is a short branch, and the next test pass is a new row. The ways out of the current step are at the bottom. Best for: what happened and what happens next. Weak for: the shape of the whole workflow.',
+      s: [['a', 'The run now', s1a], ['b', 'Tap: Test pass 1 opens in place', s1b]] },
+    { id: 'vg', name: 'Vertical graph and sheet', kind: 'panel', tag: 'side panel · vertical',
+      why: 'The workflow graph from the top down, with the run state on each node. A loop is an orange arc at the side. A sheet at the bottom shows the selected step and its ways out. Best for: the whole shape and the current step on one screen. Weak for: data, which stays in the sheet.',
+      s: [['a', 'The run now: Review is selected', s2a], ['b', 'Tap: Test, with its 2 passes', s2b]] },
+    { id: 'hp', name: 'Horizontal graph that pans', kind: 'panel', tag: 'side panel · horizontal',
+      why: 'The graph from left to right, larger than the panel. It opens at the current step, and you move it with a drag. A minimap shows the whole graph and the visible part. Below are the current step and the last steps. Best for: a long workflow in a narrow panel. Weak for: the whole shape at one look.',
+      s: [['a', 'The run now', function () { return s3('now'); }], ['b', 'Drag to the start: Split tasks opens', function () { return s3('start'); }]] },
+    { id: 'fo', name: 'Focus: now and next', kind: 'panel', tag: 'side panel · vertical',
+      why: 'The current step is in the center. The step before is above, and the ways out are below as large choices. A small graph at the top shows the whole workflow. A tap on a node there moves the focus to that node. Best for: a fast decision on a phone. Weak for: a run with many parallel steps.',
+      s: [['a', 'The run now', function () { return s4('now'); }], ['b', 'Tap Test in the small graph', function () { return s4('test'); }]] },
+    { id: 'wg', name: 'Wide graph with data cards', kind: 'wide', tag: 'full screen · horizontal',
+      why: 'On a wide screen, the full graph from left to right. Each node is a card with its executor, time and last result. The panel below shows the selected step: its input and its ways out, or the table of its passes. Best for: data and shape together. Weak for: a narrow panel.',
+      s: [['a', 'The run now', function () { return s5('now'); }], ['b', 'Tap: Test, with its passes', function () { return s5('test'); }]] },
+    { id: 'wt', name: 'Timeline and graph', kind: 'wide', tag: 'full screen · both',
+      why: 'The timeline on the left and the graph on the right, with the loop on a circle. A tap on a timeline row marks its step in the graph. A tap on a node opens its last pass in the timeline. Best for: history and shape side by side. Weak for: a narrow panel.',
+      s: [['a', 'The run now', function () { return s6('now'); }], ['b', 'Tap: Test pass 1 in the timeline', function () { return s6('test'); }]] }
+  ];
+
+  var one = new URLSearchParams(location.search).get('one');
+  if (one) {
+    var p = one.split('-'), r = ROWS.filter(function (x) { return x.id === p[0]; })[0], sk = r && r.s.filter(function (x) { return x[0] === p[1]; })[0];
+    if (sk) {
+      document.documentElement.classList.add('one');
+      document.body.innerHTML = '<div class="onebox">' + sk[2]() + '</div>';
+      document.body.firstChild.addEventListener('click', function () { parent.postMessage({ sk: 'close' }, '*'); });
+      return;
+    }
+  }
+
+  var rows = document.getElementById('rows');
+  ROWS.forEach(function (r, i) {
+    var d = document.createElement('details');
+    d.className = 'row';
+    if (i === 0) d.open = true;
+    d.innerHTML = '<summary><b>' + r.name + '</b><span>' + r.tag + ' · ' + r.s.length + ' sketches</span></summary><p class="why">' + r.why + '</p>' +
+      '<div class="grid ' + r.kind + '">' + r.s.map(function (s) {
+        return '<figure class="cell"><figcaption>' + s[1] + '</figcaption><div class="box" data-id="' + r.id + '-' + s[0] + '">' + s[2]() + '</div></figure>';
+      }).join('') + '</div>';
+    rows.appendChild(d);
+  });
+  rows.addEventListener('click', function (e) {
+    var b = e.target.closest('.box'); if (!b) return;
+    parent.postMessage({ sk: 'open', page: 'runs', id: b.dataset.id }, '*');
+  });
+})();
+</script>
