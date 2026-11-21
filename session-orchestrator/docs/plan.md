@@ -2633,3 +2633,10 @@ Findings:
 - Time order: phase `open` at 58.571, first press at 58.702, the grow motion ends at 59.131. Probable cause: the press comes in the grow motion. Not proved.
 - Data gaps: no log that the page got a click or which element got it; no check that a navigation press changed the page; no motion state at a press.
 - Decision of the user: no fix now. I19 is one symptom of 3 missing contracts (the page lifecycle with a "ready" signal, an input pipeline that confirms each click, one trace). It waits for the architecture review, which sets the next focus. The Tracing part of `docs/ui-architecture.html` records the current traces and their gaps.
+
+### Architecture page: part template and code review (2026-11-21)
+
+- The part tabs of `docs/ui-architecture.html` use one template (Template tab, skill `architecture-part`). The Motion tab is the example. Non-part tabs (Overview, Prior art, proposals) keep a free format.
+- 9 part tabs were rebuilt from a code review, then checked again by independent agents that read the code first. Each claim was checked in the code; wrong claims were dropped (for example, the tray live mode with no tick is a design decision, not a gap).
+- Ratings: Page moves and Motion Good; Data, Structure, Places, Start and stop, Interactions, Components and Style Mixed; Tracing Weak.
+- Defects found in the code (records only, not fixed): `Cards.razor:66` gives `FilterSheet` no `OnChange`; `BadgeRoot` sets `reported` before the measure, so a failed size report is not tried again.
