@@ -1,0 +1,82 @@
+@page "/motion"
+@inherits LabPage
+@inject IJSRuntime JS
+
+@* Each test renders a new element (@key), so its CSS motion starts again. Times are C# ms from the state change. *@
+<div class="page" data-test="page-motion">
+    <h1>Motion</h1>
+    <div class="row">
+        <button data-test="m-single" @onclick='() => Start("single")'>single</button>
+        <button data-test="m-stagger" @onclick='() => Start("stagger")'>stagger</button>
+        <button data-test="m-none" @onclick='() => Start("none")'>none</button>
+        <button data-test="m-cancel" @onclick='() => Start("cancel")'>cancel</button>
+        <button data-test="m-trans" @onclick='() => Start("trans")'>trans</button>
+    </div>
+    @if (test is not null)
+    {
+        <div @key="run" @ref="el" data-id="@test" class="lab @test @(on ? "on" : "")"
+             @onmotionend="End" @onmotioncancel="Cancel" @onmotiontransend="TransEnd" @onmotionsettled="Settled">
+            @if (test == "stagger")
+            {
+                <i data-id="c1"></i><i data-id="c2"></i><i data-id="c3"></i>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    protected override string PageName => "Motion";
+
+    string? test;
+    int run;
+    bool on, probe;
+    ElementReference el;
+    readonly System.Diagnostics.Stopwatch clock = new();
+
+    long T => clock.ElapsedMilliseconds;
+
+    async Task Start(string name)
+    {
+        test = name;
+        run++;
+        on = name != "trans";
+        probe = true;
+        clock.Restart();
+        if (name == "trans")
+        {
+            // A transition needs a first style: render without "on", then add it.
+            StateHasChanged();
+            await Task.Delay(50);
+            on = true;
+            clock.Restart();
+            probe = true;
+        }
+        if (name == "cancel")
+        {
+            StateHasChanged();
+            await Task.Delay(100);
+            on = false;
+            Trace.Add($"Motion: cancel removes the class at {T} ms");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (!probe) return;
+        probe = false;
+        var p = await JS.InvokeAsync<Probe>("lab.probe", el, "on");
+        Trace.Add($"Motion: OnAfterRender probe {test} hasClass={p.HasClass} animations={p.Animations} at {T} ms");
+        await JS.InvokeVoidAsync("lab.settleAndDispatch", el, 2000);
+        var r = await JS.InvokeAsync<Waited>("lab.wait", el, 2000);
+        Trace.Add($"Motion: interop wait {test} by {r.By} ({r.Ms} ms in JS) at {T} ms");
+    }
+
+    void End(MotionEventArgs e) => Trace.Add($"Motion: motionend {e.Target} {e.Name} at {T} ms");
+    void Cancel(MotionEventArgs e) => Trace.Add($"Motion: motioncancel {e.Target} {e.Name} at {T} ms");
+    void TransEnd(MotionEventArgs e) => Trace.Add($"Motion: motiontransend {e.Target} {e.Name} at {T} ms");
+    void Settled(MotionEventArgs e) => Trace.Add($"Motion: motionsettled {e.Target} by {e.Name} at {T} ms");
+
+    sealed record Probe(bool HasClass, int Animations, double At);
+    sealed record Waited(string By, int Ms);
+}

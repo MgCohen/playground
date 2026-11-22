@@ -1,0 +1,12 @@
+@page "/"
+@inherits LabPage
+@inject NavigationManager Nav
+
+<div class="page" data-test="page-home">
+    <h1>Home</h1>
+    <button data-test="go-guard-state" @onclick='() => Nav.NavigateTo("guard", new NavigationOptions { HistoryEntryState = "depth=1" })'>Open guard (state depth=1)</button>
+</div>
+
+@code {
+    protected override string PageName => "Home";
+}

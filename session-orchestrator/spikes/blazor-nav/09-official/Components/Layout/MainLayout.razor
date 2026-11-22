@@ -1,0 +1,61 @@
+@* The app frame. The layout handler stands for MotionHost: it awaits 200 ms in LocationChanging, as a view transition
+   start does. The root takes the official custom event tracedclick: one handler sees each click of the page. *@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Nav
+@inject Trace Trace
+
+<div class="frame" @ontracedclick="Clicked">
+    <div class="stage">@Body</div>
+    <TraceView />
+    <nav class="appbar four">
+        <NavLink href="" Match="NavLinkMatch.All" ActiveClass="on" data-test="tab-home">Home</NavLink>
+        <NavLink href="motion" ActiveClass="on" data-test="tab-motion">Motion</NavLink>
+        <NavLink href="guard" Match="NavLinkMatch.All" ActiveClass="on" data-test="tab-guard">Guard</NavLink>
+        <NavLink href="input" ActiveClass="on" data-test="tab-input">Input</NavLink>
+    </nav>
+</div>
+<pre data-test="full-trace" class="full">@string.Join("\n", Trace.Lines)</pre>
+
+@code {
+    IDisposable? changing;
+    public static int HandlerDelayMs = 200;
+
+    protected override void OnInitialized() => Trace.Changed += Refresh;
+
+    void Refresh() => _ = InvokeAsync(StateHasChanged);
+
+    void Clicked(TracedClickArgs e) => Trace.Add($"Layout: tracedclick {e.Test}");
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender) return;
+        changing = Nav.RegisterLocationChangingHandler(Changing);
+        Nav.LocationChanged += Changed;
+    }
+
+    async ValueTask Changing(LocationChangingContext c)
+    {
+        var to = Nav.ToBaseRelativePath(Nav.ToAbsoluteUri(c.TargetLocation).ToString());
+        Trace.Add($"Layout handler: start -> /{to} intercepted={c.IsNavigationIntercepted} state={c.HistoryEntryState ?? "null"} current={Nav.HistoryEntryState ?? "null"}");
+        try
+        {
+            await Task.Delay(HandlerDelayMs, c.CancellationToken);
+            Trace.Add($"Layout handler: end -> /{to}");
+        }
+        catch (OperationCanceledException)
+        {
+            Trace.Add($"Layout handler: canceled -> /{to}");
+        }
+    }
+
+    void Changed(object? sender, LocationChangedEventArgs e) =>
+        Trace.Add($"Nav: LocationChanged -> /{Nav.ToBaseRelativePath(e.Location)} intercepted={e.IsNavigationIntercepted} state={e.HistoryEntryState ?? "null"}");
+
+    public void Dispose()
+    {
+        changing?.Dispose();
+        Nav.LocationChanged -= Changed;
+        Trace.Changed -= Refresh;
+    }
+}

@@ -1,0 +1,41 @@
+@page "/guard"
+@inherits LabPage
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+@* The official leave guard: NavigationLock. With a note, each internal leave waits for the bar. *@
+<NavigationLock OnBeforeInternalNavigation="Leaving" />
+<div class="page" data-test="page-guard">
+    <h1>Guard</h1>
+    <input data-test="note" @bind="note" @bind:event="oninput" />
+    <button data-test="go-deep" @onclick='() => Nav.NavigateTo("guard/deep", new NavigationOptions { HistoryEntryState = "depth=2" })'>Open deep (state depth=2)</button>
+    @if (bar is not null)
+    {
+        <div data-test="guard">Leave? <button data-test="guard-stay" @onclick="() => bar.TrySetResult(false)">Stay</button>
+            <button data-test="guard-leave" @onclick="() => bar.TrySetResult(true)">Leave</button></div>
+    }
+</div>
+
+@code {
+    protected override string PageName => "Guard";
+
+    string note = "";
+    TaskCompletionSource<bool>? bar;
+
+    async Task Leaving(LocationChangingContext c)
+    {
+        var to = Nav.ToBaseRelativePath(Nav.ToAbsoluteUri(c.TargetLocation).ToString());
+        Trace.Add($"Guard: NavigationLock start -> /{to} intercepted={c.IsNavigationIntercepted} state={c.HistoryEntryState ?? "null"}");
+        if (note.Length == 0) return;
+        var mine = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        bar = mine;
+        using var reg = c.CancellationToken.Register(() => Trace.Add($"Guard: token canceled for /{to}"));
+        await InvokeAsync(StateHasChanged);
+        var leave = await mine.Task.WaitAsync(c.CancellationToken).ContinueWith(t => t.IsCompletedSuccessfully && t.Result);
+        // Only the newest wait owns the bar: an older, canceled wait must not hide the bar of a newer move.
+        if (bar == mine) bar = null;
+        await InvokeAsync(StateHasChanged);
+        Trace.Add($"Guard: decision {(leave ? "leave" : "stay")} for /{to}, canceled={c.CancellationToken.IsCancellationRequested}");
+        if (!leave) c.PreventNavigation();
+    }
+}

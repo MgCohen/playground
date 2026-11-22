@@ -1,0 +1,39 @@
+@page "/input"
+@inherits LabPage
+@inject Activity Activity
+
+<div class="page" data-test="page-input">
+    <h1>Input</h1>
+    <button data-test="i-plain" @onclick="Plain">plain click</button>
+    <div data-test="i-outer" class="outer" @onclick='() => Trace.Add("Input: outer onclick")'>
+        <button data-test="i-stop" @onclick="Stop" @onclick:stopPropagation="stop">stop=@stop</button>
+    </div>
+    <label><input type="checkbox" data-test="i-check" @onclick="Check" @onclick:preventDefault="block" /> block=@block</label>
+</div>
+
+@code {
+    protected override string PageName => "Input";
+
+    bool stop, block;
+    int last;
+
+    void Plain()
+    {
+        var now = Activity.Count;
+        Trace.Add($"Input: plain onclick, circuit activities {now - last} since the last click");
+        last = now;
+    }
+
+    // Each click flips the flag. The flag is part of the render, so it applies to the next click only.
+    void Stop()
+    {
+        Trace.Add($"Input: stop onclick, stop was {stop}");
+        stop = !stop;
+    }
+
+    void Check(MouseEventArgs e)
+    {
+        Trace.Add($"Input: check onclick, block was {block}");
+        block = true;
+    }
+}

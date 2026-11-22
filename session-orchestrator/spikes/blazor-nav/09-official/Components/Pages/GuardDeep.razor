@@ -1,0 +1,14 @@
+@page "/guard/deep"
+@inherits LabPage
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<div class="page" data-test="page-deep">
+    <h1>Deep</h1>
+    <div data-test="deep-state">state=@(Nav.HistoryEntryState ?? "null")</div>
+    <button data-test="back" @onclick='() => JS.InvokeVoidAsync("lab.back")'>Back (history.back)</button>
+</div>
+
+@code {
+    protected override string PageName => "Deep";
+}

@@ -1,0 +1,9 @@
+.row { display: flex; flex-wrap: wrap; gap: 6px; }
+.lab { height: 60px; background: #ffd2b8; border-radius: 8px; display: flex; gap: 8px; padding: 8px; }
+.single.on, .cancel.on { animation: slide 300ms ease-out; }
+.stagger.on i { display: block; width: 30px; background: #b34408; animation: slide 300ms ease-out both; }
+.stagger.on i:nth-child(2) { animation-delay: 100ms; }
+.stagger.on i:nth-child(3) { animation-delay: 200ms; }
+.trans { opacity: .3; transform: translateX(0); transition: opacity 300ms, transform 300ms; }
+.trans.on { opacity: 1; transform: translateX(20px); }
+@keyframes slide { from { transform: translateX(60px); opacity: 0; } to { transform: none; opacity: 1; } }

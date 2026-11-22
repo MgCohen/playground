@@ -621,3 +621,22 @@ Findings:
 - Blazor has no native `@onanimationend`. The official custom events (`[EventHandler]`, `registerCustomEventType`) were not checked when we made the motion waits. Our `getAnimations` + `finished` wait still fits the pipeline better: it gives a `Task`, and it ends at once when no animation runs (lesson I13).
 - .NET 11 throws when a custom event name is the same as its browser event name. MASA 1.11.9 registers `transitionend` with the same name.
 - Microsoft declines a page stack and keep-alive. Transitions (#10389) and nested routes (#11212) are in ".NET 12 Planning".
+
+### Official mechanisms, measured (spike 09, 2026-11-22)
+
+Spike `spikes/blazor-nav/09-official` measures the official parts that the first spikes did not test. The data is in its `RESULT.md`.
+
+| Mechanism | Measured | Fit for our pipeline |
+|---|---|---|
+| Custom event on `animationend`, `transitionend`, `animationcancel` | Same latency as the interop wait (344 ms against 344 ms). One event for each animation, child and property (3 for a stagger, 2 for two transitions). No event with no motion | Does not replace `MotionWait`. Possible for "tell this component" cases only |
+| Hybrid: our JS wait dispatches a DOM event, a custom event delivers it | Works, same time | No `Task`, no call id, no cancel. The interop wait stays |
+| `OnAfterRender` | 7 of 7 probes saw the class and all animations at the first call | The correct start point for a wait. Already used |
+| Several `RegisterLocationChangingHandler` and `NavigationLock` | They run at the same time. The motion handler ends 200 ms before the guard decides | Use one handler that runs our steps in order: guard, then motion |
+| Second move during a handler | The old token fires at once | Each step of a move takes the token |
+| `NavigationOptions.HistoryEntryState` | The handler gets the target state and the current state, also for the browser back and forward | Gives the push or back direction for moves from code. `NavLink` gives `null` |
+| Enhanced navigation events | 0 events in an interactive app | Not usable |
+| `@on...:preventDefault` and `:stopPropagation` | The flag of the last render applies, not the flag that the handler sets | Static rules only. A gesture that decides at event time stays in JS |
+| Custom event `tracedclick` on the layout root | Sees each click with its `data-test`, also when `stopPropagation` stops `onclick` | An official base for the input trace (Tracing T-G2) |
+| `IHandleEvent` on a page base | Sees each event and its argument type, not the element | A trace of page handlers |
+| `CircuitHandler.CreateInboundActivityHandler` | 4 activities for each click, with no kind | Timing only |
+
