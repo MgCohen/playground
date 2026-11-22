@@ -648,6 +648,27 @@ setTimeout(() =&gt; finish(&quot;limit&quot;), limit());              // a time 
       <tr><td>Many animations in one block</td><td>One event for each; we must count them</td><td>One wait for all</td></tr>
       <tr><td>Hidden page</td><td>No event</td><td>Stops at once</td></tr>
       <tr><td>Cost on Blazor Server</td><td>One SignalR message for each event</td><td>One call for each wait</td></tr>
+      <tr><td>Latency (spike 09, 300 ms animation)</td><td>344, 348, 349 ms</td><td>344, 347, 348 ms</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Measured in spike 09 (2026-11-22)</h2>
+  <p class="sum">Spike <code>spikes/blazor-nav/09-official</code> measures each official mechanism in one run of headless Chromium. All times are C# ms from the state change. The full data is in its <code>RESULT.md</code>.</p>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Mechanism</th><th>Measured</th><th>Fit for our pipeline</th></tr></thead>
+    <tbody>
+      <tr><td>Custom event on <code>animationend</code>, <code>transitionend</code>, <code>animationcancel</code></td><td>Same latency as our wait. 3 events for a stagger of 3 children (347, 430, 548 ms), 2 for two transitions. No event with no motion</td><td><span class="cv n">no</span>Cannot replace <code>MotionWait</code>: C# cannot know the count</td></tr>
+      <tr><td>Hybrid: our JS wait dispatches a DOM event, a custom event delivers it</td><td>Works, same time as the wait</td><td><span class="cv p">part</span>No <code>Task</code>, no call id, no cancel</td></tr>
+      <tr><td><code>OnAfterRender</code></td><td>7 of 7 probes saw the class and all animations at the first call</td><td><span class="cv y">yes</span>The start point of a wait (used now)</td></tr>
+      <tr><td>Several <code>RegisterLocationChangingHandler</code> and <code>NavigationLock</code></td><td>They run at the same time. The motion handler ends 200 ms before the guard decides</td><td><span class="cv p">part</span>Use one handler that runs our steps in order</td></tr>
+      <tr><td>A second move during a handler</td><td>The old token fires at once. The old <code>PreventNavigation</code> has no effect</td><td><span class="cv y">yes</span>Each step takes the token</td></tr>
+      <tr><td><code>NavigationOptions.HistoryEntryState</code></td><td>The handler gets the target state and the current state, also for the browser back and forward. <code>NavLink</code> gives <code>null</code></td><td><span class="cv y">yes</span>The direction of a move from code, with no list of visited URLs</td></tr>
+      <tr><td><code>PreventNavigation</code> on the browser back</td><td>The URL stays, <code>history.length</code> does not change</td><td><span class="cv y">yes</span></td></tr>
+      <tr><td>Enhanced navigation events</td><td>0 events after 12 moves in an interactive app</td><td><span class="cv n">no</span>Static SSR only</td></tr>
+      <tr><td><code>@on...:preventDefault</code>, <code>:stopPropagation</code></td><td>The flag of the last render applies, not the flag that the handler sets</td><td><span class="cv p">part</span>Static rules only. A gesture stays in JS</td></tr>
+      <tr><td>Custom event <code>tracedclick</code> on the layout root</td><td>Sees each click with its <code>data-test</code>, also when <code>stopPropagation</code> stops <code>onclick</code></td><td><span class="cv y">yes</span>A base for the input trace (Tracing T-G2)</td></tr>
+      <tr><td><code>IHandleEvent</code> on a page base</td><td>Sees each event and its argument type, also the <code>NavigationLock</code> callback. Not the element</td><td><span class="cv p">part</span>A trace of page handlers</td></tr>
+      <tr><td><code>CircuitHandler.CreateInboundActivityHandler</code></td><td>4 activities for each click, with no kind</td><td><span class="cv p">part</span>Timing only</td></tr>
     </tbody>
   </table></div>
 
