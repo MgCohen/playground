@@ -1,0 +1,8 @@
+@* ReuseTabs reads the route data from a cascading value (the documented way for ReuseTabsPageAttribute and IReuseTabsPage). *@
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <CascadingValue Value="routeData">
+            <RouteView RouteData="routeData" DefaultLayout="typeof(Spike.AntDesign.Components.Layout.MainLayout)" />
+        </CascadingValue>
+    </Found>
+</Router>

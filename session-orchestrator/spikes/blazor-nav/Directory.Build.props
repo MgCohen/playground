@@ -1,0 +1,13 @@
+<Project>
+  <!-- The spikes do not import the build settings of the repository: package warnings must not stop a spike build. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- The spikes keep their package versions in their own project file, not in the Directory.Packages.props of the repository. -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <!-- A run from the repository root: start the app in its own folder, so the static files have the right content root. -->
+    <RunWorkingDirectory>$(MSBuildProjectDirectory)</RunWorkingDirectory>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,37 @@
+@page "/"
+@inherits TracedPage
+@implements IDisposable
+@inject PageStackNavController NavController
+@inject CounterState State
+
+<div class="page" data-test="page-home">
+    <h1>Home</h1>
+    <button class="primary" data-test="add" @onclick="State.Increment">Add one</button>
+    <button data-test="go-counter" @onclick="Open">Open counter</button>
+</div>
+
+@code {
+    protected override string PageName => "Home";
+
+    // Home is a tab, not a stack page: OnPageActivated(state) does not run here. The back result comes with the StackPop event.
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        NavController.StackPop += Popped;
+    }
+
+    void Popped(object? sender, PageStackPopEventArgs e) =>
+        Trace.Add($"Home: back result {e.State?.GetType().Name ?? "null"} \"{e.State}\"");
+
+    void Open()
+    {
+        Trace.Add("Home: Push(/counter/stack)");
+        NavController.Push("/counter/stack");
+    }
+
+    public override void Dispose()
+    {
+        NavController.StackPop -= Popped;
+        base.Dispose();
+    }
+}

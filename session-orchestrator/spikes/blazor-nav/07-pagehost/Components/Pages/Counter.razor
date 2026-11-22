@@ -1,0 +1,50 @@
+@page "/counter"
+@inherits TracedPage
+@implements INavPage
+
+@inject Navigator Navigator
+@inject CounterState State
+
+<div class="page" data-test="page-counter">
+    <h1>Counter <button data-test="back" @onclick="Navigator.BackAsync">Back</button></h1>
+    <div class="count" data-test="count">@State.Count</div>
+    <label>Note: <input data-test="note" @bind="note" @bind:event="oninput" /></label>
+    @if (guard is not null)
+    {
+        <div data-test="guard">
+            Leave and keep the note?
+            <button data-test="guard-stay" @onclick="() => guard.TrySetResult(false)">Stay</button>
+            <button data-test="guard-leave" @onclick="() => guard.TrySetResult(true)">Leave</button>
+        </div>
+    }
+</div>
+
+@code {
+    string note = "";
+    TaskCompletionSource<bool>? guard;
+
+    protected override string PageName => "Counter";
+
+    // A kept page does not render again by itself. It follows the shared state, so it is current when it shows (F4).
+    protected override void OnInitialized() { base.OnInitialized(); State.Changed += Refresh; }
+    void Refresh() => InvokeAsync(StateHasChanged);
+    public override void Dispose() { State.Changed -= Refresh; base.Dispose(); }
+
+    public Task OnEnterAsync(NavContext c) { Trace.Add($"Counter: OnEnterAsync {c.Kind}"); return Task.CompletedTask; }
+
+    // The leave guard (F7): if the note is not empty, show the bar and wait for the user choice.
+    public async Task<bool> OnLeaveAsync(NavContext c)
+    {
+        Trace.Add($"Counter: OnLeaveAsync {c.Kind}");
+        if (note == "") return true;
+        guard = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        // A second navigation cancels this one: then the bar closes as "stay".
+        using var cancel = c.Cancel.Register(() => guard?.TrySetResult(false));
+        await InvokeAsync(StateHasChanged);
+        var leave = await guard.Task;
+        guard = null;
+        await InvokeAsync(StateHasChanged);
+        Trace.Add($"Counter: guard {(leave ? "leave" : "stay")}");
+        return leave;
+    }
+}

@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\NavSpike.Shared.csproj" />
+    <PackageReference Include="Bit.Brouter" VersionOverride="10.7.0" />
+  </ItemGroup>
+</Project>

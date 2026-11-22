@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\NavSpike.Shared.csproj" />
+    <!-- VersionOverride: the spike does not change the central Directory.Packages.props. -->
+    <PackageReference Include="AntDesign" VersionOverride="1.6.2" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,32 @@
+@page "/counter"
+@attribute [ReuseTabsPage(Title = "Counter", Closable = false, KeepAlive = true)]
+@inherits TracedPage
+@implements IReuseTabsPage
+@inject CounterState State
+@inject IJSRuntime JS
+
+<div class="page" data-test="page-counter">
+    <h1>Counter <button data-test="back" @onclick="Back">Back</button></h1>
+    <div class="count" data-test="count">@State.Count</div>
+    <label>Note: <input data-test="note" @bind="note" /></label>
+</div>
+
+@code {
+    string note = "";
+
+    protected override string PageName => "Counter";
+
+    // ReuseTabs calls this once, when it captures the page reference.
+    public RenderFragment GetPageTitle()
+    {
+        Trace.Add("Counter: IReuseTabsPage.GetPageTitle");
+        return @<span>Counter</span>;
+    }
+
+    // ReuseTabs has no back method: the browser history does the back.
+    async Task Back()
+    {
+        Trace.Add("Counter: history.back()");
+        await JS.InvokeVoidAsync("history.back");
+    }
+}

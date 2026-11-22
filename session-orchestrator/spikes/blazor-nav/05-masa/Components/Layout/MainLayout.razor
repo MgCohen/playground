@@ -1,0 +1,59 @@
+@* MASA page stack: Home and Counter are tabs (kept in the DOM). A push opens Counter as a stack page (a fullscreen MDialog) on top.
+   MApp is inside the stage, and the stage transform keeps the fixed dialog inside the stage. *@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject PageStackNavController NavController
+@inject Trace Trace
+
+<div class="frame">
+    <div class="stage" style="transform: translateZ(0)">
+        <MApp>
+            <PPageStack TabRules="tabRules" AppBarAlwaysVisible="false">@Body</PPageStack>
+        </MApp>
+    </div>
+    <TraceView />
+    <nav class="appbar">
+        <PPageStackTab Href="/" TabRule="HomeTab">
+            <a @attributes="context.Attrs" class="@(tab == "/" ? "on" : null)" data-test="tab-home">Home</a>
+        </PPageStackTab>
+        <PPageStackTab Href="/counter" TabRule="CounterTab">
+            <a @attributes="context.Attrs" class="@(tab == "/counter" ? "on" : null)" data-test="tab-counter">Counter</a>
+        </PPageStackTab>
+    </nav>
+</div>
+
+@code {
+    static readonly TabRule HomeTab = new("^/$");
+    static readonly TabRule CounterTab = new("^/counter$");
+    readonly HashSet<TabRule> tabRules = [HomeTab, CounterTab];
+    string tab = "/";
+
+    protected override void OnInitialized()
+    {
+        NavController.StackPush += Pushed;
+        NavController.StackPop += Popped;
+        NavController.PageClosed += Closed;
+        NavController.TabChanged += TabChanged;
+    }
+
+    void Pushed(object? sender, PageStackPushEventArgs e) => Trace.Add($"Nav: StackPush -> {e.RelativeUri}");
+
+    void Popped(object? sender, PageStackPopEventArgs e) => Trace.Add($"Nav: StackPop delta={e.Delta} state={e.State ?? "null"}");
+
+    void Closed(object? sender, PageStackPageClosedEventArgs e) => Trace.Add($"Nav: PageClosed {e.RelativeUri}");
+
+    void TabChanged(object? sender, PageStackTabChangedEventArgs e)
+    {
+        tab = e.CurrentTab;
+        Trace.Add($"Nav: TabChanged -> {e.CurrentTab}");
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavController.StackPush -= Pushed;
+        NavController.StackPop -= Popped;
+        NavController.PageClosed -= Closed;
+        NavController.TabChanged -= TabChanged;
+    }
+}

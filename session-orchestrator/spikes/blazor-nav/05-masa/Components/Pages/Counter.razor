@@ -1,0 +1,55 @@
+@page "/counter"
+@page "/counter/stack"
+@inherits PStackPageBase
+@inject PageStackNavController NavController
+@inject NavigationManager Nav
+@inject CounterState State
+@inject Trace Trace
+
+<div class="page" data-test="page-counter">
+    <h1>Counter <button data-test="back" @onclick="Back">Back</button></h1>
+    <div class="count" data-test="count">@State.Count</div>
+    <label>Note: <input data-test="note" @bind="note" /></label>
+</div>
+
+@code {
+    // PStackPageBase and TracedPage are both base classes: this page logs the TracedPage lines itself.
+    string note = "";
+    bool stacked;
+
+    protected override void OnInitialized() => Trace.Add("Counter: OnInitialized");
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender) Trace.Add("Counter: OnAfterRender(first)");
+    }
+
+    protected override void OnPageActivated(object? state)
+    {
+        stacked = true;
+        Trace.Add($"Counter: OnPageActivated(state={state ?? "null"})");
+    }
+
+    protected override void OnPageDeactivated() => Trace.Add("Counter: OnPageDeactivated");
+
+    protected override ValueTask DisposeAsyncCore()
+    {
+        Trace.Add("Counter: Dispose");
+        return ValueTask.CompletedTask;
+    }
+
+    void Back()
+    {
+        // A stack page goes back with GoBack and sends the note as the back result. The Counter tab has no stack: it goes to the Home tab.
+        if (stacked)
+        {
+            Trace.Add($"Counter: GoBack(1, \"{note}\")");
+            NavController.GoBack(1, note);
+        }
+        else
+        {
+            Trace.Add("Counter: not in the stack, Replace(/)");
+            Nav.NavigateTo("/", replace: true);
+        }
+    }
+}

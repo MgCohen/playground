@@ -1,0 +1,86 @@
+@* The app root instead of the Blazor Router (the Oqtane SiteRouter model).
+   It keeps one live instance of each visited page, shows the active page and plays the motion. *@
+@implements INavHost
+@inject Navigator Navigator
+@inject INavigationInterception Interception
+@inject Trace Trace
+
+<div class="frame">
+    <CascadingValue Value="Navigator.State">
+        <div class="stage">
+            @foreach (var page in alive)
+            {
+                <div @key="page" class="slot @MotionOf(page)" hidden="@(!Visible(page))">
+                    <DynamicComponent Type="page" @ref="refs[page]" />
+                </div>
+            }
+            @if (Navigator.State.Page is null)
+            {
+                <div class="page" data-test="not-found"><h1>Not found</h1>@Navigator.State.Path</div>
+            }
+            @foreach (var entry in Navigator.Stack)
+            {
+                <div @key="entry" class="slot @MotionOf(entry)">
+                    <DynamicComponent Type="entry.Page" Parameters="entry.Parameters" @ref="refs[entry]" />
+                </div>
+            }
+        </div>
+    </CascadingValue>
+    <TraceView />
+    <nav class="appbar">
+        <a href="@(Navigator.UrlOf<Home>())" class="@On(typeof(Home))" data-test="tab-home">Home</a>
+        <a href="@(Navigator.UrlOf<Counter>())" class="@On(typeof(Counter))" data-test="tab-counter">Counter</a>
+    </nav>
+</div>
+
+@code {
+    readonly List<Type> alive = [];                          // The kept pages, in the order of the first visit.
+    readonly Dictionary<object, DynamicComponent> refs = []; // Slot -> rendered component.
+    object? shown, leaving;
+    Move? motion;
+
+    protected override void OnInitialized()
+    {
+        Navigator.Start(this);
+        Keep();
+        shown = Navigator.ActiveSlot;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        // Like the Router: <a href> clicks stay in the app and come as LocationChanged.
+        await Interception.EnableNavigationInterceptionAsync();
+        Navigator.Attach();
+        Trace.Add("SiteHost: EnableNavigationInterceptionAsync");
+    }
+
+    public INavPage? Instance(object? slot) =>
+        slot is not null && refs.TryGetValue(slot, out var component) ? component.Instance as INavPage : null;
+
+    public async Task PlayAsync(Move move)
+    {
+        Keep();
+        leaving = shown;
+        shown = Navigator.ActiveSlot;
+        motion = move;
+        Trace.Add($"SiteHost: play {move.ToString().ToLowerInvariant()}");
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(300);
+        leaving = null;
+        motion = null;
+        foreach (var gone in refs.Keys.OfType<PushEntry>().Where(e => !Navigator.Stack.Contains(e)).ToList()) refs.Remove(gone);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void Keep()
+    {
+        if (Navigator.State.Page is { } page && !alive.Contains(page)) alive.Add(page);
+    }
+
+    bool Visible(Type page) => page == Navigator.State.Page || page.Equals(leaving);
+
+    string MotionOf(object slot) => motion is { } m && slot.Equals(shown) ? m.ToString().ToLowerInvariant() : "";
+
+    string On(Type page) => Navigator.State.Page == page ? "on" : "";
+}

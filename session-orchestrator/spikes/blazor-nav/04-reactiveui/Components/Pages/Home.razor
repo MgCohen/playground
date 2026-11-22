@@ -1,0 +1,23 @@
+@inherits ReactiveComponentBase<HomeViewModel>
+@inject Trace Trace
+
+<div class="page" data-test="page-home">
+    <h1>Home</h1>
+    <button class="primary" data-test="add" @onclick="() => ViewModel!.Add()">Add one</button>
+    <button data-test="go-counter" @onclick="Open">Open counter</button>
+</div>
+
+@code {
+    // ReactiveComponentBase replaces TracedPage: log the same three Blazor hooks here.
+    protected override void OnInitialized() { Trace.Add("Home: OnInitialized"); base.OnInitialized(); }
+
+    protected override void OnAfterRender(bool firstRender) { if (firstRender) Trace.Add("Home: OnAfterRender(first)"); base.OnAfterRender(firstRender); }
+
+    protected override void Dispose(bool disposing) { Trace.Add("Home: Dispose"); base.Dispose(disposing); }
+
+    void Open()
+    {
+        Trace.Add("Home: Router.Navigate(counter)");
+        ViewModel!.Screen.Router.Navigate.Execute(ViewModel.Screen.Counter).Subscribe();
+    }
+}

@@ -1,0 +1,1249 @@
+<title>Motion Controller Prior Art</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column of 980 px max; a sticky tab bar that scrolls to the side; each tab is one panel. Porcelain Orange theme of the tray. */
+:root {
+  --canvas: #e6e3de; --surf: #fdfdfc; --sunk: #f1efeb; --ink: #23201c; --muted: #6b655d; --line: #d3cec6;
+  --accent: #ff6a1a; --accent-ink: #b34408; --ok: #2f7d4f; --warn: #a86a00; --bad: #b3362b;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif; --f-mono: "JetBrains Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --canvas: #1c1a18; --surf: #262320; --sunk: #201e1b; --ink: #ece7e0; --muted: #a39c92; --line: #3a3631;
+  --accent: #ff7a33; --accent-ink: #ffa36e; --ok: #6cc28f; --warn: #e0a640; --bad: #ef7a6e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --canvas: #1c1a18; --surf: #262320; --sunk: #201e1b; --ink: #ece7e0; --muted: #a39c92; --line: #3a3631;
+  --accent: #ff7a33; --accent-ink: #ffa36e; --ok: #6cc28f; --warn: #e0a640; --bad: #ef7a6e; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--canvas); color: var(--ink); font: 15px/1.55 var(--f-body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--canvas); }
+.wrap { max-width: 980px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 60px; }
+header .eyebrow { font: 600 12px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent-ink); }
+h1 { font-size: 30px; line-height: 1.15; margin: 6px 0 8px; text-wrap: balance; font-weight: 700; }
+h2 { font-size: 20px; margin: 28px 0 10px; text-wrap: balance; scroll-margin-top: 70px; }
+h3 { font-size: 16px; margin: 18px 0 6px; }
+p { margin: 8px 0; max-width: 68ch; }
+.sum { color: var(--muted); max-width: 72ch; }
+code, .mono { font-family: var(--f-mono); font-size: .88em; }
+:not(pre) > code { background: var(--sunk); border: 1px solid var(--line); border-radius: 5px; padding: 0 4px; overflow-wrap: anywhere; }
+a { color: var(--accent-ink); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--canvas); display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity;
+  padding: 10px 0; margin-top: 14px; border-bottom: 1px solid var(--line); scrollbar-width: thin; }
+.tabs button { flex: none; scroll-snap-align: start; font: 600 14px var(--f-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 999px; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
+.tabs button:hover { color: var(--ink); border-color: var(--line); }
+.tabs button[aria-selected="true"] { color: var(--surf); background: var(--ink); }
+.tabs button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel[hidden] { display: none; }
+.tbl { overflow-x: auto; margin: 10px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surf); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { font: 600 12px var(--f-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--sunk); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; }
+.wide table { min-width: 760px; }
+/* Coverage chips. */
+.cv { display: inline-block; font: 600 11px var(--f-mono); padding: 0 6px; border-radius: 4px; margin-right: 4px; white-space: nowrap; vertical-align: 1px; }
+.cv.y { background: var(--accent); color: #23201c; }
+.cv.p { border: 1px solid var(--accent); color: var(--accent-ink); }
+.cv.n { border: 1px solid var(--line); color: var(--muted); }
+.cv.ns { border: 1px dashed var(--bad); color: var(--bad); }
+.desc { display: block; font-weight: 400; font-size: 12.5px; line-height: 1.4; color: var(--muted); margin-top: 3px; max-width: 34ch; }
+td a { text-underline-offset: 2px; }
+a.cv { text-decoration: none; cursor: pointer; }
+a.cv.y:hover { background: var(--accent-ink); color: var(--surf); }
+a.cv.p:hover, a.cv.n:hover { background: var(--sunk); border-color: var(--accent-ink); }
+a.cv:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fig a { cursor: pointer; }
+.fig a:hover rect, .fig a:focus-visible rect { stroke: var(--ink); stroke-width: 2.4; }
+.fig a:focus { outline: none; }
+td a code { color: inherit; }
+.chip { display: inline-block; font: 600 11.5px var(--f-mono); padding: 1px 7px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent-ink); white-space: nowrap; }
+.chip.out { border-color: var(--line); color: var(--muted); }
+/* Diagrams. */
+.fig { overflow-x: auto; background: var(--surf); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin: 10px 0; }
+.fig svg { display: block; width: 100%; height: auto; }
+.fig.layers svg { min-width: 700px; }
+.fig.stations svg { min-width: 760px; }
+.fig .t { fill: var(--ink); font: 600 13px var(--f-body); }
+.fig .s { fill: var(--muted); font: 11.5px var(--f-mono); }
+.fig .h { fill: var(--ink); font: 600 11.5px var(--f-body); }
+.fig .lb { fill: var(--accent-ink); font: 600 11px var(--f-mono); }
+.fig .row { fill: var(--sunk); }
+.fig .full { fill: var(--accent); }
+.fig .part { fill: url(#hatch); stroke: var(--accent); stroke-width: 1.4; }
+.fig .hl { stroke: var(--accent); stroke-width: 1.6; }
+.fig .ours { fill: none; stroke: var(--accent-ink); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.fig .box { fill: var(--sunk); stroke: var(--line); stroke-width: 1.2; }
+.fig .box.key { fill: var(--surf); stroke: var(--accent); stroke-width: 1.6; }
+.fig .box.out { fill: none; stroke: var(--muted); stroke-dasharray: 5 4; }
+.fig .ln { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.fig .ah { fill: var(--muted); }
+.figt { font: 600 13px var(--f-mono); color: var(--muted); margin: 18px 0 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 18px; height: 12px; border-radius: 3px; display: inline-block; }
+.sw.y { background: var(--accent); }
+.sw.p { border: 1.4px solid var(--accent); background: repeating-linear-gradient(135deg, var(--accent) 0 1.5px, transparent 1.5px 5px); }
+.sw.n { border: 1px solid var(--line); background: var(--sunk); }
+.sw.o { border: 1.4px dashed var(--accent-ink); }
+.note { border-left: 3px solid var(--accent); background: var(--surf); padding: 10px 14px; border-radius: 0 10px 10px 0; margin: 12px 0; max-width: 72ch; }
+.note p { margin: 4px 0; }
+.answer { background: var(--surf); border: 1px solid var(--accent); border-radius: 12px; padding: 14px 16px; margin: 14px 0; max-width: 76ch; }
+.answer p { margin: 4px 0; }
+.answer b { color: var(--accent-ink); }
+ol, ul { padding-left: 22px; }
+li { margin: 3px 0; max-width: 70ch; }
+.src { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin: 10px 0; }
+.src section { background: var(--surf); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.src h3 { margin: 0 0 4px; font-size: 14px; }
+.src ul { margin: 0; padding-left: 18px; font-size: 13px; }
+.src a { overflow-wrap: anywhere; }
+pre { background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; overflow-x: auto; font: 12.5px/1.5 var(--f-mono); margin: 6px 0; }
+pre code { background: none; border: 0; padding: 0; }
+td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* The two pages of the test app. */
+.wire { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0; }
+.phone { width: 190px; border: 1.5px solid var(--line); border-radius: 14px; background: var(--surf); display: grid; grid-template-rows: auto 1fr auto auto; height: 230px; overflow: hidden; font-size: 12.5px; }
+.ph-h { padding: 8px 10px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.ph-b { padding: 4px 10px; display: grid; align-content: start; gap: 6px; }
+.ph-t { background: var(--ink); color: var(--surf); font: 10px var(--f-mono); padding: 6px 10px; height: 46px; }
+.ph-n { display: grid; grid-template-columns: 1fr 1fr; text-align: center; border-top: 1px solid var(--line); padding: 6px 0; color: var(--muted); }
+.ph-n b { color: var(--accent-ink); }
+.btn { border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; background: var(--sunk); text-align: center; }
+.btn.pri { background: var(--accent); border-color: var(--accent); color: #23201c; }
+.btn.sm { font-size: 11px; padding: 1px 6px; font-weight: 400; }
+.big { font: 700 28px var(--f-mono); }
+.inp { border: 1px solid var(--line); border-radius: 5px; padding: 2px 6px; color: var(--muted); }
+/* Hook order strips. */
+.flow { display: flex; flex-wrap: wrap; gap: 4px 0; align-items: center; margin: 2px 0 4px; }
+.flow .st { font: 12px var(--f-mono); background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; }
+.flow .st.key { border-color: var(--accent); color: var(--accent-ink); }
+.flow .st:not(:last-child) { margin-right: 18px; position: relative; }
+.flow .st:not(:last-child)::after { content: "→"; color: var(--muted); position: absolute; right: -15px; }
+/* Scope scale. */
+.scale { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 8px 0 12px; }
+.sc { background: var(--surf); border: 1px solid var(--line); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sc:nth-child(1), .sc:nth-child(2) { border-top: 4px solid var(--ok); }
+.sc:nth-child(3) { border-top: 4px solid var(--warn); }
+.sc:nth-child(4) { border-top: 4px solid var(--bad); }
+.sc-h { font: 600 12px var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.lib { font-size: 13.5px; font-weight: 600; }
+.lib.key { color: var(--accent-ink); }
+@media (max-width: 560px) { .scale { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+/* Spike foldables. */
+.tools { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.tools button { font: 600 13px var(--f-body); background: var(--surf); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.tools button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+details.lib { background: var(--surf); border: 1px solid var(--line); border-radius: 12px; margin: 8px 0; }
+details.lib > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+details.lib > summary::-webkit-details-marker { display: none; }
+details.lib > summary::before { content: "+"; font: 700 15px var(--f-mono); color: var(--muted); width: 14px; }
+details.lib[open] > summary::before { content: "−"; }
+details.lib .sid { font: 700 14px var(--f-mono); color: var(--accent-ink); }
+details.lib .stt { font-weight: 600; flex: 1 1 220px; min-width: 0; }
+.sb { padding: 12px 14px 14px; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 14px; border-top: 1px solid var(--line); margin: 0; }
+.sb > dt { font: 600 12px var(--f-mono); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding-top: 2px; }
+.sb > dd { margin: 0; min-width: 0; }
+.sb ul { margin: 0; padding-left: 18px; }
+.sb p { margin: 4px 0 0; }
+.cmp td { vertical-align: top; min-width: 220px; }
+.cmp td:first-child { min-width: 110px; font-weight: 600; }
+.cmp pre { margin: 0; font-size: 11.5px; }
+.cmp-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 8px 0; }
+.cmp-2 > div { min-width: 0; }
+@media (max-width: 700px) { .cmp-2 { grid-template-columns: minmax(0, 1fr); } }
+.cmp td p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+@media (max-width: 560px) { .sb { grid-template-columns: minmax(0, 1fr); } .sb > dt { padding-top: 6px; } }
+@media (prefers-reduced-motion: no-preference) { .tabs button { transition: background-color .15s, border-color .15s, color .15s; } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · prior art for R1 · research of 2026-11-21</div>
+  <h1>Do design systems give a motion controller?</h1>
+  <p class="sum">No. Design systems give components, tokens and motion guidance. Only Ionic on the web and the native SDKs give a motion controller, a navigation controller and a page model. Blazor has no native layer for it. A small layer of our own over the default <code>Router</code> (spike 07) gives the navigation part, and R1 drives the motion from its hooks.</p>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Page parts">
+  <button role="tab" id="t-answer" aria-controls="answer" aria-selected="true">Answer</button>
+  <button role="tab" id="t-comparison" aria-controls="comparison" aria-selected="false">Comparison</button>
+  <button role="tab" id="t-copy" aria-controls="copy" aria-selected="false">What to copy</button>
+  <button role="tab" id="t-dotnet" aria-controls="dotnet" aria-selected="false">.NET and Blazor</button>
+  <button role="tab" id="t-microsoft" aria-controls="microsoft" aria-selected="false">Microsoft</button>
+  <button role="tab" id="t-spikes" aria-controls="spikes" aria-selected="false">Spikes</button>
+  <button role="tab" id="t-context" aria-controls="context" aria-selected="false">Context</button>
+  <button role="tab" id="t-sources" aria-controls="sources" aria-selected="false">Sources</button>
+</nav>
+
+<!-- ANSWER -->
+<section class="panel" id="answer" role="tabpanel" aria-labelledby="t-answer">
+  <div class="answer">
+    <p><b>Design systems stop at components and tokens.</b> At most, they give one element-level animation component.</p>
+    <p><b>The controller layer is in frameworks and native SDKs:</b> Ionic on the web, and UIKit, Jetpack and Flutter on native platforms.</p>
+    <p><b>Blazor has no native controller layer.</b> The best shape is our own: the default <code>Router</code>, our <code>PageHost</code> in place of <code>RouteView</code>, and one <code>Navigator</code> service (spike 07). It passes all seven flows with no package. Bit.Brouter is the best library (Spikes tab).</p>
+  </div>
+
+  <p class="figt">Only Ionic, the native mobile SDKs and .NET MAUI cover all five layers</p>
+  <div class="fig layers" data-label="Layer coverage of each library family. Design systems cover tokens and components. Motion libraries cover motion orchestration. Ionic, native mobile SDKs and .NET MAUI cover all layers. Blazor libraries cover tokens and components, and parts of the other layers. R1 covers motion tokens and motion orchestration.">
+    <svg viewBox="0 0 830 330" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="6" height="6" fill="none"/>
+          <line x1="0" y1="0" x2="0" y2="6" class="hl"/>
+        </pattern>
+      </defs>
+      <!-- Column heads: x = 190 + 70*i, center +35 -->
+      <g text-anchor="middle">
+        <text class="h" x="225" y="22">Design</text><text class="h" x="225" y="38">systems</text>
+        <text class="h" x="295" y="22">Motion</text><text class="h" x="295" y="38">libraries</text>
+        <text class="h" x="365" y="22">Browser</text><text class="h" x="365" y="38">APIs</text>
+        <text class="h" x="435" y="30">Ionic</text>
+        <text class="h" x="505" y="22">Native</text><text class="h" x="505" y="38">mobile</text>
+        <text class="h" x="575" y="22">.NET</text><text class="h" x="575" y="38">MAUI, WPF</text>
+        <text class="h" x="645" y="22">Blazor</text><text class="h" x="645" y="38">libraries</text>
+        <text class="h" x="715" y="22">Agent</text><text class="h" x="715" y="38">UI</text>
+        <text class="lb" x="785" y="22">R1</text><text class="lb" x="785" y="38">(plan)</text>
+      </g>
+      <!-- Layer rows, top to bottom -->
+      <g>
+        <rect class="row" x="0" y="52" width="830" height="46" rx="8"/>
+        <rect class="row" x="0" y="104" width="830" height="46" rx="8"/>
+        <rect class="row" x="0" y="156" width="830" height="46" rx="8"/>
+        <rect class="row" x="0" y="208" width="830" height="46" rx="8"/>
+        <rect class="row" x="0" y="260" width="830" height="46" rx="8"/>
+        <text class="t" x="12" y="80">Page structure</text>
+        <text class="t" x="12" y="132">Navigation control</text>
+        <text class="t" x="12" y="184">Motion orchestration</text>
+        <text class="t" x="12" y="236">Components</text>
+        <text class="t" x="12" y="288">Tokens</text>
+      </g>
+      <!-- Cells: w 54, h 32; x = 198 + 70*i; y = row + 7 -->
+      <!-- Design systems -->
+      <a href="#g-web" aria-label="Open the web group"><rect class="part" x="198" y="59" width="54" height="32" rx="5"/></a>
+      <a href="#g-web" aria-label="Open the web group"><rect class="part" x="198" y="163" width="54" height="32" rx="5"/></a>
+      <a href="#g-web" aria-label="Open the web group"><rect class="full" x="198" y="215" width="54" height="32" rx="5"/></a>
+      <a href="#g-web" aria-label="Open the web group"><rect class="full" x="198" y="267" width="54" height="32" rx="5"/></a>
+      <!-- Motion libraries -->
+      <a href="#g-web" aria-label="Open the web group"><rect class="part" x="268" y="111" width="54" height="32" rx="5"/></a>
+      <a href="#g-web" aria-label="Open the web group"><rect class="full" x="268" y="163" width="54" height="32" rx="5"/></a>
+      <!-- Browser APIs -->
+      <a href="#g-web" aria-label="Open the web group"><rect class="part" x="338" y="111" width="54" height="32" rx="5"/></a>
+      <a href="#g-web" aria-label="Open the web group"><rect class="part" x="338" y="163" width="54" height="32" rx="5"/></a>
+      <!-- Ionic -->
+      <a href="#g-web" aria-label="Open the web group"><rect class="full" x="408" y="59" width="54" height="32" rx="5"/></a>
+      <a href="#g-web" aria-label="Open the web group"><rect class="full" x="408" y="111" width="54" height="32" rx="5"/></a>
+      <a href="#g-web" aria-label="Open the web group"><rect class="full" x="408" y="163" width="54" height="32" rx="5"/></a>
+      <a href="#g-web" aria-label="Open the web group"><rect class="full" x="408" y="215" width="54" height="32" rx="5"/></a>
+      <a href="#g-web" aria-label="Open the web group"><rect class="full" x="408" y="267" width="54" height="32" rx="5"/></a>
+      <!-- Native SDKs -->
+      <a href="#g-native" aria-label="Open the native group"><rect class="full" x="478" y="59" width="54" height="32" rx="5"/></a>
+      <a href="#g-native" aria-label="Open the native group"><rect class="full" x="478" y="111" width="54" height="32" rx="5"/></a>
+      <a href="#g-native" aria-label="Open the native group"><rect class="full" x="478" y="163" width="54" height="32" rx="5"/></a>
+      <a href="#g-native" aria-label="Open the native group"><rect class="full" x="478" y="215" width="54" height="32" rx="5"/></a>
+      <a href="#g-native" aria-label="Open the native group"><rect class="full" x="478" y="267" width="54" height="32" rx="5"/></a>
+      <!-- .NET native -->
+      <a href="#g-dotnet" aria-label="Open the dotnet group"><rect class="full" x="548" y="59" width="54" height="32" rx="5"/></a>
+      <a href="#g-dotnet" aria-label="Open the dotnet group"><rect class="full" x="548" y="111" width="54" height="32" rx="5"/></a>
+      <a href="#g-dotnet" aria-label="Open the dotnet group"><rect class="full" x="548" y="163" width="54" height="32" rx="5"/></a>
+      <a href="#g-dotnet" aria-label="Open the dotnet group"><rect class="full" x="548" y="215" width="54" height="32" rx="5"/></a>
+      <a href="#g-dotnet" aria-label="Open the dotnet group"><rect class="full" x="548" y="267" width="54" height="32" rx="5"/></a>
+      <!-- Blazor libraries -->
+      <a href="#g-dotnet" aria-label="Open the dotnet group"><rect class="part" x="618" y="59" width="54" height="32" rx="5"/></a>
+      <a href="#g-dotnet" aria-label="Open the dotnet group"><rect class="part" x="618" y="111" width="54" height="32" rx="5"/></a>
+      <a href="#g-dotnet" aria-label="Open the dotnet group"><rect class="part" x="618" y="163" width="54" height="32" rx="5"/></a>
+      <a href="#g-dotnet" aria-label="Open the dotnet group"><rect class="full" x="618" y="215" width="54" height="32" rx="5"/></a>
+      <a href="#g-dotnet" aria-label="Open the dotnet group"><rect class="full" x="618" y="267" width="54" height="32" rx="5"/></a>
+      <!-- Agent UI -->
+      <a href="#g-agent" aria-label="Open the agent group"><rect class="part" x="688" y="59" width="54" height="32" rx="5"/></a>
+      <a href="#g-agent" aria-label="Open the agent group"><rect class="part" x="688" y="215" width="54" height="32" rx="5"/></a>
+      <!-- R1 (plan) -->
+      <a href="#context" aria-label="Open the context group"><rect class="ours" x="758" y="163" width="54" height="32" rx="5"/></a>
+      <a href="#context" aria-label="Open the context group"><rect class="ours" x="758" y="267" width="54" height="32" rx="5"/></a>
+    </svg>
+  </div>
+  <div class="legend">
+    <span><i class="sw y"></i>Yes: the library has the layer</span>
+    <span><i class="sw p"></i>Part: one element, one helper or a spec</span>
+    <span><i class="sw n"></i>No</span>
+    <span><i class="sw o"></i>R1 builds it (motion tokens and the wait)</span>
+  </div>
+  <p class="sum">The family cells use the best member of the family. The Comparison tab gives the cell for each library, with a documentation link.</p>
+
+
+  <h2>Recommendation</h2>
+  <ol>
+    <li>Build the motion pipeline and the navigation controller. No library covers them for Blazor in two hosts.</li>
+    <li>Copy the concepts of the What to copy tab. For the wait, use GSAP labels, Motion <code>when</code> and stagger, and WAAPI <code>finished</code>.</li>
+    <li>For navigation, use the UIKit transition coordinator and the Flutter <code>Navigator</code> with typed results.</li>
+    <li>Copy the React Aria <code>FocusScope</code> rules for overlays and sheets. Do not take a focus library.</li>
+    <li>Use the Carbon or Material 3 token names as the model for <code>motion.css</code>. Add one reduced motion switch at the root.</li>
+    <li>Optional: use <code>IDialogService</code> of Fluent UI Blazor only for simple dialogs. Do not use it as the page model.</li>
+  </ol>
+
+  <div class="note">
+    <p>Agent UI SDKs (A2UI, AI SDK, CopilotKit) give a component catalog and a data protocol. They give no motion controller and no navigation controller.</p>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="panel" id="comparison" role="tabpanel" aria-labelledby="t-comparison" hidden>
+  <p class="sum">Each cell starts with a coverage chip: <span class="cv y">yes</span> <span class="cv p">part</span> <span class="cv n">no</span> <span class="cv ns">no source</span>. Each linked name opens the documentation page for that capability. The line under each name tells what the library is.</p>
+  <div class="note"><p><b>Native</b> on this page means the own SDK of a mobile platform (Apple iOS, Google Android) and Flutter. It does not mean .NET.</p></div>
+
+  <h2 id="g-web">Web</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Library</th><th>Platform</th><th>Comp. + tokens</th><th>Motion orchestration</th><th>Navigation control</th><th>Page structure</th></tr></thead>
+    <tbody>
+      <tr><td>Web Awesome / Shoelace<span class="desc">A library of web components (custom HTML elements) for any web framework. The Font Awesome team makes it. Shoelace is its sunset predecessor.</span></td><td>Web components</td>
+        <td><a class="cv y" href="https://webawesome.com/docs/components" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://webawesome.com/docs/components" target="_blank" rel="noopener noreferrer">Components</a> · <a href="https://webawesome.com/docs/tokens/" target="_blank" rel="noopener noreferrer">Tokens</a></td>
+        <td><a class="cv p" href="https://webawesome.com/docs/components/animation" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://webawesome.com/docs/components/animation" target="_blank" rel="noopener noreferrer"><code>wa-animation</code></a> / <a href="https://shoelace.style/components/animation" target="_blank" rel="noopener noreferrer"><code>sl-animation</code></a>: one element, WAAPI presets, a <code>play</code> property, events <code>wa-start</code>, <code>wa-finish</code>, <code>wa-cancel</code>. No sequencer</td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv p" href="https://webawesome.com/docs/components/dialog" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://webawesome.com/docs/components/dialog" target="_blank" rel="noopener noreferrer">Dialog</a>, <a href="https://webawesome.com/docs/components/drawer" target="_blank" rel="noopener noreferrer">drawer</a></td></tr>
+      <tr><td>IBM Carbon<span class="desc">IBM's open-source design system, with React and web component libraries. IBM products and IBM Cloud use it.</span></td><td>Web</td>
+        <td><a class="cv y" href="https://carbondesignsystem.com/components/overview/components/" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://carbondesignsystem.com/components/overview/components/" target="_blank" rel="noopener noreferrer">Components</a> · <a href="https://carbondesignsystem.com/elements/color/tokens/" target="_blank" rel="noopener noreferrer">Tokens</a></td>
+        <td><a class="cv n" href="https://carbondesignsystem.com/elements/motion/overview/" target="_blank" rel="noopener noreferrer" title="Open the documentation">no</a><a href="https://carbondesignsystem.com/elements/motion/overview/" target="_blank" rel="noopener noreferrer">Tokens only</a>: <code>duration-fast-01</code>…<code>duration-slow-02</code>, productive and expressive easing</td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv p" href="https://carbondesignsystem.com/components/modal/usage/" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://carbondesignsystem.com/components/modal/usage/" target="_blank" rel="noopener noreferrer">Modal</a>, <a href="https://carbondesignsystem.com/components/UI-shell-header/usage/" target="_blank" rel="noopener noreferrer">UI Shell</a></td></tr>
+      <tr><td>Material 3 (web)<span class="desc">Google's design system spec. Android, Flutter and the web implement it. Angular Material and its CDK are the Angular implementation.</span></td><td>Web spec</td>
+        <td><a class="cv y" href="https://m3.material.io/components" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://m3.material.io/components" target="_blank" rel="noopener noreferrer">Components</a> · <a href="https://m3.material.io/foundations/design-tokens/overview" target="_blank" rel="noopener noreferrer">Tokens</a></td>
+        <td><a class="cv n" href="https://m3.material.io/styles/motion/easing-and-duration/tokens-specs" target="_blank" rel="noopener noreferrer" title="Open the documentation">no</a><a href="https://m3.material.io/styles/motion/easing-and-duration/tokens-specs" target="_blank" rel="noopener noreferrer">Duration and easing tokens</a> (legacy; the current spec uses spring tokens). Six <a href="https://m3.material.io/styles/motion/transitions/transition-patterns" target="_blank" rel="noopener noreferrer">transition patterns</a>. No web controller</td>
+        <td><a class="cv n" href="https://material.angular.dev/cdk/overlay/overview" target="_blank" rel="noopener noreferrer" title="Open the documentation">no</a>Angular CDK has <a href="https://material.angular.dev/cdk/overlay/overview" target="_blank" rel="noopener noreferrer">Overlay</a> and <a href="https://material.angular.dev/cdk/a11y/overview" target="_blank" rel="noopener noreferrer">FocusTrap</a> (<code>cdkTrapFocus</code>)</td>
+        <td><span class="cv n">no</span>Spec only</td></tr>
+      <tr><td>Fluent 2 / Fluent UI React<span class="desc">Microsoft's design system and React component library. Microsoft 365, Teams and Windows web apps use it.</span></td><td>Web, React</td>
+        <td><a class="cv y" href="https://fluent2.microsoft.design/components/web/react" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://fluent2.microsoft.design/components/web/react" target="_blank" rel="noopener noreferrer">Components</a> · <a href="https://fluent2.microsoft.design/design-tokens" target="_blank" rel="noopener noreferrer">Tokens</a></td>
+        <td><a class="cv p" href="https://storybooks.fluentui.dev/react/?path=/docs/motion-apis-createpresencecomponent--docs" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><code>@fluentui/react-motion</code>: <a href="https://storybooks.fluentui.dev/react/?path=/docs/motion-apis-createpresencecomponent--docs" target="_blank" rel="noopener noreferrer"><code>createPresenceComponent</code></a>, <a href="https://storybooks.fluentui.dev/react/?path=/docs/motion-apis-presencegroup--docs" target="_blank" rel="noopener noreferrer"><code>PresenceGroup</code></a>, <a href="https://storybooks.fluentui.dev/react/?path=/docs/motion-tokens--docs" target="_blank" rel="noopener noreferrer"><code>motionTokens</code></a></td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv p" href="https://fluent2.microsoft.design/components/web/react/core/dialog/usage" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://fluent2.microsoft.design/components/web/react/core/dialog/usage" target="_blank" rel="noopener noreferrer">Dialog</a>, <a href="https://fluent2.microsoft.design/components/web/react/core/drawer/usage" target="_blank" rel="noopener noreferrer">Drawer</a></td></tr>
+      <tr><td>Spectrum / React Aria<span class="desc">Adobe's design system. React Aria is its set of unstyled, accessible React hooks and components.</span></td><td>Web, React</td>
+        <td><a class="cv y" href="https://react-aria.adobe.com/" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://react-aria.adobe.com/" target="_blank" rel="noopener noreferrer">Components</a> · <a href="https://spectrum.adobe.com/page/design-tokens/" target="_blank" rel="noopener noreferrer">Tokens</a></td>
+        <td><a class="cv n" href="https://spectrum.adobe.com/page/motion/" target="_blank" rel="noopener noreferrer" title="Open the documentation">no</a><a href="https://spectrum.adobe.com/page/motion/" target="_blank" rel="noopener noreferrer">Guidance</a> only. Motion tokens: <span class="cv ns">no source</span></td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv p" href="https://react-aria.adobe.com/FocusScope" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a>Best focus model: <a href="https://react-aria.adobe.com/FocusScope" target="_blank" rel="noopener noreferrer"><code>FocusScope</code></a> (<code>contain</code>, <code>restoreFocus</code>, <code>autoFocus</code>), <a href="https://react-aria.adobe.com/Modal/useModalOverlay" target="_blank" rel="noopener noreferrer"><code>useModalOverlay</code></a>, <a href="https://react-aria.adobe.com/Modal" target="_blank" rel="noopener noreferrer"><code>Modal</code></a></td></tr>
+      <tr><td>Ionic<span class="desc">A JavaScript framework that builds mobile apps from web pages. Teams use it with Angular, React or Vue for one app on iOS, Android and the web.</span></td><td>Web</td>
+        <td><a class="cv y" href="https://ionicframework.com/docs/components" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://ionicframework.com/docs/components" target="_blank" rel="noopener noreferrer">Components</a> · <a href="https://ionicframework.com/docs/theming/css-variables" target="_blank" rel="noopener noreferrer">CSS variables</a></td>
+        <td><a class="cv y" href="https://ionicframework.com/docs/utilities/animations" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://ionicframework.com/docs/utilities/animations" target="_blank" rel="noopener noreferrer"><code>createAnimation</code></a>: chain, group (<code>addAnimation</code>), <code>play()</code> returns a promise, WAAPI with CSS fallback</td>
+        <td><a class="cv y" href="https://ionicframework.com/docs/api/nav" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://ionicframework.com/docs/api/nav" target="_blank" rel="noopener noreferrer"><code>ion-nav</code></a> push/pop stack, <a href="https://ionicframework.com/docs/api/router-outlet" target="_blank" rel="noopener noreferrer"><code>ion-router-outlet</code></a>, custom transitions through the <code>animation</code> property</td>
+        <td><a class="cv y" href="https://ionicframework.com/docs/api/modal#controller-modals" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://ionicframework.com/docs/api/modal#controller-modals" target="_blank" rel="noopener noreferrer"><code>modalController</code></a>, <a href="https://ionicframework.com/docs/api/modal#sheet-modal" target="_blank" rel="noopener noreferrer">sheet modal with breakpoints</a></td></tr>
+      <tr><td>Motion (Framer)<span class="desc">An animation library for React, in JavaScript. Its earlier name is Framer Motion. Many React web apps use it.</span></td><td>JS, React</td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv y" href="https://motion.dev/docs/react-animation" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://motion.dev/docs/react-animation" target="_blank" rel="noopener noreferrer">Variants</a>, <a href="https://motion.dev/docs/react-transitions" target="_blank" rel="noopener noreferrer"><code>when: beforeChildren/afterChildren</code></a>, <a href="https://motion.dev/docs/stagger" target="_blank" rel="noopener noreferrer"><code>delayChildren: stagger()</code></a>, <a href="https://motion.dev/docs/react-animate-presence" target="_blank" rel="noopener noreferrer"><code>AnimatePresence.onExitComplete</code></a>, <a href="https://motion.dev/docs/react-motion-config" target="_blank" rel="noopener noreferrer"><code>MotionConfig reducedMotion="user"</code></a>, <a href="https://motion.dev/docs/timeline-sequences" target="_blank" rel="noopener noreferrer">timeline sequences</a></td>
+        <td><a class="cv p" href="https://motion.dev/docs/react-layout-animations" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://motion.dev/docs/react-layout-animations" target="_blank" rel="noopener noreferrer">Layout and shared <code>layoutId</code> transitions</a></td>
+        <td><span class="cv n">no</span></td></tr>
+      <tr><td>GSAP<span class="desc">A JavaScript animation library for timelines. Web agencies and interactive sites use it.</span></td><td>JS</td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv y" href="https://gsap.com/docs/v3/GSAP/Timeline/" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://gsap.com/docs/v3/GSAP/Timeline/" target="_blank" rel="noopener noreferrer"><code>Timeline</code></a> with position labels, <code>then()</code>, callbacks; <a href="https://gsap.com/docs/v3/GSAP/gsap.matchMedia()" target="_blank" rel="noopener noreferrer"><code>gsap.matchMedia()</code></a> for reduced motion</td>
+        <td><a class="cv p" href="https://gsap.com/docs/v3/Plugins/Flip/" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://gsap.com/docs/v3/Plugins/Flip/" target="_blank" rel="noopener noreferrer">Flip plugin</a></td>
+        <td><span class="cv n">no</span></td></tr>
+      <tr><td>Web Animations API<span class="desc">A browser API that JavaScript calls to start and control animations. It needs no library.</span></td><td>Browser</td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv p" href="https://developer.mozilla.org/en-US/docs/Web/API/Animation/finished" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/Animation/finished" target="_blank" rel="noopener noreferrer"><code>Animation.finished</code></a> promise, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/getAnimations" target="_blank" rel="noopener noreferrer"><code>Element.getAnimations({subtree:true})</code></a></td>
+        <td><span class="cv n">no</span></td>
+        <td><span class="cv n">no</span></td></tr>
+      <tr><td>View Transitions API<span class="desc">A browser API with CSS parts. It animates from one page state to the next.</span></td><td>Browser</td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv p" href="https://developer.mozilla.org/en-US/docs/Web/API/ViewTransition" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/ViewTransition" target="_blank" rel="noopener noreferrer"><code>ready</code>, <code>updateCallbackDone</code>, <code>finished</code></a> promises</td>
+        <td><a class="cv p" href="https://developer.mozilla.org/en-US/docs/Web/CSS/view-transition-name" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/view-transition-name" target="_blank" rel="noopener noreferrer"><code>view-transition-name</code></a> shared elements, <a href="https://developer.mozilla.org/en-US/docs/Web/API/ViewTransition/types" target="_blank" rel="noopener noreferrer">types</a></td>
+        <td><span class="cv n">no</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="g-native">Native mobile</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Library</th><th>Platform</th><th>Comp. + tokens</th><th>Motion orchestration</th><th>Navigation control</th><th>Page structure</th></tr></thead>
+    <tbody>
+      <tr><td>UIKit / SwiftUI<span class="desc">Apple's own UI SDKs for iPhone and iPad apps, in Swift. UIKit is the older SDK. SwiftUI is the newer one.</span></td><td>iOS</td>
+        <td><a class="cv y" href="https://developer.apple.com/documentation/uikit/views-and-controls" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://developer.apple.com/documentation/uikit/views-and-controls" target="_blank" rel="noopener noreferrer">Views and controls</a> · <a href="https://developer.apple.com/design/human-interface-guidelines/color" target="_blank" rel="noopener noreferrer">Color (HIG)</a></td>
+        <td><a class="cv y" href="https://developer.apple.com/documentation/uikit/uiviewcontrolleranimatedtransitioning" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://developer.apple.com/documentation/uikit/uiviewcontrolleranimatedtransitioning" target="_blank" rel="noopener noreferrer"><code>UIViewControllerAnimatedTransitioning</code></a>, <a href="https://developer.apple.com/documentation/uikit/uiviewcontrollertransitioncoordinator/animate(alongsidetransition:completion:)" target="_blank" rel="noopener noreferrer"><code>UIViewControllerTransitionCoordinator.animate(alongsideTransition:completion:)</code></a></td>
+        <td><a class="cv y" href="https://developer.apple.com/documentation/uikit/uinavigationcontroller" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://developer.apple.com/documentation/uikit/uinavigationcontroller" target="_blank" rel="noopener noreferrer"><code>UINavigationController</code></a>, <a href="https://developer.apple.com/documentation/swiftui/navigationstack" target="_blank" rel="noopener noreferrer"><code>NavigationStack(path:root:)</code></a>, <a href="https://developer.apple.com/documentation/swiftui/view/matchedgeometryeffect(id:in:properties:anchor:issource:)" target="_blank" rel="noopener noreferrer"><code>matchedGeometryEffect</code></a></td>
+        <td><a class="cv y" href="https://developer.apple.com/documentation/uikit/creating-a-custom-container-view-controller" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://developer.apple.com/documentation/uikit/creating-a-custom-container-view-controller" target="_blank" rel="noopener noreferrer">View controller containment</a>, <a href="https://developer.apple.com/documentation/uikit/uisheetpresentationcontroller" target="_blank" rel="noopener noreferrer">sheets with detents</a></td></tr>
+      <tr><td>Jetpack Navigation / Compose<span class="desc">Google's UI and navigation libraries for Android apps, in Kotlin. Google recommends Compose to Android developers.</span></td><td>Android</td>
+        <td><a class="cv y" href="https://developer.android.com/develop/ui/compose/designsystems/material3" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://developer.android.com/develop/ui/compose/designsystems/material3" target="_blank" rel="noopener noreferrer">Material 3 in Compose</a></td>
+        <td><a class="cv y" href="https://developer.android.com/develop/ui/compose/animation/value-based#updateTransition" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://developer.android.com/develop/ui/compose/animation/value-based#updateTransition" target="_blank" rel="noopener noreferrer"><code>updateTransition</code></a>, <a href="https://developer.android.com/develop/ui/compose/animation/composables-modifiers" target="_blank" rel="noopener noreferrer"><code>AnimatedContent</code></a>, <a href="https://developer.android.com/develop/ui/compose/animation/shared-elements" target="_blank" rel="noopener noreferrer"><code>SharedTransitionLayout</code></a></td>
+        <td><a class="cv y" href="https://developer.android.com/guide/navigation/navcontroller" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://developer.android.com/guide/navigation/navcontroller" target="_blank" rel="noopener noreferrer">NavController</a>, <a href="https://developer.android.com/guide/navigation/backstack" target="_blank" rel="noopener noreferrer">back stack</a>, <a href="https://developer.android.com/reference/kotlin/androidx/navigation/compose/package-summary" target="_blank" rel="noopener noreferrer">enter and exit transitions for each route</a></td>
+        <td><a class="cv y" href="https://developer.android.com/develop/ui/compose/components/scaffold" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://developer.android.com/develop/ui/compose/components/scaffold" target="_blank" rel="noopener noreferrer">Scaffold</a>, <a href="https://developer.android.com/develop/ui/compose/components/bottom-sheets" target="_blank" rel="noopener noreferrer"><code>ModalBottomSheet</code></a></td></tr>
+      <tr><td>Flutter<span class="desc">Google's open-source UI SDK for mobile, web and desktop apps from one codebase, in Dart.</span></td><td>Cross-platform</td>
+        <td><a class="cv y" href="https://docs.flutter.dev/ui/widgets" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://docs.flutter.dev/ui/widgets" target="_blank" rel="noopener noreferrer">Widget catalog</a> · <a href="https://api.flutter.dev/flutter/material/ThemeData-class.html" target="_blank" rel="noopener noreferrer"><code>ThemeData</code></a></td>
+        <td><a class="cv y" href="https://api.flutter.dev/flutter/animation/AnimationController-class.html" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://api.flutter.dev/flutter/animation/AnimationController-class.html" target="_blank" rel="noopener noreferrer"><code>AnimationController</code></a>, <a href="https://docs.flutter.dev/ui/animations/staggered-animations" target="_blank" rel="noopener noreferrer"><code>Interval</code> for staggered steps</a>, <a href="https://api.flutter.dev/flutter/widgets/MediaQueryData/disableAnimations.html" target="_blank" rel="noopener noreferrer"><code>MediaQueryData.disableAnimations</code></a></td>
+        <td><a class="cv y" href="https://api.flutter.dev/flutter/widgets/Navigator-class.html" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://api.flutter.dev/flutter/widgets/Navigator-class.html" target="_blank" rel="noopener noreferrer"><code>Navigator</code></a> route stack, <a href="https://api.flutter.dev/flutter/widgets/Route-class.html" target="_blank" rel="noopener noreferrer"><code>Route</code></a>, <a href="https://api.flutter.dev/flutter/widgets/Hero-class.html" target="_blank" rel="noopener noreferrer"><code>Hero</code></a>, <a href="https://api.flutter.dev/flutter/widgets/PageRouteBuilder-class.html" target="_blank" rel="noopener noreferrer"><code>PageRouteBuilder</code></a></td>
+        <td><a class="cv y" href="https://api.flutter.dev/flutter/widgets/Overlay-class.html" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://api.flutter.dev/flutter/widgets/Overlay-class.html" target="_blank" rel="noopener noreferrer"><code>Overlay</code></a>, <a href="https://api.flutter.dev/flutter/widgets/ModalRoute-class.html" target="_blank" rel="noopener noreferrer"><code>ModalRoute</code></a>, <a href="https://api.flutter.dev/flutter/widgets/FocusScope-class.html" target="_blank" rel="noopener noreferrer"><code>FocusScope</code></a></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="g-dotnet">.NET</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Library</th><th>Platform</th><th>Comp. + tokens</th><th>Motion orchestration</th><th>Navigation control</th><th>Page structure</th></tr></thead>
+    <tbody>
+      <tr><td>MudBlazor<span class="desc">A free, open-source library of Material Design components for Blazor, in C#.</span></td><td>Blazor</td>
+        <td><a class="cv y" href="https://mudblazor.com/customization/overview" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://mudblazor.com/customization/overview" target="_blank" rel="noopener noreferrer">Theming</a></td>
+        <td><span class="cv n">no</span>No orchestration</td>
+        <td><a class="cv p" href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/routing" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a>Blazor <a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/routing" target="_blank" rel="noopener noreferrer">router</a> only</td>
+        <td><a class="cv p" href="https://mudblazor.com/components/dialog" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://mudblazor.com/components/dialog" target="_blank" rel="noopener noreferrer"><code>IDialogService</code></a>: <code>ShowAsync</code>, then <code>await dialog.Result</code> gives a <code>DialogResult</code></td></tr>
+      <tr><td>Fluent UI Blazor<span class="desc">Microsoft's open-source Blazor component library with the Fluent design, in C#. The .NET Aspire dashboard uses it.</span></td><td>Blazor</td>
+        <td><a class="cv y" href="https://www.fluentui-blazor.net/DesignTokens" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://www.fluentui-blazor.net/DesignTokens" target="_blank" rel="noopener noreferrer">Design tokens</a></td>
+        <td><span class="cv n">no</span>No orchestration</td>
+        <td><a class="cv p" href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/routing" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a>Blazor <a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/routing" target="_blank" rel="noopener noreferrer">router</a> only</td>
+        <td><a class="cv p" href="https://www.fluentui-blazor.net/DialogService" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://www.fluentui-blazor.net/DialogService" target="_blank" rel="noopener noreferrer"><code>IDialogService.ShowDialogAsync</code></a> gives a <code>DialogResult</code></td></tr>
+      <tr><td>Radzen Blazor<span class="desc">A free component library for Blazor from the company Radzen, in C#.</span></td><td>Blazor</td>
+        <td><a class="cv y" href="https://blazor.radzen.com/themes" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://blazor.radzen.com/themes" target="_blank" rel="noopener noreferrer">Themes</a></td>
+        <td><span class="cv n">no</span>No orchestration</td>
+        <td><a class="cv p" href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/routing" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a>Blazor <a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/routing" target="_blank" rel="noopener noreferrer">router</a> only</td>
+        <td><a class="cv p" href="https://blazor.radzen.com/dialog" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://blazor.radzen.com/dialog" target="_blank" rel="noopener noreferrer"><code>DialogService.OpenAsync</code></a> returns the value of <code>Close(result)</code></td></tr>
+      <tr><td>Blazorise<span class="desc">A component library for Blazor, in C#. It runs on CSS frameworks such as Bootstrap, Bulma and Material.</span></td><td>Blazor</td>
+        <td><a class="cv y" href="https://blazorise.com/docs/theming" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://blazorise.com/docs/theming" target="_blank" rel="noopener noreferrer">Theming</a> (<code>ThemeProvider</code>)</td>
+        <td><span class="cv n">no</span>No orchestration</td>
+        <td><a class="cv p" href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/routing" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a>Blazor <a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/routing" target="_blank" rel="noopener noreferrer">router</a> only</td>
+        <td><a class="cv p" href="https://blazorise.com/docs/services/modal-provider" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://blazorise.com/docs/services/modal-provider" target="_blank" rel="noopener noreferrer"><code>IModalService</code></a>: the page shows <code>OnSuccess</code> callbacks, no returned result</td></tr>
+      <tr><td>BlazorAnimate<span class="desc">A small Blazor package in C#. It wraps the AOS JavaScript library. The project continues in Blazorise.</span></td><td>Blazor add-on</td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv p" href="https://github.com/mikoskinen/Blazor.Animate" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://github.com/mikoskinen/Blazor.Animate" target="_blank" rel="noopener noreferrer"><code>Animate</code> component</a>: AOS effects on enter only</td>
+        <td><span class="cv n">no</span></td>
+        <td><span class="cv n">no</span></td></tr>
+      <tr><td>Toolbelt.Blazor.ViewTransition<span class="desc">A small open-source Blazor package in C#. Its router animates page changes with the browser View Transitions API.</span></td><td>Blazor add-on</td>
+        <td><span class="cv n">no</span></td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv p" href="https://github.com/jsakamoto/Toolbelt.Blazor.ViewTransition" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://github.com/jsakamoto/Toolbelt.Blazor.ViewTransition" target="_blank" rel="noopener noreferrer"><code>ViewTransitionRouter</code></a>: a router on the View Transitions API</td>
+        <td><span class="cv n">no</span></td></tr>
+      <tr><td>BlazorTransitionableRoute<span class="desc">A small open-source Blazor package in C#. It keeps the old route alive, so that CSS can animate the change.</span></td><td>Blazor add-on</td>
+        <td><span class="cv n">no</span></td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv p" href="https://github.com/JByfordRew/BlazorTransitionableRoute" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://github.com/JByfordRew/BlazorTransitionableRoute" target="_blank" rel="noopener noreferrer">Old and new route both rendered</a>. The old one is hidden; your CSS animates them</td>
+        <td><span class="cv n">no</span></td></tr>
+      <tr><td>.NET MAUI Shell<span class="desc">The app frame of .NET MAUI, Microsoft's cross-platform UI framework for Android, iOS, macOS and Windows, in C# and XAML.</span></td><td>.NET, cross-platform</td>
+        <td><a class="cv y" href="https://learn.microsoft.com/en-us/dotnet/maui/user-interface/controls/" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://learn.microsoft.com/en-us/dotnet/maui/user-interface/controls/" target="_blank" rel="noopener noreferrer">Controls</a> · <a href="https://learn.microsoft.com/en-us/dotnet/maui/user-interface/styles/xaml" target="_blank" rel="noopener noreferrer">Styles</a></td>
+        <td><a class="cv y" href="https://learn.microsoft.com/en-us/dotnet/maui/user-interface/animation/custom" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://learn.microsoft.com/en-us/dotnet/maui/user-interface/animation/custom" target="_blank" rel="noopener noreferrer"><code>Animation</code></a> with child animations and begin/finish ratios (<code>Commit</code> gives callbacks, not a <code>Task</code>). Awaitable <a href="https://learn.microsoft.com/en-us/dotnet/maui/user-interface/animation/basic" target="_blank" rel="noopener noreferrer"><code>FadeToAsync</code></a> and others</td>
+        <td><a class="cv y" href="https://learn.microsoft.com/en-us/dotnet/maui/fundamentals/shell/navigation" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://learn.microsoft.com/en-us/dotnet/maui/fundamentals/shell/navigation" target="_blank" rel="noopener noreferrer">Shell URI routes, <code>GoToAsync</code>, nav stack</a>, <a href="https://learn.microsoft.com/en-us/dotnet/maui/fundamentals/shell/pages" target="_blank" rel="noopener noreferrer">modal pages</a> (<code>Shell.PresentationMode</code>)</td>
+        <td><a class="cv y" href="https://learn.microsoft.com/en-us/dotnet/maui/fundamentals/shell/flyout" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://learn.microsoft.com/en-us/dotnet/maui/fundamentals/shell/flyout" target="_blank" rel="noopener noreferrer">Shell flyout</a>, <a href="https://learn.microsoft.com/en-us/dotnet/maui/fundamentals/shell/tabs" target="_blank" rel="noopener noreferrer">tabs</a></td></tr>
+      <tr><td>Avalonia<span class="desc">An open-source cross-platform UI framework for .NET, in C# and XAML. Teams often use it in place of WPF.</span></td><td>.NET desktop</td>
+        <td><a class="cv y" href="https://docs.avaloniaui.net/docs/reference/controls/" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://docs.avaloniaui.net/docs/reference/controls/" target="_blank" rel="noopener noreferrer">Controls</a> · <a href="https://docs.avaloniaui.net/docs/styling/themes" target="_blank" rel="noopener noreferrer">Themes</a></td>
+        <td><a class="cv p" href="https://docs.avaloniaui.net/docs/graphics-animation/control-transitions" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://docs.avaloniaui.net/docs/graphics-animation/control-transitions" target="_blank" rel="noopener noreferrer">Styles with transitions</a></td>
+        <td><a class="cv p" href="https://docs.avaloniaui.net/docs/reference/controls/transitioningcontentcontrol" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://docs.avaloniaui.net/docs/reference/controls/transitioningcontentcontrol" target="_blank" rel="noopener noreferrer"><code>TransitioningContentControl</code></a> with <a href="https://docs.avaloniaui.net/docs/graphics-animation/page-transitions" target="_blank" rel="noopener noreferrer"><code>IPageTransition</code></a> (CrossFade, PageSlide, CompositePageTransition)</td>
+        <td><span class="cv n">no</span></td></tr>
+      <tr><td>WPF / WinUI<span class="desc">Microsoft's Windows desktop UI frameworks, in C# and XAML. WPF is the older one. WinUI 3 is the current native Windows UI.</span></td><td>.NET desktop</td>
+        <td><a class="cv y" href="https://learn.microsoft.com/en-us/dotnet/desktop/wpf/controls/styles-templates-overview" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://learn.microsoft.com/en-us/dotnet/desktop/wpf/controls/styles-templates-overview" target="_blank" rel="noopener noreferrer">WPF styles</a> · <a href="https://learn.microsoft.com/en-us/windows/apps/develop/platform/xaml/xaml-theme-resources" target="_blank" rel="noopener noreferrer">WinUI theme resources</a></td>
+        <td><a class="cv y" href="https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/storyboards-overview" target="_blank" rel="noopener noreferrer" title="Open the documentation">yes</a><a href="https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/storyboards-overview" target="_blank" rel="noopener noreferrer"><code>Storyboard</code></a> timelines, <a href="https://learn.microsoft.com/en-us/dotnet/api/system.windows.media.animation.timeline.completed" target="_blank" rel="noopener noreferrer"><code>Timeline.Completed</code></a> event, <a href="https://learn.microsoft.com/en-us/dotnet/api/system.windows.visualstatemanager.gotostate" target="_blank" rel="noopener noreferrer"><code>VisualStateManager.GoToState</code></a></td>
+        <td><a class="cv p" href="https://learn.microsoft.com/en-us/windows/apps/develop/ui/navigation/navigate-between-two-pages" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a>WinUI <a href="https://learn.microsoft.com/en-us/windows/apps/develop/ui/navigation/navigate-between-two-pages" target="_blank" rel="noopener noreferrer"><code>Frame</code></a>, <a href="https://learn.microsoft.com/en-us/windows/apps/develop/motion/connected-animation" target="_blank" rel="noopener noreferrer"><code>ConnectedAnimationService</code></a></td>
+        <td><a class="cv p" href="https://learn.microsoft.com/en-us/dotnet/api/system.windows.visualstatemanager" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://learn.microsoft.com/en-us/dotnet/api/system.windows.visualstatemanager" target="_blank" rel="noopener noreferrer">VSM states</a></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="g-agent">Agent UI</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Library</th><th>Platform</th><th>Comp. + tokens</th><th>Motion orchestration</th><th>Navigation control</th><th>Page structure</th></tr></thead>
+    <tbody>
+      <tr><td>A2UI<span class="desc">An open protocol from Google. An AI agent sends JSON that describes a UI. The client draws it from a catalog of known components.</span></td><td>Agent protocol</td>
+        <td><a class="cv p" href="https://a2ui.org/concepts/catalogs/" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://a2ui.org/concepts/catalogs/" target="_blank" rel="noopener noreferrer">Component catalog</a> only</td>
+        <td><span class="cv n">no</span></td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv p" href="https://a2ui.org/concepts/overview/" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://a2ui.org/concepts/overview/" target="_blank" rel="noopener noreferrer">Declarative surfaces</a> from a pre-approved component catalog</td></tr>
+      <tr><td>AI SDK (Vercel)<span class="desc">A TypeScript toolkit to call language models. Its React hooks show tool results as UI.</span></td><td>TypeScript, React</td>
+        <td><a class="cv p" href="https://ai-sdk.dev/docs/ai-sdk-ui/generative-user-interfaces" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://ai-sdk.dev/docs/ai-sdk-ui/generative-user-interfaces" target="_blank" rel="noopener noreferrer">App components chosen by tool calls</a></td>
+        <td><span class="cv n">no</span></td>
+        <td><span class="cv n">no</span></td>
+        <td><span class="cv n">no</span>No surfaces, no catalog</td></tr>
+      <tr><td>CopilotKit<span class="desc">A framework that adds AI agents and chat to web apps (React, Angular, Vue). Its generative UI uses A2UI.</span></td><td>Web</td>
+        <td><a class="cv p" href="https://docs.copilotkit.ai/generative-ui/a2ui" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://docs.copilotkit.ai/generative-ui/a2ui" target="_blank" rel="noopener noreferrer">A2UI catalog</a> only</td>
+        <td><span class="cv n">no</span></td>
+        <td><span class="cv n">no</span></td>
+        <td><a class="cv p" href="https://docs.copilotkit.ai/generative-ui/a2ui" target="_blank" rel="noopener noreferrer" title="Open the documentation">part</a><a href="https://docs.copilotkit.ai/generative-ui/a2ui" target="_blank" rel="noopener noreferrer">Surfaces through A2UI</a> (<code>createSurface</code>, <code>updateComponents</code>)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sum">The research report gives the cell text. This page adds the coverage chips (a reading of the cell text), the links and the name corrections. The Sources tab lists each correction.</p>
+</section>
+
+<!-- WHAT TO COPY -->
+<section class="panel" id="copy" role="tabpanel" aria-labelledby="t-copy" hidden>
+  <p class="sum">Six of the eight copy items go into a station of the R1 pipeline. The navigation controller and the overlay focus rules are outside R1.</p>
+
+  <p class="figt">Where each copy item goes in the R1 pipeline</p>
+  <div class="fig stations" role="img" aria-label="The five R1 stations with the copy source of each. Registry row: GSAP Timeline, Flutter Interval, MAUI Animation, Motion variants. Set state: WPF VSM. CSS rule and token: Carbon, Material 3, Motion and GSAP reduced motion. Wait utility: WAAPI and View Transitions. Trace line: no copy source. Outside R1: navigation controller and overlays.">
+    <svg viewBox="0 0 900 290" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+      <!-- Stations: x = 10 + 178*i, w 160 -->
+      <rect class="box key" x="10" y="20" width="160" height="70" rx="10"/>
+      <text class="t" x="22" y="46">Registry row</text><text class="s" x="22" y="66">S4 · name, state class</text>
+      <rect class="box key" x="188" y="20" width="160" height="70" rx="10"/>
+      <text class="t" x="200" y="46">Set state</text><text class="s" x="200" y="66">S4 · is-open, is-leaving</text>
+      <rect class="box key" x="366" y="20" width="160" height="70" rx="10"/>
+      <text class="t" x="378" y="46">CSS rule + token</text><text class="s" x="378" y="66">S1, S2 · motion.css</text>
+      <rect class="box key" x="544" y="20" width="160" height="70" rx="10"/>
+      <text class="t" x="556" y="46">Wait utility</text><text class="s" x="556" y="66">S3 · orchMotion.wait</text>
+      <rect class="box key" x="722" y="20" width="160" height="70" rx="10"/>
+      <text class="t" x="734" y="46">Trace line</text><text class="s" x="734" y="66">S3 · by end or limit</text>
+      <path class="ln" d="M170,55 H186" marker-end="url(#ar)"/>
+      <path class="ln" d="M348,55 H364" marker-end="url(#ar)"/>
+      <path class="ln" d="M526,55 H542" marker-end="url(#ar)"/>
+      <path class="ln" d="M704,55 H720" marker-end="url(#ar)"/>
+      <!-- Copy sources under each station -->
+      <g>
+        <path class="ln" d="M90,90 V112"/><path class="ln" d="M268,90 V112"/><path class="ln" d="M446,90 V112"/><path class="ln" d="M624,90 V112"/>
+        <text class="lb" x="22" y="130">GSAP Timeline</text><text class="lb" x="22" y="146">Flutter Interval</text><text class="lb" x="22" y="162">MAUI Animation</text><text class="lb" x="22" y="178">Motion variants</text>
+        <text class="lb" x="200" y="130">WPF VSM</text><text class="s" x="200" y="146">GoToState</text>
+        <text class="lb" x="378" y="130">Carbon, Material 3</text><text class="lb" x="378" y="146">Motion, GSAP</text><text class="s" x="378" y="162">reduced motion</text>
+        <text class="lb" x="556" y="130">WAAPI</text><text class="lb" x="556" y="146">View Transitions</text><text class="s" x="556" y="162">finished, ready</text>
+        <text class="s" x="734" y="130">No copy source</text>
+      </g>
+      <!-- Outside R1 -->
+      <rect class="box out" x="10" y="206" width="872" height="66" rx="10"/>
+      <text class="t" x="22" y="232">Outside R1</text>
+      <text class="lb" x="22" y="254">Navigation controller: UIKit, Ionic, Flutter</text>
+      <text class="lb" x="452" y="254">Overlays and focus: React Aria, Flutter</text>
+    </svg>
+  </div>
+
+  <h2>Copy items and their R1 part</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Our part</th><th>Copy from</th><th>What to copy</th><th>R1 part</th></tr></thead>
+    <tbody>
+      <tr><td>One JS wait (settle, property, time, event)</td><td>WAAPI, View Transitions</td><td><code>getAnimations({subtree:true})</code>, then <code>Promise.all(a.finished)</code> for settle. Use the three phase promises <code>ready</code>, <code>updateCallbackDone</code>, <code>finished</code> as result states</td><td><span class="chip">S3</span> <code>orchMotion.wait(target, mode, arg)</code> returns <code>{ by, ms }</code>. <span class="chip">S4</span> <code>MotionBegin</code> command</td></tr>
+      <tr><td>C# registry of motion steps</td><td>GSAP Timeline, Flutter <code>Interval</code>, MAUI <code>Animation</code></td><td>A sequence with labels and offsets (<code>"&lt;"</code>, <code>"+=0.1"</code>), and child steps with begin and end ratios</td><td><span class="chip">S4</span> registry rows. <span class="chip">S9</span> a request is a list of rows</td></tr>
+      <tr><td>Parent and child order</td><td>Motion variants</td><td><code>when: beforeChildren/afterChildren</code>, <code>delayChildren: stagger()</code>, an exit-complete callback before unmount</td><td><span class="chip">S6</span> badge phase after the slide. <span class="chip">S3</span> <code>Presence</code> settle wait</td></tr>
+      <tr><td>Reduced motion</td><td>Motion, GSAP</td><td>One global switch (<code>MotionConfig reducedMotion="user"</code>, <code>matchMedia</code>). Tokens go to 0 ms, and waits end at once</td><td><span class="chip">S2</span> reduced motion rule in <code>motion.css</code></td></tr>
+      <tr><td>Tokens</td><td>Carbon, Material 3</td><td>Named duration slots (<code>duration-fast-01</code>…<code>duration-slow-02</code>; the legacy Material 3 <code>short1</code>…<code>extraLong4</code>) and easing pairs (standard, entrance, exit)</td><td><span class="chip">S1</span> duration, dwell and limit tokens</td></tr>
+      <tr><td>Navigation controller</td><td>UIKit, Ionic, Flutter</td><td>A push/pop/replace stack. A transition object with <code>animateTransition</code> and <code>transitionDuration</code>. An <code>alongside</code> hook through a coordinator. A pop result as a typed <code>Task&lt;T&gt;</code> (Flutter <code>Navigator.push</code> returns <code>Future&lt;T&gt;</code>)</td><td><span class="chip out">Outside R1</span></td></tr>
+      <tr><td>Overlays and focus</td><td>React Aria, Flutter</td><td><code>FocusScope</code> with <code>contain</code>, <code>restoreFocus</code> and <code>autoFocus</code>. Overlay as a route on the same stack (<code>ModalRoute</code>). Sheet detents (Ionic breakpoints, UIKit detents)</td><td><span class="chip out">Outside R1</span></td></tr>
+      <tr><td>Page states</td><td>WPF VSM</td><td>Named visual states and <code>GoToState(state, useTransitions)</code> for each page</td><td><span class="chip">S4</span> the state class of each row</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Fit checks against the R1 rules</h2>
+  <div class="note">
+    <p><b>Reduced motion.</b> The report says "tokens go to 0 ms". R1 step S2 sets each duration token to 1 ms. Dwell tokens and limit tokens keep their values.</p>
+  </div>
+  <div class="note">
+    <p><b>Offsets and ratios.</b> An R1 registry row has only the step name and the state class (S4). C# has no token and no time. Thus a GSAP offset or a Flutter ratio is a token in <code>motion.css</code>, not a value in C#.</p>
+  </div>
+  <div class="note">
+    <p><b>Exit-complete callback.</b> R1 has no calls from JS to C#. C# waits for the result of <code>MotionWait</code>, then removes the element. That wait has the function of the callback.</p>
+  </div>
+</section>
+
+<!-- .NET AND BLAZOR -->
+<section class="panel" id="dotnet" role="tabpanel" aria-labelledby="t-dotnet" hidden>
+  <p class="sum">No library replaces the motion pipeline. Bit.Brouter covers most of the navigation controller, and our own spike 07 covers all of it (Spikes tab). Avalonia, MAUI and WPF have good models, but they do not run in Blazor.</p>
+
+  <h2>Blazor libraries that you can use directly</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Library</th><th>Use</th><th>Limits</th></tr></thead>
+    <tbody>
+      <tr><td>Toolbelt.Blazor.ViewTransition</td><td>Page change through the View Transitions API</td><td>Router only. No step registry, no typed result, no trace. Targets .NET 8</td></tr>
+      <tr><td>BlazorTransitionableRoute</td><td>Keeps the old and the new page in the DOM for a transition</td><td>Router only. You write the motion yourself</td></tr>
+      <tr><td>MudBlazor / Fluent UI Blazor <code>IDialogService</code></td><td>Overlay presenter with a <code>DialogResult</code></td><td>Their own visuals and motion. No sheet stack, no shared motion tokens</td></tr>
+      <tr><td>BlazorAnimate</td><td>Enter effects</td><td>AOS based. No sequence, no wait, no exit</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>.NET native models to copy, not to use</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Model</th><th>Concept to copy</th></tr></thead>
+    <tbody>
+      <tr><td>.NET MAUI Shell</td><td><code>Animation</code> with child animations and begin/finish ratios. Shell URI routes and <code>GoToAsync</code></td></tr>
+      <tr><td>Avalonia</td><td><code>TransitioningContentControl</code> with <code>IPageTransition</code></td></tr>
+      <tr><td>WPF / WinUI</td><td><code>Storyboard</code> timelines, <code>VisualStateManager.GoToState</code>, <code>ConnectedAnimationService</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <p>Use <code>IDialogService</code> of Fluent UI Blazor only for simple dialogs. It is optional. Do not use it as the page model.</p>
+  </div>
+
+  <h2>Microsoft's position (dotnet/aspnetcore)</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Topic</th><th>Status</th><th>Issue</th></tr></thead>
+    <tbody>
+      <tr><td>Page transitions, View Transitions</td><td><span class="cv p">planned</span>".NET 12 Planning"; struck out of the .NET 11 roadmap</td><td><a href="https://github.com/dotnet/aspnetcore/issues/10389" target="_blank" rel="noopener noreferrer">#10389</a></td></tr>
+      <tr><td>Back method or own stack</td><td><span class="cv n">declined</span>"no separate browsing stack"</td><td><a href="https://github.com/dotnet/aspnetcore/issues/60754" target="_blank" rel="noopener noreferrer">#60754</a></td></tr>
+      <tr><td>Keep-alive, page cache</td><td><span class="cv n">not planned</span>The router always destroys the old page</td><td><a href="https://github.com/dotnet/aspnetcore/issues/22207" target="_blank" rel="noopener noreferrer">#22207</a></td></tr>
+      <tr><td>Lifecycle events (OnNavigatedTo/From)</td><td><span class="cv n">not made</span>LocationChanging (.NET 7) is the only hook</td><td><a href="https://github.com/dotnet/aspnetcore/issues/28527" target="_blank" rel="noopener noreferrer">#28527</a></td></tr>
+      <tr><td>More history control</td><td><span class="cv n">declined</span>"implement your own router"</td><td><a href="https://github.com/dotnet/aspnetcore/issues/44699" target="_blank" rel="noopener noreferrer">#44699</a></td></tr>
+      <tr><td>Nested routing</td><td><span class="cv p">planned</span>".NET 12 Planning"</td><td><a href="https://github.com/dotnet/aspnetcore/issues/11212" target="_blank" rel="noopener noreferrer">#11212</a></td></tr>
+      <tr><td>Awaitable navigation</td><td><span class="cv n">backlog</span><code>NavigateToAsync</code></td><td><a href="https://github.com/dotnet/aspnetcore/issues/64813" target="_blank" rel="noopener noreferrer">#64813</a></td></tr>
+    </tbody>
+  </table></div>
+  <p class="sum">Native today: <code>NavigationManager</code> (<code>LocationChanging</code>, <code>LocationChanged</code>, <code>NavigationLock</code>, <code>HistoryEntryState</code>, <code>NotFound</code>), the <code>Router</code> (<code>OnNavigateAsync</code>, <code>&lt;Navigating&gt;</code>) and, in BlazorWebView, <code>UrlLoading</code> and <code>StartPath</code>. The absence of a stack and of transitions is a decision: Microsoft points to libraries and custom routers.</p>
+
+  <h2>Candidates from the Blazor search</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Library</th><th>Stars</th><th>What it gives</th><th>Spike</th></tr></thead>
+    <tbody>
+      <tr><td><a href="https://github.com/bitfoundation/bitplatform/blob/develop/src/Brouter/README.md" target="_blank" rel="noopener noreferrer">Bit.Brouter</a></td><td class="n">1.4K (repo)</td><td>Router, 7 hooks, keep-alive, direction-aware transitions</td><td>03, best library</td></tr>
+      <tr><td><a href="https://github.com/jsakamoto/Toolbelt.Blazor.ViewTransition" target="_blank" rel="noopener noreferrer">Toolbelt.Blazor.ViewTransition</a></td><td class="n">127</td><td>View transitions around the router</td><td>02</td></tr>
+      <tr><td><a href="https://github.com/reactiveui/ReactiveUI" target="_blank" rel="noopener noreferrer">ReactiveUI</a></td><td class="n">8.6K</td><td>View-model stack (<code>RoutingState</code>)</td><td>04</td></tr>
+      <tr><td><a href="https://github.com/masastack/MASA.Blazor" target="_blank" rel="noopener noreferrer">MASA Blazor PageStack</a></td><td class="n">1.3K</td><td>Mobile tabs and stack, <code>GoBack(n, state)</code></td><td>05</td></tr>
+      <tr><td><a href="https://ant-design-blazor.pages.dev/en-US/experimental/reusetabs" target="_blank" rel="noopener noreferrer">Ant Design ReuseTabs</a></td><td class="n">6.2K</td><td>Kept pages in tabs</td><td>06</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sum">Left out, because of low trust (stars, age or author): Routeables.Blazor (full feature list, but one month old, 1 star), Blazouter (72 stars), Blazor.NavigationStack (typed <code>Push&lt;T&gt;</code>, 4 stars), Hez2010.BlazorRouter (nested routes only), BlazorTransitionableRoute (abandoned in 2022). Prism, MvvmCross, Uno navigation and MAUI Shell need another UI framework for the whole app.</p>
+
+  <h2>Research update (2026-11-22)</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Question</th><th>Finding</th><th>Source</th></tr></thead>
+    <tbody>
+      <tr><td>Can C# wait for a CSS animation with no JS?</td><td><span class="cv p">part</span>Blazor has no native <code>@onanimationend</code> (none of its 96 events). A custom <code>[EventHandler("onanimationend", ...)]</code> works for one element since .NET 6. A view transition is a JS API, so it still needs <code>IJSRuntime</code>, and the documented way is to return a Promise.</td><td><a href="https://github.com/dotnet/aspnetcore/blob/main/src/Components/Web/src/Web/EventHandlers.cs" target="_blank" rel="noopener noreferrer">EventHandlers.cs</a>, <a href="https://meziantou.net/removing-elements-after-an-animation-in-blazor.htm" target="_blank" rel="noopener noreferrer">Meziantou</a>, <a href="https://learn.microsoft.com/aspnet/core/blazor/call-javascript-from-dotnet" target="_blank" rel="noopener noreferrer">MS Learn</a></td></tr>
+      <tr><td>A custom host in place of <code>RouteView</code>?</td><td><span class="cv p">part</span>Only small or old samples: Blazorise RouterTabs, BlazorDemoMultiPagesTab (2020), Blazr.Demo.Routing (2022), an ABP thread. No maintained keep-alive project apart from the ones we tested.</td><td><a href="https://blazorise.com/docs/extensions/routertabs" target="_blank" rel="noopener noreferrer">Blazorise</a>, <a href="https://abp.io/QA/Questions/6395" target="_blank" rel="noopener noreferrer">ABP #6395</a></td></tr>
+      <tr><td>A central navigation controller for large apps?</td><td><span class="cv n">no</span>No article combines a stack, typed results and guards. Blazor.NavigationStack has <code>Push&lt;T&gt;</code> with a result (4 stars). Blazing.Mvvm maps a view-model type to a route and calls <code>NavigateTo</code>; it has no stack, keep-alive, hooks or motion.</td><td><a href="https://github.com/gpoon21/Blazor.NavigationStack" target="_blank" rel="noopener noreferrer">NavigationStack</a>, <a href="https://github.com/gragra33/Blazing.Mvvm" target="_blank" rel="noopener noreferrer">Blazing.Mvvm</a></td></tr>
+      <tr><td>A large app with no <code>@page</code>?</td><td><span class="cv y">yes</span>Oqtane (CMS): <code>SiteRouter</code> replaces the <code>Router</code>, reads the URL into one <code>PageState</code> and renders pages from database records. It has no stack, keep-alive or hooks.</td><td><a href="https://github.com/oqtane/oqtane.framework" target="_blank" rel="noopener noreferrer">Oqtane</a></td></tr>
+      <tr><td>.NET 11 and .NET 12</td><td><span class="cv n">no</span>.NET 11 shipped on 2026-11-10 with <code>RelativeToCurrentUri</code>, <code>GetUriWithFragment</code> and <code>&lt;BasePath /&gt;</code>, but no transitions, keep-alive or <code>NavigateToAsync</code>. Transitions (#10389) and nested routing (#11212) are in ".NET 12 Planning".</td><td><a href="https://learn.microsoft.com/aspnet/core/release-notes/aspnetcore-11" target="_blank" rel="noopener noreferrer">ASP.NET Core 11</a>, <a href="https://github.com/dotnet/aspnetcore/issues/11212" target="_blank" rel="noopener noreferrer">#11212</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- MICROSOFT -->
+<section class="panel" id="microsoft" role="tabpanel" aria-labelledby="t-microsoft" hidden>
+  <div class="answer">
+    <p><b>Microsoft gives the basics and stops there.</b> Blazor has page navigation, a leave guard, custom events and JS interop. It has no page stack, keep-alive, page hooks, transitions or animation guide.</p>
+    <p><b>For the gaps, Microsoft says "use a library or your own router".</b> Transitions and nested routes are in ".NET 12 Planning". A stack and keep-alive are declined or not planned.</p>
+    <p><b>Our choices fit the official parts:</b> the default <code>Router</code> and <code>NavigationManager</code>, our <code>PageHost</code> and <code>Navigator</code> on top, and a JS Promise wait for the motion.</p>
+  </div>
+  <p class="sum">State on 2026-11-22. .NET 11 shipped on 2026-11-10 (<a href="https://learn.microsoft.com/aspnet/core/release-notes/aspnetcore-11" target="_blank" rel="noopener noreferrer">release notes</a>). Its navigation changes are small: <code>RelativeToCurrentUri</code>, <code>GetUriWithFragment</code> and <code>&lt;BasePath /&gt;</code>.</p>
+
+  <h2>Official state and suggestions</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Need</th><th>Blazor today (.NET 10 and 11)</th><th>Status of the gap</th><th>Microsoft source</th><th>Our choice</th></tr></thead>
+    <tbody>
+      <tr><td>Go to a page</td><td><span class="cv y">yes</span><code>@page</code>, <code>Router</code>, <code>NavigationManager.NavigateTo</code>, <code>[SupplyParameterFromQuery]</code></td><td>Done</td><td><a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/navigation?view=aspnetcore-10.0" target="_blank" rel="noopener noreferrer">Navigation doc</a></td><td>We use it</td></tr>
+      <tr><td>Stop a leave</td><td><span class="cv y">yes</span><code>RegisterLocationChangingHandler</code> (can await), <code>NavigationLock</code>, <code>PreventNavigation()</code></td><td>Done (.NET 7)</td><td><a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/navigation?view=aspnetcore-10.0" target="_blank" rel="noopener noreferrer">Navigation doc</a></td><td>We use it (<code>MotionHost</code>, spike 07)</td></tr>
+      <tr><td>Back, own page stack</td><td><span class="cv n">no</span>Browser history only</td><td>Declined: "no separate browsing stack"</td><td><a href="https://github.com/dotnet/aspnetcore/issues/60754" target="_blank" rel="noopener noreferrer">#60754</a></td><td>Our <code>Navigator</code> (spike 07)</td></tr>
+      <tr><td>More history control</td><td><span class="cv n">no</span></td><td>Declined: "implement your own router"</td><td><a href="https://github.com/dotnet/aspnetcore/issues/44699" target="_blank" rel="noopener noreferrer">#44699</a></td><td>Our <code>PageHost</code> under the default <code>Router</code></td></tr>
+      <tr><td>Keep-alive pages</td><td><span class="cv n">no</span>The router destroys the old page</td><td>Not planned</td><td><a href="https://github.com/dotnet/aspnetcore/issues/22207" target="_blank" rel="noopener noreferrer">#22207</a></td><td>Our <code>PageHost</code></td></tr>
+      <tr><td>Enter and leave hooks for a page</td><td><span class="cv p">part</span>Only the global <code>LocationChanging</code> and <code>LocationChanged</code></td><td>Not made</td><td><a href="https://github.com/dotnet/aspnetcore/issues/28527" target="_blank" rel="noopener noreferrer">#28527</a></td><td><code>INavPage</code> (spike 07)</td></tr>
+      <tr><td>Await a navigation</td><td><span class="cv n">no</span><code>NavigateTo</code> returns <code>void</code></td><td>Backlog</td><td><a href="https://github.com/dotnet/aspnetcore/issues/64813" target="_blank" rel="noopener noreferrer">#64813</a></td><td><code>PushAsync</code> returns a <code>Task</code></td></tr>
+      <tr><td>Nested routes</td><td><span class="cv n">no</span></td><td>".NET 12 Planning", needs a prototype</td><td><a href="https://github.com/dotnet/aspnetcore/issues/11212" target="_blank" rel="noopener noreferrer">#11212</a></td><td>Not needed now</td></tr>
+      <tr><td>Page transitions</td><td><span class="cv n">no</span></td><td>".NET 12 Planning"; struck out of .NET 11</td><td><a href="https://github.com/dotnet/aspnetcore/issues/10389" target="_blank" rel="noopener noreferrer">#10389</a></td><td>R1 motion pipeline</td></tr>
+      <tr><td>Animation end event (<code>@onanimationend</code>)</td><td><span class="cv n">no</span>None of the 96 built-in events</td><td>No issue on the roadmap</td><td><a href="https://github.com/dotnet/aspnetcore/blob/main/src/Components/Web/src/Web/EventHandlers.cs" target="_blank" rel="noopener noreferrer">EventHandlers.cs</a></td><td>Not used: see below</td></tr>
+      <tr><td>Your own browser event in C#</td><td><span class="cv y">yes</span><code>[EventHandler]</code> + <code>Blazor.registerCustomEventType</code> in a JS initializer</td><td>Done (.NET 6). .NET 11: the name must differ from the browser event</td><td><a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/components/event-handling?view=aspnetcore-10.0" target="_blank" rel="noopener noreferrer">Event handling doc</a>, <a href="https://learn.microsoft.com/en-us/aspnet/core/breaking-changes/11/blazor-custom-event-name-collision?view=aspnetcore-10.0" target="_blank" rel="noopener noreferrer">.NET 11 change</a></td><td>Not used: see below</td></tr>
+      <tr><td>Await a JS Promise from C#</td><td><span class="cv y">yes</span><code>IJSRuntime.InvokeAsync</code> waits for the Promise</td><td>Done</td><td><a href="https://learn.microsoft.com/aspnet/core/blazor/call-javascript-from-dotnet" target="_blank" rel="noopener noreferrer">JS interop doc</a></td><td><code>motion.js</code> wait, through the JS command system</td></tr>
+      <tr><td>A guide for animations</td><td><span class="cv n">no</span>No doc shows how to run or wait for an animation</td><td>None</td><td>Q&amp;A answers point to JS interop or libraries</td><td>R1 motion pipeline</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Animation end: the official way and our wait</h2>
+  <p class="sum">Finding (2026-11-22): the project has no record that we read the official event-handling doc when we made the motion waits. We used JS listeners on <code>transitionend</code> first, then moved to <code>getAnimations</code> after lesson I13. The comparison below shows that our choice holds.</p>
+  <div class="cmp-2">
+    <div><p class="figt">Official: a custom event</p><pre><code>// 1. C#: a class named EventHandlers, in a .cs file
+[EventHandler(&quot;onanimationdone&quot;, typeof(EventArgs), enableStopPropagation: true, enablePreventDefault: true)]
+public static class EventHandlers { }
+
+// 2. JS initializer (wwwroot/{AssemblyName}.lib.module.js)
+export function afterWebStarted(blazor) {
+    blazor.registerCustomEventType(&quot;animationdone&quot;, { browserEventName: &quot;animationend&quot; }); // .NET 11: names must differ
+}
+
+// 3. Razor
+&lt;div class=&quot;sheet&quot; @onanimationdone=&quot;OnSheetDone&quot;&gt;...&lt;/div&gt;</code></pre></div>
+    <div><p class="figt">Ours: await a JS Promise</p><pre><code>// motion.js: settle mode (simplified)
+var all = el.getAnimations({ subtree: true });
+Promise.all(all.map(a =&gt; a.finished.catch(() =&gt; {})))   // all animations of the block
+setTimeout(() =&gt; finish(&quot;limit&quot;), limit());              // a time limit from the tokens
+// C#: await Commands.SendAsync(new MotionWait(target, WaitMode.Settle))</code></pre></div>
+  </div>
+  <div class="tbl wide"><table>
+    <thead><tr><th></th><th>Official custom event</th><th>Our wait</th></tr></thead>
+    <tbody>
+      <tr><td>JavaScript needed</td><td>Yes: a JS initializer</td><td>Yes: <code>motion.js</code></td></tr>
+      <tr><td>What C# gets</td><td>A handler call, with no <code>Task</code> for the step</td><td>A <code>Task</code> that a pipeline step awaits</td></tr>
+      <tr><td>No animation runs (reduced motion)</td><td><span class="cv n">no event</span>A timer must end the wait (lesson I13)</td><td><span class="cv y">ends at once</span>No animation is found</td></tr>
+      <tr><td>Many animations in one block</td><td>One event for each; we must count them</td><td>One wait for all</td></tr>
+      <tr><td>Hidden page</td><td>No event</td><td>Stops at once</td></tr>
+      <tr><td>Cost on Blazor Server</td><td>One SignalR message for each event</td><td>One call for each wait</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Suggestions for us</h2>
+  <ol>
+    <li>Keep the default <code>Router</code> and <code>NavigationManager</code>. Add only what Microsoft declined: the stack, keep-alive and page hooks (spike 07).</li>
+    <li>Keep the <code>motion.js</code> wait for pipeline steps. It is the official "await a JS Promise" pattern.</li>
+    <li>Use an official custom event only for a simple "tell this component when its animation ends" case. Give it a name that differs from the browser event (.NET 11 rule).</li>
+    <li>Watch <a href="https://github.com/dotnet/aspnetcore/issues/10389" target="_blank" rel="noopener noreferrer">#10389</a> and <a href="https://github.com/dotnet/aspnetcore/issues/11212" target="_blank" rel="noopener noreferrer">#11212</a>. If .NET 12 ships transitions, compare them with R1 before the change.</li>
+  </ol>
+</section>
+
+<!-- SPIKES -->
+<section class="panel" id="spikes" role="tabpanel" aria-labelledby="t-spikes" hidden>
+  <div class="answer">
+    <p><b>Our own shape is the best fit: spike 07.</b> It keeps the default <code>Router</code>, replaces only <code>RouteView</code> with a <code>PageHost</code>, and adds one <code>Navigator</code> service. It passes all seven flows, with no package and 213 reusable lines.</p>
+    <p><b>Bit.Brouter is the best library.</b> It gives the hooks, keep-alive and the push/pop mark, but no typed result and its own route table.</p>
+    <p><b>ReactiveUI, MASA and Ant Design bring too much.</b> ReactiveUI sets the app architecture (MVVM with Rx). MASA and Ant Design are full UI kits.</p>
+  </div>
+  <p class="sum">Eight spikes built the same two-page app on .NET 10 with Blazor Server: six with a library, two (07 and 08) with our own code and no library. The code is in <code>spikes/blazor-nav/</code> (not committed). The spec is <code>spikes/blazor-nav/SPEC.md</code>.</p>
+
+  <h2>The test app</h2>
+  <div class="wire" aria-label="The two pages of the test app">
+    <div class="phone"><div class="ph-h">Home</div><div class="ph-b"><span class="btn pri">Add one</span><span class="btn">Open counter</span></div><div class="ph-t">trace</div><div class="ph-n"><b>Home</b><span>Counter</span></div></div>
+    <div class="phone"><div class="ph-h">Counter <span class="btn sm">Back</span></div><div class="ph-b"><span class="big">3</span><span class="inp">Note: abc</span></div><div class="ph-t">trace</div><div class="ph-n"><span>Home</span><b>Counter</b></div></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Flow</th><th>Steps</th><th>What it shows</th></tr></thead>
+    <tbody>
+      <tr><td>F1 Tab change</td><td>App bar: Counter, then Home</td><td>Tab navigation and its motion</td></tr>
+      <tr><td>F2 Push</td><td>Home: "Open counter"</td><td>Navigation from C# and its motion</td></tr>
+      <tr><td>F3 Back</td><td>Counter: "Back"</td><td>Back from C#, reverse motion</td></tr>
+      <tr><td>F4 Shared state</td><td>"Add one" 3 times, then open Counter</td><td>The count shows 3</td></tr>
+      <tr><td>F5 Page state</td><td>Type in "Note", leave, come back</td><td>Keep-alive of a page</td></tr>
+      <tr><td>F6 Typed result</td><td>Home: "Pick a color", then "Red"</td><td>A pushed page with no URL gives a typed value back to the caller (07 and 08 only)</td></tr>
+      <tr><td>F7 Leave guard</td><td>Counter: type a note, then click the Home tab</td><td>The page waits for an in-page "Stay / Leave" bar and can cancel the move; no JS <code>confirm</code> (07 and 08 only)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Results: navigation</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Spike</th><th>Lines</th><th>Transition</th><th>Direction</th><th>Page hooks</th><th>Cancel a leave</th></tr></thead>
+    <tbody>
+      <tr><td>01 Native Blazor</td><td class="n">105</td><td><span class="cv n">no</span></td><td><span class="cv n">no</span></td><td><span class="cv p">part</span>Changing / changed, <code>OnInitialized</code>, <code>Dispose</code></td><td><span class="cv y">yes</span><code>PreventNavigation()</code></td></tr>
+      <tr><td>02 Toolbelt ViewTransition</td><td class="n">152</td><td><span class="cv y">yes</span></td><td><span class="cv p">part</span>We set it</td><td><span class="cv p">part</span><code>OnNavigateAsync</code> only</td><td><span class="cv n">no</span></td></tr>
+      <tr><td>03 Bit.Brouter</td><td class="n">160</td><td><span class="cv y">yes</span></td><td><span class="cv y">yes</span>push, pop, replace</td><td><span class="cv y">yes</span>7 hooks</td><td><span class="cv y">yes</span><code>Cancel()</code></td></tr>
+      <tr><td>04 ReactiveUI</td><td class="n">217</td><td><span class="cv n">no</span></td><td><span class="cv p">part</span>Navigate / NavigateBack</td><td><span class="cv p">part</span><code>WhenActivated</code></td><td><span class="cv n">no</span></td></tr>
+      <tr><td>05 MASA PageStack</td><td class="n">174</td><td><span class="cv p">part</span>Push only</td><td><span class="cv y">yes</span></td><td><span class="cv p">part</span><code>OnPageActivated</code>, events</td><td><span class="cv n">no</span></td></tr>
+      <tr><td>06 Ant ReuseTabs</td><td class="n">136</td><td><span class="cv n">no</span></td><td><span class="cv n">no</span></td><td><span class="cv n">no</span>Tab events only</td><td><span class="cv n">no</span></td></tr>
+      <tr><td><b>07 Router + PageHost</b> (own)</td><td class="n">346</td><td><span class="cv y">yes</span>CSS classes, C# wait</td><td><span class="cv y">yes</span>push, back, tab</td><td><span class="cv y">yes</span><code>OnLeaveAsync</code>, <code>OnEnterAsync</code></td><td><span class="cv y">yes</span>Awaits an in-page bar (F7)</td></tr>
+      <tr><td>08 SiteRouter (own, no Router)</td><td class="n">432</td><td><span class="cv y">yes</span>CSS classes, C# wait</td><td><span class="cv y">yes</span>push, back, tab</td><td><span class="cv y">yes</span><code>OnLeaveAsync</code>, <code>OnEnterAsync</code></td><td><span class="cv y">yes</span>Awaits an in-page bar (F7)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Results: state</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Spike</th><th>Stack</th><th>Back result</th><th>F4 shared state</th><th>F5 keep page</th><th>Visual check</th></tr></thead>
+    <tbody>
+      <tr><td>01 Native Blazor</td><td><span class="cv n">no</span>Browser history</td><td><span class="cv n">no</span></td><td><span class="cv y">pass</span></td><td><span class="cv n">fail</span>By design</td><td>Plain swap</td></tr>
+      <tr><td>02 Toolbelt ViewTransition</td><td><span class="cv n">no</span>Browser history</td><td><span class="cv n">no</span></td><td><span class="cv y">pass</span></td><td><span class="cv n">fail</span>By design</td><td>Works</td></tr>
+      <tr><td>03 Bit.Brouter</td><td><span class="cv p">part</span>History + kept pages</td><td><span class="cv n">no</span></td><td><span class="cv y">pass</span>With a 1-line fix</td><td><span class="cv y">pass</span></td><td>Works</td></tr>
+      <tr><td>04 ReactiveUI</td><td><span class="cv y">yes</span>View-model stack</td><td><span class="cv n">no</span></td><td><span class="cv y">pass</span></td><td><span class="cv y">pass</span>In the view model</td><td>Works; URL stays <code>/</code></td></tr>
+      <tr><td>05 MASA PageStack</td><td><span class="cv y">yes</span>Tabs + stack</td><td><span class="cv p">part</span><code>object?</code></td><td><span class="cv y">pass</span></td><td><span class="cv p">part</span>Tabs only</td><td>Works</td></tr>
+      <tr><td>06 Ant ReuseTabs</td><td><span class="cv n">no</span>Tabs</td><td><span class="cv n">no</span></td><td><span class="cv n">fail</span>One visit late</td><td><span class="cv y">pass</span></td><td><b>Bug:</b> the count updates one change late</td></tr>
+      <tr><td><b>07 Router + PageHost</b> (own)</td><td><span class="cv y">yes</span>History + kept pages + push stack</td><td><span class="cv y">yes</span>Typed (F6)</td><td><span class="cv y">pass</span>With a state subscription</td><td><span class="cv y">pass</span></td><td>Works</td></tr>
+      <tr><td>08 SiteRouter (own, no Router)</td><td><span class="cv y">yes</span>Own visited list + kept pages + push stack</td><td><span class="cv y">yes</span>Typed (F6)</td><td><span class="cv y">pass</span>Via the <code>NavState</code> cascade</td><td><span class="cv y">pass</span></td><td>Works</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sum">"Lines" counts the spike code without empty lines and without the shared base. The visual check is the user's own test in a browser. The machine test ran with a hidden browser pane, so it checked only the functional flows.</p>
+
+  <h2>How much each library sets</h2>
+  <p class="figt">The wider the scope, the more of the app the library decides</p>
+  <div class="scale" aria-label="Scope of each library, from navigation motion only to a full UI kit">
+    <div class="sc"><div class="sc-h">Motion only</div><span class="lib">02 Toolbelt</span></div>
+    <div class="sc"><div class="sc-h">Router and pages</div><span class="lib">01 Native</span><span class="lib">03 Bit.Brouter</span><span class="lib key">07 own PageHost</span><span class="lib">08 own SiteRouter</span></div>
+    <div class="sc"><div class="sc-h">App architecture</div><span class="lib">04 ReactiveUI</span></div>
+    <div class="sc"><div class="sc-h">UI kit and app shell</div><span class="lib">05 MASA</span><span class="lib">06 Ant Design</span></div>
+  </div>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Spike</th><th>Packages</th><th>Assembly (KB)</th><th>Page assets</th><th>What it sets in the app</th></tr></thead>
+    <tbody>
+      <tr><td>01 Native Blazor</td><td class="n">0</td><td class="n">0</td><td>None</td><td>Nothing</td></tr>
+      <tr><td>02 Toolbelt ViewTransition</td><td class="n">1</td><td class="n">20</td><td>0.2 KB JS</td><td>The router component only</td></tr>
+      <tr><td>03 Bit.Brouter</td><td class="n">1</td><td class="n">220</td><td>6.4 KB JS</td><td>The router and a route table. Pages that want hooks implement <code>IBrouterRoute</code></td></tr>
+      <tr><td>04 ReactiveUI</td><td class="n">13</td><td>Not summed</td><td>None</td><td>A view model for each page, a view map, Rx commands (<code>Execute().Subscribe()</code>), its own router host</td></tr>
+      <tr><td>05 MASA PageStack</td><td class="n">9</td><td class="n">3,136</td><td>582 KB CSS, 37 KB JS</td><td>The <code>MApp</code> root, its theme, a page base class, tab rules, pushed pages as full-screen dialogs</td></tr>
+      <tr><td>06 Ant ReuseTabs</td><td class="n">2</td><td class="n">4,152</td><td>690 KB CSS, JS</td><td>Its CSS and JS, a page attribute, ReuseTabs in the layout</td></tr>
+      <tr><td><b>07 Router + PageHost</b> (own)</td><td class="n">0</td><td class="n">0</td><td>8 lines of scoped CSS</td><td>Only our code: <code>PageHost</code> in <code>&lt;Found&gt;</code>, one scoped <code>Navigator</code>, an optional page interface</td></tr>
+      <tr><td>08 SiteRouter (own, no Router)</td><td class="n">0</td><td class="n">0</td><td>Scoped CSS</td><td>Only our code, but it replaces the <code>Router</code>: a page table in <code>Program.cs</code>, <code>MapFallback</code> on the server, a <code>NavState</code> cascade</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sum">Assembly size is for one target framework (net10.0, or net9.0 for MASA). ReactiveUI has 13 packages (ReactiveUI and Splat) with small assemblies each; the page did not sum them.</p>
+
+
+  <h2>Code side by side: 03 Brouter, 07 and 08</h2>
+  <p class="sum">The same jobs in the best library and in our two shapes. The code is cut from the spikes.</p>
+  <div class="tbl wide cmp"><table>
+    <thead><tr><th>Job</th><th>03 Bit.Brouter</th><th>07 Router + PageHost (own)</th><th>08 SiteRouter (own)</th></tr></thead>
+    <tbody>
+      <tr><td>Setup</td><td><pre><code>&lt;Brouter&gt;
+  &lt;Broute Path=&quot;/&quot; Component=&quot;typeof(Home)&quot; /&gt;
+  &lt;Broute Path=&quot;/counter&quot; Component=&quot;typeof(Counter)&quot;
+          KeepAlive=&quot;true&quot; /&gt;
+&lt;/Brouter&gt;</code></pre><p>Its own route table. No <code>@page</code>.</p></td><td><pre><code>&lt;Router AppAssembly=&quot;typeof(Program).Assembly&quot;&gt;
+  &lt;Found Context=&quot;route&quot;&gt;
+    &lt;PageHost Route=&quot;route&quot; /&gt;
+  &lt;/Found&gt;
+&lt;/Router&gt;</code></pre><p>The default <code>Router</code> and <code>@page</code>. Only <code>RouteView</code> is ours.</p></td><td><pre><code>// Program.cs
+builder.Services.AddNav(p =&gt; p
+    .Map&lt;Home&gt;(&quot;/&quot;).Map&lt;Counter&gt;(&quot;/counter&quot;));
+app.MapFallback(() =&gt;
+    new RazorComponentResult&lt;App&gt;());
+// App: &lt;SiteHost /&gt; (no Router)</code></pre><p>Our page table. The server needs a fallback route.</p></td></tr>
+      <tr><td>Page hooks</td><td><pre><code>public class Counter : IBrouterRoute
+ValueTask OnDeactivatingAsync(ctx)   // ctx.Cancel()
+ValueTask OnDeactivatedAsync(...)    // Hidden / Disposing
+ValueTask OnActivatedAsync(...)      // first or not
+ValueTask OnRenavigating/OnRenavigated</code></pre><p>Seven hooks.</p></td><td><pre><code>public interface INavPage {
+  Task OnEnterAsync(NavContext c)
+      =&gt; Task.CompletedTask;        // after the motion
+  Task&lt;bool&gt; OnLeaveAsync(NavContext c)
+      =&gt; Task.FromResult(true);     // false = cancel
+}
+record NavContext(NavKind Kind, string From,
+                  string To, CancellationToken Cancel);</code></pre><p>Two hooks with defaults. A page implements only what it needs.</p></td><td><pre><code>public interface INavPage {
+  Task OnEnterAsync(NavContext c) =&gt; ...;
+  Task&lt;bool&gt; OnLeaveAsync(NavContext c) =&gt; ...;
+}
+record NavContext(Move Move, Type? From, Type? To);
+record NavState(string Url, string Path, Type? Page,
+                Move Move, IReadOnlyDictionary&lt;string,string&gt; Query);</code></pre><p>The same hooks. Pages also get <code>NavState</code> as a cascade.</p></td></tr>
+      <tr><td>Push and back</td><td><pre><code>Brouter.Navigate(&quot;/counter&quot;);   // push
+Brouter.Back();                // pop</code></pre><p>Strings. The mark is push, pop or replace.</p></td><td><pre><code>Navigator.Push(&quot;/counter&quot;);    // URL page
+await Navigator.BackAsync();   // pop stack, else history</code></pre></td><td><pre><code>Navigator.Go&lt;Counter&gt;();       // typed, URL from table
+await Navigator.Back();        // pop stack, else own list</code></pre><p>No URL strings in pages.</p></td></tr>
+      <tr><td>Typed result (F6)</td><td><p>No. Add our own stack service.</p></td><td><pre><code>// Home
+picked = await Navigator.PushAsync&lt;Picker, string&gt;();
+// Picker (no @page, no URL)
+&lt;button @onclick=&#x27;() =&gt; Navigator.CloseAsync(&quot;Red&quot;)&#x27;&gt;</code></pre><p>A <code>TaskCompletionSource</code> for each pushed page.</p></td><td><pre><code>picked = await Navigator.PushAsync&lt;Picker, string&gt;();
+// Picker
+&lt;button @onclick=&#x27;() =&gt; Navigator.Close(&quot;Red&quot;)&#x27;&gt;</code></pre><p>The same model.</p></td></tr>
+      <tr><td>Leave guard (F7)</td><td><pre><code>if (note != &quot;&quot;) ctx.Cancel();</code></pre><p>Cancel only. An await of a user choice is not tested.</p></td><td><pre><code>public async Task&lt;bool&gt; OnLeaveAsync(NavContext c) {
+  if (note == &quot;&quot;) return true;
+  guard = new();              // shows the in-page bar
+  await InvokeAsync(StateHasChanged);
+  return await guard.Task;    // Stay = false, Leave = true
+}</code></pre><p><code>Navigator</code> calls it from <code>RegisterLocationChangingHandler</code>; false calls <code>PreventNavigation()</code>.</p></td><td><pre><code>// Same page code as 07.</code></pre><p>Same as 07.</p></td></tr>
+      <tr><td>Motion</td><td><pre><code>html[data-brouter-nav=&quot;pop&quot;]
+  ::view-transition-new(stage) { ... }</code></pre><p>Its own view transitions. We turn them off for R1.</p></td><td><pre><code>// PageHost.PlayAsync
+moving = slot; motion = &quot;push&quot;;   // class=&quot;slot push&quot;
+StateHasChanged();
+await Task.Delay(300);            // R1: MotionWait
+await slot.Page.OnEnterAsync(ctx);</code></pre><p>One place. R1 replaces the delay with its wait.</p></td><td><pre><code>// SiteHost.PlayAsync
+leaving = shown; shown = ActiveSlot; motion = move;
+await InvokeAsync(StateHasChanged);
+await Task.Delay(300);</code></pre><p>The same, and the old page stays visible during the move.</p></td></tr>
+      <tr><td>Kept page shows old state</td><td><pre><code>public ValueTask OnActivatedAsync(...) {
+  StateHasChanged(); return default; }</code></pre></td><td><pre><code>State.Changed += Refresh;   // in the page
+void Refresh() =&gt; InvokeAsync(StateHasChanged);</code></pre><p>Open item: a visit value from the host would fix it for all pages.</p></td><td><pre><code>[CascadingParameter] public NavState State { get; set; }
+// A new NavState renders the kept page again</code></pre><p>Fixed by the cascade.</p></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>How 07 works</h2>
+  <p class="figt">One move, from a click to the enter hook</p>
+  <div class="flow"><span class="st">click or Navigator call</span><span class="st">LocationChanging</span><span class="st key">old: OnLeaveAsync (await, can cancel)</span><span class="st">Router finds page type</span><span class="st">PageHost: show kept slot + class</span><span class="st">wait 300 ms (R1: MotionWait)</span><span class="st key">new: OnEnterAsync</span></div>
+  <p class="sum">A pushed page skips the URL part: <code>PushAsync</code> calls <code>OnLeaveAsync</code>, adds a slot to the stack, plays the move, and returns when the page calls <code>CloseAsync</code>.</p>
+
+  <h2>Our app today uses the default navigation</h2>
+  <p class="sum">The check is on the motion branch (<code>orch/motion-review-fixes</code>). We use each default feature that the <a href="https://refactorlogic.com/posts/blazor-navigation-explained.html" target="_blank" rel="noopener noreferrer">refactorlogic.com guide</a> shows, except <code>NavigationLock</code> and <code>forceLoad</code>.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Default feature</th><th>Where we use it</th></tr></thead>
+    <tbody>
+      <tr><td><code>@page</code> routes</td><td><code>Cards</code>, <code>Settings</code>, <code>Sessions</code>, <code>/events/{Id}</code>, <code>/sessions/{Id}</code></td></tr>
+      <tr><td><code>NavigationManager.NavigateTo</code></td><td><code>Open.razor</code>: <code>Nav.NavigateTo("cards")</code></td></tr>
+      <tr><td><code>[SupplyParameterFromQuery]</code></td><td><code>StreamPage.razor</code> (<code>Session</code>)</td></tr>
+      <tr><td><code>LocationChanged</code></td><td><code>AppBar.razor</code> (the active tab)</td></tr>
+      <tr><td><code>RegisterLocationChangingHandler</code></td><td><code>MotionHost.razor</code> (starts each push or back motion)</td></tr>
+      <tr><td><code>IJSRuntime.InvokeAsync</code></td><td>The JS command system wraps it and adds a trace, cancellation and a typed <code>Result</code> in place of an exception</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sum"><code>motion.js</code> does only what C# cannot do: wait for the end of CSS animations, start a view transition, and wait for the Blazor render. The JS <code>confirm</code> of the guide is a browser dialog; our guard is an in-page bar.</p>
+
+  <h2>Each spike</h2>
+  <div class="tools"><button type="button" id="open-all">Open all</button><button type="button" id="close-all">Close all</button></div>
+
+  <details class="lib">
+    <summary><span class="sid">01</span><span class="stt">Native Blazor · the base that we have today</span><span class="cv p">reference</span></summary>
+    <dl class="sb">
+      <dt>Model</dt><dd>The <code>Router</code> maps the URL to one page and swaps it in one render. The browser history is the only stack. There is no back method.</dd>
+      <dt>Pages</dt><dd>A Razor component with <code>@page "/counter"</code>.</dd>
+      <dt>Hook order</dt><dd><div class="flow"><span class="st">NavigateTo</span><span class="st">LocationChanging</span><span class="st">new: OnInitialized</span><span class="st">old: Dispose</span><span class="st">LocationChanged</span><span class="st">new: OnAfterRender</span></div><p>The new page starts before the old page goes, in the same render. No step waits for a motion.</p></dd>
+      <dt>Key code</dt><dd><pre><code>Nav.RegisterLocationChangingHandler(ctx =&gt; { /* can await, can ctx.PreventNavigation() */ });
+Nav.NavigateTo("counter");                      // push
+await JS.InvokeVoidAsync("history.back");       // back: no C# method</code></pre></dd>
+      <dt>At scale</dt><dd>We write the stack, the transitions, keep-alive and a back result ourselves. This is the R1 motion pipeline plus a navigation controller.</dd>
+      <dt>Trap</dt><dd>An exception in a location changing handler ends the Blazor circuit. After that, no button works.</dd>
+      <dt>Opinion</dt><dd>Free of opinion, but it gives only the two hooks.</dd>
+    </dl>
+  </details>
+
+  <details class="lib">
+    <summary><span class="sid">02</span><span class="stt">Toolbelt.Blazor.ViewTransition · motion only</span><span class="cv p">fallback</span></summary>
+    <dl class="sb">
+      <dt>Model</dt><dd>Native Blazor routing. <code>ViewTransitionRouter</code> replaces <code>Router</code> and wraps each page swap in a browser view transition. It can also wrap another router.</dd>
+      <dt>Pages</dt><dd>Plain <code>@page</code> components. No change.</dd>
+      <dt>Hook order</dt><dd><div class="flow"><span class="st">OnNavigateAsync</span><span class="st">view transition starts</span><span class="st">Router swaps page</span><span class="st">transition ends</span></div></dd>
+      <dt>Key code</dt><dd><pre><code>&lt;ViewTransitionRouter AppAssembly="..." OnNavigateAsync="OnNavigate"&gt;
+// The library does not know push or back. The page sets a mark before it navigates:
+Mark.Next = "push"; Nav.NavigateTo("counter");
+// OnNavigate writes &lt;html data-nav="push"&gt;; CSS picks the slide:
+html[data-nav="push"]::view-transition-new(stage) { animation: 300ms ease both vt-in-right; }</code></pre></dd>
+      <dt>At scale</dt><dd>Each navigation call must set the direction mark. One global transition runs for each page change. There is no page hook, no keep-alive and no cancel.</dd>
+      <dt>Opinion</dt><dd>Very small (20 KB, one file of JS). It adds motion and nothing else. Use it if we keep native routing.</dd>
+    </dl>
+  </details>
+
+  <details class="lib">
+    <summary><span class="sid">03</span><span class="stt">Bit.Brouter · router with hooks, keep-alive and transitions</span><span class="cv y">best fit</span></summary>
+    <dl class="sb">
+      <dt>Model</dt><dd>A router that replaces <code>&lt;Router&gt;</code>. One route table (<code>&lt;Broute&gt;</code>, nestable). The stack is the browser history plus the kept pages. <code>IBrouter</code> has <code>Navigate</code>, <code>Back()</code> and the navigation type (Push, Pop, Replace).</dd>
+      <dt>Pages</dt><dd>Plain components. A page that wants hooks implements <code>IBrouterRoute</code>. Keep-alive is a route option.</dd>
+      <dt>Hook order (back)</dt><dd><div class="flow"><span class="st">Back()</span><span class="st key">old: OnDeactivating (can cancel)</span><span class="st">OnNavigating (Pop)</span><span class="st">old: OnDeactivated (Hidden)</span><span class="st">new: OnInitialized</span><span class="st">OnNavigated</span><span class="st key">new: OnActivated</span></div><p>A kept page gets <code>OnDeactivated(Hidden)</code>; a page that goes gets <code>Disposing</code>. A kept page that shows again gets <code>OnActivated(first=false)</code>.</p></dd>
+      <dt>Key code</dt><dd><pre><code>&lt;Brouter&gt;
+    &lt;Broute Path="/" Component="typeof(Home)" /&gt;
+    &lt;Broute Path="/counter" Component="typeof(Counter)" KeepAlive="true" /&gt;
+&lt;/Brouter&gt;
+
+public ValueTask OnDeactivatingAsync(BrouterRouteDeactivatingContext c)
+{
+    if (note == "stay") c.Cancel();          // leave guard
+    return default;
+}
+public ValueTask OnActivatedAsync(BrouterRouteActivation a)
+{
+    StateHasChanged();                        // a kept page does not render again by itself
+    return default;
+}
+
+/* Motion: Brouter sets &lt;html data-brouter-nav="push|pop|replace"&gt; */
+html[data-brouter-nav="pop"]::view-transition-new(stage) { animation-name: in-left; }</code></pre></dd>
+      <dt>At scale</dt><dd>
+        <ul>
+          <li>Nested routes, guards and data loaders are in the same route table.</li>
+          <li>Keep-alive has a limit (<code>KeepAliveMax</code>) and <code>ClearKeepAlive()</code>.</li>
+          <li>For our motion pipeline: turn off its default animations, wait for <code>MotionWait</code> in <code>OnDeactivating</code>, and start the enter step in <code>OnActivated</code>.</li>
+          <li>Add a small stack service for a typed back result (a <code>TaskCompletionSource&lt;T&gt;</code> for each push).</li>
+        </ul>
+      </dd>
+      <dt>Trap</dt><dd>A kept page shows old shared state until it renders. Render it in <code>OnActivatedAsync</code>, or subscribe to the state.</dd>
+      <dt>Opinion</dt><dd>It sets the routing only: the route table and an optional page interface. It does not touch state, components or style. Risks: version 11 is in preview, and the tray host (our own <code>WebViewManager</code>) is not tested.</dd>
+    </dl>
+  </details>
+
+  <details class="lib">
+    <summary><span class="sid">04</span><span class="stt">ReactiveUI · view-model stack</span><span class="cv n">too wide</span></summary>
+    <dl class="sb">
+      <dt>Model</dt><dd>View-model-first. An <code>IScreen</code> holds a <code>RoutingState</code> with a <code>NavigationStack</code> of view models. A host component shows the view of the current view model. The URL does not follow.</dd>
+      <dt>Pages</dt><dd>Each page is two parts: a view model (<code>IRoutableViewModel</code>) and a view (<code>ReactiveComponentBase&lt;T&gt;</code>), linked in a view map.</dd>
+      <dt>Hook order (back)</dt><dd><div class="flow"><span class="st">NavigateBack.Execute()</span><span class="st">CurrentViewModel = Home</span><span class="st">new view: OnInitialized</span><span class="st">new VM: WhenActivated</span><span class="st">old view: Dispose</span><span class="st">old VM: deactivated</span></div></dd>
+      <dt>Key code</dt><dd><pre><code>public sealed class AppScreen : ReactiveObject, IScreen
+{
+    public RoutingState Router { get; } = new();
+}
+Screen.Router.Navigate.Execute(Screen.Counter).Subscribe();   // push
+Screen.Router.NavigateBack.Execute().Subscribe();             // back
+Screen.Router.NavigateAndReset.Execute(Screen.Home).Subscribe(); // tab
+
+RxAppBuilder.CreateReactiveUIBuilder().WithBlazor()
+    .ConfigureViewLocator(l =&gt; { l.Map&lt;HomeViewModel, Home&gt;(); l.Map&lt;CounterViewModel, Counter&gt;(); })
+    .BuildApp();</code></pre></dd>
+      <dt>At scale</dt><dd>Each page gets a view model and a map line. Each action is an Rx command. The URL must be synced by hand, or the browser back leaves the app. After a tab change the stack has one item, so the back does nothing.</dd>
+      <dt>Opinion</dt><dd>Small in bytes, wide in shape. It sets MVVM with Rx for the whole app. The 27.x API changed (<code>ViewLocator.Current</code> is gone; <code>Subscribe</code> needs <code>ReactiveUI.Primitives</code>).</dd>
+    </dl>
+  </details>
+
+  <details class="lib">
+    <summary><span class="sid">05</span><span class="stt">MASA PageStack · mobile tabs and stack</span><span class="cv n">UI kit</span></summary>
+    <dl class="sb">
+      <dt>Model</dt><dd>Two layers. Tab pages match tab rules and stay in the DOM. Pushed pages open on top as full-screen dialogs and close on back.</dd>
+      <dt>Pages</dt><dd>A stack page inherits <code>PStackPageBase</code>. A pushed page needs a route that no tab rule matches (here <code>/counter/stack</code>).</dd>
+      <dt>Hook order (back)</dt><dd><div class="flow"><span class="st">GoBack(1, "abc")</span><span class="st">StackPop (state = "abc")</span><span class="st">StackPop (state = null)</span><span class="st">PageClosed</span><span class="st">old: Dispose</span></div><p><code>StackPop</code> fires two times for each back.</p></dd>
+      <dt>Key code</dt><dd><pre><code>&lt;MApp&gt;
+    &lt;PPageStack TabRules="tabRules"&gt;@Body&lt;/PPageStack&gt;
+&lt;/MApp&gt;
+NavController.Push("/counter/stack");
+NavController.GoBack(1, note);                       // back with a result (object?)
+protected override void OnPageActivated(object? state) { ... }</code></pre></dd>
+      <dt>At scale</dt><dd>This is the closest to a mobile navigation controller: tabs, a stack, <code>GoBack(n)</code>, a result. But all of it is inside the MASA app shell and its dialog component.</dd>
+      <dt>Opinion</dt><dd>A full UI kit: 9 packages (FluentValidation and OneOf too), 3 MB of assemblies, 582 KB of CSS, its own theme and root. Copy the model (tab rules plus a push stack with <code>GoBack(n, state)</code>), not the package.</dd>
+    </dl>
+  </details>
+
+  <details class="lib">
+    <summary><span class="sid">06</span><span class="stt">Ant Design ReuseTabs · kept pages for admin tabs</span><span class="cv n">bug</span></summary>
+    <dl class="sb">
+      <dt>Model</dt><dd>Native routing. ReuseTabs keeps each visited page in a hidden tab pane and shows the pane of the current URL.</dd>
+      <dt>Pages</dt><dd>A page gets <code>[ReuseTabsPage(KeepAlive = true)]</code> and can implement <code>IReuseTabsPage</code> for its tab title.</dd>
+      <dt>Hook order</dt><dd><div class="flow"><span class="st">LocationChanging</span><span class="st">ActiveKeyChanged</span><span class="st">OnChange</span><span class="st">LocationChanged</span></div><p>A kept page gets no hook when it shows or hides.</p></dd>
+      <dt>The bug</dt><dd>The hidden Counter page renders only when ReuseTabs renders all its panes, at the next navigation. So the page shows the count of the last visit, and the new count shows at the moment you leave. With no activation hook, each kept page needs its own subscription to the state.</dd>
+      <dt>Key code</dt><dd><pre><code>&lt;ReuseTabs TabBarStyle="display:none" /&gt;
+@attribute [ReuseTabsPage(Title = "Counter", KeepAlive = true)]</code></pre></dd>
+      <dt>Opinion</dt><dd>Made for admin apps with closable tabs. A full UI kit (4 MB, 690 KB CSS) for one feature. Not a fit.</dd>
+    </dl>
+  </details>
+
+  <details class="lib">
+    <summary><span class="sid">07</span><span class="stt">Router + PageHost + Navigator · our own, no library</span><span class="cv y">best fit</span></summary>
+    <dl class="sb">
+      <dt>Model</dt><dd>The default <code>Router</code> finds the page type. Our <code>PageHost</code> replaces <code>RouteView</code>: it keeps one instance for each page type and hides the inactive ones. One scoped <code>Navigator</code> decides the move kind, calls the leave hook, keeps the push stack and a list of visited URLs, and tells the host to play the move.</dd>
+      <dt>Pages</dt><dd>Plain <code>@page</code> components. A page that wants hooks implements <code>INavPage</code>. A pushed page (Picker) has no <code>@page</code> and no URL.</dd>
+      <dt>Hook order (push)</dt><dd><div class="flow"><span class="st">Navigator.Push</span><span class="st">LocationChanging (Push)</span><span class="st key">old: OnLeaveAsync</span><span class="st">PageHost: show (push)</span><span class="st">new: OnInitialized (first visit)</span><span class="st">wait 300 ms</span><span class="st key">new: OnEnterAsync Push</span></div></dd>
+      <dt>Key code</dt><dd><pre><code>// PageHost.razor: keep-alive with DynamicComponent
+@foreach (var slot in kept)
+{
+    &lt;div @key=&quot;slot.Type&quot; class=&quot;slot @MotionOf(slot)&quot; hidden=&quot;@(slot != active)&quot;&gt;
+        &lt;DynamicComponent @ref=&quot;slot.View&quot; Type=&quot;slot.Type&quot; Parameters=&quot;slot.Values&quot; /&gt;
+    &lt;/div&gt;
+}
+@foreach (var slot in Navigator.Stack)   // pushed pages over the active page
+{
+    &lt;div @key=&quot;slot&quot; class=&quot;slot @MotionOf(slot)&quot;&gt;
+        &lt;DynamicComponent @ref=&quot;slot.View&quot; Type=&quot;slot.Type&quot; Parameters=&quot;slot.Values&quot; /&gt;
+    &lt;/div&gt;
+}
+
+// Navigator: typed push with a result
+public async Task&lt;TResult?&gt; PushAsync&lt;TPage, TResult&gt;(IDictionary&lt;string, object&gt;? parameters = null)
+{
+    if (!await LeaveAsync(ctx)) return default;
+    var slot = new PageSlot(typeof(TPage), parameters ?? new Dictionary&lt;string, object&gt;());
+    stack.Add(slot);
+    await host.PlayAsync(ctx);
+    return await slot.Result.Task is TResult typed ? typed : default;
+}</code></pre></dd>
+      <dt>At scale</dt><dd>
+        <ul>
+          <li>All default parts stay: <code>@page</code> with parameters, <code>NotFound</code>, server routes, prerender, links.</li>
+          <li>R1 plugs in at one place: <code>PageHost.PlayAsync</code> replaces <code>Task.Delay</code> with <code>MotionWait</code>.</li>
+          <li>Add a keep-alive limit and tab rules (the MASA model) to the <code>Navigator</code>.</li>
+        </ul>
+      </dd>
+      <dt>Trap</dt><dd>A kept page does not render again by itself: the first run showed <code>count</code> = 0. The spike fixed it with a state subscription in the page. The better fix is a visit value that the host sends to all kept pages.</dd>
+      <dt>Open items</dt><dd>
+        <ul>
+          <li><code>BackAsync</code> with no history leaves the app (it calls <code>history.back</code>).</li>
+          <li>Two fast moves are not queued.</li>
+          <li>The browser does not say back or forward; the <code>Navigator</code> guesses from its visited list.</li>
+        </ul>
+      </dd>
+      <dt>Opinion</dt><dd>The best fit. No package, no opinion outside navigation, and the API is the one we want: typed push, typed result, two hooks, one place for the motion. It is 213 reusable lines that we own and must test.</dd>
+    </dl>
+  </details>
+
+  <details class="lib">
+    <summary><span class="sid">08</span><span class="stt">SiteRouter + Navigator · our own, no Router (the Oqtane model)</span><span class="cv p">works, more cost</span></summary>
+    <dl class="sb">
+      <dt>Model</dt><dd>No <code>&lt;Router&gt;</code> and no <code>@page</code>. <code>SiteHost</code> listens to <code>LocationChanged</code>, turns on link interception itself, parses the URL into one <code>NavState</code> and gives it to all pages as a cascade. A typed page table maps types to paths.</dd>
+      <dt>Pages</dt><dd>Plain components with no <code>@page</code>. Optional <code>INavPage</code>, the same as 07.</dd>
+      <dt>Hook order (push)</dt><dd><div class="flow"><span class="st">Navigator.Go&lt;Counter&gt;</span><span class="st">LocationChanging</span><span class="st key">old: OnLeaveAsync</span><span class="st">LocationChanged → new NavState</span><span class="st">SiteHost: play push</span><span class="st">wait 300 ms</span><span class="st key">new: OnEnterAsync</span></div></dd>
+      <dt>Key code</dt><dd><pre><code>// SiteHost.razor: what the Router did for us
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (!firstRender) return;
+    await Interception.EnableNavigationInterceptionAsync();   // &lt;a href&gt; clicks stay in the app
+    Navigator.Attach();                                        // RegisterLocationChangingHandler
+}
+
+&lt;CascadingValue Value=&quot;Navigator.State&quot;&gt;                       @* one state object, as Oqtane PageState *@
+    @foreach (var page in alive)
+    {
+        &lt;div @key=&quot;page&quot; class=&quot;slot @MotionOf(page)&quot; hidden=&quot;@(!Visible(page))&quot;&gt;
+            &lt;DynamicComponent Type=&quot;page&quot; @ref=&quot;refs[page]&quot; /&gt;
+        &lt;/div&gt;
+    }
+&lt;/CascadingValue&gt;
+
+// Program.cs
+builder.Services.AddNav(p =&gt; p.Map&lt;Home&gt;(&quot;/&quot;).Map&lt;Counter&gt;(&quot;/counter&quot;));
+app.MapFallback(() =&gt; new RazorComponentResult&lt;App&gt;());       // no @page, so no server routes</code></pre></dd>
+      <dt>What we wrote again</dt><dd>
+        <ul>
+          <li>Link interception, URL parse and the page table.</li>
+          <li>Server routes (<code>MapFallback</code>) and not-found. Not-found gives HTTP 200, not 404.</li>
+          <li>Route parameters and constraints are not done.</li>
+        </ul>
+      </dd>
+      <dt>Opinion</dt><dd>It works, and the <code>NavState</code> cascade solves the stale kept page. But it writes the router again for no gain: our pages exist at build time. Copy the cascade idea into 07, not the router replacement.</dd>
+    </dl>
+  </details>
+
+  <h2>Recommendation</h2>
+  <ol>
+    <li>Use the shape of spike 07: the default <code>Router</code>, our <code>PageHost</code> in <code>&lt;Found&gt;</code>, and one <code>Navigator</code> service.</li>
+    <li>Let R1 do the motion in <code>PageHost.PlayAsync</code>, between <code>OnLeaveAsync</code> and <code>OnEnterAsync</code>.</li>
+    <li>From 08, copy the state cascade, so kept pages render again on each visit. From MASA, copy tab rules plus a push stack.</li>
+    <li>Keep Bit.Brouter as the library fallback. Do not take ReactiveUI, MASA or Ant Design for navigation.</li>
+  </ol>
+
+  <h2>Open items</h2>
+  <ul>
+    <li>07: fix the three open items (kept-page refresh for all pages, back with no history, a queue for fast moves).</li>
+    <li>07: test in the tray host (our own <code>WebViewManager</code>) and with a real <code>MotionWait</code> in a visible browser.</li>
+    <li>07: the motion is checked only by the user's eye, not by a machine test.</li>
+    <li>Brouter: in the hidden-pane run, it showed about 500 ms between <code>OnNavigating</code> and <code>OnDeactivated</code>. The cause is not checked.</li>
+  </ul>
+</section>
+
+<!-- CONTEXT -->
+<section class="panel" id="context" role="tabpanel" aria-labelledby="t-context" hidden>
+  <p class="sum">This page answers one question for the motion pipeline (R1) of session-orchestrator: is there a library or a model to copy for the motion controller, the navigation controller and the page structure?</p>
+
+  <h2>The project</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Item</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Stack</td><td>C# on .NET 10, Blazor (Razor components), NUnit, bUnit. JS only in small <code>wwwroot</code> scripts</td></tr>
+      <tr><td>Web host</td><td><code>src/Orchestrator.Web</code>, Blazor Server, JS calls through SignalR</td></tr>
+      <tr><td>Tray host</td><td><code>src/Orchestrator.Tray</code>, own <code>WebViewManager</code> in WinForms, WebView2 messages</td></tr>
+      <tr><td>Tray windows</td><td>Panel and badge. Each window has its own <code>IJSRuntime</code></td></tr>
+      <tr><td>R1 plan</td><td><a href="https://claude.ai/artifact/G89uZPfkYsVe5kcHn4daaP" target="_blank" rel="noopener noreferrer">Motion Pipeline Plan</a> (<code>docs/motion-pipeline-plan.html</code>, branch <code>orch/visual-review</code>)</td></tr>
+      <tr><td>Handover</td><td><code>docs/handover-vsa-js-pipeline.md</code>: C# to JS calls as commands on the Umpire pipeline</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>What R1 is</h2>
+  <p>R1 makes all motion of the tray one pipeline. Motion times are tokens in <code>motion.css</code>. One JS wait function has four modes: settle, property, time and event. A C# registry holds the motion steps and only their token names.</p>
+  <p>All visuals and motion are Razor and CSS. C# controls only the windows and the order of the steps. R1 has no calls from JS to C#.</p>
+
+  <h2>R1 steps and the copy items that touch them</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Step</th><th>What it does</th><th>Copy item</th></tr></thead>
+    <tbody>
+      <tr><td>S0</td><td>Proof base: scenarios and the reduced motion run</td><td>None</td></tr>
+      <tr><td>S1</td><td>Motion times as tokens in <code>motion.css</code></td><td>Tokens</td></tr>
+      <tr><td>S2</td><td>Reduced motion as 1 ms durations</td><td>Reduced motion</td></tr>
+      <tr><td>U1 to U3</td><td>Umpire SDK, warning list, modules in both hosts</td><td>None</td></tr>
+      <tr><td>S3</td><td>JS commands and the wait command <code>MotionWait</code></td><td>One JS wait; parent and child order</td></tr>
+      <tr><td>S4</td><td>C# motion registry, <code>data-motion</code> targets</td><td>C# registry; page states; one JS wait</td></tr>
+      <tr><td>S5</td><td>The fold waits for the panel, not the home button</td><td>None</td></tr>
+      <tr><td>S6</td><td>The badge phase starts after the slide</td><td>Parent and child order</td></tr>
+      <tr><td>S7</td><td>Flow faults show; a notice waits for the flow</td><td>None</td></tr>
+      <tr><td>S8</td><td>The deck goes through the pipeline</td><td>None</td></tr>
+      <tr><td>S9</td><td>Window steps in the pipeline</td><td>C# registry</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Terms</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Motion orchestration</td><td>The order and the waits of motion steps across elements</td></tr>
+      <tr><td>Navigation control</td><td>A page stack with push, pop and the transition between pages</td></tr>
+      <tr><td>Page structure</td><td>Overlays, sheets, dialogs and the focus rules of a page</td></tr>
+      <tr><td>Registry row</td><td>One R1 motion step in C#: the step name and the state class only</td></tr>
+      <tr><td>Native</td><td>The own SDK of a mobile platform (Apple iOS, Google Android) and Flutter. Not .NET</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- SOURCES -->
+<section class="panel" id="sources" role="tabpanel" aria-labelledby="t-sources" hidden>
+  <p class="sum">The links are in the cells of the Comparison tab. A link check on 2026-11-21 opened each link or found the exact page with a search. One cell has no focused page.</p>
+
+  <h2>How each link was checked</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Group</th><th>Check</th></tr></thead>
+    <tbody>
+      <tr><td>Web frameworks, motion, browser APIs</td><td>Each page opened</td></tr>
+      <tr><td>Native mobile</td><td>Each page opened. Apple pages through the Apple JSON data of the same page</td></tr>
+      <tr><td>Web design systems</td><td>Opened. Material 3 pages by search only (the site gives no text to a fetch)</td></tr>
+      <tr><td>.NET</td><td>Opened. MudBlazor, Fluent UI Blazor, MAUI, WPF and WinUI pages partly by search</td></tr>
+      <tr><td>Agent UI</td><td>Opened. One CopilotKit page by search</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Missing links</h2>
+  <ul>
+    <li><b>Spectrum motion tokens:</b> no source. The Spectrum motion page is guidance only and names no tokens.</li>
+    <li><b>Jetpack transitions for each route:</b> no guide page for Navigation Compose. The cell links the API reference of <code>composable()</code>. Do not use <code>guide/navigation/navigation-animate-transitions</code>: it covers only XML and Fragment actions.</li>
+  </ul>
+
+  <h2>Name and fact corrections: web and agent UI</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Cell</th><th>Report text</th><th>Correct text</th></tr></thead>
+    <tbody>
+      <tr><td>Web Awesome motion</td><td><code>play</code>, finish and cancel events</td><td><code>play</code> is a property. Events: <code>wa-start</code>, <code>wa-finish</code>, <code>wa-cancel</code> (Shoelace: <code>sl-</code>)</td></tr>
+      <tr><td>Shoelace</td><td>Active library</td><td>The Shoelace page says it is sunset and points to Web Awesome</td></tr>
+      <tr><td>Carbon motion</td><td><code>fast-01</code>…<code>slow-02</code></td><td><code>duration-fast-01</code>…<code>duration-slow-02</code>: 6 tokens, 70 to 700 ms</td></tr>
+      <tr><td>Material 3 patterns</td><td>Four patterns: container transform, shared axis, fade through, fade</td><td>Six patterns: container transform, forward and backward, lateral, top level, enter and exit, skeleton loaders. The four are the 2020 set</td></tr>
+      <tr><td>Material 3 tokens</td><td>Duration and easing tokens</td><td>Legacy system. The current spec uses spring tokens ("motion physics")</td></tr>
+      <tr><td>Angular CDK</td><td>FocusTrap</td><td>Directive <code>cdkTrapFocus</code> (class <code>FocusTrap</code>)</td></tr>
+      <tr><td>Fluent motion</td><td>motion tokens</td><td>Export <code>motionTokens</code></td></tr>
+      <tr><td>React Aria FocusScope</td><td>contain, restore, autoFocus</td><td><code>contain</code>, <code>restoreFocus</code>, <code>autoFocus</code></td></tr>
+      <tr><td>React Aria Overlay</td><td><code>Overlay</code></td><td>No page of its own. The cell links <code>Modal</code></td></tr>
+      <tr><td>Ionic navigation</td><td>Custom transition functions</td><td>The <code>animation</code> property (<code>AnimationBuilder</code>)</td></tr>
+      <tr><td>Motion stagger</td><td><code>staggerChildren</code></td><td>Deprecated since 12.22.0. Use <code>delayChildren: stagger(0.1)</code></td></tr>
+      <tr><td>Motion sequences</td><td>Sequence arrays</td><td>"Timeline sequences" of <code>animate()</code>, with an <code>at</code> option</td></tr>
+      <tr><td>A2UI</td><td>Trusted component catalog</td><td>The docs say "component catalog", checked against JSON Schema</td></tr>
+      <tr><td>AI SDK</td><td>Catalog and surfaces</td><td>No catalog, no surfaces. Tool calls choose app components</td></tr>
+      <tr><td>CopilotKit</td><td>Catalog and surfaces</td><td>Uses A2UI: <code>createSurface</code>, <code>updateComponents</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Name and fact corrections: native mobile and .NET</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Cell</th><th>Report text</th><th>Correct text</th></tr></thead>
+    <tbody>
+      <tr><td>UIKit motion</td><td><code>animate(alongsideTransition:)</code></td><td><code>animate(alongsideTransition:completion:)</code></td></tr>
+      <tr><td>SwiftUI navigation</td><td><code>NavigationStack(path:)</code></td><td>Initializer <code>init(path:root:)</code></td></tr>
+      <tr><td>Jetpack page structure</td><td>Bottom sheet</td><td><code>ModalBottomSheet</code></td></tr>
+      <tr><td>Jetpack navigation</td><td>Enter and exit transitions for each route</td><td><code>enterTransition</code>, <code>exitTransition</code>, <code>popEnterTransition</code>, <code>popExitTransition</code> on <code>composable()</code></td></tr>
+      <tr><td>Flutter motion</td><td><code>MediaQuery.disableAnimations</code></td><td><code>MediaQueryData.disableAnimations</code>, read with <code>MediaQuery.of(context)</code></td></tr>
+      <tr><td>MAUI motion</td><td>Awaitable <code>FadeTo</code></td><td><code>FadeToAsync</code> in MAUI 10. <code>FadeTo</code> is obsolete in MAUI 11</td></tr>
+      <tr><td>MAUI <code>Animation</code></td><td>Child animations with ratios</td><td>Correct. <code>Commit</code> gives callbacks, not a <code>Task</code></td></tr>
+      <tr><td>MAUI navigation</td><td>Modal stack</td><td>The docs name no modal stack. A page sets <code>Shell.PresentationMode="Modal"</code></td></tr>
+      <tr><td>Blazor kits navigation</td><td>Blazor router only</td><td>Page "ASP.NET Core Blazor routing". <code>NavigationManager</code> is on the <a href="https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/navigation" target="_blank" rel="noopener noreferrer">navigation page</a></td></tr>
+      <tr><td>Blazorise page structure</td><td><code>DialogService</code> with a result</td><td><code>IModalService</code>. The page shows no returned result</td></tr>
+      <tr><td>BlazorAnimate</td><td>AOS effects on enter</td><td><code>Animate</code> component. The project continues in Blazorise</td></tr>
+      <tr><td>BlazorTransitionableRoute</td><td>Old and new route side by side</td><td>Both rendered, the old one hidden. Your CSS decides the look</td></tr>
+      <tr><td>Avalonia navigation</td><td>Composite</td><td>Property <code>PageTransition</code>; class <code>CompositePageTransition</code></td></tr>
+      <tr><td>WPF motion</td><td><code>Completed</code> event</td><td><code>Timeline.Completed</code>. <code>Stop()</code> does not raise it</td></tr>
+      <tr><td>WinUI navigation</td><td><code>ConnectedAnimationService</code></td><td>Correct. Source page: <code>PrepareToAnimate</code>. Target page: <code>GetAnimation</code>, then <code>TryStart</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Changed links</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Report link</th><th>Link on this page</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td><code>cdn.jsdelivr.net/…/webawesome@3.8.0/…/animation.md</code></td><td><code>webawesome.com/docs/components/animation</code></td><td>Documentation page, not a package file</td></tr>
+      <tr><td><code>carbondesignsystem.com/elements/motion/code/</code></td><td><code>…/elements/motion/overview/</code></td><td>The overview lists the tokens</td></tr>
+      <tr><td><code>github.com/material-components/…/Motion.md</code></td><td><code>m3.material.io/styles/motion/easing-and-duration/tokens-specs</code></td><td>Web spec page of the tokens</td></tr>
+      <tr><td><code>material.angular.io/cdk/overlay/overview</code></td><td><code>material.angular.dev/cdk/overlay/overview</code></td><td>Current host</td></tr>
+      <tr><td><code>fluent2.microsoft.design/motion</code>, <code>…/react-motion@9.14.0/dist/index.d.ts</code></td><td><code>storybooks.fluentui.dev</code> docs of each export</td><td>One page for each API</td></tr>
+      <tr><td><code>react-spectrum.adobe.com/react-aria/…</code></td><td><code>react-aria.adobe.com/…</code></td><td>The old URLs redirect</td></tr>
+      <tr><td><code>developer.mozilla.org/…/View_Transition_API</code></td><td><code>…/API/ViewTransition</code>, <code>…/CSS/view-transition-name</code>, <code>…/ViewTransition/types</code></td><td>One page for each capability</td></tr>
+      <tr><td><code>developer.android.com/guide/navigation</code></td><td><code>…/navigation/navcontroller</code>, <code>…/navigation/backstack</code></td><td>One page for each capability</td></tr>
+      <tr><td><code>www.fluentui-blazor.net/Dialog</code></td><td><code>www.fluentui-blazor.net/DialogService</code></td><td>The page of the service</td></tr>
+      <tr><td><code>nuget.org/packages/BlazorAnimate</code>, <code>…/Toolbelt.Blazor.ViewTransition</code>, <code>…/BlazorTransitionableRoute</code></td><td>The GitHub README of each package</td><td>The README documents the API</td></tr>
+      <tr><td><code>github.com/google/A2UI</code>, the Google blog post</td><td><code>a2ui.org/concepts/catalogs/</code>, <code>a2ui.org/concepts/overview/</code></td><td>Documentation pages</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sum">All other report links are in the grid with no change. The grid adds links for each cell that the report did not link.</p>
+
+  <h2>Limits of the research</h2>
+  <ul>
+    <li>The coverage chips are a reading of the cell text. They are not a test of each library.</li>
+    <li>The research did not read the full R1 plan page. It read only parts of the handover.</li>
+    <li>The research did not read the <code>vsa-design</code> project.</li>
+  </ul>
+</section>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs [role="tab"]'));
+  function show(id) {
+    var el = id ? document.getElementById(id) : null;
+    var panel = el ? el.closest(".panel") : null;
+    var target = panel ? panel.id : "answer";
+    var inner = el && el !== panel ? el : null;
+    tabs.forEach(function (t) {
+      var on = t.getAttribute("aria-controls") === target;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+      if (on) { var bar = t.parentNode; bar.scrollLeft = Math.max(0, t.offsetLeft - bar.offsetLeft - 16); }
+    });
+    if (inner) inner.scrollIntoView({ block: "start" }); else if (panel) window.scrollTo(0, 0);
+  }
+  function go(id) {
+    show(id);
+    try { if (location.hash.slice(1) !== id) history.replaceState(null, "", "#" + id); } catch (err) {}
+  }
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    e.preventDefault();
+    var id = a.getAttribute("href").slice(1);
+    go(id);
+  });
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () { go(t.getAttribute("aria-controls")); });
+    t.addEventListener("keydown", function (e) {
+      var n = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : null;
+      if (n === null) return;
+      var next = tabs[(n + tabs.length) % tabs.length];
+      next.focus();
+      go(next.getAttribute("aria-controls"));
+    });
+  });
+  var oa = document.getElementById("open-all"), ca = document.getElementById("close-all");
+  if (oa) oa.addEventListener("click", function () { document.querySelectorAll("details.lib").forEach(function (d) { d.open = true; }); });
+  if (ca) ca.addEventListener("click", function () { document.querySelectorAll("details.lib").forEach(function (d) { d.open = false; }); });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>

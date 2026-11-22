@@ -1,0 +1,27 @@
+@* Minimal form of ReactiveRouterHost.razor from the ReactiveUI sample (src/examples/ReactiveUI.Builder.BlazorServer). *@
+@implements IDisposable
+@inject IScreen Screen
+
+@content
+
+@code {
+    IDisposable? subscription;
+    RenderFragment? content;
+
+    protected override void OnInitialized() =>
+        subscription = Screen.Router.CurrentViewModel.Subscribe(vm =>
+        {
+            var view = vm is null ? null : global::ReactiveUI.Binding.ViewLocator.GetCurrent().ResolveView((object)vm, null)
+                ?? throw new InvalidOperationException($"No view for {vm.GetType().Name}");
+            content = view is null ? null : builder =>
+            {
+                builder.OpenComponent(0, view.GetType());
+                builder.AddAttribute(1, "ViewModel", vm);
+                builder.SetKey(vm);
+                builder.CloseComponent();
+            };
+            InvokeAsync(StateHasChanged);
+        });
+
+    public void Dispose() => subscription?.Dispose();
+}

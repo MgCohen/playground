@@ -1,0 +1,8 @@
+/* The motion of the host: push comes in from the right, back from the left, tab fades. 300 ms. */
+.slot { position: absolute; inset: 0; animation: 300ms ease both; }
+.slot.push { animation-name: in-right; }
+.slot.back { animation-name: in-left; }
+.slot.tab { animation-name: fade-in; }
+@keyframes in-right { from { transform: translateX(100%); } }
+@keyframes in-left { from { transform: translateX(-100%); } }
+@keyframes fade-in { from { opacity: 0; } }

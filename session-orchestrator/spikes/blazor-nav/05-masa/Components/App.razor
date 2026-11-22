@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <base href="/" />
+    @* MASA CSS first, so spike.css wins over the MASA reset. *@
+    <link rel="stylesheet" href="_content/Masa.Blazor/css/masa-blazor.min.css" />
+    <link rel="stylesheet" href="_content/NavSpike.Shared/spike.css" />
+    <title>05 masa</title>
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+<body>
+    <Routes @rendermode="InteractiveServer" />
+    <script src="_framework/blazor.web.js"></script>
+    <script src="_content/Masa.Blazor/js/masa-blazor.js"></script>
+</body>
+</html>

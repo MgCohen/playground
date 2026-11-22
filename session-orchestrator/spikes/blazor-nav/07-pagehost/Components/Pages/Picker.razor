@@ -1,0 +1,16 @@
+@* A pushed page with no URL. It gives its result to the caller with Navigator.CloseAsync. *@
+@inherits TracedPage
+@implements INavPage
+@inject Navigator Navigator
+
+<div class="page" data-test="page-picker">
+    <h1>Picker</h1>
+    <button data-test="pick-red" @onclick='() => Navigator.CloseAsync("Red")'>Red</button>
+    <button data-test="pick-blue" @onclick='() => Navigator.CloseAsync("Blue")'>Blue</button>
+</div>
+
+@code {
+    protected override string PageName => "Picker";
+
+    public Task OnEnterAsync(NavContext c) { Trace.Add($"Picker: OnEnterAsync {c.Kind}"); return Task.CompletedTask; }
+}

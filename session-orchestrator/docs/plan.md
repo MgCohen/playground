@@ -599,3 +599,25 @@ The session "Orchestrator watch" (`dc99fc00`) gets the framework problems of the
 | W9 | After `orch archive`, 21 empty `playground.wt/orch-<id>` folders stayed. The app then warned that an archive failed because of worktrees (root `ab9acae5`, 2026-11-20). Now no empty folders are left: somebody deleted them | `RemoveWorktree` (`Lifecycle.cs`) runs `git worktree remove`, then `Directory.Delete` with retries (`RemoveDelays`). Probable cause: on Windows, a live app session with its cwd in the folder locks it, so the delete fails and the command returns "The worktree ... stays: <error>". In W8 the app archive failed first (Remote Control on), so the children were still live when the store archive ran. After the app releases the folder, no step deletes it again. Possible fixes: run the store archive only after the app archive is confirmed; at each `orch archive` and on each supervisor start, delete empty `orch-*` folders that `git worktree list` does not show; show the delete error in the output | Open: wait for the user |
 | W10 | A new child is not in the app during its first turn: the supervisor imports a session only after its first good turn, so the full brief runs headless. The user cannot see or steer it (root `ab9acae5`, 2026-11-20) | By design today: an import needs a session id with a transcript, so `Supervisor.cs` imports after the first `claude -p` turn. PR #45 ("C5: fix the C3 live run findings", open, a root child) says it imports before the first turn. Notes for the review of #45: an import takes the focus (F14), so N children at one time take the focus N times; and an import of a session with no transcript must still give a live app session. Second part of the request: a brief option (for example `firstTurn: "plan"`) that makes the child show its plan and wait for the user before it changes files | Open: in PR #45. Wait for the user |
 | W11 | After `orch stop` ends a supervisor turn, `status.json` stays `running` and `lease.json` stays `supervisor`. So `orch open` refuses with "has a running turn". The root edited both files by hand (root `ab9acae5`, 2026-11-20) | The plugin in the `claude -p` process writes `status.json` and releases the lease in its `session.end` hook. `orch stop` cancels the turn, and the cancel kills the process, so `session.end` never runs. The stop path in `RunTurn` (`Supervisor.cs`) only appends `turn.fail` and ends `turn.json`. Possible fix: on the stop path (and on each failed turn), the supervisor sets the status to `idle` and the lease to `none` with the reason "turn stopped", if the lease holder is still `supervisor`. Add a test. Also: a stopped first turn never imports, because `ImportOnce` runs only after a good turn (see W10) | Open: wait for the user |
+
+## Blazor navigation spikes (2026-11-22)
+
+Eight spikes build the same two-page app with one navigation option each. The spec is `spikes/blazor-nav/SPEC.md` (flows F1 to F7). Each folder has a `RESULT.md`. The analysis is on the Spikes and Microsoft tabs of `docs/motion-prior-art.html`.
+
+| Spike | Shape | Result |
+|---|---|---|
+| 01 native | Blazor `Router`, `NavigationManager` | F5 fails by design (no keep-alive) |
+| 02 Toolbelt ViewTransition | View transitions around the router | Works; the direction is a mark that we set by hand |
+| 03 Bit.Brouter | Its own router with hooks and keep-alive | F1 to F5 pass after a `StateHasChanged` fix; no typed result |
+| 04 ReactiveUI | View-model stack | URL stays `/`; back does nothing after a tab change |
+| 05 MASA PageStack | UI kit with tabs and a stack | Pushed pages are full-screen dialogs; `StackPop` fires two times |
+| 06 Ant ReuseTabs | UI kit with kept tabs | F4 is one visit late (no activation hook) |
+| 07 Router + PageHost (own) | Default `Router`, our `PageHost` in `<Found>`, one `Navigator` | F1 to F7 pass; F4 needs a state subscription |
+| 08 SiteRouter (own) | No `Router`, one `NavState` (Oqtane model) | F1 to F7 pass; needs `MapFallback`; not-found gives 200 |
+
+Findings:
+- The best fit is spike 07. Bit.Brouter is the best library.
+- No library waits for the end of a page transition. Toolbelt and Brouter resolve when the browser captures the old page. Brouter has a 500 ms fallback timer, which probably explains its 500 ms gap in a hidden pane. MASA listens for `transitionend`.
+- Blazor has no native `@onanimationend`. The official custom events (`[EventHandler]`, `registerCustomEventType`) were not checked when we made the motion waits. Our `getAnimations` + `finished` wait still fits the pipeline better: it gives a `Task`, and it ends at once when no animation runs (lesson I13).
+- .NET 11 throws when a custom event name is the same as its browser event name. MASA 1.11.9 registers `transitionend` with the same name.
+- Microsoft declines a page stack and keep-alive. Transitions (#10389) and nested routes (#11212) are in ".NET 12 Planning".

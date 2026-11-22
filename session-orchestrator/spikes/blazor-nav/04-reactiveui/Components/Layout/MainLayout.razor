@@ -1,0 +1,30 @@
+@* ReactiveUI: the app bar calls NavigateAndReset on the RoutingState. The URL does not follow. *@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject AppScreen Screen
+
+<div class="frame">
+    <div class="stage">@Body</div>
+    <TraceView />
+    <nav class="appbar">
+        <a class="@On(Screen.Home)" data-test="tab-home" @onclick="() => Tab(Screen.Home)">Home</a>
+        <a class="@On(Screen.Counter)" data-test="tab-counter" @onclick="() => Tab(Screen.Counter)">Counter</a>
+    </nav>
+</div>
+
+@code {
+    IDisposable? changed;
+
+    protected override void OnInitialized() =>
+        changed = Screen.Router.CurrentViewModel.Subscribe(_ => InvokeAsync(StateHasChanged));
+
+    string On(IRoutableViewModel vm) => Screen.Router.GetCurrentViewModel() == vm ? "on" : "";
+
+    void Tab(IRoutableViewModel vm)
+    {
+        Screen.Trace.Add($"AppBar: NavigateAndReset({vm.UrlPathSegment})");
+        Screen.Router.NavigateAndReset.Execute(vm).Subscribe();
+    }
+
+    public void Dispose() => changed?.Dispose();
+}

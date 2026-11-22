@@ -1,0 +1,45 @@
+@* Ant Design ReuseTabs: each visited page stays in a hidden TabPane (KeepAlive), so a return shows the same instance.
+   TabBarStyle hides the ReuseTabs tab strip; our app bar does the tab change. The NavigationManager hooks of 01-native stay. *@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Nav
+@inject Trace Trace
+
+<div class="frame">
+    <div class="stage">
+        <ReuseTabs TabBarStyle="display:none" Animated="true"
+                   OnChange="@(k => Trace.Add($"ReuseTabs: OnChange -> {k}"))"
+                   ActiveKeyChanged="@(k => Trace.Add($"ReuseTabs: ActiveKeyChanged -> {k}"))"
+                   OnTabClick="@(k => Trace.Add($"ReuseTabs: OnTabClick -> {k}"))"
+                   AfterTabCreated="@(k => Trace.Add($"ReuseTabs: AfterTabCreated -> {k}"))"
+                   OnClose="@(k => Trace.Add($"ReuseTabs: OnClose -> {k}"))" />
+    </div>
+    <TraceView />
+    <nav class="appbar">
+        <NavLink href="" Match="NavLinkMatch.All" ActiveClass="on" data-test="tab-home">Home</NavLink>
+        <NavLink href="counter" ActiveClass="on" data-test="tab-counter">Counter</NavLink>
+    </nav>
+</div>
+
+@code {
+    IDisposable? changing;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender) return;
+        changing = Nav.RegisterLocationChangingHandler(context =>
+        {
+            Trace.Add($"Nav: LocationChanging -> /{Nav.ToBaseRelativePath(Nav.ToAbsoluteUri(context.TargetLocation).ToString())}");
+            return ValueTask.CompletedTask;
+        });
+        Nav.LocationChanged += Changed;
+    }
+
+    void Changed(object? sender, LocationChangedEventArgs e) => Trace.Add($"Nav: LocationChanged -> /{Nav.ToBaseRelativePath(e.Location)}");
+
+    public void Dispose()
+    {
+        changing?.Dispose();
+        Nav.LocationChanged -= Changed;
+    }
+}

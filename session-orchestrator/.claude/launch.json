@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "nav-01-native", "runtimeExecutable": "dotnet", "runtimeArgs": ["run", "--project", "spikes/blazor-nav/01-native", "--urls", "http://localhost:5101"], "port": 5101 },
+    { "name": "nav-02-viewtransition", "runtimeExecutable": "dotnet", "runtimeArgs": ["run", "--project", "spikes/blazor-nav/02-viewtransition", "--urls", "http://localhost:5102"], "port": 5102 },
+    { "name": "nav-03-brouter", "runtimeExecutable": "dotnet", "runtimeArgs": ["run", "--project", "spikes/blazor-nav/03-brouter", "--urls", "http://localhost:5103"], "port": 5103 },
+    { "name": "nav-04-reactiveui", "runtimeExecutable": "dotnet", "runtimeArgs": ["run", "--project", "spikes/blazor-nav/04-reactiveui", "--urls", "http://localhost:5104"], "port": 5104 },
+    { "name": "nav-05-masa", "runtimeExecutable": "dotnet", "runtimeArgs": ["run", "--project", "spikes/blazor-nav/05-masa", "--urls", "http://localhost:5105"], "port": 5105 },
+    { "name": "nav-06-antdesign", "runtimeExecutable": "dotnet", "runtimeArgs": ["run", "--project", "spikes/blazor-nav/06-antdesign", "--urls", "http://localhost:5106"], "port": 5106 },
+    { "name": "nav-07-pagehost", "runtimeExecutable": "dotnet", "runtimeArgs": ["run", "--project", "spikes/blazor-nav/07-pagehost", "--urls", "http://localhost:5107"], "port": 5107 },
+    { "name": "nav-08-siterouter", "runtimeExecutable": "dotnet", "runtimeArgs": ["run", "--project", "spikes/blazor-nav/08-siterouter", "--urls", "http://localhost:5108"], "port": 5108 }
+  ]
+}

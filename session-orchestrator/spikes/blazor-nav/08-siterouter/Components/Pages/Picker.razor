@@ -1,0 +1,22 @@
+@* Picker: a pushed page with no URL. It gives a typed result back with Navigator.Close (F6). *@
+@inherits TracedPage
+@implements INavPage
+@inject Navigator Navigator
+
+<div class="page" data-test="page-picker">
+    <h1>@Title</h1>
+    <button data-test="pick-red" @onclick='() => Navigator.Close("Red")'>Red</button>
+    <button data-test="pick-blue" @onclick='() => Navigator.Close("Blue")'>Blue</button>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+
+    protected override string PageName => "Picker";
+
+    public Task OnEnterAsync(NavContext c)
+    {
+        Trace.Add($"Picker: OnEnterAsync({c})");
+        return Task.CompletedTask;
+    }
+}

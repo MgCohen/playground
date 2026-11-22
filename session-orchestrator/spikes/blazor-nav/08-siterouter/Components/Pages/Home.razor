@@ -1,0 +1,40 @@
+@* Home: the shared count (F4), a typed move to Counter (F2) and a typed result from the Picker (F6). *@
+@inherits TracedPage
+@implements INavPage
+@inject Navigator Navigator
+@inject CounterState Shared
+
+<div class="page" data-test="page-home">
+    <h1>Home</h1>
+    <button class="primary" data-test="add" @onclick="Shared.Increment">Add one</button>
+    <button data-test="go-counter" @onclick="Open">Open counter</button>
+    <button data-test="pick" @onclick="Pick">Pick a color</button>
+    <div>Picked: <b data-test="picked">@picked</b></div>
+</div>
+
+@code {
+    string picked = "";
+
+    protected override string PageName => "Home";
+
+    void Open() => Navigator.Go<Counter>();
+
+    async Task Pick()
+    {
+        var color = await Navigator.PushAsync<Picker, string>(new Dictionary<string, object> { ["Title"] = "Pick a color" });
+        picked = color ?? "";
+        Trace.Add($"Home: picked {color ?? "null"}");
+    }
+
+    public Task OnEnterAsync(NavContext c)
+    {
+        Trace.Add($"Home: OnEnterAsync({c})");
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> OnLeaveAsync(NavContext c)
+    {
+        Trace.Add($"Home: OnLeaveAsync({c})");
+        return Task.FromResult(true);
+    }
+}

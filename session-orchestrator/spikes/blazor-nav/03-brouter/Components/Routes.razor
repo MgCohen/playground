@@ -1,0 +1,8 @@
+@* Brouter replaces the Blazor Router. The frame is outside the router, so keep-alive applies to the page only. *@
+@using Spike.Brouter.Components.Layout
+<MainLayout>
+    <Brouter>
+        <Broute Path="/" Component="typeof(Pages.Home)" />
+        <Broute Path="/counter" Component="typeof(Pages.Counter)" KeepAlive="true" />
+    </Brouter>
+</MainLayout>
