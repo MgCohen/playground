@@ -72,6 +72,19 @@ pre { background: var(--sunk); border: 1px solid var(--line); border-radius: 10p
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); margin: 6px 0 0; }
 .sw { width: 18px; height: 12px; border-radius: 3px; display: inline-block; vertical-align: -1px; margin-right: 6px; }
 @media (max-width: 560px) { .brow, .axis { grid-template-columns: 96px minmax(0, 1fr); } }
+/* Architecture view: three columns (browser, Blazor, our C#) and a numbered timeline. */
+.arch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.arch > div { background: var(--surf); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.arch h3 { margin: 0 0 6px; font-size: 14px; }
+.arch h3 small { font: 600 11px var(--f-mono); color: var(--muted); margin-left: 6px; }
+.arch ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
+.arch .mine { border-color: var(--accent); }
+@media (max-width: 760px) { .arch { grid-template-columns: minmax(0, 1fr); } }
+.tl { background: var(--surf); border: 1px solid var(--line); border-radius: 12px; padding: 6px 12px; }
+.tl .step { grid-template-columns: 54px 44px minmax(0, 1fr); }
+.ms { font: 600 11px var(--f-mono); color: var(--muted); padding-top: 2px; font-variant-numeric: tabular-nums; }
+.file { font: 600 12px var(--f-mono); color: var(--accent-ink); margin: 12px 0 0; }
+.why { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
 ol, ul { padding-left: 22px; }
 li { margin: 3px 0; max-width: 70ch; }
 </style>
@@ -85,6 +98,7 @@ li { margin: 3px 0; max-width: 70ch; }
 
 <nav class="tabs" role="tablist" aria-label="Page parts">
   <button role="tab" id="t-answer" aria-controls="answer" aria-selected="true">Answer</button>
+  <button role="tab" id="t-how" aria-controls="how" aria-selected="false">How it works</button>
   <button role="tab" id="t-catalog" aria-controls="catalog" aria-selected="false">What Blazor gives</button>
   <button role="tab" id="t-channel" aria-controls="channel" aria-selected="false">Events against interop</button>
   <button role="tab" id="t-split" aria-controls="split" aria-selected="false">Proposed split</button>
@@ -109,6 +123,183 @@ li { margin: 3px 0; max-width: 70ch; }
       <tr><td>One custom click event sees each click</td><td><code>tracedclick</code> on the layout root got each click with its <code>data-test</code>, also when <code>stopPropagation</code> stopped <code>onclick</code></td><td>An official base for the input trace that the Tracing tab asks for</td></tr>
     </tbody>
   </table></div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="panel" id="how" role="tabpanel" aria-labelledby="t-how" hidden>
+  <p class="sum">A worked example from the spike code, cut down. One app with two pages: Home and Deep. A click on Home opens Deep with a slide (a view transition), then the blocks of Deep rise one after the other. The snippets are from <code>spikes/blazor-nav/10-events</code> and <code>09-official</code>.</p>
+
+  <h2>The parts</h2>
+  <div class="arch">
+    <div><h3>Browser <small>JS + CSS</small></h3><ul>
+      <li>The DOM that Blazor renders</li>
+      <li><code>motion.css</code>: the keyframes</li>
+      <li><code>{Assembly}.lib.module.js</code>: registers custom events, runs the view transition and the settle wait</li>
+    </ul></div>
+    <div><h3>Blazor runtime <small>official</small></h3><ul>
+      <li>Event dispatch: a DOM event to a C# handler</li>
+      <li><code>NavigationManager</code>: <code>NavigateTo</code>, the changing handlers, <code>HistoryEntryState</code></li>
+      <li>The router: renders the page of the URL after all handlers end</li>
+      <li><code>IJSRuntime</code>: a C# call to a JS function, with its Promise</li>
+    </ul></div>
+    <div class="mine"><h3>Our C# <small>components</small></h3><ul>
+      <li><code>MainLayout</code>: the one changing handler (direction, motion)</li>
+      <li>Pages: <code>Home</code>, <code>Deep</code> (the enter wait in <code>OnAfterRenderAsync</code>)</li>
+      <li>Event args classes and the <code>[EventHandler]</code> attribute</li>
+    </ul></div>
+  </div>
+
+  <p class="figt">One push from Home to Deep (median times from spike 10)</p>
+  <div class="tl">
+    <div class="step"><span class="ms">0 ms</span><span class="who">C#</span><span>The click handler calls <code>Nav.NavigateTo("deep", new() { HistoryEntryState = "depth=1" })</code></span></div>
+    <div class="step"><span class="ms">0</span><span class="who">C#</span><span>Blazor calls our <code>Changing</code> handler. The router waits for it</span></div>
+    <div class="step"><span class="ms">0</span><span class="who">C#</span><span>Direction: target depth 1 &gt; current depth 0, so "push"</span></div>
+    <div class="step"><span class="ms">~10</span><span class="who js">JS</span><span><code>lab.begin("push")</code>: <code>startViewTransition</code> takes a picture of Home</span></div>
+    <div class="step"><span class="ms">24</span><span class="who">C#</span><span>The call returns at "captured". The handler ends</span></div>
+    <div class="step"><span class="ms">34</span><span class="who">C#</span><span>The router renders Deep. <code>OnAfterRenderAsync(true)</code> starts the enter wait</span></div>
+    <div class="step"><span class="ms">349</span><span class="who js">JS</span><span>The slide (300 ms) ends. <code>lab.finished</code> resolves</span></div>
+    <div class="step"><span class="ms">514</span><span class="who js">JS</span><span>The last block stops. The settle wait resolves. Deep is ready</span></div>
+  </div>
+
+  <h2>1. A simple view</h2>
+  <p class="file">Components/Pages/Deep.razor</p>
+<pre>@page "/deep"
+@inject IJSRuntime JS
+
+&lt;div class="page" id="deep"&gt;
+    &lt;h1&gt;Deep &lt;button @onclick="Back"&gt;Back&lt;/button&gt;&lt;/h1&gt;
+    &lt;div class="blocks"&gt;&lt;div&gt;&lt;/div&gt;&lt;div&gt;&lt;/div&gt;&lt;div&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        // The DOM is there and the CSS animations have started (7 of 7 probes in spike 09).
+        var r = await JS.InvokeAsync&lt;Waited&gt;("lab.wait", "#deep .blocks", 2000);
+        // r.By is "end", "cancel" or "limit". Now the page is ready for input.
+    }
+
+    Task Back() =&gt; JS.InvokeVoidAsync("lab.back").AsTask();   // history.back()
+
+    sealed record Waited(string By, int Ms);
+}</pre>
+  <p class="why">A page is a component. <code>@onclick</code> is an official event: Blazor sends the DOM click to the C# method on the circuit.</p>
+
+  <h2>2. A simple custom event</h2>
+  <p class="why">A custom event has three parts. This one is the click trace of spike 09: one handler at the layout root sees each click.</p>
+  <p class="file">Lab/EventHandlers.cs: the C# side</p>
+<pre>public sealed class TracedClickArgs : EventArgs
+{
+    public string Test { get; set; } = "";   // data-test of the clicked element
+    public double At { get; set; }           // performance.now() in the browser
+}
+
+// The C# name "ontracedclick" must differ from the browser event "click".
+[EventHandler("ontracedclick", typeof(TracedClickArgs), enableStopPropagation: true, enablePreventDefault: true)]
+public static class EventHandlers;</pre>
+  <p class="file">wwwroot/Spike.Official.lib.module.js: the browser side</p>
+<pre>export function afterWebStarted(blazor) {     // Blazor loads this file by its name
+  blazor.registerCustomEventType("tracedclick", {
+    browserEventName: "click",                 // the DOM event to listen to
+    createEventArgs: e =&gt; ({                   // the JSON that becomes TracedClickArgs
+      test: e.target.closest?.("[data-test]")?.dataset.test || "",
+      at: performance.now(),
+    }),
+  });
+}</pre>
+  <p class="file">Components/Layout/MainLayout.razor: the use</p>
+<pre>&lt;div class="frame" @ontracedclick="Clicked"&gt;
+    @Body
+&lt;/div&gt;
+
+@code {
+    void Clicked(TracedClickArgs e) =&gt; Trace.Add($"click {e.Test} at {e.At:0} ms");
+}</pre>
+  <p class="why">Measured: each click arrived with its <code>data-test</code>, also when a button stopped <code>onclick</code> with <code>:stopPropagation</code>. The handler runs after the handler of the button.</p>
+
+  <h2>3. Navigation</h2>
+  <p class="file">Home.razor: the move, with a state on the history entry</p>
+<pre>&lt;button @onclick='() =&gt; Nav.NavigateTo("deep",
+    new NavigationOptions { HistoryEntryState = "depth=1" })'&gt;Open deep&lt;/button&gt;</pre>
+  <p class="file">MainLayout.razor: the one changing handler</p>
+<pre>IDisposable? changing;
+
+protected override void OnAfterRender(bool firstRender)
+{
+    if (firstRender) changing = Nav.RegisterLocationChangingHandler(Changing);
+}
+
+static int Depth(string? s) =&gt; s is { } v &amp;&amp; v.StartsWith("depth=") ? int.Parse(v[6..]) : 0;
+
+async ValueTask Changing(LocationChangingContext c)
+{
+    // c.HistoryEntryState = the target entry, Nav.HistoryEntryState = the current entry.
+    // Both are correct also on the browser back and forward buttons.
+    var kind = Depth(c.HistoryEntryState) &gt; Depth(Nav.HistoryEntryState) ? "push" : "back";
+
+    // A guard step goes here: if (dirty) { c.PreventNavigation(); return; }
+
+    // The router waits until this handler ends. A second move cancels c.CancellationToken.
+    await JS.InvokeVoidAsync("lab.begin", c.CancellationToken, kind);   // returns at "captured"
+}
+
+public void Dispose() =&gt; changing?.Dispose();</pre>
+  <p class="why">Rules from the data: use one handler, with the steps in order in it. Two handlers (or a handler and <code>NavigationLock</code>) run at the same time. <code>NavLink</code> gives no state, so a tab link has depth 0.</p>
+
+  <h2>4. A simple animation</h2>
+  <p class="file">wwwroot/motion.css: the slide and the rise</p>
+<pre>.vt::view-transition-old(root) { animation: out-left 300ms ease-out both; }
+.vt::view-transition-new(root) { animation: in-right 300ms ease-out both; }
+@keyframes out-left { to { transform: translateX(-30%); opacity: 0; } }
+@keyframes in-right { from { transform: translateX(100%); } }
+
+.blocks &gt; div { animation: rise 300ms ease-out both; }
+.blocks &gt; div:nth-child(2) { animation-delay: 80ms; }
+.blocks &gt; div:nth-child(3) { animation-delay: 160ms; }
+@keyframes rise { from { transform: translateY(16px); opacity: 0; } }</pre>
+  <p class="file">lib.module.js: the view transition, in two phases</p>
+<pre>function begin(kind) {
+  const root = document.documentElement;
+  root.classList.add("vt");
+  root.classList.toggle("vt-back", kind === "back");
+  let captured;
+  const c = new Promise(r =&gt; { captured = r; });
+  // The callback runs after the browser has the picture of the old page.
+  // It resolves "captured", then waits for the next DOM change (the router render).
+  const t = document.startViewTransition(() =&gt; { captured(); return rendered(); });
+  const finished = t.finished.then(() =&gt; root.classList.remove("vt", "vt-back"));
+  return { captured: c, finished };
+}</pre>
+  <p class="file">lib.module.js: the settle wait (why a raw <code>animationend</code> is not enough)</p>
+<pre>function settle(el, limitMs) {
+  return new Promise(resolve =&gt; {
+    setTimeout(() =&gt; resolve({ by: "limit" }), limitMs);        // nothing moves forever
+    requestAnimationFrame(() =&gt; {
+      // All finite animations of the element and its children: 3 for the 3 blocks.
+      const all = el.getAnimations({ subtree: true })
+        .filter(a =&gt; a.effect.getComputedTiming().endTime !== Infinity);
+      if (all.length === 0) { resolve({ by: "end" }); return; }  // no motion: no event would come
+      Promise.all(all.map(a =&gt; a.finished)).then(() =&gt; resolve({ by: "end" }),
+                                                () =&gt; resolve({ by: "cancel" }));
+    });
+  });
+}</pre>
+  <p class="why">Measured: <code>animationend</code> fires one time for each block (3 events) and never when nothing moves. The settle wait gives one answer in each case.</p>
+
+  <h2>5. The same move on the event channel</h2>
+  <p class="why">Spike 10 replaces the <code>IJSRuntime</code> call of step 3 with an element and an event. Same times, but no error path.</p>
+<pre>// C#: the handler
+var command = Channel.Send("vt", kind);                  // the outlet renders &lt;i data-orch-req="7" data-verb="vt"&gt;
+await command.On("captured").WaitAsync(c.CancellationToken);
+
+// Outlet.razor
+&lt;div class="outlet" @onorchdone="Channel.Complete"&gt;
+    @foreach (var c in Channel.Open) { &lt;i @key="c.Id" data-orch-req="@c.Id" data-verb="@c.Verb" data-arg="@c.Arg" hidden&gt;&lt;/i&gt; }
+&lt;/div&gt;
+
+// JS: a MutationObserver sees the &lt;i&gt;, runs begin(), and reports each phase
+el.dispatchEvent(new CustomEvent("orch-done", { bubbles: true, detail: { id: 7, phase: "captured" } }));</pre>
 </section>
 
 <!-- CATALOG -->
