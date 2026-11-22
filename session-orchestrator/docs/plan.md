@@ -640,3 +640,20 @@ Spike `spikes/blazor-nav/09-official` measures the official parts that the first
 | `IHandleEvent` on a page base | Sees each event and its argument type, not the element | A trace of page handlers |
 | `CircuitHandler.CreateInboundActivityHandler` | 4 activities for each click, with no kind | Timing only |
 
+### Event channel against IJSRuntime (spike 10, 2026-11-22)
+
+Spike `spikes/blazor-nav/10-events` runs the same navigation pipeline in two ways: an event channel with no `IJSRuntime` call (C# renders a command element, a script runs it and sends `orch-done` events, a custom event brings each phase back), and `IJSRuntime` calls. The data is in its `RESULT.md`.
+
+| Step (median of 20 navigations) | Event channel | IJSRuntime |
+|---|---|---|
+| Captured | 24 ms | 24 ms |
+| View transition finished | 349 ms | 349 ms |
+| Enter wait ended | 514 ms | 514 ms |
+| Inbound activities to "finished" | 14 | 11 |
+| A JS error | Timeout after the C# limit (2007 ms) | `JSException` after 14 ms |
+
+Findings:
+- The event channel can carry the pipeline. The times are the same: the motion is the cost, not the transport.
+- It gives a two-phase result from one command. It has no error path, and it is our own RPC (ids, phases, outlet, observer).
+- Keep `IJSRuntime` for the commands that C# starts. Use custom events for what the browser starts (input, gestures).
+

@@ -1,0 +1,19 @@
+@* The outlet of the event channel: one hidden element for each open command. The script runs each new element and
+   dispatches "orch-done" on it; the event bubbles to this div. *@
+@implements IDisposable
+@inject Channel Channel
+
+<div class="outlet" @onorchdone="Channel.Complete">
+    @foreach (var c in Channel.Open)
+    {
+        <i @key="c.Id" data-orch-req="@c.Id" data-verb="@c.Verb" data-arg="@c.Arg" hidden></i>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized() => Channel.Changed += Refresh;
+
+    void Refresh() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Channel.Changed -= Refresh;
+}

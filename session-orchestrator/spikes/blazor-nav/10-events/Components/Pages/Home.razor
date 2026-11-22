@@ -1,0 +1,46 @@
+@page "/"
+@inherits TracedPage
+@inject NavigationManager Nav
+@inject Channel Channel
+@inject IJSRuntime JS
+
+<div class="page" data-test="page-home">
+    <h1>Home</h1>
+    <button data-test="err-events" @onclick="ErrEvents">error (events)</button>
+    <button data-test="err-interop" @onclick="ErrInterop">error (interop)</button>
+    <button data-test="go-deep" @onclick='() => Nav.NavigateTo("deep", new NavigationOptions { HistoryEntryState = "depth=1" })'>Open deep</button>
+</div>
+
+@code {
+    protected override string PageName => "Home";
+
+    // A JS error in the command. The event channel has no error path: only a C# time limit ends the wait.
+    async Task ErrEvents()
+    {
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            await Channel.Send("throw", "").On("end").WaitAsync(TimeSpan.FromSeconds(2));
+            Trace.Add($"Error events: ended at {clock.ElapsedMilliseconds} ms");
+        }
+        catch (TimeoutException)
+        {
+            Trace.Add($"Error events: TimeoutException at {clock.ElapsedMilliseconds} ms");
+        }
+    }
+
+    async Task ErrInterop()
+    {
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            await JS.InvokeVoidAsync("lab.throw");
+            Trace.Add($"Error interop: ended at {clock.ElapsedMilliseconds} ms");
+        }
+        catch (JSException e)
+        {
+            var first = e.Message.Split('\n')[0];
+            Trace.Add($"Error interop: JSException \"{first}\" at {clock.ElapsedMilliseconds} ms");
+        }
+    }
+}

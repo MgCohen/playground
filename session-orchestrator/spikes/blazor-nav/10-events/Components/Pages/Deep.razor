@@ -1,0 +1,34 @@
+@page "/deep"
+@inherits TracedPage
+@inject Channel Channel
+@inject NavClock Clock
+@inject IJSRuntime JS
+
+@* The enter step: the blocks rise one after the other. The page waits for the end through the mode of the run. *@
+<div class="page" id="deep" data-test="page-deep">
+    <h1>Deep <button data-test="back" @onclick="Back">Back</button></h1>
+    <div class="blocks"><div></div><div></div><div></div></div>
+</div>
+
+@code {
+    protected override string PageName => "Deep";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        var mode = Clock.Events ? "events" : "interop";
+        Trace.Add($"Deep {mode}: rendered at {Clock.T} ms");
+        var (by, ms) = Clock.Events
+            ? await Channel.Send("settle", "#deep .blocks").On("end").ContinueWith(t => (t.Result.By, t.Result.Ms))
+            : await JS.InvokeAsync<Waited>("lab.wait", "#deep .blocks", 2000).AsTask().ContinueWith(t => (t.Result.By, t.Result.Ms));
+        Trace.Add($"Deep {mode}: enter wait {by} ({ms} ms in JS) at {Clock.T} ms");
+    }
+
+    async Task Back()
+    {
+        if (Clock.Events) await Channel.Send("back", "").On("end");
+        else await JS.InvokeVoidAsync("lab.back");
+    }
+
+    sealed record Waited(string By, int Ms);
+}

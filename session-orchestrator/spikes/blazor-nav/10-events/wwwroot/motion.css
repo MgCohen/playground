@@ -1,0 +1,15 @@
+/* The motion of spike 10: a push and a back as a view transition (300 ms), and the rise of the blocks on Deep. */
+.vt::view-transition-old(root) { animation: out-left 300ms ease-out both; }
+.vt::view-transition-new(root) { animation: in-right 300ms ease-out both; }
+.vt-back::view-transition-old(root) { animation: out-right 300ms ease-out both; }
+.vt-back::view-transition-new(root) { animation: in-left 300ms ease-out both; }
+@keyframes out-left { to { transform: translateX(-30%); opacity: 0; } }
+@keyframes in-right { from { transform: translateX(100%); } }
+@keyframes out-right { to { transform: translateX(100%); } }
+@keyframes in-left { from { transform: translateX(-30%); opacity: 0; } }
+.blocks { display: grid; gap: 8px; }
+.blocks > div { height: 40px; border-radius: 8px; background: #ffd2b8; animation: rise 300ms ease-out both; }
+.blocks > div:nth-child(2) { animation-delay: 80ms; }
+.blocks > div:nth-child(3) { animation-delay: 160ms; }
+@keyframes rise { from { transform: translateY(16px); opacity: 0; } }
+.full { display: none; }

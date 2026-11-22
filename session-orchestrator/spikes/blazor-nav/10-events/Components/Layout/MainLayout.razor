@@ -1,0 +1,80 @@
+@* The app frame and the one navigation handler. The handler runs the steps in order: the direction from
+   HistoryEntryState, then the view transition. The mode picks the transport: the event channel or IJSRuntime calls. *@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Nav
+@inject Trace Trace
+@inject Channel Channel
+@inject NavClock Clock
+@inject Activity Activity
+@inject IJSRuntime JS
+
+<div class="frame">
+    <div class="stage">@Body</div>
+    <TraceView />
+    <nav class="appbar">
+        <button data-test="mode-events" @onclick="() => SetMode(true)">events</button>
+        <button data-test="mode-interop" @onclick="() => SetMode(false)">interop</button>
+    </nav>
+</div>
+<Outlet />
+<pre data-test="full-trace" class="full">@string.Join("\n", Trace.Lines)</pre>
+
+@code {
+    IDisposable? changing;
+    int start;
+
+    protected override void OnInitialized() => Trace.Changed += Refresh;
+
+    void Refresh() => _ = InvokeAsync(StateHasChanged);
+
+    void SetMode(bool events)
+    {
+        Clock.Events = events;
+        Trace.Add($"Mode: {(events ? "events" : "interop")}");
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender) changing = Nav.RegisterLocationChangingHandler(Changing);
+    }
+
+    static int Depth(string? state) => state is { } s && s.StartsWith("depth=") ? int.Parse(s[6..]) : 0;
+
+    async ValueTask Changing(LocationChangingContext c)
+    {
+        Clock.Restart();
+        start = Activity.Count;
+        var kind = Depth(c.HistoryEntryState) > Depth(Nav.HistoryEntryState) ? "push" : "back";
+        var mode = Clock.Events ? "events" : "interop";
+        Trace.Add($"Nav {mode}: start {kind}");
+        Task<string> finished;
+        if (Clock.Events)
+        {
+            var command = Channel.Send("vt", kind);
+            var captured = await command.On("captured").WaitAsync(c.CancellationToken);
+            finished = command.On("finished").ContinueWith(t => $"{t.Result.By} ({t.Result.Ms} ms in JS)");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("lab.begin", c.CancellationToken, kind);
+            finished = JS.InvokeAsync<Waited>("lab.finished").AsTask().ContinueWith(t => $"{t.Result.By} ({t.Result.Ms} ms in JS)");
+        }
+        Trace.Add($"Nav {mode}: captured at {Clock.T} ms");
+        _ = Report(mode, finished);
+    }
+
+    async Task Report(string mode, Task<string> finished)
+    {
+        var by = await finished;
+        await InvokeAsync(() => Trace.Add($"Nav {mode}: finished {by} at {Clock.T} ms, activities {Activity.Count - start}"));
+    }
+
+    public void Dispose()
+    {
+        changing?.Dispose();
+        Trace.Changed -= Refresh;
+    }
+
+    sealed record Waited(string By, int Ms);
+}
