@@ -1,0 +1,259 @@
+<title>Blazor Event Toolkit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column of 980 px max, a sticky tab bar, one panel for each tab. The Porcelain Orange theme of the tray. */
+:root {
+  --canvas: #e6e3de; --surf: #fdfdfc; --sunk: #f1efeb; --ink: #23201c; --muted: #6b655d; --line: #d3cec6;
+  --accent: #ff6a1a; --accent-ink: #b34408; --ok: #2f7d4f; --bad: #b3362b;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif; --f-mono: "JetBrains Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --canvas: #1c1a18; --surf: #262320; --sunk: #201e1b; --ink: #ece7e0; --muted: #a39c92; --line: #3a3631;
+  --accent: #ff7a33; --accent-ink: #ffa36e; --ok: #6cc28f; --bad: #ef7a6e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --canvas: #1c1a18; --surf: #262320; --sunk: #201e1b; --ink: #ece7e0; --muted: #a39c92; --line: #3a3631;
+  --accent: #ff7a33; --accent-ink: #ffa36e; --ok: #6cc28f; --bad: #ef7a6e; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--canvas); color: var(--ink); font: 15px/1.55 var(--f-body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--canvas); }
+.wrap { max-width: 980px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 60px; }
+.eyebrow { font: 600 12px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent-ink); }
+h1 { font-size: 30px; line-height: 1.15; margin: 6px 0 8px; text-wrap: balance; }
+h2 { font-size: 20px; margin: 28px 0 10px; text-wrap: balance; }
+p { margin: 8px 0; max-width: 68ch; }
+.sum { color: var(--muted); max-width: 72ch; }
+code { font-family: var(--f-mono); font-size: .88em; }
+:not(pre) > code { background: var(--sunk); border: 1px solid var(--line); border-radius: 5px; padding: 0 4px; overflow-wrap: anywhere; }
+a { color: var(--accent-ink); }
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--canvas); display: flex; gap: 6px; overflow-x: auto; padding: 10px 0; margin-top: 14px; border-bottom: 1px solid var(--line); }
+.tabs button { flex: none; font: 600 14px var(--f-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
+.tabs button:hover { color: var(--ink); border-color: var(--line); }
+.tabs button[aria-selected="true"] { color: var(--surf); background: var(--ink); }
+.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tbl { overflow-x: auto; margin: 10px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surf); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { font: 600 12px var(--f-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--sunk); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; }
+.wide table { min-width: 760px; }
+td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cv { display: inline-block; font: 600 11px var(--f-mono); padding: 0 6px; border-radius: 4px; margin-right: 4px; white-space: nowrap; vertical-align: 1px; }
+.cv.y { background: var(--accent); color: #23201c; }
+.cv.p { border: 1px solid var(--accent); color: var(--accent-ink); }
+.cv.n { border: 1px solid var(--line); color: var(--muted); }
+.answer { background: var(--surf); border: 1px solid var(--accent); border-radius: 12px; padding: 14px 16px; margin: 14px 0; max-width: 76ch; }
+.answer p { margin: 4px 0; }
+.answer b { color: var(--accent-ink); }
+pre { background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; overflow-x: auto; font: 12.5px/1.5 var(--f-mono); margin: 6px 0; }
+.figt { font: 600 13px var(--f-mono); color: var(--muted); margin: 18px 0 0; }
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cols > div { min-width: 0; }
+@media (max-width: 700px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+/* Two-lane flow strips. */
+.lane { background: var(--surf); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.lane h3 { margin: 0 0 6px; font-size: 14px; }
+.step { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; font-size: 13.5px; padding: 4px 0; border-top: 1px dashed var(--line); }
+.step:first-of-type { border-top: 0; }
+.who { font: 600 11px var(--f-mono); color: var(--accent-ink); padding-top: 2px; }
+.who.js { color: var(--muted); }
+/* Bars of the timing chart: one scale of 0 to 600 ms. */
+.bars { background: var(--surf); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; }
+.brow { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 13px; }
+.track { position: relative; height: 34px; }
+.bar { position: absolute; left: 0; height: 14px; border-radius: 3px; display: flex; align-items: center; }
+.bar.ev { top: 0; background: var(--accent); }
+.bar.io { top: 18px; background: var(--muted); }
+.bar span { position: absolute; left: calc(100% + 6px); font: 11px var(--f-mono); color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.axis { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; font: 11px var(--f-mono); color: var(--muted); }
+.ticks { display: flex; justify-content: space-between; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.sw { width: 18px; height: 12px; border-radius: 3px; display: inline-block; vertical-align: -1px; margin-right: 6px; }
+@media (max-width: 560px) { .brow, .axis { grid-template-columns: 96px minmax(0, 1fr); } }
+ol, ul { padding-left: 22px; }
+li { margin: 3px 0; max-width: 70ch; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · Blazor UI · spikes 09 and 10 · 2026-11-22</div>
+  <h1>What Blazor gives us for events and navigation</h1>
+  <p class="sum">Each row on this page comes from a measurement in <code>spikes/blazor-nav/09-official</code> or <code>10-events</code> (.NET 10, Blazor Server, headless Chromium). The question: can the official event mechanisms be the base of our pipeline, in place of the JS interop that we built?</p>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Page parts">
+  <button role="tab" id="t-answer" aria-controls="answer" aria-selected="true">Answer</button>
+  <button role="tab" id="t-catalog" aria-controls="catalog" aria-selected="false">What Blazor gives</button>
+  <button role="tab" id="t-channel" aria-controls="channel" aria-selected="false">Events against interop</button>
+  <button role="tab" id="t-split" aria-controls="split" aria-selected="false">Proposed split</button>
+</nav>
+
+<!-- ANSWER -->
+<section class="panel" id="answer" role="tabpanel" aria-labelledby="t-answer">
+  <div class="answer">
+    <p><b>Events can carry the pipeline, but they do not do it better.</b> Spike 10 runs the same push and back on an event channel with no <code>IJSRuntime</code> call. The times are the same to the ms: 349 ms to the end of the view transition in both modes.</p>
+    <p><b>The event channel loses the error path.</b> A JS error gives no event, so only a C# time limit ends the wait (2007 ms). <code>IJSRuntime</code> gives the error and its message in 14 ms.</p>
+    <p><b>The channel is our own RPC on top of events:</b> ids, phases, an outlet and an observer. <code>IJSRuntime</code> already gives these. The one gain is a command with more than one result phase.</p>
+    <p><b>Events are the right tool for what the browser starts:</b> clicks, gestures, the end of a motion that C# did not start. Calls are the right tool for what C# starts.</p>
+  </div>
+
+  <h2>The four findings that decide it</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Finding</th><th>Data</th><th>What it means for us</th></tr></thead>
+    <tbody>
+      <tr><td>The transport is not the cost</td><td>Captured 24 ms, finished 349 ms, enter wait 514 ms: the same median in both modes (20 navigations each)</td><td>No speed gain from a change. The motion is the time</td></tr>
+      <tr><td>A raw animation event cannot be a wait</td><td>3 <code>animationend</code> events for a stagger of 3 children, 2 <code>transitionend</code> events for 2 properties, 0 events when nothing moves</td><td>Something must count and must time out. That is the job of our <code>getAnimations</code> settle</td></tr>
+      <tr><td>Several navigation handlers run at the same time</td><td>The motion handler ended 200 ms before the <code>NavigationLock</code> guard decided</td><td>One handler, and our own ordered steps in it</td></tr>
+      <tr><td>One custom click event sees each click</td><td><code>tracedclick</code> on the layout root got each click with its <code>data-test</code>, also when <code>stopPropagation</code> stopped <code>onclick</code></td><td>An official base for the input trace that the Tracing tab asks for</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- CATALOG -->
+<section class="panel" id="catalog" role="tabpanel" aria-labelledby="t-catalog" hidden>
+  <p class="sum">Each official mechanism, what spike 09 measured, and its fit. <span class="cv y">yes</span> use it as a base. <span class="cv p">part</span> use it for one job. <span class="cv n">no</span> it does not help.</p>
+
+  <h2>Events from the browser to C#</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Mechanism</th><th>Measured</th><th>Fit</th></tr></thead>
+    <tbody>
+      <tr><td><code>[EventHandler]</code> + <code>registerCustomEventType</code> on <code>animationend</code></td><td>Same latency as our wait (344 against 344 ms). One event for each animation and each child. No event when nothing moves. <code>animationcancel</code> came 133 ms after a cancel at 113 ms</td><td><span class="cv p">part</span>"Tell this element when its one animation ends"</td></tr>
+      <tr><td>The same on <code>transitionend</code></td><td>One event for each property: 2 events for opacity and transform</td><td><span class="cv p">part</span>Same limit</td></tr>
+      <tr><td>A custom event on a DOM event that our script dispatches</td><td>Works. The settle of our script, then <code>orch-settled</code>: same time as the interop wait</td><td><span class="cv p">part</span>The base of the event channel (next tab)</td></tr>
+      <tr><td>A custom event on <code>click</code> at the layout root</td><td>Each click with its <code>data-test</code>. It runs after the handler of the element. <code>stopPropagation</code> of <code>onclick</code> does not stop it</td><td><span class="cv y">yes</span>The input trace</td></tr>
+      <tr><td><code>IHandleEvent</code> on a page base</td><td>Sees each event of the page and its argument type (<code>MouseEventArgs</code>, <code>ChangeEventArgs</code>, the custom args, <code>LocationChangingContext</code>). Not the element</td><td><span class="cv p">part</span>A trace of the page handlers</td></tr>
+      <tr><td><code>@on...:preventDefault</code>, <code>:stopPropagation</code></td><td>The flag of the last render applies. A handler that sets the flag changes the next event only</td><td><span class="cv p">part</span>Static rules. A gesture that decides at event time stays in JS</td></tr>
+      <tr><td><code>CircuitHandler.CreateInboundActivityHandler</code></td><td>4 inbound activities for each click, with no kind and no element</td><td><span class="cv p">part</span>Timing only</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Navigation</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Mechanism</th><th>Measured</th><th>Fit</th></tr></thead>
+    <tbody>
+      <tr><td><code>RegisterLocationChangingHandler</code></td><td>Can await. The router waits for each handler. A render of another component in the handler works (spike 10)</td><td><span class="cv y">yes</span>The one entry of a move</td></tr>
+      <tr><td>Two handlers, or a handler and <code>NavigationLock</code></td><td>They start in the same ms and run at the same time</td><td><span class="cv n">no</span>Do not split the steps of a move over handlers</td></tr>
+      <tr><td>A second move during a handler</td><td>The token of the old move fires at once. Its <code>PreventNavigation</code> has no effect</td><td><span class="cv y">yes</span>Each step takes the token</td></tr>
+      <tr><td><code>PreventNavigation</code> on the browser back</td><td>The URL stays. <code>history.length</code> does not change</td><td><span class="cv y">yes</span>The leave guard</td></tr>
+      <tr><td><code>NavigationOptions.HistoryEntryState</code></td><td>The handler gets the state of the target entry and of the current entry, also on the browser back and forward. <code>NavLink</code> gives <code>null</code></td><td><span class="cv y">yes</span>The push or back direction, with no list of visited URLs</td></tr>
+      <tr><td><code>IsNavigationIntercepted</code> on a popstate</td><td><code>False</code> in <code>LocationChanging</code>, <code>True</code> in <code>LocationChanged</code></td><td><span class="cv p">part</span>Use only the value of <code>LocationChanging</code></td></tr>
+      <tr><td>Enhanced navigation events</td><td>0 events after 12 moves</td><td><span class="cv n">no</span>Static SSR only</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Render and calls</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Mechanism</th><th>Measured</th><th>Fit</th></tr></thead>
+    <tbody>
+      <tr><td><code>OnAfterRender</code></td><td>7 of 7 probes saw the class of the render and all its animations at the first call</td><td><span class="cv y">yes</span>The start point of each wait</td></tr>
+      <tr><td><code>IJSRuntime.InvokeAsync</code></td><td>Waits for the Promise. A JS error comes back as <code>JSException</code> with its message in 14 ms</td><td><span class="cv y">yes</span>The transport of each command that C# starts</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- CHANNEL -->
+<section class="panel" id="channel" role="tabpanel" aria-labelledby="t-channel" hidden>
+  <p class="sum">Spike 10 builds an event channel with no <code>IJSRuntime</code> call. It runs the same navigation pipeline in both modes: one location changing handler, the direction from <code>HistoryEntryState</code>, a view transition, then a settle wait for the blocks of the new page.</p>
+
+  <p class="figt">One push in each mode</p>
+  <div class="cols">
+    <div class="lane"><h3>Event channel</h3>
+      <div class="step"><span class="who">C#</span><span><code>Channel.Send("vt", "push")</code> adds a command</span></div>
+      <div class="step"><span class="who">C#</span><span>The outlet renders <code>&lt;i data-orch-req="7" data-verb="vt"&gt;</code></span></div>
+      <div class="step"><span class="who js">JS</span><span>A <code>MutationObserver</code> sees the element and starts the view transition</span></div>
+      <div class="step"><span class="who js">JS</span><span>Dispatches <code>orch-done</code> {id 7, "captured"}</span></div>
+      <div class="step"><span class="who">C#</span><span><code>@onorchdone</code> ends the task of "captured". The handler returns, the router renders</span></div>
+      <div class="step"><span class="who js">JS</span><span>Dispatches <code>orch-done</code> {id 7, "finished"}. The outlet removes the command</span></div>
+    </div>
+    <div class="lane"><h3>IJSRuntime (the product today)</h3>
+      <div class="step"><span class="who">C#</span><span><code>await JS.InvokeVoidAsync("lab.begin", "push")</code></span></div>
+      <div class="step"><span class="who js">JS</span><span>Starts the view transition. The Promise resolves at "captured"</span></div>
+      <div class="step"><span class="who">C#</span><span>The call returns. The handler returns, the router renders</span></div>
+      <div class="step"><span class="who">C#</span><span>A second call: <code>await JS.InvokeAsync("lab.finished")</code></span></div>
+      <div class="step"><span class="who js">JS</span><span>The Promise resolves at "finished"</span></div>
+    </div>
+  </div>
+
+  <h2>Median times, 20 navigations in each mode</h2>
+  <div class="bars" role="img" aria-label="Median times in ms from the start of a navigation. Captured: 24 in both modes. Page rendered: 34 in both. View transition finished: 349 in both. Enter wait ended: 514 in both.">
+    <div class="brow"><span>Captured</span><div class="track"><div class="bar ev" style="width:4%"><span>24</span></div><div class="bar io" style="width:4%"><span>24</span></div></div></div>
+    <div class="brow"><span>Page rendered</span><div class="track"><div class="bar ev" style="width:5.67%"><span>34</span></div><div class="bar io" style="width:5.67%"><span>34</span></div></div></div>
+    <div class="brow"><span>Transition finished</span><div class="track"><div class="bar ev" style="width:58.17%"><span>349</span></div><div class="bar io" style="width:58.17%"><span>349</span></div></div></div>
+    <div class="brow"><span>Enter wait ended</span><div class="track"><div class="bar ev" style="width:85.67%"><span>514</span></div><div class="bar io" style="width:85.67%"><span>514</span></div></div></div>
+    <div class="axis"><span></span><div class="ticks"><span>0</span><span>150</span><span>300</span><span>450</span><span>600 ms</span></div></div>
+  </div>
+  <div class="legend"><span><i class="sw" style="background:var(--accent)"></i>Event channel</span><span><i class="sw" style="background:var(--muted)"></i>IJSRuntime</span></div>
+
+  <h2>Where the two modes differ</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Item</th><th>Event channel</th><th>IJSRuntime</th></tr></thead>
+    <tbody>
+      <tr><td>Inbound activities to "finished" (min / median / max)</td><td class="n">12 / 14 / 14</td><td class="n">10 / 11 / 12</td></tr>
+      <tr><td>A JS error in the command</td><td><span class="cv n">timeout</span>Only the C# limit ends the wait: 2007 ms</td><td><span class="cv y">error</span><code>JSException "lab error"</code> in 14 ms</td></tr>
+      <tr><td>Results with more than one phase</td><td><span class="cv y">yes</span>One command, a task for each phase</td><td><span class="cv p">part</span>One call for each phase</td></tr>
+      <tr><td>Ids, errors, typed results</td><td>Our code: <code>Channel.cs</code> 57 lines, <code>Outlet.razor</code> 15, about 30 lines of script</td><td>Given by Blazor</td></tr>
+      <tr><td>Before the first interactive render</td><td>No outlet: the command does not run (not tested)</td><td>The call throws: no circuit</td></tr>
+      <tr><td>The rule "no calls from JS to C#" of R1</td><td>Kept: the result is an event, not a call</td><td>Kept</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- SPLIT -->
+<section class="panel" id="split" role="tabpanel" aria-labelledby="t-split" hidden>
+  <p class="sum">A proposal for the discussion. Nothing in <code>src/</code> changes before the user decides.</p>
+
+  <h2>Who starts the work picks the mechanism</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Work</th><th>Who starts it</th><th>Mechanism</th><th>Our code today</th></tr></thead>
+    <tbody>
+      <tr><td>A command: wait for a motion, start a view transition</td><td>C#</td><td><code>IJSRuntime</code></td><td><code>JsCommandHandler</code>, <code>MotionWait</code>: keep</td></tr>
+      <tr><td>A move between pages</td><td>The user or C#</td><td>One <code>RegisterLocationChangingHandler</code> with our ordered steps: guard, motion</td><td><code>MotionHost</code>: grows into the one handler. No <code>NavigationLock</code> next to it</td></tr>
+      <tr><td>The direction of a move</td><td>C#</td><td><code>HistoryEntryState</code> on each move from code</td><td><code>PageDepth</code>: can read the state in place of the two paths</td></tr>
+      <tr><td>The order of the tray windows</td><td>C#</td><td>No official part</td><td><code>TrayFlow</code>: keep</td></tr>
+      <tr><td>Clicks and gestures for the trace</td><td>The browser</td><td>A custom click event at the layout root</td><td>None today (Tracing T-G2, Interactions G1)</td></tr>
+      <tr><td>The end of a motion that C# did not start (a swipe)</td><td>The browser</td><td>A custom event that our script dispatches at the end</td><td><code>swipe.js</code>: a candidate</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Open questions</h2>
+  <ul>
+    <li>The data is from headless Chromium. The tray host (WebView2 with our own <code>WebViewManager</code>) is not measured.</li>
+    <li>Should the input trace use the custom click event, and should the self-test <code>Press</code> wait for its trace line?</li>
+    <li>Should <code>PageDepth</code> move to <code>HistoryEntryState</code>? Tab links give no state, so a tab change still needs the path.</li>
+  </ul>
+</section>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs [role="tab"]'));
+  function show(id) {
+    var ok = tabs.some(function (t) { return t.getAttribute("aria-controls") === id; });
+    var target = ok ? id : "answer";
+    tabs.forEach(function (t) {
+      var on = t.getAttribute("aria-controls") === target;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    });
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () {
+      var id = t.getAttribute("aria-controls");
+      show(id);
+      try { history.replaceState(null, "", "#" + id); } catch (e) {}
+    });
+    t.addEventListener("keydown", function (e) {
+      var n = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : null;
+      if (n === null) return;
+      var next = tabs[(n + tabs.length) % tabs.length];
+      next.focus();
+      next.click();
+    });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>

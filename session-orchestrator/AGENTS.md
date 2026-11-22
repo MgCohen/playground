@@ -11,6 +11,7 @@ Read these files before you change this project:
 | `docs/how-it-works.html` | How it works today: processes, folders, store files, call stack, sequences (https://claude.ai/artifact/CP2ozBgysFuJSwhrgoHugt) |
 | `docs/session-management.html` | The options for session management, with a worked example each (https://claude.ai/artifact/SRBob5ix2xQ2ArpwDXTJaW) |
 | `docs/motion-prior-art.html` | Prior art for the motion and navigation controller, with the Blazor navigation spikes and the Microsoft state (https://claude.ai/artifact/JBM4fGbpvrNMRvWmPxEK6q) |
+| `docs/blazor-events.html` | What the official Blazor event and navigation mechanisms give us, measured in spikes 09 and 10 (https://claude.ai/artifact/XxQpm7s4zAMuWNL2xcJJbE) |
 
 ## Rules
 
