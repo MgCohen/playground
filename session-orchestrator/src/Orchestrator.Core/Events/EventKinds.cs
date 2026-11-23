@@ -31,6 +31,9 @@ public static class EventKinds
     public const string LeaseRelease = "lease.release";
     public const string Blocked = "blocked";
     public const string DeliveryBlocked = "delivery.blocked";
+
+    /// <summary>A failure that the supervisor saw: one thread for each session and reason (D, problem 4).</summary>
+    public const string Failure = "failure";
     public const string SessionState = "session.state";
     public const string StateConflict = "state.conflict";
     public const string MetaUpdate = "meta.update";

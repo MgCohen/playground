@@ -2041,6 +2041,251 @@ The run showed that a type does one thing: it selects the agent and the skills o
 
 So a "session kind" today is the pair of role and type. The role says what the session does in a run. The type says which agent runs it. The run did not use a step of a type (`{ "type": name }`), because the planning workflow uses only `owner`. A type with tool limits or its own behavior does not exist. Recommendation: keep the type as a start setting of the provider, and do not add a separate kind field.
 
+## L live demo (2026-11-18)
+
+`tools/demo/demo.ps1` started a clean live demo from the branch `orch/c5-c3-findings`: one root with a `planning` run and three children, real `claude` on `haiku`, store `%LOCALAPPDATA%\orch\demo-store\store`, port 7791. The first full turns took about 30 s.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| The script runs from a clean start | Pass. It stops the old demo, publishes the stack, makes a new store and starts all processes |
+| Question cards | Pass. Two open questions: the child ("Which greeting word do we put in hello.txt?") and the root, from the step `ask` of the run ("Which language do we use in greeting.txt?") |
+| Report | Pass. `Demo child: report done` reported `done`: "report.txt is written." |
+| Update | Pass. `Demo child: send an update` sent "Half of the check list is done." (50 %) |
+| Session tree | Pass. `orch tree` and `/api/sessions` show the root and its three children |
+| Workflow run | Pass. `planning-586ab943` waits at the step `answer`. History: read, ask |
+| No failure flood | Pass. The messages to the user are the 2 questions, the report and the update. No "failed", "does not respond" or stuck message |
+| Model | Pass. The transcripts show `claude-haiku-5-5` for each turn |
+| Tray | Pass. The tray runs in live mode on the demo store and port |
+
+### Findings
+
+| Id | Finding | Proposal | State |
+|---|---|---|---|
+| L-F1 | The supervisor gives its full environment to each `claude` turn. A supervisor that starts from a Claude session gives the turns `CLAUDE_CODE_SESSION_ID`, `CLAUDE_CODE_HOST_SESSION_ID`, `CLAUDE_CODE_AGENT=orch:worker`, `CLAUDE_CODE_PLUGIN_DIRS` and the messaging socket of that session. In the first demo run the plugin wrote `appId = local_ab9acae5-...` (the app id of the host session) into the demo root | The provider removes the engine variables of the host from the turn environment, and sets only its own | Open (app code, owner D). The demo script removes the variables before the start |
+| L-F2 | With `haiku` and only the agent text of `orchestrator`, the root ran `orch run start` and ended its turn. The run stayed at the step `read`, with no stuck question | None in the app. The demo goal names each `orch run` command | Workaround in the demo |
+| L-F3 | The supervisor has no option for the model or the effort of a turn | Add a model and effort setting to the provider, if a cheap test run is a use case | Open, for review. The demo uses `ANTHROPIC_MODEL` |
+| L-F4 | The tray allows one normal instance for each user. The demo tray cannot start while the installed tray or another live tray runs | None. The script prints the tray command | No change |
+| L-F5 | Windows PowerShell 5.1 breaks a native argument with quotes or line breaks, and makes a native stderr line an error | None in the app | The script puts goals and bodies in files and runs natives with a helper |
+| L-F6 | A copied session names its real folder in `work.cwd` and `work.repo`. An archive in the demo UI of a copy runs `git worktree remove` on that real folder | The environment feature of issue #47 must guard this. Until then, a copy must point each session to a scratch folder | Workaround in the demo: `-FromLive` rewrites both fields |
+| L-F7 | With the fake provider, `orch tree` shows `new` for each session, but `/api/sessions` shows `idle` and `done`. `orch tree` reads `status.json`, and only the plugin writes it | `orch tree` uses the lifecycle state when `status.json` is absent | Open (app code, owner D) |
+| L-F8 | `orch store migrate --force` cannot copy a store that live sessions write: new files arrive during the copy, so the check finds differences and keeps no copy | None for the real migration (it needs a stopped store). A demo copy uses a snapshot | Workaround in the demo: `robocopy`, then `orch store upgrade --force` |
+
+### Fake and live copy (2026-11-18, on the branch of D)
+
+The script moved onto `orch/d-data-upgrade`, which has the fake provider of D (`ORCH_PROVIDER=fake`, `ORCH_FAKE`) and `orch store upgrade`.
+
+| Check | Result |
+|---|---|
+| `-Fake` tree (port 7793) | Pass. 2 questions, 1 report, 1 update, and `planning-d4a45ba3` waits at the step `answer` on the root question. History: read, ask, answer. No model call, 0 failure messages |
+| `-FromLive` copy (port 7792) | Pass. `robocopy` of the 58 sessions (30 MB) of `session-orchestrator\store`, upgrade to version 3 (58 registry entries). No copied `session.json` names a real folder |
+| The supervisor on the copy | Pass. In the first minutes: 81 new envelopes, all internal (72 state detects, 5 lease releases, 1 fake turn). No message to the user. `/api/sessions` shows the 7 active sessions |
+| The live store did not change | Pass. The script only reads it. The copy has its own folder `%LOCALAPPDATA%\orch\demo-live` |
+
+## D result: store upgrade and message content (2026-11-18)
+
+Session D fixed the data side that the user found strange at the top of the stack (PR #45). Branch `orch/d-data-upgrade`, base `orch/c5-c3-findings`.
+
+| Step | Result |
+|---|---|
+| 1. Upgrade from version 1 | `orch store upgrade` reads version 1 and 2. A version 1 store also gets the history mark: a cursor at the newest envelope for each subscription that can match an old envelope |
+| 2. Root notice text | A parent notice to the user uses `render/user-<kind>.md`: "Session", and the acts of the user |
+| 3. Fake provider | `ORCH_PROVIDER=fake`, behavior file in `ORCH_FAKE`. No model, no `claude`, no app |
+| 4. Question with no thread | It gets its own envelope id as thread, so it makes a card. A post of `decision` or `query` is stored as `question` |
+| 5. Failure events | One `failure` thread for each session and reason, updated on each try, closed by `recovered`. `delivery.blocked` is a trace with no card |
+| Tests | `dotnet test --solution Orchestrator.slnx`: 784 pass, 0 fail. `node --test plugin/hooks/test/`: 20 of 20 |
+
+### Check on a copy of the real store
+
+The real store (`session-orchestrator/store/`, version 1) was copied with `orch store migrate --force` into the scratchpad, then upgraded. The real store did not change.
+
+| Check | Result |
+|---|---|
+| `orch store upgrade --dry-run`, then `orch store upgrade` | 57 registry entries, 116 cursors of the history mark, version 3 |
+| `orch tree` of the #45 code | All 57 sessions, with codes and phases |
+| `orch inbox` | Empty: no old question makes a card |
+| Supervisor of the #45 code, 150 s, fake `claude`, scratch `cwd` | No old envelope delivered or relayed again. Only new lifecycle events (`session.state`, one `report-missing`) |
+
+### Check on dummy data (port 7810, fake provider)
+
+Four dummy sessions: a root and three children. The root and two children fail, one child asks a question through `POST /api/stream` with no thread.
+
+| Check | Result |
+|---|---|
+| Question card | ✅ "Which color goes in color.txt?", with the options and the recommendation |
+| Failure cards | ✅ one for each failed session: "Shot: root: its supervisor turns fail (3 tries)", with the error and the state `open` |
+| Root notice | ✅ "Session "Shot: root" (...) does not respond", with "stop it, or send it new input" |
+| Recovery | ✅ "Shot: recovers" works again at its next try: the thread gets `recovered`, and its card goes. The inbox keeps 4 cards: the question, two failures, one root notice |
+| Tray self-test on the same store | ✅ Home: 5 waiting (1 question, 1 report, 3 blocked), one row for each failed session. Cards: the API question with its options. `docs/screens/d-tray-home.png`, `d-tray-cards.png`, `d-web-failure-card.jpg`. Six motion and document checks of the self-test fail, because they expect the content of the mock data |
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| D1 | `orch store upgrade` refused version 1, and the docs said there is no migration | Fixed |
+| D1a | Version 1 envelopes have no acks and no threads. The #45 supervisor would deliver each old brief and message again, and relay the 55 old questions again | Fixed: the history mark |
+| D1b | `orch store migrate` cannot copy a store while sessions write to it: the hash check fails, also with `--force` | Recorded in `know-how.md`. For the real move, stop all writers first |
+| D2 | A root got "Child ... does not respond" and "tell the user in your status block" | Fixed |
+| D2a | The stop-latch fault text said "Tell the user to type in the session", also to the user | Fixed: "A person must type in the session" |
+| D3 | A question from `POST /api/stream` with no thread was never open, so it made no card. It was a bug, not a design: `ask_user` always gives a thread | Fixed |
+| D4 | One `delivery.blocked` card for each envelope and each try; one `blocked` for each try, because its reason had the count; a copy of `delivery.blocked` to the supervisor itself | Fixed: one `failure` thread for each session and reason |
+| D5 | Sessions D, L and V can conflict on the real supervisor, the tray, the app and the ports | Rules in `know-how.md` ("Test work next to the real sessions"). Environments: issue #47 |
+| D6 | The web tests started the app with the real provider: a test session could start a real `claude` turn | Fixed: the web tests use the fake provider |
+| D8 | After each retry, the restart sets the try count to 0. A failed root then flips from "does not respond" to "responds again" and back, and each change was a new card | Fixed: one thread `notice-<session>` for the lifecycle messages to the user. A new one closes the older one. The flip itself stays (stream B) |
+| D9 | Report summaries and answers were too long for a title: one summary had 4 sentences and 2 URLs, one answer was a raw voice transcript (seen by V on a copy of the real store) | Fixed in the data: the subject is the first sentence, cut at 80 characters (C# and plugin, contract cases). The report `summary` has 300 characters maximum and no URL. The answer view shows the question as title and the answer text below it. V fixes the layout side |
+| D10 | Root messages start with "Root:", a copy of the sender | No render fix: old messages stay as history, and a strip rule could remove real words. The root stops the prefix; the `orch-report` skill says "do not start a text with your own name or role" |
+| D11 | A report Done item held a raw tool id (`toolu_01Gq...`) | Rule in `orch-report` and in the report schema: name a decision by its question. Open, later task: a render step that shows the question in place of a decision id in old texts |
+| D12 | Report Done items were paragraphs | `done`, `next` and `blockers`: one fact for each item, 200 characters and 12 items maximum (schema and skill). A post over the limit is refused, so the session writes it again shorter |
+| D7 | The card setting (which kinds make a card) does not exist. The inbox view decides in code | Open: the user wants it as a filter (code, app setting or live page filter), later |
+
+## R spike: Remote Control at the start (2026-11-18)
+
+Result: no CLI command starts or imports a session into the desktop app with Remote Control on. The command table is in `docs/know-how.md` ("Remote Control at the start").
+
+Test setup: scratchpad folder `spike/s1`, test store `spike/store`, port 7840. Test sessions: `4b0a24cd` ("R spike B", imported, in the sidebar), `1e268431` (transcript only), `f57246a9` ("R spike E", `--bg` job, stopped).
+
+| Test | Command | Result |
+|---|---|---|
+| R-1 | `--desktop --remote-control --session-id <new>` | Exit 1, refused |
+| R-2 | `--desktop --session-id <new>` | Exit 1, refused |
+| R-3 | `--desktop --remote-control --resume <known>` | Exit 1, refused |
+| R-4 | `--desktop --resume <known>` | Imported. Remote Control off |
+| R-5 | `-p --remote-control` | No effect |
+| R-6 | `--bg --remote-control` | Remote Control on from turn 1, not in the app. Own id |
+| R-7 | `--desktop --resume <live --bg id>` | Exit 1: stop the job first |
+| R-8 | `--desktop --settings <file> --resume <known>` | Exit 1, refused |
+| R-9 | `-p --remote-control` with `--debug-file`, a 20 s turn, CLI 2.1.312 | No bridge in the debug log |
+| R-10 | R-9 with the app CLI 2.1.325 | No bridge in the debug log |
+| R-11 | `--bg --remote-control <name> --resume <known>` | Same session id. Remote Control on. The job stays idle after the turn until `claude stop` |
+| R-12 | `claude --remote-control <name> --session-id <new> "<prompt>"` (interactive, in a console) | Same id. Remote Control on from turn 1 ("/remote-control is active"). The process stays open after the turn |
+| R-13 | `--desktop --resume <id>` while R-12 runs | Exit 1: "Session ... is open in another terminal. Run /desktop there instead." |
+| R-14 | `claude --remote-control <name> --resume <id> "/desktop"` | The CLI exits and the app imports the session. App state: `remoteControlState: off` |
+| R-15 | R-12 again ("R spike M"), then a look at the app sidebar by the user | Not in the sidebar, not in `list_sessions`, no app record. Only the imported tests (G, I, K) show |
+| R-16 | App tool `start_session` from an app session ("R spike N", `beaa0468`) | In the sidebar at once, linked to its parent. `remoteControlState: connecting` 2 s after the start. No headless turn |
+| R-17 | `start_session` with `cwd` as `C:/…` | Refused: "reached through a symbolic link (or another spelling)". With `C:\…` it starts |
+| R-18 | Live test of `orch new --app-start`, `start_session`, `orch join` on a test store ("R live child") | Joined. Remote Control `on`. The CLI id (`2ec9d858`) is not the app id (`local_1d15b9da`). `CLAUDE_CODE_HOST_SESSION_ID` holds the app id |
+| R-19 | R-18 with `permission_mode: "auto"` | The app reports `permissionMode: default` after the turn |
+| R-20 | Console start (test supervisor, port 7842) in a new folder that is not trusted | The console waits at the trust prompt. No transcript, no lease. The old fallback ran `-p --resume` next to the live process and failed |
+| R-21 | Interactive start in a new worktree of a trusted folder | No trust prompt. Remote Control link shown, READY |
+| R-22 | Console start end to end (test supervisor, port 7844, `ORCH_BIN` set): parent outside the app, child with `--worktree` | Console pid 246432, lease `live` in 4 s, the plugin delivered the brief, the child reported done. `orch archive` stopped the process and removed the worktree |
+| R-23 | `start_session` in a turn that came through Remote Control | Refused: "The user is working over Remote Control, and this turn can't start that session" |
+| R-24 | `start_session` with `permission_mode: bypassPermissions` and Opus parent in bypass ("R spike P", Haiku child) | `bypassPermissions` at the start and after the first turn. Remote Control `on` |
+| R-25 | `start_session` in a turn that the app continued by itself (a note of a child), with an explicit `cwd`: a test folder, then the folder of this session | Both refused: "it can only start sessions where this one runs, in this project" |
+| R-26 | R-25 with no `cwd` ("R spike Q") | Started |
+
+Findings:
+
+- R-F1: `--desktop` takes no flag other than `--resume` or `--continue`. So the first import of a new session needs a transcript, and the opening turn stays headless.
+- R-F2: the app turns on Remote Control by default (`ccRemoteControlDefaultEnabled`) only for sessions that it makes. An imported session never gets it.
+- R-F3: a `--bg --remote-control` job has Remote Control from turn 1, but the app cannot import it while it runs, and Remote Control stops with the job.
+- R-F5: `-p` ignores `--remote-control` in 2.1.312 and 2.1.325. The help text says the flag starts an interactive session.
+- R-F6: `--bg --remote-control --resume <id>` keeps the id. So a known session can run a turn with Remote Control on, but as a background job, not as an app session.
+- R-F7: an interactive `claude --remote-control` keeps the id and has Remote Control from turn 1, but needs a console and stays open. Each move to the app (`/desktop` or `--desktop --resume`) gives Remote Control off in the app.
+- R-F8: the app tool `start_session` gives both at once: the sidebar and Remote Control from the start (the app default `ccRemoteControlDefaultEnabled`). Only an app session has this tool, so the parent must start the child, not the supervisor.
+- R-F9: `orch join` must not resolve the store from the environment: an app child has no `ORCH_STORE`, and the HTTP fallback calls port 7777. The start file names the store.
+- R-F10: the app id of a session that the app made comes from `CLAUDE_CODE_HOST_SESSION_ID`, only in the app (a `-p` child inherits the id of its parent).
+- R-F11: an explicit `permission_mode` stays after the first turn (R-24). The `default` of R-18 and R-16 most likely came from the Haiku model of those probes: the auto mode is not available for it. Not checked with an Opus child in auto.
+- R-F14: the app starts a session only in a turn that the user typed in the desktop app, or, in a turn that the app continued by itself, only in the project of the parent with no `cwd` (R-23, R-25, R-26). So the app call has no `cwd` for a child in the folder of the parent, which is the default of `spawn_child`. In other cases the parent falls back to `inApp: false`. Not tested: a turn that an orch plugin message started.
+- R-F12: a console start in a folder that is not trusted waits at the trust prompt, and no session can answer it. A worktree of a trusted repository is trusted. Fallback: after `ImportWait` with no lease, the supervisor stops the console process and starts the child with a print turn.
+- R-F13: a test supervisor needs `ORCH_BIN` for its build of `orch`: the plugin of a live process calls the `orch` on `PATH` (R-22 failed first with the installed `orch`, which has no `watch`).
+- R-F4: so a session started by the supervisor needs `set_remote_control`. Only a live app session has that tool.
+
+## V: Visual fixes in the tray and web UI (2026-11-18)
+
+V fixes the visual issues that the user found in the app of PR #45. Branch `orch/v-visual-fixes`, base `orch/c5-c3-findings`. Tray self-test: 59 of 59 PASS. `dotnet test --solution Orchestrator.slnx`: 781 tests, 0 failed. The checks of V1, V2 and V4 also ran with `--live` on a copy of the demo store of session L (port 7800, no supervisor, `ORCH_IMPORT=0`, fake `ORCH_CLAUDE`).
+
+### Issues
+
+| # | Issue | Cause | Fix | State |
+|---|---|---|---|---|
+| V1 | Toast ghost: an empty blurred box stays after the peek bubble fades | The edge tab clock ran on the UI thread of the widget. After each store change, that thread counts the cards (26 to 43 ms) and loads the Blazor views. The fade moved one fixed step for each tick, so each stall made it longer | The edge tab has its own UI thread (`EdgeTab.Start`). The extend and the bubble move by elapsed time. `TrayApp` merges a burst of store changes into one count | Fixed |
+| V2 | Ring jitter: the ring spin does not move smoothly | The same stalls: frame gaps of up to 110 ms in the 800 ms spin | The same thread. A motion paces its frames on `DwmFlush` (one frame for each display refresh) | Fixed |
+| V3 | Test trays on the screen of the user, over the trays of other sessions | The self-test used the home places, where the user's tray and the demo tray of L are. Real mouse input then went to the other window | The self-test uses test places: the widget at the top left, the edge tab high on the right edge. A probe puts a fixed backdrop behind the measured area | Fixed |
+| V4 | The widget and the edge tab show at the same time | A store change during the grow slid the tab in, and no code slid it out after the grow | While the widget shows or grows, a change updates only the counts. During the shrink, the notice waits for the hide. `Showing` always slides the tab out | Fixed |
+| V5 | The home button has depth at the pop in, and looks flat after the page loads | Two drawings: the native ball (GDI+) and the page button (CSS) | One image, `Orchestrator.Web/wwwroot/home-ball.png`. The page button, the native ball and the edge tab show the same file. `Orchestrator.Tray --write-ball <png>` writes it | Fixed |
+| V6 | The small rings of the stream rows draw again at each tab change | Each tab change makes new row elements, and each ring plays its 900 ms draw | The end of the first ring draw sets `drawn` on the root (`motion.js`); `app.css` stops the draw after that | Fixed |
+| V7 | The cards and the card pages look badly formatted | Mostly the layout of the document page; four defects are data. See "V7 review" | See "V7 review" | Layout fixed; data sent to session D |
+
+### Measured result (store copy, one store post each 250 ms)
+
+| Check | Before | After |
+|---|---|---|
+| V2: frames in the 800 ms spin | 41 | 60 |
+| V2: worst frame gap | 102.5 ms | 23.4 ms |
+| V1: bubble side clear after the fade start | 473 ms | 269 ms |
+| V4: samples with both forms at rest | 24 | 0 |
+| V5: mean color difference in the ball (0 to 255) | 5.7, with 8 % of the pixels far off | 0.6, with 0 % |
+
+Proof (`docs/screens/`): `tray-v1-fade-live-before.png`, `tray-v1-fade-live-after.png`, `tray-v2-spin-live-before.png`, `tray-v2-spin-live-after.png`, `tray-v4-show-live-before.png`, `tray-v4-show-live-after.png` (store copy); `tray-v1-fade-before.png`, `tray-v1-fade-after.png`, `tray-v2-spin-before.png`, `tray-v2-spin-after.png`, `tray-v4-show-before.png`, `tray-v4-show-after.png`, `tray-v5-ball-before.png`, `tray-v5-ball-after.png`, `tray-v6-ring-before.png`, `tray-v6-ring-after.png` (mock store).
+
+### The threads of the tray
+
+```mermaid
+flowchart LR
+    Store[Store change] --> Hub[StreamHub.Changed]
+    Hub --> UI[Widget UI thread: count, Blazor loads]
+    UI -->|SetCounts, SlideIn, Peek| Tab[Edge tab thread: clock, frames]
+    Tab -->|OpenRequested| UI
+```
+
+### Self-test groups
+
+`--selftest <folder> --only <groups>` runs a part of the self-test at the test places. Groups: `notify` (V1, V2, with a store load of `ORCH_PROBE_LOAD_MS`, default 100 ms), `overlap` (V4), `ball` (V5), `drag`, `edge` (N1, N2) and `cards` (pictures of the cards and of two stream rows of each kind, V7).
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| V-F1 | `Copy-Item` keeps the time of the file, so MSBuild did not compile a copied source file again. One test run used an old build | Use `cp` or touch the file before a build |
+| V-F2 | The hidden Blazor views still load on the UI thread of the widget after each store change. They do not stop the edge tab, which has its own thread | Open: load the views only while the widget shows |
+| V-F3 | The demo tray of session L runs an old build, so it still shows V4 | No change: L updates its build |
+
+### V7 review
+
+Source: 23 pictures of a copy of the live store (`--live <copy> --port 7802`, `ORCH_IMPORT=0`, fake `ORCH_CLAUDE`), group `cards`. The inbox of the copy was empty, so the pictures show the stream and twelve document pages.
+
+| # | Defect | Class | Fix |
+|---|---|---|---|
+| 1 | A long summary shows in the headline style and fills the first screen | Layout | A title of more than 90 characters uses the body style (`.q.long`, `Ui.TitleSize`) |
+| 3 | Text fields show raw Markdown: backticks, `- ` and `1.` lines | Layout | `Markdown.cs`: paragraphs, line breaks, lists, code and bold, after an HTML encode |
+| 4 | The header path cuts each parent to 2 to 4 letters | Layout | "…" and only the last parent, up to 12 characters (`PathTrail.Shown`) |
+| 5 | Long option chips have pill corners | Layout | Chips of a block have 16 px corners |
+| 6 | The pill says "closed" next to "State: done" | Layout | The pill shows only while the document waits |
+| 7, 8 | A fact value (a default, a folder) is cut | Layout | Text and code facts wrap (`.fv`) |
+| 9 | The question under an answer has no gap | Layout | The second line of a title block has an 8 px gap |
+| 10 | The page bar covers lines during a scroll | Layout | No change: at the end of the scroll, the last block ends above the bar |
+| 11 to 16, 20 | Breaks in identifiers, full URLs as link labels, a small caption under the title, grey well blocks, empty space, "you" and "user" for the same party, "55 %" | Layout | Open: low |
+| 2, 17, 18, 19 | Summaries too long for a title, a raw voice transcript, a "Root:" prefix, a raw tool id, paragraphs as Done items | Data | Sent to session D through the root |
+
+Proof (`docs/screens/`): `tray-v7-page-1-before.png`, `tray-v7-page-1-after.png`, `tray-v7-page-12-before.png`, `tray-v7-page-12-after.png`, `tray-v7-page-6-end-before.png`, `tray-v7-page-6-end-after.png`. The three design picks, cropped: `tray-v7-title-before.png` and `tray-v7-title-after.png` (long summary), `tray-v7-path-before.png` and `tray-v7-path-after.png` (header path), `tray-v7-pill-before.png` and `tray-v7-pill-after.png` (pill). The user accepted the three defaults; they can change later.
+
+## I6: Integration of D, L and V (2026-11-18)
+
+Branch `orch/integration-dlv`, base `orch/c5-c3-findings`. It starts from `orch/l-demo-fake` (L), then merges `orch/v-visual-fixes` (V) and `orch/d-data-upgrade` (D, two commits after L).
+
+| Check | Result |
+|---|---|
+| Conflicts | Only `docs/plan.md` and `docs/decisions.md`. Both sides are kept. No code conflict, so no new decision |
+| `dotnet test --solution Orchestrator.slnx` | 804 tests: 791 passed, 13 skipped, 0 failed |
+| `node --test test/` in `plugin/hooks` | 20 of 20 pass |
+| Tray self-test | Not run: the tray code is the same as on V (59 of 59 PASS there) |
+
+### Demo control pane (2026-11-18)
+
+The page `/demo` of a fake demo supervisor writes dummy events into its store. The user clicked the buttons on port 7791 and watched the tray.
+
+| Check | Result |
+|---|---|
+| Tests | Pass. `DemoPaneTests` (6): the guard, each button, the failure rule in the behavior file, the burst. Full suite: 810 tests, 1 failure (the architecture rule on file IO), fixed with an entry and its reason |
+| Live, port 7791 | Pass. Add question and Add report make a card and a tray notice. The other buttons change the tree and the stream |
+| Plain page | Pass. Its own layout: no app bar, no link to the other pages |
+
+| Id | Finding | State |
+|---|---|---|
+| L-F9 | The tray notices and counts only inbox cards (questions, reviews, reports, blocked). A new session, an update or a message makes no notice. This is the design | Proposal for V: a quiet peek bubble with no count for these events, if the user wants it |
+| L-F10 | The tray check of `demo.ps1` saw a tray of V (`--instance v`) as a block. That tray has its own lock | Fixed: the check ignores a tray with `--instance` |
+
 ## P plan: advanced features and the Workflows sketches (2026-11-20)
 
 Task P plans the advanced features of the UI. It makes drafts only, no app code.
@@ -2123,3 +2368,36 @@ Later (not in the graph):
 | Item | Owner | Content | Start |
 |---|---|---|---|
 | Workflow page | E (UI), with C | A UI page for one workflow run: progress, the graph, the history, the current step on the graph and the possible next steps | Plan and design after C2 |
+
+## A1 result: Android host spike (2026-11-19)
+
+Branch `orch/spike-android`, base `orch/integration-dlv`. Project `spikes/android/`, not in `Orchestrator.slnx`. Plan page: https://claude.ai/artifact/DGrG2DtX4nKwX1tpSrobLh
+
+The orchestrator UI runs as an Android app. A .NET MAUI `BlazorWebView` runs the same Razor components as the tray, in the app process, on the tray mock store. The components did not change.
+
+| Part | Result |
+|---|---|
+| Components | Linked from `Orchestrator.Web` as `RazorComponent` items. `App.razor` and `Routes.razor` stay out; the spike has its own router |
+| Change in `src/` | `NewSession` moved from `Api/OrchestratorApi.cs` to `NewSession.cs`. No logic change |
+| Data | `MockStore.cs` of the tray, linked. Templates and policy are resources; the app writes them to its data folder and sets `ORCH_HOME` |
+| APK | Debug, 84 MB, installs with no store |
+| Toolchain | User-local: .NET 10.0.404 + `maui-android`, JDK, Android SDK, emulator in `%LOCALAPPDATA%\orch-android`. No administrator rights |
+| Emulator | Android 15 (API 35), WHPX acceleration, boot in about 25 s |
+
+### Test results
+
+| Test | Result | Proof (`docs/screens/`) |
+|---|---|---|
+| Start and home view | ✅ Ring, active sessions, events, waiting list | `android-a1-home.png` |
+| Cards tab (tap) | ✅ | `android-a1-cards.png` |
+| Swipe on a card | ✅ Accept, undo toast, badge 8 to 7 after the supervisor tick | `android-a1-swipe.png` |
+| Sessions tab | ✅ Foldable tree with states | `android-a1-sessions.png` |
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| A1-1 | The MAUI host starts Blazor itself. A host page without `autostart="false"` shows only the loading text | Fixed in `wwwroot/index.html` |
+| A1-2 | Android 15 draws the app under the status bar, and the header went under it | Fixed: `SafeAreaEdges = SafeAreaEdges.All` on the page. The bar band is white; a theme color is later work |
+| A1-3 | The components need no change for a phone host. The host work is a router, a host page and the service list | Input for the devices plan |
+| A1-4 | Not tested: the microphone (`speech.js`) in Android WebView, a real phone, a release build with trim | Open |

@@ -188,7 +188,8 @@ public sealed class SupervisorTests
         Assert.That(t.Turns, Has.Count.EqualTo(2));
         Assert.That(t.Store.Pending(id).Text, Is.EqualTo("hello"));
         Assert.That(t.Turns.All(turn => turn.IsNew), Is.True);
-        Assert.That(t.Store.Blocked(id)?.Reason, Does.Contain("failed 2 times"));
+        Assert.That(t.Store.Blocked(id)?.Reason, Is.EqualTo("supervisor turns fail: boom"));
+        Assert.That(Failures.Current(t.Store, id, Failures.FailedTurns)?["tries"], Is.EqualTo(2.0));
     }
 
     [Test]

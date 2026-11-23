@@ -69,6 +69,9 @@ public sealed class TemplateTests
     {
         var schema = JsonDocument.Parse(Set[Kinds.Notice].SchemaText).RootElement;
         var kinds = schema.GetProperty("properties").GetProperty("kind").GetProperty("enum").EnumerateArray().Select(k => k.GetString()).ToList();
-        Assert.That(Set[Kinds.Notice].RenderNames(), Is.EquivalentTo(kinds));
+        var names = Set[Kinds.Notice].RenderNames();
+        Assert.That(names.Where(n => !n.StartsWith(Supervisor.Supervisor.UserPrefix)), Is.EquivalentTo(kinds));
+        Assert.That(names.Where(n => n.StartsWith(Supervisor.Supervisor.UserPrefix)).Select(n => n[Supervisor.Supervisor.UserPrefix.Length..]), Is.SubsetOf(kinds),
+            "a user render is the text of a notice kind for the user");
     }
 }

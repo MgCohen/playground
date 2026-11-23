@@ -275,17 +275,37 @@ public sealed partial class Supervisor
         var meta = store.Session(id);
         var data = store.Texts.Notice(kind, [("title", meta.Title ?? Short(id)), ("child", id), .. fields]);
         if (HasLiveParent(meta)) Notify(Parties.Session(meta.Parent!), null, data);
-        else ToUser(id, store.Templates.Render(Kinds.Notice, data, kind));
+        else ToUser(id, store.Templates.Render(Kinds.Notice, data, UserRender(kind)));
         store.Log($"{id} notice {kind} to {(HasLiveParent(meta) ? meta.Parent : Parties.User)}");
     }
 
-    void ToUser(string id, string text) =>
-        store.Events.Post(new PostInput(EventKinds.Message, Parties.Supervisor, Parties.User, Data.Of(("text", text))) { Session = id, Needs = Needs.Ack });
+    /// <summary>
+    /// The render of a parent notice for the user: <c>render/user-&lt;kind&gt;.md</c>. It names a session, not a child, and
+    /// the acts of the user, not of a parent session. A root is not a child (D, problem 2).
+    /// </summary>
+    string UserRender(string kind) => store.Templates[Kinds.Notice].HasRender($"{UserPrefix}{kind}") ? $"{UserPrefix}{kind}" : kind;
+
+    public const string UserPrefix = "user-";
+
+    /// <summary>The thread of the lifecycle messages of one session to the user.</summary>
+    public static string UserThread(string id) => $"notice-{id}";
+
+    /// <summary>
+    /// A lifecycle message to the user. All of one session share one thread, and a new one closes the older open one
+    /// (ack superseded), so the user sees only the newest state of the session, not one card for each change (D).
+    /// </summary>
+    void ToUser(string id, string text)
+    {
+        var thread = UserThread(id);
+        foreach (var old in store.Events.Thread(thread).Where(e => e.Kind == EventKinds.Message && e.To == Parties.User && !store.Events.IsAcked(e.Id)).ToList())
+            store.Events.Ack(old, Parties.Supervisor, "superseded", "read");
+        store.Events.Post(new PostInput(EventKinds.Message, Parties.Supervisor, Parties.User, Data.Of(("text", text))) { Session = id, Thread = thread, Needs = Needs.Ack });
+    }
 
     static string FaultText(string? fault, Snapshot s) => fault switch
     {
         Faults.FailedTurns => "Its supervisor turns failed. The supervisor tries again after the backoff (5, 10, then 20 min).",
-        Faults.StopLatch => $"The engine refuses each delivery until a person types in the session (the stop latch: {s.StopLatch}). Tell the user to type in the session.",
+        Faults.StopLatch => $"The engine refuses each delivery until a person types in the session (the stop latch: {s.StopLatch}). A person must type in the session.",
         Faults.InputNotTaken => $"The live session did not take its input for {s.Timers.InputSeconds:0} s. The input stays in its inbox.",
         Faults.HungTurn => $"Its turn wrote no event for {s.Timers.HungMinutes:0} min.",
         Faults.HungProcess => $"Its process is alive, but it wrote no heartbeat for {s.Timers.StaleProcessSeconds:0} s. The supervisor does not resume it. The user must stop it.",

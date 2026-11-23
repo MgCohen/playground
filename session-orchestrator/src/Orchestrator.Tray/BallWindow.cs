@@ -35,7 +35,7 @@ public sealed class BallWindow : LayeredForm
     public void Place(Point center, float size)
     {
         diameter = size;
-        var box = (int)(size * 1.6f);
+        var box = (int)Math.Ceiling(size * EdgeTab.BallBox);
         Bounds = new Rectangle(center.X - box / 2, center.Y - box / 2, box, box);
     }
 

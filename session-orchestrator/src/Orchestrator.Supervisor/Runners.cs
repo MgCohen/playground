@@ -37,6 +37,12 @@ public sealed record SupervisorOptions(int MaxRuns, int MaxFailures, int MaxChec
     public TimeSpan RetryAfter { get; init; } = TimeSpan.FromMinutes(5);
     public Action<string>? Import { get; init; }
     public TimeSpan ImportWait { get; init; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// True: a new child whose parent is not in the app starts as a live process with Remote Control (a console), not
+    /// with a print turn and an import. A parent in the app starts its children in the app itself (R-F8).
+    /// </summary>
+    public bool ConsoleStart { get; init; }
     public TimeSpan FirstReminder { get; init; } = TimeSpan.FromMinutes(10);
     public TimeSpan NextReminder { get; init; } = TimeSpan.FromHours(1);
 

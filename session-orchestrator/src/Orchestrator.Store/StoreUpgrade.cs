@@ -1,5 +1,7 @@
 using Orchestrator.Core.Contract;
+using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
+using Orchestrator.Core.Ordering;
 using Orchestrator.Core.Sessions;
 using Orchestrator.Core.Storage;
 
@@ -9,9 +11,10 @@ namespace Orchestrator.Store;
 public sealed record UpgradeResult(int From, int Entries, IReadOnlyList<string> Lines);
 
 /// <summary>
-/// The upgrade of a store from version 2 to version 3 (S2): <c>meta.json</c> and <c>control.json</c> of each session
+/// The upgrade of a store from version 1 or 2 to version 3 (S2): <c>meta.json</c> and <c>control.json</c> of each session
 /// become one registry entry, <c>session.json</c>. It runs only through the repositories. It keeps the old files as a
-/// backup and writes <c>version.json</c> last, so a stopped upgrade can run again.
+/// backup and writes <c>version.json</c> last, so a stopped upgrade can run again. A store of version 1 also gets the
+/// history mark: the envelopes of version 1 are history, and no subscription delivers or relays them again.
 /// </summary>
 public static class StoreUpgrade
 {
@@ -37,7 +40,7 @@ public static class StoreUpgrade
         var version = repos.StoreVersions.Read(StoreIds.Version)?.Version
             ?? throw new InvalidDataException($"store {repos.Location} has no version.json: it is not a store");
         if (version == 3) return new UpgradeResult(3, 0, ["The store has version 3 already. Nothing changed."]);
-        if (version != 2) throw new InvalidDataException($"store {repos.Location} has version {version}. The upgrade reads only version 2.");
+        if (version is not (1 or 2)) throw new InvalidDataException($"store {repos.Location} has version {version}. The upgrade reads only version 1 and version 2.");
 
         var metas = repos.SessionFile<V2Meta>(StoreFiles.Meta);
         var controls = repos.SessionFile<V2Control>(StoreFiles.Control);
@@ -71,10 +74,56 @@ public static class StoreUpgrade
             lines.Add($"{id}: {entry.Code} {entry.Title ?? "(no title)"}, phase {entry.Lifecycle.Phase}");
         }
 
-        if (dryRun) return new UpgradeResult(2, made.Count, lines);
+        var marks = version == 1 ? HistoryMarks(repos, at) : [];
+        if (marks.Count > 0) lines.Add($"history: the envelopes up to {marks[0].Value.Cursor} are version 1 history; {marks.Count} subscription cursors start after them");
+
+        if (dryRun) return new UpgradeResult(version, made.Count, lines);
         foreach (var entry in made.Values) repos.SessionEntries.TryCreate(entry.Id, entry);
+        foreach (var mark in marks) Mark(repos, mark.Key, mark.Value);
         repos.StoreVersions.Put(StoreIds.Version, new StoreVersion(3, at));
-        return new UpgradeResult(2, made.Count, lines);
+        return new UpgradeResult(version, made.Count, lines);
+    }
+
+    /// <summary>
+    /// The subscriptions whose filter can match an envelope of version 1: the delivery of each session (<c>deliver</c>),
+    /// the report relay of each session (<c>reports-&lt;id&gt;</c>), the question relay (<c>relay</c>) and the meta writer
+    /// (<c>meta</c>). The names are the names in <c>FileStore.Deliveries</c> and in the supervisor.
+    /// </summary>
+    public static IEnumerable<(string Party, string Name)> Subscriptions(IEnumerable<string> sessions)
+    {
+        yield return (Parties.Supervisor, "relay");
+        yield return (Parties.Supervisor, "meta");
+        foreach (var id in sessions)
+        {
+            yield return (Parties.Session(id), "deliver");
+            yield return (Parties.Supervisor, $"reports-{id}");
+        }
+    }
+
+    /// <summary>
+    /// The history mark of a store of version 1. Version 1 had no acks, no threads and no subscriptions, so each old
+    /// envelope to a session looks undelivered, and each old question of a child looks not relayed. The mark puts each
+    /// cursor at the newest envelope and keeps the ids of the last <see cref="StreamSubscription.Grace"/> as done, so
+    /// <c>Next</c> gives only the envelopes after the upgrade. The envelopes do not change.
+    /// </summary>
+    static List<KeyValuePair<string, CursorState>> HistoryMarks(IRepositories repos, string at)
+    {
+        var ids = repos.Events.List(_ => true).Select(d => d.Id).Order(Names.Order).ToList();
+        if (ids.Count == 0) return [];
+        var newest = ids[^1];
+        var floor = long.TryParse(newest.Split('-')[0], out var ms) ? ms - (long)StreamSubscription.Grace.TotalMilliseconds : 0;
+        var recent = ids.Where(id => long.TryParse(id.Split('-')[0], out var t) && t > floor).ToList();
+        var sessions = repos.Sessions.List(_ => true).Select(d => d.Id).Order(StringComparer.Ordinal);
+        return Subscriptions(sessions)
+            .Select(s => KeyValuePair.Create($"{Parties.Folder(s.Party)}/{s.Name}", new CursorState(s.Party, s.Name, newest, recent, at)))
+            .ToList();
+    }
+
+    /// <summary>Writes one history mark. A cursor that exists and is newer stays.</summary>
+    static void Mark(IRepositories repos, string id, CursorState mark)
+    {
+        if (repos.Cursors.Read(id) is { Cursor: { } cursor } && Names.Order.Compare(cursor, mark.Cursor) >= 0) return;
+        repos.Cursors.Put(id, mark);
     }
 
     static SessionEntry Entry(string id, V2Meta? meta, V2Control? control, string code, SessionSettings settings, string engineKind, string at) => new(id)

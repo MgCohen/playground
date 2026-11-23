@@ -49,18 +49,21 @@ public sealed record AnswerSource(string By)
 public sealed class Messages(FileStore store)
 {
     /// <param name="role">The role of the new session. Null: <see cref="Roles.Initial"/>. A workflow run gives it.</param>
-    public string NewSession(BriefFields brief, string createdBy, string from = Parties.User, string? role = null)
+    /// <param name="join">A session that the app started already: its engine id, app id and folder. Null: a new entry that the supervisor starts.</param>
+    public string NewSession(BriefFields brief, string createdBy, string from = Parties.User, string? role = null, SessionJoin? join = null)
     {
-        var fields = Fields(("title", brief.Title), ("goal", brief.Goal), ("scope", brief.Scope), ("doneWhen", brief.DoneWhen),
-            ("skills", brief.Skills), ("agent", brief.Agent), ("cwd", brief.Cwd), ("worktree", brief.Worktree), ("parent", brief.Parent), ("allowDefaults", brief.AllowDefaults), ("background", brief.Background),
-            ("stream", brief.Stream), ("type", brief.Type), ("workflow", brief.Workflow), ("where", brief.Where));
-        Check(Kinds.Brief, fields);
+        var fields = BriefOf(brief);
         if (string.IsNullOrEmpty(brief.Cwd)) throw new MessageException("brief: cwd is necessary");
         var id = store.Create(new SessionSpec
         {
+            Id = join?.Id,
             Title = brief.Title,
             Parent = brief.Parent,
-            Work = new SessionWork { Cwd = brief.Cwd, Worktree = brief.Worktree, Where = Places.IsCloud(brief.Where) ? Places.Cloud : null },
+            Engine = join is null ? new EngineRef() : new EngineRef { AppId = join.AppId, Imported = true },
+            Started = join is null ? null : true,
+            Work = join is not null
+                ? new SessionWork { Cwd = join.Cwd }
+                : new SessionWork { Cwd = brief.Cwd, Worktree = brief.Worktree, Where = Places.IsCloud(brief.Where) ? Places.Cloud : null },
             Type = (brief.Type ?? brief.Agent) is null && brief.Skills is null ? null : new SessionType { Agent = brief.Type ?? brief.Agent, Skills = brief.Skills?.ToList() },
             Stream = brief.Stream,
             Workflow = brief.Workflow,
@@ -70,6 +73,16 @@ public sealed class Messages(FileStore store)
         }).Id;
         store.Events.Post(new PostInput(EventKinds.Brief, from, Parties.Session(id), Clean(fields)) { Session = id, Refs = brief.Parent is { } p ? Fields(("parent", p)) : null });
         return id;
+    }
+
+    /// <summary>The fields of a brief, checked against the brief template.</summary>
+    public Dictionary<string, object?> BriefOf(BriefFields brief)
+    {
+        var fields = Fields(("title", brief.Title), ("goal", brief.Goal), ("scope", brief.Scope), ("doneWhen", brief.DoneWhen),
+            ("skills", brief.Skills), ("agent", brief.Agent), ("cwd", brief.Cwd), ("worktree", brief.Worktree), ("parent", brief.Parent), ("allowDefaults", brief.AllowDefaults), ("background", brief.Background),
+            ("stream", brief.Stream), ("type", brief.Type), ("workflow", brief.Workflow), ("where", brief.Where));
+        Check(Kinds.Brief, fields);
+        return fields;
     }
 
     /// <summary>

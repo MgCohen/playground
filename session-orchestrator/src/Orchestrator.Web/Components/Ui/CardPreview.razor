@@ -11,7 +11,7 @@
     <span class="mono sub">@Ui.Clock(Card.At)</span>
 </div>
 <div class="in">
-    <p class="q">@(p?.Title ?? Card.Title)</p>
+    <p class="q @Ui.TitleSize(p?.Title ?? Card.Title)">@(p?.Title ?? Card.Title)</p>
     @if (p?.Well is { } well)
     {
         <div class="well rec"><span class="sub">@well.Label</span>@well.Text</div>

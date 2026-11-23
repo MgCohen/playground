@@ -1,4 +1,6 @@
 using Orchestrator.Core.Contract;
+using Orchestrator.Core.Leases;
+using Orchestrator.Supervisor;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Storage;
 using Orchestrator.Store;
@@ -6,7 +8,7 @@ using Orchestrator.Store.Local;
 
 namespace Orchestrator.Tests;
 
-/// <summary>The upgrade of a scratch store from version 2 to version 3. No test touches the real store.</summary>
+/// <summary>The upgrade of a scratch store from version 1 or 2 to version 3. No test touches the real store.</summary>
 [NonParallelizable]
 public sealed class StoreUpgradeTests
 {
@@ -136,11 +138,92 @@ public sealed class StoreUpgradeTests
     }
 
     [Test]
-    public void The_upgrade_reads_only_version_2()
+    public void The_upgrade_reads_only_version_1_and_version_2()
     {
-        Write("version.json", """{ "version": 1, "at": "2026-11-01T10:00:00Z" }""");
+        Write("version.json", """{ "version": 0, "at": "2026-11-01T10:00:00Z" }""");
         Assert.Throws<InvalidDataException>(() => StoreUpgrade.ToVersion3(Repos(), Now, "Claude Code"));
         Assert.Throws<InvalidDataException>(() => StoreUpgrade.ToVersion3(new LocalRepositories(Path.Combine(root, "none")), Now, "Claude Code"));
+    }
+
+    // Store version 1: the same meta.json and control.json, and envelopes with no thread, no needs and no acks.
+
+    static string Ms(DateTimeOffset at) => at.ToUnixTimeMilliseconds().ToString();
+
+    /// <summary>One envelope of version 1, as the code of version 1 wrote it: refs.decision in place of thread.</summary>
+    void V1Envelope(DateTimeOffset at, string kind, string from, string to, string session, string body, string refs = "{}")
+    {
+        var id = $"{Ms(at)}-0000abcd-cli";
+        var day = at.UtcDateTime.ToString("yyyy-MM-dd");
+        Write($"bodies/{day}/{id}.json", body);
+        Write($"events/{day}/{id}.json", $$"""
+            { "id": "{{id}}", "at": "{{Times.Format(at)}}", "session": "{{session}}", "kind": "{{kind}}", "from": "{{from}}", "to": "{{to}}",
+              "subject": "old", "body": "bodies/{{day}}/{{id}}.json", "refs": {{refs}} }
+            """);
+    }
+
+    /// <summary>A store of version 1: a root and a child, both active, and the old envelopes of one conversation.</summary>
+    void Version1Store(DateTimeOffset at)
+    {
+        Write("version.json", """{ "version": 1, "at": "2026-11-16T13:26:01Z" }""");
+        Session("root-1", """{ "id": "root-1", "title": "Root", "cwd": "C:/repo", "createdBy": "orch", "createdAt": "2026-11-16T10:00:00Z", "started": true }""", null);
+        Session("child-a", """
+            { "id": "child-a", "parent": "root-1", "title": "Child", "cwd": "C:/x", "createdBy": "spawn_child", "createdAt": "2026-11-16T10:01:00Z", "started": true, "agent": "worker" }
+            """, null);
+        Write("sessions/child-a/inbox/1.json", """{ "text": "old inbox file", "from": "user" }""");
+        V1Envelope(at.AddMinutes(-30), "brief", "user", "session:child-a", "child-a", """{ "title": "Child", "goal": "OLD BRIEF" }""");
+        V1Envelope(at.AddMinutes(-20), "decision", "session:child-a", "user", "child-a",
+            """{ "question": "OLD QUESTION?", "options": ["A", "B"], "risk": "high", "mode": "pending" }""", """{ "decision": "toolu_old" }""");
+        V1Envelope(at.AddMinutes(-10), "message", "user", "session:root-1", "root-1", """{ "text": "OLD MESSAGE" }""");
+        V1Envelope(at.AddSeconds(-30), "answer", "user", "session:child-a", "child-a",
+            """{ "decision": "toolu_old", "text": "OLD ANSWER", "question": "OLD QUESTION?" }""", """{ "decision": "toolu_old" }""");
+    }
+
+    [Test]
+    public void The_upgrade_of_version_1_makes_the_entries_and_marks_the_old_envelopes_as_history()
+    {
+        var clock = new ManualClock(DateTimeOffset.UtcNow);
+        Version1Store(clock.Now);
+        var result = StoreUpgrade.ToVersion3(Repos(), clock.Now, "Claude Code");
+        Assert.That((result.From, result.Entries), Is.EqualTo((1, 2)));
+        Assert.That(Repos().StoreVersions.Read(StoreIds.Version)!.Version, Is.EqualTo(3));
+        Assert.That(result.Lines, Has.Some.StartsWith("history:"));
+        Assert.That(File.Exists(Path.Combine(root, "sessions/child-a/inbox/1.json")), Is.True, "the files of version 1 stay as a backup");
+
+        var store = new FileStore(root, clock);
+        Assert.That(store.Registry.FullCode("child-a"), Is.EqualTo("O1 C1"));
+        Assert.That(store.Query(new StreamQuery()).Count, Is.EqualTo(4), "the history stays readable");
+        Assert.That(store.Report("child-a"), Is.Null);
+        Assert.That((store.Undelivered("child-a").Count, store.Undelivered("root-1").Count), Is.EqualTo((0, 0)), "no old envelope is delivered again");
+        Assert.That(store.Query(StreamQueries.Inbox).Count, Is.EqualTo(0), "no old envelope makes a card");
+
+        var runner = new FakeRunner(true);
+        var supervisor = new Supervisor.Supervisor(store, runner, new FakeDocs(new DocsResult(false)), new SupervisorOptions(2, 2, 2, Rig.TestPolicy));
+        supervisor.Tick();
+        supervisor.Idle().Wait();
+        Assert.That(runner.Turns.Select(t => t.Prompt), Has.None.Contains("OLD"), "no turn gets an old envelope");
+        Assert.That(store.Events.OfKind(EventKinds.Question).Where(e => e.IsForward), Is.Empty, "the relay forwards no old question");
+        Assert.That(store.Events.OfKind(EventKinds.DeliveryBlocked), Is.Empty);
+
+        store.Events.Post(new PostInput(EventKinds.Message, Parties.User, Parties.Session("child-a"), new Dictionary<string, object?> { ["text"] = "NEW MESSAGE" }) { Session = "child-a" });
+        Assert.That(store.Undelivered("child-a").Select(e => store.Events.Fields(e)["text"]), Is.EqualTo(new[] { "NEW MESSAGE" }), "a new envelope is delivered");
+    }
+
+    [Test]
+    public void A_dry_run_of_version_1_writes_no_cursor()
+    {
+        Version1Store(DateTimeOffset.UtcNow);
+        var result = StoreUpgrade.ToVersion3(Repos(), Now, "Claude Code", dryRun: true);
+        Assert.That(result.From, Is.EqualTo(1));
+        Assert.That(Directory.Exists(Path.Combine(root, "subscriptions")), Is.False);
+        Assert.That(Repos().StoreVersions.Read(StoreIds.Version)!.Version, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void The_version_check_refuses_version_1_and_names_the_upgrade()
+    {
+        Version1Store(DateTimeOffset.UtcNow);
+        var error = Assert.Throws<InvalidDataException>(() => Home.CheckVersion(Repos(), Now))!;
+        Assert.That(error.Message, Does.Contain("orch store upgrade"));
     }
 
     [Test]

@@ -33,9 +33,9 @@ public sealed class PathTrail
     static bool Same(string a, string b) => string.Equals(a.TrimStart('/'), b.TrimStart('/'), StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The parents to show: with more than two parents, the first ones become one "…" part that leads to the last hidden page,
-    /// so the last two parents always show in full.
+    /// The parents to show (V7): with two or more parents, the first ones become one "…" part that leads to the last hidden
+    /// page, so the last parent always shows in full. In the 350 px widget, two parents and the title do not fit.
     /// </summary>
     public static IReadOnlyList<Crumb> Shown(IReadOnlyList<Crumb> parents) =>
-        parents.Count <= 2 ? parents : [new Crumb("…", parents[^3].Href), parents[^2], parents[^1]];
+        parents.Count <= 1 ? parents : [new Crumb("…", parents[^2].Href), parents[^1]];
 }

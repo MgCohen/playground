@@ -36,7 +36,7 @@ public sealed class LifecycleTests
         var id = t.Create("hello");
         for (var i = 0; i < 3; i++) await t.Cycle();
         Assert.That(t.Turns, Has.Count.EqualTo(2));
-        Assert.That(t.Store.Blocked(id)?.Reason, Does.Contain("Next try at"));
+        Assert.That(Failures.Current(t.Store, id, Failures.FailedTurns)?["next"], Is.Not.Null, "the failure gives the time of the next try");
         t.Clock.Advance(TimeSpan.FromMinutes(6));
         await t.Cycle();
         Assert.That(t.Turns, Has.Count.EqualTo(3));
