@@ -2407,6 +2407,7 @@ Goal: one plugin with all orchestrator commands, documented, from the existing m
 | P1-F10 | A supervisor turn inherits `CLAUDE_CODE_HOST_SESSION_ID` and `CLAUDE_CODE_ENTRYPOINT` of the process that started the supervisor. The plugin of a supervisor turn posted that id as its own `appId`: this session got the app id of the root (`local_ab9acae5`) | The plugin posts the app id only with holder `live` |
 | P1-F11 | The app gave the root a new engine session (`0dd96a12`, app record `local_ab9acae5`). The plugin of the app process found no folder `sessions/0dd96a12`, so it did not activate: no `mcp__orch__*` tools, no delivery. Messages went to supervisor turns on the old transcript, which the app does not show. With P1-F8, those turns had no tools either | `orch whoami` finds the entry by the app id and records `engine.sessionId`. The plugin uses `ORCH_SESSION_ID` or `orch whoami`. A resume names `engine.sessionId`. `registerTools` tries `orch home` and the plugin folder after a home with no templates |
 | P1-F12 | A root had to make its own recurring check (`CronCreate`) to see the questions of its children | `plugin/hooks/check.ts`: each live root orchestrator gets a check about every 5 minutes |
+| P1-F13 | The root merged claude-plugins PR 33 (orch 0.3.0) and PR 34 (core 0.5.1) at 20:44 UTC. `core` 0.5.1 was in the synced manifest at 20:45. `orch` was not in it at 20:55: a new plugin of an account marketplace probably stays off until the user turns it on in claude.ai | In the maintenance window: the user turns `orch` on (Customize, Plugins), then the `CLAUDE_CODE_PLUGIN_DIRS` lines go, in the same window, so two copies never load |
 | P1-F7 | A PowerShell function named `Git` that calls `git` calls itself (names are not case-sensitive): call depth overflow after minutes | `tools/publish-plugin.ps1` uses `Invoke-Clone` and `git.exe` |
 
 ### Test results
@@ -2418,3 +2419,4 @@ Goal: one plugin with all orchestrator commands, documented, from the existing m
 | `claude plugin validate plugin` | Pass, with warnings |
 | Packed tool in the scratchpad, run from `C:\Users\matheus.cohen` | Pass: `orch home` gives the tool folder, `orch doctor` finds 11 template kinds |
 | `tools/publish-plugin.ps1 -DryRun` | Pass: 23 files, catalog entry, README row. `claude plugin validate` passes on the clone |
+| Marketplace merge (PR 33, PR 34) | `core` 0.5.1 synced in 1 min. `orch` 0.3.0 not synced after 10 min (P1-F13) |
