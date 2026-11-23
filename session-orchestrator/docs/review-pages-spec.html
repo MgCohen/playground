@@ -229,6 +229,7 @@ flowchart LR
 <div class="panel" id="run" hidden>
   <div class="subtabs" role="tablist" aria-label="F2 parts">
     <button role="tab" data-sub="run/spec" aria-selected="true">Spec</button>
+    <button role="tab" data-sub="run/pages">Pages</button>
     <button role="tab" data-sub="run/sketches">Sketches</button>
     <button role="tab" data-sub="run/graphs">Graph shapes</button>
     <button role="tab" data-sub="run/views">Run views</button>
@@ -237,17 +238,27 @@ flowchart LR
   <section>
     <span class="kicker">F2 · summary</span>
     <h2>Workflows</h2>
-    <p>The workflow definitions and their runs. A definition is a graph of steps. A run is one execution of a definition, with an owner session and a goal. A step run is one pass of a run through one step. The main page is the run page: it shows the progress, the graph with the current step, the next steps and the history. When the run waits for you, the page shows the wait first and lets you act on it.</p>
+    <p>The workflow definitions and their runs. A definition is a set of flows on levels, in the model P5 Forward and restart: a run goes only forward, into a child flow, out with an exit, or back to step 1 of its flow with a restart. The main page is the run page. It is a Git tree with one row for each step run and one screen for each level. When the run waits for you, the page shows the wait first and lets you act on it.</p>
+    <p class="summary">Sources: the workflow brainstorm (<a href="https://claude.ai/artifact/4hexcdNxAtjP4ZF1hoonC8" target="_blank" rel="noopener">Workflow Shape Options</a>), and the run views rounds 1 to 3 on the Run views tab. The page sketches for this spec are on the Pages tab.</p>
   </section>
 
   <section>
     <span class="kicker">Terms</span>
     <div class="scroll"><table>
       <tr><th>Term</th><th>Meaning</th><th>Store</th></tr>
-      <tr><td>Definition</td><td>A workflow: its steps, conditions, approvals and definition of done. It has a version</td><td><code>templates/workflows/&lt;name&gt;/workflow.json</code></td></tr>
-      <tr><td>Step</td><td>One node of a definition, with its own settings</td><td><code>steps[]</code></td></tr>
+      <tr><td>Definition</td><td>A workflow: its flows, steps, moves, exits, restart settings and definition of done. It has a version</td><td><code>templates/workflows/&lt;name&gt;/workflow.json</code></td></tr>
+      <tr><td>Flow</td><td>One level of a definition: a tree of steps that goes down, from its step 1 to its exits</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td>Level</td><td>The depth of a flow. The top flow is level 1. No limit on levels</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td>Step</td><td>One node of a flow, with its own settings. Step 1 of a flow decides where the flow goes</td><td><code>steps[]</code></td></tr>
+      <tr><td>Child flow ▸</td><td>A step that starts another flow at its step 1. It ends only with an exit</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td>Split</td><td>A step with more than one next step. A <b>choice</b> runs one branch. A <b>parallel</b> split runs all branches</td><td><span class="chip part">part</span></td></tr>
+      <tr><td>Join</td><td>The step after a parallel split. It waits for all branches</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td>Exit</td><td>The end of a flow, with a named result for the parent, for example "approved"</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td>Restart ↺</td><td>A move to step 1 of the current flow. It never goes to the parent</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td>Reason</td><td>Why a restart happens: <b>expected</b> (the next task), <b>error</b> or <b>change</b>. Each reason has its own settings and limit</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td>Pass</td><td>One run of a flow from its step 1 to an exit or a restart. A restart starts the next pass</td><td><span class="chip gap">runner</span></td></tr>
       <tr><td>Run</td><td>One execution of a definition, with an owner session and a goal</td><td><code>runs/&lt;id&gt;.json</code></td></tr>
-      <tr><td>Step run</td><td>One pass of a run through one step: input, output, session, answer, time. A loop makes a new step run of the same step</td><td><code>run.history[]</code></td></tr>
+      <tr><td>Step run</td><td>One visit of a run to one step, in one pass: input, output, session, answer, time</td><td><code>run.history[]</code></td></tr>
     </table></div>
   </section>
 
@@ -259,36 +270,60 @@ flowchart LR
   D --> SD["Step definition"]
   C --> RL["Runs"]
   D --> RL
-  RL --> R["Run"]
+  RL --> R["Run, level 1"]
+  R --> RC["Run, child level"]
   R --> SR["Step run"]
-  S["Session page, stream bar"] -->|run row| R
+  RC --> SR
+  S["Session page, stream bar, Cards"] -->|run row, wait card| R
 </pre>
     <div class="scroll"><table>
       <tr><th>Code</th><th>Name</th><th>Kind</th><th>What you see</th><th>What you do</th><th>When</th></tr>
-      <tr><td class="mono">W-1</td><td>Workflows</td><td>Page</td><td>Each definition: name, purpose, version, number of steps, active runs</td><td>Open a definition</td><td><span class="chip have">first sketches</span></td></tr>
-      <tr><td class="mono">W-2</td><td>Workflow definition</td><td>Page</td><td>One definition in three views: <b>Graph</b> (a node graph, read only), <b>Outline</b> (rows with indents for branches and loops), <b>Definition</b> (the fields of each step). Also the definition of done, the versions and the runs</td><td>Switch the view. Click a node or a row: open its step definition</td><td><span class="chip have">first sketches</span></td></tr>
-      <tr><td class="mono">W-2a</td><td>Step definition</td><td>Sheet on W-2</td><td>The settings of one step: executor, session, instructions, input, output, approval, next conditions</td><td>Later: edit the fields (W-6)</td><td><span class="chip have">first sketches</span></td></tr>
-      <tr><td class="mono">W-3</td><td>Runs</td><td>Page</td><td>All runs: workflow, goal, owner, state, current step, wait, age</td><td>Filter by state, stream, project, workflow. Open a run</td><td><span class="chip have">first sketches</span></td></tr>
-      <tr><td class="mono">W-4</td><td>Run</td><td>Page</td><td>Two modes (B1) and the eight parts below</td><td>Answer, approve, pick, force a next step, go back, stop</td><td><span class="chip have">first sketches</span></td></tr>
-      <tr><td class="mono">W-5</td><td>Step run</td><td>Page or sheet</td><td>One step run: why the run came here, input, output, session, question and answer, time</td><td>Open the output document or the session</td><td><span class="chip have">first sketches</span></td></tr>
-      <tr><td class="mono">W-C1</td><td>Run row</td><td>Component</td><td>One line: workflow, goal, state, current step, wait. Same idea as the session row</td><td>Click: open the run page</td><td><span class="chip have">first sketches</span></td></tr>
-      <tr><td class="mono">W-C2</td><td>Wait card</td><td>Component</td><td>The wait of a run, with its acts. On the run page and in Cards</td><td>Answer, approve, pick</td><td><span class="chip have">first sketches</span></td></tr>
-      <tr><td class="mono">W-6</td><td>Definition editor</td><td>Mode of W-2</td><td>The step fields as a form. No drag on the graph</td><td>Change a step or a condition, check, save as a new version</td><td><span class="chip">later</span></td></tr>
-      <tr><td class="mono">W-7</td><td>New session with a workflow</td><td>Field of the new session form</td><td>A workflow field, as <code>orch new --workflow</code></td><td>Start a session that owns a new run</td><td><span class="chip">later</span></td></tr>
+      <tr><td class="mono">W-1</td><td>Workflows</td><td>Page</td><td>Each definition: name, purpose, version, levels, steps, active runs, and a small Git tree preview of level 1</td><td>Open a definition</td><td><span class="chip have">round 4</span></td></tr>
+      <tr><td class="mono">W-2</td><td>Workflow definition</td><td>Page</td><td>One definition in three views: <b>Tree</b> (one level as a Git tree that goes down, with child flows ▸, exits and restarts ↺), <b>Outline</b> (all levels as indented rows), <b>Steps</b> (the fields of each step). Also the versions and the runs</td><td>Switch the view or the level. Tap a row: open its step definition</td><td><span class="chip have">round 4</span></td></tr>
+      <tr><td class="mono">W-2a</td><td>Step definition</td><td>Sheet on W-2</td><td>The settings of one step: executor, instructions, input, output, approval, next moves. For a child flow: its exits and the parent map, the restart settings by reason, the escalation path</td><td>Later: edit the fields (W-6)</td><td><span class="chip have">round 4</span></td></tr>
+      <tr><td class="mono">W-3</td><td>Runs</td><td>Page</td><td>All runs: workflow, goal, owner, state, where it is with the level path and the pass, wait, age</td><td>Filter by state, stream, project, workflow. Act on a wait. Open a run</td><td><span class="chip have">round 4</span></td></tr>
+      <tr><td class="mono">W-4</td><td>Run</td><td>Page, one screen for each level</td><td>The Git tree of one level: one row for each step run, oldest at the top. A Next bar or a wait card on top (B1). A breadcrumb shows the level path</td><td>Answer, approve, pick. Open a child level. Control acts in the ⋯ menu</td><td><span class="chip have">round 4</span></td></tr>
+      <tr><td class="mono">W-5</td><td>Step run</td><td>Bottom sheet over the tree</td><td>One step run: why here, input, output, session, question and answer, time. For a child row: its passes and exits. For a restart chip: the reason and the limit</td><td>Open the output, the log or the session</td><td><span class="chip have">round 4</span></td></tr>
+      <tr><td class="mono">W-C1</td><td>Run row</td><td>Component</td><td>One line: workflow, goal, state, level path and step, pass, wait. Same idea as the session row</td><td>Tap: open the run page</td><td><span class="chip have">round 4</span></td></tr>
+      <tr><td class="mono">W-C2</td><td>Wait card</td><td>Component</td><td>The wait of a run, with its acts. On the run page and in Cards</td><td>Answer, approve, pick</td><td><span class="chip have">round 4</span></td></tr>
+      <tr><td class="mono">W-6</td><td>Definition editor</td><td>Mode of W-2</td><td>The step fields as a form. No drag on the tree</td><td>Change a step or a move, check, save as a new version</td><td><span class="chip">later</span></td></tr>
+      <tr><td class="mono">W-7</td><td>New session with a workflow</td><td>Field of the new session form</td><td>A workflow picker, as <code>orch new --workflow</code></td><td>Start a session that owns a new run</td><td><span class="chip">later</span></td></tr>
     </table></div>
   </section>
 
   <section>
-    <span class="kicker">Decisions · Workflows feature, 2026-11-19</span>
+    <span class="kicker">Decisions</span>
     <div class="scroll"><table>
-      <tr><th>Question</th><th>Answer</th></tr>
-      <tr><td>Name of one pass through a step</td><td>"Step run". A step is the node of the definition</td></tr>
-      <tr><td>Can you start a run from the UI?</td><td>Not in version 1: a run starts from a session. Later: a workflow field on the new session form (W-7)</td></tr>
-      <tr><td>Who owns a run that starts from the UI?</td><td>The new session of the form. It gets the role orchestrator, as <code>orch new --workflow</code> does today</td></tr>
-      <tr><td>Can you edit a definition in the UI?</td><td>Later (W-6). A simple form on the step fields. No drag on the graph</td></tr>
-      <tr><td>How does a definition show?</td><td>Three views: node graph, outline rows with indents, and the step fields. A click on a node opens its step definition</td></tr>
-      <tr><td>How do other pages show runs?</td><td>A one-line run row (W-C1) that opens the run page, as a session row opens the session page</td></tr>
+      <tr><th>Date</th><th>Question</th><th>Answer</th></tr>
+      <tr><td>11-19</td><td>Name of one visit to a step</td><td>"Step run". A step is the node of the definition</td></tr>
+      <tr><td>11-19</td><td>Can you start a run from the UI?</td><td>Not in version 1: a run starts from a session. Later: a workflow field on the new session form (W-7)</td></tr>
+      <tr><td>11-19</td><td>Who owns a run that starts from the UI?</td><td>The new session of the form. It gets the role orchestrator, as <code>orch new --workflow</code> does today</td></tr>
+      <tr><td>11-19</td><td>Can you edit a definition in the UI?</td><td>Later (W-6). A simple form on the step fields. No drag on the tree</td></tr>
+      <tr><td>11-19</td><td>How do other pages show runs?</td><td>A one-line run row (W-C1) that opens the run page, as a session row opens the session page</td></tr>
+      <tr><td>11-19</td><td>B1: which moment comes first?</td><td>Two modes that change with the run state. The run waits for you: the wait card is on top. Else: the Next bar is on top</td></tr>
+      <tr><td>11-19</td><td>Q12: what happens to earlier outputs when the run goes back?</td><td>Keep them. Each step run keeps its outputs. In P5, a restart starts a new pass, and the old pass stays in the history</td></tr>
+      <tr><td>11-22</td><td>The graph shape of the run page</td><td>The Git tree on a phone: one row for each step run, oldest at the top, lanes that split and join</td></tr>
+      <tr><td>11-23</td><td>The workflow model</td><td>P5 Forward and restart: forward (split and join), enter a child flow, exit with a named result, restart ↺ to step 1 of the current flow. The parent maps each exit of a child</td></tr>
+      <tr><td>11-23</td><td>The restart limit</td><td>Configurable for each reason (expected, error, change). It applies only when the flow has an escalation path</td></tr>
+      <tr><td>11-23</td><td>The number of levels</td><td>No limit</td></tr>
+      <tr><td>11-23</td><td>Split kinds</td><td>Choice and parallel. The first build supports one kind</td></tr>
+      <tr><td>11-23</td><td>The run page view</td><td>The Git tree, one screen for each level. The layout details wait for the build</td></tr>
     </table></div>
+  </section>
+
+  <section>
+    <span class="kicker">Logic · the moves of P5</span>
+    <div class="scroll"><table>
+      <tr><th>Move</th><th>What it does</th><th>Definition view</th><th>Run view</th></tr>
+      <tr><td>Forward</td><td>Go to the next step</td><td>A row under the step</td><td>A row under the step run</td></tr>
+      <tr><td>Split · choice</td><td>Run one branch. The step picks it, or the owner, or you (wait <code>pick</code>)</td><td>Lanes with the condition on each branch</td><td>Only the branch that ran</td></tr>
+      <tr><td>Split · parallel</td><td>Run all branches. The join waits for all</td><td>Lanes that split and join</td><td>Lanes that split and join</td></tr>
+      <tr><td>Enter ▸</td><td>Start a child flow at its step 1</td><td>A dashed row ▸ that opens its level</td><td>A child row ▸ that opens its level screen</td></tr>
+      <tr><td>Exit</td><td>Leave the flow with a named result</td><td>A round grey leaf</td><td>A last row "exit · result"</td></tr>
+      <tr><td>Restart ↺</td><td>Go to step 1 of the current flow, with a reason</td><td>A round dashed leaf ↺ with the reason</td><td>A chip "↺ pass N · reason", then the new pass in the same lane</td></tr>
+    </table></div>
+    <p><b>Parent map.</b> For each exit of a child flow, the parent sets one move: forward to a step, an exit of its own, or a restart of its own flow. So the parent decides if a result goes up one more level.</p>
+    <p><b>Restart limit.</b> Each flow counts its restarts for each reason. At the limit, the flow takes its escalation exit, for example "limit". A flow with no escalation path has no limit.</p>
   </section>
 
   <section>
@@ -299,7 +334,8 @@ stateDiagram-v2
   [*] --> running: orch run start
   running --> waiting: the executor needs input
   waiting --> running: answer, verdict, pick, step done
-  running --> done: a done step and the definition of done holds
+  running --> running: restart, new pass
+  running --> done: level 1 takes a done exit
   waiting --> stopped: orch run stop, refuse
   running --> stopped: 200 step runs
   done --> [*]
@@ -310,80 +346,71 @@ stateDiagram-v2
       <tr><td class="mono">agent</td><td>A session does the step</td><td>The step session</td><td>Open the session</td><td>—</td></tr>
       <tr><td class="mono">ask</td><td>A question to a human</td><td>You or <code>approval.by</code></td><td>Answer</td><td><code>orch run step --answer</code></td></tr>
       <tr><td class="mono">approval</td><td>The step needs a verdict</td><td>You</td><td>Approve, change, refuse, skip (skippable only)</td><td><code>--verdict</code>, <code>--skip-approval</code></td></tr>
-      <tr><td class="mono">pick</td><td>Many next steps are valid</td><td>The owner, else you</td><td>Pick a next step</td><td><code>--pick S</code></td></tr>
-      <tr><td class="mono">stuck</td><td>No next step is valid</td><td>You</td><td>Pick a step, or stop</td><td><code>--pick</code>, <code>orch run stop</code></td></tr>
-      <tr><td class="mono">exit</td><td>The exit condition does not hold</td><td>The step session</td><td>Open the session</td><td>—</td></tr>
+      <tr><td class="mono">pick</td><td>A choice split has more than one valid branch</td><td>The owner, else you</td><td>Pick a branch</td><td><code>--pick S</code></td></tr>
+      <tr><td class="mono">stuck</td><td>No branch is valid</td><td>You</td><td>Pick a branch, restart the flow, or stop</td><td><code>--pick</code>, <code>orch run stop</code></td></tr>
+      <tr><td class="mono">check</td><td>The done condition of the step does not hold</td><td>The step session</td><td>Open the session</td><td>—</td></tr>
+      <tr><td class="mono">join</td><td>A join waits for the other branches</td><td>The branch sessions</td><td>Open a branch</td><td>—</td></tr>
       <tr><td class="mono">tool</td><td>A tool runs</td><td>Nobody</td><td>None</td><td>—</td></tr>
     </table></div>
-    <p><b>Next steps rule (C1 T2).</b> Each next step checks its own <code>when</code> and the entry condition of its target against the holds of the last step run. One valid: go. Many valid: pick. None: stuck. The page shows each candidate with ✓ or ✕ and the condition text.</p>
+    <p><b>Next steps rule (C1 T2).</b> Each next step checks its own <code>when</code> and the entry condition of its target against the holds of the last step run. One valid: go. Many valid in a choice: pick. None: stuck. The Next bar shows each move with its target, and the sheet shows ✓ or ✕ and the condition text.</p>
   </section>
 
   <section>
-    <span class="kicker">Decisions · brainstorm 2026-11-19</span>
-    <div class="scroll"><table>
-      <tr><th>#</th><th>Question</th><th>Answer</th></tr>
-      <tr><td class="mono">B1</td><td>Which moment comes first: the wait or the check?</td><td>Two modes that change with the run state. The run waits for you: the wait card is on top and the graph is small. Else: the graph is on top</td></tr>
-      <tr><td class="mono">B2</td><td>Do we add control acts to the runner?</td><td>Yes: "force a next step" and "go back to step X"</td></tr>
-      <tr><td class="mono">Q12</td><td>When a run goes back to step X, what happens to the outputs of the later steps?</td><td>Keep them. A loop is a normal part of the work, not an error: some results need many passes. Each step run is a new node in the history, with its own outputs. Nothing is marked old or removed</td></tr>
-      <tr><td class="mono">B3</td><td>Which parts go into the sketches?</td><td>All parts below go on the F2 view. The ones that need runner work have a mark</td></tr>
-    </table></div>
-  </section>
-
-  <section>
-    <span class="kicker">Parts of the F2 view</span>
+    <span class="kicker">Parts of the run page</span>
     <div class="scroll"><table>
       <tr><th>#</th><th>Part</th><th>What it shows</th><th>Data</th></tr>
-      <tr><td class="mono">1</td><td>Path on the graph</td><td>The path of this run on the definition graph. A loop edge has a neutral pass count, for example "pass 2". A loop is normal, so it has no warning color</td><td><span class="chip have">have</span></td></tr>
-      <tr><td class="mono">2</td><td>Why here</td><td>The conditions that moved the run to the current step, for example "the verdict is change"</td><td><span class="chip have">have</span></td></tr>
-      <tr><td class="mono">3</td><td>What if</td><td>Each next step with ✓ or ✕ and its condition. The likely next step has a mark</td><td><span class="chip have">have</span></td></tr>
-      <tr><td class="mono">4</td><td>Time per step</td><td>Agent time and the time that waited for you, for each step and for the run</td><td><span class="chip have">have</span></td></tr>
+      <tr><td class="mono">1</td><td>Tree of the level</td><td>One row for each step run of this level, oldest at the top. Lanes split and join. A pass count is neutral: a restart is normal work, so it has no warning color. Old passes fold into one row</td><td><span class="chip part">part</span></td></tr>
+      <tr><td class="mono">2</td><td>Why here</td><td>The move and the condition that brought the run to the step, for example "the verdict is change"</td><td><span class="chip have">have</span></td></tr>
+      <tr><td class="mono">3</td><td>Next bar</td><td>The moves out of the current step, and where each goes, for example "change → Fix → ↺ pass 3"</td><td><span class="chip have">have</span></td></tr>
+      <tr><td class="mono">4</td><td>Time per step</td><td>Agent time and the time that waited for you, for each step, each pass and the run</td><td><span class="chip have">have</span></td></tr>
       <tr><td class="mono">5</td><td>Step outputs</td><td>Each output (spec, task list) opens as a document page</td><td><span class="chip part">part</span></td></tr>
-      <tr><td class="mono">6</td><td>Nested runs</td><td>A step that started a child run shows a small ring. A tap opens the child run</td><td><span class="chip gap">runner</span></td></tr>
-      <tr><td class="mono">7</td><td>Control acts</td><td>"Force a next step" and "go back to step X", beside "stop"</td><td><span class="chip gap">runner</span></td></tr>
-      <tr><td class="mono">8</td><td>Changed definition</td><td>"The run uses v1, the current definition is v2"</td><td><span class="chip have">have</span></td></tr>
+      <tr><td class="mono">6</td><td>Child flows and levels</td><td>A child row ▸ with its pass and state. A tap opens its level screen. The breadcrumb shows the path, for example "Feature delivery › Verify ▸"</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td class="mono">7</td><td>Control acts</td><td>In the ⋯ menu: force a next step, restart this flow (reason change), stop. "Go back to step X" is open (Q-R6)</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td class="mono">8</td><td>Changed definition</td><td>"The run uses v2, the current definition is v3"</td><td><span class="chip have">have</span></td></tr>
+      <tr><td class="mono">9</td><td>Restart count</td><td>For each flow and reason: the restarts so far and the limit, for example "error 1 of 3"</td><td><span class="chip gap">runner</span></td></tr>
     </table></div>
-
-    <p><b>Progress.</b> Proposal: the passes so far, plus the steps left on the shortest path to a done step. A pass is normal work, not a step back. See Q3.</p>
+    <p><b>Progress.</b> Proposal: the passes so far for each flow, plus the steps left on the shortest path to a done exit of level 1. A pass is normal work, not a step back.</p>
   </section>
 
   <section>
     <span class="kicker">Capabilities</span>
     <div class="grid2">
       <div class="box"><h3>Show</h3><ul>
-        <li>Header: workflow, goal, status, owner, start time, loop count</li>
-        <li>Progress ring or bar</li>
-        <li>Graph: visited path, current node, loops</li>
+        <li>Header: run name, workflow, level path, state, owner, elapsed time</li>
+        <li>Progress</li>
+        <li>Tree of the level: step runs, lanes, child rows, restart chips, folded passes</li>
         <li>Current step: executor, actor, approval, input, output, wait time</li>
-        <li>Next steps with ✓ or ✕ and the condition</li>
-        <li>History: one row per visit, with session, time, output, answer</li>
+        <li>Next bar: the moves out of the current step</li>
+        <li>Restart counts and limits</li>
         <li>End reason when done or stopped</li>
       </ul></div>
       <div class="box"><h3>Do</h3><ul>
         <li>Answer the wait question</li>
         <li>Approve, change, refuse, or skip an approval</li>
-        <li>Pick a next step</li>
-        <li>Stop the run (danger act)</li>
+        <li>Pick a branch of a choice</li>
+        <li>Open a child level, and go back up with the breadcrumb</li>
+        <li>Tap a row: the step run sheet</li>
+        <li>Force a next step, restart this flow, stop the run (danger act)</li>
         <li>Open the owner or a step session</li>
-        <li>Tap a node: show the step runs of that step</li>
       </ul></div>
     </div>
   </section>
 
   <section>
-    <span class="kicker">Workflow · one wait</span>
+    <span class="kicker">Workflow · one wait in a child level</span>
 <pre class="mermaid">
 sequenceDiagram
   participant U as User
   participant P as Run page
   participant A as API
   participant R as WorkflowRunner
-  R-->>P: run waits (approval, step spec)
-  P->>U: wait card first, with the step and the spec
-  U->>P: approve
+  R-->>P: run waits (approval, Verify ▸ / Review)
+  P->>U: wait card on level 1, "Verify ▸ · Review waits"
+  U->>P: open the level, approve
   P->>A: verdict approve
   A->>R: orch run step --verdict approve
-  R->>R: next steps: one valid, go to propose
-  R-->>P: run running, step propose
+  R->>R: Verify exits "approved", parent map: forward to Release
+  R-->>P: run running, level 1, step Release
 </pre>
   </section>
 
@@ -392,18 +419,34 @@ sequenceDiagram
     <div class="scroll"><table>
       <tr><th>Part</th><th>Source</th><th>State</th></tr>
       <tr><td>Header, status, wait</td><td><code>runs/&lt;id&gt;.json</code>: <code>workflow</code>, <code>input</code>, <code>status</code>, <code>step</code>, <code>wait</code></td><td><span class="chip have">have</span></td></tr>
-      <tr><td>Graph</td><td><code>templates/workflows/&lt;name&gt;/workflow.json</code> at <code>run.version</code></td><td><span class="chip have">have</span></td></tr>
-      <tr><td>History</td><td><code>run.history[]</code></td><td><span class="chip have">have</span></td></tr>
-      <tr><td>Next steps ✓ ✕</td><td><code>next[].when</code>, target entry, <code>history[-1].holds</code></td><td><span class="chip have">have</span></td></tr>
+      <tr><td>Tree of a level</td><td><code>templates/workflows/&lt;name&gt;/workflow.json</code> at <code>run.version</code>. Flows, child flows, exits and restarts are new fields</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td>History</td><td><code>run.history[]</code>. Each step run needs its level path and its pass</td><td><span class="chip part">part</span></td></tr>
+      <tr><td>Restart counts</td><td>New: counts for each flow and reason, in the run</td><td><span class="chip gap">runner</span></td></tr>
+      <tr><td>Next moves ✓ ✕</td><td><code>next[].when</code>, target entry, <code>history[-1].holds</code></td><td><span class="chip have">have</span></td></tr>
       <tr><td>Stream of the run</td><td>Owner entry <code>stream</code></td><td><span class="chip part">indirect</span></td></tr>
       <tr><td>Read over HTTP</td><td>Only the generic <code>/api/store/workflow-runs</code></td><td><span class="chip gap">gap</span></td></tr>
       <tr><td>Act over HTTP</td><td>Only <code>orch run step</code> in the CLI</td><td><span class="chip gap">gap</span></td></tr>
       <tr><td>Live update</td><td>No envelope when a run changes</td><td><span class="chip gap">gap</span></td></tr>
     </table></div>
   </section>
+
+  <section>
+    <span class="kicker">Open questions</span>
+    <div class="scroll"><table>
+      <tr><th>#</th><th>Question</th><th>Recommendation</th></tr>
+      <tr><td class="mono">Q-P1</td><td>Which split kind does the first build support?</td><td>Choice</td></tr>
+      <tr><td class="mono">Q-P2</td><td>Can a step keep its last result on a restart, so that the new pass does not run it again?</td><td>Yes, as an option of the step. Off by default</td></tr>
+      <tr><td class="mono">Q-P3</td><td>How do old passes fold?</td><td>Each pass before the current one folds into one row. A flow with many passes folds them into one row "N passes"</td></tr>
+      <tr><td class="mono">Q-R6</td><td>Does the control act "go back to step X" (B2) stay with P5?</td><td>No. The user can restart the current flow, with the reason change</td></tr>
+    </table></div>
+  </section>
+</div>
+<div class="sub" id="run/pages" hidden>
+  <p class="summary">All F2 pages on a phone, in the Git tree style and the P5 model. Two sample runs: Feature delivery (level 1 and the child flow Verify ▸) and Planning (the child flow Question round ▸). One row for each page or component.</p>
+  <iframe class="sketch-frame" title="F2 pages" data-src="run-views.html?set=r4" loading="lazy"></iframe>
 </div>
 <div class="sub" id="run/sketches" hidden>
-  <p class="summary">One row for each page of F2. Open a row to see its sketches side by side. Pick one sketch for each page.</p>
+  <p class="summary">The first sketches of each F2 page, from before the P5 model and the Git tree. The Pages tab replaces them.</p>
   <iframe class="sketch-frame" title="F2 Workflows sketches" data-src="workflows-sketches.html?embed" loading="lazy"></iframe>
 </div>
 <div class="sub" id="run/graphs" hidden>
