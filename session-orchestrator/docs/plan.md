@@ -2258,7 +2258,7 @@ Source: 23 pictures of a copy of the live store (`--live <copy> --port 7802`, `O
 | 11 to 16, 20 | Breaks in identifiers, full URLs as link labels, a small caption under the title, grey well blocks, empty space, "you" and "user" for the same party, "55 %" | Layout | Open: low |
 | 2, 17, 18, 19 | Summaries too long for a title, a raw voice transcript, a "Root:" prefix, a raw tool id, paragraphs as Done items | Data | Sent to session D through the root |
 
-Proof (`docs/screens/`): `tray-v7-page-1-before.png`, `tray-v7-page-1-after.png`, `tray-v7-page-12-before.png`, `tray-v7-page-12-after.png`, `tray-v7-page-6-end-before.png`, `tray-v7-page-6-end-after.png`.
+Proof (`docs/screens/`): `tray-v7-page-1-before.png`, `tray-v7-page-1-after.png`, `tray-v7-page-12-before.png`, `tray-v7-page-12-after.png`, `tray-v7-page-6-end-before.png`, `tray-v7-page-6-end-after.png`. The three design picks, cropped: `tray-v7-title-before.png` and `tray-v7-title-after.png` (long summary), `tray-v7-path-before.png` and `tray-v7-path-after.png` (header path), `tray-v7-pill-before.png` and `tray-v7-pill-after.png` (pill). The user accepted the three defaults; they can change later.
 
 ## I6: Integration of D, L and V (2026-11-18)
 
