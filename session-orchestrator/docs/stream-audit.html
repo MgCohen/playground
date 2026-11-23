@@ -240,7 +240,7 @@ svg .arrow.ret { fill: var(--muted); }
       <div class="scroll"><table>
         <thead><tr><th>#</th><th>Rule</th><th>Check</th></tr></thead>
         <tbody>
-          <tr><td>R1</td><td>Each domain fact is an envelope</td><td>No fact lives only in a file</td></tr>
+          <tr><td>R1</td><td>Each domain fact is an envelope</td><td>No fact lives only in a file. Lifecycle facts too (Q1)</td></tr>
           <tr><td>R2</td><td>A view reads only projections of the stream</td><td>No view reads a side file</td></tr>
           <tr><td>R3</td><td>An action only posts</td><td>No action writes a file or a field</td></tr>
           <tr><td>R4</td><td>A projection is a cache</td><td>Delete it, rebuild it, same result</td></tr>
@@ -327,7 +327,7 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
     <p>Each answer changes a rule on the Guidelines tab. Answer in the chat, in free text.</p>
 
     <div class="panel q">
-      <h3>Q1. How strict is the rule for session state?</h3>
+      <h3>Q1. How strict is the rule for session state? <span class="pill ok">Default: (c) mixed</span></h3>
       <dl>
         <dt>Context</dt><dd>A3-2 kept <code>status.json</code>, <code>lease.json</code>, <code>heartbeat.txt</code> and <code>stack/</code> as files: "Stream B owns them". A strict rule makes each of them a bypass.</dd>
         <dt>Options</dt><dd>(a) Strict: all state is a projection; files are caches only. (b) Messages only: lifecycle files are allowed. (c) Mixed: lifecycle facts are envelopes; plumbing stays in files.</dd>
