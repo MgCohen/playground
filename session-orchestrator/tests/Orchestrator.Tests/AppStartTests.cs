@@ -167,4 +167,22 @@ public sealed class AppStartTests
         if (OperatingSystem.IsWindows()) Assert.That(cwd, Is.EqualTo("C:\\\\repo"), "the app refuses C:/ as another spelling of C:\\ (R-17)");
         Assert.That(text, Does.Contain("inApp false"), "the fallback when the app tool is missing or refused");
     }
+
+    [Test]
+    public void The_fallback_after_a_refusal_is_spawn_child_with_no_second_try()
+    {
+        var text = new ClaudeCodeProvider(new()).AppStartInstruction(new("T 3", "C:/repo", false, "orch join x"))!;
+        Assert.That(text, Does.Contain("Remote Control").And.Contain("do not try again"), "P1: the app refuses start_session in a Remote Control turn (23 times in the audit)");
+    }
+
+    [Test]
+    public void The_doctor_wants_exactly_one_orch_plugin()
+    {
+        const string one = "Synced from claude.ai:\n\n  ❯ orch@synced\n    Version: 0.3.0\n  ❯ core@synced\n";
+        const string two = "  ❯ orch@inline\n    Path: C:/p\n\n  ❯ orch@synced\n";
+        Assert.That(ClaudeCodeProvider.PluginCheck(one), Is.EqualTo((true, "orch@synced")));
+        Assert.That(ClaudeCodeProvider.PluginCheck(two).Ok, Is.False, "two copies register each tool two times");
+        Assert.That(ClaudeCodeProvider.PluginCheck("  ❯ core@synced\n").Ok, Is.False);
+        Assert.That(ClaudeCodeProvider.PluginCheck(null).Ok, Is.False);
+    }
 }

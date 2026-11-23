@@ -2387,3 +2387,29 @@ Test bed: a demo store in the scratchpad, `demo.ps1 -Fake -Port 7850 -AnyPort -N
 | Answer one demo card | Pass. Answer "HELLO", Questions 2 becomes 1, the next card shows | `10-card-before.png`, `11-card-answered.png` |
 
 Note for tests: a `WM_CLOSE` that another process posts gives a close reason that is not `UserClosing`. The widget then closes for real and the tray cannot show it again. Use `WM_SYSCOMMAND SC_CLOSE` (the same as Alt+F4).
+
+## P1: The orch plugin in the mgcohen marketplace (2026-11-23)
+
+Goal: one plugin with all orchestrator commands, documented, from the existing marketplace `MgCohen/claude-plugins` (`mgcohen`, account-synced). The reference is `docs/commands.md`.
+
+### Findings
+
+| Id | Finding | Fix |
+|---|---|---|
+| P1-F1 | The installed `orch` embedded the path of the worktree that built it (`playground.wt/main-merge`). That worktree was removed, so `orch` looked for `templates/` in the current folder. `orch watch --list` then gave the subject as the text: a session got only the first line of its brief or of a message (this session got the title as its brief, and one line of a 6-line answer) | The build copies `templates/` and `config/` next to the program. `Home.Root()` uses that copy before the embedded checkout |
+| P1-F2 | `plugin/hooks/state.ts` hard-coded `DEFAULT_HOME`, the main checkout. A copy of the plugin on another computer registers no tools | The plugin asks `orch home`. New command `orch home` |
+| P1-F3 | Most failures of the lifecycle audit came from orchestrators that used `core:spawn` or their own `start_session` call. In a Remote Control turn the app refuses `start_session` | `spawn_child` is the only spawn path: `orch-brief`, the orchestrator agent, the tool descriptions and the app start text say so. In a Remote Control turn, `inApp: false` |
+| P1-F4 | The lifecycle notices had no retry rules and no sidebar fallback | `remote-control-self`, `remote-control-child`, `archive-self`, `archive-child`: retries, full ids, the sidebar fallback |
+| P1-F5 | `know-how.md` said that `archive-self` works while the session is open on screen. Transcripts 0d481f32, 6a3d1313 and 077178e7 show that the app refuses it | Corrected |
+| P1-F6 | `orch doctor` checked only `CLAUDE_CODE_PLUGIN_DIRS` | It reads `claude plugin list` and wants exactly one `orch@` copy |
+| P1-F7 | A PowerShell function named `Git` that calls `git` calls itself (names are not case-sensitive): call depth overflow after minutes | `tools/publish-plugin.ps1` uses `Invoke-Clone` and `git.exe` |
+
+### Test results
+
+| Step | Result |
+|---|---|
+| `dotnet test --solution Orchestrator.slnx` | Pass: 824 passed, 0 failed, 13 skipped |
+| `node --test --experimental-strip-types plugin/hooks/test/*.test.ts` | Pass: 24 of 24 |
+| `claude plugin validate plugin` | Pass, with warnings |
+| Packed tool in the scratchpad, run from `C:\Users\matheus.cohen` | Pass: `orch home` gives the tool folder, `orch doctor` finds 11 template kinds |
+| `tools/publish-plugin.ps1 -DryRun` | Pass: 23 files, catalog entry, README row. `claude plugin validate` passes on the clone |

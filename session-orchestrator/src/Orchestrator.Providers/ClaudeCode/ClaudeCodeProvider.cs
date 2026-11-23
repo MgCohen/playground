@@ -217,13 +217,22 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     public IReadOnlyList<DoctorCheck> Doctor(CommandRun run) =>
     [
         new("claude", () => run("claude", "--version") is var r && r.Ok ? (true, r.Text) : (false, "not on the PATH")),
-        new("plugin", () =>
-        {
-            var settings = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude", "settings.json");
-            var json = JsonDocument.Parse(File.ReadAllText(settings)).RootElement;
-            if (!json.TryGetProperty("env", out var env) || !env.TryGetProperty("CLAUDE_CODE_PLUGIN_DIRS", out var dirs)) return (false, "CLAUDE_CODE_PLUGIN_DIRS is not in the env block of ~/.claude/settings.json");
-            var path = dirs.GetString() ?? "";
-            return (File.Exists(Path.Combine(path, ".claude-plugin", "plugin.json")), path);
-        }),
+        new("plugin", () => PluginCheck(run("claude", "plugin", "list") is var r && r.Ok ? r.Text : null)),
     ];
+
+    /// <summary>
+    /// The orch plugin of <c>claude plugin list</c>: exactly one copy must load. The marketplace copy is <c>orch@synced</c> or
+    /// <c>orch@mgcohen</c>; a <c>--plugin-dir</c> or <c>CLAUDE_CODE_PLUGIN_DIRS</c> copy is <c>orch@inline</c>. Two copies register each tool two times.
+    /// </summary>
+    public static (bool Ok, string Detail) PluginCheck(string? list)
+    {
+        if (list is null) return (false, "claude plugin list failed");
+        var copies = list.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("❯ orch@", StringComparison.Ordinal)).Select(l => l[2..]).ToList();
+        return copies.Count switch
+        {
+            0 => (false, "no orch plugin: enable orch in the mgcohen marketplace, or start with --plugin-dir"),
+            1 => (true, copies[0]),
+            _ => (false, $"{string.Join(", ", copies)} load at the same time: remove CLAUDE_CODE_PLUGIN_DIRS from ~/.claude/settings.json"),
+        };
+    }
 }

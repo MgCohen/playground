@@ -21,7 +21,8 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - Give each promise a `.catch` handler.
 - `tool.describe` can change the description of a tool and move it behind ToolSearch (`isDeferred`).
 - A hook module can import a relative `.ts` file (`./state.ts`). The modules of one plugin share their module state.
-- Plugin skills and agents reach each session through `CLAUDE_CODE_PLUGIN_DIRS` and through `--plugin-dir`. Their names start with `orch:` (`orch:orch-ask`, `orch:worker`).
+- Plugin skills and agents reach each session through the `mgcohen` marketplace, `CLAUDE_CODE_PLUGIN_DIRS` or `--plugin-dir`. Their names start with `orch:` (`orch:orch-ask`, `orch:worker`).
+- A hot reload gives the skills to a session that started before the plugin loaded, but not the `mcp__orch__*` tools. Such a session uses the CLI only (`docs/commands.md`).
 - `claude -p --agent orch:worker` starts a session with a plugin agent.
 - `$.process.run(argv, { cwd, env, stdin, timeoutMs })` runs a program with no shell. The child gets the environment of the session, so `orch` gets `ORCH_STORE`.
 - Auto mode refuses `--permission-mode bypassPermissions` in tests. Use the user settings, or `--permission-mode auto`.
@@ -208,11 +209,14 @@ Known limits:
 
 ## Session lifecycle
 
+The rules for start, retry and archive are in `docs/commands.md` "Lifecycle rules".
+
+
 - `orch stop <id>` ends a running turn: the supervisor cancels it and kills each descendant that it recorded while the turn ran, also an orphan. `orch archive` tries the worktree removal again for about 7.5 s if a process holds the folder.
 - `orch archive <id>` removes the `enabled` file. The supervisor never runs the session again. The branch of its worktree stays.
 - The app refuses `archive_session` while Remote Control is on ("it still has live work", probe 2a). So each archive turns Remote Control off first: `set_remote_control` with `enabled: false`, then `archive_session`. A parent can do both for a child by its app id (probes 2b, 2c), with no prompt in auto mode.
 - A child in a `claude -p` supervisor turn has no app tools. `set_remote_control` on `self` works only in a live app turn (probe 1a); the parent can call it for the child at any time (probe 1b).
-- If the session is live in the desktop app, `orch archive` first sends it the notice `archive-self`. The session turns its Remote Control off and calls `archive_session` with `self`, so the app archives it, also while it is open on screen. `orch archive` waits up to 120 s (`--wait`) for `"isArchived": true` in the app record, then archives the store side. `--store-only` skips the app step. A session that is not live in the app stays in the sidebar: archive it from the sidebar.
+- If the session is live in the desktop app, `orch archive` first sends it the notice `archive-self`. The session turns its Remote Control off and calls `archive_session` with `self`. The app refuses this call while the session is open on screen or pinned ("keeping it for the user", transcripts 0d481f32, 6a3d1313, 077178e7): then the user archives it from the sidebar. `orch archive` waits up to 120 s (`--wait`) for `"isArchived": true` in the app record, then archives the store side. `--store-only` skips the app step. A session that is not live in the app stays in the sidebar: archive it from the sidebar.
 - A worktree folder is `<repo>.wt/orch-<id8>`, next to the repository, on branch `orch/session-<id8>`.
 - `orch open <id>` imports a session into the desktop app (`claude --desktop --resume` with the session folder as working folder). The app starts its process at once, and the plugin takes the lease `live`. The supervisor imports each new session before its work starts, when it uses the default store (`ORCH_IMPORT=1` or `0` overrides): the first turn has only the notice `open-in-app` (reply READY), because the app can import only a session that has a transcript. The import follows at once, and the plugin of the live app session delivers the brief. If the app does not take the lease in 30 s, the supervisor delivers the brief with `claude -p`. The first turn of a new session gets `-n <title>`, so the sidebar shows the title.
 - A parent in the desktop app starts a normal child in the app (R-F8): `spawn_child` runs `orch new --app-start`, the parent calls `start_session` with the call in the tool result, and the child runs `orch join <file>` first. The app check is `CLAUDE_CODE_ENTRYPOINT=claude-desktop` (`IProvider.CallerInApp`). If the app tool is missing or refused, the parent calls `spawn_child` again with `inApp: false`, and the supervisor starts the child.
