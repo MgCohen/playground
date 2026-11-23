@@ -2097,6 +2097,47 @@ Four dummy sessions: a root and three children. The root and two children fail, 
 | D12 | Report Done items were paragraphs | `done`, `next` and `blockers`: one fact for each item, 200 characters and 12 items maximum (schema and skill). A post over the limit is refused, so the session writes it again shorter |
 | D7 | The card setting (which kinds make a card) does not exist. The inbox view decides in code | Open: the user wants it as a filter (code, app setting or live page filter), later |
 
+## W result: stream audit (2026-11-23)
+
+Messages go through the stream. The session lifecycle does not: turn, lease, heartbeat, registry, state, stack and runs live in side files and in supervisor memory. So each page that shows a session reads files and polls. The page `docs/stream-audit.html` (https://claude.ai/artifact/DKqHidbSJD1JTPHeKCKf7t) has the rules, the audit, the details with file and line, and the fix plan. Code read at commit `c445988`.
+
+Rules of the audit (default answers Q1 to Q6, each on its own decision branch, PRs #84, #86, #87, #89, #91, #93):
+
+| Rule | Content |
+|---|---|
+| R1 | Each domain fact is an envelope, lifecycle facts too. Plumbing (cursors, claims, nudges) stays in files |
+| R2 | A view reads only projections of the stream |
+| R3 | An action only posts |
+| R4 | A projection is a cache that a replay can rebuild |
+| R5 | A view updates on a push. A data poll is a bypass |
+| R7 | One owner and one fold for each projection |
+| R8 | A time sweep reads projections and writes envelopes |
+
+Scope: Web, Store, Supervisor, plugin hooks, CLI, tray, providers. Config (`policy.json`, `templates/`) is outside the audit.
+
+| Item | Bypass | Rules | Fix task |
+|---|---|---|---|
+| W-1 | Turn state in `status.json`, `turn.json` and supervisor memory | R1 R2 R5 | W1 |
+| W-2 | Lease in `lease.json`, two writers, no `lease.take` post | R1 R2 R7 | W2 |
+| W-3 | `heartbeat.txt` each 3 s | R1 R5 | W3 |
+| W-4 | Actions write `session.json` and `enabled` | R3 | W4 |
+| W-5 | Registry fields with no envelope (code, started, appId, role, settings) | R1 R4 R7 | W4 |
+| W-6 | `enabled` repeats the phase; the plugin polls it | R2 | W4 |
+| W-7 | `supervisor.Tick()` and `git worktree remove` inside a request | R3 R5 | W5 |
+| W-8 | `state.json` is the source of truth; `state-check.json`, `forgotten.json` | R4 | W6 |
+| W-9 | `stack/` and `runs/` only in files | R1 R2 R4 | W7 |
+| W-10 | `docs-checks/` loses a negative result; `mirror/`, `last-output.json` repeat envelopes | R1 R4 | W8 |
+| W-11 | Failure count and nudge state in memory; app facts polled | R4 R5 R8 | W9 |
+| W-12 | Three folds of session state (Board, API, CLI) | R7 | W10 |
+| W-13 | Poll timers: LiveView 10 s, tick 5 s, plugin 3 s, HTTP 2 s | R5 R8 | W11 |
+| W-14 | Dead code (`Board.DefaultsToReview`), `Cwd` from the lease | R2 | W12 |
+
+Through the stream (no bypass): all message kinds, the Cards page and the inbox, the Stream page, the event document, the API stream views and SSE, the plugin tools and the delivery push, the providers.
+
+Open: Q7, liveness. Default proposal: `heartbeat.txt` stays as plumbing; only the supervisor sweep reads it and posts `session.stale` or `session.fresh` on a change.
+
+Notes for other sessions: K, projections need one home and one owner. N, W1 to W9 add lifecycle envelopes; the store needs fast folds by session and a push for each append.
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
@@ -2136,6 +2177,25 @@ Rules for these tasks:
 - One role model (C1): `role` (orchestrator, worker, free), `type` (optional custom agent), `workflow`.
 - Only `Providers/` names a provider: the `claude` CLI, its flags (also `--cloud`) and the app files.
 - Task codes are only for tasks. Steps and items use a dash: G-0, E-1.
+
+Stream audit fix tasks (W). Order: facts first, views last. Each task keeps the file as a cache until a later task moves its readers. Details: "W result: stream audit".
+
+| Task | Content | After |
+|---|---|---|
+| W1 | The plugin posts `turn.start` and `turn.end` (`by: live`); a turn projection; `Recovery.Interrupted` from it | None |
+| W2 | The plugin and the supervisor post `lease.take` and `lease.release`; a lease projection | None |
+| W3 | Liveness: the sweep posts `session.stale` and `session.fresh` (Q7) | Q7 |
+| W4 | Actions only post; a registry reactor folds `session.json`; `session.update` for supervisor fields; `enabled` as a projection | None |
+| W5 | Delete the `supervisor.Tick()` calls in Board and the API; a reactor removes the worktree after `session.archive` | W4 |
+| W6 | A state projection from `session.state`; the marks as envelopes; the `episode` field; delete `state-check.json` | W1 to W4 |
+| W7 | Stack and run envelopes; stack and run projections | None |
+| W8 | A `docs.check` trace; delete `mirror/` and `last-output.json` | None |
+| W9 | Fold the failure count; an `app.state` sweep | W1 |
+| W10 | One session projection in `Orchestrator.Store` for Board, API, CLI and tray | W6, W7 |
+| W11 | Delete the poll timers and the reload after an act; SSE in HTTP mode | W9, W10 |
+| W12 | Delete unused side files; change `docs/store.md`; delete dead code | W8, W11 |
+
+Guard tests for W: an action changes no file outside `events/` and `bodies/` (`ArchitectureTests`); a replay into an empty store gives equal projections; with a fake clock and no envelope, no view loads.
 
 Later (not in the graph):
 

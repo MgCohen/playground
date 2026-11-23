@@ -83,6 +83,21 @@ th { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; te
 .q dt { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
 .q dd { margin: 0; min-width: 0; }
 @media (max-width: 560px) { .q dl { grid-template-columns: 1fr; } .q dt { padding-top: 6px; } }
+.bars { display: flex; flex-direction: column; gap: 6px; }
+.bar { display: grid; grid-template-columns: 130px 1fr 32px; gap: 10px; align-items: center; font-size: 13.5px; }
+.bar i { display: block; height: 14px; width: var(--w); min-width: 2px; background: var(--accent); border-radius: 3px; }
+.bar b { font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; }
+.foldbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.foldbar h3 { margin-right: auto; }
+.foldbar button { font: 500 13px var(--font-body); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.foldbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+details { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+details summary { cursor: pointer; font-size: 14.5px; }
+details[open] summary { margin-bottom: 10px; }
+dl.fd { margin: 0; display: grid; grid-template-columns: 80px 1fr; gap: 6px 14px; font-size: 14px; }
+dl.fd dt { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+dl.fd dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 560px) { dl.fd { grid-template-columns: 1fr; } .bar { grid-template-columns: 100px 1fr 28px; } }
 svg text { font-family: var(--font-body); fill: var(--fg); }
 svg .muted { fill: var(--muted); }
 svg .box { fill: var(--panel); stroke: var(--line); }
@@ -100,14 +115,16 @@ svg .arrow.ret { fill: var(--muted); }
   <header>
     <div class="eyebrow">Session orchestrator · audit W</div>
     <h1>Stream Audit</h1>
-    <p class="lead">Does each feature read from and write to the event stream, or does it bypass it? This page holds the context, the rules of the audit, the open questions and the plan. When the user agrees the rules, the audit result goes on a fifth tab.</p>
-    <div class="status"><span class="pill warn">Draft</span> Rules proposed, not agreed. Branch <code>orch/d-data-upgrade</code>.</div>
+    <p class="lead">Does each feature read from and write to the event stream, or does it bypass it? Messages go through the stream. The session lifecycle does not: 14 bypass groups, with 12 fix tasks.</p>
+    <div class="status"><span class="pill warn">For review</span> The audit and the fix plan wait for the approval of the user. Base branch <code>orch/d-data-upgrade</code>.</div>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button role="tab" id="t-context" data-tab="context" aria-selected="true">Context</button>
     <button role="tab" id="t-rules" data-tab="rules" aria-selected="false">Guidelines</button>
     <button role="tab" id="t-questions" data-tab="questions" aria-selected="false">Open questions</button>
+    <button role="tab" id="t-audit" data-tab="audit" aria-selected="false">Audit</button>
+    <button role="tab" id="t-fixes" data-tab="fixes" aria-selected="false">Fix plan</button>
     <button role="tab" id="t-plan" data-tab="plan" aria-selected="false">Action plan</button>
   </nav>
 
@@ -155,17 +172,6 @@ svg .arrow.ret { fill: var(--muted); }
       </table></div>
     </div>
 
-    <div class="block">
-      <h3>First signals</h3>
-      <p>These are signals from a first read. They are not audit findings yet.</p>
-      <ul>
-        <li><code>StateReader.Read</code> builds the session snapshot from <code>status.json</code>, <code>lease.json</code>, <code>heartbeat.txt</code>, <code>turn.json</code> and the envelopes together.</li>
-        <li><code>LiveView</code> loads the full page again on each file change, and also on a 10 s timer.</li>
-        <li><code>LiveView.Act</code> runs the action, then calls <code>Load()</code> at once. It does not wait for the envelope.</li>
-        <li><code>Board</code> is one large read model for all pages. It calls <code>FileStore</code>, the lifecycle and the inbox directly.</li>
-        <li><code>TickService</code> runs the supervisor tick on each push and at least each 5 s for the time rules.</li>
-      </ul>
-    </div>
 
     <div class="panel">
       <h3>Purpose of this session</h3>
@@ -382,6 +388,269 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
     </div>
   </section>
 
+  <!-- AUDIT -->
+  <section role="tabpanel" id="audit" aria-labelledby="t-audit" hidden>
+    <div class="block">
+      <h2>Messages go through the stream. The session lifecycle does not.</h2>
+      <p>Each message kind is an envelope, and the cards, the stream page and the event documents read only the stream. The session lifecycle lives in side files and in memory: turn, lease, heartbeat, registry, state, stack and runs. So each page that shows a session reads files and polls each 10 s.</p>
+      <p class="status">Code read at commit <code>c445988</code>. 46 findings in three parts, merged into 14 bypass groups.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Findings for each part</h3>
+      <div class="bars" role="img" aria-label="Findings: Store and Supervisor 18, plugin hooks 12, Web and API 11, CLI 9, tray 1, providers 0">
+        <div class="bar"><span>Store, Supervisor</span><i style="--w:100%"></i><b>18</b></div>
+        <div class="bar"><span>Plugin hooks</span><i style="--w:66.7%"></i><b>12</b></div>
+        <div class="bar"><span>Web, API</span><i style="--w:61.1%"></i><b>11</b></div>
+        <div class="bar"><span>CLI</span><i style="--w:50%"></i><b>9</b></div>
+        <div class="bar"><span>Tray</span><i style="--w:5.6%"></i><b>1</b></div>
+        <div class="bar"><span>Providers</span><i style="--w:0%"></i><b>0</b></div>
+      </div>
+      <p class="status">One bypass can show in more than one part. Example: the <code>status.json</code> write is in the hooks, and its reads are in the Web and the Supervisor.</p>
+    </div>
+
+    <div class="block">
+      <h3>Through the stream</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Feature</th><th>Reads</th><th>Writes</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>Messages: question, answer, review, report, notice, failure</td><td>Stream</td><td>Envelopes</td><td><span class="pill ok">OK</span></td></tr>
+          <tr><td>Cards page, inbox, card actions</td><td><code>StreamQueries.Inbox</code></td><td>Envelopes</td><td><span class="pill ok">OK</span></td></tr>
+          <tr><td>Stream page, event document</td><td><code>StreamQuery</code></td><td>None</td><td><span class="pill ok">OK</span></td></tr>
+          <tr><td>API stream, events, views, SSE</td><td><code>StreamQuery</code></td><td>Envelopes</td><td><span class="pill ok">OK</span></td></tr>
+          <tr><td>Plugin tools, delivery push</td><td><code>orch watch</code></td><td>Envelopes</td><td><span class="pill ok">OK</span></td></tr>
+          <tr><td>Relay, meta updates, question reminders</td><td>Subscriptions</td><td>Envelopes</td><td><span class="pill ok">OK</span></td></tr>
+          <tr><td>Providers</td><td>App files, process table</td><td>None in the store</td><td><span class="pill ok">OK</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="block">
+      <h3>Bypass groups</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Item</th><th>Bypass</th><th>Rules</th><th>Parts</th><th>Fix task</th></tr></thead>
+        <tbody>
+          <tr><td>W-1</td><td>Turn state in files and memory</td><td>R1 R2 R5</td><td>Hooks, Supervisor, Web</td><td>W1</td></tr>
+          <tr><td>W-2</td><td>Lease in a file, two writers</td><td>R1 R2 R7</td><td>Hooks, Supervisor, Web</td><td>W2</td></tr>
+          <tr><td>W-3</td><td>Heartbeat file each 3 s</td><td>R1 R5</td><td>Hooks, Supervisor</td><td>W3</td></tr>
+          <tr><td>W-4</td><td>Actions write the registry</td><td>R3</td><td>Web, CLI, hooks</td><td>W4</td></tr>
+          <tr><td>W-5</td><td>Registry fields with no envelope</td><td>R1 R4 R7</td><td>Supervisor</td><td>W4</td></tr>
+          <tr><td>W-6</td><td><code>enabled</code> repeats the phase</td><td>R2</td><td>Store, hooks</td><td>W4</td></tr>
+          <tr><td>W-7</td><td>Side effects inside a request</td><td>R3 R5</td><td>Web, API</td><td>W5</td></tr>
+          <tr><td>W-8</td><td><code>state.json</code> is the source of truth</td><td>R4</td><td>Supervisor</td><td>W6</td></tr>
+          <tr><td>W-9</td><td>Stack and runs only in files</td><td>R1 R2 R4</td><td>CLI, Supervisor</td><td>W7</td></tr>
+          <tr><td>W-10</td><td>Docs checks, mirror, last output</td><td>R1 R4</td><td>Supervisor, hooks</td><td>W8</td></tr>
+          <tr><td>W-11</td><td>Supervisor memory and app polls</td><td>R4 R5 R8</td><td>Supervisor</td><td>W9</td></tr>
+          <tr><td>W-12</td><td>Three folds of session state</td><td>R7</td><td>Web, API, CLI</td><td>W10</td></tr>
+          <tr><td>W-13</td><td>Poll timers and reloads</td><td>R5 R8</td><td>Web, hooks, CLI</td><td>W11</td></tr>
+          <tr><td>W-14</td><td>Dead code and fallbacks</td><td>R2</td><td>Web, Store</td><td>W12</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="block">
+      <div class="foldbar"><h3>Details</h3><button type="button" id="open-all">Open all</button><button type="button" id="close-all">Close all</button></div>
+
+      <details><summary><b>W-1</b> Turn state in files and memory · <code>status.json</code>, <code>turn.json</code></summary>
+        <dl class="fd">
+          <dt>Where</dt><dd>Writes: <code>register.ts:56-59, 173, 183</code> (<code>status.json</code>); <code>Supervisor.cs:349, 408</code>, <code>Recovery.cs:36</code> (<code>turn.json</code>). Memory: <code>Supervisor.cs:26, 34</code> (<code>running</code>). Reads: <code>StateReader.cs:40-42</code>, <code>Supervisor.cs:214</code>, <code>Board.cs:65-66</code>, <code>lease.ts:40</code>, <code>events.ts:259</code></dd>
+          <dt>Problem</dt><dd>A live turn posts no turn envelope. It writes only <code>status.json</code>. A supervisor turn posts <code>turn.start</code>, but readers use <code>turn.json</code>. The Running dot comes from supervisor memory.</dd>
+          <dt>Fix</dt><dd>The plugin posts <code>turn.start</code> and <code>turn.end</code> with <code>by: live</code>. A turn projection holds the open turn of each session. <code>Recovery.Interrupted</code> is a <code>turn.start</code> with no end.</dd>
+          <dt>Test</dt><dd>Delete <code>status.json</code> and <code>turn.json</code>. The snapshot gives the same <code>Running</code>.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-2</b> Lease in a file, two writers · <code>lease.json</code></summary>
+        <dl class="fd">
+          <dt>Where</dt><dd>Writes: <code>lease.ts:51, 327-360</code>, <code>register.ts:100</code>, <code>Supervisor.Lifecycle.cs:183</code>. Reads: <code>FileStore.cs:86-97</code>, <code>StateReader.cs:34</code>, <code>Board.cs:63-64</code>, <code>OrchestratorApi.cs:75</code>, <code>Recovery.cs:16</code></dd>
+          <dt>Problem</dt><dd>The plugin and the supervisor both write the lease. The kind <code>lease.take</code> exists (<code>EventKinds.cs:30</code>), but nothing posts it.</dd>
+          <dt>Fix</dt><dd>Both writers post <code>lease.take</code> and <code>lease.release</code>. A lease projection holds the holder. The first-writer rule uses a claim, as for answers.</dd>
+          <dt>Test</dt><dd>Delete <code>lease.json</code>. <code>IsLive</code> and the Holder row do not change.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-3</b> Heartbeat file each 3 s · <code>heartbeat.txt</code></summary>
+        <dl class="fd">
+          <dt>Where</dt><dd>Write: <code>backend.ts:101-103</code> from <code>lease.ts:345</code>, <code>register.ts:97</code>. Reads: <code>FileStore.cs:90-92</code>, <code>StateReader.cs:35</code>, <code>Recovery.cs:16</code>, the Holder row</dd>
+          <dt>Problem</dt><dd>Liveness is not an envelope. A beat envelope each 3 s gives about 28,800 envelopes for each session each day.</dd>
+          <dt>Fix</dt><dd>Open decision. Default: the file stays as plumbing. Only the supervisor sweep reads it, and it posts <code>session.stale</code> or <code>session.fresh</code> when liveness changes (R8). No view reads the file.</dd>
+          <dt>Test</dt><dd>Stop the beat. The sweep posts one <code>session.stale</code>, and the Sessions page updates on the push.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-4</b> Actions write the registry · new, enable, stop, resume, archive, open</summary>
+        <dl class="fd">
+          <dt>Where</dt><dd><code>Lifecycle.cs:24, 30, 49-53, 135-155, 175</code>; <code>Messages.cs:56-70</code> → <code>FileStore.cs:104-109</code>; plugin <code>register.ts:122-144</code> (<code>/orch-enable</code>). Callers: <code>Board.cs:105-124</code>, <code>OrchestratorApi.cs:108-135</code>, <code>SessionCommands.cs:30, 40</code></dd>
+          <dt>Problem</dt><dd>Each action posts an envelope, then writes <code>session.json</code> and <code>enabled</code> itself. A new session writes the registry before the <code>brief</code>.</dd>
+          <dt>Fix</dt><dd>Each action only posts: <code>brief</code>, <code>session.start</code>, <code>session.stop</code>, <code>session.resume</code>, <code>session.archive</code>, <code>session.import</code>. One registry reactor in the supervisor folds them into <code>session.json</code>, which becomes a cache.</dd>
+          <dt>Test</dt><dd>An architecture test: an action changes no file outside <code>events/</code> and <code>bodies/</code>.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-5</b> Registry fields with no envelope · code, started, appId, role, settings</summary>
+        <dl class="fd">
+          <dt>Where</dt><dd><code>Supervisor.Lifecycle.cs:198</code> (code), <code>FileStore.cs:83</code> from <code>Supervisor.cs:345, 384</code> and <code>Recovery.cs:32</code> (started), <code>Supervisor.cs:369</code> (cloud appId), <code>WorkflowHost.cs:62</code> (role), <code>SessionRegistry.Configure</code> (settings)</dd>
+          <dt>Problem</dt><dd>A replay of the stream cannot give these fields back. <code>/orch-enable</code> is a second writer of the registry.</dd>
+          <dt>Fix</dt><dd><code>SessionRegistry</code> posts <code>session.update {field, value, by}</code> for each write. The registry is a fold of the stream.</dd>
+          <dt>Test</dt><dd>Rebuild the registry from the stream. Each entry is equal.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-6</b> <code>enabled</code> repeats the phase</summary>
+        <dl class="fd">
+          <dt>Where</dt><dd>Writes: <code>FileStore.cs:73-74</code>, <code>backend.ts:93-99</code>. Reads: <code>FileStore.cs:65, 68</code>, <code>StateReader.cs:68</code>, <code>Supervisor.Lifecycle.cs:271</code>, <code>lease.ts:339</code> (3 s poll)</dd>
+          <dt>Problem</dt><dd>The marker repeats <code>lifecycle.phase</code>. The plugin polls it to see an archive.</dd>
+          <dt>Fix</dt><dd>Enabled is a projection: a <code>brief</code> or <code>session.start</code>, and no <code>session.archive</code>. The plugin sees the archive on its <code>orch watch</code> push.</dd>
+          <dt>Test</dt><dd>Archive a session. The plugin stops on the push, with no file.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-7</b> Side effects inside a request · <code>Tick()</code>, worktree remove</summary>
+        <dl class="fd">
+          <dt>Where</dt><dd><code>Board.cs:94-182</code> and <code>OrchestratorApi.cs:115-224</code> call <code>supervisor.Tick()</code>. <code>Lifecycle.cs:52-53</code> runs <code>git worktree remove</code>.</dd>
+          <dt>Problem</dt><dd>The request thread runs the reactor and its file writes. The post already wakes <code>TickService</code> through the push.</dd>
+          <dt>Fix</dt><dd>Delete the <code>Tick()</code> calls. A supervisor reactor removes the worktree after <code>session.archive</code> and posts the result.</dd>
+          <dt>Test</dt><dd>An action returns before a tick runs.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-8</b> <code>state.json</code> is the source of truth · also <code>state-check.json</code>, <code>forgotten.json</code></summary>
+        <dl class="fd">
+          <dt>Where</dt><dd><code>StateReader.cs:16-27, 97-98</code>; <code>Supervisor.Lifecycle.cs:36, 123, 138, 151-161, 173, 355, 364</code>; <code>OrchestratorApi.cs:74</code></dd>
+          <dt>Problem</dt><dd><code>Machine.Step</code> reads its input from <code>state.json</code>. The marks, <code>history</code> and <code>since</code> have no envelope. Nothing reads <code>state-check.json</code>. The forgotten episode is a file.</dd>
+          <dt>Fix</dt><dd>Post <code>session.state</code> for each mark change. A state projection folds it, and <code>state.json</code> becomes a cache. Add an <code>episode</code> field to <code>report-missing</code> and <code>child-forgotten</code>. Put the reason and the error in the inferred <code>session.state</code> body, and delete <code>state-check.json</code>.</dd>
+          <dt>Test</dt><dd>Delete <code>state.json</code>. The rebuild is equal, and each notice goes one time.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-9</b> Stack and runs only in files · <code>stack/</code>, <code>runs/</code></summary>
+        <dl class="fd">
+          <dt>Where</dt><dd><code>StackOps.cs:16-187</code>, <code>MergeGuard.cs:26, 68-69</code>, <code>FileStore.cs:192, 294-297</code>; <code>WorkflowRunner.cs:43, 48, 73, 129</code></dd>
+          <dt>Problem</dt><dd><code>branch.*</code> and <code>pr.*</code> envelopes exist, but the plan version and the merge state are only in <code>stack/</code>. A workflow run posts no envelope.</dd>
+          <dt>Fix</dt><dd>Each stack save posts the full version record, and a stack projection folds it. Workflows post <code>run.start</code>, <code>run.step</code> and <code>run.stop</code>, and the runs are a fold.</dd>
+          <dt>Test</dt><dd>Rebuild <code>stack/</code> and <code>runs/</code> from the stream. They are equal.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-10</b> Docs checks, mirror, last output · <code>docs-checks/</code>, <code>mirror/</code>, <code>last-output.json</code></summary>
+        <dl class="fd">
+          <dt>Where</dt><dd><code>Supervisor.cs:171, 190</code>; <code>backend.ts:105-107</code>, <code>register.ts:61-65</code>; <code>events.ts:282</code> → <code>Supervisor.cs:376</code></dd>
+          <dt>Problem</dt><dd>A negative docs check is lost on a rebuild. <code>mirror/</code> and <code>last-output.json</code> repeat <code>session.input</code> and <code>session.output</code>.</dd>
+          <dt>Fix</dt><dd>Post a <code>docs.check</code> trace, and fold the cache from it. Delete <code>mirror/</code>. Take the last <code>session.output</code> from <code>OfSession</code>, and delete <code>last-output.json</code>.</dd>
+          <dt>Test</dt><dd>Delete <code>docs-checks/</code>: no model call runs again. <code>refs.output</code> is correct with no file.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-11</b> Supervisor memory and app polls</summary>
+        <dl class="fd">
+          <dt>Where</dt><dd>Memory: <code>Supervisor.cs:29-31, 255, 413</code> (<code>failures</code>, <code>nudged</code>, <code>imports</code>), <code>Supervisor.Lifecycle.cs:18</code> (<code>fallbackAt</code>). Polls: <code>StateReader.cs:62</code> (<code>provider.Read</code> each tick), <code>Lifecycle.cs:166-187</code> (1 s)</dd>
+          <dt>Problem</dt><dd>A restart loses the failure count and the nudge state. The app facts are polled, not posted.</dd>
+          <dt>Fix</dt><dd>Fold the failure count from <code>turn.fail</code> and <code>turn.end</code>. A sweep posts <code>app.state</code> when the app facts change (R8), and the snapshot reads that projection.</dd>
+          <dt>Test</dt><dd>Restart the supervisor. The failure count is the same.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-12</b> Three folds of session state · Board, API, CLI</summary>
+        <dl class="fd">
+          <dt>Where</dt><dd><code>Board.cs:31-35, 61-72</code> (<code>SessionNode</code>, from <code>status.json</code>); <code>OrchestratorApi.cs:70-104</code> (<code>SessionView</code>, from <code>state.json</code>); <code>DecisionCommands.cs:13</code>; <code>SessionCommands.cs:58-125</code></dd>
+          <dt>Problem</dt><dd>The UI, the API and the CLI can show different states for one session.</dd>
+          <dt>Fix</dt><dd>One session projection in <code>Orchestrator.Store</code>, from W1 to W6. Board, API, CLI and tray use it.</dd>
+          <dt>Test</dt><dd>The API, the Board and <code>orch status</code> give the same state for one fixture.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-13</b> Poll timers and reloads · 10 s, 5 s, 3 s, 2 s</summary>
+        <dl class="fd">
+          <dt>Where</dt><dd><code>LiveView.cs:9, 22, 54</code> (10 s, reload after an act); <code>TickService.cs:11, 25</code> (5 s); <code>deliver.ts:99-103</code>, <code>register.ts:110-111</code> (3 s); <code>HttpRepositories.cs:78, 225-247</code> (2 s); <code>StreamWatcher.cs:20</code> watches only <code>events/</code> and <code>nudges/</code></dd>
+          <dt>Problem</dt><dd>Side files make no push, so each reader polls. The tray gets no update when a status or a lease changes.</dd>
+          <dt>Fix</dt><dd>After W1 to W6, delete the LiveView timer and the reload after an act. The 5 s timer drives only time rules (R8). The plugin tick only restarts the watch. HTTP mode uses <code>GET /api/stream/live</code>.</dd>
+          <dt>Test</dt><dd>With a fake clock and no envelope, no view loads.</dd>
+        </dl>
+      </details>
+
+      <details><summary><b>W-14</b> Dead code and fallbacks</summary>
+        <dl class="fd">
+          <dt>Where</dt><dd><code>Board.cs:41-53</code> (<code>DefaultsToReview</code>, no caller, reads <code>stack/</code>); <code>FileStore.cs:94-100</code> (<code>Cwd</code> from <code>lease.reason.start.cwd</code>); <code>FileStore.cs:263</code> (a read moves the delivery cursor)</dd>
+          <dt>Problem</dt><dd>Reads of side files with no need. A read with a write.</dd>
+          <dt>Fix</dt><dd>Delete <code>DefaultsToReview</code>. Take <code>Cwd</code> only from the registry fold. Move the cursor only in the delivery step.</dd>
+          <dt>Test</dt><dd>The existing tests pass.</dd>
+        </dl>
+      </details>
+    </div>
+  </section>
+
+  <!-- FIX PLAN -->
+  <section role="tabpanel" id="fixes" aria-labelledby="t-fixes" hidden>
+    <div class="block">
+      <h2>Facts first, views last</h2>
+      <p>Each task keeps the app working. A task first posts the fact and keeps the file as a cache. A later task moves the readers to the projection and deletes the file.</p>
+      <pre class="mermaid">
+flowchart LR
+  W1[W1 turn facts] --> W6[W6 state projection]
+  W2[W2 lease facts] --> W6
+  W3[W3 liveness] --> W6
+  W4[W4 registry fold] --> W6
+  W4 --> W5[W5 no request side effects]
+  W6 --> W10[W10 one session projection]
+  W7[W7 stack and runs] --> W10
+  W10 --> W11[W11 push only views]
+  W8[W8 docs, mirror, output] --> W12[W12 clean up]
+  W9[W9 memory and app facts] --> W11
+  W11 --> W12
+      </pre>
+    </div>
+
+    <div class="block">
+      <h3>Fix tasks</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Task</th><th>Items</th><th>Content</th><th>After</th></tr></thead>
+        <tbody>
+          <tr><td>W1</td><td>W-1</td><td>Plugin posts <code>turn.start</code>, <code>turn.end</code>; turn projection</td><td>None</td></tr>
+          <tr><td>W2</td><td>W-2</td><td>Post <code>lease.take</code>, <code>lease.release</code>; lease projection</td><td>None</td></tr>
+          <tr><td>W3</td><td>W-3</td><td>Sweep posts <code>session.stale</code>, <code>session.fresh</code></td><td>Decision Q7</td></tr>
+          <tr><td>W4</td><td>W-4, W-5, W-6</td><td>Actions post only; registry reactor; <code>session.update</code></td><td>None</td></tr>
+          <tr><td>W5</td><td>W-7</td><td>Delete <code>Tick()</code> calls; worktree reactor</td><td>W4</td></tr>
+          <tr><td>W6</td><td>W-8</td><td>State projection; marks as envelopes; delete <code>state-check.json</code></td><td>W1 to W4</td></tr>
+          <tr><td>W7</td><td>W-9</td><td>Stack and run envelopes; projections</td><td>None</td></tr>
+          <tr><td>W8</td><td>W-10</td><td><code>docs.check</code> trace; delete mirror and last output</td><td>None</td></tr>
+          <tr><td>W9</td><td>W-11</td><td>Fold failures; <code>app.state</code> sweep</td><td>W1</td></tr>
+          <tr><td>W10</td><td>W-12</td><td>One session projection for Board, API, CLI, tray</td><td>W6, W7</td></tr>
+          <tr><td>W11</td><td>W-13</td><td>Delete poll timers; SSE in HTTP mode</td><td>W10, W9</td></tr>
+          <tr><td>W12</td><td>W-14</td><td>Delete unused side files; <code>docs/store.md</code>; dead code</td><td>W11, W8</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="block">
+      <h3>Guard tests</h3>
+      <ul>
+        <li><b>Action test:</b> each action changes no file outside <code>events/</code> and <code>bodies/</code>. Extend <code>ArchitectureTests</code>.</li>
+        <li><b>Replay test:</b> replay the stream into an empty store. Each projection is equal to the live one.</li>
+        <li><b>Push test:</b> with a fake clock and no envelope, no view loads.</li>
+      </ul>
+    </div>
+
+    <div class="panel q">
+      <h3>Q7. How does the stream show liveness? <span class="pill warn">Open</span></h3>
+      <dl>
+        <dt>Context</dt><dd>The plugin writes <code>heartbeat.txt</code> each 3 s. As envelopes, that is about 28,800 for each session each day.</dd>
+        <dt>Options</dt><dd>(a) A beat envelope at a coarse rate, about staleSeconds / 3. (b) The file stays as plumbing; only the sweep reads it and posts <code>session.stale</code> or <code>session.fresh</code> on a change.</dd>
+        <dt>Recommend</dt><dd>(b). The stream gets only the changes, and it follows R8.</dd>
+      </dl>
+    </div>
+
+    <div class="block">
+      <h3>Notes for other sessions</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Session</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>K (architecture)</td><td>Projections need one home and one owner (R7). Config stays outside the stream (Q6).</td></tr>
+          <tr><td>N (event store)</td><td>W1 to W9 add lifecycle envelopes. The store needs fast folds by session and a push for each append.</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </section>
+
   <!-- ACTION PLAN -->
   <section role="tabpanel" id="plan" aria-labelledby="t-plan" hidden>
     <div class="block">
@@ -390,12 +659,12 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
         <thead><tr><th>#</th><th>Step</th><th>Output</th><th>State</th></tr></thead>
         <tbody>
           <tr><td>1</td><td>Agree the rules and the open questions</td><td>Guidelines tab, final</td><td><span class="pill ok">Defaults</span></td></tr>
-          <tr><td>2</td><td>Make the feature inventory</td><td>Web, Store, Supervisor, hooks, CLI, tray, providers</td><td><span class="pill warn">Now</span></td></tr>
-          <tr><td>3</td><td>Trace each feature</td><td>Read source, write target, trigger</td><td><span class="pill info">Next</span></td></tr>
-          <tr><td>4</td><td>Give each feature a verdict</td><td>Through the stream, bypass, allowed</td><td><span class="pill info">Next</span></td></tr>
-          <tr><td>5</td><td>Write a fix for each bypass</td><td>Event kind, projection, test</td><td><span class="pill info">Next</span></td></tr>
-          <tr><td>6</td><td>Review with the user</td><td>Approved audit and fix plan</td><td><span class="pill info">Next</span></td></tr>
-          <tr><td>7</td><td>Record and publish</td><td>Audit tab, <code>docs/plan.md</code> tasks</td><td><span class="pill info">Next</span></td></tr>
+          <tr><td>2</td><td>Make the feature inventory</td><td>Web, Store, Supervisor, hooks, CLI, tray, providers</td><td><span class="pill ok">Done</span></td></tr>
+          <tr><td>3</td><td>Trace each feature</td><td>Read source, write target, trigger</td><td><span class="pill ok">Done</span></td></tr>
+          <tr><td>4</td><td>Give each feature a verdict</td><td>Audit tab</td><td><span class="pill ok">Done</span></td></tr>
+          <tr><td>5</td><td>Write a fix for each bypass</td><td>Fix plan tab</td><td><span class="pill ok">Done</span></td></tr>
+          <tr><td>6</td><td>Review with the user</td><td>Approved audit and fix plan</td><td><span class="pill warn">Now</span></td></tr>
+          <tr><td>7</td><td>Record and publish</td><td>This page, <code>docs/plan.md</code> tasks</td><td><span class="pill ok">Done</span></td></tr>
         </tbody>
       </table></div>
     </div>
@@ -447,5 +716,8 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
   tabs.forEach(t => t.addEventListener('click', () => { location.hash = t.dataset.tab; show(t.dataset.tab); }));
   window.addEventListener('hashchange', () => show(location.hash.slice(1)));
   show(location.hash.slice(1));
+  const folds = () => document.querySelectorAll('#audit details');
+  document.getElementById('open-all').addEventListener('click', () => folds().forEach(d => { d.open = true; }));
+  document.getElementById('close-all').addEventListener('click', () => folds().forEach(d => { d.open = false; }));
 })();
 </script>
