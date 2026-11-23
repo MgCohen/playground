@@ -202,6 +202,7 @@ flowchart TB
   Hosts -. composes .-> Prov
   </pre></div>
   <p>Only the hosts reference <code>Store</code> and <code>Providers</code>. A slice cannot see an implementation, so it cannot make its own adapter.</p>
+  <p>All slices are in one project, <code>Orchestrator.Features</code>, with one folder and one namespace for each slice <span class="pill draft">default K-Q2</span>. The compiler does not separate the slices; the ArchUnitNET slice rule does.</p>
 </section>
 
 <section>
@@ -376,10 +377,6 @@ public interface IStateChecker { ... }</pre>
 <section>
   <h2>Open questions</h2>
   <p>Answer in free text. Each answer goes into the Topology tab, and its question leaves this tab.</p>
-
-  <div class="q"><h3>Q2 · How are the slices packaged? <span class="pill open">open</span></h3>
-    <p><span class="lbl">Options</span>(a) One <code>Orchestrator.Features</code> project, one folder for each slice. (b) One project for each slice. (c) Keep the projects, add slice folders in them.</p>
-    <div class="rec">Recommendation: (a). One project is simple to build. A test makes the folder limits strict.</div></div>
 
   <div class="q"><h3>Q3 · Where is the IProvider port? <span class="pill open">open</span></h3>
     <p><span class="lbl">Context</span>It is in <code>Orchestrator.Providers</code>, with the implementations.</p>
