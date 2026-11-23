@@ -45,10 +45,10 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
         if (request.RemoteControl) return await ConsoleTurn(request, cancel);
         var watch = Stopwatch.StartNew();
         var session = request.IsNew ? "--session-id" : "--resume";
-        List<string> arguments = [.. SettingArguments(options.PluginDir), session, request.Id];
+        List<string> arguments = [.. SettingArguments(options.PluginDir), session, request.IsNew ? request.Id : request.ResumeId];
         if (request.IsNew && request.Title is { Length: > 0 } title) arguments.AddRange(["-n", title]);
         if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", Agent(agent)]);
-        var call = new ClaudeCall(request.Cwd, request.Prompt, arguments, TurnEnvironment(options));
+        var call = new ClaudeCall(request.Cwd, request.Prompt, arguments, TurnEnvironment(options, sessionId: request.Id));
         var output = await Claude.Run(call, null, cancel);
         return new TurnResult(output.Ok, output.Result, output.Error, Math.Round(watch.Elapsed.TotalSeconds));
     }
@@ -57,10 +57,12 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     /// The environment of a local turn: the holder, the store and the home. With <see cref="ProviderOptions.OrchDir"/>,
     /// that folder comes first on <c>PATH</c>, so that the session and the plugin call the <c>orch</c> of the supervisor (C3-F5).
     /// </summary>
-    public static Dictionary<string, string> TurnEnvironment(ProviderOptions options, string? path = null)
+    public static Dictionary<string, string> TurnEnvironment(ProviderOptions options, string? path = null, string? sessionId = null)
     {
         var environment = new Dictionary<string, string>
         {
+            // The store id of the session: the plugin finds its folder by it, also when the engine session id differs (P1-F11).
+            ["ORCH_SESSION_ID"] = sessionId ?? "",
             ["ORCH_HOLDER"] = Holders.Supervisor,
             ["ORCH_STORE"] = (options.StoreRoot ?? "").Replace('\\', '/'),
             ["ORCH_HOME"] = (options.HomeRoot ?? "").Replace('\\', '/'),
@@ -80,7 +82,7 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     public static IReadOnlyList<string> ConsoleArguments(TurnRequest request, string? pluginDir)
     {
         var name = request.Title is { Length: > 0 } title ? title : request.Id;
-        List<string> arguments = [.. SettingArguments(pluginDir), "--remote-control", name, request.IsNew ? "--session-id" : "--resume", request.Id];
+        List<string> arguments = [.. SettingArguments(pluginDir), "--remote-control", name, request.IsNew ? "--session-id" : "--resume", request.IsNew ? request.Id : request.ResumeId];
         if (request.IsNew) arguments.AddRange(["-n", name]);
         if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", Agent(agent)]);
         arguments.Add(request.Prompt);

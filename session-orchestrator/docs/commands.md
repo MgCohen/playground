@@ -32,7 +32,7 @@ All session types get the CLI, if the session has a shell and `orch` is on the P
 
 | Group | Commands | Reference |
 |---|---|---|
-| Sessions | `new`, `enable`, `join`, `send`, `tree`, `status`, `stop`, `resume`, `archive`, `open` | `store.md`, "Session lifecycle" in `know-how.md` |
+| Sessions | `new`, `enable`, `join`, `whoami`, `send`, `tree`, `status`, `stop`, `resume`, `archive`, `open` | `store.md`, "Session lifecycle" in `know-how.md` |
 | Workflow runs | `run start`, `run show`, `run list`, `run step`, `run stop` | `store.md` "Workflow runs" |
 | Questions | `questions` (`decisions`), `answer`, `chat-answer`, `inbox`, `review` | `store.md` "Question, answer and review" |
 | Stack | `decision start/pr/ready`, `stack rebase/close`, `merge` | `store.md` "Stack", skill `orch-stack` |
@@ -100,6 +100,26 @@ Each child session in the app goes into the sidebar group `Workers`. The root an
 | The app starts the child (`start_session`) | The child, after `orch join` | The output of `orch join` |
 
 The child calls `move_sessions` with its full `local_<uuid>` id and the group `Workers`. If the group does not exist, it calls `create_group` first. If the tools are missing or refuse, the child continues: the user can drag the session.
+
+### The recurring check of a root
+
+Each live root orchestrator session gets a check about every 5 minutes (`plugin/hooks/check.ts`). The user does not ask for it, and no `CronCreate` is necessary.
+
+1. The check runs only when the root is idle.
+2. If envelopes with no ack wait (for example a child report), the deliverer delivers them.
+3. Else the check reads `orch decisions`. Each open question that the root did not show yet becomes one turn: "Show each one to the user".
+4. A question that reached the root as an envelope counts as shown.
+
+### A new engine session
+
+The app can give a session a new engine session id. The app id stays the same. The plugin then finds no folder under the new id.
+
+| Where | How the plugin finds its store id |
+|---|---|
+| Supervisor turn | `ORCH_SESSION_ID`, which the supervisor sets |
+| App process | `orch whoami`: the entry with the same app id |
+
+`orch whoami` records the new id in `engine.sessionId`. A supervisor turn and `orch open` resume that id. A supervisor turn never posts an app id: it inherits the host id of the process that started the supervisor.
 
 ### Retry rules
 

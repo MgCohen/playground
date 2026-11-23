@@ -4,6 +4,10 @@ export const ROW_CHARS = 4000
 
 export const S: {
   id?: string
+  alias?: string
+  aliasTried?: boolean
+  root?: boolean
+  shown: Set<string>
   dir?: string
   store?: string
   home: string
@@ -29,6 +33,7 @@ export const S: {
   watching: false,
   wanted: false,
   handled: new Set<string>(),
+  shown: new Set<string>(),
   inputFrom: '',
   lastMs: 0,
 }

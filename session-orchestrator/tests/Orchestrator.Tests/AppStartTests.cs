@@ -186,4 +186,34 @@ public sealed class AppStartTests
         Assert.That(ClaudeCodeProvider.PluginCheck("  ❯ core@synced\n").Ok, Is.False);
         Assert.That(ClaudeCodeProvider.PluginCheck(null).Ok, Is.False);
     }
+
+    [Test]
+    public void Whoami_in_the_app_finds_the_entry_by_the_app_id_and_records_the_new_engine_session()
+    {
+        using var rig = new Rig();
+        var root = Parent(rig);
+        rig.Store.Registry.Update(root, e => e with { Engine = e.Engine with { AppId = $"local_{root}" } }, "test");
+        const string engine = "eeee5555-0000-0000-0000-000000000000";
+        Environment.SetEnvironmentVariable("CLAUDE_CODE_SESSION_ID", engine);
+        Environment.SetEnvironmentVariable(ClaudeCodeProvider.HostSessionVariable, $"local_{root}");
+        try
+        {
+            var (exit, output) = Run(rig, true, "whoami");
+            Assert.That(exit, Is.EqualTo(0), output);
+            Assert.That(output.Trim(), Is.EqualTo(root), "P1-F11: the app gave the root a new engine session");
+            Assert.That(rig.Store.Session(root).Engine.SessionId, Is.EqualTo(engine), "a resume must name the new engine session");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CLAUDE_CODE_SESSION_ID", null);
+            Environment.SetEnvironmentVariable(ClaudeCodeProvider.HostSessionVariable, null);
+        }
+    }
+
+    [Test]
+    public void A_resume_names_the_engine_session_when_it_differs()
+    {
+        Assert.That(new TurnRequest("store-id", "C:/w", "p", false) { EngineId = "engine-id" }.ResumeId, Is.EqualTo("engine-id"));
+        Assert.That(new TurnRequest("store-id", "C:/w", "p", false).ResumeId, Is.EqualTo("store-id"));
+    }
 }

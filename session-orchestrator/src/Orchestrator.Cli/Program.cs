@@ -16,6 +16,7 @@ namespace Orchestrator.Cli
               orch new --title T --goal G [--cwd DIR] [--scope S] [--done-when D] [--skills a,b] [--type A] [--stream S] [--workflow W] [--worktree] [--allow-defaults] [--background] [--where local|cloud] [--parent ID] [--app-start]
                                                         --app-start: a caller in the desktop app gets a start file and the app call that starts the child there
               orch enable [--title T] [--parent ID] [--id ID]
+              orch whoami                                  the store id of this session; records a new engine session of the app
               orch join <start file> [--id ID] [--app-id A]       the first command of a child that the app started: the store entry, the brief, the parent link
               orch send <session> <text> [--from P]
               orch tree [--stream S]
@@ -93,6 +94,7 @@ namespace Orchestrator.Cli
                 {
                     "new" => SessionCommands.New(command),
                     "enable" => SessionCommands.Enable(command),
+                    "whoami" => SessionCommands.WhoAmI(command),
                     "join" => SessionCommands.Join(command),
                     "send" => SessionCommands.Send(command),
                     "tree" => SessionCommands.Tree(command),

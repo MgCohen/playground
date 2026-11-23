@@ -293,6 +293,7 @@ public sealed partial class Supervisor
         {
             Agent = Roles.AgentOf(meta), Title = meta.Title, Where = cloud ? Places.Cloud : null, AppId = cloud ? meta.Engine.AppId : null,
             RemoteControl = console,
+            EngineId = meta.Engine.SessionId is { } engine && engine != id ? engine : null,
         };
         var stop = new CancellationTokenSource();
         stops[id] = stop;

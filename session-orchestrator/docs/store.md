@@ -449,7 +449,7 @@ Store version 3 keeps the data of each session in one registry entry, `sessions/
 |---|---|---|
 | `id` | The registry id. Today it is the engine session id | Create |
 | `code` | The own code, unique among the siblings. The registry gives `O<n>` to a root and `C<n>` to a child when the creator gives none | Create; the supervisor tick for an entry of `/orch-enable` |
-| `engine` | References to the engine only: `kind` (`IProvider.Name`), `sessionId`, `appId`. Records of our own actions: `imported` (the import is confirmed), `remoteControl` (a session reported a change, or the supervisor started it with Remote Control) and `console` (the supervisor started the session as a console process; the archive stops that process) | Create, the import, `meta.update` |
+| `engine` | References to the engine only: `kind` (`IProvider.Name`), `sessionId` (`orch whoami` writes a new engine session id that the app gave the session), `appId`. Records of our own actions: `imported` (the import is confirmed), `remoteControl` (a session reported a change, or the supervisor started it with Remote Control) and `console` (the supervisor started the session as a console process; the archive stops that process) | Create, the import, `meta.update` |
 | `parent` | The parent id. Null for a root. The children are a query (`SessionRegistry.Children`), not a field | Create |
 | `title`, `owner`, `tags`, `stream` | Labels. `owner` and `stream` are copies of the parent when the creator gives none | Create, `orch enable` |
 | `role` | `orchestrator`, `worker` or `free` (C1). At create: `orchestrator` for the orchestrator agent, `worker` for a child, else `free`. The workflow runner (C2) changes it | Create |
