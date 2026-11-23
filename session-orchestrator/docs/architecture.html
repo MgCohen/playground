@@ -326,6 +326,28 @@ flowchart LR
 <pre class="stack"><span class="c">// A5 in ArchUnitNET: no slice depends on another slice</span>
 Slices().Matching("Orchestrator.Features.(*)").Should().NotDependOnEachOther().Check(Architecture);</pre>
 </section>
+
+<section>
+  <h2>Move plan: slice by slice, the allow list gets shorter <span class="pill draft">default K-Q8</span></h2>
+  <div class="box"><pre class="mermaid">
+flowchart LR
+  K1["K1 tests, allow list"] --> K2["K2 kernel, ports"]
+  K2 --> K3["K3 first slice"]
+  K3 --> K4["K4 dispatcher"]
+  K4 --> K5["K5 other slices"]
+  K5 --> K6["K6 stream as truth"]
+  </pre></div>
+  <div class="scroll"><table>
+    <tr><th>Task</th><th>Content</th><th>Closes</th></tr>
+    <tr><td>K1</td><td>ArchUnitNET rules A3–A7 with an allow list of the known breaks</td><td>C7, C8</td></tr>
+    <tr><td>K2</td><td><code>Orchestrator.Kernel</code>: events, storage ports, <code>IProvider</code>. Delete <code>Runners.cs</code> wrappers</td><td>C1, C3</td></tr>
+    <tr><td>K3</td><td><code>Orchestrator.Features</code> with the first slice, Decisions</td><td>Part of C2, C4</td></tr>
+    <tr><td>K4</td><td>Supervisor dispatcher, <code>Tick</code> event, slice registration</td><td>C4</td></tr>
+    <tr><td>K5</td><td>One task for each other slice; Store keeps only Local and Remote</td><td>C2, C5</td></tr>
+    <tr><td>K6</td><td>Registry and claims as projections (after tasks W and N)</td><td>C6</td></tr>
+  </table></div>
+  <p>Each task removes its items from the allow list. A task may not add an item. The move is complete when the allow list is empty.</p>
+</section>
 </div>
 
 <!-- ============ CURRENT ============ -->
@@ -399,10 +421,6 @@ public interface IStateChecker { ... }</pre>
 <section>
   <h2>Open questions</h2>
   <p>Answer in free text. Each answer goes into the Topology tab, and its question leaves this tab.</p>
-
-  <div class="q"><h3>Q8 · How do we move the code? <span class="pill open">open</span></h3>
-    <p><span class="lbl">Options</span>(a) One large move. (b) Slice by slice. The tests start with an allow list of known breaks, and each move removes items from it.</p>
-    <div class="rec">Recommendation: (b). Each step is small, and the allow list shows the progress.</div></div>
 
   <div class="q"><h3>Q9 · Where is the plugin in the topology? <span class="pill open">open</span></h3>
     <p><span class="lbl">Context</span>The plugin hooks (TypeScript) write store files from inside Claude Code.</p>
