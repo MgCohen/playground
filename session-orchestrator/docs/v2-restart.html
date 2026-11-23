@@ -1,0 +1,599 @@
+<title>V2 Visual Restart</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar with 3 tabs, one panel for each tab. Same tokens as the view architecture page and the issue tracker. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --warn: #9a6200; --code-bg: #eef1f3;
+  --bad: #b3402f; --bad-soft: #f7e6e2; --ok: #2e7d32; --ok-soft: #e3f1e4;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f;
+    --bad: #ef8a78; --bad-soft: #3a2220; --ok: #7fd08a; --ok-soft: #1c3222; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f;
+  --bad: #ef8a78; --bad-soft: #3a2220; --ok: #7fd08a; --ok-soft: #1c3222; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 70ch; }
+
+/* Tab bar: native scroll only. No drag-to-scroll script, so no click is ever lost. */
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line);
+  display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+nav button { flex: none; white-space: nowrap; font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 8px 14px; cursor: pointer; touch-action: manipulation; }
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button .n { font-family: var(--font-mono); font-size: 12px; opacity: .7; margin-right: 6px; }
+button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.panel { display: flex; flex-direction: column; gap: 24px; }
+section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 70ch; }
+
+/* Field list: label and value, stacked on a phone. */
+.field { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; padding-block: 10px; border-bottom: 1px solid var(--line); }
+.field > .k { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+.field > .v { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+@media (max-width: 600px) { .field { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+
+/* Number tiles: the size of the problem. */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.tile b { font-family: var(--font-display); font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile span { font-size: 13px; color: var(--muted); }
+
+.q { font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; border: 1px solid currentColor; white-space: nowrap; }
+.q.good { color: var(--ok); } .q.mixed { color: var(--warn); } .q.weak { color: var(--bad); }
+
+/* Pain list: one row for each pain, made for a phone. */
+.plist { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.prow { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--line); color: var(--fg); text-decoration: none; }
+.prow:first-child { border-top: none; }
+.prow:hover { background: var(--code-bg); }
+.prow .id { font-family: var(--font-mono); font-size: 13px; color: var(--accent); }
+.prow .t { font-weight: 500; }
+.prow .s { display: block; font-size: 13px; color: var(--muted); }
+.prow .c { font-family: var(--font-display); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bar { height: 6px; border-radius: 3px; background: var(--code-bg); margin-top: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+
+/* Foldable pain: title line, key fact line, then the context and the two snippets. */
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.tools button { font: 500 13px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+details.pain { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; scroll-margin-top: 64px; }
+details.pain > summary { cursor: pointer; list-style: none; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+details.pain > summary::-webkit-details-marker { display: none; }
+details.pain > summary .l1 { display: flex; gap: 10px; align-items: baseline; min-width: 0; }
+details.pain > summary .l1::before { content: "▸"; color: var(--muted); flex: none; }
+details.pain[open] > summary .l1::before { content: "▾"; }
+details.pain > summary .id { font-family: var(--font-mono); font-size: 13px; color: var(--accent); flex: none; }
+details.pain > summary .t { font-family: var(--font-display); font-weight: 500; font-size: 16px; flex: 1 1 auto; min-width: 0; }
+details.pain > summary .c { font-family: var(--font-mono); font-size: 12px; color: var(--muted); flex: none; }
+details.pain > summary .l2 { color: var(--muted); font-size: 13px; padding-left: 20px; }
+details.pain > .body { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+.snip { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.snip .lab { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 500; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.snip.bad .lab { color: var(--bad); } .snip.good .lab { color: var(--ok); }
+.snip .file { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 400; overflow-wrap: anywhere; }
+.snip pre { margin: 0; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55; border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; color: var(--fg); }
+.snip.bad pre { background: var(--bad-soft); border-left: 3px solid var(--bad); }
+.snip.good pre { background: var(--ok-soft); border-left: 3px solid var(--ok); }
+.snip pre .cm { color: var(--muted); }
+.must { border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; padding: 8px 12px; }
+.must b { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); display: block; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { font-family: var(--font-mono); font-size: 11.5px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · V2 · restart plan · step 1 of 3</div>
+  <h1>V2 Visual Restart</h1>
+  <p class="summary">The app looks correct, but each visual fix costs too much. This page states the goal of the restart, what we know today, and the eight root causes of the pains. The target design and the rebuild plan come after you approve this page.</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" id="t-purpose" data-tab="purpose" aria-controls="purpose" aria-selected="true"><span class="n">1</span>Purpose</button>
+  <button role="tab" id="t-state" data-tab="state" aria-controls="state" aria-selected="false"><span class="n">2</span>Current state</button>
+  <button role="tab" id="t-pains" data-tab="pains" aria-controls="pains" aria-selected="false"><span class="n">3</span>Pains</button>
+</nav>
+
+<!-- 1 PURPOSE -->
+<div class="panel" id="purpose" role="tabpanel" aria-labelledby="t-purpose">
+  <section>
+    <h2>Purpose</h2>
+    <div>
+      <div class="field"><span class="k">Goal</span><div class="v"><p>Rebuild the view of the app (web UI and tray) from scratch. Use one data flow and one design system, so that a visual change is a small, local change.</p></div></div>
+      <div class="field"><span class="k">Why now</span><div class="v"><p>The visuals work, but 28 tracker issues and 88 architecture gaps came from the same few causes. Each fix found the next defect. The R1 and R2 refactors came only after many single fixes.</p></div></div>
+      <div class="field"><span class="k">I look for</span><div class="v"><ul>
+        <li>The root causes of the pains, not the list of defects.</li>
+        <li>The parts that cause the most work for each visual change.</li>
+        <li>What to keep: the look, the motion spec, the R1 and R2 lessons.</li>
+        <li>What to take from a library or a design system, and what to write.</li>
+      </ul></div></div>
+      <div class="field"><span class="k">I know</span><div class="v"><ul>
+        <li>The look and the motion are approved (I6, V7, E2). They are the reference, not the problem.</li>
+        <li>The data model is ready: <code>view.json</code> gives the document and the preview of each kind.</li>
+        <li>The tray has two windows (spike S7). Their faults come from the native host, not from the split.</li>
+        <li>Details: tab <a href="#state" data-go="state">2 · Current state</a>.</li>
+      </ul></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Steps and outputs</h2>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  A["1 · Diagnosis<br/>this page"] -->|you approve| B["2 · Target design<br/>data flow, design system"]
+  B -->|you approve| C["3 · Rebuild plan<br/>slices, parity checks"]
+  C -->|you approve| D["4 · Build<br/>new project"]
+</pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Step</th><th>Output</th><th>Code</th></tr></thead>
+      <tbody>
+        <tr><td>1 · Diagnosis</td><td>The root causes, with proof (this page)</td><td>None</td></tr>
+        <tr><td>2 · Target design</td><td>Data flow, state model, design system</td><td>None</td></tr>
+        <tr><td>3 · Rebuild plan</td><td>Slices, order, a parity check each</td><td>None</td></tr>
+        <tr><td>4 · Build</td><td>A new view project next to the old one</td><td>After approval</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Requirements</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Requirement</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>No app code before you approve the plan</td><td>Brief, rule 4</td></tr>
+        <tr><td>The plan is in <code>docs/plan.md</code> and in this artifact</td><td>Brief, done when</td></tr>
+        <tr><td>Never use the live store or port 7777</td><td>Brief, rule 5</td></tr>
+        <tr><td>C#, .NET 10, Blazor; JavaScript only in small UI parts</td><td><code>AGENTS.md</code>, Stack</td></tr>
+        <tr><td>No provider names outside <code>Providers/</code></td><td><code>AGENTS.md</code>, Provider boundary</td></tr>
+        <tr><td>Data-driven views: one store, one view model</td><td>You, this discussion</td></tr>
+        <tr><td>Keep the approved look and motion spec</td><td>I6, V7, E2</td></tr>
+        <tr><td>Keyboard input works in the tray</td><td>I5 answer</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Expected outcome</h2>
+    <ul>
+      <li>A new view project that renders all 7 pages and the tray from one view model.</li>
+      <li>Each fact has one owner: a token, a record or a state. Copies are not possible.</li>
+      <li>Each state change is an event, so the trace and the tests read events, not pixels and timers.</li>
+      <li>The old app stays until the new app passes the parity check of each slice.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Open questions</h2>
+    <div class="field"><span class="k">Q4 · Complete?</span><div class="v"><p>Is the pain list on tab 3 complete? It comes from the artifacts and <code>plan.md</code> only. Add the pains that you know from use, for example the speed of the work, agent mistakes or reviews.</p></div></div>
+    <div class="field"><span class="k">Q5 · Start</span><div class="v"><p>Does the target design start from the data (state model and view model), or from the design system (tokens and components)? Recommendation: from the data. Five of the eight causes are data and lifecycle causes.</p></div></div>
+    <div class="field"><span class="k">Q6 · Tray host</span><div class="v"><p>Do we keep WinForms with WebView2 composition for the tray? Step 2 compares the options. P8 on tab 3 shows the cost of this host.</p></div></div>
+  </section>
+</div>
+
+<!-- 2 CURRENT STATE -->
+<div class="panel" id="state" role="tabpanel" aria-labelledby="t-state" hidden>
+  <section>
+    <h2>Size of the problem</h2>
+    <div class="tiles">
+      <div class="tile"><b>88</b><span>architecture gaps in 10 parts</span></div>
+      <div class="tile"><b>28</b><span>tracker issues (I1–I22, F1–F6)</span></div>
+      <div class="tile"><b>8</b><span>root causes (tab 3)</span></div>
+      <div class="tile"><b>147</b><span><code>Task.Delay</code> calls in the self-test</span></div>
+      <div class="tile"><b>6</b><span>trace files, 5 writers, free text</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How data reaches the screen</h2>
+    <p class="summary">Each component pulls from <code>Board</code> on its own. C#, CSS and JS share facts only by name.</p>
+    <div class="box"><pre class="mermaid">
+flowchart TB
+  ST[("Store")] --> BD["Board<br/>static Ui facts"]
+  BD -->|each reads| PG["Pages"]
+  BD -->|each reads| AB["AppBar"]
+  BD -->|each reads| BR["BadgeRoot"]
+  BD -->|each row reads| ER["EventRow"]
+  PG -->|class names| CSS["app.css, tray.css<br/>motion.css"]
+  PG -->|JS commands| JS["motion.js, swipe.js<br/>tray.js"]
+  JS -->|size report| WIN["TrayWindow<br/>BadgeWindow"]
+</pre></div>
+  </section>
+
+  <section>
+    <h2>Quality of each part</h2>
+    <p class="summary">From the view architecture page. Good: one way, tested. Mixed: works, with gaps. Weak: known faults.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Rating</th><th class="num">Gaps</th><th>Main gap</th></tr></thead>
+      <tbody>
+        <tr><td>Data</td><td><span class="q mixed">Mixed</span></td><td class="num">8</td><td>Free strings, 3 count copies</td></tr>
+        <tr><td>Structure</td><td><span class="q mixed">Mixed</span></td><td class="num">9</td><td>Hidden views load; 2 hosts</td></tr>
+        <tr><td>Places</td><td><span class="q mixed">Mixed</span></td><td class="num">10</td><td>Report routed by its shape</td></tr>
+        <tr><td>Start and stop</td><td><span class="q mixed">Mixed</span></td><td class="num">8</td><td>Phase before the motion end</td></tr>
+        <tr><td>Page moves</td><td><span class="q good">Good</span></td><td class="num">6</td><td>Two units pick the move</td></tr>
+        <tr><td>Motion</td><td><span class="q good">Good</span></td><td class="num">9</td><td>Rules still in <code>app.css</code></td></tr>
+        <tr><td>Interactions</td><td><span class="q mixed">Mixed</span></td><td class="num">8</td><td>No click confirmation</td></tr>
+        <tr><td>Tracing</td><td><span class="q weak">Weak</span></td><td class="num">11</td><td>No format, no common id</td></tr>
+        <tr><td>Components</td><td><span class="q mixed">Mixed</span></td><td class="num">10</td><td>Components read data</td></tr>
+        <tr><td>Style</td><td><span class="q mixed">Mixed</span></td><td class="num">9</td><td>No layers, literals</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>What works and stays</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Why it stays</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>The look and the motion spec</td><td>Approved by you</td><td>I6, V7, E2</td></tr>
+        <tr><td><code>view.json</code> render model</td><td>Data-driven views of each kind</td><td><code>plan.md</code> R1, R2</td></tr>
+        <tr><td>Motion registry and one wait</td><td>One owner for times and waits</td><td>PR #58, #61</td></tr>
+        <tr><td>The page owns each size</td><td>One owner for sizes</td><td>PR #67</td></tr>
+        <tr><td>Two tray windows</td><td>One place, one input rule each</td><td>Spike S7</td></tr>
+        <tr><td>The issue record method</td><td>Proof before a fix</td><td>Issue tracker</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Sources</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Source</th><th>What I used</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">Orch View Architecture</a></td><td>The Review of each part tab</td></tr>
+        <tr><td><a href="https://claude.ai/artifact/KcP1KAskQiQqiWALAAF87s">Tray Issue Tracker</a></td><td>I1–I22, F1–F6, inventory</td></tr>
+        <tr><td>Branch <code>orch/visual-review</code></td><td>The code of each snippet</td></tr>
+        <tr><td><code>docs/plan.md</code></td><td>Sections V, E1, E2, R1, R2, Q</td></tr>
+        <tr><td>Issue #51, PR #50, #58, #59, #61, #67</td><td>Scope and results</td></tr>
+        <tr><td><code>docs/ui-drafts.html</code></td><td>Pages not built yet</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+
+<!-- 3 PAINS -->
+<div class="panel" id="pains" role="tabpanel" aria-labelledby="t-pains" hidden>
+  <section>
+    <h2>Eight root causes</h2>
+    <p class="summary">Each row is one root cause. The number is the count of gaps and issues that it explains. Select a row to open its detail.</p>
+    <div class="plist">
+      <a class="prow" href="#p1"><span class="id">P1</span><span><span class="t">No single source of truth</span><span class="s">One fact in many places</span><span class="bar"><i style="width:100%"></i></span></span><span class="c">20</span></a>
+      <a class="prow" href="#p2"><span class="id">P2</span><span><span class="t">Contracts are strings</span><span class="s">C#, CSS and JS share names only</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
+      <a class="prow" href="#p3"><span class="id">P3</span><span><span class="t">No lifecycle model</span><span class="s">State changes before the work ends</span><span class="bar"><i style="width:70%"></i></span></span><span class="c">14</span></a>
+      <a class="prow" href="#p4"><span class="id">P4</span><span><span class="t">Data flow is pull</span><span class="s">Each component reads the store</span><span class="bar"><i style="width:55%"></i></span></span><span class="c">11</span></a>
+      <a class="prow" href="#p5"><span class="id">P5</span><span><span class="t">Hand-made infrastructure</span><span class="s">The same job written two or three times</span><span class="bar"><i style="width:75%"></i></span></span><span class="c">15</span></a>
+      <a class="prow" href="#p6"><span class="id">P6</span><span><span class="t">Tracing added after</span><span class="s">Free text, no input, no id</span><span class="bar"><i style="width:55%"></i></span></span><span class="c">11</span></a>
+      <a class="prow" href="#p7"><span class="id">P7</span><span><span class="t">Tests read pixels and wait</span><span class="s">Timers and pictures, not events</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
+      <a class="prow" href="#p8"><span class="id">P8</span><span><span class="t">Native host cost</span><span class="s">WinForms, WebView2, GDI+</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
+    </div>
+    <p class="note">Process cause: we fixed one symptom at a time. One cause made many issues, and we saw it only when all records were side by side.</p>
+  </section>
+
+  <section>
+    <div class="tools"><button type="button" id="open-all">Open all</button><button type="button" id="close-all">Close all</button></div>
+
+    <details class="pain" id="p1">
+      <summary><span class="l1"><span class="id">P1</span><span class="t">No single source of truth</span><span class="c">20</span></span><span class="l2">The card group count is in 3 places, with 2 different rules</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> A fact that has many copies needs a change in each copy. The copies then drift apart. The "Reports" chip of Cards adds <code>Blocked</code>, and the home ring and the badge count it apart.</p>
+        <div class="chips"><span class="chip">Data G6</span><span class="chip">Data G5, G8</span><span class="chip">Start and stop: 4 phase copies</span><span class="chip">Style S-G4, S-G8</span><span class="chip">Structure G2</span><span class="chip">Places G9</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">HomePage.razor · Cards.razor · TrayCounts.cs</span></span>
+<pre><span class="cm">// HomePage.razor</span>
+("Reports", cards.Count(c =&gt; c.Group == CardGroup.Reports), ...),
+("Blocked", cards.Count(c =&gt; c.Group == CardGroup.Blocked), ...),
+<span class="cm">// Cards.razor: a different rule</span>
+["Reports"] = Label("Reports", cards.Count(c =&gt;
+    c.Group is CardGroup.Reports or CardGroup.Blocked)),
+<span class="cm">// TrayCounts.cs: a third copy</span>
+cards.Count(c =&gt; c.Group == CardGroup.Reports),
+cards.Count(c =&gt; c.Group == CardGroup.Blocked));</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">// The view model computes the counts one time.</span>
+record BoardView(
+    IReadOnlyList&lt;CardView&gt; Cards,
+    GroupCounts Counts);
+
+<span class="cm">// Each page and the badge get the counts.</span>
+&lt;HomeRing Counts="@View.Counts" /&gt;
+&lt;FilterChips Counts="@View.Counts" /&gt;
+&lt;Badge Counts="@View.Counts" /&gt;</pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Give each fact one owner, and pass it down. A copy is a build error or a test failure.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p2">
+      <summary><span class="l1"><span class="id">P2</span><span class="t">Contracts are strings</span><span class="c">12</span></span><span class="l2">The text of a plan card goes to Refuse, but its sheet says "Send change"</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> Card types, filter orders, phases and tone names are free strings. C#, CSS and JS repeat them. A wrong name gives a default or a missing class, not a build error. The tests check that a name exists, not the link.</p>
+        <div class="chips"><span class="chip">Data G3, G7</span><span class="chip">Motion G4, G7</span><span class="chip">Interactions G5</span><span class="chip">Style S-G7</span><span class="chip">Data G4</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">Board.cs:177-186</span></span>
+<pre>public void SendSheet(CardView card, string text)
+{
+    <span class="cm">// only "review": a "plan" card goes to Refuse</span>
+    if (card.Type == "review" &amp;&amp; card.Card.Envelope.Thread is { } thread)
+    {
+        supervisor.Review(card.Session, thread, Verdicts.Change, text);
+        supervisor.Tick();
+        return;
+    }
+    Refuse(card.Id, text);
+}</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre>enum CardType { YesNo, Default, Opinion, Question,
+                Plan, Review, Blocked, Report }
+
+<span class="cm">// The send path is data of the card type.</span>
+record CardView(CardType Type, SendPath Send, ...);
+
+<span class="cm">// CSS and JS names come from one generated file.</span>
+<span class="cm">// A test reads the CSS and fails on a missing rule.</span></pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Use types in C#, and generate the names that CSS and JS use. A test compares each link in both directions.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p3">
+      <summary><span class="l1"><span class="id">P3</span><span class="t">No lifecycle model</span><span class="c">14</span></span><span class="l2">The phase is "open" 555 ms before the grow ends, so the first presses miss (I19)</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> State changes when the code starts a step, not when the step ends. There is no "page ready" state. A request before the first render is lost. A late size report leaves a window hidden. A failed report is not tried again (I21).</p>
+        <div class="chips"><span class="chip">I19</span><span class="chip">I21</span><span class="chip">Start and stop G2–G7</span><span class="chip">Places G2, G6</span><span class="chip">Page moves G3</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">TrayFlow.cs:175-181</span></span>
+<pre>await Window(TrayPhase.Start);
+Phase = TrayPhase.Start;
+await Page(() =&gt; p.Prepare());
+await Window(TrayPhase.Open);
+Phase = TrayPhase.Open;      <span class="cm">// set here...</span>
+await Page(() =&gt; p.Grow());  <span class="cm">// ...the grow runs 555 ms more</span></pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">// One state machine. Each step has a start state</span>
+<span class="cm">// and an end state, and the end comes from an event.</span>
+Hidden  --open--&gt;   Opening
+Opening --grown--&gt;  Open        <span class="cm">// motion end event</span>
+Open    --dock--&gt;   Docking
+Docking --docked--&gt; Badge
+
+<span class="cm">// Input waits for a state, never for a time.</span></pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Have one explicit state machine for each window and page. A state ends only on an event.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p4">
+      <summary><span class="l1"><span class="id">P4</span><span class="t">Data flow is pull</span><span class="c">11</span></span><span class="l2">Each stream row makes 3 store calls at each render</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> Components inject <code>Board</code> and read the store themselves, also when hidden. One push gives 3 loads: the page, the app bar and the badge. In the tray, store reads run on the UI thread and make the motion slow (V1, V2).</p>
+        <div class="chips"><span class="chip">Components C-G1, C-G5–C-G8, C-G10</span><span class="chip">Structure G1, G6</span><span class="chip">V1, V2</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">EventRow.razor:1-3</span></span>
+<pre>@inject Board Board
+@{ var f = Board.Fields(Event);
+   var state = Ui.Text(f.GetValueOrDefault("state"));
+   var open = Board.IsOpen(Event);
+   var p = Board.Preview(Event); }
+<span class="cm">// each row, at each render</span></pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">// The store pushes one snapshot. One projection</span>
+<span class="cm">// makes the view model off the UI thread.</span>
+Store --&gt; Projection --&gt; ViewModel --&gt; Page
+
+<span class="cm">// A row is a pure component: parameters in,</span>
+<span class="cm">// events out. No @inject.</span>
+&lt;EventRow Row="@row" OnOpen="Open" /&gt;</pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Push data one way: store, projection, view model, components. Only the page root gets the view model.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p5">
+      <summary><span class="l1"><span class="id">P5</span><span class="t">Hand-made infrastructure</span><span class="c">15</span></span><span class="l2">Three sheets copy the same scrim and close markup</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> We wrote common UI jobs by hand, each time again: 8 motion mechanisms before R1, 2 size owners before R2, 3 ways to close a sheet, 2 ring renderers, 2 timer copies, 2 trace systems. The two windows copy the same DPI and display code.</p>
+        <div class="chips"><span class="chip">I9</span><span class="chip">I10</span><span class="chip">Interactions G4, G7</span><span class="chip">Components C-G9</span><span class="chip">Style S-G8</span><span class="chip">Places G8</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">SessionStatus.razor:78-80 · AnswerSheet.razor:2 · FilterSheet.razor:1</span></span>
+<pre><span class="cm">&lt;!-- SessionStatus.razor: an inline copy --&gt;</span>
+&lt;Presence Shown="sending"&gt;
+  &lt;div class="scrim" @onclick="() =&gt; sending = false"&gt;&lt;/div&gt;
+  &lt;div class="crd sheet" role="dialog" ...&gt;
+<span class="cm">&lt;!-- AnswerSheet.razor --&gt;</span>
+&lt;div class="scrim" @onclick="Close"&gt;&lt;/div&gt;
+<span class="cm">&lt;!-- FilterSheet.razor: no leave motion --&gt;</span>
+&lt;div class="scrim" @onclick="Close"&gt;&lt;/div&gt;</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">&lt;!-- One component of the design system owns the</span>
+<span class="cm">     scrim, the focus, the keys and the motion. --&gt;</span>
+&lt;Sheet Open="@sending" OnClose="Close"
+       Title="Message to the session"&gt;
+  ...
+&lt;/Sheet&gt;</pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Get each common job from one design system component or one library. Write a job only if no component does it.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p6">
+      <summary><span class="l1"><span class="id">P6</span><span class="t">Tracing added after</span><span class="c">11</span></span><span class="l2">5 writers, 6 files, free text, and no trace of input</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> The trace came after the code, for each problem. The lines have no common format and no common id. The page writes no click, key or navigation line. The full trace is on only with <code>--demo</code>. The file write runs on the UI thread, in the motion that it measures.</p>
+        <div class="chips"><span class="chip">Tracing T-G1–T-G11</span><span class="chip">I19</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">Faults.cs:25-33</span></span>
+<pre>public static void Trace(string step)
+{
+    ...
+    File.AppendAllText(Log,
+      $"{DateTimeOffset.Now:HH:mm:ss.fff} " +
+      $"[{Environment.CurrentManagedThreadId}] {step}");
+}
+<span class="cm">// a second system: IJsTrace in the web views</span></pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">// One event record, one queue, one sink.</span>
+record TraceEvent(
+    long Time, string Run, string Source,
+    string Kind,      <span class="cm">// state, input, motion, data</span>
+    string Name, object? Data);
+
+<span class="cm">// The state machine and the input layer write</span>
+<span class="cm">// each event. A background task writes the file.</span></pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Make the trace a part of the state machine. Each state change and each input is one structured event, always on.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p7">
+      <summary><span class="l1"><span class="id">P7</span><span class="t">Tests read pixels and wait</span><span class="c">12</span></span><span class="l2">147 fixed waits in the self-test, and a check that compares a rule with itself</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> Without state events, the tests wait for a time and then read pixels. The detector gave false empty frames (I1, I2). The recorder gave 0 frames (I17). Missed presses did not fail (I3). The self-test ships in the tray exe.</p>
+        <div class="chips"><span class="chip">I1, I2, I3, I17, I19</span><span class="chip">Start and stop G2</span><span class="chip">Places G3, G4, G7</span><span class="chip">Page moves G2, G6</span><span class="chip">Structure: self-test in exe</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">SelfTest.cs:48-53</span></span>
+<pre>var open = await Until(() =&gt; w.Phase == TrayPhase.Open, 8000);
+await Task.Delay(900);   <span class="cm">// guess the grow end</span>
+...
+<span class="cm">// the expected value is the rule under test</span>
+Add("start", open &amp;&amp; w.Visible
+    &amp;&amp; w.Bounds == w.PanelBounds() ...);</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">// Wait for the event, with a limit.</span>
+await trace.Until(State.Open, limit: Tokens.Grow * 2);
+
+<span class="cm">// The expected value comes from the tokens,</span>
+<span class="cm">// not from the code under test.</span>
+var expected = Place.Panel(screen, Tokens.PanelSize);
+Assert.That(window.Bounds, Is.EqualTo(expected));</pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Test against events and tokens. Most checks are unit tests of pure rules. Pictures prove only the look.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p8">
+      <summary><span class="l1"><span class="id">P8</span><span class="t">Native host cost</span><span class="c">12</span></span><span class="l2">WinForms windows, WebView2 composition and GDI+ drawings, each with own faults</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> The tray host adds a second world: DPI, places, click regions, focus and pointer input. The window cut the shadow (I7, I18). A browser bubble showed links (I14). The demo moved the real pointer (I8). Keys went to the wrong window (I5).</p>
+        <div class="chips"><span class="chip">I5, I7, I8, I14, I18, I21</span><span class="chip">Places G1, G4, G5, G8, G10</span><span class="chip">V1–V5</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">WidgetWindow.cs:112-117</span></span>
+<pre>public void UseSizes(TraySizesResult sizes)
+{
+    Faults.Trace($"sizes: {sizes}");
+    <span class="cm">// the shape of the report picks the window</span>
+    if (sizes.Rest is null)
+        Window?.BeginInvoke(() =&gt; Window.UseSizes(sizes));
+    else
+        Badge?.BeginInvoke(() =&gt; Badge.UseSizes(sizes));
+}</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">// A thin host: each window owns one root and</span>
+<span class="cm">// one size report. The host does only window</span>
+<span class="cm">// jobs: place, show, hide, input.</span>
+interface IHostWindow {
+    Task Show(Place place);
+    Task Hide();
+    void UseSize(Size size);   <span class="cm">// from its own root</span>
+}</pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Keep the native part thin and generic. Step 2 compares a thin WinForms host with other hosts.</div>
+      </div>
+    </details>
+  </section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["purpose", "state", "pains"];
+  var tabs = document.querySelectorAll('nav [role="tab"]');
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "purpose";
+    names.forEach(function (n) { document.getElementById(n).hidden = n !== name; });
+    tabs.forEach(function (b) {
+      var on = b.dataset.tab === name;
+      b.setAttribute("aria-selected", on ? "true" : "false");
+      b.tabIndex = on ? 0 : -1;
+      if (on && b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+    return name;
+  }
+  function go(name, anchor) {
+    var shown = show(name);
+    try { history.replaceState(history.state, "", "#" + (anchor || shown)); } catch (e) {}
+    var target = anchor && document.getElementById(anchor);
+    if (target) {
+      if (target.tagName === "DETAILS") target.open = true;
+      target.scrollIntoView({ block: "start" });
+    } else {
+      var nav = document.querySelector("nav");
+      if (nav.getBoundingClientRect().top <= 1) window.scrollTo(0, document.querySelector("header").getBoundingClientRect().bottom + window.scrollY);
+    }
+  }
+  // One click handler for the tab bar. The browser scrolls the bar natively, so a click always reaches its tab.
+  tabs.forEach(function (b) { b.addEventListener("click", function () { go(b.dataset.tab); }); });
+  document.querySelector("nav").addEventListener("keydown", function (e) {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    var i = names.indexOf(document.querySelector('nav [aria-selected="true"]').dataset.tab);
+    i = (i + (e.key === "ArrowRight" ? 1 : names.length - 1)) % names.length;
+    go(names[i]); document.getElementById("t-" + names[i]).focus();
+  });
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("a[data-go], a.prow");
+    if (!a) return;
+    e.preventDefault();
+    if (a.dataset.go) go(a.dataset.go);
+    else go("pains", a.getAttribute("href").slice(1));
+  });
+  document.getElementById("open-all").addEventListener("click", function () { document.querySelectorAll("details.pain").forEach(function (d) { d.open = true; }); });
+  document.getElementById("close-all").addEventListener("click", function () { document.querySelectorAll("details.pain").forEach(function (d) { d.open = false; }); });
+  function fromHash() {
+    var h = location.hash.slice(1);
+    if (/^p[1-8]$/.test(h)) { show("pains"); var d = document.getElementById(h); d.open = true; d.scrollIntoView({ block: "start" }); }
+    else show(h);
+  }
+  window.addEventListener("hashchange", fromHash);
+  fromHash();
+})();
+</script>
