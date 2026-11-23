@@ -181,6 +181,7 @@ details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: c
 <section>
   <h2>Proposal: vertical slices around the event stream</h2>
   <p>A modular monolith. The kernel holds the event stream and the ports. Each feature is one slice. The hosts only compose the parts and map input to slice commands.</p>
+  <p>The code is plain .NET 10 with no framework package <span class="pill draft">default K-Q7</span>. It uses the VSA ideas. The kernel keeps its copies of <code>IRepository</code> and <code>Entity</code> from vsa-template. A move to the vsa-template packs is a decision after the VSA 0.1.0 release (<code>docs/plan.md</code>).</p>
   <div class="box"><pre class="mermaid">
 flowchart TB
   subgraph Hosts["Hosts: composition roots"]
@@ -398,11 +399,6 @@ public interface IStateChecker { ... }</pre>
 <section>
   <h2>Open questions</h2>
   <p>Answer in free text. Each answer goes into the Topology tab, and its question leaves this tab.</p>
-
-  <div class="q"><h3>Q7 · Plain .NET or the VSA framework? <span class="pill open">open</span></h3>
-    <p><span class="lbl">Context</span><code>docs/plan.md</code> says: plain .NET until 1.0, decide after the VSA 0.1.0 release. The kernel copies <code>IRepository</code> from vsa-template.</p>
-    <p><span class="lbl">Options</span>(a) Plain .NET, with copied kernel parts. (b) Use the vsa-template packs.</p>
-    <div class="rec">Recommendation: (a). The plan decision stays. This page uses only the VSA ideas.</div></div>
 
   <div class="q"><h3>Q8 · How do we move the code? <span class="pill open">open</span></h3>
     <p><span class="lbl">Options</span>(a) One large move. (b) Slice by slice. The tests start with an allow list of known breaks, and each move removes items from it.</p>
