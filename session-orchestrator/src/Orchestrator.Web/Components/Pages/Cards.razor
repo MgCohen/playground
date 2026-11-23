@@ -57,7 +57,7 @@
 }
 @if (filterOpen)
 {
-    <FilterSheet Filter="filter" Sessions="FilterSessions" Show="@($"Show {Visible().Count} cards")" OnClose="() => filterOpen = false" />
+    <FilterSheet Filter="filter" Sessions="FilterSessions" Show="@($"Show {Visible().Count} cards")" OnChange="StateHasChanged" OnClose="() => filterOpen = false" />
 }
 
 @code {
