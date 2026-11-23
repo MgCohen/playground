@@ -2387,3 +2387,20 @@ Test bed: a demo store in the scratchpad, `demo.ps1 -Fake -Port 7850 -AnyPort -N
 | Answer one demo card | Pass. Answer "HELLO", Questions 2 becomes 1, the next card shows | `10-card-before.png`, `11-card-answered.png` |
 
 Note for tests: a `WM_CLOSE` that another process posts gives a close reason that is not `UserClosing`. The widget then closes for real and the tray cannot show it again. Use `WM_SYSCOMMAND SC_CLOSE` (the same as Alt+F4).
+
+## V2: Visual restart plan (2026-11-23)
+
+The view (web UI and tray) restarts from scratch on one data flow and one design system. The plan has three steps; app code starts only after the user approves step 3. Branch stack: `orch/session-4edcb14f`, then the decision branches of Q6 (PR #88) and Q5 (PR #97).
+
+| Step | Result | Page |
+|---|---|---|
+| 1 · Diagnosis | 11 root causes (P1 to P11) of 88 architecture gaps and 28 tracker issues | `docs/v2-restart.html` (https://claude.ai/artifact/BNwcBE7dsYXYmGhyiPk1b6) |
+| 2 · Target design | Each page and list is a view of one query; a composer joins the view template, the content template and the result; state machines; design system; thin tray host | `docs/v2-target-design.html` (https://claude.ai/artifact/FmECykMtYjwUtdgfTct32V) |
+| 3 · Rebuild plan | Not started | - |
+
+Decisions so far: each page and list is a view of one query (user, Q4); step 2 starts from the data (default, Q5); step 2 compares the tray hosts (default, Q6). Open in step 2: D1 to D5 on the Decisions tab of the target design page.
+
+Findings:
+
+- `orch decision pr` fails with "no template answer" when it runs from the repository root. It works from `session-orchestrator/`.
+- The drag-to-scroll script of the tab bar in the earlier artifacts loses a click: a drag that ends on another element leaves the `dragged` flag on the first button, so the next click on that tab does nothing. The V2 pages use only the native scroll of the bar.

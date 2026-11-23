@@ -1,0 +1,609 @@
+<title>V2 Target Design</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar with 6 tabs, one panel for each tab. Same tokens as the V2 Visual Restart page. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --warn: #9a6200; --code-bg: #eef1f3;
+  --bad: #b3402f; --ok: #2e7d32; --ok-soft: #e3f1e4;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f;
+    --bad: #ef8a78; --ok: #7fd08a; --ok-soft: #1c3222; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f;
+  --bad: #ef8a78; --ok: #7fd08a; --ok-soft: #1c3222; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 70ch; }
+a { color: var(--accent); }
+
+/* Tab bar: native scroll only. No drag script, so each click reaches its tab. */
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line);
+  display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+nav button { flex: none; white-space: nowrap; font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 8px 14px; cursor: pointer; touch-action: manipulation; }
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button .n { font-family: var(--font-mono); font-size: 12px; opacity: .7; margin-right: 6px; }
+button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.panel { display: flex; flex-direction: column; gap: 24px; }
+section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
+pre.code { margin: 0; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; color: var(--fg); }
+pre.code .cm { color: var(--muted); }
+.file { font-family: var(--font-mono); font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 70ch; }
+.rule { border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; padding: 8px 12px; max-width: 70ch; }
+.tag { font-family: var(--font-mono); font-size: 11px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.rec { color: var(--ok); border-color: var(--ok); }
+.tag.no { color: var(--bad); border-color: var(--bad); }
+.tag.mid { color: var(--warn); border-color: var(--warn); }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pair > * { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 760px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+
+/* Foldables: title line, key fact line, body. */
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.tools button { font: 500 13px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+details.f { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+details.f > summary { cursor: pointer; list-style: none; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+details.f > summary::-webkit-details-marker { display: none; }
+details.f > summary .l1 { display: flex; gap: 10px; align-items: baseline; min-width: 0; flex-wrap: wrap; }
+details.f > summary .l1::before { content: "▸"; color: var(--muted); flex: none; }
+details.f[open] > summary .l1::before { content: "▾"; }
+details.f > summary .id { font-family: var(--font-mono); font-size: 13px; color: var(--accent); flex: none; }
+details.f > summary .t { font-family: var(--font-display); font-weight: 500; font-size: 16px; flex: 1 1 auto; min-width: 0; }
+details.f > summary .l2 { color: var(--muted); font-size: 13px; padding-left: 20px; }
+details.f > .body { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.field { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px; padding-block: 8px; border-bottom: 1px solid var(--line); }
+.field > .k { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+.field > .v { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+@media (max-width: 600px) { .field { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.tree { font-family: var(--font-mono); font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+.tree details { margin-left: 16px; }
+.tree > details { margin-left: 0; }
+.tree summary { cursor: pointer; padding: 2px 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
+.tree summary::-webkit-details-marker { display: none; }
+.tree summary::before { content: "▸"; color: var(--muted); width: 10px; flex: none; }
+.tree details[open] > summary::before { content: "▾"; }
+.tree details.leaf > summary::before { content: "·"; }
+.tree .n { color: var(--fg); font-weight: 500; }
+.tree .d { color: var(--muted); font-family: var(--font-body); font-size: 13px; }
+.tree .more { margin: 2px 0 6px 20px; font-family: var(--font-body); font-size: 13px; color: var(--muted); max-width: 70ch; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · V2 · restart plan · step 2 of 3</div>
+  <h1>V2 Target Design</h1>
+  <p class="summary">Each page and each list of the app is a view of one query of the event stream. A composer joins the view template, the content template of each kind and the query result into one view model, off the UI thread. The page renders it only with design system components. The diagnosis is on the <a href="https://claude.ai/artifact/BNwcBE7dsYXYmGhyiPk1b6">V2 Visual Restart</a> page.</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" id="t-overview" data-tab="overview" aria-controls="overview" aria-selected="true"><span class="n">1</span>Overview</button>
+  <button role="tab" id="t-views" data-tab="views" aria-controls="views" aria-selected="false"><span class="n">2</span>Views</button>
+  <button role="tab" id="t-state" data-tab="state" aria-controls="state" aria-selected="false"><span class="n">3</span>State</button>
+  <button role="tab" id="t-system" data-tab="system" aria-controls="system" aria-selected="false"><span class="n">4</span>Design system</button>
+  <button role="tab" id="t-host" data-tab="host" aria-controls="host" aria-selected="false"><span class="n">5</span>Tray host</button>
+  <button role="tab" id="t-decide" data-tab="decide" aria-controls="decide" aria-selected="false"><span class="n">6</span>Decisions</button>
+</nav>
+
+<!-- 1 OVERVIEW -->
+<div class="panel" id="overview" role="tabpanel" aria-labelledby="t-overview">
+  <section>
+    <h2>One way from the store to the screen</h2>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  ST[("Event stream<br/>and registry")] -->|snapshot| CO["Composer<br/>pure, off UI thread"]
+  VT["View template<br/>query, shape, layout"] --> CO
+  KT["Content template<br/>of each kind"] --> CO
+  CO -->|view model| PR["Page root"]
+  PR -->|parameters| DS["Design system<br/>components"]
+  DS -->|events| SM["State machines"]
+  SM -->|acts| ST
+  SM -->|trace events| TR["Trace"]
+</pre></div>
+    <p class="summary">Data goes one way: down as parameters. Input goes the other way: up as events into a state machine, which posts to the store. Each state change is a trace event.</p>
+  </section>
+
+  <section>
+    <h2>Rules and the pains they stop</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Rule</th><th>Stops</th><th>Tab</th></tr></thead>
+      <tbody>
+        <tr><td>Each page and list is a view of one query</td><td>P11, P1, P4</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
+        <tr><td>Card rules and actions are template data</td><td>P11, P2</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
+        <tr><td>One composer makes the view model</td><td>P1, P4</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
+        <tr><td>Each window, page and sheet has a state machine</td><td>P3</td><td><a href="#state" data-go="state">3 · State</a></td></tr>
+        <tr><td>Each state change is one trace event</td><td>P6, P7</td><td><a href="#state" data-go="state">3 · State</a></td></tr>
+        <tr><td>Tests wait for events and read tokens</td><td>P7</td><td><a href="#state" data-go="state">3 · State</a></td></tr>
+        <tr><td>Token tiers, layer order, written guidelines</td><td>P9</td><td><a href="#system" data-go="system">4 · Design system</a></td></tr>
+        <tr><td>Pages use only catalog components</td><td>P10, P5</td><td><a href="#system" data-go="system">4 · Design system</a></td></tr>
+        <tr><td>Names for CSS and JS are generated</td><td>P2</td><td><a href="#system" data-go="system">4 · Design system</a></td></tr>
+        <tr><td>The native host is thin and generic</td><td>P8</td><td><a href="#host" data-go="host">5 · Tray host</a></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Projects</h2>
+    <p class="summary">New projects next to the old app. The old app stays until each slice passes its parity check (step 3).</p>
+    <div class="tree">
+      <details class="leaf"><summary><span class="n">Orchestrator.View/</span><span class="d">Composer, view templates, state machines. Pure C#, no Blazor</span></summary><div class="more">Unit tests run here with no window and no browser. It reads the store through one snapshot interface.</div></details>
+      <details class="leaf"><summary><span class="n">Orchestrator.View.Components/</span><span class="d">Razor class library: the design system</span></summary><div class="more">Tokens, layers, components, motion CSS, the small JS helpers, and a gallery page. No store access.</div></details>
+      <details class="leaf"><summary><span class="n">Orchestrator.View.Web/</span><span class="d">The web host: routes to pages, the hub of the view model</span></summary><div class="more">Replaces the pages of <code>Orchestrator.Web</code> slice by slice. The supervisor and the API stay in <code>Orchestrator.Web</code>.</div></details>
+      <details class="leaf"><summary><span class="n">Orchestrator.View.Tray/</span><span class="d">The thin tray host: windows, places, input</span></summary><div class="more">One generic host window. Each window has one Blazor root. See tab 5.</div></details>
+      <details class="leaf"><summary><span class="n">templates/views/</span><span class="d">The view templates (a new catalog)</span></summary><div class="more">One folder for each view, like <code>templates/modes/</code>. The store layer can replace a core view.</div></details>
+    </div>
+  </section>
+</div>
+
+<!-- 2 VIEWS -->
+<div class="panel" id="views" role="tabpanel" aria-labelledby="t-views" hidden>
+  <section>
+    <h2>A card composes itself</h2>
+    <div class="box"><pre class="mermaid">
+flowchart TB
+  Q["Query<br/>StreamQuery"] --> R["Result<br/>events, groups"]
+  V["View template<br/>shape, layout, part"] --> C["Composer"]
+  R --> C
+  K["Content template<br/>kind document, preview"] --> C
+  M["Card rules<br/>meta.json card"] --> C
+  C --> N["View model nodes<br/>keyed, immutable"]
+</pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Term</th><th>Owns</th><th>File</th></tr></thead>
+      <tbody>
+        <tr><td>Content template</td><td>What one kind shows</td><td><code>templates/&lt;kind&gt;/content.json</code></td></tr>
+        <tr><td>Card rules</td><td>Card variant, group, actions</td><td><code>templates/&lt;kind&gt;/meta.json</code></td></tr>
+        <tr><td>View template</td><td>Query, shape, layout, part</td><td><code>templates/views/&lt;name&gt;/view.json</code></td></tr>
+        <tr><td>Page</td><td>Route, depth, view slots</td><td><code>templates/pages/&lt;name&gt;/page.json</code></td></tr>
+        <tr><td>View model</td><td>The composed nodes</td><td>C# records, in memory</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The content template is the file <code>view.json</code> of each kind today. Decision D1 renames it to <code>content.json</code>, so that "view" has one meaning.</p>
+  </section>
+
+  <section>
+    <h2>Shapes and layouts</h2>
+    <p class="summary">A shape says what the query gives. A layout says how a catalog component shows it. Each layout takes only some shapes.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Shape</th><th>Query gives</th><th>Layouts</th></tr></thead>
+      <tbody>
+        <tr><td><code>item</code></td><td>One event</td><td><code>document</code>, <code>card</code></td></tr>
+        <tr><td><code>list</code></td><td>Events in order</td><td><code>deck</code>, <code>rows</code>, <code>timeline</code></td></tr>
+        <tr><td><code>groups</code></td><td>Counts by one key</td><td><code>ring</code>, <code>chips</code>, <code>bars</code></td></tr>
+        <tr><td><code>tree</code></td><td>Sessions by parent</td><td><code>tree</code></td></tr>
+        <tr><td><code>series</code></td><td>Counts by time bucket</td><td><code>spark</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Examples</h2>
+    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V1</span><span class="t">Inbox deck</span></span><span class="l2">The Cards page: list shape, deck layout, preview part</span></summary>
+      <div class="body">
+        <p class="file">templates/views/inbox/view.json</p>
+<pre class="code">{
+  "name": "inbox",
+  "query":  { "view": "inbox" },          <span class="cm">// StreamQueries.Inbox</span>
+  "shape":  "list",
+  "layout": "deck",
+  "part":   "preview",                    <span class="cm">// from content.json</span>
+  "filter": { "by": "card.group", "chips": true },
+  "order":  ["arrival", "newest", "session"],
+  "empty":  "New cards show here when they arrive."
+}</pre>
+        <p>The chips, the filter sheet and the order list come from <code>filter</code> and <code>order</code>. No page code counts or sorts.</p>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V2</span><span class="t">Home ring</span></span><span class="l2">An aggregate: the same query, groups shape, ring layout</span></summary>
+      <div class="body">
+        <p class="file">templates/views/waiting/view.json</p>
+<pre class="code">{
+  "name": "waiting",
+  "query":  { "view": "inbox" },
+  "shape":  "groups",
+  "key":    "card.group",
+  "layout": "ring",
+  "tones":  { "Questions": "q", "Reviews": "rev",
+              "Reports": "rep", "Blocked": "blk" }
+}</pre>
+        <p>The home page, the tray badge and the chips of the Cards page use this one view. So the count has one rule (P1, Data G6).</p>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V3</span><span class="t">Event page</span></span><span class="l2">One item: item shape, document layout, a parameter from the route</span></summary>
+      <div class="body">
+        <p class="file">templates/views/event/view.json · templates/pages/event/page.json</p>
+        <div class="pair">
+<pre class="code">{
+  "name": "event",
+  "query":  { "id": "{route.id}" },
+  "shape":  "item",
+  "layout": "document",
+  "part":   "document",
+  "actions": "card"     <span class="cm">// from meta.json</span>
+}</pre>
+<pre class="code">{
+  "name":  "event",
+  "route": "/events/{id}",
+  "depth": 2,
+  "slots": [ "event", "event-results" ]
+}</pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V4</span><span class="t">Session page</span></span><span class="l2">Two sources: the registry for the header, the stream for the timeline</span></summary>
+      <div class="body">
+<pre class="code"><span class="cm">// templates/pages/session/page.json</span>
+{ "route": "/sessions/{id}", "depth": 1,
+  "slots": [ "session-head", "session-timeline" ] }
+
+<span class="cm">// templates/views/session-head/view.json</span>
+{ "source": "sessions", "query": { "id": "{route.id}" },
+  "shape": "item", "layout": "card", "part": "session" }
+
+<span class="cm">// templates/views/session-timeline/view.json</span>
+{ "query": { "session": "{route.id}", "newest": true, "limit": 300 },
+  "shape": "list", "layout": "timeline", "part": "row" }</pre>
+        <p>The session registry is a second source with the same query keys. The session content template lives in <code>templates/_session/content.json</code>.</p>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V5</span><span class="t">Card rules as data</span></span><span class="l2">The 8 card variants of Ui.Classify move to meta.json</span></summary>
+      <div class="body">
+        <p class="file">templates/question/meta.json · "card"</p>
+<pre class="code">"card": {
+  "group": "Questions",
+  "variants": [
+    { "name": "yesno",   "when": { "field": "options", "is": ["yes", "no"] },
+      "right": { "label": "Yes", "post": "answer", "text": "yes" },
+      "left":  { "label": "No",  "post": "answer", "text": "no" } },
+    { "name": "default", "when": { "field": "defaultOption", "exists": true },
+      "right": { "label": "Accept", "post": "answer", "text": "defaultOption" },
+      "left":  { "label": "Other",  "input": "type" } },
+    { "name": "opinion",
+      "right": { "label": "Speak", "input": "speak" },
+      "left":  { "label": "Type",  "input": "type" } }
+  ]
+}</pre>
+        <p>The first variant whose <code>when</code> matches wins. A <code>when</code> is a small JSON test (<code>exists</code>, <code>is</code>, <code>equals</code>, <code>count</code>), with no script. The send path is in each action, so the "plan" card cannot go to Refuse (P2).</p>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>The composer</h2>
+<pre class="code"><span class="cm">// Orchestrator.View: pure, testable with no window.</span>
+public interface IViewSource { Snapshot Take(); }
+
+public static ViewModel Compose(Snapshot data, ViewTemplate view,
+                                Templates templates, RouteValues route);
+
+<span class="cm">// The hub runs Compose for each open view on each store change,</span>
+<span class="cm">// on a worker thread, and pushes only the changed nodes (by key).</span></pre>
+    <div class="rule">A component never reads the store. Only the page root gets a view model, and it passes nodes down as parameters.</div>
+  </section>
+</div>
+
+<!-- 3 STATE -->
+<div class="panel" id="state" role="tabpanel" aria-labelledby="t-state" hidden>
+  <section>
+    <h2>The tray panel as one state machine</h2>
+    <div class="box"><pre class="mermaid">
+stateDiagram-v2
+  [*] --> Hidden
+  Hidden --> Opening: open
+  Opening --> Open: grown
+  Open --> Folding: fold
+  Folding --> Folded: folded
+  Folded --> Opening: open
+  Open --> Docking: dock
+  Docking --> Badge: docked
+  Badge --> Opening: open
+  Open --> Hiding: hide
+  Hiding --> Hidden: hidden
+</pre></div>
+    <p class="summary">Each "-ing" state ends only on an end event: a motion end from the page, or a window event from the host. Input waits for a rest state, so a press in <code>Opening</code> waits for <code>Open</code> (I19).</p>
+  </section>
+
+  <section>
+    <h2>State machines</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Machine</th><th>Rest states</th><th>End events from</th></tr></thead>
+      <tbody>
+        <tr><td>Tray panel</td><td>Hidden, Open, Folded, Badge</td><td>Motion, window</td></tr>
+        <tr><td>Badge</td><td>Out, In, Peek</td><td>Motion, window</td></tr>
+        <tr><td>Page</td><td>Loading, Ready</td><td>First render, motion</td></tr>
+        <tr><td>Sheet</td><td>Closed, Open</td><td>Motion</td></tr>
+        <tr><td>Card act</td><td>Idle, Pending, Done</td><td>Motion, undo time, store</td></tr>
+        <tr><td>Size report</td><td>Unknown, Known</td><td>Measure; retry on fault (I21)</td></tr>
+      </tbody>
+    </table></div>
+<pre class="code"><span class="cm">// One small generic machine. Each machine is a table of data.</span>
+public sealed class Machine&lt;TState, TEvent&gt;
+{
+    public TState State { get; }
+    public Task Fire(TEvent e);              <span class="cm">// refuses an event with no row</span>
+    public Task Until(TState s, TimeSpan limit);
+}</pre>
+  </section>
+
+  <section>
+    <h2>Trace and tests</h2>
+<pre class="code">record TraceEvent(long Time, string Run, string Source,
+    string Kind,          <span class="cm">// state, input, motion, data, fault</span>
+    string Name, IReadOnlyDictionary&lt;string, object?&gt; Data);</pre>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>Writers</td><td>Machines and the input layer only</td></tr>
+        <tr><td>Sink</td><td>One queue, one background file writer</td></tr>
+        <tr><td>On</td><td>Always; a ring buffer in memory</td></tr>
+        <tr><td>Format</td><td>One JSON line for each event</td></tr>
+        <tr><td>Unit tests</td><td>Fire events into a machine; no window</td></tr>
+        <tr><td>Host tests</td><td>Wait for trace events, with a limit</td></tr>
+        <tr><td>Expected values</td><td>From tokens, never from the code under test</td></tr>
+        <tr><td>Pictures</td><td>Only for the look; never for timing</td></tr>
+        <tr><td>Test code</td><td>A test project, not the shipped exe</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+
+<!-- 4 DESIGN SYSTEM -->
+<div class="panel" id="system" role="tabpanel" aria-labelledby="t-system" hidden>
+  <section>
+    <h2>Layers</h2>
+<pre class="code">@layer reset, tokens, base, components, layouts, motion, host;
+<span class="cm">/* host: web or tray. A host rule never wins by specificity (S-G1). */</span></pre>
+    <div class="scroll"><table>
+      <thead><tr><th>Layer</th><th>Holds</th><th>Check</th></tr></thead>
+      <tbody>
+        <tr><td><code>tokens</code></td><td>All values: color, size, radius, shadow, time</td><td>Only layer with literals</td></tr>
+        <tr><td><code>base</code></td><td>Elements: body, text, focus</td><td>No class selectors</td></tr>
+        <tr><td><code>components</code></td><td>One block for each component</td><td>Class prefix = component</td></tr>
+        <tr><td><code>layouts</code></td><td>deck, rows, timeline, ring, tree</td><td>One rule set for each layout</td></tr>
+        <tr><td><code>motion</code></td><td>The motion steps of R1</td><td>Registry test, both ways</td></tr>
+        <tr><td><code>host</code></td><td>Web or tray frame only</td><td>No component selectors</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Token tiers</h2>
+<pre class="code">@layer tokens {
+  :root {
+    <span class="cm">/* 1 primitive: the scale */</span>
+    --gray-10: #fdfdfc;  --orange-50: #ff6a1a;  --space-2: 8px;  --radius-4: 16px;
+    <span class="cm">/* 2 role: what it means */</span>
+    --surface: var(--gray-10);  --accent: var(--orange-50);  --radius-panel: var(--radius-4);
+    <span class="cm">/* 3 component: one part */</span>
+    --card-radius: var(--radius-panel);  --ring-track: var(--sunken);
+  }
+}</pre>
+    <p class="summary">Components read only tier 2 and tier 3. A theme changes only tier 2. The values of today come from <code>app.css</code> and <code>docs/inbox-design.html</code>, so the look stays the same.</p>
+  </section>
+
+  <section>
+    <h2>Component catalog</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Group</th><th>Components</th></tr></thead>
+      <tbody>
+        <tr><td>Primitives</td><td>Text, Icon, Button, Pill, Chip, Ring, Progress</td></tr>
+        <tr><td>Content</td><td>Fact, Block, Well, Code, Links, Steps</td></tr>
+        <tr><td>Containers</td><td>Card, Row, Sheet, Toast, Dial</td></tr>
+        <tr><td>Layouts</td><td>Deck, Rows, Timeline, RingGroups, Tree, Spark</td></tr>
+        <tr><td>Frame</td><td>AppBar, PageBar, PathTrail, Presence</td></tr>
+      </tbody>
+    </table></div>
+    <div class="rule">A component takes parameters and sends events. It has one job, no <code>@inject</code> of data, and a header comment that names its spec. Each component has a gallery entry with each state.</div>
+  </section>
+
+  <section>
+    <h2>Guidelines and names</h2>
+    <ul>
+      <li>The design system is a "Design System" artifact: tokens, components with live previews, and the rule of use of each part.</li>
+      <li>One C# file lists each class, state and motion name. A build step writes it as CSS and JS constants, so the three languages share one source (P2).</li>
+      <li>A test reads the CSS and fails on a literal outside <code>tokens</code>, on an unknown <code>var()</code> name, and on a rule with no markup.</li>
+    </ul>
+  </section>
+</div>
+
+<!-- 5 TRAY HOST -->
+<div class="panel" id="host" role="tabpanel" aria-labelledby="t-host" hidden>
+  <section>
+    <h2>What the tray host needs</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Need</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td>Per-pixel transparency</td><td>Round panel, soft shadow, ball</td></tr>
+        <tr><td>Click area from the page</td><td>Clicks pass through the shadow</td></tr>
+        <tr><td>Two windows, one process</td><td>Panel and badge (spike S7)</td></tr>
+        <tr><td>Keyboard focus in the page</td><td>I5 answer: a must</td></tr>
+        <tr><td>C# and Blazor</td><td><code>AGENTS.md</code> stack</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Options</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Option</th><th>Transparency</th><th>Cost</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td>A · Thin WinForms, WebView2 composition</td><td>Yes, proven</td><td>Small: remove code</td><td><span class="tag rec">Recommended</span></td></tr>
+        <tr><td>B · WPF, WebView2</td><td>No: HWND airspace</td><td>Port, lose the look</td><td><span class="tag no">No</span></td></tr>
+        <tr><td>C · WinUI 3, WebView2</td><td>Not proven</td><td>Port, new runtime</td><td><span class="tag mid">Spike only</span></td></tr>
+        <tr><td>D · Blazor Hybrid (MAUI)</td><td>Not proven</td><td>WinUI 3 under it</td><td><span class="tag mid">Spike only</span></td></tr>
+        <tr><td>E · Browser app window</td><td>No</td><td>No tray shapes</td><td><span class="tag no">No</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The facts for C and D come from the platform docs, not from a test. A spike in step 3 can try C if you want a second option. The cost of P8 comes from the host code size, not from WinForms.</p>
+  </section>
+
+  <section>
+    <h2>Option A: the thin host</h2>
+<pre class="code"><span class="cm">// The only native contract. The tray state machine calls it.</span>
+public interface IHostWindow
+{
+    Task Show(Place place);        <span class="cm">// ends on the "shown" window event</span>
+    Task Hide();                   <span class="cm">// ends on "hidden"</span>
+    void UseSize(PageSize size);   <span class="cm">// from its own root only (P8, Places G5)</span>
+    event Action&lt;HostInput&gt; Input; <span class="cm">// click, drag, key: to the trace</span>
+}</pre>
+    <ul>
+      <li>One class for both windows: DPI, display change and exit are written once (Places G8).</li>
+      <li>No GDI+ drawing: the ball and the badge are page content (V5 lesson).</li>
+      <li>Place rules are pure functions with unit tests (Places G7).</li>
+    </ul>
+  </section>
+</div>
+
+<!-- 6 DECISIONS -->
+<div class="panel" id="decide" role="tabpanel" aria-labelledby="t-decide" hidden>
+  <section>
+    <h2>Decided</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Decision</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>Each page and list is a view of one query</td><td>You, Q4</td></tr>
+        <tr><td>Start from the data, then components, then the look</td><td>Default, Q5</td></tr>
+        <tr><td>Step 2 compares the tray hosts</td><td>Default, Q6</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Open questions</h2>
+    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D1</span><span class="t">Rename the kind file to content.json?</span></span><span class="l2">Recommendation: yes. Default: yes</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p>Today <code>templates/&lt;kind&gt;/view.json</code> holds the content of a kind. The new catalog has view templates too. One word with two meanings breaks rule 2 of the writing rules.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: rename to <code>content.json</code>.</li><li>B: keep <code>view.json</code>, and call the new files <code>lens.json</code>.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The kind file holds content; the view file holds a query and a layout.</p></div></div>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D2</span><span class="t">Own design system or a component library?</span></span><span class="l2">Recommendation: own, on CSS tokens. Default: own</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p>The prior-art research found that Blazor libraries such as MudBlazor have no motion system, and their look is not ours. Our look and motion are approved.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: own components on our tokens (tab 4).</li><li>B: Fluent UI Blazor, themed.</li><li>C: MudBlazor, themed.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The catalog has about 30 small components. A library adds a second style system to override (P5).</p></div></div>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D3</span><span class="t">Thin WinForms host for the tray?</span></span><span class="l2">Recommendation: option A of tab 5. Default: A</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p>Only WebView2 composition is proven for a transparent, shaped window. WinUI 3 and MAUI are not proven for it.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: thin WinForms host with <code>IHostWindow</code>.</li><li>A + spike: also try WinUI 3 in step 3.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Make the host small first; change the host later only if the spike shows a gain.</p></div></div>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D4</span><span class="t">New projects next to the old app?</span></span><span class="l2">Recommendation: yes, in the same solution. Default: yes</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p>A rewrite in place breaks the app for a long time. New projects let the old app run, and each slice can compare with it.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: new projects in <code>Orchestrator.slnx</code> (tab 1).</li><li>B: rewrite the pages in place.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The supervisor, the store and the API stay as they are.</p></div></div>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D5</span><span class="t">How do card rules test the fields?</span></span><span class="l2">Recommendation: small JSON tests, no script. Default: JSON tests</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p><code>Ui.Classify</code> tests fields: two options yes and no, a default, the needs. The rules must be data (P11).</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: JSON tests: <code>exists</code>, <code>is</code>, <code>equals</code>, <code>count</code> (tab 2, V5).</li><li>B: an expression language, for example JsonLogic.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Four tests cover the 8 variants of today. A schema can check them.</p></div></div>
+      </div>
+    </details>
+  </section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["overview", "views", "state", "system", "host", "decide"];
+  var tabs = document.querySelectorAll('nav [role="tab"]');
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "overview";
+    names.forEach(function (n) { document.getElementById(n).hidden = n !== name; });
+    tabs.forEach(function (b) {
+      var on = b.dataset.tab === name;
+      b.setAttribute("aria-selected", on ? "true" : "false");
+      b.tabIndex = on ? 0 : -1;
+      if (on && b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+    return name;
+  }
+  function go(name) {
+    var shown = show(name);
+    try { history.replaceState(history.state, "", "#" + shown); } catch (e) {}
+    var nav = document.querySelector("nav");
+    if (nav.getBoundingClientRect().top <= 1) window.scrollTo(0, document.querySelector("header").getBoundingClientRect().bottom + window.scrollY);
+  }
+  // One click handler for each tab. The browser scrolls the bar natively, so a click always reaches its tab.
+  tabs.forEach(function (b) { b.addEventListener("click", function () { go(b.dataset.tab); }); });
+  document.querySelector("nav").addEventListener("keydown", function (e) {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    var i = names.indexOf(document.querySelector('nav [aria-selected="true"]').dataset.tab);
+    i = (i + (e.key === "ArrowRight" ? 1 : names.length - 1)) % names.length;
+    go(names[i]); document.getElementById("t-" + names[i]).focus();
+  });
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("a[data-go]");
+    if (a) { e.preventDefault(); go(a.dataset.go); return; }
+    var t = e.target.closest && e.target.closest("button[data-all]");
+    if (t) t.closest("section").querySelectorAll("details.f").forEach(function (d) { d.open = t.dataset.all === "open"; });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>
