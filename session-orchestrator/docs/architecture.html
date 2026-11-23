@@ -275,6 +275,13 @@ flowchart LR
   ApplyDefault.cs    <span class="c">// reactor: timer event -> DefaultApplied</span>
   DocsCheck.cs       <span class="c">// prompt and parse, calls IProvider.Ask directly</span>
   Contract.cs        <span class="c">// public queries for other slices and hosts</span></pre>
+  <div class="scroll"><table>
+    <tr><th>A slice may use</th><th>Of another slice</th><th>Example</th></tr>
+    <tr><td>Its events</td><td>Read, react</td><td>Stack reacts to <code>AnswerGiven</code></td></tr>
+    <tr><td>Its <code>Contract.cs</code> queries</td><td>Read only</td><td>Decisions reads the session role</td></tr>
+    <tr><td>Other types</td><td>Never</td><td>The ArchUnitNET slice rule refuses them</td></tr>
+  </table></div>
+  <p>A slice never appends an event of another slice. <span class="pill draft">default K-Q4</span></p>
 </section>
 
 <section>
@@ -377,10 +384,6 @@ public interface IStateChecker { ... }</pre>
 <section>
   <h2>Open questions</h2>
   <p>Answer in free text. Each answer goes into the Topology tab, and its question leaves this tab.</p>
-
-  <div class="q"><h3>Q4 · How does one slice use another? <span class="pill open">open</span></h3>
-    <p><span class="lbl">Options</span>(a) Events only. (b) Events, and the queries in <code>Contract.cs</code>. (c) No limit.</p>
-    <div class="rec">Recommendation: (b). Some commands must read the state of another slice before they append.</div></div>
 
   <div class="q"><h3>Q5 · Is the supervisor a host of reactors? <span class="pill open">open</span></h3>
     <p><span class="lbl">Options</span>(a) Each slice registers its reactors; the tick only sends events to them. (b) Keep one central supervisor class.</p>
