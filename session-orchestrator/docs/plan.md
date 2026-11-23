@@ -2410,6 +2410,8 @@ Goal: one plugin with all orchestrator commands, documented, from the existing m
 | P1-F13 | The root merged claude-plugins PR 33 (orch 0.3.0) and PR 34 (core 0.5.1) at 20:44 UTC. `core` 0.5.1 was in the synced manifest at 20:45. `orch` was not in it at 20:55. A synced plugin is on by default, but the terminal sync runs only when Claude Code starts: a new plugin shows only in a new session (`know-how.md`, Plugin rules) | In the maintenance window: remove the `CLAUDE_CODE_PLUGIN_DIRS` lines, start a new session, run `/reload-plugins` if "Plugins changed" shows, so two copies never load |
 | P1-F14 | `orch doctor` said "FAIL plugin: no orch plugin" with `orch@synced` loaded. `PluginCheck` wanted rows that start with `❯ orch@`. With no console, `claude plugin list` prints `> orch@` | `PluginCheck` accepts any marker of 1 to 3 characters before `orch@`. A test has the real output |
 | P1-F15 | `dotnet tool update` did not reinstall a package of the same version (0.1.0) | Each pack gives a new version, for example `-p:Version=0.1.1` |
+| P1-F16 | `orch supervisor start` in the test found no supervisor: "no Orchestrator.Web.dll in ...\Apps\Orchestrator\supervisor and no source in ...\tools\net10.0\any\src\Orchestrator.Web". The tool package carries no supervisor, and the app of `install.ps1` was not installed | Open. Options: bundle `Orchestrator.Web` with the tool, or let `orch doctor` name `install.ps1`. The test published 852d0a7 to the scratchpad and set `ORCH_APP` |
+| P1-F17 | The demo supervisor writes its log to `%LOCALAPPDATA%\Orchestrator\supervisor-7871.log`, not into the demo store | Open |
 | P1-F7 | A PowerShell function named `Git` that calls `git` calls itself (names are not case-sensitive): call depth overflow after minutes | `tools/publish-plugin.ps1` uses `Invoke-Clone` and `git.exe` |
 
 ### Test results
@@ -2425,3 +2427,16 @@ Goal: one plugin with all orchestrator commands, documented, from the existing m
 | Maintenance window, by the root (2026-11-23) | PR 103 merged (852d0a7). `orch` 0.1.1 installed from 852d0a7; one `orch watch` of 30d48d28 held the old `.store` folder and was stopped right before the update. The two `CLAUDE_CODE_PLUGIN_DIRS` lines removed from `~/.claude/settings.json`. Supervisor from main started on port 7777 |
 | `claude plugin list` after a restart, clean environment | Pass: only `orch@synced` 0.3.0, loaded. The sync works after a restart, so the `author` fix (0.3.1) was dropped |
 | `orch doctor` plugin check after the fix of P1-F14 | Pass: `ok plugin: orch@synced` |
+
+### Test orchestration (child d57f98c6, demo store, port 7871, 2026-11-23)
+
+A toy root splits a task into 2 children with `spawn_child` (`inApp: false`), then archives child A.
+
+| Step | Result | Evidence |
+|---|---|---|
+| `orch init`, `orch doctor` | Pass | Store version 3. 9 checks ok, `plugin: orch@synced`. The supervisor check fails before the start (expected) |
+| `orch supervisor start --port 7871` | Pass with a workaround (P1-F16) | 852d0a7 published to the scratchpad, `ORCH_APP` set. Port 7871 answers |
+| `orch new` toy root, 2 children | Pass | Root f0e732a5, children 7d8d012e and dcec71ae, no errors |
+| The root reports done | Pass | About 2 minutes after the start |
+| Files, archive, reports | Pass | `a.txt` = alpha, `b.txt` = beta. Child A archived, child B not. Both child reports reached the root |
+| `orch supervisor stop` | Pass | Port 7871 does not answer. No repository file changed. The live store and port 7777 not used |
