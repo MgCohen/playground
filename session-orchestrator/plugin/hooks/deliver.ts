@@ -86,6 +86,8 @@ export async function deliver($: any): Promise<void> {
     S.inputFrom = [...new Set(items.map(item => item.from))].join(',')
     if (!(await submit($, items.map(item => item.text ?? item.subject ?? '').join(SEPARATOR)))) return
     for (const item of items) await ack($, item, 'live')
+    // A question that reached the session as an envelope is shown: the recurring check does not show it again.
+    for (const item of items) if (item.kind === 'question') S.shown.add(item.thread ?? item.id)
     S.wanted = false
     await log($, `delivered ${items.map(item => `${item.kind} ${item.id}`).join(', ')}`)
   } catch (error) {

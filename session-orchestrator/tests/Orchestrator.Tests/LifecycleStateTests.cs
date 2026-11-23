@@ -144,6 +144,20 @@ public sealed class LifecycleStateTests
     }
 
     [Test]
+    public async Task Only_a_child_gets_the_step_into_the_workers_group()
+    {
+        using var t = new Rig(import: true);
+        var root = t.Create("work", "root");
+        var child = t.Create("work", "child", root);
+        await t.Cycle();
+        IReadOnlyDictionary<string, string> Fields(string id) =>
+            t.Store.Events.Fields(t.Store.Events.Thread(Orchestrator.Supervisor.Supervisor.RemoteControlThread(id)).Single()).ToDictionary(p => p.Key, p => p.Value?.ToString() ?? "");
+        Assert.That(Fields(child).GetValueOrDefault("group"), Is.EqualTo("Workers"), "the user asked for one sidebar group of child sessions");
+        Assert.That(Fields(child).ContainsKey("appId"), Is.True);
+        Assert.That(Fields(root).ContainsKey("group"), Is.False, "the root and the sessions of the user stay out of the group");
+    }
+
+    [Test]
     public async Task A_forgotten_session_gets_one_nudge_then_its_parent_gets_one_notice()
     {
         using var t = new Rig();

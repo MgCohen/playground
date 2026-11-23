@@ -68,7 +68,7 @@ export async function storeRoot($: any): Promise<string> {
 }
 
 export async function sessionDir($: any): Promise<string> {
-  return `${await storeRoot($)}/sessions/${await $.session.id()}`
+  return `${await storeRoot($)}/sessions/${S.alias ?? (await $.session.id())}`
 }
 
 // The store contract version (version.json), read before the plugin activates.

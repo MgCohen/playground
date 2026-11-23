@@ -72,6 +72,18 @@
       "description": "The app tool that archives a session. The provider gives it.",
       "type": "string"
     },
+    "groupTool": {
+      "description": "The app tool that moves a session into a sidebar group. The provider gives it.",
+      "type": "string"
+    },
+    "groupCreateTool": {
+      "description": "The app tool that makes a sidebar group. The provider gives it.",
+      "type": "string"
+    },
+    "group": {
+      "description": "The sidebar group of child sessions, for example Workers. The provider gives it.",
+      "type": "string"
+    },
     "state": {
       "type": "string"
     },

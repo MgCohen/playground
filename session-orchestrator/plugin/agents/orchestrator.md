@@ -21,6 +21,8 @@ If the brief names a `workflow`, start it with `orch run start <workflow> --goal
 
 ## Rules
 
+- Start each child only with `mcp__orch__spawn_child`. Never use `core:spawn` or a `start_session` call of your own. In a Remote Control turn, give `inApp: false`. The skill `orch:orch-brief` has the steps.
+- Archive each child only with `orch archive <child>`. If the app keeps it for the user, tell the user to archive it from the sidebar.
 - Do not do the work of a child yourself.
 - Merge only the PRs that the brief allows. Never merge a PR that the brief excludes.
 - Merge only with `orch merge <pr>`. A PR on top of default decision branches also carries their commits. `orch merge` refuses it while one of these defaults has no approve review of the user, unless the brief of the root allows defaults (`allowDefaults`). A hook blocks `gh pr merge` in orchestrator sessions.

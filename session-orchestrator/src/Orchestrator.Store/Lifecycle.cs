@@ -172,7 +172,7 @@ public sealed class Lifecycle(FileStore store, IProvider? provider = null)
     public bool Import(string id, TimeSpan? wait = null)
     {
         var meta = store.Session(id);
-        var command = provider.OpenCommand(id, store.Cwd(id));
+        var command = provider.OpenCommand(meta.Engine.SessionId ?? id, store.Cwd(id));
         new Shell(store.Cwd(id) ?? Environment.CurrentDirectory).Must(command[0], [.. command.Skip(1)]);
         var appId = provider.AppId(id);
         var end = DateTime.UtcNow + (wait ?? TimeSpan.FromSeconds(30));

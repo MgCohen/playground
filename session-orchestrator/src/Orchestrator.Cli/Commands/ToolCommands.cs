@@ -145,9 +145,9 @@ public static class ToolCommands
             c.Output.WriteLine($"{(result.Ok ? "ok  " : "FAIL")} {name}: {result.Detail}");
         }
         var shell = new Shell(c.Cwd);
-        Check("home", () => (File.Exists(Path.Combine(Home.Root(), Home.Solution)), Home.Root()));
-        Check("install", () => Install.Check(new Shell(Home.Root()), Install.Commit));
-        Check("app", () => Install.CheckApp(new Shell(Home.Root()), SupervisorHost.AppRoot()));
+        Check("home", () => (Directory.Exists(Home.Templates()), Home.Root()));
+        Check("install", () => Home.Repo() is { } repo ? Install.Check(new Shell(repo), Install.Commit) : (true, "no source checkout: the templates come with the tool"));
+        Check("app", () => Home.Repo() is { } repo ? Install.CheckApp(new Shell(repo), SupervisorHost.AppRoot()) : (true, "no source checkout"));
         Check("store", () => (c.Store.Repositories.Exists(), c.Store.Repositories.Exists() || !StoreMigration.IsStore(Home.OldStoreRoot()) ? c.Store.Root : $"{c.Store.Root} does not exist. The old store {Home.OldStoreRoot()} exists: run orch store migrate"));
         Check("policy", () =>
         {

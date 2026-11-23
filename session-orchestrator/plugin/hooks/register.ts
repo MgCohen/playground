@@ -1,5 +1,6 @@
 import type { Register } from 'claude-code'
-import { ROW_CHARS, S, TICK_MS, homeRoot, now } from './state.ts'
+import { ROW_CHARS, S, TICK_MS, homeRoot, now, orch } from './state.ts'
+import { CHECK_MS, rootCheck } from './check.ts'
 import { enable, isEnabled, log, readSession, readSessionVersioned, sessionDir, storeRoot, storeVersion, writeHeartbeat, writeMirror, writeSession } from './backend.ts'
 import { emitRow } from './events.ts'
 import { beat, findProcess, mayTakeLease, releaseLease, turnOpen, writeLease } from './lease.ts'
@@ -85,7 +86,7 @@ export async function mayActivate($: any): Promise<boolean> {
 
 async function activate($: any, dir: string, reason: unknown): Promise<void> {
   if (!(await mayActivate($))) return
-  S.id = await $.session.id()
+  S.id = S.alias ?? (await $.session.id())
   S.dir = dir
   S.home = await homeRoot($)
   S.store = await storeRoot($)
@@ -99,21 +100,68 @@ async function activate($: any, dir: string, reason: unknown): Promise<void> {
   const open = await turnOpen($)
   if (mayTakeLease(S.holder, open.turn, open.lease, open.now)) await writeLease($, S.holder, reason)
   else await log($, 'a supervisor turn runs: the lease waits for its end')
-  const host = await $.env.get('CLAUDE_CODE_HOST_SESSION_ID')
+  // A supervisor turn inherits the host id of the process that started the supervisor: only a live process has its own (P1-F10).
+  const host = S.holder === 'live' ? await $.env.get('CLAUDE_CODE_HOST_SESSION_ID') : undefined
   const entry = await readSession($, 'session.json', dir)
   if (host && entry && entry.engine?.appId !== host) await postMetaUpdate($, S.id!, 'appId', host)
+  // A root orchestrator gets the recurring check by default (P1-F12).
+  S.root = entry?.role === 'orchestrator' && !entry?.parent
   await log($, `activate plugin holder=${S.holder} ${JSON.stringify(reason)}`)
-  await registerTools($)
+  await registerToolsFromHome($)
   if (S.holder === 'live') watchLoop($).catch((error: unknown) => log($, `watch failed: ${String(error)}`))
   if (S.timers) return
   S.timers = true
   $.clock.every(TICK_MS, () => beat($))
   $.clock.every(TICK_MS, () => tick($))
+  $.clock.every(CHECK_MS, () => rootCheck($))
+}
+
+// The tools read their schemas from the templates of the home folder. A wrong ORCH_HOME (a deleted worktree, P1-F8)
+// must not leave the session with no tools: try `orch home`, then the plugin folder.
+async function registerToolsFromHome($: any): Promise<void> {
+  const tried: string[] = []
+  for (const next of [async () => S.home, async () => homeFromOrch($), async () => $.plugin.root]) {
+    const home = await next()
+    if (!home || tried.includes(home)) continue
+    tried.push(home)
+    S.home = home
+    try {
+      await registerTools($)
+      if (tried.length > 1) await log($, `tools registered from home ${home} (not ${tried[0]})`)
+      return
+    } catch (error) {
+      await log($, `tools not registered from home ${home}: ${String(error).slice(0, 200)}`)
+    }
+  }
+}
+
+async function homeFromOrch($: any): Promise<string | undefined> {
+  const run = await orch($, ['home'], 15000)
+  return run.ok ? run.text.split(/\r?\n/).pop()?.trim() : undefined
 }
 
 async function activateIfEnabled($: any, event: string): Promise<void> {
-  const dir = await sessionDir($)
+  let dir = await sessionDir($)
+  if (!(await isEnabled($, dir)) && (await findAlias($))) dir = await sessionDir($)
   if (await isEnabled($, dir)) await activate($, dir, { event })
+}
+
+// P1-F11: the app can give a session a new engine session id, so the folder of the engine id does not exist. The store id
+// comes from ORCH_SESSION_ID (a supervisor turn), else from `orch whoami` in an app process (by the app id). One try per process.
+async function findAlias($: any): Promise<boolean> {
+  if (S.aliasTried) return false
+  S.aliasTried = true
+  const given = await $.env.get('ORCH_SESSION_ID')
+  if (given) {
+    S.alias = given
+    return true
+  }
+  if (!(await $.env.get('CLAUDE_CODE_HOST_SESSION_ID')) || ((await $.env.get('ORCH_HOLDER')) ?? 'live') !== 'live') return false
+  const run = await orch($, ['whoami'], 15000)
+  const id = run.ok ? run.text.split(/\r?\n/).pop()?.trim() : undefined
+  if (!id) return false
+  S.alias = id
+  return true
 }
 
 // The registry entry of a session that joins with /orch-enable (store version 3). The plugin writes it only here: a new
