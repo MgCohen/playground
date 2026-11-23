@@ -244,7 +244,7 @@ svg .arrow.ret { fill: var(--muted); }
           <tr><td>R2</td><td>A view reads only projections of the stream</td><td>No view reads a side file</td></tr>
           <tr><td>R3</td><td>An action only posts</td><td>No action writes a file or a field</td></tr>
           <tr><td>R4</td><td>A projection is a cache</td><td>Delete it, rebuild it, same result</td></tr>
-          <tr><td>R5</td><td>A view updates on a push</td><td>No poll timer for data</td></tr>
+          <tr><td>R5</td><td>A view updates on a push</td><td>No poll timer for data (Q2)</td></tr>
           <tr><td>R6</td><td>Plumbing serves only the stream</td><td>No page shows a plumbing file</td></tr>
           <tr><td>R7</td><td>One writer for each projection</td><td>One fold function, one owner</td></tr>
         </tbody>
@@ -336,7 +336,7 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
     </div>
 
     <div class="panel q">
-      <h3>Q2. Is a poll timer a bypass?</h3>
+      <h3>Q2. Is a poll timer a bypass? <span class="pill ok">Default: (a) yes</span></h3>
       <dl>
         <dt>Context</dt><dd><code>LiveView</code> reloads on a push and also each 10 s. <code>TickService</code> runs at least each 5 s.</dd>
         <dt>Options</dt><dd>(a) Yes: a data poll is a bypass. (b) No: the audit checks only the data source.</dd>
