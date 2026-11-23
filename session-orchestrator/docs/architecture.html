@@ -223,7 +223,19 @@ flowchart LR
     <tr><td>Reactor</td><td>Starts a command after an event</td><td>Nothing directly</td></tr>
     <tr><td>Query</td><td>Reads a projection for a host</td><td>Nothing</td></tr>
   </table></div>
-  <p>You can delete a projection and build it again from the stream. Run state with a high rate (lease heartbeat, cursors) is on an exception list. Question Q1 decides that list.</p>
+  <p>You can delete a projection and build it again from the stream. The session registry, claims, decisions and workflow runs are projections.</p>
+</section>
+
+<section>
+  <h2>State outside the stream: one short list <span class="pill draft">default K-Q1</span></h2>
+  <div class="scroll"><table>
+    <tr><th>State</th><th>Store</th><th>Reason</th></tr>
+    <tr><td>Lease and heartbeat</td><td><code>IRepository</code> (local)</td><td>Write every 3 s</td></tr>
+    <tr><td>Subscription cursors</td><td><code>IRepository</code> (local)</td><td>Read position, not a fact</td></tr>
+    <tr><td>Logs</td><td><code>ILogSink</code></td><td>Text for people, not state</td></tr>
+    <tr><td>Definitions (templates, modes, policy)</td><td><code>IRepository</code></td><td>Source files in git</td></tr>
+  </table></div>
+  <p>All other state comes from the stream. A claim is an append with an expected version, so the first writer wins.</p>
 </section>
 
 <section>
@@ -364,11 +376,6 @@ public interface IStateChecker { ... }</pre>
 <section>
   <h2>Open questions</h2>
   <p>Answer in free text. Each answer goes into the Topology tab, and its question leaves this tab.</p>
-
-  <div class="q"><h3>Q1 · How much of the state comes from the stream? <span class="pill open">open</span></h3>
-    <p><span class="lbl">Context</span>The registry, leases, claims and cursors are mutable files next to the stream. Tasks W and N affect this answer.</p>
-    <p><span class="lbl">Options</span>(a) All state is a projection, with an exception list for run state. (b) The stream holds facts; repositories keep the registry and run state. (c) All state, also leases and heartbeats.</p>
-    <div class="rec">Recommendation: (a). The stream is the single source of truth. Heartbeats stay out because of their rate.</div></div>
 
   <div class="q"><h3>Q2 · How are the slices packaged? <span class="pill open">open</span></h3>
     <p><span class="lbl">Options</span>(a) One <code>Orchestrator.Features</code> project, one folder for each slice. (b) One project for each slice. (c) Keep the projects, add slice folders in them.</p>
