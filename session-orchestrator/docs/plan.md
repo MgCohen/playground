@@ -667,3 +667,9 @@ Findings:
 - The NuGet package `org.k2fsa.sherpa.onnx` 2.0.1 has only a CPU build for Windows. The GPU needs a CUDA build of sherpa-onnx.
 - 13 s after stop is too slow for a 5-minute dictation. Two fixes: the GPU, or a decode of each part while the user still speaks (cut at pauses), so that only the last part waits after stop.
 - The test voice is synthetic. The user's own voice is the next test.
+
+### M status (2026-11-23): approval deferred, spike stopped
+
+- The user deferred the approval of the M plan (Q8). Q8 stays open. No default applies, and no step starts.
+- The Parakeet spike on port 7830 is stopped. Start it again only after the approval: `dotnet run --project spikes/m1-dictation`.
+- The tests with the user's own voice (PC and phone) did not run.
