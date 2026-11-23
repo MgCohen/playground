@@ -277,6 +277,7 @@ flowchart LR
       <details><summary><span class="n">Orchestrator.Providers/</span><span class="d">IProvider implementations</span></summary><div class="more">ClaudeCode/, Fake/, Processes/. Only this folder knows engine names.</div></details>
       <details><summary><span class="n">Orchestrator.Web, .Cli, .Tray/</span><span class="d">hosts</span></summary><div class="more">Composition, input mapping, UI. No event kinds, no appends, no rules.</div></details>
     </details>
+    <details><summary><span class="n">plugin/</span><span class="d">live side of Providers/ClaudeCode (default K-Q9)</span></summary><div class="more">The TypeScript hooks and MCP tools run inside Claude Code. They write only events, through the store contract in docs/store.md (backend.ts). They hold no rules of a slice. Rule A1 applies; the check is a test in plugin/hooks that only backend.ts writes store files.</div></details>
   </div>
 </section>
 
@@ -422,10 +423,6 @@ public interface IStateChecker { ... }</pre>
   <h2>Open questions</h2>
   <p>Answer in free text. Each answer goes into the Topology tab, and its question leaves this tab.</p>
 
-  <div class="q"><h3>Q9 · Where is the plugin in the topology? <span class="pill open">open</span></h3>
-    <p><span class="lbl">Context</span>The plugin hooks (TypeScript) write store files from inside Claude Code.</p>
-    <p><span class="lbl">Options</span>(a) The live side of <code>Providers/ClaudeCode</code>. It writes only events, through the store contract. (b) A separate host with its own rules.</p>
-    <div class="rec">Recommendation: (a). Then rule A1 also covers the plugin.</div></div>
 </section>
 </div>
 </div>
