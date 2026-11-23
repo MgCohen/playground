@@ -228,6 +228,20 @@ flowchart LR
 </section>
 
 <section>
+  <h2>The supervisor dispatches, the slices react <span class="pill draft">default K-Q5</span></h2>
+<pre class="stack"><span class="c">Web/Program.cs (composition root)</span>
+  services.AddSlice&lt;Decisions&gt;()      <span class="c">// registers its handlers, projections, reactors</span>
+  services.AddSlice&lt;Sessions&gt;()
+  ...
+<span class="c">Supervisor tick (host)</span>
+  read new events from the stream
+    for each projection : apply(event)
+    for each reactor    : react(event) -&gt; command
+  emit a Tick event        <span class="c">// timers: defaults, reminders, watchdog</span></pre>
+  <p>The tick has no feature logic. A timer rule (default after 600 s, a reminder) is a reactor on the <code>Tick</code> event in its own slice.</p>
+</section>
+
+<section>
   <h2>State outside the stream: one short list <span class="pill draft">default K-Q1</span></h2>
   <div class="scroll"><table>
     <tr><th>State</th><th>Store</th><th>Reason</th></tr>
@@ -384,10 +398,6 @@ public interface IStateChecker { ... }</pre>
 <section>
   <h2>Open questions</h2>
   <p>Answer in free text. Each answer goes into the Topology tab, and its question leaves this tab.</p>
-
-  <div class="q"><h3>Q5 · Is the supervisor a host of reactors? <span class="pill open">open</span></h3>
-    <p><span class="lbl">Options</span>(a) Each slice registers its reactors; the tick only sends events to them. (b) Keep one central supervisor class.</p>
-    <div class="rec">Recommendation: (a). A feature then adds a reactor, not lines in Supervisor.cs.</div></div>
 
   <div class="q"><h3>Q7 · Plain .NET or the VSA framework? <span class="pill open">open</span></h3>
     <p><span class="lbl">Context</span><code>docs/plan.md</code> says: plain .NET until 1.0, decide after the VSA 0.1.0 release. The kernel copies <code>IRepository</code> from vsa-template.</p>
