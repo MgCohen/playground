@@ -5,6 +5,7 @@ Read these files before you change this project:
 | File | Content |
 |---|---|
 | `docs/plan.md` | Goal, phases, test results, findings, next steps |
+| `docs/architecture.html` | The architecture: slices around the event stream, topology, rules A1–A9 and their tests (https://claude.ai/artifact/1ah9eGXuB8rxFzRfwJqGwU) |
 | `docs/store.md` | The store contract, the HTTP API, the policy |
 | `docs/know-how.md` | Engine limits, mod rules, live test recipe, app import, settings |
 | `docs/orchestrator-design.html` | The design page (https://claude.ai/artifact/EggEYH4ivUuPGG9Pw4k1y1) |
