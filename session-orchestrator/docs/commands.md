@@ -128,7 +128,7 @@ The app can give a session a new engine session id. The app id stays the same. T
 | `start_session`: "the user is working over Remote Control" | Do not try again. `spawn_child` with `inApp: false` |
 | `start_session`: "only on the user's own words", "only where this one runs" | Do not try again. `spawn_child` with `inApp: false` |
 | `get_session`, `set_remote_control`: "not found" | Use the full `local_<uuid>` id. Wait 5 s, try again, 3 times maximum |
-| `set_remote_control`: "requires an active session" | Try again at once, 3 times maximum |
+| `set_remote_control`: "requires an active session" | Send the session a message first (it starts a turn), wait 5 s, try again. An immediate retry fails |
 | `set_remote_control` on an archived session | `unarchive_session` first |
 | Auto mode: "a hook changed this call's input" | Send the same call again, alone |
 | `send_message`: "a turn is in progress" | Not a failure: the app queues the message |
