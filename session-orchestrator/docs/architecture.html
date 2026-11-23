@@ -279,6 +279,18 @@ flowchart LR
     <tr><td>A9</td><td>Store IO only in Store/Local</td><td><code>ArchitectureTests</code> (exists)</td></tr>
   </table></div>
 </section>
+
+<section>
+  <h2>Test tool: ArchUnitNET and text scans <span class="pill draft">default K-Q6</span></h2>
+  <div class="scroll"><table>
+    <tr><th>Tool</th><th>Rules</th><th>Why</th></tr>
+    <tr><td>ArchUnitNET with NUnit</td><td>A3, A4, A5, A6, A7</td><td>Type, namespace and slice rules</td></tr>
+    <tr><td>Text scans (exist)</td><td>A8, A9</td><td>Engine names and file IO in text</td></tr>
+    <tr><td>Replay tests</td><td>A1, A2</td><td>Behavior, not structure</td></tr>
+  </table></div>
+<pre class="stack"><span class="c">// A5 in ArchUnitNET: no slice depends on another slice</span>
+Slices().Matching("Orchestrator.Features.(*)").Should().NotDependOnEachOther().Check(Architecture);</pre>
+</section>
 </div>
 
 <!-- ============ CURRENT ============ -->
@@ -374,10 +386,6 @@ public interface IStateChecker { ... }</pre>
   <div class="q"><h3>Q5 · Is the supervisor a host of reactors? <span class="pill open">open</span></h3>
     <p><span class="lbl">Options</span>(a) Each slice registers its reactors; the tick only sends events to them. (b) Keep one central supervisor class.</p>
     <div class="rec">Recommendation: (a). A feature then adds a reactor, not lines in Supervisor.cs.</div></div>
-
-  <div class="q"><h3>Q6 · Which tool runs the architecture tests? <span class="pill open">open</span></h3>
-    <p><span class="lbl">Options</span>(a) ArchUnitNET with NUnit. (b) NetArchTest.Rules. (c) Our own reflection and text scans only.</p>
-    <div class="rec">Recommendation: (a). It has a slice rule: no dependency between slices. Keep the text scans for engine names and store IO.</div></div>
 
   <div class="q"><h3>Q7 · Plain .NET or the VSA framework? <span class="pill open">open</span></h3>
     <p><span class="lbl">Context</span><code>docs/plan.md</code> says: plain .NET until 1.0, decide after the VSA 0.1.0 release. The kernel copies <code>IRepository</code> from vsa-template.</p>
