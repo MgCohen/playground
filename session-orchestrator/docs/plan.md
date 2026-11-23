@@ -2387,3 +2387,77 @@ Test bed: a demo store in the scratchpad, `demo.ps1 -Fake -Port 7850 -AnyPort -N
 | Answer one demo card | Pass. Answer "HELLO", Questions 2 becomes 1, the next card shows | `10-card-before.png`, `11-card-answered.png` |
 
 Note for tests: a `WM_CLOSE` that another process posts gives a close reason that is not `UserClosing`. The widget then closes for real and the tray cannot show it again. Use `WM_SYSCOMMAND SC_CLOSE` (the same as Alt+F4).
+
+## #83 spike: Artifact database as a remote store (2026-11-23)
+
+Result: two cloud sessions exchanged a question, an answer and an ack through the database of one private Artifact. They did not use the local store or `orch`. The store rules `Exists` and `Stale` map to the database. The C# supervisor and `orch` cannot reach the database, so it cannot be the remote store behind `IRepository`.
+
+Store page: https://claude.ai/artifact/WrQYrT5TLFpcEvcwgNzqrK. Results page: https://claude.ai/artifact/C8h5GMjnARmvHkgL26fTny. Files: `spikes/artifact-store/`.
+
+```mermaid
+sequenceDiagram
+    participant A as Cloud session A
+    participant D as Artifact database
+    participant B as Cloud session B
+    A->>D: set events/question (18:11:13)
+    B->>D: query to == cloudB (18:11:16)
+    B->>D: set events/answer (18:11:20)
+    B--xD: set claims/answer (refused: exists)
+    A->>D: query thread (18:11:37)
+    A->>D: update answer, if_version 1 (18:11:44)
+```
+
+### Measurements
+
+| Item | Result |
+|---|---|
+| `ArtifactData` in a cloud session | Yes, in both. No setup, no token |
+| Start of a cloud session | `claude --cloud` in a terminal tab: 4 s. Start to first write: 27 s |
+| Write time of one call | 2 to 3 s (client time to server `updatedAt`) |
+| Question to answer | 4 to 7 s (B polled at once) |
+| Question to ack | 31 s. The 15 s poll of A sets most of it |
+| Push to a session | None. Only a page has `onSnapshot` |
+| Create of an existing id, no pin | Refused: `version_mismatch` (store rule `Exists`) |
+| Write with an old `if_version` | Refused: `version_mismatch` (store rule `Stale`) |
+| Claim race | The first writer wins. B got `version_mismatch` |
+| Batch with one conflict | Atomic: nothing written |
+
+### Limits
+
+| Limit | Value | Effect on the store |
+|---|---|---|
+| Document size | 256 KiB | Large bodies need a split |
+| Documents for each artifact | 25,000 | 2,350 envelopes a day fill it in 10 days |
+| Batch | 50 writes, 1 MiB | Enough for one tick |
+| Query | Scans the collection | Hundreds to low thousands of documents |
+| Access | Owner and shared people. View level reads only | No service token |
+| Caller | Claude tool or page only | No HTTP API for C# |
+
+### Ways to start a cloud session
+
+| Way | Result |
+|---|---|
+| `start_session` with `target: cloud` | Refused in a Remote Control turn |
+| `claude --cloud` from the Bash tool | Refused: needs an interactive terminal |
+| `claude --cloud` in a terminal tab (`run_in_terminal`, script file) | Works: prints the session id and the view URL |
+
+### Comparison
+
+| Option | Push | C# access | Store rules | Limits |
+|---|---|---|---|---|
+| Artifact database | No (poll) | No | `Exists`, `Stale` | 256 KiB, 25,000 docs |
+| Direct session messages | Yes: starts a turn | No | None: no store | No query, no history |
+| Notion store (H1, H6) | No (poll) | REST API with a token | No conditional write | 3 requests/s |
+
+### Findings
+
+| # | Finding | State |
+|---|---|---|
+| R83-1 | Each read and write is one model tool call. A store with many reads for each tick costs tokens | Open |
+| R83-2 | The app does not list cloud sessions that the CLI started. `archive_session` gives "not found" | Open: archive them on claude.ai/code |
+| R83-3 | A cloud session has no wait tool. The poll needs a shell wait between calls | Accepted |
+| R83-4 | The sessions write times from the shell clock, 1 to 3 s off the server time | Accepted. Use `updatedAt` |
+
+### Recommendation
+
+Do not use the Artifact database as the remote store behind `IRepository`. The supervisor, `orch` and the hooks cannot call it. Go to the next option for the store: the H5 store API through the D2 tunnel, or a Notion store (H6). The Artifact database stays a possible mailbox for cloud sessions with no tunnel: a relay copies its envelopes into the local store.

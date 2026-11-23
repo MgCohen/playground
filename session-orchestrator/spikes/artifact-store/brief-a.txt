@@ -1,0 +1,11 @@
+Spike for issue 83, session A (the asker). Do not change any repository file. Do not push.
+Goal: send an orchestrator question to session B through the database of one Artifact, and read the answer.
+Artifact URL: https://claude.ai/artifact/WrQYrT5TLFpcEvcwgNzqrK
+Tool: ArtifactData (load it with ToolSearch, query select:ArtifactData). If you do not have this tool, write the list of your tools that contain Artifact in the name, then stop.
+Steps:
+1. Write the document spike/a-start (collection spike, doc_id a-start) with the fields at (ISO time now) and tools (true or false: ArtifactData available).
+2. Write the question envelope: collection events, doc_id 1795460000000-aaaaaaaa-cloudA, no if_version. Fields: id (same as doc_id), at (ISO time now), kind decision, from session:cloudA, to session:cloudB, subject Which color goes in color.txt?, thread spike83-t1, needs answer, options [red, blue], body inline.
+3. Poll every 15 s: action query, collection events, where thread == spike83-t1. Stop when an envelope with kind answer exists, or after 15 minutes.
+4. Ack the answer: read the answer, then update it with if_version (the version you read) and the field ackedBy cloudA.
+5. Write spike/a-result with: questionAt, answerSeenAt, ackAt, polls (count), errors (each error text), notes (what was hard).
+6. Reply with a short summary of the times and the errors. Then end.
