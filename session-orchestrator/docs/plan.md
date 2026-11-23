@@ -2041,6 +2041,48 @@ The run showed that a type does one thing: it selects the agent and the skills o
 
 So a "session kind" today is the pair of role and type. The role says what the session does in a run. The type says which agent runs it. The run did not use a step of a type (`{ "type": name }`), because the planning workflow uses only `owner`. A type with tool limits or its own behavior does not exist. Recommendation: keep the type as a start setting of the provider, and do not add a separate kind field.
 
+## L live demo (2026-11-18)
+
+`tools/demo/demo.ps1` started a clean live demo from the branch `orch/c5-c3-findings`: one root with a `planning` run and three children, real `claude` on `haiku`, store `%LOCALAPPDATA%\orch\demo-store\store`, port 7791. The first full turns took about 30 s.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| The script runs from a clean start | Pass. It stops the old demo, publishes the stack, makes a new store and starts all processes |
+| Question cards | Pass. Two open questions: the child ("Which greeting word do we put in hello.txt?") and the root, from the step `ask` of the run ("Which language do we use in greeting.txt?") |
+| Report | Pass. `Demo child: report done` reported `done`: "report.txt is written." |
+| Update | Pass. `Demo child: send an update` sent "Half of the check list is done." (50 %) |
+| Session tree | Pass. `orch tree` and `/api/sessions` show the root and its three children |
+| Workflow run | Pass. `planning-586ab943` waits at the step `answer`. History: read, ask |
+| No failure flood | Pass. The messages to the user are the 2 questions, the report and the update. No "failed", "does not respond" or stuck message |
+| Model | Pass. The transcripts show `claude-haiku-5-5` for each turn |
+| Tray | Pass. The tray runs in live mode on the demo store and port |
+
+### Findings
+
+| Id | Finding | Proposal | State |
+|---|---|---|---|
+| L-F1 | The supervisor gives its full environment to each `claude` turn. A supervisor that starts from a Claude session gives the turns `CLAUDE_CODE_SESSION_ID`, `CLAUDE_CODE_HOST_SESSION_ID`, `CLAUDE_CODE_AGENT=orch:worker`, `CLAUDE_CODE_PLUGIN_DIRS` and the messaging socket of that session. In the first demo run the plugin wrote `appId = local_ab9acae5-...` (the app id of the host session) into the demo root | The provider removes the engine variables of the host from the turn environment, and sets only its own | Open (app code, owner D). The demo script removes the variables before the start |
+| L-F2 | With `haiku` and only the agent text of `orchestrator`, the root ran `orch run start` and ended its turn. The run stayed at the step `read`, with no stuck question | None in the app. The demo goal names each `orch run` command | Workaround in the demo |
+| L-F3 | The supervisor has no option for the model or the effort of a turn | Add a model and effort setting to the provider, if a cheap test run is a use case | Open, for review. The demo uses `ANTHROPIC_MODEL` |
+| L-F4 | The tray allows one normal instance for each user. The demo tray cannot start while the installed tray or another live tray runs | None. The script prints the tray command | No change |
+| L-F5 | Windows PowerShell 5.1 breaks a native argument with quotes or line breaks, and makes a native stderr line an error | None in the app | The script puts goals and bodies in files and runs natives with a helper |
+| L-F6 | A copied session names its real folder in `work.cwd` and `work.repo`. An archive in the demo UI of a copy runs `git worktree remove` on that real folder | The environment feature of issue #47 must guard this. Until then, a copy must point each session to a scratch folder | Workaround in the demo: `-FromLive` rewrites both fields |
+| L-F7 | With the fake provider, `orch tree` shows `new` for each session, but `/api/sessions` shows `idle` and `done`. `orch tree` reads `status.json`, and only the plugin writes it | `orch tree` uses the lifecycle state when `status.json` is absent | Open (app code, owner D) |
+| L-F8 | `orch store migrate --force` cannot copy a store that live sessions write: new files arrive during the copy, so the check finds differences and keeps no copy | None for the real migration (it needs a stopped store). A demo copy uses a snapshot | Workaround in the demo: `robocopy`, then `orch store upgrade --force` |
+
+### Fake and live copy (2026-11-18, on the branch of D)
+
+The script moved onto `orch/d-data-upgrade`, which has the fake provider of D (`ORCH_PROVIDER=fake`, `ORCH_FAKE`) and `orch store upgrade`.
+
+| Check | Result |
+|---|---|
+| `-Fake` tree (port 7793) | Pass. 2 questions, 1 report, 1 update, and `planning-d4a45ba3` waits at the step `answer` on the root question. History: read, ask, answer. No model call, 0 failure messages |
+| `-FromLive` copy (port 7792) | Pass. `robocopy` of the 58 sessions (30 MB) of `session-orchestrator\store`, upgrade to version 3 (58 registry entries). No copied `session.json` names a real folder |
+| The supervisor on the copy | Pass. In the first minutes: 81 new envelopes, all internal (72 state detects, 5 lease releases, 1 fake turn). No message to the user. `/api/sessions` shows the 7 active sessions |
+| The live store did not change | Pass. The script only reads it. The copy has its own folder `%LOCALAPPDATA%\orch\demo-live` |
+
 ## D result: store upgrade and message content (2026-11-18)
 
 Session D fixed the data side that the user found strange at the top of the stack (PR #45). Branch `orch/d-data-upgrade`, base `orch/c5-c3-findings`.
