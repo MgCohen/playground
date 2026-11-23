@@ -210,7 +210,8 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
         // folder, also the folder of the parent. A child in the folder of the parent gets none: the app uses that folder.
         if (!SameFolder(request.Cwd, request.ParentCwd)) call["cwd"] = Path.GetFullPath(request.Cwd);
         return $"Start the child in the desktop app now: call {StartTool} with these inputs: {JsonSerializer.Serialize(call, Readable)}. "
-            + "Do not change the prompt. If you do not have that tool, or the call is refused, call spawn_child again with the same fields and inApp false: then the supervisor starts the child.";
+            + "Do not change the prompt. If you do not have that tool, or the call is refused (for example \"the user is working over Remote Control\"), do not try again and do not start the child another way: "
+            + "call spawn_child again with the same fields and inApp false. Then the supervisor starts the child, opens it in the app and turns its Remote Control on.";
     }
 
     public IReadOnlyList<DoctorCheck> Doctor(CommandRun run) =>
