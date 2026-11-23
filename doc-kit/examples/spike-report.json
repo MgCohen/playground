@@ -1,0 +1,139 @@
+{
+ "title": "Traffic light controller",
+ "summary": "A finite state machine controls the lights at a crossing of a main road and a side road. It has four states, a timer and a sensor for cars on the side road.",
+ "source": { "kind": "artifact" },
+ "sections": [
+  {
+   "title": "The states",
+   "blocks": [
+    { "type": "graph", "data": {
+      "rows": [3, 3, 3],
+      "nodes": [
+       { "id": "sensor", "label": "Car sensor", "sub": "side road", "kind": "outside", "row": 0, "col": 0 },
+       { "id": "mg", "label": "MAIN_GREEN", "sub": "main green, side red", "kind": "key", "row": 0, "col": 1 },
+       { "id": "timer", "label": "Timer", "sub": "counts clock ticks", "kind": "outside", "row": 0, "col": 2 },
+       { "id": "my", "label": "MAIN_YELLOW", "sub": "3 s", "kind": "key", "row": 1, "col": 2 },
+       { "id": "sy", "label": "SIDE_YELLOW", "sub": "3 s", "kind": "key", "row": 1, "col": 0 },
+       { "id": "sg", "label": "SIDE_GREEN", "sub": "main red, side green", "kind": "key", "row": 2, "col": 1 }
+      ],
+      "edges": [
+       { "from": "sensor", "to": "mg", "dashed": true },
+       { "from": "timer", "to": "mg", "dashed": true },
+       { "from": "mg", "to": "my", "label": "car and t ≥ 20 s" },
+       { "from": "my", "to": "sg", "label": "t ≥ 3 s" },
+       { "from": "sg", "to": "sy", "label": "t ≥ 10 s or no car" },
+       { "from": "sy", "to": "mg", "label": "t ≥ 3 s" }
+      ],
+      "legend": [ { "kind": "key", "text": "state" }, { "kind": "outside", "text": "input" } ]
+    } },
+    { "type": "callout", "icon": "→", "text": "The main road stays green until a car waits on the side road **and** the main road had at least 20 s of green." }
+   ]
+  },
+  {
+   "title": "The parts",
+   "blocks": [
+    { "type": "columns", "data": {
+      "groups": [
+       { "id": "in", "title": "Inputs", "desc": "Signals from the street and the clock.", "items": [
+         { "name": "car", "meta": "1 bit", "desc": "A loop in the side road sees a car" },
+         { "name": "clk", "meta": "1 Hz", "desc": "One tick each second" },
+         { "name": "rst", "meta": "1 bit", "desc": "Go to MAIN_GREEN" }
+       ] },
+       { "id": "reg", "title": "State register", "desc": "Two flip-flops hold the state.", "items": [
+         { "name": "state", "meta": "2 bits", "desc": "00, 01, 10, 11" },
+         { "name": "t", "meta": "5 bits", "desc": "Seconds in this state, 0 to 31" }
+       ] },
+       { "id": "next", "title": "Next-state logic", "desc": "Gates that read the state, t and car.", "items": [
+         { "name": "go", "meta": "1 bit", "desc": "1 when the state must change" },
+         { "name": "next", "meta": "2 bits", "desc": "state + 1 when go is 1" },
+         { "name": "clear", "meta": "1 bit", "desc": "Sets t to 0 on a change" }
+       ] },
+       { "id": "out", "title": "Output logic", "desc": "Each state sets six lamps.", "items": [
+         { "name": "main", "meta": "R Y G", "desc": "Lamps of the main road" },
+         { "name": "side", "meta": "R Y G", "desc": "Lamps of the side road" }
+       ] }
+      ]
+    } }
+   ]
+  },
+  {
+   "title": "Files",
+   "blocks": [
+    { "type": "tree", "data": {
+      "tags": { "later": "warn", "kind": "neutral" },
+      "rows": [
+       { "path": "traffic", "desc": "The project", "kind": "repo", "order": 0 },
+       { "path": "traffic/rtl", "desc": "The circuit, in Verilog", "kind": "source", "order": 1 },
+       { "path": "traffic/rtl/states.vh", "desc": "The four state codes", "order": 2 },
+       { "path": "traffic/rtl/timer.v", "desc": "Counts seconds, clears on a change", "order": 3 },
+       { "path": "traffic/rtl/controller.v", "desc": "State register and next-state logic", "kind": "top", "order": 4 },
+       { "path": "traffic/rtl/lamps.v", "desc": "State → six lamps", "order": 5 },
+       { "path": "traffic/rtl/walk.v", "desc": "A walk button for people", "when": "later", "order": 6 },
+       { "path": "traffic/tb", "desc": "Test benches", "kind": "test", "order": 7 },
+       { "path": "traffic/tb/controller_tb.v", "desc": "One full cycle, with and without cars", "order": 8 },
+       { "path": "traffic/sim", "desc": "Simulation output", "order": 9 },
+       { "path": "traffic/sim/controller.vcd", "desc": "Waveforms for GTKWave", "order": 10 }
+      ]
+    } }
+   ]
+  },
+  {
+   "title": "One clock tick",
+   "blocks": [
+    { "type": "stack", "data": {
+      "groups": [
+       { "title": "", "stacks": [
+        { "root": [
+         { "call": "posedge clk", "key": true, "note": "state = MAIN_GREEN, t = 20, car = 1", "children": [
+          { "call": "next_state(state, t, car)", "key": true, "children": [
+           { "call": "go = car AND (t ≥ 20)", "note": "go = 1" },
+           { "call": "next = MAIN_YELLOW", "note": "state + 1" }
+          ] },
+          { "call": "state ← next", "note": "flip-flops load on the edge" },
+          { "call": "t ← 0", "note": "clear, because go = 1" },
+          { "call": "lamps(MAIN_YELLOW)", "children": [
+           { "call": "main = Y", "note": "main road yellow" },
+           { "call": "side = R", "note": "side road stays red" }
+          ] }
+         ] }
+        ], "foot": "The lamps change one gate delay after the clock edge." }
+       ] }
+      ]
+    } }
+   ]
+  },
+  {
+   "title": "State table",
+   "blocks": [
+    { "type": "table", "head": ["State", "Code", "Main", "Side", "Go to next when"], "rows": [
+     ["MAIN_GREEN", "`00`", "G", "R", "car and t ≥ 20 s"],
+     ["MAIN_YELLOW", "`01`", "Y", "R", "t ≥ 3 s"],
+     ["SIDE_GREEN", "`10`", "R", "G", "t ≥ 10 s, or no car"],
+     ["SIDE_YELLOW", "`11`", "R", "Y", "t ≥ 3 s"]
+    ] },
+    { "type": "code", "lang": "verilog", "code": "always @(posedge clk) begin\n  if (rst)        begin state <= `MAIN_GREEN; t <= 0; end\n  else if (go)    begin state <= state + 1;   t <= 0; end\n  else if (t < 31)      t <= t + 1;\nend" }
+   ]
+  },
+  {
+   "title": "Design notes",
+   "blocks": [
+    { "type": "folds", "data": { "items": [
+     { "title": "Why binary order", "summary": "The codes count 00 → 01 → 10 → 11", "body": [
+      { "type": "p", "text": "Each change is `state + 1`, so the next-state logic is one adder and one AND gate. A Gray code changes one bit each step, but needs a small table." }
+     ] },
+     { "title": "Safety", "summary": "The two roads never have green at the same time", "body": [
+      { "type": "list", "items": ["Each state has red on at least one road", "A yellow state is always between two green states", "Reset goes to `MAIN_GREEN`, not to a random state"] }
+     ] },
+     { "title": "Variants", "summary": "Two changes that real crossings use", "children": [
+      { "title": "Walk button", "summary": "A fifth state for people", "body": [
+       { "type": "p", "text": "A `WALK` state between `MAIN_YELLOW` and `SIDE_GREEN`. All cars have red. It needs 3 state bits." }
+      ] },
+      { "title": "Night mode", "summary": "Yellow flashes on the main road", "body": [
+       { "type": "p", "text": "A `night` input skips the cycle. The main yellow lamp is on when `t` is even." }
+      ] }
+     ] }
+    ] } }
+   ]
+  }
+ ]
+}
