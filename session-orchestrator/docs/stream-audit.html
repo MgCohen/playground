@@ -181,7 +181,7 @@ svg .arrow.ret { fill: var(--muted); }
 
   <!-- GUIDELINES -->
   <section role="tabpanel" id="rules" aria-labelledby="t-rules" hidden>
-    <div class="status"><span class="pill warn">Proposed</span> The open questions can change these rules.</div>
+    <div class="status"><span class="pill ok">Default answers</span> Each question has a default answer. The user reviews each one in its PR.</div>
 
     <div class="block">
       <h2>Target topology: one loop</h2>
@@ -260,7 +260,7 @@ svg .arrow.ret { fill: var(--muted); }
           <tr><td>Domain fact</td><td>Envelope</td><td>Question, answer, report, state change</td><td><span class="pill ok">Required</span></td></tr>
           <tr><td>Projection</td><td>Memory or cache file</td><td>Inbox, session tree, <code>docs-checks/</code></td><td><span class="pill ok">Allowed</span> if rebuildable</td></tr>
           <tr><td>Plumbing</td><td>Small file</td><td>Cursor, claim, nudge</td><td><span class="pill ok">Allowed</span></td></tr>
-          <tr><td>Config</td><td>File</td><td><code>policy.json</code>, <code>templates/</code></td><td><span class="pill warn">Open question 6</span></td></tr>
+          <tr><td>Config</td><td>File</td><td><code>policy.json</code>, <code>templates/</code></td><td><span class="pill info">Outside the audit</span> note for K</td></tr>
         </tbody>
       </table></div>
       <p>A bypass is a domain fact outside the stream, a view that reads a side file, an action that writes a side file, or a projection that the stream cannot rebuild.</p>
@@ -373,7 +373,7 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
     </div>
 
     <div class="panel q">
-      <h3>Q6. Is config a domain fact?</h3>
+      <h3>Q6. Is config a domain fact? <span class="pill ok">Default: (b) outside the audit</span></h3>
       <dl>
         <dt>Context</dt><dd><code>policy.json</code> and <code>templates/</code> change the behavior of all parts. A running supervisor reads templates only at start.</dd>
         <dt>Options</dt><dd>(a) Config changes are envelopes (for example <code>policy.change</code>). (b) Config stays in files, outside the audit.</dd>
@@ -389,8 +389,8 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
       <div class="scroll"><table>
         <thead><tr><th>#</th><th>Step</th><th>Output</th><th>State</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>Agree the rules and the open questions</td><td>Guidelines tab, final</td><td><span class="pill warn">Now</span></td></tr>
-          <tr><td>2</td><td>Make the feature inventory</td><td>Web, Store, Supervisor, hooks, CLI, tray, providers</td><td><span class="pill info">Next</span></td></tr>
+          <tr><td>1</td><td>Agree the rules and the open questions</td><td>Guidelines tab, final</td><td><span class="pill ok">Defaults</span></td></tr>
+          <tr><td>2</td><td>Make the feature inventory</td><td>Web, Store, Supervisor, hooks, CLI, tray, providers</td><td><span class="pill warn">Now</span></td></tr>
           <tr><td>3</td><td>Trace each feature</td><td>Read source, write target, trigger</td><td><span class="pill info">Next</span></td></tr>
           <tr><td>4</td><td>Give each feature a verdict</td><td>Through the stream, bypass, allowed</td><td><span class="pill info">Next</span></td></tr>
           <tr><td>5</td><td>Write a fix for each bypass</td><td>Event kind, projection, test</td><td><span class="pill info">Next</span></td></tr>
