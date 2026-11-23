@@ -473,7 +473,7 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
         <dl class="fd">
           <dt>Where</dt><dd>Write: <code>backend.ts:101-103</code> from <code>lease.ts:345</code>, <code>register.ts:97</code>. Reads: <code>FileStore.cs:90-92</code>, <code>StateReader.cs:35</code>, <code>Recovery.cs:16</code>, the Holder row</dd>
           <dt>Problem</dt><dd>Liveness is not an envelope. A beat envelope each 3 s gives about 28,800 envelopes for each session each day.</dd>
-          <dt>Fix</dt><dd>Open decision. Default: the file stays as plumbing. Only the supervisor sweep reads it, and it posts <code>session.stale</code> or <code>session.fresh</code> when liveness changes (R8). No view reads the file.</dd>
+          <dt>Fix</dt><dd>Q7, default answer (b): the file stays as plumbing. Only the supervisor sweep reads it, and it posts <code>session.stale</code> or <code>session.fresh</code> when liveness changes (R8). No view reads the file.</dd>
           <dt>Test</dt><dd>Stop the beat. The sweep posts one <code>session.stale</code>, and the Sessions page updates on the push.</dd>
         </dl>
       </details>
@@ -607,7 +607,7 @@ flowchart LR
         <tbody>
           <tr><td>W1</td><td>W-1</td><td>Plugin posts <code>turn.start</code>, <code>turn.end</code>; turn projection</td><td>None</td></tr>
           <tr><td>W2</td><td>W-2</td><td>Post <code>lease.take</code>, <code>lease.release</code>; lease projection</td><td>None</td></tr>
-          <tr><td>W3</td><td>W-3</td><td>Sweep posts <code>session.stale</code>, <code>session.fresh</code></td><td>Decision Q7</td></tr>
+          <tr><td>W3</td><td>W-3</td><td>Sweep posts <code>session.stale</code>, <code>session.fresh</code> (Q7)</td><td>None</td></tr>
           <tr><td>W4</td><td>W-4, W-5, W-6</td><td>Actions post only; registry reactor; <code>session.update</code></td><td>None</td></tr>
           <tr><td>W5</td><td>W-7</td><td>Delete <code>Tick()</code> calls; worktree reactor</td><td>W4</td></tr>
           <tr><td>W6</td><td>W-8</td><td>State projection; marks as envelopes; delete <code>state-check.json</code></td><td>W1 to W4</td></tr>
@@ -631,7 +631,7 @@ flowchart LR
     </div>
 
     <div class="panel q">
-      <h3>Q7. How does the stream show liveness? <span class="pill warn">Open</span></h3>
+      <h3>Q7. How does the stream show liveness? <span class="pill ok">Default: (b) file as plumbing</span></h3>
       <dl>
         <dt>Context</dt><dd>The plugin writes <code>heartbeat.txt</code> each 3 s. As envelopes, that is about 28,800 for each session each day.</dd>
         <dt>Options</dt><dd>(a) A beat envelope at a coarse rate, about staleSeconds / 3. (b) The file stays as plumbing; only the sweep reads it and posts <code>session.stale</code> or <code>session.fresh</code> on a change.</dd>

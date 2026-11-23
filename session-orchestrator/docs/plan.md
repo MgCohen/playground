@@ -2134,7 +2134,7 @@ Scope: Web, Store, Supervisor, plugin hooks, CLI, tray, providers. Config (`poli
 
 Through the stream (no bypass): all message kinds, the Cards page and the inbox, the Stream page, the event document, the API stream views and SSE, the plugin tools and the delivery push, the providers.
 
-Open: Q7, liveness. Default proposal: `heartbeat.txt` stays as plumbing; only the supervisor sweep reads it and posts `session.stale` or `session.fresh` on a change.
+Q7, liveness (default answer (b)): `heartbeat.txt` stays as plumbing. Only the supervisor sweep reads it, and it posts `session.stale` or `session.fresh` on a change. No view reads the file.
 
 Notes for other sessions: K, projections need one home and one owner. N, W1 to W9 add lifecycle envelopes; the store needs fast folds by session and a push for each append.
 
@@ -2184,7 +2184,7 @@ Stream audit fix tasks (W). Order: facts first, views last. Each task keeps the 
 |---|---|---|
 | W1 | The plugin posts `turn.start` and `turn.end` (`by: live`); a turn projection; `Recovery.Interrupted` from it | None |
 | W2 | The plugin and the supervisor post `lease.take` and `lease.release`; a lease projection | None |
-| W3 | Liveness: the sweep posts `session.stale` and `session.fresh` (Q7) | Q7 |
+| W3 | Liveness: the sweep reads `heartbeat.txt` and posts `session.stale` and `session.fresh` (Q7) | None |
 | W4 | Actions only post; a registry reactor folds `session.json`; `session.update` for supervisor fields; `enabled` as a projection | None |
 | W5 | Delete the `supervisor.Tick()` calls in Board and the API; a reactor removes the worktree after `session.archive` | W4 |
 | W6 | A state projection from `session.state`; the marks as envelopes; the `episode` field; delete `state-check.json` | W1 to W4 |
