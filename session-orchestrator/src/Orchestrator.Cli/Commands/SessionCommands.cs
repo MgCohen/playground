@@ -84,6 +84,7 @@ public static class SessionCommands
         File.Delete(path);
         c.Output.WriteLine($"Joined as {id} ({meta.Title}){(meta.Parent is { } q ? $", child of {Short(q)}" : "")}.");
         c.Output.WriteLine($"The plugin activates after this tool result: the {c.Provider.PluginTools} tools, the inbox and the live lease. Your brief arrives as the next message.");
+        if (meta.Parent is not null && c.Provider.WorkerGroupInstruction(appId) is { } group) c.Output.WriteLine(group);
         return 0;
     }
 

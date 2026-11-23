@@ -79,6 +79,7 @@ public sealed class AppStartTests
         var (exit, joined) = Run(rig, true, "join", file, "--id", Child);
         Assert.That(exit, Is.EqualTo(0), joined);
         Assert.That(joined, Does.Contain($"Joined as {Child} (Child C), child of {parent[..8]}"));
+        Assert.That(joined, Does.Contain("Workers"), "a child that the app started moves itself into the sidebar group of child sessions");
         var meta = rig.Store.Session(Child);
         Assert.That((meta.Title, meta.Parent, meta.Lifecycle.Started, meta.Engine.Imported, meta.Engine.AppId),
             Is.EqualTo(("Child C", parent, (bool?)true, (bool?)true, $"local_{Child}")));

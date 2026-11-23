@@ -71,6 +71,7 @@ The desktop app gives these tools to app and Remote Control turns. A supervisor 
 | `get_session` | Read a child by its full `local_<uuid>` id |
 | `set_remote_control` | Only as a notice asks |
 | `archive_session` | Only as a notice asks |
+| `move_sessions`, `create_group` (sidebar) | Only as a notice or `orch join` asks: the Workers group |
 | `send_message`, `detach_session`, `unarchive_session` | Not used |
 
 ## Lifecycle rules
@@ -88,6 +89,17 @@ Refused      ->    again, inApp: false   ->    the supervisor starts the child
 ```
 
 The supervisor opens the child in the app (notice `open-in-app`). Then the child turns its own Remote Control on (notice `remote-control-self`).
+
+### The Workers group
+
+Each child session in the app goes into the sidebar group `Workers`. The root and the sessions of the user stay out of it.
+
+| Start path | Who moves the child | Text |
+|---|---|---|
+| The supervisor starts the child | The child, in its first app turn | Notice `remote-control-self`, fields `groupTool`, `groupCreateTool`, `group` |
+| The app starts the child (`start_session`) | The child, after `orch join` | The output of `orch join` |
+
+The child calls `move_sessions` with its full `local_<uuid>` id and the group `Workers`. If the group does not exist, it calls `create_group` first. If the tools are missing or refuse, the child continues: the user can drag the session.
 
 ### Retry rules
 

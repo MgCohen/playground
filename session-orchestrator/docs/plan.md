@@ -2402,6 +2402,8 @@ Goal: one plugin with all orchestrator commands, documented, from the existing m
 | P1-F4 | The lifecycle notices had no retry rules and no sidebar fallback | `remote-control-self`, `remote-control-child`, `archive-self`, `archive-child`: retries, full ids, the sidebar fallback |
 | P1-F5 | `know-how.md` said that `archive-self` works while the session is open on screen. Transcripts 0d481f32, 6a3d1313 and 077178e7 show that the app refuses it | Corrected |
 | P1-F6 | `orch doctor` checked only `CLAUDE_CODE_PLUGIN_DIRS` | It reads `claude plugin list` and wants exactly one `orch@` copy |
+| P1-F8 | The installed supervisor gives its turns `ORCH_HOME` with the same deleted worktree path, so a supervisor turn of a session also renders no templates | The fix of P1-F1 applies after `install.ps1` |
+| P1-F9 | The user asked for one sidebar group `Workers` for child sessions | A child moves itself into it: notice `remote-control-self` (supervisor path) or the output of `orch join` (app path). A root gets no group step |
 | P1-F7 | A PowerShell function named `Git` that calls `git` calls itself (names are not case-sensitive): call depth overflow after minutes | `tools/publish-plugin.ps1` uses `Invoke-Clone` and `git.exe` |
 
 ### Test results

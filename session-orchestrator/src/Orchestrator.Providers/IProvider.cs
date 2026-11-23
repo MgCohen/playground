@@ -48,6 +48,15 @@ public interface IProvider
     /// <summary>The notice fields that name the app tools for Remote Control and archive.</summary>
     IReadOnlyList<(string Key, object? Value)> AppTools { get; }
 
+    /// <summary>
+    /// The notice fields for the sidebar group of child sessions: the app tool that moves a session into a group
+    /// (<c>groupTool</c>), the tool that makes a group (<c>groupCreateTool</c>) and the group name (<c>group</c>). Empty: the engine has no groups.
+    /// </summary>
+    IReadOnlyList<(string Key, object? Value)> GroupTools { get; }
+
+    /// <summary>The step for a child in the app: move this session (its app id) into the group of child sessions. Null: no groups.</summary>
+    string? WorkerGroupInstruction(string appId);
+
     /// <summary>The text that names the tools of the orch plugin in this engine.</summary>
     string PluginTools { get; }
 

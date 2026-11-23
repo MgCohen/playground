@@ -24,6 +24,16 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     public IReadOnlyList<(string Key, object? Value)> AppTools { get; } =
         [("remoteControlTool", "mcp__ccd_session_mgmt__set_remote_control"), ("archiveTool", "mcp__ccd_session_mgmt__archive_session")];
 
+    /// <summary>The sidebar group of the child sessions in the app. The root and the sessions of the user stay out of it.</summary>
+    public const string WorkerGroup = "Workers";
+
+    public IReadOnlyList<(string Key, object? Value)> GroupTools { get; } =
+        [("groupTool", "mcp__ccd_sidebar__move_sessions"), ("groupCreateTool", "mcp__ccd_sidebar__create_group"), ("group", WorkerGroup)];
+
+    public string? WorkerGroupInstruction(string appId) =>
+        $"Then put this session into the sidebar group \"{WorkerGroup}\": call mcp__ccd_sidebar__move_sessions with the session {appId} and the group \"{WorkerGroup}\". "
+        + $"If the group does not exist, call mcp__ccd_sidebar__create_group with the name \"{WorkerGroup}\" first. If the tools are missing or refuse, continue: the user can drag the session.";
+
     public static IReadOnlyList<string> SettingArguments(string? pluginDir) =>
         pluginDir is null ? ["--setting-sources", "user"] : ["--setting-sources", "project,local", "--permission-mode", "auto", "--plugin-dir", pluginDir];
 

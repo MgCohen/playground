@@ -29,6 +29,10 @@ public sealed class FakeProvider(ProviderOptions options) : IProvider
 
     public IReadOnlyList<(string Key, object? Value)> AppTools { get; } = [("remoteControlTool", "fake_remote_control"), ("archiveTool", "fake_archive")];
 
+    public IReadOnlyList<(string Key, object? Value)> GroupTools { get; } = [("groupTool", "fake_move_sessions"), ("groupCreateTool", "fake_create_group"), ("group", "Workers")];
+
+    public string? WorkerGroupInstruction(string appId) => $"fake_move_sessions session={appId} group=Workers";
+
     public async Task<TurnResult> Turn(TurnRequest request, CancellationToken cancel)
     {
         lock (Turns) Turns.Add(request);

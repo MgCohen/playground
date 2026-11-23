@@ -465,7 +465,9 @@ public sealed partial class Supervisor
             store.Log($"{id} imported into the desktop app");
             var meta = store.Session(id);
             if (meta.Engine.Imported == true && !meta.IsPrivate())
-                Notify(Parties.Session(id), RemoteControlThread(id), store.Texts.Notice("remote-control-self", [.. options.Provider.AppTools]));
+                // A child also goes into the sidebar group of child sessions; a root stays out of it.
+                Notify(Parties.Session(id), RemoteControlThread(id), store.Texts.Notice("remote-control-self",
+                    meta.Parent is null ? [.. options.Provider.AppTools] : [("appId", options.Provider.AppId(id)), .. options.Provider.AppTools, .. options.Provider.GroupTools]));
         }
         catch (Exception e) when (e is ShellException or IOException or InvalidOperationException)
         {
