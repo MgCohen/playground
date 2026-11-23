@@ -246,7 +246,7 @@ flowchart LR
       <details><summary><span class="n">Orchestrator.Kernel/</span><span class="d">no feature logic</span></summary>
         <details class="leaf"><summary><span class="n">Events/</span><span class="d">envelope, kinds, IEventStream</span></summary><div class="more">Append with an expected version, read by query, subscribe. One write path for all slices.</div></details>
         <details class="leaf"><summary><span class="n">Projections/</span><span class="d">projection base, rebuild</span></summary><div class="more">A projection gets each event one time, in order, and keeps a checkpoint.</div></details>
-        <details class="leaf"><summary><span class="n">Ports/</span><span class="d">IProvider, IRepository, ILogSink, IClock</span></summary><div class="more">One port for each external system. The provider port is here, not in Orchestrator.Providers.</div></details>
+        <details class="leaf"><summary><span class="n">Ports/</span><span class="d">IProvider, IRepository, ILogSink, IClock</span></summary><div class="more">One port for each external system. IProvider and its records (TurnRequest, AskRequest, AppFacts) are here (default K-Q3). Orchestrator.Providers holds only the implementations and ProviderFactory, and only the hosts reference it.</div></details>
       </details>
       <details open><summary><span class="n">Orchestrator.Features/</span><span class="d">one folder for each slice</span></summary>
         <details class="leaf"><summary><span class="n">Sessions/</span><span class="d">registry, create, open, archive</span></summary><div class="more">Today: Core/Sessions, Store/Lifecycle.cs, parts of Supervisor.</div></details>
@@ -377,11 +377,6 @@ public interface IStateChecker { ... }</pre>
 <section>
   <h2>Open questions</h2>
   <p>Answer in free text. Each answer goes into the Topology tab, and its question leaves this tab.</p>
-
-  <div class="q"><h3>Q3 · Where is the IProvider port? <span class="pill open">open</span></h3>
-    <p><span class="lbl">Context</span>It is in <code>Orchestrator.Providers</code>, with the implementations.</p>
-    <p><span class="lbl">Options</span>(a) In the kernel, <code>Kernel/Ports</code>. (b) In a <code>Providers.Abstractions</code> project. (c) Where it is.</p>
-    <div class="rec">Recommendation: (a). Then Features never references the provider project.</div></div>
 
   <div class="q"><h3>Q4 · How does one slice use another? <span class="pill open">open</span></h3>
     <p><span class="lbl">Options</span>(a) Events only. (b) Events, and the queries in <code>Contract.cs</code>. (c) No limit.</p>
