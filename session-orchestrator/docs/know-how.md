@@ -23,6 +23,7 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - A hook module can import a relative `.ts` file (`./state.ts`). The modules of one plugin share their module state.
 - Plugin skills and agents reach each session through the `mgcohen` marketplace, `CLAUDE_CODE_PLUGIN_DIRS` or `--plugin-dir`. Their names start with `orch:` (`orch:orch-ask`, `orch:worker`).
 - A plugin of the account marketplace (`mgcohen`) is on by default. Claude Code syncs the account plugins only when it starts, not during a session. A new plugin (`orch` 0.3.0) shows only in a session that starts after the sync. If that session shows "Plugins changed", run `/reload-plugins`. No documented setting turns on all plugins of a marketplace (docs check of the root, 2026-11-23).
+- After the merge of `orch` 0.3.0 into `MgCohen/claude-plugins`, claude.ai did not list `orch` at all, while `claude plugin validate` passed (2026-11-23). Two differences from `core`: `plugin.json` had no `author` (a validator warning), and `orch` has a hooks module. Version 0.3.1 adds `"author": { "name": "MgCohen" }` to test the first difference.
 - A hot reload gives the skills to a session that started before the plugin loaded, but not the `mcp__orch__*` tools. Such a session uses the CLI only (`docs/commands.md`).
 - `claude -p --agent orch:worker` starts a session with a plugin agent.
 - `$.process.run(argv, { cwd, env, stdin, timeoutMs })` runs a program with no shell. The child gets the environment of the session, so `orch` gets `ORCH_STORE`.
