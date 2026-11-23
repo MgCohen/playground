@@ -56,6 +56,7 @@ namespace Orchestrator.Cli
               orch template add <folder> [--replace]    check, then copy to <store>/templates/<folder name>
               orch template remove <kind>               move a store template to <store>/templates/.removed
               orch doctor
+              orch home                                  the home folder (templates, config): ORCH_HOME, the checkout, or the copy next to the tool
               orch store [root]                          the store root: ORCH_STORE, else %LOCALAPPDATA%\orch\store
             HTTP mode: with ORCH_URL (or with no store folder and no ORCH_STORE), each store command calls the store API of the supervisor. ORCH_TOKEN is the token
               orch store migrate [--from DIR] [--to DIR] [--dry-run] [--force]   copy the old store (<home>/store) to the store root and check the copy. Deletes nothing
@@ -74,6 +75,12 @@ namespace Orchestrator.Cli
                 return args.Positional.Count == 0 && !args.Flag("help") ? 2 : 0;
             }
             var word = args.Positional[0];
+            // The home folder (templates and config). The plugin asks it, so it needs no path of its own. No store.
+            if (word == "home")
+            {
+                output.WriteLine(Home.Root());
+                return 0;
+            }
             try
             {
                 // A child that the app started has no ORCH_STORE: the start file names the store of its parent (R-17).

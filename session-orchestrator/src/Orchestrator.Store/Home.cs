@@ -9,8 +9,22 @@ public static class Home
 {
     public const string Solution = "Orchestrator.slnx";
 
+    /// <summary>
+    /// The home folder: the folder that holds <c>templates/</c> and <c>config/</c>. <c>ORCH_HOME</c>, else the checkout
+    /// above the program, else the copy that the build put next to the program (an installed tool), else the checkout
+    /// that the build embedded, else the current folder. The bundled copy comes before the embedded checkout: it has the
+    /// version of the program, and an embedded worktree can be deleted (P1-F1).
+    /// </summary>
     public static string Root() =>
-        Environment.GetEnvironmentVariable("ORCH_HOME") is { Length: > 0 } home ? home : FindUp(AppContext.BaseDirectory) ?? Built() ?? Environment.CurrentDirectory;
+        Environment.GetEnvironmentVariable("ORCH_HOME") is { Length: > 0 } home ? home : FindUp(AppContext.BaseDirectory) ?? Bundled(AppContext.BaseDirectory) ?? Built() ?? Environment.CurrentDirectory;
+
+    /// <summary>The source checkout of this build, for the install checks: the checkout above the program, else the embedded one. Null: none.</summary>
+    public static string? Repo() =>
+        Environment.GetEnvironmentVariable("ORCH_HOME") is { Length: > 0 } home && File.Exists(Path.Combine(home, Solution)) ? home : FindUp(AppContext.BaseDirectory) ?? Built();
+
+    /// <summary>The folder of the program when the build copied <c>templates/</c> and <c>config/</c> next to it. Null: no copy.</summary>
+    public static string? Bundled(string folder) =>
+        Directory.Exists(Path.Combine(folder, "templates", "_spec")) && File.Exists(Path.Combine(folder, "config", "policy.default.json")) ? Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)) : null;
 
     static string? Built() =>
         typeof(Home).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false).OfType<System.Reflection.AssemblyMetadataAttribute>()

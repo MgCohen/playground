@@ -31,13 +31,13 @@ public sealed class ArchitectureTests
         ("src/Orchestrator.Tray/EdgeTab.cs", [], "the place of the edge tab on the screen"),
         ("src/Orchestrator.Tray/Program.cs", ["\"templates\"", "selftest-error.txt"], "the check of the home folder, and the error file of the self test"),
         ("src/Orchestrator.Tray/MockStore.cs", ["CreateTempSubdirectory", "Directory.CreateDirectory(cwd)", "Directory.Delete(Folder"], "the mock store makes and deletes its own temp folder and the cwd of its sessions"),
-        ("src/Orchestrator.Store/Home.cs", ["Solution", "File.ReadAllText(source)", "Directory.Exists(DefaultStoreRoot())", "File.Exists(Path.Combine(folder, \"orch"], "the home folder, config/policy.default.json of the repository, the choice of the orch store (H5), and the orch tool of the supervisor (C3-F5)"),
+        ("src/Orchestrator.Store/Home.cs", ["Solution", "File.ReadAllText(source)", "Directory.Exists(DefaultStoreRoot())", "File.Exists(Path.Combine(folder, \"orch", "Path.Combine(folder, \"templates\", \"_spec\")"], "the home folder, the templates and config that the build copies next to the tool (P1-F1), config/policy.default.json of the repository, the choice of the orch store (H5), and the orch tool of the supervisor (C3-F5)"),
         ("src/Orchestrator.Store/Lifecycle.cs", ["worktree", "Directory.Exists(path)", "Path.GetDirectoryName(path)"], "the git worktree of a session"),
         ("src/Orchestrator.Store/FileStore.cs", ["(Local.LocalRepositories)Repositories).PathOf"], "the path helper for tests, which delegates to the implementation"),
         ("src/Orchestrator.Cli/Commands/EventCommands.cs", ["File.ReadAllText(json)"], "a JSON file of the user"),
         ("src/Orchestrator.Cli/Commands/SessionCommands.cs", ["File.ReadAllText(file)", "File.Delete(file)", "File.Delete(path)"], "the goal file of the user, and the start file of a child that the app starts (R-F8)"),
         ("src/Orchestrator.Store/AppStart.cs", [], "the start file of a child that the app starts: a temp file outside the store, before the store entry exists (R-F8)"),
-        ("src/Orchestrator.Cli/Commands/ToolCommands.cs", ["File.ReadAllText(check)", "File.ReadAllText(render)", "Home.Solution", "example.json"], "the files of the user and the templates"),
+        ("src/Orchestrator.Cli/Commands/ToolCommands.cs", ["File.ReadAllText(check)", "File.ReadAllText(render)", "Home.Solution", "Directory.Exists(Home.Templates())", "example.json"], "the files of the user and the templates"),
         ("src/Orchestrator.Cli/Git/StackOps.cs", ["bodyFile"], "the temp file of a PR body for gh"),
     ];
 
