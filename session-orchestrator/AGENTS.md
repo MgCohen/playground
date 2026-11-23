@@ -42,7 +42,7 @@ Follow these rules for each change. The design is on the Engines tab of `docs/se
 | Build and test | `dotnet test --solution Orchestrator.slnx` |
 | Start the supervisor | `dotnet run --project src/Orchestrator.Web` |
 | Test store and port | Set `ORCH_STORE` and `ORCH_PORT` before the start |
-| Install or update `orch` | `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` |
+| Install or update `orch` | `dotnet pack src/Orchestrator.Cli -c Release -o <folder> -p:Version=<new>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder> --version <new>`. Each pack needs a new version |
 | Check the setup | `orch doctor` |
 | Install or update the tray, the supervisor and `orch` | `.\install.ps1` (needs the approval of the user on the real profile; see `docs/know-how.md`) |
 | Start or stop the supervisor | `orch supervisor start\|stop\|status [--port P]` |

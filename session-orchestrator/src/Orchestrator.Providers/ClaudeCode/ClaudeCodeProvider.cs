@@ -236,10 +236,16 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     /// The orch plugin of <c>claude plugin list</c>: exactly one copy must load. The marketplace copy is <c>orch@synced</c> or
     /// <c>orch@mgcohen</c>; a <c>--plugin-dir</c> or <c>CLAUDE_CODE_PLUGIN_DIRS</c> copy is <c>orch@inline</c>. Two copies register each tool two times.
     /// </summary>
+    /// <summary>
+    /// A plugin row of <c>claude plugin list</c>: a short marker, then <c>orch@&lt;source&gt;</c>. The marker is <c>❯</c> in a
+    /// console and <c>&gt;</c> in other output; a decoding in another code page gives other characters (P1-F14).
+    /// </summary>
+    static readonly System.Text.RegularExpressions.Regex PluginRow = new(@"^\s*\S{1,3}\s+(orch@\S+)\s*$");
+
     public static (bool Ok, string Detail) PluginCheck(string? list)
     {
         if (list is null) return (false, "claude plugin list failed");
-        var copies = list.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("❯ orch@", StringComparison.Ordinal)).Select(l => l[2..]).ToList();
+        var copies = list.Split('\n').Select(l => PluginRow.Match(l)).Where(m => m.Success).Select(m => m.Groups[1].Value).ToList();
         return copies.Count switch
         {
             0 => (false, "no orch plugin: enable orch in the mgcohen marketplace, or start with --plugin-dir"),

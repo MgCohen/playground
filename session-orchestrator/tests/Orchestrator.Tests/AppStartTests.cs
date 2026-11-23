@@ -185,6 +185,11 @@ public sealed class AppStartTests
         Assert.That(ClaudeCodeProvider.PluginCheck(two).Ok, Is.False, "two copies register each tool two times");
         Assert.That(ClaudeCodeProvider.PluginCheck("  ❯ core@synced\n").Ok, Is.False);
         Assert.That(ClaudeCodeProvider.PluginCheck(null).Ok, Is.False);
+        // The real output in the maintenance window (P1-F14): with no console, the marker is ">".
+        const string window = "Synced from claude.ai:\n\n  > core@synced\n    Version: 0.5.2\n    Status: ✔ loaded\n\n  > orch@synced\n    Version: 0.3.0\n    Path: C:/x/orch\n    Status: ✔ loaded\n";
+        Assert.That(ClaudeCodeProvider.PluginCheck(window), Is.EqualTo((true, "orch@synced")));
+        Assert.That(ClaudeCodeProvider.PluginCheck("  Γ¥» orch@synced\r\n").Ok, Is.True, "a marker in another code page");
+        Assert.That(ClaudeCodeProvider.PluginCheck("    Path: C:/plugins/orch@x\n").Ok, Is.False, "only a plugin row counts");
     }
 
     [Test]
