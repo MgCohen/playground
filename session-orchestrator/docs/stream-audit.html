@@ -247,6 +247,7 @@ svg .arrow.ret { fill: var(--muted); }
           <tr><td>R5</td><td>A view updates on a push</td><td>No poll timer for data (Q2)</td></tr>
           <tr><td>R6</td><td>Plumbing serves only the stream</td><td>No page shows a plumbing file</td></tr>
           <tr><td>R7</td><td>One writer for each projection</td><td>One fold function, one owner</td></tr>
+          <tr><td>R8</td><td>A time sweep reads projections, writes envelopes</td><td>Only for clock rules (Q3)</td></tr>
         </tbody>
       </table></div>
     </div>
@@ -345,7 +346,7 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
     </div>
 
     <div class="panel q">
-      <h3>Q3. Are time rules events?</h3>
+      <h3>Q3. Are time rules events? <span class="pill ok">Default: (b) sweep allowed</span></h3>
       <dl>
         <dt>Context</dt><dd>Default timeouts, reminders, the watchdog and the stale lease depend on the clock, not on an envelope.</dd>
         <dt>Options</dt><dd>(a) The supervisor posts a timer event (for example <code>default.due</code>) when a time passes. (b) A sweep over the projection is allowed for time only.</dd>
