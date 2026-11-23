@@ -170,7 +170,7 @@ flowchart LR
       <thead><tr><th>Step</th><th>Output</th><th>Code</th></tr></thead>
       <tbody>
         <tr><td>1 · Diagnosis</td><td>The root causes, with proof (this page)</td><td>None</td></tr>
-        <tr><td>2 · Target design</td><td>Data flow, state model, design system</td><td>None</td></tr>
+        <tr><td>2 · Target design</td><td>Data flow, state model, design system, tray host</td><td>None</td></tr>
         <tr><td>3 · Rebuild plan</td><td>Slices, order, a parity check each</td><td>None</td></tr>
         <tr><td>4 · Build</td><td>A new view project next to the old one</td><td>After approval</td></tr>
       </tbody>
@@ -190,6 +190,7 @@ flowchart LR
         <tr><td>Data-driven views: one store, one view model</td><td>You, this discussion</td></tr>
         <tr><td>Keep the approved look and motion spec</td><td>I6, V7, E2</td></tr>
         <tr><td>Keyboard input works in the tray</td><td>I5 answer</td></tr>
+        <tr><td>Step 2 compares a thin WinForms host with other tray hosts</td><td>Default decision, Q6</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -208,7 +209,6 @@ flowchart LR
     <h2>Open questions</h2>
     <div class="field"><span class="k">Q4 · Complete?</span><div class="v"><p>Is the pain list on tab 3 complete? It comes from the artifacts and <code>plan.md</code> only. Add the pains that you know from use, for example the speed of the work, agent mistakes or reviews.</p></div></div>
     <div class="field"><span class="k">Q5 · Start</span><div class="v"><p>Does the target design start from the data (state model and view model), or from the design system (tokens and components)? Recommendation: from the data. Five of the eight causes are data and lifecycle causes.</p></div></div>
-    <div class="field"><span class="k">Q6 · Tray host</span><div class="v"><p>Do we keep WinForms with WebView2 composition for the tray? Step 2 compares the options. P8 on tab 3 shows the cost of this host.</p></div></div>
   </section>
 </div>
 
