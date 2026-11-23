@@ -1,0 +1,1 @@
+Child "{{title}}" ({{child}}) is archived in the store, but the app still shows it. First call {{remoteControlTool}} with session_id "{{appId}}" and enabled false: the app refuses to archive a session while its Remote Control is on. Then call {{archiveTool}} with session_id "{{appId}}". If a call is refused, tell the user to archive it from the sidebar.

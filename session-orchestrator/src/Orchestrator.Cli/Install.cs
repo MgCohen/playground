@@ -12,6 +12,19 @@ public static class Install
     public static string? Commit =>
         typeof(Install).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+') is [_, { Length: > 0 } commit] ? commit : null;
 
+    /// <summary>The installed tray and supervisor (install.ps1): the commit of the copy against the source of the home.</summary>
+    public static (bool Ok, string Detail) CheckApp(Shell home, string appRoot)
+    {
+        if (SupervisorHost.Installed(appRoot) is not { } app) return (true, $"not installed in {appRoot}");
+        var shortCommit = app.Commit[..Math.Min(8, app.Commit.Length)];
+        var newer = home.Run("git", ["log", "--format=%h", $"{app.Commit}..HEAD", "--", "src"]);
+        if (!newer.Ok) return (false, $"{appRoot}: commit {shortCommit} is not in {home.Cwd}. Update: install.ps1");
+        var count = newer.Text.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length;
+        return count == 0
+            ? (true, $"{appRoot}: built from {shortCommit}, store {app.Store}, port {app.Port}")
+            : (false, $"{appRoot}: built from {shortCommit}, {count} newer commits change src/. Update: install.ps1");
+    }
+
     public static (bool Ok, string Detail) Check(Shell home, string? commit)
     {
         if (commit is null) return (false, $"the build has no source commit. Update: {UpdateCommand}");

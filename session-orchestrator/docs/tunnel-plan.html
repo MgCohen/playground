@@ -1,0 +1,262 @@
+<title>Orchestrator Tunnel Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* Layout: one narrow reading column, tabs at the top, tables scroll inside their own box. */
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --fg: #1b2230; --muted: #5b6577; --line: #d9dee7;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --warn: #9a5b00; --warn-soft: #fbf0dc; --bad: #a3302a; --bad-soft: #f8e3e1; --good: #2d6a3a; --good-soft: #e3f1e6;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161d; --panel: #1a2029; --fg: #e3e7ee; --muted: #9aa4b5; --line: #2e3643;
+  --accent: #5cc3cc; --accent-soft: #17343a; --warn: #e2a64a; --warn-soft: #3a2c14; --bad: #ef8a83; --bad-soft: #3d1f1d; --good: #7fcf8f; --good-soft: #1b3321; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12161d; --panel: #1a2029; --fg: #e3e7ee; --muted: #9aa4b5; --line: #2e3643;
+  --accent: #5cc3cc; --accent-soft: #17343a; --warn: #e2a64a; --warn-soft: #3a2c14; --bad: #ef8a83; --bad-soft: #3d1f1d; --good: #7fcf8f; --good-soft: #1b3321; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); }
+.wrap { max-width: 860px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.2; }
+h1 { font-size: 30px; margin: 0 0 6px; }
+h2 { font-size: 21px; margin: 30px 0 10px; }
+h3 { font-size: 16px; margin: 20px 0 6px; }
+p { max-width: 68ch; margin: 8px 0; }
+.eyebrow { font: 600 12px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.summary { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 16px 0; }
+.summary p { margin: 4px 0; }
+nav.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 4px; border-bottom: 1px solid var(--line); }
+nav.tabs button { font: 600 14px var(--body); color: var(--muted); background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 10px; cursor: pointer; }
+nav.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+nav.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scroll { overflow-x: auto; margin: 10px 0; }
+table { border-collapse: collapse; width: 100%; min-width: 520px; background: var(--panel); font-size: 14px; }
+th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; }
+th { font-weight: 600; background: var(--accent-soft); }
+code, pre { font-family: var(--mono); font-size: 13px; }
+code { background: var(--accent-soft); padding: 1px 4px; border-radius: 3px; }
+pre { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+ol, ul { padding-left: 22px; max-width: 68ch; }
+li { margin: 4px 0; }
+.who { display: inline-block; font: 600 11px/1 var(--body); letter-spacing: .05em; text-transform: uppercase; padding: 3px 6px; border-radius: 3px; margin-right: 6px; vertical-align: 1px; }
+.who.user { background: var(--warn-soft); color: var(--warn); }
+.who.code { background: var(--accent-soft); color: var(--accent); }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.note { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 8px 12px; margin: 12px 0; max-width: 68ch; }
+svg text { fill: var(--fg); font: 13px var(--body); }
+svg .small { fill: var(--muted); font-size: 11px; }
+svg .box { fill: var(--panel); stroke: var(--line); }
+svg .boxa { fill: var(--accent-soft); stroke: var(--accent); }
+svg .edge { stroke: var(--muted); fill: none; stroke-width: 1.5; }
+svg .edgea { stroke: var(--accent); fill: none; stroke-width: 2; }
+svg .zone { fill: none; stroke: var(--line); stroke-dasharray: 5 4; }
+svg .arrow { fill: var(--muted); }
+svg .arrowa { fill: var(--accent); }
+.diagram { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+.diagram svg { display: block; min-width: 640px; width: 100%; height: auto; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Session orchestrator · M4 tunnel</div>
+  <h1>Orchestrator Tunnel Plan</h1>
+  <div class="summary">
+    <p><strong>Answer (user, 2026-11-17):</strong> Cloudflare Tunnel + Access, the same as for the runner and the inbox. The build runs on the user's own PC, not on this borrowed PC.</p>
+    <p><strong>Decision (user, 2026-11-17):</strong> The phone can do the same as the tray app. Each client reaches data through the same interfaces. A local store, a remote server or memory is only a different implementation, so the client does not change.</p>
+    <p><strong>Answer (user, 2026-11-17):</strong> One user only, with no app accounts. Cloudflare Access is the only gate. Session length: the maximum that the plan allows (1 month). Roadmap: the Android app through Access, then a cloud host for more users with their own sessions.</p>
+    <p><strong>Decision (user, 2026-11-17):</strong> Plan only now. The code is a later task. Order of the clients:</p>
+    <ol>
+      <li>Tunnel + web UI in a computer browser.</li>
+      <li>Tunnel + installable web app on Android.</li>
+      <li>Native Android app.</li>
+      <li>Cloud host for more users (roadmap).</li>
+    </ol>
+    <p><strong>Plan:</strong> a named Cloudflare Tunnel, run as a Windows service, sends <code>https://orch.&lt;domain&gt;</code> to a second supervisor port. Cloudflare Access signs in one email address before each request.</p>
+    <p>Cost: US$0. The plan uses the Cloudflare account, the domain and the Access sign-in of the runner and the inbox again.</p>
+    <p>The supervisor checks the Access token on the tunnel port. Local tools keep port 7777 with no change.</p>
+    <p><strong>Gap:</strong> a cloud worker (task G2) has no browser, so it cannot sign in to Cloudflare Access. It needs a service token for the API. Task D2 builds the service token after G2.</p>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Plan sections">
+    <button role="tab" id="tab-target" aria-controls="p-target" aria-selected="true">Target</button>
+    <button role="tab" id="tab-steps" aria-controls="p-steps" aria-selected="false">Steps</button>
+    <button role="tab" id="tab-code" aria-controls="p-code" aria-selected="false">Code</button>
+    <button role="tab" id="tab-options" aria-controls="p-options" aria-selected="false">Options</button>
+    <button role="tab" id="tab-risks" aria-controls="p-risks" aria-selected="false">Risks</button>
+  </nav>
+
+  <!-- TARGET -->
+  <section role="tabpanel" id="p-target" aria-labelledby="tab-target">
+    <h2>The phone reaches the supervisor through Cloudflare, with no open port at home</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 760 300" role="img" aria-label="Request path: phone, Cloudflare Access, tunnel, cloudflared service, supervisor tunnel port. Local tools use port 7777.">
+        <defs>
+          <marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow"/></marker>
+          <marker id="ma" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrowa"/></marker>
+        </defs>
+        <rect class="zone" x="210" y="20" width="200" height="130" rx="8"/>
+        <text class="small" x="220" y="40">Cloudflare edge</text>
+        <rect class="zone" x="430" y="20" width="320" height="270" rx="8"/>
+        <text class="small" x="440" y="40">This PC (outbound only)</text>
+
+        <rect class="box" x="20" y="62" width="150" height="56" rx="6"/>
+        <text x="34" y="86">Phone browser</text>
+        <text class="small" x="34" y="104">any network</text>
+
+        <rect class="boxa" x="228" y="62" width="164" height="56" rx="6"/>
+        <text x="242" y="86">Access sign-in</text>
+        <text class="small" x="242" y="104">one email, MFA</text>
+
+        <rect class="box" x="450" y="62" width="130" height="56" rx="6"/>
+        <text x="464" y="86">cloudflared</text>
+        <text class="small" x="464" y="104">Windows service</text>
+
+        <rect class="boxa" x="604" y="62" width="132" height="56" rx="6"/>
+        <text x="616" y="86">Supervisor</text>
+        <text class="small" x="616" y="104">127.0.0.1:7778</text>
+
+        <rect class="box" x="604" y="200" width="132" height="56" rx="6"/>
+        <text x="616" y="224">Supervisor</text>
+        <text class="small" x="616" y="242">127.0.0.1:7777</text>
+
+        <rect class="box" x="450" y="200" width="130" height="56" rx="6"/>
+        <text x="464" y="224">Mod, orch, tray</text>
+        <text class="small" x="464" y="242">local tools</text>
+
+        <path class="edgea" d="M170,90 L226,90" marker-end="url(#ma)"/>
+        <text class="small" x="176" y="82">HTTPS</text>
+        <path class="edgea" d="M392,90 L448,90" marker-end="url(#ma)"/>
+        <text class="small" x="396" y="82">JWT</text>
+        <path class="edgea" d="M580,90 L602,90" marker-end="url(#ma)"/>
+        <path class="edge" d="M580,228 L602,228" marker-end="url(#m)"/>
+        <path class="edge" d="M515,118 L515,140 L470,140 L470,160 L410,160" />
+        <text class="small" x="230" y="185">cloudflared opens the tunnel to Cloudflare</text>
+        <text class="small" x="230" y="200">on outbound port 7844. No inbound rule.</text>
+        <text class="small" x="616" y="146">one process,</text>
+        <text class="small" x="616" y="162">two ports</text>
+      </svg>
+    </div>
+
+    <h3>Facts that set the design</h3>
+    <div class="scroll"><table>
+      <tr><th>Item</th><th>Fact</th><th>Effect here</th></tr>
+      <tr><td>Domain</td><td>A published route needs a domain on Cloudflare</td><td>The domain of the runner and the inbox</td></tr>
+      <tr><td>Zero Trust Free</td><td>Up to 50 users, US$0</td><td>One user fits</td></tr>
+      <tr><td>Tunnels</td><td>1,000 tunnels in each account, free</td><td>One tunnel</td></tr>
+      <tr><td>WebSockets</td><td>Tunnel has full WebSocket support</td><td>Blazor Server circuits work</td></tr>
+      <tr><td>Access token</td><td>Header <code>Cf-Access-Jwt-Assertion</code>, RS256</td><td>The supervisor can check it</td></tr>
+      <tr><td>Session length</td><td>Immediate to one month, default 24 h</td><td>Plan: 1 month, the maximum (user)</td></tr>
+      <tr><td>Sign-in kinds</td><td>Cloudflare account, one-time PIN, GitHub, passkey</td><td>The sign-in of the runner and the inbox</td></tr>
+      <tr><td>Network</td><td>Outbound UDP or TCP 7844, TCP 443</td><td>No router change</td></tr>
+    </table></div>
+    <p>The microphone button needs a secure context. The tunnel gives HTTPS, so speech input can work on the real phone. Test it in step 6.</p>
+  </section>
+
+  <!-- STEPS -->
+  <section role="tabpanel" id="p-steps" aria-labelledby="tab-steps" hidden>
+    <h2>Six steps: three for the user, two for the code, one shared test</h2>
+    <p><span class="who user">User</span>The user does it in the Cloudflare dashboard or as administrator. <span class="who code">Code</span>A session does it in this repository.</p>
+    <ol>
+      <li><span class="who user">User</span>In the account of the runner and the inbox, make the Access application <code>orch.&lt;domain&gt;</code> first. Use the same login method. Policy: Allow, include your email only. Session: 1 month, the maximum. Copy the AUD tag.</li>
+      <li><span class="who code">Code</span>Add the tunnel port and the Access token check (tab Code). Merge it before step 3.</li>
+      <li><span class="who user">User</span>Make a remote-managed tunnel. Add the route <code>orch.&lt;domain&gt;</code> → <code>http://127.0.0.1:7778</code>. Enable "Protect with Access".</li>
+      <li><span class="who user">User</span>In an administrator prompt, run <code>cloudflared.exe service install &lt;TUNNEL_TOKEN&gt;</code>.</li>
+      <li><span class="who code">Code</span>Set <code>ORCH_ACCESS_TEAM</code>, <code>ORCH_ACCESS_AUD</code> and <code>ORCH_TUNNEL_PORT</code> in the supervisor start. Record the setup in <code>know-how.md</code>.</li>
+      <li><span class="who code">Code</span>+ <span class="who user">User</span>Test on the phone with Wi-Fi off: sign-in, answer a card, a review, the mic, a reconnect after a <code>cloudflared</code> restart.</li>
+    </ol>
+    <div class="note"><strong>Make the Access application before the route.</strong> A route with no Access application is open to all of the Internet.</div>
+    <p>The tunnel token and the Cloudflare password are secrets. Keep them in 1Password. The team name and the AUD tag are not secrets.</p>
+  </section>
+
+  <!-- CODE -->
+  <section role="tabpanel" id="p-code" aria-labelledby="tab-code" hidden>
+    <h2>One new port with a token check; port 7777 stays as it is</h2>
+    <p><code>cloudflared</code> connects from 127.0.0.1. So the supervisor cannot use the client address to tell a phone from a local tool. It uses the local port.</p>
+    <pre><code>// Program.cs: second listener only when ORCH_TUNNEL_PORT is set
+builder.WebHost.UseUrls($"http://{bind}:{port}", $"http://127.0.0.1:{tunnelPort}");
+
+// AccessGate: runs before SignInMiddleware
+if (context.Connection.LocalPort == tunnelPort)
+{
+    var jwt = context.Request.Headers["Cf-Access-Jwt-Assertion"];
+    // check RS256 signature (keys: https://&lt;team&gt;.cloudflareaccess.com/cdn-cgi/access/certs),
+    // iss = team domain, aud = ORCH_ACCESS_AUD, exp; else 403
+}</code></pre>
+    <div class="scroll"><table>
+      <tr><th>Part</th><th>Change</th><th>Reason</th></tr>
+      <tr><td><code>Program.cs</code></td><td>Second listener on <code>ORCH_TUNNEL_PORT</code></td><td>Tunnel traffic is separate</td></tr>
+      <tr><td><code>AccessGate.cs</code> (new)</td><td>JWT check on the tunnel port</td><td>Defense if Access is off</td></tr>
+      <tr><td><code>SignIn.cs</code></td><td>Skip <code>ORCH_TOKEN</code> after a valid JWT</td><td>One sign-in on the phone</td></tr>
+      <tr><td>Forwarded headers</td><td>Use <code>X-Forwarded-Proto</code> on the tunnel port only</td><td>Secure cookies, https redirects</td></tr>
+      <tr><td>App bar</td><td>Sign-out link <code>/cdn-cgi/access/logout</code></td><td>End a phone session</td></tr>
+      <tr><td><code>WebTests</code></td><td>Gate tests with a test key set</td><td>No Cloudflare call in tests</td></tr>
+      <tr><td><code>decisions.md</code>, <code>know-how.md</code></td><td>Decision rows, setup recipe</td><td>Project rule</td></tr>
+    </table></div>
+    <p>The JWT check uses <code>Microsoft.IdentityModel.Protocols.OpenIdConnect</code> or a small key fetch with a cache. No JavaScript changes.</p>
+  </section>
+
+  <!-- OPTIONS -->
+  <section role="tabpanel" id="p-options" aria-labelledby="tab-options" hidden>
+    <h2>Cloudflare is the only option with a fixed public address and no phone app</h2>
+    <div class="scroll"><table>
+      <tr><th>Option</th><th>Account, domain</th><th>Cost per year</th><th>Phone needs</th><th>Address</th><th>Exposure</th></tr>
+      <tr><td><strong>Cloudflare Tunnel + Access</strong></td><td>Account and domain</td><td>Domain, about US$10 to 15</td><td>Browser only</td><td><span class="pill good">Fixed</span></td><td><span class="pill warn">Public, Access in front</span></td></tr>
+      <tr><td>Tailscale Serve</td><td>Account, no domain</td><td>US$0 (Personal)</td><td>Tailscale app, VPN on</td><td><span class="pill good">Fixed <code>*.ts.net</code></span></td><td><span class="pill good">Private network only</span></td></tr>
+      <tr><td>Quick Tunnel with <code>--allowed-mail</code></td><td>None</td><td>US$0</td><td>Browser, email PIN</td><td><span class="pill bad">New on each start</span></td><td><span class="pill warn">Public, PIN in front</span></td></tr>
+      <tr><td><code>ORCH_BIND=0.0.0.0</code> (today)</td><td>None</td><td>US$0</td><td>Same Wi-Fi</td><td><span class="pill warn">Local IP</span></td><td><span class="pill good">Home network only</span></td></tr>
+    </table></div>
+    <h3>Notes</h3>
+    <ul>
+      <li>Tailscale Personal is free for non-commercial use, with 6 users. The phone app takes the VPN slot of the phone.</li>
+      <li>A Quick Tunnel is for tests. Cloudflare gives no uptime promise, and the link changes after each restart.</li>
+      <li>A cloud environment can run <code>cloudflared</code>: it needs only outbound traffic and the token. The supervisor drives the desktop app on this PC, so the tunnel stays on this PC.</li>
+    </ul>
+  </section>
+
+  <!-- RISKS -->
+  <section role="tabpanel" id="p-risks" aria-labelledby="tab-risks" hidden>
+    <h2>The UI starts <code>claude</code> on this PC, so a sign-in breach is a remote shell</h2>
+    <div class="scroll"><table>
+      <tr><th>Risk</th><th>Level</th><th>Control</th></tr>
+      <tr><td>Access application missing or wrong</td><td><span class="pill bad">High</span></td><td>Access app before the route; JWT check in the supervisor; "Protect with Access" in <code>cloudflared</code></td></tr>
+      <tr><td>Stolen email or Cloudflare account</td><td><span class="pill bad">High</span></td><td>MFA on email and Cloudflare; one allowed email</td></tr>
+      <tr><td>IT management of this PC</td><td><span class="pill good">Low</span></td><td>No build on this PC; build on the own PC</td></tr>
+      <tr><td>Cloudflare decrypts traffic at its edge</td><td><span class="pill warn">Medium</span></td><td>Accept, or use Tailscale</td></tr>
+      <tr><td>Phone lost while signed in</td><td><span class="pill warn">Medium</span></td><td>Revoke the session in Zero Trust; sign-out link</td></tr>
+      <tr><td>PC asleep or off</td><td><span class="pill warn">Medium</span></td><td>No access; set sleep rules if necessary</td></tr>
+      <tr><td><code>cloudflared</code> restart drops the circuit</td><td><span class="pill good">Low</span></td><td>Blazor reconnects; test in step 6</td></tr>
+      <tr><td>Tunnel token leaks</td><td><span class="pill good">Low</span></td><td>Rotate the token; it cannot pass Access</td></tr>
+    </table></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('nav.tabs button'));
+  function show(id) {
+    tabs.forEach(function (t) {
+      var on = t.id === 'tab-' + id;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      var id = t.id.slice(4);
+      show(id);
+      try { history.replaceState(null, '', '#' + id); } catch (e) {}
+    });
+  });
+  function fromHash() {
+    var h = (location.hash || '').slice(1);
+    show(['target', 'steps', 'code', 'options', 'risks'].indexOf(h) >= 0 ? h : 'target');
+  }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+})();
+</script>

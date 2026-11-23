@@ -1,0 +1,4 @@
+@* Look "progress": a bar and the percent (0 to 100). *@
+@inherits LookBase
+@{ var percent = double.TryParse(Value.Text.TrimEnd(' ', '%'), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var p) ? p : 0; }
+<span class="look-progress"><Progress Value="percent" /><span class="mono">@Value.Text</span></span>

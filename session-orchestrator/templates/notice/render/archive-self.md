@@ -1,1 +1,1 @@
-The orchestrator archives this session now. Call mcp__ccd_session_mgmt__archive_session with session_id "self" and reason "archived by the orchestrator". Do nothing else before this call.
+The orchestrator archives this session now. Do nothing else before these two calls. First call {{remoteControlTool}} with session_id "self" and enabled false: the app refuses to archive a session while its Remote Control is on. Then call {{archiveTool}} with session_id "self" and reason "archived by the orchestrator".

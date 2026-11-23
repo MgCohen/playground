@@ -13,18 +13,18 @@ public sealed class SupervisorTests
         var id = t.Create("Do the work.", "root");
         await t.Cycle();
         Assert.That(t.Turns, Is.EqualTo(new[] { new TurnRequest(id, "C:/x", "Do the work.", true) { Title = "root" } }));
-        Assert.That(t.Store.Meta(id).Started, Is.True);
+        Assert.That(t.Store.Session(id).Lifecycle.Started, Is.True);
         Assert.That(t.Store.Pending(id).Text, Is.Empty);
     }
 
     [Test]
-    public async Task The_next_turn_is_a_resume_with_all_inbox_files_in_order()
+    public async Task The_next_turn_is_a_resume_with_all_messages_in_order()
     {
         using var t = new Rig();
         var id = t.Create("one", "root");
         await t.Cycle();
-        Files.Write(t.Store.PathOf(id, StoreFiles.Inbox, "10.txt"), "three");
-        Files.Write(t.Store.PathOf(id, StoreFiles.Inbox, "2.txt"), "two");
+        t.Store.Send(id, "two");
+        t.Store.Send(id, "three");
         await t.Cycle();
         Assert.That(t.Turns[1].IsNew, Is.False);
         Assert.That(t.Turns[1].Prompt, Is.EqualTo("two\n\n---\n\nthree"));
@@ -41,11 +41,13 @@ public sealed class SupervisorTests
     }
 
     [Test]
-    public async Task A_live_lease_with_a_stale_heartbeat_is_released_and_the_session_runs()
+    public async Task A_live_lease_with_a_stale_heartbeat_and_no_process_id_is_released_and_the_session_runs()
     {
         using var t = new Rig();
         var id = t.Create("hello");
         t.MakeLive(id, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+        await t.Cycle();
+        Assert.That(t.Turns, Is.Empty, "the first tick finds the state stale and runs no turn");
         await t.Cycle();
         Assert.That(t.Store.Lease(id).Holder, Is.EqualTo(Holders.None));
         Assert.That(t.Turns, Has.Count.EqualTo(1));
@@ -63,7 +65,7 @@ public sealed class SupervisorTests
     }
 
     [Test]
-    public async Task An_answer_to_a_pending_decision_is_sent_once_and_marked_delivered()
+    public async Task An_answer_is_sent_once_and_gets_an_ack()
     {
         using var t = new Rig();
         var id = await t.Started();
@@ -73,31 +75,18 @@ public sealed class SupervisorTests
         await t.Cycle();
         await t.Cycle();
         Assert.That(t.Turns, Has.Count.EqualTo(2));
-        Assert.That(t.Turns[1].Prompt, Is.EqualTo("Answer to decision d1 (Pick): LIME"));
+        Assert.That(t.Turns[1].Prompt, Is.EqualTo("Answer to question d1 (Pick): LIME"));
         Assert.That(t.Store.IsDelivered(id, "d1"), Is.True);
     }
 
     [Test]
-    public async Task An_answer_from_the_chat_of_the_session_is_not_sent_back_to_it()
-    {
-        using var t = new Rig();
-        var id = await t.Started();
-        t.Store.SaveDecision(new Decision("d1", id) { Question = "Pick", Risk = "high" });
-        t.Store.WriteJson(id, new Delivered("chat", "2026-11-17T12:00:00Z"), StoreFiles.Delivered, StoreFiles.Json("d1"));
-        t.Store.SaveAnswer(id, "d1", new Answer { Value = "LIME" });
-        await t.Cycle();
-        await t.Cycle();
-        Assert.That(t.Turns.Select(turn => turn.Prompt), Has.None.Contains("LIME"));
-    }
-
-    [Test]
-    public async Task A_done_report_of_a_child_goes_to_the_parent_inbox_once()
+    public async Task A_done_report_of_a_child_goes_to_the_parent_once()
     {
         using var t = new Rig();
         var parent = t.Create("p", "parent");
         var child = t.Create("c", "child", parent, "spawn_child");
         await t.Cycle();
-        t.Store.WriteJson(child, new Report(ReportStates.Done, "All good.", "t1"), StoreFiles.Report);
+        t.Store.SaveReport(child, ReportStates.Done, "All good.");
         await t.Cycle();
         await t.Cycle();
         var toParent = t.Turns.Where(turn => turn.Id == parent).Select(turn => turn.Prompt);
@@ -105,7 +94,7 @@ public sealed class SupervisorTests
     }
 
     [Test]
-    public async Task An_open_question_of_a_child_goes_to_the_parent_inbox_once()
+    public async Task An_open_question_of_a_child_goes_to_the_parent_once()
     {
         using var t = new Rig();
         var parent = t.Create("p", "parent");
@@ -116,7 +105,7 @@ public sealed class SupervisorTests
         await t.Cycle();
         var toParent = t.Turns.Where(turn => turn.Id == parent).Select(turn => turn.Prompt).ToList();
         Assert.That(toParent, Has.Count.EqualTo(2));
-        Assert.That(toParent[1], Does.StartWith($"Question from child \"child\" ({child}), decision d1: Q d1"));
+        Assert.That(toParent[1], Does.StartWith($"Question from child \"child\" ({child}), question d1: Q d1"));
         Assert.That(toParent[1], Does.Contain("Options: A; B"));
         Assert.That(toParent[1], Does.Contain("If nobody answers in 60 s, the policy answers \"A\"."));
         Assert.That(toParent[1], Does.Contain("mcp__orch__answer"));
@@ -136,7 +125,7 @@ public sealed class SupervisorTests
         await t.Cycle();
         await t.Cycle();
         var toParent = string.Join(" | ", t.Turns.Where(turn => turn.Id == parent).Select(turn => turn.Prompt));
-        var closed = $"Question closed: child \"child\" ({child}), decision d1: Q d1 Answer: B (from user).";
+        var closed = $"Question closed: child \"child\" ({child}), question d1: Q d1 Answer: B (from user).";
         Assert.That(toParent.Split(closed).Length - 1, Is.EqualTo(1));
     }
 
@@ -191,7 +180,7 @@ public sealed class SupervisorTests
     }
 
     [Test]
-    public async Task A_failed_turn_keeps_the_inbox_and_stops_after_the_failure_limit()
+    public async Task A_failed_turn_keeps_its_messages_and_stops_after_the_failure_limit()
     {
         using var t = new Rig(ok: false);
         var id = t.Create("hello");
@@ -199,7 +188,8 @@ public sealed class SupervisorTests
         Assert.That(t.Turns, Has.Count.EqualTo(2));
         Assert.That(t.Store.Pending(id).Text, Is.EqualTo("hello"));
         Assert.That(t.Turns.All(turn => turn.IsNew), Is.True);
-        Assert.That(t.Store.Blocked(id)?.Reason, Does.Contain("failed 2 times"));
+        Assert.That(t.Store.Blocked(id)?.Reason, Is.EqualTo("supervisor turns fail: boom"));
+        Assert.That(Failures.Current(t.Store, id, Failures.FailedTurns)?["tries"], Is.EqualTo(2.0));
     }
 
     [Test]

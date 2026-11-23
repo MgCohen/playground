@@ -118,8 +118,8 @@ public sealed class CliTests
         ops.Close("d1", "use B");
         ops.Start("d1");
         Commit(shell, "a.txt", "B");
-        var inbox = rig.Supervisor.Review(session, "d1", Verdicts.Change, "use C");
-        var text = File.ReadAllText(rig.Store.PathOf(session, StoreFiles.Inbox, inbox));
+        var review = rig.Supervisor.Review(session, "d1", Verdicts.Change, "use C");
+        var text = rig.Store.Renderer.Text(review);
         Assert.That(text, Does.Contain("orch/decision-d1-v2"));
         Assert.That(rig.Store.Review(session, "d1-v2")!.Verdict, Is.EqualTo(Verdicts.Change));
         Assert.That(rig.Store.Review(session, "d1")!.Verdict, Is.EqualTo(Verdicts.Refuse));
@@ -132,8 +132,8 @@ public sealed class CliTests
         using var _ = rig;
         rig.Decide(session, "d1", "medium", "A");
         ops.Start("d1");
-        var inbox = rig.Supervisor.Review(session, "d1", Verdicts.Refuse, "use B");
-        var text = File.ReadAllText(rig.Store.PathOf(session, StoreFiles.Inbox, inbox));
+        var review = rig.Supervisor.Review(session, "d1", Verdicts.Refuse, "use B");
+        var text = rig.Store.Renderer.Text(review);
         Assert.That(text, Does.Contain("orch stack close d1"));
         Assert.That(text, Does.Contain("orch/decision-d1-v2"));
         Assert.That(text, Does.Contain("main"));

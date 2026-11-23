@@ -45,6 +45,11 @@ public static partial class StackNames
 
     public static string Branch(string decision, int version) => Prefix + VersionId(decision, version);
 
+    public static string DecisionOf(string versionId) => VersionPattern().Match(versionId) is { Success: true } m ? m.Groups[1].Value : versionId;
+
+    [GeneratedRegex(@"^(.+?)-v\d+$")]
+    private static partial Regex VersionPattern();
+
     public static (string Decision, int Version)? Parse(string branch)
     {
         var match = BranchPattern().Match(branch);

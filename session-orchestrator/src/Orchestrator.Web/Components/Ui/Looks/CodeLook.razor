@@ -1,0 +1,10 @@
+@* Look "code": monospace text. A block is a sunken well. *@
+@inherits LookBase
+@if (IsFact)
+{
+    <span class="mono fv">@Value.Text</span>
+}
+else
+{
+    <div class="well rec"><pre class="mono pre">@Value.Text</pre></div>
+}

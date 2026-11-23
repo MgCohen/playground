@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!--
+    Spike A1: the Android host. A .NET MAUI app with a BlazorWebView, the same model as the Windows tray.
+    It links the Razor components and the UI classes of Orchestrator.Web, with no copy and no change.
+    Data: the mock store of the tray, in the data folder of the app. No supervisor process, no engine.
+    This project is not in Orchestrator.slnx, because it needs the maui-android workload.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <RootNamespace>Orchestrator.Web</RootNamespace>
+    <AssemblyName>Orchestrator.Android</AssemblyName>
+    <ApplicationTitle>Orchestrator</ApplicationTitle>
+    <ApplicationId>com.mgcohen.orchestrator</ApplicationId>
+    <ApplicationDisplayVersion>0.1</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <IsPackable>false</IsPackable>
+    <!-- A spike: platform warnings do not stop the build. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- One APK file that installs with no store. -->
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <!-- Faster spike builds: no trim, no AOT. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" VersionOverride="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" VersionOverride="$(MauiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Orchestrator.Supervisor/Orchestrator.Supervisor.csproj" />
+  </ItemGroup>
+
+  <!-- The UI of Orchestrator.Web, linked. App.razor (server render mode) and Routes.razor (server assembly) stay out. -->
+  <PropertyGroup>
+    <WebDir>../../src/Orchestrator.Web/</WebDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(WebDir)Board.cs;$(WebDir)Ui.cs;$(WebDir)Markdown.cs;$(WebDir)PageAct.cs;$(WebDir)PathTrail.cs;$(WebDir)ViewFilter.cs;$(WebDir)StreamHub.cs;$(WebDir)IWidgetWindow.cs;$(WebDir)NewSession.cs;$(WebDir)DemoPane.cs;$(WebDir)Usings.cs" Link="Web/%(Filename)%(Extension)" />
+    <Compile Include="$(WebDir)Components/**/*.cs" Link="Components/%(RecursiveDir)%(Filename)%(Extension)" />
+    <RazorComponent Include="$(WebDir)Components/**/*.razor" Exclude="$(WebDir)Components/App.razor;$(WebDir)Components/Routes.razor" Link="Components/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../src/Orchestrator.Tray/MockStore.cs" Link="Web/MockStore.cs" />
+  </ItemGroup>
+
+  <!-- The web assets of Orchestrator.Web, linked into wwwroot. The host page is local. -->
+  <ItemGroup>
+    <Content Include="$(WebDir)wwwroot/**" Link="wwwroot/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- The templates and the policy, as resources. The app writes them to its data folder and sets ORCH_HOME. -->
+  <ItemGroup>
+    <EmbeddedResource Include="../../templates/**" LogicalName="home/templates/%(RecursiveDir)%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../config/**" LogicalName="home/config/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

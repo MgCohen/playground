@@ -1,0 +1,54 @@
+@inject IJSRuntime JS
+<div class="scrim @(closing ? "closing" : "")" @onclick="Close"></div>
+<div class="crd sheet @(closing ? "closing" : "")" role="dialog" aria-label="@Card.SheetLabel">
+    <span class="grab"></span>
+    <div><div class="sub">@Card.SheetLabel</div><div class="nm big-q">@Card.Title</div></div>
+    @if (Card.Options.Count > 0)
+    {
+        <div class="chips">
+            @foreach (var o in Card.Options)
+            {
+                <button type="button" class="chip @(o == Card.DefaultOption ? "def" : "")" @onclick="() => text = o">@o</button>
+            }
+        </div>
+    }
+    <label class="sr" for="sheet-text">@Card.SheetLabel</label>
+    <textarea id="sheet-text" class="well ta" rows="3" placeholder="Say or type" @bind="text" @bind:event="oninput"></textarea>
+    <div class="acts">
+        <Mic For="sheet-text" />
+        <button type="button" class="btn" @onclick="Close">Cancel</button>
+        <button type="button" class="btn pri" disabled="@string.IsNullOrWhiteSpace(text)" @onclick="Send"><Icon Name="check" />@Card.SendLabel</button>
+    </div>
+</div>
+
+@code {
+    /// <summary>The time of the slide down at close (M5). The parent removes the sheet after it.</summary>
+    public const int CloseMs = 220;
+
+    bool closing;
+
+    async Task Close()
+    {
+        if (closing) return;
+        closing = true;
+        StateHasChanged();
+        await Task.Delay(CloseMs);
+        await OnClose.InvokeAsync();
+    }
+
+    [Parameter, EditorRequired] public CardView Card { get; set; } = default!;
+    [Parameter] public bool Voice { get; set; }
+    [Parameter] public EventCallback<string> OnSend { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    string text = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try { await JS.InvokeVoidAsync("orchSpeech.focus", "sheet-text", Voice); }
+        catch (Exception e) when (e is JSException or InvalidOperationException or JSDisconnectedException) { }
+    }
+
+    Task Send() => OnSend.InvokeAsync(text.Trim());
+}

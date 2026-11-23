@@ -18,13 +18,17 @@ A child knows only its brief. A short brief that names skills works better than 
 | `scope` | What is in scope and what is not |
 | `doneWhen` | The check that shows that the work is done |
 | `skills` | The skills to load first, for example `orch-ask`, `orch-report`, `orch-stack` |
-| `agent` | `worker` for one task, `orchestrator` for a child that splits work again |
+| `type` | The custom agent of the child, for example `decider`. Default: the agent of its role, `worker` or `orchestrator`. The old field `agent` stays valid |
+| `stream` | The stream id, for example `C`. Default: your stream |
+| `workflow` | The workflow that the child runs or works in, for example `planning` |
 | `cwd` | The working folder. Default: your folder |
 | `worktree` | `true` if two children change one repository at the same time |
+| `background` | `true` only for a session that the user does not need to see on the phone. Default: Remote Control is on |
 
 ## Rules
 
-- Give each child one decision group: one area of work, one owner of its questions.
+- Give each child one task: one area of work, one owner of its questions.
+- Give a task an id: the stream letter and a number, for example `C2`.
 - A child reports `done` or `blocked`. You get the report as a message that starts with "Report from child".
 - After you start children and have nothing else to do, end your turn. Do not wait in a loop.
 - Do not archive a child that waits for the user, or a child that has an open PR.

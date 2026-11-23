@@ -18,6 +18,7 @@ public sealed class NewSessionFormTests
     {
         var context = new BunitContext();
         context.Services.AddSingleton(new Board(rig.Store, rig.Supervisor));
+        context.Services.AddSingleton(new StreamHub(rig.Store));
         return context;
     }
 
@@ -28,15 +29,17 @@ public sealed class NewSessionFormTests
     }
 
     static JsonElement BriefEvent(Rig rig, string session) =>
-        rig.Store.Events.Body(rig.Store.Query(new EventFilter { Kinds = new HashSet<string> { EventKinds.Brief }, Session = session }).Single())!.Value;
+        rig.Store.Events.Body(rig.Store.Query(new StreamQuery { Kinds = new HashSet<string> { EventKinds.Brief }, Session = session }).Single())!.Value;
 
     [Test]
-    public void The_form_has_each_brief_field_except_allowDefaults()
+    public void The_form_has_each_brief_field_except_allowDefaults_and_background()
     {
+        // background (B2) is not in the form yet: the UI views are stream A4. A form session has Remote Control on, the default.
+        // type, stream and workflow (C2) are not in the form yet: the form and the API fields are stream E. The old field agent sets the type.
         using var context = new BunitContext();
         var form = context.Render<NewSessionForm>();
         var names = form.FindAll("form [name]").Select(e => e.GetAttribute("name")).ToList();
-        Assert.That(names, Is.EquivalentTo(BriefProperties().Where(p => p != "allowDefaults")));
+        Assert.That(names, Is.EquivalentTo(BriefProperties().Where(p => p is not ("allowDefaults" or "background" or "type" or "stream" or "workflow"))));
         Assert.That(form.Markup, Does.Not.Contain("allowDefaults").IgnoreCase);
         Assert.That(form.Markup, Does.Not.Contain("default decisions").IgnoreCase);
     }
@@ -74,14 +77,14 @@ public sealed class NewSessionFormTests
         page.Find("form").Submit();
 
         var id = rig.Store.AllSessions().Single();
-        var meta = rig.Store.Meta(id);
+        var meta = rig.Store.Session(id);
         Assert.That(meta.Title, Is.EqualTo("Color child"));
-        Assert.That(meta.Cwd, Is.EqualTo("C:/work"));
-        Assert.That(meta.Agent, Is.EqualTo("worker"));
-        Assert.That(meta.Skills, Is.EqualTo(new[] { "orch:orch-ask", "orch:orch-report" }));
-        Assert.That(meta.Worktree, Is.True);
+        Assert.That(meta.Work.Cwd, Is.EqualTo("C:/work"));
+        Assert.That(meta.Type?.Agent, Is.EqualTo("worker"));
+        Assert.That(meta.Type?.Skills, Is.EqualTo(new[] { "orch:orch-ask", "orch:orch-report" }));
+        Assert.That(meta.Work.Worktree, Is.True);
         Assert.That(meta.Parent, Is.Null);
-        Assert.That(meta.AllowDefaults, Is.Null);
+        Assert.That(meta.Settings.Flag(SettingTiers.Permissions, SettingTiers.AllowDefaults), Is.False, "a root copies the default");
         var brief = BriefEvent(rig, id);
         Assert.That(brief.GetProperty("goal").GetString(), Is.EqualTo("Write RED in color.txt."));
         Assert.That(brief.GetProperty("scope").GetString(), Is.EqualTo("Only color.txt."));
@@ -92,10 +95,10 @@ public sealed class NewSessionFormTests
     }
 
     [Test]
-    public void A_child_from_the_form_gets_the_parent_and_its_folder_but_not_allowDefaults()
+    public void A_child_from_the_form_gets_the_parent_its_folder_and_a_copy_of_allowDefaults()
     {
         using var rig = new Rig();
-        var parent = rig.Store.Create(new Meta("") { Title = "Root", Cwd = "C:/root", AllowDefaults = true }, "start");
+        var parent = rig.Store.Create(new Seed { Title = "Root", Cwd = "C:/root", AllowDefaults = true }, "start");
         using var context = Context(rig);
         var page = context.Render<Sessions>();
         page.Find("#new-title").Input("Child");
@@ -104,10 +107,10 @@ public sealed class NewSessionFormTests
         Assert.That(page.Find("#new-cwd").GetAttribute("placeholder"), Is.EqualTo("Default: C:/root"));
         page.Find("form").Submit();
 
-        var meta = rig.Store.Meta(rig.Store.AllSessions().Single(s => s != parent));
+        var meta = rig.Store.Session(rig.Store.AllSessions().Single(s => s != parent));
         Assert.That(meta.Parent, Is.EqualTo(parent));
-        Assert.That(meta.Cwd, Is.EqualTo("C:/root"));
-        Assert.That(meta.AllowDefaults, Is.Null);
+        Assert.That(meta.Work.Cwd, Is.EqualTo("C:/root"));
+        Assert.That(meta.Settings.Flag(SettingTiers.Permissions, SettingTiers.AllowDefaults), Is.True, "the brief has no allowDefaults; the registry copies the parent value at create");
     }
 
     [Test]
@@ -128,17 +131,10 @@ public sealed class NewSessionFormTests
     }
 
     [Test]
-    public void Each_free_text_field_of_the_cards_has_a_mic_button()
+    public void Each_free_text_field_of_the_form_has_a_mic_button()
     {
         using var context = new BunitContext();
-        var decision = new Decision("toolu_1", "s1") { Question = "Which color?", Risk = "low", Asked = Times.Format(DateTimeOffset.UtcNow) };
-        var cards = new[]
-        {
-            context.Render<DecisionCard>(p => p.Add(c => c.Item, new OpenDecision("s1", "One", decision))).Markup,
-            context.Render<DefaultCard>(p => p.Add(c => c.Item, new DefaultToReview("s1", "One", decision, new Answer { Value = "RED", By = Parties.Policy }, null))).Markup,
-            context.Render<SessionCard>(p => p.Add(c => c.Node, new SessionNode(new Meta("s1-00000000") { Cwd = "C:/x" }, "", false, false, "new", ControlStates.Active, null, null, null, 0, []))).Markup,
-            context.Render<NewSessionForm>().Markup,
-        };
+        var cards = new[] { context.Render<NewSessionForm>().Markup };
         foreach (var markup in cards)
         {
             var html = new HtmlParser().ParseDocument(markup);

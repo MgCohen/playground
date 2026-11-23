@@ -10,12 +10,26 @@ var bind = Environment.GetEnvironmentVariable("ORCH_BIND") is { Length: > 0 } ho
 builder.WebHost.UseUrls($"http://{bind}:{port}");
 builder.Services.AddSingleton(new FileStore(root));
 var pluginDir = Environment.GetEnvironmentVariable("ORCH_PLUGIN_DIR") is { Length: > 0 } dir ? Path.GetFullPath(dir) : null;
-builder.Services.AddSingleton<ITurnRunner>(new ClaudeRunner(root, pluginDir));
-builder.Services.AddSingleton<IDocsChecker, ClaudeDocsChecker>();
-var import = Environment.GetEnvironmentVariable("ORCH_IMPORT") is { Length: > 0 } flag ? flag == "1" : root == Path.Combine(Home.Root(), "store");
-builder.Services.AddSingleton(services => new SupervisorOptions(4, 3, 2, Home.LoadPolicy(root)) { Import = import ? id => new Lifecycle(services.GetRequiredService<FileStore>()).Import(id) : null });
+var provider = ProviderFactory.Create(new ProviderOptions(root, Home.Root(), pluginDir) { OrchDir = Home.OrchDir() });
+builder.Services.AddSingleton(provider);
+builder.Services.AddSingleton<ITurnRunner>(new ProviderTurns(provider));
+builder.Services.AddSingleton<IDocsChecker>(new DocsChecker(provider));
+var import = Environment.GetEnvironmentVariable("ORCH_IMPORT") is { Length: > 0 } flag ? flag == "1" : string.Equals(root, Home.DefaultStoreRoot(), StringComparison.OrdinalIgnoreCase);
+// R-F8: a child of a parent outside the app starts in a console with Remote Control. Same default as the import.
+var console = Environment.GetEnvironmentVariable("ORCH_CONSOLE") is { Length: > 0 } consoleFlag ? consoleFlag == "1" : import;
+builder.Services.AddSingleton(services => new SupervisorOptions(4, 3, 2, Home.LoadPolicy(root))
+{
+    Import = import ? id => new Lifecycle(services.GetRequiredService<FileStore>(), provider).Import(id) : null,
+    ConsoleStart = console,
+    StateChecker = new StateChecker(provider),
+    Provider = provider,
+});
 builder.Services.AddSingleton<Supervisor>();
 builder.Services.AddSingleton<Board>();
+builder.Services.AddSingleton(services => new DemoPane(services.GetRequiredService<FileStore>(), provider, port, () => services.GetRequiredService<Supervisor>().Tick()));
+builder.Services.AddSingleton(services => new Orchestrator.Store.Remote.StoreService(services.GetRequiredService<FileStore>().Repositories));
+builder.Services.AddScoped<PathTrail>();
+builder.Services.AddSingleton<StreamHub>();
 builder.Services.AddSingleton(services => new SignIn(services.GetRequiredService<IConfiguration>()["ORCH_TOKEN"]));
 builder.Services.AddHostedService<TickService>();
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
@@ -26,6 +40,7 @@ app.UseMiddleware<SignInMiddleware>();
 app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapOrchestratorApi();
+app.MapStoreApi();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 var store = app.Services.GetRequiredService<FileStore>();
 var policy = app.Services.GetRequiredService<SupervisorOptions>().Policy;

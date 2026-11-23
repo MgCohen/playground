@@ -1,0 +1,1 @@
+Turn on Remote Control for this session, so that the user can see it on the phone. Call {{remoteControlTool}} with session_id "self" and enabled true. Do nothing else before this call. Then continue your work. If this session has no tool {{remoteControlTool}} (a supervisor turn outside the app), ignore this notice: the parent turns it on.

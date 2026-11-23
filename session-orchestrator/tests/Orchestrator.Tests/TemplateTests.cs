@@ -6,7 +6,7 @@ namespace Orchestrator.Tests;
 
 public sealed class TemplateTests
 {
-    static readonly TemplateSet Set = new(Home.Templates());
+    static readonly TemplateSet Set = Home.LoadTemplates(null);
 
     static IEnumerable<string> AllKinds() => Kinds.All;
 
@@ -26,7 +26,7 @@ public sealed class TemplateTests
     public void Each_render_of_the_example_fills_each_place(string kind)
     {
         var fields = Render.Fields(Example(kind));
-        var names = Set[kind].RenderNames().Prepend(null).Where(name => name is not null || File.Exists(Set[kind].RenderPath()));
+        var names = Set[kind].RenderNames().Prepend(null).Where(name => name is not null || Set[kind].HasRender());
         foreach (var name in names)
         {
             var text = Set.Render(kind, fields, name);
@@ -37,9 +37,19 @@ public sealed class TemplateTests
     [Test]
     public void A_missing_required_field_is_refused()
     {
-        var check = Set.Validate(Kinds.Decision, JsonSerializer.Deserialize<JsonElement>("""{"question":"Q","risk":"low"}"""));
+        var check = Set.Validate(Kinds.Question, JsonSerializer.Deserialize<JsonElement>("""{"context":"C","risk":"low"}"""));
         Assert.That(check.IsValid, Is.False);
         Assert.That(check.Message, Does.Contain("required").IgnoreCase);
+    }
+
+    [Test]
+    public void A_question_needs_only_its_text_and_a_risk_with_a_default()
+    {
+        bool Valid(string json) => Set.Validate(Kinds.Question, JsonSerializer.Deserialize<JsonElement>(json)).IsValid;
+        Assert.That(Valid("""{"question":"Which port?"}"""), Is.True, "a question with no default");
+        Assert.That(Valid("""{"question":"Which color?","options":["RED","BLUE"],"risk":"low","defaultOption":"BLUE"}"""), Is.True, "a question with a default");
+        Assert.That(Valid("""{"question":"Which color?","defaultOption":"BLUE"}"""), Is.False, "a default with no risk");
+        Assert.That(Valid("""{"question":"Which color?","risk":"low"}"""), Is.True, "a risk with no default");
     }
 
     [Test]
@@ -59,6 +69,9 @@ public sealed class TemplateTests
     {
         var schema = JsonDocument.Parse(Set[Kinds.Notice].SchemaText).RootElement;
         var kinds = schema.GetProperty("properties").GetProperty("kind").GetProperty("enum").EnumerateArray().Select(k => k.GetString()).ToList();
-        Assert.That(Set[Kinds.Notice].RenderNames(), Is.EquivalentTo(kinds));
+        var names = Set[Kinds.Notice].RenderNames();
+        Assert.That(names.Where(n => !n.StartsWith(Supervisor.Supervisor.UserPrefix)), Is.EquivalentTo(kinds));
+        Assert.That(names.Where(n => n.StartsWith(Supervisor.Supervisor.UserPrefix)).Select(n => n[Supervisor.Supervisor.UserPrefix.Length..]), Is.SubsetOf(kinds),
+            "a user render is the text of a notice kind for the user");
     }
 }

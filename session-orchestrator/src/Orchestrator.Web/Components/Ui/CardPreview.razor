@@ -1,0 +1,55 @@
+@* The preview of a card in the pile, from the view.json of its kind. Open shows the full document. *@
+@using Orchestrator.Core.Templates
+@{ var state = Ui.Text(Card.Fields.GetValueOrDefault("state")); var p = Card.Preview; }
+<div class="row head">
+    <KindRing Kind="@Card.Kind" State="@state" P="0.5" />
+    <span class="grow"><span class="nm">@Card.Label</span><span class="sub ell">@Card.SessionTitle</span></span>
+    @if (p?.Pill is { } pill)
+    {
+        <FactValue Fact="pill" />
+    }
+    <span class="mono sub">@Ui.Clock(Card.At)</span>
+</div>
+<div class="in">
+    <p class="q @Ui.TitleSize(p?.Title ?? Card.Title)">@(p?.Title ?? Card.Title)</p>
+    @if (p?.Well is { } well)
+    {
+        <div class="well rec"><span class="sub">@well.Label</span>@well.Text</div>
+    }
+    else if (p?.Line is { Length: > 0 } line)
+    {
+        <p class="t2 line">@line</p>
+    }
+    @if (p is { List.Count: > 0 })
+    {
+        <ul class="doc">
+            @foreach (var item in p.List)
+            {
+                <li>@item</li>
+            }
+        </ul>
+    }
+    @if (p?.Progress is { } progress)
+    {
+        <Progress Value="progress" />
+    }
+    <div class="foot">
+        <div class="chips">
+            @foreach (var o in p?.Chips ?? [])
+            {
+                <span class="chip @(o == p!.Marked ? "def" : "")">@o</span>
+            }
+        </div>
+        @if (Card.DefaultAt is { } at)
+        {
+            var total = Card.At is { } asked ? (at - asked).TotalSeconds : 0;
+            var left = at - Now;
+            <Ring P="@(total > 0 ? left.TotalSeconds / total : 0)" Size="50" Th="6"><span class="disp timer">@Ui.Left(left)</span></Ring>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CardView Card { get; set; } = default!;
+    [Parameter] public DateTimeOffset Now { get; set; }
+}

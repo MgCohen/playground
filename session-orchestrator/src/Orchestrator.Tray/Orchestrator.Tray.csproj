@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!--
+    The desktop tray app (T1): a tray icon and a window with a BlazorWebView on WebView2.
+    It shows the Razor components of Orchestrator.Web with mock data in a temporary store. No supervisor ticks, no engine process.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Orchestrator.Web/Orchestrator.Web.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- V5: the one image of the home ball. The page button shows the same file from the web assets. -->
+    <EmbeddedResource Include="../Orchestrator.Web/wwwroot/home-ball.png" LogicalName="home-ball.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The templates and the policy go next to the exe, so an installed app does not need the source folder. -->
+    <None Include="../../templates/**" Link="home/templates/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../config/**" Link="home/config/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <!-- The WebView2 package also references its WPF control. A WinForms app does not use it, and it gives a WindowsBase version conflict. -->
+  <Target Name="RemoveWebView2Wpf" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+    </ItemGroup>
+  </Target>
+</Project>

@@ -1,71 +1,41 @@
-export const HOME = 'C:/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator'
-export const DEFAULT_STORE = `${HOME}/store`
+export const DEFAULT_HOME = 'C:/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator'
 export const TICK_MS = 3000
 export const MAX_WAIT_SECONDS = 580
 export const ROW_CHARS = 4000
 
-export type Decision = {
-  id: string
-  session: string
-  kind: 'ask_user'
-  question?: string
-  context?: string
-  snippet?: string
-  options?: string[]
-  recommendation?: string
-  risk: string
-  defaultOption?: string
-  mode: 'wait' | 'pending'
-  waitSeconds: number
-  asked: string
-}
-
-export const S: { id?: string; dir?: string; store?: string; cwd?: string; holder: string; cursor: string; busy: boolean; idle: boolean; dropped: string; timers?: boolean } = {
+export const S: {
+  id?: string
+  dir?: string
+  store?: string
+  home: string
+  cwd?: string
+  holder: string
+  busy: boolean
+  idle: boolean
+  dropped: string
+  timers?: boolean
+  watching: boolean
+  wanted: boolean
+  handled: Set<string>
+  inputFrom: string
+  lastMs: number
+  pid?: number
+  started?: string
+} = {
   dropped: '',
   holder: 'live',
-  cursor: '',
+  home: DEFAULT_HOME,
   busy: false,
   idle: true,
+  watching: false,
+  wanted: false,
+  handled: new Set<string>(),
+  inputFrom: '',
+  lastMs: 0,
 }
 
 export async function now($: any): Promise<string> {
   return new Date(await $.clock.now()).toISOString()
-}
-
-export async function readText($: any, path: string): Promise<string | undefined> {
-  return (await $.fs.exists(path)) ? String(await $.fs.read(path)) : undefined
-}
-
-export async function readJson($: any, path: string): Promise<any> {
-  const text = await readText($, path)
-  if (text === undefined) return undefined
-  try {
-    return JSON.parse(text)
-  } catch {
-    return { text }
-  }
-}
-
-export async function writeJson($: any, path: string, value: unknown): Promise<void> {
-  await $.fs.write(path, JSON.stringify(value, null, 2))
-}
-
-export async function log($: any, line: string): Promise<void> {
-  if (!S.dir) return
-  const path = `${S.dir}/log-${S.holder}.txt`
-  const old = (await readText($, path)) ?? ''
-  const kept = old.length > 200000 ? old.slice(-100000) : old
-  await $.fs.write(path, `${kept}${await now($)} ${line}\n`)
-}
-
-export function byName(a: string, b: string): number {
-  return a.localeCompare(b, 'en', { numeric: true })
-}
-
-export async function names($: any, folder: string): Promise<string[]> {
-  if (!(await $.fs.exists(folder))) return []
-  const entries = await $.fs.list(folder)
-  return entries.map((x: any) => String(x.name)).filter((name: string) => !name.endsWith('.tmp')).sort(byName)
 }
 
 export function newId(): string {
@@ -76,10 +46,12 @@ export function newId(): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`
 }
 
-export async function storeRoot($: any): Promise<string> {
-  return (await $.env.get('ORCH_STORE')) ?? DEFAULT_STORE
+export async function homeRoot($: any): Promise<string> {
+  return (await $.env.get('ORCH_HOME')) ?? DEFAULT_HOME
 }
 
-export async function sessionDir($: any): Promise<string> {
-  return `${await storeRoot($)}/sessions/${await $.session.id()}`
+export async function orch($: any, argv: string[], timeoutMs = 60000): Promise<{ ok: boolean; text: string; code: number }> {
+  const run = await $.process.run(['orch', ...argv], { timeoutMs })
+  const text = String(run.exitCode === 0 ? run.stdout ?? '' : run.stderr || run.stdout || '').trim()
+  return { ok: run.exitCode === 0, text, code: run.exitCode }
 }

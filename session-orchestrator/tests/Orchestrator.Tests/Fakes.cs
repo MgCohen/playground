@@ -2,6 +2,7 @@ using Orchestrator.Core.Contract;
 using Orchestrator.Core.Leases;
 using Orchestrator.Core.Policy;
 using Orchestrator.Store;
+using Orchestrator.Store.Local;
 using Orchestrator.Supervisor;
 
 namespace Orchestrator.Tests;
@@ -18,12 +19,16 @@ public sealed class FakeRunner(bool ok) : ITurnRunner
     public List<TurnRequest> Turns { get; } = [];
     public TaskCompletionSource? Gate { get; set; }
 
+    /// <summary>Runs in the turn, as the model would: for example a report tool call.</summary>
+    public Action<TurnRequest>? OnRun { get; set; }
+
     public async Task<TurnResult> Run(TurnRequest request, CancellationToken cancel)
     {
         lock (Turns) Turns.Add(request);
+        OnRun?.Invoke(request);
         if (Gate is { } gate) await Task.WhenAny(gate.Task, Task.Delay(Timeout.Infinite, cancel)).ContinueWith(_ => { });
         if (cancel.IsCancellationRequested) return new TurnResult(false, null, "stopped", 0);
-        return ok ? new TurnResult(true, "done", null, 0) : new TurnResult(false, null, "boom", 0);
+        return ok ? new TurnResult(true, "done", null, 0) { Pid = request.RemoteControl ? 999_999 : null } : new TurnResult(false, null, "boom", 0);
     }
 }
 
@@ -38,6 +43,17 @@ public sealed class FakeDocs(DocsResult result) : IDocsChecker
     }
 }
 
+public sealed class FakeStateChecker(string? state) : IStateChecker
+{
+    public List<StateCheckRequest> Requests { get; } = [];
+
+    public Task<StateCheckResult> Check(StateCheckRequest request, CancellationToken cancel)
+    {
+        lock (Requests) Requests.Add(request);
+        return Task.FromResult(new StateCheckResult(state, "the test checker"));
+    }
+}
+
 public sealed class Rig : IDisposable
 {
     public static readonly Policy TestPolicy = new(
@@ -46,14 +62,19 @@ public sealed class Rig : IDisposable
 
     public List<string> Imports { get; } = [];
 
-    public Rig(bool ok = true, DocsResult? docs = null, bool import = false)
+    public Rig(bool ok = true, DocsResult? docs = null, bool import = false, Policy? policy = null, IStateChecker? checker = null, bool console = false)
     {
         Folder = Directory.CreateTempSubdirectory("orch-").FullName;
         Clock = new ManualClock(DateTimeOffset.UtcNow);
         Store = new FileStore(Folder, Clock);
         Runner = new FakeRunner(ok);
         Docs = new FakeDocs(docs ?? new DocsResult(false));
-        Supervisor = new Supervisor.Supervisor(Store, Runner, Docs, new SupervisorOptions(2, 2, 2, TestPolicy) { Import = import ? id => { Imports.Add(id); Store.SaveMeta(Store.Meta(id) with { Imported = true }); } : null });
+        Supervisor = new Supervisor.Supervisor(Store, Runner, Docs, new SupervisorOptions(2, 2, 2, policy ?? TestPolicy)
+        {
+            Import = import ? id => { Imports.Add(id); Store.Change(id, e => e with { Engine = e.Engine with { Imported = true } }); } : null,
+            StateChecker = checker,
+            ConsoleStart = console,
+        });
     }
 
     public string Folder { get; }
@@ -64,8 +85,8 @@ public sealed class Rig : IDisposable
     public Supervisor.Supervisor Supervisor { get; }
     public List<TurnRequest> Turns => Runner.Turns;
 
-    public string Create(string brief, string? title = null, string? parent = null, string createdBy = "supervisor") =>
-        Store.Create(new Meta("") { Title = title, Cwd = "C:/x", Parent = parent, CreatedBy = createdBy }, brief);
+    public string Create(string text, string? title = null, string? parent = null, string createdBy = "supervisor") =>
+        Store.Create(new Seed { Title = title, Cwd = "C:/x", Parent = parent, CreatedBy = createdBy }, text);
 
     public async Task Cycle()
     {

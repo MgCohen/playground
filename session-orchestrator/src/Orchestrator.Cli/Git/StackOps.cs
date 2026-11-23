@@ -53,8 +53,8 @@ public sealed class StackOps(FileStore store, Shell shell, TextWriter output)
         }
         shell.Push(current.Branch);
         var fields = PrFields(session, decision, entry, current);
-        var title = store.Templates.Render(Kinds.Decision, fields, "pr-title");
-        var body = store.Templates.Render(Kinds.Decision, fields, "pr-body");
+        var title = store.Templates.Render(Kinds.Question, fields, "pr-title");
+        var body = store.Templates.Render(Kinds.Question, fields, "pr-body");
         var bodyFile = Path.GetTempFileName();
         File.WriteAllText(bodyFile, body);
         string url;
@@ -134,8 +134,8 @@ public sealed class StackOps(FileStore store, Shell shell, TextWriter output)
             if (v.Pr is { } pr)
             {
                 var comment = parent is null
-                    ? store.Templates.Render(Kinds.Decision, Messages.Fields(("decision", decision), ("question", question), ("said", said), ("branch", v.Branch), ("nextBranch", plan.Branch)), "pr-close")
-                    : store.Templates.Render(Kinds.Decision, Messages.Fields(("refusedPr", current.Pr?.ToString() ?? "?"), ("branch", v.Branch), ("nextBranch", plan.Branch)), "pr-close-above");
+                    ? store.Templates.Render(Kinds.Question, Messages.Fields(("decision", decision), ("question", question), ("said", said), ("branch", v.Branch), ("nextBranch", plan.Branch)), "pr-close")
+                    : store.Templates.Render(Kinds.Question, Messages.Fields(("refusedPr", current.Pr?.ToString() ?? "?"), ("branch", v.Branch), ("nextBranch", plan.Branch)), "pr-close-above");
                 shell.Must("gh", "pr", "close", pr.ToString(), "--comment", comment);
                 store.Events.Append(EventKinds.PrClose, Parties.Session(session), Parties.User, Messages.Fields(("text", $"PR #{pr} closed"), ("comment", comment)), Messages.Fields(("decision", e.Decision), ("pr", pr)), session);
             }
@@ -152,7 +152,7 @@ public sealed class StackOps(FileStore store, Shell shell, TextWriter output)
         var answer = store.Answer(session, decision);
         var previous = entry.Previous(current);
         var refused = previous is not null ? store.Review(session, StackNames.VersionId(decision, previous.Version)) is { Verdict: Verdicts.Refuse } r ? r : null : null;
-        var text = refused?.Text ?? answer?.Body ?? "";
+        var text = refused?.Text ?? answer?.Value ?? "";
         var reason = refused is not null ? $"the user refused version {previous!.Version} and gave this direction" : answer?.Reason ?? $"answer by {answer?.By ?? "the user"}";
         var origin = refused is not null ? "direction of the user" : answer?.By == Parties.Policy ? "default decision" : $"answer by {answer?.By ?? "the user"}";
         var basePr = current.BaseDecision is { } bd ? store.Stack(session, bd)?.Versions.LastOrDefault(v => v.Branch == current.Base)?.Pr : null;
