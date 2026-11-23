@@ -293,6 +293,7 @@ public sealed partial class Supervisor
         {
             Agent = Roles.AgentOf(meta), Title = meta.Title, Where = cloud ? Places.Cloud : null, AppId = cloud ? meta.Engine.AppId : null,
             RemoteControl = console,
+            EngineId = meta.Engine.SessionId is { } engine && engine != id ? engine : null,
         };
         var stop = new CancellationTokenSource();
         stops[id] = stop;
@@ -465,7 +466,9 @@ public sealed partial class Supervisor
             store.Log($"{id} imported into the desktop app");
             var meta = store.Session(id);
             if (meta.Engine.Imported == true && !meta.IsPrivate())
-                Notify(Parties.Session(id), RemoteControlThread(id), store.Texts.Notice("remote-control-self", [.. options.Provider.AppTools]));
+                // A child also goes into the sidebar group of child sessions; a root stays out of it.
+                Notify(Parties.Session(id), RemoteControlThread(id), store.Texts.Notice("remote-control-self",
+                    meta.Parent is null ? [.. options.Provider.AppTools] : [("appId", options.Provider.AppId(id)), .. options.Provider.AppTools, .. options.Provider.GroupTools]));
         }
         catch (Exception e) when (e is ShellException or IOException or InvalidOperationException)
         {

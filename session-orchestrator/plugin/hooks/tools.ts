@@ -93,11 +93,11 @@ export async function registerTools($: any): Promise<void> {
   delete brief.properties.allowDefaults
   brief.properties.inApp = {
     type: 'boolean',
-    description: 'Default true: if this session runs in the desktop app, start the child in the app, with Remote Control. false: the supervisor starts the child.',
+    description: 'Default true: if this session runs in the desktop app, start the child in the app, with Remote Control. false: the supervisor starts the child, opens it in the app and turns its Remote Control on. Use false in a turn that came from Remote Control (the phone or claude.ai): the app refuses start_session there.',
   }
   await $.tool.register({
     name: 'spawn_child',
-    description: `${await purpose($, 'brief')} Start a child session under the orchestrator (the brief template). The skill orch:orch-brief tells how to fill it. When the child reports done or blocked, you get a new message that starts with "Report from child".`,
+    description: `${await purpose($, 'brief')} Start a child session under the orchestrator (the brief template). The skill orch:orch-brief tells how to fill it. This is the only way to start a child: never use core:spawn or a start_session call of your own. When the child reports done or blocked, you get a new message that starts with "Report from child".`,
     inputSchema: brief,
     isDeferred: false,
   })

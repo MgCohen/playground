@@ -48,6 +48,15 @@ public interface IProvider
     /// <summary>The notice fields that name the app tools for Remote Control and archive.</summary>
     IReadOnlyList<(string Key, object? Value)> AppTools { get; }
 
+    /// <summary>
+    /// The notice fields for the sidebar group of child sessions: the app tool that moves a session into a group
+    /// (<c>groupTool</c>), the tool that makes a group (<c>groupCreateTool</c>) and the group name (<c>group</c>). Empty: the engine has no groups.
+    /// </summary>
+    IReadOnlyList<(string Key, object? Value)> GroupTools { get; }
+
+    /// <summary>The step for a child in the app: move this session (its app id) into the group of child sessions. Null: no groups.</summary>
+    string? WorkerGroupInstruction(string appId);
+
     /// <summary>The text that names the tools of the orch plugin in this engine.</summary>
     string PluginTools { get; }
 
@@ -89,6 +98,15 @@ public sealed record TurnRequest(string Id, string Cwd, string Prompt, bool IsNe
     /// the app). The turn ends when the process runs; the plugin of the process takes the lease and delivers the next messages.
     /// </summary>
     public bool RemoteControl { get; init; }
+
+    /// <summary>
+    /// The session id of the engine when it differs from <see cref="Id"/>: the app can give a session a new engine
+    /// session (P1-F11). A resume uses it; the store keeps <see cref="Id"/>.
+    /// </summary>
+    public string? EngineId { get; init; }
+
+    /// <summary>The id that a resume names: <see cref="EngineId"/>, else <see cref="Id"/>.</summary>
+    public string ResumeId => EngineId is { Length: > 0 } engine ? engine : Id;
 }
 
 /// <summary>The result of a turn. <c>AppId</c>: the id that the engine gave to a new session that it names (cloud).</summary>

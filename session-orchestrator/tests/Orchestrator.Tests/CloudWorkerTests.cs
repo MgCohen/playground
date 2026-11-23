@@ -37,6 +37,9 @@ public sealed class FakeProvider(bool giveId = true) : IProvider
 
     public IReadOnlyList<(string Key, object? Value)> AppTools { get; } = [("remoteControlTool", "fake_rc"), ("archiveTool", "fake_archive")];
 
+    public IReadOnlyList<(string Key, object? Value)> GroupTools { get; } = [];
+    public string? WorkerGroupInstruction(string appId) => null;
+
     public string PluginTools => "fake__";
 
     public IReadOnlyList<DoctorCheck> Doctor(CommandRun run) => [];

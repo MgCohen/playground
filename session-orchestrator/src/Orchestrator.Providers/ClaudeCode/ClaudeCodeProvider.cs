@@ -24,6 +24,16 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     public IReadOnlyList<(string Key, object? Value)> AppTools { get; } =
         [("remoteControlTool", "mcp__ccd_session_mgmt__set_remote_control"), ("archiveTool", "mcp__ccd_session_mgmt__archive_session")];
 
+    /// <summary>The sidebar group of the child sessions in the app. The root and the sessions of the user stay out of it.</summary>
+    public const string WorkerGroup = "Workers";
+
+    public IReadOnlyList<(string Key, object? Value)> GroupTools { get; } =
+        [("groupTool", "mcp__ccd_sidebar__move_sessions"), ("groupCreateTool", "mcp__ccd_sidebar__create_group"), ("group", WorkerGroup)];
+
+    public string? WorkerGroupInstruction(string appId) =>
+        $"Then put this session into the sidebar group \"{WorkerGroup}\": call mcp__ccd_sidebar__move_sessions with the session {appId} and the group \"{WorkerGroup}\". "
+        + $"If the group does not exist, call mcp__ccd_sidebar__create_group with the name \"{WorkerGroup}\" first. If the tools are missing or refuse, continue: the user can drag the session.";
+
     public static IReadOnlyList<string> SettingArguments(string? pluginDir) =>
         pluginDir is null ? ["--setting-sources", "user"] : ["--setting-sources", "project,local", "--permission-mode", "auto", "--plugin-dir", pluginDir];
 
@@ -35,10 +45,10 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
         if (request.RemoteControl) return await ConsoleTurn(request, cancel);
         var watch = Stopwatch.StartNew();
         var session = request.IsNew ? "--session-id" : "--resume";
-        List<string> arguments = [.. SettingArguments(options.PluginDir), session, request.Id];
+        List<string> arguments = [.. SettingArguments(options.PluginDir), session, request.IsNew ? request.Id : request.ResumeId];
         if (request.IsNew && request.Title is { Length: > 0 } title) arguments.AddRange(["-n", title]);
         if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", Agent(agent)]);
-        var call = new ClaudeCall(request.Cwd, request.Prompt, arguments, TurnEnvironment(options));
+        var call = new ClaudeCall(request.Cwd, request.Prompt, arguments, TurnEnvironment(options, sessionId: request.Id));
         var output = await Claude.Run(call, null, cancel);
         return new TurnResult(output.Ok, output.Result, output.Error, Math.Round(watch.Elapsed.TotalSeconds));
     }
@@ -47,10 +57,12 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     /// The environment of a local turn: the holder, the store and the home. With <see cref="ProviderOptions.OrchDir"/>,
     /// that folder comes first on <c>PATH</c>, so that the session and the plugin call the <c>orch</c> of the supervisor (C3-F5).
     /// </summary>
-    public static Dictionary<string, string> TurnEnvironment(ProviderOptions options, string? path = null)
+    public static Dictionary<string, string> TurnEnvironment(ProviderOptions options, string? path = null, string? sessionId = null)
     {
         var environment = new Dictionary<string, string>
         {
+            // The store id of the session: the plugin finds its folder by it, also when the engine session id differs (P1-F11).
+            ["ORCH_SESSION_ID"] = sessionId ?? "",
             ["ORCH_HOLDER"] = Holders.Supervisor,
             ["ORCH_STORE"] = (options.StoreRoot ?? "").Replace('\\', '/'),
             ["ORCH_HOME"] = (options.HomeRoot ?? "").Replace('\\', '/'),
@@ -70,7 +82,7 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
     public static IReadOnlyList<string> ConsoleArguments(TurnRequest request, string? pluginDir)
     {
         var name = request.Title is { Length: > 0 } title ? title : request.Id;
-        List<string> arguments = [.. SettingArguments(pluginDir), "--remote-control", name, request.IsNew ? "--session-id" : "--resume", request.Id];
+        List<string> arguments = [.. SettingArguments(pluginDir), "--remote-control", name, request.IsNew ? "--session-id" : "--resume", request.IsNew ? request.Id : request.ResumeId];
         if (request.IsNew) arguments.AddRange(["-n", name]);
         if (request.Agent is { Length: > 0 } agent) arguments.AddRange(["--agent", Agent(agent)]);
         arguments.Add(request.Prompt);
@@ -210,19 +222,29 @@ public sealed partial class ClaudeCodeProvider(ProviderOptions options) : IProvi
         // folder, also the folder of the parent. A child in the folder of the parent gets none: the app uses that folder.
         if (!SameFolder(request.Cwd, request.ParentCwd)) call["cwd"] = Path.GetFullPath(request.Cwd);
         return $"Start the child in the desktop app now: call {StartTool} with these inputs: {JsonSerializer.Serialize(call, Readable)}. "
-            + "Do not change the prompt. If you do not have that tool, or the call is refused, call spawn_child again with the same fields and inApp false: then the supervisor starts the child.";
+            + "Do not change the prompt. If you do not have that tool, or the call is refused (for example \"the user is working over Remote Control\"), do not try again and do not start the child another way: "
+            + "call spawn_child again with the same fields and inApp false. Then the supervisor starts the child, opens it in the app and turns its Remote Control on.";
     }
 
     public IReadOnlyList<DoctorCheck> Doctor(CommandRun run) =>
     [
         new("claude", () => run("claude", "--version") is var r && r.Ok ? (true, r.Text) : (false, "not on the PATH")),
-        new("plugin", () =>
-        {
-            var settings = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude", "settings.json");
-            var json = JsonDocument.Parse(File.ReadAllText(settings)).RootElement;
-            if (!json.TryGetProperty("env", out var env) || !env.TryGetProperty("CLAUDE_CODE_PLUGIN_DIRS", out var dirs)) return (false, "CLAUDE_CODE_PLUGIN_DIRS is not in the env block of ~/.claude/settings.json");
-            var path = dirs.GetString() ?? "";
-            return (File.Exists(Path.Combine(path, ".claude-plugin", "plugin.json")), path);
-        }),
+        new("plugin", () => PluginCheck(run("claude", "plugin", "list") is var r && r.Ok ? r.Text : null)),
     ];
+
+    /// <summary>
+    /// The orch plugin of <c>claude plugin list</c>: exactly one copy must load. The marketplace copy is <c>orch@synced</c> or
+    /// <c>orch@mgcohen</c>; a <c>--plugin-dir</c> or <c>CLAUDE_CODE_PLUGIN_DIRS</c> copy is <c>orch@inline</c>. Two copies register each tool two times.
+    /// </summary>
+    public static (bool Ok, string Detail) PluginCheck(string? list)
+    {
+        if (list is null) return (false, "claude plugin list failed");
+        var copies = list.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("❯ orch@", StringComparison.Ordinal)).Select(l => l[2..]).ToList();
+        return copies.Count switch
+        {
+            0 => (false, "no orch plugin: enable orch in the mgcohen marketplace, or start with --plugin-dir"),
+            1 => (true, copies[0]),
+            _ => (false, $"{string.Join(", ", copies)} load at the same time: remove CLAUDE_CODE_PLUGIN_DIRS from ~/.claude/settings.json"),
+        };
+    }
 }

@@ -1,10 +1,13 @@
-export const DEFAULT_HOME = 'C:/Users/matheus.cohen/Documents/Projects/playground/session-orchestrator'
 export const TICK_MS = 3000
 export const MAX_WAIT_SECONDS = 580
 export const ROW_CHARS = 4000
 
 export const S: {
   id?: string
+  alias?: string
+  aliasTried?: boolean
+  root?: boolean
+  shown: Set<string>
   dir?: string
   store?: string
   home: string
@@ -24,12 +27,13 @@ export const S: {
 } = {
   dropped: '',
   holder: 'live',
-  home: DEFAULT_HOME,
+  home: '',
   busy: false,
   idle: true,
   watching: false,
   wanted: false,
   handled: new Set<string>(),
+  shown: new Set<string>(),
   inputFrom: '',
   lastMs: 0,
 }
@@ -46,8 +50,17 @@ export function newId(): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`
 }
 
+// The home folder (templates, config): ORCH_HOME, else the answer of `orch home`, else the plugin folder, where the
+// marketplace copy carries templates/ (tools/publish-plugin.ps1). The plugin keeps no path of its own, so a copy in a
+// marketplace works on each computer that has `orch`, also with an `orch` older than `orch home` (P1-F2).
 export async function homeRoot($: any): Promise<string> {
-  return (await $.env.get('ORCH_HOME')) ?? DEFAULT_HOME
+  const env = await $.env.get('ORCH_HOME')
+  if (env) return env
+  if (S.home) return S.home
+  const run = await orch($, ['home'], 15000)
+  const line = run.ok ? run.text.split(/\r?\n/).pop()?.trim() : undefined
+  S.home = line || $.plugin.root
+  return S.home
 }
 
 export async function orch($: any, argv: string[], timeoutMs = 60000): Promise<{ ok: boolean; text: string; code: number }> {

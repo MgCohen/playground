@@ -79,6 +79,7 @@ public sealed class AppStartTests
         var (exit, joined) = Run(rig, true, "join", file, "--id", Child);
         Assert.That(exit, Is.EqualTo(0), joined);
         Assert.That(joined, Does.Contain($"Joined as {Child} (Child C), child of {parent[..8]}"));
+        Assert.That(joined, Does.Contain("Workers"), "a child that the app started moves itself into the sidebar group of child sessions");
         var meta = rig.Store.Session(Child);
         Assert.That((meta.Title, meta.Parent, meta.Lifecycle.Started, meta.Engine.Imported, meta.Engine.AppId),
             Is.EqualTo(("Child C", parent, (bool?)true, (bool?)true, $"local_{Child}")));
@@ -166,5 +167,53 @@ public sealed class AppStartTests
         Assert.That(text, Does.Contain("orch join \\\"C:/t/s.json\\\"").And.Not.Contain("\\u0022"), "readable quotes for the model");
         if (OperatingSystem.IsWindows()) Assert.That(cwd, Is.EqualTo("C:\\\\repo"), "the app refuses C:/ as another spelling of C:\\ (R-17)");
         Assert.That(text, Does.Contain("inApp false"), "the fallback when the app tool is missing or refused");
+    }
+
+    [Test]
+    public void The_fallback_after_a_refusal_is_spawn_child_with_no_second_try()
+    {
+        var text = new ClaudeCodeProvider(new()).AppStartInstruction(new("T 3", "C:/repo", false, "orch join x"))!;
+        Assert.That(text, Does.Contain("Remote Control").And.Contain("do not try again"), "P1: the app refuses start_session in a Remote Control turn (23 times in the audit)");
+    }
+
+    [Test]
+    public void The_doctor_wants_exactly_one_orch_plugin()
+    {
+        const string one = "Synced from claude.ai:\n\n  ❯ orch@synced\n    Version: 0.3.0\n  ❯ core@synced\n";
+        const string two = "  ❯ orch@inline\n    Path: C:/p\n\n  ❯ orch@synced\n";
+        Assert.That(ClaudeCodeProvider.PluginCheck(one), Is.EqualTo((true, "orch@synced")));
+        Assert.That(ClaudeCodeProvider.PluginCheck(two).Ok, Is.False, "two copies register each tool two times");
+        Assert.That(ClaudeCodeProvider.PluginCheck("  ❯ core@synced\n").Ok, Is.False);
+        Assert.That(ClaudeCodeProvider.PluginCheck(null).Ok, Is.False);
+    }
+
+    [Test]
+    public void Whoami_in_the_app_finds_the_entry_by_the_app_id_and_records_the_new_engine_session()
+    {
+        using var rig = new Rig();
+        var root = Parent(rig);
+        rig.Store.Registry.Update(root, e => e with { Engine = e.Engine with { AppId = $"local_{root}" } }, "test");
+        const string engine = "eeee5555-0000-0000-0000-000000000000";
+        Environment.SetEnvironmentVariable("CLAUDE_CODE_SESSION_ID", engine);
+        Environment.SetEnvironmentVariable(ClaudeCodeProvider.HostSessionVariable, $"local_{root}");
+        try
+        {
+            var (exit, output) = Run(rig, true, "whoami");
+            Assert.That(exit, Is.EqualTo(0), output);
+            Assert.That(output.Trim(), Is.EqualTo(root), "P1-F11: the app gave the root a new engine session");
+            Assert.That(rig.Store.Session(root).Engine.SessionId, Is.EqualTo(engine), "a resume must name the new engine session");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CLAUDE_CODE_SESSION_ID", null);
+            Environment.SetEnvironmentVariable(ClaudeCodeProvider.HostSessionVariable, null);
+        }
+    }
+
+    [Test]
+    public void A_resume_names_the_engine_session_when_it_differs()
+    {
+        Assert.That(new TurnRequest("store-id", "C:/w", "p", false) { EngineId = "engine-id" }.ResumeId, Is.EqualTo("engine-id"));
+        Assert.That(new TurnRequest("store-id", "C:/w", "p", false).ResumeId, Is.EqualTo("store-id"));
     }
 }

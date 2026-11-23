@@ -84,6 +84,43 @@ public static class SessionCommands
         File.Delete(path);
         c.Output.WriteLine($"Joined as {id} ({meta.Title}){(meta.Parent is { } q ? $", child of {Short(q)}" : "")}.");
         c.Output.WriteLine($"The plugin activates after this tool result: the {c.Provider.PluginTools} tools, the inbox and the live lease. Your brief arrives as the next message.");
+        if (meta.Parent is not null && c.Provider.WorkerGroupInstruction(appId) is { } group) c.Output.WriteLine(group);
+        return 0;
+    }
+
+    /// <summary>
+    /// The store id of the session that runs this command (P1-F11). <c>ORCH_SESSION_ID</c> (a supervisor turn), else the
+    /// entry of the engine session id, else, in the app, the entry of the app id of the caller. The app can give a session
+    /// a new engine session: then the entry records the new id in <c>engine.sessionId</c>, so a resume finds it. Exit 1: no entry.
+    /// </summary>
+    public static int WhoAmI(CommandContext c)
+    {
+        if (Environment.GetEnvironmentVariable("ORCH_SESSION_ID") is { Length: > 0 } given && c.Store.Registry.Exists(given))
+        {
+            c.Output.WriteLine(given);
+            return 0;
+        }
+        var engine = c.Provider.CallerSessionId();
+        if (engine is not null && c.Store.Registry.Exists(engine))
+        {
+            c.Output.WriteLine(engine);
+            return 0;
+        }
+        var live = Environment.GetEnvironmentVariable("ORCH_HOLDER") is null or "" or Holders.Live;
+        var appId = live ? c.Provider.CallerAppId() : null;
+        var entry = c.Store.Registry.List(e => engine is not null && e.Engine.SessionId == engine).FirstOrDefault()
+            ?? (appId is null ? null : c.Store.Registry.List(e => e.Engine.AppId == appId && e.Lifecycle.Phase != ControlStates.Archived).FirstOrDefault());
+        if (entry is null)
+        {
+            c.Output.WriteLine("this session is not in the store");
+            return 1;
+        }
+        if (engine is not null && entry.Engine.SessionId != engine)
+        {
+            c.Store.Registry.Update(entry.Id, e => e with { Engine = e.Engine with { SessionId = engine } }, Parties.Session(entry.Id));
+            c.Store.Log($"{entry.Id} engine session {engine} (app {appId}): the app gave the session a new engine session");
+        }
+        c.Output.WriteLine(entry.Id);
         return 0;
     }
 

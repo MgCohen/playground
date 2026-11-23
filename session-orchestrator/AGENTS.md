@@ -60,4 +60,8 @@ Follow these rules for each change. The design is on the Engines tab of `docs/se
 
 ## Load the plugin
 
-`~/.claude/settings.json` loads the plugin for all sessions with two `env` lines: `CLAUDE_CODE_PLUGIN_DIRS` (the absolute path of `plugin/`) and `CLAUDE_CODE_PLUGIN_DIR_WATCH=1` (hot reload). To remove the plugin, delete the two lines. A test supervisor with `ORCH_PLUGIN_DIR` loads the plugin with `--plugin-dir` and does not use the settings. The settings history is in `docs/know-how.md`.
+Each session gets the plugin from the `mgcohen` marketplace (`MgCohen/claude-plugins`, account-synced). To publish a change: increase `version` in `plugin/.claude-plugin/plugin.json`, run `tools/publish-plugin.ps1`, and merge the PR that it opens. The sync takes a few minutes.
+
+- For development, start a session with `claude --plugin-dir <path of plugin/>`. A test supervisor with `ORCH_PLUGIN_DIR` does the same for its turns.
+- Do not put `CLAUDE_CODE_PLUGIN_DIRS` in the user settings while the marketplace copy is on: two copies register each tool two times. `orch doctor` checks it.
+- `docs/commands.md` lists each command, tool, skill and agent, and the lifecycle rules. The settings history is in `docs/know-how.md`.

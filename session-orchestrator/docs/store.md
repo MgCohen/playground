@@ -248,12 +248,12 @@ The lifecycle notices of the supervisor:
 | `child-archived-in-app` | Parent | The user archived the session in the app sidebar, and the store side is not archived |
 | `archive-reminder` | Parent | Done for `reminderMinutes`, no open PR, not archived. One time |
 | `open-in-app` | Session | The only input of the first turn of a new session when the supervisor imports sessions (`ORCH_IMPORT`). The turn makes the transcript, the import follows, and the brief waits for the live app session |
-| `remote-control-self` | Session | After the import into the app, unless the setting `behavior.visibility` is `private` (F4). Field `remoteControlTool` |
+| `remote-control-self` | Session | After the import into the app, unless the setting `behavior.visibility` is `private` (F4). Field `remoteControlTool`. A child also gets `appId`, `groupTool`, `groupCreateTool` and `group`: it moves itself into the sidebar group `Workers` |
 | `remote-control-child` | Parent | `remoteControlSeconds` after `remote-control-self`, and `engine.remoteControl` of the entry is not set. Fields `appId`, `remoteControlTool` |
 | `archive-child` | Parent | F8, path 2: the app still shows a session that is archived in the store. At once when the session is not live (it cannot archive itself), else at the deadline of the request. The parent turns Remote Control off, then archives it in the app (probes 2a to 2c). Fields `appId`, `remoteControlTool`, `archiveTool` |
 | `state-inferred` | Parent | The fallback agent inferred the state. Fields `state`, `text` |
 
-The provider gives the app tool names: `remoteControlTool` and `archiveTool` (`IProvider.AppTools`). The supervisor adds them to `remote-control-self`, `remote-control-child`, `archive-child` and `archive-self`. No template names an app tool.
+The provider gives the app tool names: `remoteControlTool` and `archiveTool` (`IProvider.AppTools`), and `groupTool`, `groupCreateTool` and `group` (`IProvider.GroupTools`). The supervisor adds them to `remote-control-self`, `remote-control-child`, `archive-child` and `archive-self`. No template names an app tool.
 
 A root session has no parent: each notice to the parent goes to the user as a `message` from `supervisor` with `needs: ack`. The same applies to a child whose parent is not enabled. Its text is the user render of the notice, `render/user-<kind>.md`: it names a "session", not a "child", and gives the acts of the user. Each notice kind to the parent has a user render (test `Each_notice_to_the_parent_has_a_render_for_the_user`). A user render is not a notice kind. All lifecycle messages of one session to the user share the thread `notice-<session>`. A new one gets the older open ones an ack from the supervisor (`by: superseded`, `state: read`), so the inbox shows one card for each session: its newest state.
 
@@ -449,7 +449,7 @@ Store version 3 keeps the data of each session in one registry entry, `sessions/
 |---|---|---|
 | `id` | The registry id. Today it is the engine session id | Create |
 | `code` | The own code, unique among the siblings. The registry gives `O<n>` to a root and `C<n>` to a child when the creator gives none | Create; the supervisor tick for an entry of `/orch-enable` |
-| `engine` | References to the engine only: `kind` (`IProvider.Name`), `sessionId`, `appId`. Records of our own actions: `imported` (the import is confirmed), `remoteControl` (a session reported a change, or the supervisor started it with Remote Control) and `console` (the supervisor started the session as a console process; the archive stops that process) | Create, the import, `meta.update` |
+| `engine` | References to the engine only: `kind` (`IProvider.Name`), `sessionId` (`orch whoami` writes a new engine session id that the app gave the session), `appId`. Records of our own actions: `imported` (the import is confirmed), `remoteControl` (a session reported a change, or the supervisor started it with Remote Control) and `console` (the supervisor started the session as a console process; the archive stops that process) | Create, the import, `meta.update` |
 | `parent` | The parent id. Null for a root. The children are a query (`SessionRegistry.Children`), not a field | Create |
 | `title`, `owner`, `tags`, `stream` | Labels. `owner` and `stream` are copies of the parent when the creator gives none | Create, `orch enable` |
 | `role` | `orchestrator`, `worker` or `free` (C1). At create: `orchestrator` for the orchestrator agent, `worker` for a child, else `free`. The workflow runner (C2) changes it | Create |

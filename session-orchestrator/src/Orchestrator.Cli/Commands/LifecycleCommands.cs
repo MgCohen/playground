@@ -38,7 +38,7 @@ public static class LifecycleCommands
     public static int Open(CommandContext c)
     {
         var id = c.Session(1);
-        var command = c.Provider.OpenCommand(id, c.Store.Cwd(id));
+        var command = c.Provider.OpenCommand(c.Store.Session(id).Engine.SessionId ?? id, c.Store.Cwd(id));
         if (c.Args.Flag("dry-run"))
         {
             c.Output.WriteLine(string.Join(' ', command));
