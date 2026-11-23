@@ -45,15 +45,16 @@ export function newId(): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`
 }
 
-// The home folder (templates, config): ORCH_HOME, else the answer of `orch home`. The plugin keeps no path of its own,
-// so a copy in a marketplace works on each computer that has `orch` (P1-F2).
+// The home folder (templates, config): ORCH_HOME, else the answer of `orch home`, else the plugin folder, where the
+// marketplace copy carries templates/ (tools/publish-plugin.ps1). The plugin keeps no path of its own, so a copy in a
+// marketplace works on each computer that has `orch`, also with an `orch` older than `orch home` (P1-F2).
 export async function homeRoot($: any): Promise<string> {
   const env = await $.env.get('ORCH_HOME')
   if (env) return env
   if (S.home) return S.home
   const run = await orch($, ['home'], 15000)
-  if (!run.ok || !run.text) throw new Error(`orch home failed (exit ${run.code}): ${run.text.slice(0, 200)}. Install or update orch.`)
-  S.home = run.text.split(/\r?\n/).pop()!.trim()
+  const line = run.ok ? run.text.split(/\r?\n/).pop()?.trim() : undefined
+  S.home = line || $.plugin.root
   return S.home
 }
 

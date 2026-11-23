@@ -51,6 +51,9 @@ $OldVersion = if (Test-Path $OldManifest) { (Get-Content $OldManifest -Raw | Con
 if (Test-Path $Target) { Remove-Item $Target -Recurse -Force }
 robocopy $Source $Target /E /NFL /NDL /NJH /NJS /NP /XD types test node_modules /XF '*.log' | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit $LASTEXITCODE" }
+# The templates go with the copy: the plugin reads them from its own folder when orch home is not available.
+robocopy (Join-Path (Split-Path $Source -Parent) 'templates') (Join-Path $Target 'templates') /E /NFL /NDL /NJH /NJS /NP | Out-Null
+if ($LASTEXITCODE -ge 8) { throw "robocopy of templates failed with exit $LASTEXITCODE" }
 
 # The catalog entry and the README row, once.
 $Catalog = Join-Path $Clone '.claude-plugin/marketplace.json'
