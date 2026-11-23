@@ -127,7 +127,7 @@ details.pain > .body { padding: 0 14px 16px; display: flex; flex-direction: colu
 <header>
   <div class="eyebrow">session-orchestrator · V2 · restart plan · step 1 of 3 · done</div>
   <h1>V2 Visual Restart</h1>
-  <p class="summary">The app looks correct, but each visual fix costs too much. This page states the goal of the restart, what we know today, and the eleven root causes of the pains. The target design is on the <a href="https://claude.ai/artifact/FmECykMtYjwUtdgfTct32V">V2 Target Design</a> page.</p>
+  <p class="summary">The app looks correct, but each visual fix costs too much. This page states the goal of the restart, what we know today, and the thirteen root causes of the pains. The target design is on the <a href="https://claude.ai/artifact/FmECykMtYjwUtdgfTct32V">V2 Target Design</a> page.</p>
 </header>
 
 <nav role="tablist" aria-label="Sections">
@@ -190,6 +190,7 @@ flowchart LR
         <tr><td><strong>Main:</strong> each page and list is a view of one query</td><td>You, answer to Q4</td></tr>
         <tr><td>A card composes from its view and kind templates</td><td>You, answer to Q4</td></tr>
         <tr><td>A new kind or view is data, not code</td><td>You, answer to Q4</td></tr>
+        <tr><td>One motion system and one navigation system</td><td>You, answer to Q4</td></tr>
         <tr><td>Keep the approved look and motion spec</td><td>I6, V7, E2</td></tr>
         <tr><td>Keyboard input works in the tray</td><td>I5 answer</td></tr>
         <tr><td>Step 2 compares a thin WinForms host with other tray hosts</td><td>Default decision, Q6</td></tr>
@@ -217,7 +218,7 @@ flowchart LR
     <div class="tiles">
       <div class="tile"><b>88</b><span>architecture gaps in 10 parts</span></div>
       <div class="tile"><b>28</b><span>tracker issues (I1–I22, F1–F6)</span></div>
-      <div class="tile"><b>11</b><span>root causes (tab 3)</span></div>
+      <div class="tile"><b>13</b><span>root causes (tab 3)</span></div>
       <div class="tile"><b>147</b><span><code>Task.Delay</code> calls in the self-test</span></div>
       <div class="tile"><b>6</b><span>trace files, 5 writers, free text</span></div>
     </div>
@@ -293,7 +294,7 @@ flowchart TB
 <!-- 3 PAINS -->
 <div class="panel" id="pains" role="tabpanel" aria-labelledby="t-pains" hidden>
   <section>
-    <h2>Eleven root causes</h2>
+    <h2>Thirteen root causes</h2>
     <p class="summary">Each row is one root cause. The number is the count of gaps and issues that it explains. Select a row to open its detail.</p>
     <div class="plist">
       <a class="prow" href="#p1"><span class="id">P1</span><span><span class="t">No single source of truth</span><span class="s">One fact in many places</span><span class="bar"><i style="width:100%"></i></span></span><span class="c">20</span></a>
@@ -307,6 +308,8 @@ flowchart TB
       <a class="prow" href="#p9"><span class="id">P9</span><span><span class="t">No defined design system</span><span class="s">No full tokens, rules or guidelines</span><span class="bar"><i style="width:45%"></i></span></span><span class="c">9</span></a>
       <a class="prow" href="#p10"><span class="id">P10</span><span><span class="t">Components not reusable</span><span class="s">Four ring components for one shape</span><span class="bar"><i style="width:40%"></i></span></span><span class="c">8</span></a>
       <a class="prow" href="#p11"><span class="id">P11</span><span><span class="t">The view is not data-driven</span><span class="s">Pages and card rules are C# code</span><span class="bar"><i style="width:40%"></i></span></span><span class="c">8</span></a>
+      <a class="prow" href="#p12"><span class="id">P12</span><span><span class="t">No unified animation system</span><span class="s">CSS, JS, view transitions and GDI+</span><span class="bar"><i style="width:50%"></i></span></span><span class="c">10</span></a>
+      <a class="prow" href="#p13"><span class="id">P13</span><span><span class="t">No unified navigation system</span><span class="s">Two units pick the page move</span><span class="bar"><i style="width:35%"></i></span></span><span class="c">7</span></a>
     </div>
     <p class="note">Process cause: we fixed one symptom at a time. One cause made many issues, and we saw it only when all records were side by side.</p>
   </section>
@@ -625,6 +628,66 @@ if (options.Count == 2 &amp;&amp; options.Any(o =&gt; o.Equals("yes", ...)))
         <div class="must"><b>The new design must</b>Make each page and each list a view of one query: one item or an aggregate. A new kind or view is data only.</div>
       </div>
     </details>
+
+    <details class="pain" id="p12">
+      <summary><span class="l1"><span class="id">P12</span><span class="t">No unified animation system</span><span class="c">10</span></span><span class="l2">R1 unified the tray steps, but 4 motion sources stay</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> Motion comes from CSS steps of the registry, a view transition for push and back, waits in <code>swipe.js</code>, and GDI+ fades in the native edge tab (V1, V2). The view transition and the deck back-in give no end to C#. The speed dial has no leave rule, so it closes with no motion and a false warning (I22).</p>
+        <div class="chips"><span class="chip">Motion G1–G9</span><span class="chip">I9, I22</span><span class="chip">V1, V2</span><span class="chip">Source: you</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">swipe.js:24 · MotionHost.razor:20</span></span>
+<pre><span class="cm">// swipe.js: a wait outside the C# pipeline</span>
+orchMotion.wait(card, "property", "transform")
+  .then(function () { card.classList.remove("back-in"); });
+
+<span class="cm">// MotionHost: the view transition starts, and</span>
+<span class="cm">// C# gets no end event (Motion G2)</span>
+if (PageDepth.Move(from, to) is not { } kind
+    || kind == PageDepth.Tab) return;</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">// Each motion is the look of one machine transition.</span>
+<span class="cm">// Row: from, event, to, motion step.</span>
+(Open,    "dock",   Docking, Motion.Fold),
+(Docking, "docked", Badge,   null),
+
+<span class="cm">// One player starts the step and waits for</span>
+<span class="cm">// getAnimations() to end, also for a view</span>
+<span class="cm">// transition. The end fires the next event.</span></pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Have one motion system: each motion is a step of a state transition, with one player, one end rule and tokens only.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p13">
+      <summary><span class="l1"><span class="id">P13</span><span class="t">No unified navigation system</span><span class="c">7</span></span><span class="l2">MotionHost and MainLayout each compute the move; a page has depth 1.5</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> Navigation is the Blazor router plus a depth attribute on each page. Two units compute the move from two addresses. Sheets and the speed dial are not part of navigation, so Back does not close them. The header path has its own logic and no test.</p>
+        <div class="chips"><span class="chip">Page moves G1, G3–G6</span><span class="chip">Trade-off: no attribute = tab page</span><span class="chip">Source: you</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">MainLayout.razor:23-29 · StreamPage.razor:3</span></span>
+<pre><span class="cm">// MainLayout: a second copy of the move rule</span>
+var here = Nav.ToBaseRelativePath(Nav.Uri);
+if (last is not null
+    &amp;&amp; PageDepth.Move(last, here) == PageDepth.Tab)
+    ...
+last = here;
+
+<span class="cm">// StreamPage: a depth from the query string</span>
+@attribute [PageDepth(0, Query = "session", QueryDepth = 1.5)]</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">// One navigator owns a stack of entries:</span>
+<span class="cm">// tab root, pushed pages, open overlays.</span>
+nav.Tab("cards");          <span class="cm">// move: tab</span>
+nav.Push("/events/42");    <span class="cm">// move: push</span>
+nav.Open(Overlay.Sheet);   <span class="cm">// move: overlay</span>
+nav.Back();                <span class="cm">// closes the top entry</span>
+
+<span class="cm">// The operation gives the move. The path trail</span>
+<span class="cm">// is the stack. Each change is a trace event.</span></pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Have one navigator: a stack of pages and overlays, one Back rule, the move from the operation, the URL in sync.</div>
+      </div>
+    </details>
   </section>
 </div>
 </div>
@@ -675,7 +738,7 @@ if (options.Count == 2 &amp;&amp; options.Any(o =&gt; o.Equals("yes", ...)))
   document.getElementById("close-all").addEventListener("click", function () { document.querySelectorAll("details.pain").forEach(function (d) { d.open = false; }); });
   function fromHash() {
     var h = location.hash.slice(1);
-    if (/^p([1-9]|1[01])$/.test(h)) { show("pains"); var d = document.getElementById(h); d.open = true; d.scrollIntoView({ block: "start" }); }
+    if (/^p([1-9]|1[0-3])$/.test(h)) { show("pains"); var d = document.getElementById(h); d.open = true; d.scrollIntoView({ block: "start" }); }
     else show(h);
   }
   window.addEventListener("hashchange", fromHash);

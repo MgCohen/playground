@@ -2394,13 +2394,14 @@ The view (web UI and tray) restarts from scratch on one data flow and one design
 
 | Step | Result | Page |
 |---|---|---|
-| 1 · Diagnosis | 11 root causes (P1 to P11) of 88 architecture gaps and 28 tracker issues | `docs/v2-restart.html` (https://claude.ai/artifact/BNwcBE7dsYXYmGhyiPk1b6) |
-| 2 · Target design | Each page and list is a view of one query; a composer joins the view template, the content template and the result; state machines; design system; thin tray host | `docs/v2-target-design.html` (https://claude.ai/artifact/FmECykMtYjwUtdgfTct32V) |
+| 1 · Diagnosis | 13 root causes (P1 to P13) of 88 architecture gaps and 28 tracker issues | `docs/v2-restart.html` (https://claude.ai/artifact/BNwcBE7dsYXYmGhyiPk1b6) |
+| 2 · Target design | Each page and list is a view of one query; a composer joins the view template, the content template and the result; one navigator; state machines with one motion system; design system; thin tray host | `docs/v2-target-design.html` (https://claude.ai/artifact/FmECykMtYjwUtdgfTct32V) |
 | 3 · Rebuild plan | Not started | - |
 
-Decisions so far: each page and list is a view of one query (user, Q4); step 2 starts from the data (default, Q5); step 2 compares the tray hosts (default, Q6). Open in step 2: D1 to D5 on the Decisions tab of the target design page.
+Decisions so far: each page and list is a view of one query, and one motion system and one navigation system (user, Q4); step 2 starts from the data (default, Q5); step 2 compares the tray hosts (default, Q6). Open in step 2: D1 to D6 at the end of the Overview tab of the target design page.
 
 Findings:
 
 - `orch decision pr` fails with "no template answer" when it runs from the repository root. It works from `session-orchestrator/`.
 - The drag-to-scroll script of the tab bar in the earlier artifacts loses a click: a drag that ends on another element leaves the `dragged` flag on the first button, so the next click on that tab does nothing. The V2 pages use only the native scroll of the bar.
+- The repository and the artifacts have no prior-art notes on a navigation controller. The Navigation tab of the target design uses the Page moves review and a summary of common stack navigators.

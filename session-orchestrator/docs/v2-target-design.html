@@ -109,16 +109,16 @@ details.f > .body { padding: 0 14px 16px; display: flex; flex-direction: column;
 <header>
   <div class="eyebrow">session-orchestrator · V2 · restart plan · step 2 of 3</div>
   <h1>V2 Target Design</h1>
-  <p class="summary">Each page and each list of the app is a view of one query of the event stream. A composer joins the view template, the content template of each kind and the query result into one view model, off the UI thread. The page renders it only with design system components. The diagnosis is on the <a href="https://claude.ai/artifact/BNwcBE7dsYXYmGhyiPk1b6">V2 Visual Restart</a> page.</p>
+  <p class="summary">Each page and each list of the app is a view of one query of the event stream. A composer joins the view template, the content template of each kind and the query result into one view model, off the UI thread. The page renders it only with design system components. One navigator owns where the user is, and each motion is a step of a state transition. The diagnosis is on the <a href="https://claude.ai/artifact/BNwcBE7dsYXYmGhyiPk1b6">V2 Visual Restart</a> page.</p>
 </header>
 
 <nav role="tablist" aria-label="Sections">
   <button role="tab" id="t-overview" data-tab="overview" aria-controls="overview" aria-selected="true"><span class="n">1</span>Overview</button>
   <button role="tab" id="t-views" data-tab="views" aria-controls="views" aria-selected="false"><span class="n">2</span>Views</button>
-  <button role="tab" id="t-state" data-tab="state" aria-controls="state" aria-selected="false"><span class="n">3</span>State</button>
-  <button role="tab" id="t-system" data-tab="system" aria-controls="system" aria-selected="false"><span class="n">4</span>Design system</button>
-  <button role="tab" id="t-host" data-tab="host" aria-controls="host" aria-selected="false"><span class="n">5</span>Tray host</button>
-  <button role="tab" id="t-decide" data-tab="decide" aria-controls="decide" aria-selected="false"><span class="n">6</span>Decisions</button>
+  <button role="tab" id="t-nav" data-tab="nav" aria-controls="nav" aria-selected="false"><span class="n">3</span>Navigation</button>
+  <button role="tab" id="t-state" data-tab="state" aria-controls="state" aria-selected="false"><span class="n">4</span>State, motion</button>
+  <button role="tab" id="t-system" data-tab="system" aria-controls="system" aria-selected="false"><span class="n">5</span>Design system</button>
+  <button role="tab" id="t-host" data-tab="host" aria-controls="host" aria-selected="false"><span class="n">6</span>Tray host</button>
 </nav>
 
 <!-- 1 OVERVIEW -->
@@ -132,7 +132,8 @@ flowchart LR
   KT["Content template<br/>of each kind"] --> CO
   CO -->|view model| PR["Page root"]
   PR -->|parameters| DS["Design system<br/>components"]
-  DS -->|events| SM["State machines"]
+  DS -->|events| SM["Navigator and<br/>state machines"]
+  SM -->|motion steps| DS
   SM -->|acts| ST
   SM -->|trace events| TR["Trace"]
 </pre></div>
@@ -147,13 +148,15 @@ flowchart LR
         <tr><td>Each page and list is a view of one query</td><td>P11, P1, P4</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
         <tr><td>Card rules and actions are template data</td><td>P11, P2</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
         <tr><td>One composer makes the view model</td><td>P1, P4</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
-        <tr><td>Each window, page and sheet has a state machine</td><td>P3</td><td><a href="#state" data-go="state">3 · State</a></td></tr>
-        <tr><td>Each state change is one trace event</td><td>P6, P7</td><td><a href="#state" data-go="state">3 · State</a></td></tr>
-        <tr><td>Tests wait for events and read tokens</td><td>P7</td><td><a href="#state" data-go="state">3 · State</a></td></tr>
-        <tr><td>Token tiers, layer order, written guidelines</td><td>P9</td><td><a href="#system" data-go="system">4 · Design system</a></td></tr>
-        <tr><td>Pages use only catalog components</td><td>P10, P5</td><td><a href="#system" data-go="system">4 · Design system</a></td></tr>
-        <tr><td>Names for CSS and JS are generated</td><td>P2</td><td><a href="#system" data-go="system">4 · Design system</a></td></tr>
-        <tr><td>The native host is thin and generic</td><td>P8</td><td><a href="#host" data-go="host">5 · Tray host</a></td></tr>
+        <tr><td>Each window, page and sheet has a state machine</td><td>P3</td><td><a href="#state" data-go="state">4 · State, motion</a></td></tr>
+        <tr><td>Each state change is one trace event</td><td>P6, P7</td><td><a href="#state" data-go="state">4 · State, motion</a></td></tr>
+        <tr><td>Tests wait for events and read tokens</td><td>P7</td><td><a href="#state" data-go="state">4 · State, motion</a></td></tr>
+        <tr><td>Token tiers, layer order, written guidelines</td><td>P9</td><td><a href="#system" data-go="system">5 · Design system</a></td></tr>
+        <tr><td>Pages use only catalog components</td><td>P10, P5</td><td><a href="#system" data-go="system">5 · Design system</a></td></tr>
+        <tr><td>Names for CSS and JS are generated</td><td>P2</td><td><a href="#system" data-go="system">5 · Design system</a></td></tr>
+        <tr><td>The native host is thin and generic</td><td>P8</td><td><a href="#host" data-go="host">6 · Tray host</a></td></tr>
+        <tr><td>One navigator: a stack of pages and overlays</td><td>P13</td><td><a href="#nav" data-go="nav">3 · Navigation</a></td></tr>
+        <tr><td>Each motion is a step of a state transition</td><td>P12</td><td><a href="#state" data-go="state">4 · State, motion</a></td></tr>
       </tbody>
     </table></div>
   </section>
@@ -165,9 +168,81 @@ flowchart LR
       <details class="leaf"><summary><span class="n">Orchestrator.View/</span><span class="d">Composer, view templates, state machines. Pure C#, no Blazor</span></summary><div class="more">Unit tests run here with no window and no browser. It reads the store through one snapshot interface.</div></details>
       <details class="leaf"><summary><span class="n">Orchestrator.View.Components/</span><span class="d">Razor class library: the design system</span></summary><div class="more">Tokens, layers, components, motion CSS, the small JS helpers, and a gallery page. No store access.</div></details>
       <details class="leaf"><summary><span class="n">Orchestrator.View.Web/</span><span class="d">The web host: routes to pages, the hub of the view model</span></summary><div class="more">Replaces the pages of <code>Orchestrator.Web</code> slice by slice. The supervisor and the API stay in <code>Orchestrator.Web</code>.</div></details>
-      <details class="leaf"><summary><span class="n">Orchestrator.View.Tray/</span><span class="d">The thin tray host: windows, places, input</span></summary><div class="more">One generic host window. Each window has one Blazor root. See tab 5.</div></details>
+      <details class="leaf"><summary><span class="n">Orchestrator.View.Tray/</span><span class="d">The thin tray host: windows, places, input</span></summary><div class="more">One generic host window. Each window has one Blazor root. See tab 6.</div></details>
       <details class="leaf"><summary><span class="n">templates/views/</span><span class="d">The view templates (a new catalog)</span></summary><div class="more">One folder for each view, like <code>templates/modes/</code>. The store layer can replace a core view.</div></details>
     </div>
+  </section>
+
+  <section>
+    <h2>Decided</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Decision</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>Each page and list is a view of one query</td><td>You, Q4</td></tr>
+        <tr><td>Start from the data, then components, then the look</td><td>Default, Q5</td></tr>
+        <tr><td>Step 2 compares the tray hosts</td><td>Default, Q6</td></tr>
+        <tr><td>One motion system and one navigation system</td><td>You, Q4 (P12, P13)</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Open questions</h2>
+    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D1</span><span class="t">Rename the kind file to content.json?</span></span><span class="l2">Recommendation: yes. Default: yes</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p>Today <code>templates/&lt;kind&gt;/view.json</code> holds the content of a kind. The new catalog has view templates too. One word with two meanings breaks rule 2 of the writing rules.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: rename to <code>content.json</code>.</li><li>B: keep <code>view.json</code>, and call the new files <code>lens.json</code>.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The kind file holds content; the view file holds a query and a layout.</p></div></div>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D2</span><span class="t">Own design system or a component library?</span></span><span class="l2">Recommendation: own, on CSS tokens. Default: own</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p>The prior-art research found that Blazor libraries such as MudBlazor have no motion system, and their look is not ours. Our look and motion are approved.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: own components on our tokens (tab 4).</li><li>B: Fluent UI Blazor, themed.</li><li>C: MudBlazor, themed.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The catalog has about 30 small components. A library adds a second style system to override (P5).</p></div></div>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D3</span><span class="t">Thin WinForms host for the tray?</span></span><span class="l2">Recommendation: option A of tab 5. Default: A</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p>Only WebView2 composition is proven for a transparent, shaped window. WinUI 3 and MAUI are not proven for it.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: thin WinForms host with <code>IHostWindow</code>.</li><li>A + spike: also try WinUI 3 in step 3.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Make the host small first; change the host later only if the spike shows a gain.</p></div></div>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D4</span><span class="t">New projects next to the old app?</span></span><span class="l2">Recommendation: yes, in the same solution. Default: yes</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p>A rewrite in place breaks the app for a long time. New projects let the old app run, and each slice can compare with it.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: new projects in <code>Orchestrator.slnx</code> (tab 1).</li><li>B: rewrite the pages in place.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The supervisor, the store and the API stay as they are.</p></div></div>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D5</span><span class="t">How do card rules test the fields?</span></span><span class="l2">Recommendation: small JSON tests, no script. Default: JSON tests</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p><code>Ui.Classify</code> tests fields: two options yes and no, a default, the needs. The rules must be data (P11).</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: JSON tests: <code>exists</code>, <code>is</code>, <code>equals</code>, <code>count</code> (tab 2, V5).</li><li>B: an expression language, for example JsonLogic.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Four tests cover the 8 variants of today. A schema can check them.</p></div></div>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D6</span><span class="t">Do overlays change the URL?</span></span><span class="l2">Recommendation: no; overlays live only in the stack. Default: no</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p>Sheets and the speed dial become stack entries (tab 3). The browser Back key must close them. A URL for each overlay makes deep links to a half-done answer.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: no URL change; the navigator catches the browser Back for an open overlay.</li><li>B: a <code>#sheet</code> fragment for each overlay.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. A link opens a page, never a half-open sheet. The tray has no address bar.</p></div></div>
+      </div>
+    </details>
   </section>
 </div>
 
@@ -329,7 +404,89 @@ public static ViewModel Compose(Snapshot data, ViewTemplate view,
   </section>
 </div>
 
-<!-- 3 STATE -->
+<!-- 3 NAVIGATION -->
+<div class="panel" id="nav" role="tabpanel" aria-labelledby="t-nav" hidden>
+  <section>
+    <h2>One navigator, one stack</h2>
+    <p class="summary">The navigator is the only owner of "where the user is". It holds a stack of entries: one tab root, the pushed pages, and the open overlays. Each operation gives its move, so no unit computes a move from two addresses (P13, Page moves G4).</p>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  IN["Input<br/>link, Back key, swipe"] -->|operation| NV["Navigator<br/>stack"]
+  PJ["page.json<br/>route, parent"] --> NV
+  NV -->|URL| RT["Router<br/>address bar"]
+  NV -->|move| MO["Motion player"]
+  NV -->|entries| PR["Page roots<br/>and overlays"]
+  NV -->|nav events| TR["Trace"]
+</pre></div>
+  </section>
+
+  <section>
+    <h2>Operations</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Operation</th><th>Stack change</th><th>Move</th></tr></thead>
+      <tbody>
+        <tr><td><code>Tab(name)</code></td><td>Clear; set the tab root</td><td>tab</td></tr>
+        <tr><td><code>Push(route)</code></td><td>Add a page on top</td><td>push</td></tr>
+        <tr><td><code>Back()</code></td><td>Remove the top entry</td><td>back, or overlay leave</td></tr>
+        <tr><td><code>Replace(route)</code></td><td>Swap the top page</td><td>none</td></tr>
+        <tr><td><code>Open(overlay)</code></td><td>Add a sheet or a dial</td><td>overlay enter</td></tr>
+        <tr><td><code>Deep(route)</code></td><td>Build the stack from the parents</td><td>none</td></tr>
+      </tbody>
+    </table></div>
+    <div class="rule">Back always closes the top entry first: an overlay before a page. The Back key, Esc, a swipe and the app bar use the same <code>Back()</code>.</div>
+  </section>
+
+  <section>
+    <h2>Pages name their parent</h2>
+    <div class="pair">
+      <div><p class="file">templates/pages/stream-session/page.json</p>
+<pre class="code">{
+  "name":   "stream-session",
+  "route":  "/stream?session={id}",
+  "parent": "session",
+  "slots":  [ "session-timeline" ]
+}</pre></div>
+      <div><p class="file">the stack after Deep("/events/42")</p>
+<pre class="code">cards              <span class="cm">// tab root</span>
+└─ session/abc     <span class="cm">// parent of the event</span>
+   └─ events/42    <span class="cm">// top</span>
+
+<span class="cm">// The path trail shows the stack.</span>
+<span class="cm">// No depth numbers, no 1.5.</span></pre></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Prior art</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Source</th><th>Pattern</th><th>For us</th></tr></thead>
+      <tbody>
+        <tr><td>iOS navigation controller</td><td>A stack: push, pop</td><td>Push and Back</td></tr>
+        <tr><td>Android Navigation</td><td>A graph; a deep link builds the back stack</td><td><code>parent</code>, <code>Deep()</code></td></tr>
+        <tr><td>Flutter Navigator 2.0</td><td>The page list is state</td><td>The stack is state; pages render from it</td></tr>
+        <tr><td>Radix, Headless UI</td><td>Overlays as presence states</td><td>Overlays are stack entries</td></tr>
+        <tr><td>Our <code>PageDepth.Move</code></td><td>One tested move rule</td><td>Keep the tests; the operation gives the move</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The first four rows are a summary of the platform patterns from general knowledge. They were not researched again for this page.</p>
+  </section>
+
+  <section>
+    <h2>Navigator contract</h2>
+<pre class="code"><span class="cm">// Orchestrator.View: one navigator for the web host and each tray window.</span>
+public interface INavigator
+{
+    IReadOnlyList&lt;NavEntry&gt; Stack { get; }
+    Task Tab(string name);
+    Task Push(string route);
+    Task Open(Overlay overlay);
+    Task Back();                 <span class="cm">// ends when the leave motion ends</span>
+    event Action&lt;NavChange&gt; Changed;   <span class="cm">// also a trace event</span>
+}</pre>
+  </section>
+</div>
+
+<!-- 4 STATE -->
 <div class="panel" id="state" role="tabpanel" aria-labelledby="t-state" hidden>
   <section>
     <h2>The tray panel as one state machine</h2>
@@ -391,6 +548,49 @@ public sealed class Machine&lt;TState, TEvent&gt;
         <tr><td>Test code</td><td>A test project, not the shipped exe</td></tr>
       </tbody>
     </table></div>
+  </section>
+
+  <section>
+    <h2>One motion system</h2>
+    <p class="summary">Each motion is the look of one row of a state machine. The row names a motion step; the player runs it and fires the end event. No motion starts outside a row (P12).</p>
+<pre class="code"><span class="cm">// A row of the tray panel machine</span>
+(Open, "dock", Docking, Motion.Fold)     <span class="cm">// from, event, to, step</span>
+(Docking, "docked", Badge, null)        <span class="cm">// "docked" = end of Fold</span>
+
+<span class="cm">// The player: one entry for each kind of motion</span>
+Task&lt;MotionEnd&gt; Play(MotionStep step, ElementRef target);</pre>
+    <div class="scroll"><table>
+      <thead><tr><th>Motion</th><th>Owner</th><th>End event</th></tr></thead>
+      <tbody>
+        <tr><td>Page move (tab, push, back)</td><td>Navigator</td><td>View transition <code>finished</code></td></tr>
+        <tr><td>Overlay enter and leave</td><td>Navigator, Presence</td><td>Animations settled</td></tr>
+        <tr><td>Card act (throw, tuck)</td><td>Card act machine</td><td>Animations settled</td></tr>
+        <tr><td>Gesture follow (drag)</td><td>Input layer</td><td>Pointer up; then a step</td></tr>
+        <tr><td>Window show and hide</td><td>Tray machine, host</td><td>Window event</td></tr>
+        <tr><td>Attention (spin, count-up)</td><td>View model change</td><td>Animations settled</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Motion prior art and the R1 lessons</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Pattern</th><th>From</th><th>Rule for V2</th></tr></thead>
+      <tbody>
+        <tr><td>One state attribute</td><td>Radix, Headless UI</td><td>CSS keys on <code>data-state</code> only</td></tr>
+        <tr><td>One end helper</td><td>Web Awesome 3</td><td><code>getAnimations()</code>, then all <code>finished</code></td></tr>
+        <tr><td>Presence with states</td><td>Radix Presence</td><td>shown, leaving, gone; no rule = no wait</td></tr>
+        <tr><td>Tokens only in CSS</td><td>Carbon, Material 3</td><td>Times in <code>@layer tokens</code></td></tr>
+        <tr><td>Reduced motion = 1 ms</td><td>Fluent UI</td><td>End events still come</td></tr>
+        <tr><td>Registry of steps (R1)</td><td>Our PR #58</td><td>Generated from the machine rows</td></tr>
+      </tbody>
+    </table></div>
+    <ul>
+      <li>A leave with no motion rule ends at once and writes no warning (I22).</li>
+      <li>The drag follow is the only motion in JS. It sends gesture events; the step after the release is a normal row.</li>
+      <li>The native host draws no motion. GDI+ fades are not used (V1, V2).</li>
+      <li>The source is the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">Orch View Architecture</a> page, Prior art tab, and the R1 motion guide.</li>
+    </ul>
   </section>
 </div>
 
@@ -502,75 +702,11 @@ public interface IHostWindow
   </section>
 </div>
 
-<!-- 6 DECISIONS -->
-<div class="panel" id="decide" role="tabpanel" aria-labelledby="t-decide" hidden>
-  <section>
-    <h2>Decided</h2>
-    <div class="scroll"><table>
-      <thead><tr><th>Decision</th><th>Source</th></tr></thead>
-      <tbody>
-        <tr><td>Each page and list is a view of one query</td><td>You, Q4</td></tr>
-        <tr><td>Start from the data, then components, then the look</td><td>Default, Q5</td></tr>
-        <tr><td>Step 2 compares the tray hosts</td><td>Default, Q6</td></tr>
-      </tbody>
-    </table></div>
-  </section>
-
-  <section>
-    <h2>Open questions</h2>
-    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
-
-    <details class="f">
-      <summary><span class="l1"><span class="id">D1</span><span class="t">Rename the kind file to content.json?</span></span><span class="l2">Recommendation: yes. Default: yes</span></summary>
-      <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>Today <code>templates/&lt;kind&gt;/view.json</code> holds the content of a kind. The new catalog has view templates too. One word with two meanings breaks rule 2 of the writing rules.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: rename to <code>content.json</code>.</li><li>B: keep <code>view.json</code>, and call the new files <code>lens.json</code>.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The kind file holds content; the view file holds a query and a layout.</p></div></div>
-      </div>
-    </details>
-
-    <details class="f">
-      <summary><span class="l1"><span class="id">D2</span><span class="t">Own design system or a component library?</span></span><span class="l2">Recommendation: own, on CSS tokens. Default: own</span></summary>
-      <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>The prior-art research found that Blazor libraries such as MudBlazor have no motion system, and their look is not ours. Our look and motion are approved.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: own components on our tokens (tab 4).</li><li>B: Fluent UI Blazor, themed.</li><li>C: MudBlazor, themed.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The catalog has about 30 small components. A library adds a second style system to override (P5).</p></div></div>
-      </div>
-    </details>
-
-    <details class="f">
-      <summary><span class="l1"><span class="id">D3</span><span class="t">Thin WinForms host for the tray?</span></span><span class="l2">Recommendation: option A of tab 5. Default: A</span></summary>
-      <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>Only WebView2 composition is proven for a transparent, shaped window. WinUI 3 and MAUI are not proven for it.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: thin WinForms host with <code>IHostWindow</code>.</li><li>A + spike: also try WinUI 3 in step 3.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Make the host small first; change the host later only if the spike shows a gain.</p></div></div>
-      </div>
-    </details>
-
-    <details class="f">
-      <summary><span class="l1"><span class="id">D4</span><span class="t">New projects next to the old app?</span></span><span class="l2">Recommendation: yes, in the same solution. Default: yes</span></summary>
-      <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>A rewrite in place breaks the app for a long time. New projects let the old app run, and each slice can compare with it.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: new projects in <code>Orchestrator.slnx</code> (tab 1).</li><li>B: rewrite the pages in place.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The supervisor, the store and the API stay as they are.</p></div></div>
-      </div>
-    </details>
-
-    <details class="f">
-      <summary><span class="l1"><span class="id">D5</span><span class="t">How do card rules test the fields?</span></span><span class="l2">Recommendation: small JSON tests, no script. Default: JSON tests</span></summary>
-      <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p><code>Ui.Classify</code> tests fields: two options yes and no, a default, the needs. The rules must be data (P11).</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: JSON tests: <code>exists</code>, <code>is</code>, <code>equals</code>, <code>count</code> (tab 2, V5).</li><li>B: an expression language, for example JsonLogic.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Four tests cover the 8 variants of today. A schema can check them.</p></div></div>
-      </div>
-    </details>
-  </section>
-</div>
 </div>
 
 <script>
 (function () {
-  var names = ["overview", "views", "state", "system", "host", "decide"];
+  var names = ["overview", "views", "nav", "state", "system", "host"];
   var tabs = document.querySelectorAll('nav [role="tab"]');
   function show(name) {
     if (names.indexOf(name) < 0) name = "overview";
