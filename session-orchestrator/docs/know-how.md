@@ -202,7 +202,8 @@ Known limits:
 
 ## The orch tool
 
-- Install or update it after a change of `src/Orchestrator.Cli`: `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` (`install` the first time).
+- Install or update it after a change of `src/Orchestrator.Cli`: `dotnet pack src/Orchestrator.Cli -c Release -o <folder> -p:Version=<new version>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder> --version <new version>` (`install` the first time). Each pack needs a new version: `dotnet tool update` does not reinstall a package of the same version (P1-F15).
+- A running `orch` process (for example the `orch watch` of a live session) locks the `.store` folder of the tool, and the update fails with "Access to the path ... is denied". Update when no live session runs, for example after an app restart.
 - The build embeds the repository path, so `orch` finds `templates/` and `config/` from any folder. `ORCH_HOME` overrides it.
 - `orch` uses `ORCH_STORE`. A supervisor turn sets it, so a session that runs `orch` writes to the store of its supervisor.
 - HTTP mode: with `ORCH_URL`, each store command calls the store API of that supervisor, with `ORCH_TOKEN` in `X-Orch-Token`. With no `ORCH_URL`, no `ORCH_STORE` and no folder at the default store root, `orch` calls `http://127.0.0.1:<ORCH_PORT or 7777>`. `orch supervisor`, `orch store` and `orch process` always use the local folder.
