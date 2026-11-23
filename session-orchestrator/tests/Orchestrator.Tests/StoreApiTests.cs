@@ -26,6 +26,7 @@ public sealed class StoreApiTests
     static WebApplicationFactory<Program> Start(string store, string? token, bool loopback = false, int? kestrelPort = null)
     {
         Environment.SetEnvironmentVariable("ORCH_STORE", store);
+        Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, Providers.Fake.FakeProvider.ProviderName);
         Environment.SetEnvironmentVariable("ORCH_IMPORT", "0");
         if (kestrelPort is { } listen) Environment.SetEnvironmentVariable("ORCH_PORT", listen.ToString());
         try
@@ -46,6 +47,7 @@ public sealed class StoreApiTests
         finally
         {
             Environment.SetEnvironmentVariable("ORCH_STORE", null);
+            Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, null);
             Environment.SetEnvironmentVariable("ORCH_IMPORT", null);
             Environment.SetEnvironmentVariable("ORCH_PORT", null);
         }
@@ -197,6 +199,7 @@ public sealed class StoreApiTests
             Environment.SetEnvironmentVariable("ORCH_URL", null);
             Environment.SetEnvironmentVariable("ORCH_TOKEN", null);
             Environment.SetEnvironmentVariable("ORCH_STORE", null);
+            Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, null);
         }
     }
 
@@ -240,6 +243,7 @@ public sealed class StoreApiTests
         finally
         {
             Environment.SetEnvironmentVariable("ORCH_STORE", null);
+            Environment.SetEnvironmentVariable(Providers.ProviderFactory.Variable, null);
         }
     }
 }

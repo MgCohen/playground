@@ -256,7 +256,23 @@ public sealed class LifecycleStateTests
         var texts = MessagesToUser(t, id);
         Assert.That(texts, Has.Count.EqualTo(1));
         Assert.That(texts[0], Does.Contain("does not respond").And.Contain("failed-turns"));
+        Assert.That(texts[0], Does.StartWith("Session \"root\"").And.Not.Contain("Child").And.Not.Contain("status block"), "a root is not a child (D, problem 2)");
         Assert.That(new Inbox(t.Store).Cards().Any(c => c.Kind == EventKinds.Message && c.Session == id), Is.True, "a card that needs an ack");
+    }
+
+    [Test]
+    public void Each_notice_to_the_parent_has_a_render_for_the_user()
+    {
+        using var t = new Rig();
+        var source = File.ReadAllText(Path.Combine(Home.Root(), "src", "Orchestrator.Supervisor", "Supervisor.Lifecycle.cs"));
+        var kinds = System.Text.RegularExpressions.Regex.Matches(source, @"NotifyParent\(id, ""([a-z-]+)""").Select(m => m.Groups[1].Value).Distinct().ToList();
+        Assert.That(kinds, Has.Count.GreaterThanOrEqualTo(10));
+        foreach (var kind in kinds)
+        {
+            var name = Supervisor.Supervisor.UserPrefix + kind;
+            Assert.That(t.Store.Templates[Core.Templates.Kinds.Notice].HasRender(name), Is.True, $"render/{name}.md");
+            Assert.That(File.ReadAllText(Path.Combine(Home.Root(), "templates", "notice", "render", $"{name}.md")), Does.Not.Contain("Child").And.Not.Contain("child \""), name);
+        }
     }
 
     [Test]

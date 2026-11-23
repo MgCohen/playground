@@ -46,12 +46,15 @@ public static partial class SelfTest
             """);
         checks.Add(new Check("app-bar-on-top", context.Length == 0, $"ancestors of the app bar with a stacking context: {(context.Length == 0 ? "none" : context)}", ""));
 
-        // M7 ring draw: the deep ring sweeps in 900 ms. A screenshot at about 300 ms shows a part of the ring.
+        // M7 ring draw and V6: the rings draw (900 ms) only at the first show. The end of that draw set "drawn" on the root;
+        // a tab change after it shows the full rings at once.
+        var drawn = await Eval<bool>(web, "document.documentElement.classList.contains('drawn')");
         await Home(web, "stream");
+        var rows = await Eval<string>(web, "(f => f ? getComputedStyle(f).animationName : 'no ring')(document.querySelector('.ring .fill'))");
         var ringPng = await Snap(web, folder, "m7-ring-draw", $"{Go}('')", 330);
-        await Task.Delay(900);
         var sweep = await Eval<string>(web, "getComputedStyle(document.querySelector('.dring .fill')).animationName");
-        checks.Add(new Check("m7-ring-draw", sweep == "m-sweep", $"deep ring animation {sweep}", ringPng));
+        checks.Add(new Check("m7-ring-draw", drawn && sweep == "none" && rows == "none",
+            $"first draw ended (root class drawn) {drawn}; after a tab change: deep ring animation {sweep}, row ring animation {rows} (expect none)", ringPng));
 
         // M7 fold: the active sessions fold opens its height in 260 ms.
         var foldPng = await Snap(web, folder, "m7-fold", "document.querySelector('details.fold > summary').click()", 120);

@@ -92,12 +92,17 @@ public static partial class Subjects
         return "";
     }
 
+    /// <summary>One line: the first sentence of the text, cut at <see cref="MaxLength"/> (D9). A sentence ends with . ! or ? and a space.</summary>
     public static string Clean(string text)
     {
         var line = Space().Replace(text, " ").Trim();
+        if (SentenceEnd().Match(line) is { Success: true } end) line = line[..(end.Index + 1)];
         return line.Length > MaxLength ? line[..MaxLength] : line;
     }
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Space();
+
+    [GeneratedRegex(@"[.!?](?= )")]
+    private static partial Regex SentenceEnd();
 }

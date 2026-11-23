@@ -30,11 +30,12 @@ public static class EventQuery
     public static bool IsLedger(Event e) => StreamQuery.IsLedger(e);
 
     /// <summary>
-    /// An envelope waits for an act: a question with no answer in its thread, or an envelope with needs and no reply or ack.
+    /// An envelope waits for an act: a question with no answer in its thread, an open failure, or an envelope with needs and no reply or ack.
     /// A report that needs an ack is closed when its forward to the parent has an ack.
     /// </summary>
     public static bool IsOpen(FileStore store, Event e)
     {
+        if (e.Kind == EventKinds.Failure) return Failures.IsOpen(store, e);
         if (EventKinds.Questions.Contains(e.Kind) && !e.IsForward) return e.Thread is { } thread && store.Events.FirstAnswer(thread) is null;
         if (e.Needs is null) return false;
         if (store.Events.RepliesTo(e.Id).Count > 0 || store.Events.IsAcked(e.Id)) return false;

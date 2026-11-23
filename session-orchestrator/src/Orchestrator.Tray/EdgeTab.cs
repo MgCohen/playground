@@ -17,6 +17,8 @@ public sealed record WaitCounts(int Questions, int Reviews, int Reports, int Blo
 /// N2: the peek bubble: a short text comes out of the tab, and goes back into it after 5 s.
 /// The window is a layered window with per-pixel alpha (UpdateLayeredWindow), drawn with GDI+: soft edges, and the clear parts
 /// let the clicks through. The web page is not used, so the tab shows at once.
+/// The tab has its own UI thread (<see cref="Start"/>): a long job on the thread of the widget (a load of the Blazor views, a
+/// count of the cards after a store change) does not stop its clock (V1, V2). The public acts go to that thread by themselves.
 /// </summary>
 public sealed class EdgeTab : LayeredForm
 {
@@ -71,6 +73,45 @@ public sealed class EdgeTab : LayeredForm
         clock.Tick += (_, _) => Step();
     }
 
+    /// <summary>Makes the tab on a new UI thread with its own message loop, and returns when its window handle exists.</summary>
+    public static EdgeTab Start(string? placeFile)
+    {
+        EdgeTab? tab = null;
+        using var ready = new ManualResetEventSlim();
+        var thread = new Thread(() =>
+        {
+            tab = new EdgeTab(placeFile);
+            _ = tab.Handle;
+            ready.Set();
+            Application.Run();
+        })
+        { IsBackground = true, Name = "Edge tab" };
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        ready.Wait();
+        return tab!;
+    }
+
+    /// <summary>Stops the thread of the tab and frees the tab.</summary>
+    public void Stop()
+    {
+        if (IsDisposed || !IsHandleCreated) return;
+        Invoke(() =>
+        {
+            Hide();
+            Dispose();
+            Application.ExitThread();
+        });
+    }
+
+    // A call from another thread goes to the thread of the tab, in the order of the calls.
+    bool Elsewhere(Action act)
+    {
+        if (!InvokeRequired) return false;
+        if (!IsDisposed) BeginInvoke(act);
+        return true;
+    }
+
     /// <summary>The click on the tab: the widget opens. The tab slides out first.</summary>
     public event Action? OpenRequested;
 
@@ -87,7 +128,7 @@ public sealed class EdgeTab : LayeredForm
     public bool Peeking => bubble > .01;
 
     /// <summary>True while a slide, a spin, an extend or a peek runs.</summary>
-    public bool Moving => clock.Enabled && (slideStart >= 0 || spinStart >= 0 || Math.Abs(expand - Target) > .001 || Math.Abs(bubble - bubbleTarget) > .001);
+    public bool Moving => (clock.Enabled || pumping) && (slideStart >= 0 || spinStart >= 0 || Math.Abs(expand - Target) > .001 || Math.Abs(bubble - bubbleTarget) > .001);
 
     /// <summary>The ring of the tab on the screen, in screen pixels.</summary>
     public Rectangle RingBounds
@@ -108,6 +149,7 @@ public sealed class EdgeTab : LayeredForm
     /// <summary>Slides the tab in from the right edge of the screen.</summary>
     public void SlideIn()
     {
+        if (Elsewhere(SlideIn)) return;
         Place();
         if (!Visible) Show();
         Animate(1, SlideInMs, null);
@@ -116,6 +158,7 @@ public sealed class EdgeTab : LayeredForm
     /// <summary>Slides the tab out to the right, then hides it and runs <paramref name="then"/>.</summary>
     public void SlideOut(Action? then = null)
     {
+        if (Elsewhere(() => SlideOut(then))) return;
         if (!Visible)
         {
             then?.Invoke();
@@ -138,12 +181,13 @@ public sealed class EdgeTab : LayeredForm
         slideMs = ms;
         slideStart = time.ElapsedMilliseconds;
         afterSlide = then;
-        Start();
+        Wake();
     }
 
     /// <summary>New counts. A higher total spins the ring and shows the peek bubble with the newest item.</summary>
     public void SetCounts(WaitCounts next, string? title = null, string? sub = null)
     {
+        if (Elsewhere(() => SetCounts(next, title, sub))) return;
         var more = next.Total > counts.Total;
         counts = next;
         if (more)
@@ -151,25 +195,27 @@ public sealed class EdgeTab : LayeredForm
             spinStart = time.ElapsedMilliseconds;
             if (title is not null) Peek(title, sub ?? "");
         }
-        Start();
+        Wake();
         Render();
     }
 
     /// <summary>N2: the peek bubble with a short text. It hides after <see cref="PeekMs"/>.</summary>
     public void Peek(string title, string sub)
     {
+        if (Elsewhere(() => Peek(title, sub))) return;
         bubbleTitle = title;
         bubbleSub = sub;
         bubbleTarget = 1;
         bubbleUntil = time.ElapsedMilliseconds + PeekMs;
-        Start();
+        Wake();
     }
 
     /// <summary>The self-test: the extended tab, as after a hover.</summary>
     public void Hover(bool on)
     {
+        if (Elsewhere(() => Hover(on))) return;
         hoverSince = on ? time.ElapsedMilliseconds - HoverMs : -1;
-        Start();
+        Wake();
     }
 
     // The window is a strip at the right edge of the work area: the bubble, the gap and the widest tab, with the shadow.
@@ -206,7 +252,7 @@ public sealed class EdgeTab : LayeredForm
         dragging = true;
         var area = Screen.FromControl(this).WorkingArea;
         Top = Math.Clamp(downTop + dy, area.Top, Math.Max(area.Top, area.Bottom - Height));
-        Start();
+        Wake();
     }
 
     protected override void OnMouseUp(MouseEventArgs e)
@@ -226,14 +272,20 @@ public sealed class EdgeTab : LayeredForm
 
     // ===== The clock =====
 
-    void Start()
+    void Wake()
     {
-        if (!clock.Enabled) clock.Start();
+        if (clock.Enabled) return;
+        lastStep = -1;
+        clock.Start();
     }
 
     void Step()
     {
         var now = time.ElapsedMilliseconds;
+        // The extend and the bubble move by the time since the last frame, not by a fixed step for each tick: a late tick
+        // does not make the motion longer (V1).
+        var dt = lastStep < 0 ? 15 : Math.Clamp(now - lastStep, 0, 100);
+        lastStep = now;
         if (slideStart >= 0)
         {
             var t = Math.Min(1, (now - slideStart) / (double)slideMs);
@@ -252,13 +304,13 @@ public sealed class EdgeTab : LayeredForm
         var over = Visible && TabScreenRect().Contains(Cursor.Position);
         if (over && hoverSince < 0) hoverSince = now;
         if (!over && !dragging && hoverSince >= 0 && down is null) hoverSince = -1;
-        expand = Approach(expand, Target, 15 / 200.0);
+        expand = Approach(expand, Target, dt / 200.0);
         if (bubbleUntil >= 0 && now >= bubbleUntil)
         {
             bubbleTarget = 0;
             bubbleUntil = -1;
         }
-        bubble = Approach(bubble, bubbleTarget, 15 / (bubbleTarget > bubble ? 260.0 : 200.0));
+        bubble = Approach(bubble, bubbleTarget, dt / (bubbleTarget > bubble ? 260.0 : 200.0));
         if (spinStart >= 0 && now - spinStart >= 800) spinStart = -1;
         // Draw only a frame that changed: the clock also polls the pointer for the hover while the tab shows.
         var key = (slide, expand, bubble, spinStart >= 0 ? now : 0, counts, Top);
@@ -266,7 +318,40 @@ public sealed class EdgeTab : LayeredForm
         lastFrame = key;
         var idle = slideStart < 0 && spinStart < 0 && Math.Abs(expand - Target) < .001 && Math.Abs(bubble - bubbleTarget) < .001 && bubbleUntil < 0;
         // The hover needs the clock while the tab shows; a hidden tab stops it.
-        if (idle && !Visible) clock.Stop();
+        if (idle && !Visible)
+        {
+            clock.Stop();
+            lastStep = -1;
+        }
+        // A motion runs: the frames follow the display refresh, not the timer (V2).
+        if (Animating && !pumping && Visible)
+        {
+            pumping = true;
+            clock.Stop();
+            BeginInvoke(Pump);
+        }
+    }
+
+    long lastStep = -1;
+    bool pumping;
+
+    bool Animating => slideStart >= 0 || spinStart >= 0 || Math.Abs(expand - Target) > .001 || Math.Abs(bubble - bubbleTarget) > .001;
+
+    // One frame for each refresh of the display: draw, wait for the next composition of the screen, then post the next frame.
+    // The wait blocks only the thread of the tab; the posted frame lets the mouse messages in between.
+    void Pump()
+    {
+        if (IsDisposed) return;
+        Step();
+        if (Animating && Visible)
+        {
+            WaitForFrame();
+            BeginInvoke(Pump);
+            return;
+        }
+        pumping = false;
+        // The timer polls the hover again, and stops itself when the tab is hidden.
+        clock.Start();
     }
 
     object? lastFrame;
@@ -407,15 +492,54 @@ public sealed class EdgeTab : LayeredForm
         g.Restore(state);
     }
 
-    /// <summary>The home ball: the look of the home button of the app (app.css .nav2 .home), with the home icon.</summary>
+    /// <summary>
+    /// V5: the home ball is one image, <c>Orchestrator.Web/wwwroot/home-ball.png</c>. The home button of the page shows it, and the
+    /// native ball and the edge tab draw it here, so the three are the same pixels. The image is a square of
+    /// <see cref="BallBox"/> × the ball size: the ball in the center and its shadow around it.
+    /// </summary>
     public static void Ball(Graphics g, float cx, float cy, float d)
     {
-        var rect = new RectangleF(cx - d / 2, cy - d / 2, d, d);
-        // The drop shadow under the ball.
-        for (var i = 3; i >= 1; i--)
+        var box = d * BallBox;
+        var state = g.Save();
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        g.DrawImage(BallImage.Value, cx - box / 2, cy - box / 2, box, box);
+        g.Restore(state);
+    }
+
+    /// <summary>The side of the image square for a ball of size 1: 100 CSS px for the 62 px ball.</summary>
+    public const float BallBox = 100f / 62f;
+
+    static readonly Lazy<Bitmap> BallImage = new(() =>
+    {
+        using var stream = typeof(EdgeTab).Assembly.GetManifestResourceStream("home-ball.png") ?? throw new InvalidOperationException("The resource home-ball.png is missing.");
+        return new Bitmap(stream);
+    });
+
+    /// <summary>Writes the image of the home ball (the source of <see cref="Ball"/> and of the page button) at 3× scale.</summary>
+    public static void WriteBall(string png)
+    {
+        const int scale = 3;
+        var size = (int)Math.Round(100f * scale);
+        using var bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(bitmap))
         {
-            using var sh = new SolidBrush(Color.FromArgb(18, 120, 45, 5));
-            var k = i * d * .04f;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.Clear(Color.Transparent);
+            DrawBall(g, size / 2f, size / 2f, 62f * scale);
+        }
+        bitmap.Save(png, ImageFormat.Png);
+    }
+
+    /// <summary>The drawing of the image of the home ball. Only <see cref="WriteBall"/> uses it.</summary>
+    static void DrawBall(Graphics g, float cx, float cy, float d)
+    {
+        var rect = new RectangleF(cx - d / 2, cy - d / 2, d, d);
+        // The drop shadow under the ball: 14 thin steps to 12 % of the ball outside it, so the edge fades with no bands.
+        for (var i = 14; i >= 1; i--)
+        {
+            using var sh = new SolidBrush(Color.FromArgb(5, 120, 45, 5));
+            var k = i * d * .12f / 14;
             g.FillEllipse(sh, rect.X - k, rect.Y - k + d * .08f, d + 2 * k, d + 2 * k);
         }
         using (var fill = new LinearGradientBrush(rect, Mix(Accent, Color.White, .08), Mix(Accent, Color.Black, .06), LinearGradientMode.Vertical))
@@ -468,6 +592,9 @@ public sealed class EdgeTab : LayeredForm
         {
         }
     }
+
+    /// <summary>The file of the saved top, or null.</summary>
+    public string? PlaceFile => placeFile;
 
     /// <summary>The saved top of the tab, or null.</summary>
     public int? SavedTop => LoadTop();

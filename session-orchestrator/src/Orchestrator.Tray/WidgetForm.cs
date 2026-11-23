@@ -234,6 +234,12 @@ public sealed partial class WidgetForm : Form
     /// <summary>True while the widget shows or hides: the ball, the gap, the grow or the shrink.</summary>
     public bool Growing => grow.Enabled || starting || closing;
 
+    /// <summary>True from the start of a hide (or a minimize) to the end of the shrink.</summary>
+    public bool Hiding => Visible && closing;
+
+    /// <summary>The widget is hidden at the end of a hide or a minimize.</summary>
+    public event Action? Hidden;
+
     /// <summary>True while the window region grows or shrinks.</summary>
     public bool Resizing => grow.Enabled;
 
@@ -270,6 +276,7 @@ public sealed partial class WidgetForm : Form
             closing = false;
             shadow.Hide();
             Hide();
+            Hidden?.Invoke();
             if (minimizing)
             {
                 minimizing = false;
