@@ -1,0 +1,27 @@
+@page "/"
+@inherits TracedPage
+@implements IBrouterRoute
+@inject IBrouter Brouter
+@inject CounterState State
+
+<div class="page" data-test="page-home">
+    <h1>Home</h1>
+    <button class="primary" data-test="add" @onclick="State.Increment">Add one</button>
+    <button data-test="go-counter" @onclick="Open">Open counter</button>
+</div>
+
+@code {
+    protected override string PageName => "Home";
+
+    void Open()
+    {
+        Trace.Add("Home: Navigate(/counter)");
+        Brouter.Navigate("/counter");
+    }
+
+    public ValueTask OnActivatedAsync(BrouterRouteActivation a) { Trace.Add($"Home: OnActivated (first={a.IsFirstActivation})"); return default; }
+    public ValueTask OnDeactivatedAsync(BrouterRouteDeactivation d) { Trace.Add($"Home: OnDeactivated ({d.Reason})"); return default; }
+    public ValueTask OnDeactivatingAsync(BrouterRouteDeactivatingContext c) { Trace.Add($"Home: OnDeactivating ({c.Reason})"); return default; }
+    public ValueTask OnRenavigatingAsync(BrouterRouteRenavigatingContext c) { Trace.Add("Home: OnRenavigating"); return default; }
+    public ValueTask OnRenavigatedAsync(BrouterRouteRenavigation r) { Trace.Add("Home: OnRenavigated"); return default; }
+}

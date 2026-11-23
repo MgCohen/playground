@@ -1,0 +1,7 @@
+@* The default Router finds the page. PageHost replaces RouteView: it keeps the pages and plays the motion. *@
+@* The frame is outside the router, so the kept pages do not keep a copy of the frame. *@
+<MainLayout>
+    <Router AppAssembly="typeof(Program).Assembly">
+        <Found Context="route"><PageHost Route="route" /></Found>
+    </Router>
+</MainLayout>

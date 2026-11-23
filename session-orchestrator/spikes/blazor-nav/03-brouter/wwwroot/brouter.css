@@ -1,0 +1,16 @@
+/* Motion for Brouter view transitions. Brouter sets data-brouter-nav on <html>: push, pop (back), replace (tabs). */
+.stage { view-transition-name: stage; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+::view-transition-old(stage), ::view-transition-new(stage) { animation: 300ms ease both; }
+html[data-brouter-nav="push"]::view-transition-old(stage) { animation-name: out-left; }
+html[data-brouter-nav="push"]::view-transition-new(stage) { animation-name: in-right; }
+html[data-brouter-nav="pop"]::view-transition-old(stage) { animation-name: out-right; }
+html[data-brouter-nav="pop"]::view-transition-new(stage) { animation-name: in-left; }
+html[data-brouter-nav="replace"]::view-transition-old(stage) { animation-name: fade-out; }
+html[data-brouter-nav="replace"]::view-transition-new(stage) { animation-name: fade-in; }
+@keyframes in-right { from { transform: translateX(100%); } }
+@keyframes in-left { from { transform: translateX(-100%); } }
+@keyframes out-left { to { transform: translateX(-100%); } }
+@keyframes out-right { to { transform: translateX(100%); } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }

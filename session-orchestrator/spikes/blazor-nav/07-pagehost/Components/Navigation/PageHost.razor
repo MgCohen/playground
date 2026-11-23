@@ -1,0 +1,62 @@
+@* PageHost replaces RouteView. It keeps one instance for each page type (keep-alive) and hides the inactive pages. *@
+@* It renders the pushed pages of the Navigator over the active page, and it plays the motion with CSS classes. *@
+@implements IDisposable
+@inject Navigator Navigator
+@inject Trace Trace
+
+@foreach (var slot in kept)
+{
+    <div @key="slot.Type" class="slot @MotionOf(slot)" hidden="@(slot != active)">
+        <DynamicComponent @ref="slot.View" Type="slot.Type" Parameters="slot.Values" />
+    </div>
+}
+@foreach (var slot in Navigator.Stack)
+{
+    <div @key="slot" class="slot @MotionOf(slot)">
+        <DynamicComponent @ref="slot.View" Type="slot.Type" Parameters="slot.Values" />
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public RouteData Route { get; set; } = default!;
+
+    readonly List<PageSlot> kept = [];
+    PageSlot? active;
+    PageSlot? moving;
+    string motion = "";
+
+    internal PageSlot? Active => active;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var slot = kept.FirstOrDefault(s => s.Type == Route.PageType);
+        if (slot is null) kept.Add(slot = new PageSlot(Route.PageType, new Dictionary<string, object>()));
+        slot.Values = Route.RouteValues.ToDictionary(p => p.Key, p => p.Value!);
+        active = slot;
+        // The prerender has no motion and no hooks.
+        if (RendererInfo.IsInteractive) await PlayAsync(Navigator.TakeMove());
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && RendererInfo.IsInteractive) Navigator.Attach(this);
+    }
+
+    /// <summary>Shows the top page with the motion class, waits for the motion, then calls OnEnterAsync.</summary>
+    internal Task PlayAsync(NavContext ctx) => InvokeAsync(async () =>
+    {
+        var slot = Navigator.Stack.LastOrDefault() ?? active;
+        moving = slot;
+        motion = ctx.Kind.ToString().ToLowerInvariant();
+        Trace.Add($"PageHost: show {ctx.To} ({motion})");
+        StateHasChanged();
+        await Task.Delay(300);
+        if (moving == slot) moving = null;
+        StateHasChanged();
+        if (slot?.Page is { } page) await page.OnEnterAsync(ctx);
+    });
+
+    string MotionOf(PageSlot slot) => slot == moving ? motion : "";
+
+    public void Dispose() => Navigator.Detach();
+}

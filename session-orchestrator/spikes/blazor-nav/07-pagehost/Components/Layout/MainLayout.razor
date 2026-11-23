@@ -1,0 +1,14 @@
+@* The frame: a plain component around the Router. The Navigator logs the navigation steps. *@
+
+<div class="frame">
+    <div class="stage">@ChildContent</div>
+    <TraceView />
+    <nav class="appbar">
+        <NavLink href="" Match="NavLinkMatch.All" ActiveClass="on" data-test="tab-home">Home</NavLink>
+        <NavLink href="counter" ActiveClass="on" data-test="tab-counter">Counter</NavLink>
+    </nav>
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

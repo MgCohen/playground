@@ -1,0 +1,31 @@
+@page "/"
+@inherits TracedPage
+@implements INavPage
+@inject Navigator Navigator
+@inject CounterState State
+
+<div class="page" data-test="page-home">
+    <h1>Home</h1>
+    <button class="primary" data-test="add" @onclick="State.Increment">Add one</button>
+    <button data-test="go-counter" @onclick="Open">Open counter</button>
+    <button data-test="pick" @onclick="Pick">Pick a color</button>
+    <div>Picked: <span data-test="picked">@picked</span></div>
+</div>
+
+@code {
+    string picked = "";
+
+    protected override string PageName => "Home";
+
+    void Open() => Navigator.Push("counter");
+
+    // The typed result comes back from C# code (F6): no URL and no store.
+    async Task Pick()
+    {
+        picked = await Navigator.PushAsync<Picker, string>() ?? "";
+        Trace.Add($"Home: picked {picked}");
+    }
+
+    public Task OnEnterAsync(NavContext c) { Trace.Add($"Home: OnEnterAsync {c.Kind}"); return Task.CompletedTask; }
+    public Task<bool> OnLeaveAsync(NavContext c) { Trace.Add($"Home: OnLeaveAsync {c.Kind}"); return Task.FromResult(true); }
+}

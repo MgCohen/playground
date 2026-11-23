@@ -1,0 +1,26 @@
+@* The library router: it calls IViewTransition.BeginAsync() before the page swap and EndAsync() after the render.
+   OnNavigateAsync is the only hook of the library. Here it also writes the direction mark on <html>. *@
+@inject IJSRuntime JS
+@inject Trace Trace
+@inject NavMark Mark
+
+<ViewTransitionRouter AppAssembly="typeof(Program).Assembly" OnNavigateAsync="OnNavigate">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+    </Found>
+</ViewTransitionRouter>
+
+@code {
+    string? applied;
+
+    async Task OnNavigate(NavigationContext context)
+    {
+        var mark = Mark.Next;
+        Mark.Next = "fade";
+        Trace.Add($"ViewTransitionRouter: OnNavigateAsync -> /{context.Path} ({mark})");
+        // The prerender has no JS. The library also skips the transition on the first navigation.
+        if (!RendererInfo.IsInteractive || mark == applied) return;
+        applied = mark;
+        await JS.InvokeVoidAsync("document.documentElement.setAttribute", "data-nav", mark);
+    }
+}

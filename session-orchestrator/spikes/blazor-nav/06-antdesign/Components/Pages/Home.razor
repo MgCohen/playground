@@ -1,0 +1,29 @@
+@page "/"
+@attribute [ReuseTabsPage(Title = "Home", Closable = false, KeepAlive = true)]
+@inherits TracedPage
+@implements IReuseTabsPage
+@inject NavigationManager Nav
+@inject CounterState State
+
+<div class="page" data-test="page-home">
+    <h1>Home</h1>
+    <button class="primary" data-test="add" @onclick="State.Increment">Add one</button>
+    <button data-test="go-counter" @onclick="Open">Open counter</button>
+</div>
+
+@code {
+    protected override string PageName => "Home";
+
+    // ReuseTabs calls this once, when it captures the page reference.
+    public RenderFragment GetPageTitle()
+    {
+        Trace.Add("Home: IReuseTabsPage.GetPageTitle");
+        return @<span>Home</span>;
+    }
+
+    void Open()
+    {
+        Trace.Add("Home: NavigateTo(counter)");
+        Nav.NavigateTo("counter");
+    }
+}

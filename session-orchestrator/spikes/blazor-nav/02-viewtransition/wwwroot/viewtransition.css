@@ -1,0 +1,16 @@
+/* Only the stage slides. The rest of the frame (trace, app bar) uses the default fade of the root. */
+.stage { view-transition-name: stage; }
+::view-transition-group(root), ::view-transition-group(stage) { animation-duration: 300ms; }
+::view-transition-old(root), ::view-transition-new(root),
+::view-transition-old(stage), ::view-transition-new(stage) { animation-duration: 300ms; }
+::view-transition-group(stage) { overflow: clip; }
+
+html[data-nav="push"]::view-transition-old(stage) { animation: 300ms ease both vt-out-left; }
+html[data-nav="push"]::view-transition-new(stage) { animation: 300ms ease both vt-in-right; }
+html[data-nav="back"]::view-transition-old(stage) { animation: 300ms ease both vt-out-right; }
+html[data-nav="back"]::view-transition-new(stage) { animation: 300ms ease both vt-in-left; }
+
+@keyframes vt-in-right { from { transform: translateX(100%); } }
+@keyframes vt-in-left { from { transform: translateX(-100%); } }
+@keyframes vt-out-left { to { transform: translateX(-100%); } }
+@keyframes vt-out-right { to { transform: translateX(100%); } }

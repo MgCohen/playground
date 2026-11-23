@@ -1,0 +1,20 @@
+@page "/"
+@inherits TracedPage
+@inject NavigationManager Nav
+@inject CounterState State
+
+<div class="page" data-test="page-home">
+    <h1>Home</h1>
+    <button class="primary" data-test="add" @onclick="State.Increment">Add one</button>
+    <button data-test="go-counter" @onclick="Open">Open counter</button>
+</div>
+
+@code {
+    protected override string PageName => "Home";
+
+    void Open()
+    {
+        Trace.Add("Home: NavigateTo(counter)");
+        Nav.NavigateTo("counter");
+    }
+}

@@ -1,0 +1,17 @@
+@implements IDisposable
+@inject Trace Trace
+
+<section class="trace" data-test="trace">
+    @foreach (var line in Trace.Lines.TakeLast(10))
+    {
+        <div>@line</div>
+    }
+</section>
+
+@code {
+    protected override void OnInitialized() => Trace.Changed += Changed;
+
+    void Changed() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Trace.Changed -= Changed;
+}

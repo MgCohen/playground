@@ -1,0 +1,41 @@
+@* Brouter: the frame around the router. The two global Brouter hooks log to the trace. Tabs are replace links (fade). *@
+@implements IDisposable
+@inject IBrouter Brouter
+@inject Trace Trace
+
+<div class="frame">
+    <div class="stage">@ChildContent</div>
+    <TraceView />
+    <nav class="appbar">
+        <BrouterLink Href="/" Match="BrouterLinkMatch.All" ActiveClass="on" Replace="true" data-test="tab-home">Home</BrouterLink>
+        <BrouterLink Href="/counter" ActiveClass="on" Replace="true" data-test="tab-counter">Counter</BrouterLink>
+    </nav>
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Brouter.OnNavigating += Navigating;
+        Brouter.OnNavigated += Navigated;
+    }
+
+    ValueTask Navigating(BrouterNavigationContext ctx)
+    {
+        Trace.Add($"Brouter: OnNavigating -> {ctx.To.Path} ({ctx.NavigationType})");
+        return ValueTask.CompletedTask;
+    }
+
+    ValueTask Navigated(BrouterNavigationContext ctx)
+    {
+        Trace.Add($"Brouter: OnNavigated -> {ctx.To.Path} ({ctx.NavigationType})");
+        return ValueTask.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        Brouter.OnNavigating -= Navigating;
+        Brouter.OnNavigated -= Navigated;
+    }
+}

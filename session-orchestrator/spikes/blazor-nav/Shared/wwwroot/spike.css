@@ -1,0 +1,16 @@
+/* The shared look of all navigation spikes: a phone-size frame, the page, the trace panel and the app bar. */
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.4 "Segoe UI", system-ui, sans-serif; background: #e6e3de; color: #23201c; }
+.frame { width: 380px; height: 640px; margin: 20px auto; background: #fdfdfc; border: 1px solid #d3cec6; border-radius: 16px;
+  display: grid; grid-template-rows: 1fr auto auto; overflow: hidden; position: relative; }
+.stage { position: relative; overflow: hidden; }
+.page { position: absolute; inset: 0; padding: 16px; display: grid; align-content: start; gap: 12px; background: #fdfdfc; }
+.page h1 { margin: 0; font-size: 22px; display: flex; justify-content: space-between; align-items: center; }
+button { font: 600 14px inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #d3cec6; background: #f1efeb; cursor: pointer; }
+button.primary { background: #ff6a1a; border-color: #ff6a1a; color: #23201c; }
+input { font: inherit; padding: 6px 8px; border: 1px solid #d3cec6; border-radius: 6px; }
+.count { font: 700 40px Consolas, monospace; }
+.trace { height: 150px; overflow: hidden; background: #23201c; color: #ece7e0; font: 11px/1.45 Consolas, monospace; padding: 6px 10px; }
+.appbar { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #d3cec6; }
+.appbar a { text-align: center; padding: 12px; color: #6b655d; text-decoration: none; font-weight: 600; }
+.appbar a.on { color: #b34408; }

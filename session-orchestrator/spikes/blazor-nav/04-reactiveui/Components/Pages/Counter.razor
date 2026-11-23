@@ -1,0 +1,29 @@
+@inherits ReactiveComponentBase<CounterViewModel>
+@inject Trace Trace
+
+<div class="page" data-test="page-counter">
+    <h1>Counter <button data-test="back" @onclick="Back">Back</button></h1>
+    <div class="count" data-test="count">@ViewModel!.Count</div>
+    <label>Note: <input data-test="note" @bind="ViewModel.Note" /></label>
+</div>
+
+@code {
+    protected override void OnInitialized() { Trace.Add("Counter: OnInitialized"); base.OnInitialized(); }
+
+    protected override void OnAfterRender(bool firstRender) { if (firstRender) Trace.Add("Counter: OnAfterRender(first)"); base.OnAfterRender(firstRender); }
+
+    protected override void Dispose(bool disposing) { Trace.Add("Counter: Dispose"); base.Dispose(disposing); }
+
+    void Back()
+    {
+        var router = ViewModel!.Screen.Router;
+        // NavigateBack cannot execute with one view model on the stack (after a tab change). Do not call it then.
+        if (router.NavigationStack.Count < 2)
+        {
+            Trace.Add("Counter: NavigateBack skipped (stack 1)");
+            return;
+        }
+        Trace.Add("Counter: Router.NavigateBack()");
+        router.NavigateBack.Execute().Subscribe();
+    }
+}

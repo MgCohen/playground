@@ -1,0 +1,48 @@
+@* Counter: the note is local page state (F5). The leave guard asks the user when the note is not empty (F7). *@
+@inherits TracedPage
+@implements INavPage
+@inject Navigator Navigator
+@inject CounterState Shared
+
+<div class="page" data-test="page-counter">
+    <h1>Counter <button data-test="back" @onclick="Navigator.Back">Back</button></h1>
+    <div class="count" data-test="count">@Shared.Count</div>
+    <label>Note: <input data-test="note" @bind="note" @bind:event="oninput" /></label>
+    @if (ask is not null)
+    {
+        <div data-test="guard">
+            The note is not empty. Leave?
+            <button data-test="guard-stay" @onclick="() => ask.TrySetResult(false)">Stay</button>
+            <button data-test="guard-leave" @onclick="() => ask.TrySetResult(true)">Leave</button>
+        </div>
+    }
+</div>
+
+@code {
+    // Each new NavState renders the kept page again, so the count is current when the page shows.
+    [CascadingParameter] public NavState State { get; set; } = default!;
+
+    string note = "";
+    TaskCompletionSource<bool>? ask;
+
+    protected override string PageName => "Counter";
+
+    public Task OnEnterAsync(NavContext c)
+    {
+        Trace.Add($"Counter: OnEnterAsync({c}) url {State.Url}");
+        return Task.CompletedTask;
+    }
+
+    public async Task<bool> OnLeaveAsync(NavContext c)
+    {
+        Trace.Add($"Counter: OnLeaveAsync({c})");
+        if (note == "") return true;
+        ask = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        StateHasChanged();
+        var leave = await ask.Task;
+        ask = null;
+        StateHasChanged();
+        Trace.Add($"Counter: guard {(leave ? "leave" : "stay")}");
+        return leave;
+    }
+}

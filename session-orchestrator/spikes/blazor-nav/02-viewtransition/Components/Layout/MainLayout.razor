@@ -1,0 +1,37 @@
+@* ViewTransitionRouter swaps the page inside a browser view transition. The two NavigationManager hooks log to the trace. *@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Nav
+@inject Trace Trace
+
+<div class="frame">
+    <div class="stage">@Body</div>
+    <TraceView />
+    <nav class="appbar">
+        <NavLink href="" Match="NavLinkMatch.All" ActiveClass="on" data-test="tab-home">Home</NavLink>
+        <NavLink href="counter" ActiveClass="on" data-test="tab-counter">Counter</NavLink>
+    </nav>
+</div>
+
+@code {
+    IDisposable? changing;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender) return;
+        changing = Nav.RegisterLocationChangingHandler(context =>
+        {
+            Trace.Add($"Nav: LocationChanging -> /{Nav.ToBaseRelativePath(Nav.ToAbsoluteUri(context.TargetLocation).ToString())}");
+            return ValueTask.CompletedTask;
+        });
+        Nav.LocationChanged += Changed;
+    }
+
+    void Changed(object? sender, LocationChangedEventArgs e) => Trace.Add($"Nav: LocationChanged -> /{Nav.ToBaseRelativePath(e.Location)}");
+
+    public void Dispose()
+    {
+        changing?.Dispose();
+        Nav.LocationChanged -= Changed;
+    }
+}

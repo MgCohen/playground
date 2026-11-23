@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <!-- The repository uses central package versions. This spike keeps its package versions here. -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\NavSpike.Shared.csproj" />
+    <PackageReference Include="Masa.Blazor" Version="1.11.9" />
+    <PackageReference Include="Masa.Blazor.MobileComponents" Version="1.11.9" />
+  </ItemGroup>
+</Project>
