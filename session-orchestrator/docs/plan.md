@@ -2364,3 +2364,22 @@ The orchestrator UI runs as an Android app. A .NET MAUI `BlazorWebView` runs the
 | A1-2 | Android 15 draws the app under the status bar, and the header went under it | Fixed: `SafeAreaEdges = SafeAreaEdges.All` on the page. The bar band is white; a theme color is later work |
 | A1-3 | The components need no change for a phone host. The host work is a router, a host page and the service list | Input for the devices plan |
 | A1-4 | Not tested: the microphone (`speech.js`) in Android WebView, a real phone, a release build with trim | Open |
+
+## Q: I20 fix and a quick visual test of the #45 chain (2026-11-23)
+
+I20: `Cards.razor` gives `OnChange="StateHasChanged"` to `FilterSheet`. The "Show N cards" count now changes while the sheet is open. I14 did not show, so `WidgetForm.cs` has no change.
+
+Test bed: a demo store in the scratchpad, `demo.ps1 -Fake -Port 7850 -AnyPort -NoTray`, then the worktree tray with `--live <store> --port 7850 --no-supervisor --pin`. A WebView2 debug port (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`) gave the page screenshots. A window capture gave the tray screenshots.
+
+| Step | Result | Evidence |
+|---|---|---|
+| `dotnet test --solution Orchestrator.slnx` | Pass: 822 passed, 0 failed, 13 skipped | Test output |
+| Tray opens and closes | Pass. `SC_CLOSE` hides the widget, a second start shows it again | `01-tray-open.png`, `02-tray-closed.png`, `03-tray-reopen.png` |
+| Home | Pass | `04-home.png` |
+| Cards, filter sheet, count | Pass. Source "Sessions" off: "Show 2 cards" becomes "Show 0 cards", and back | `05-cards-filter-before.png`, `06-cards-filter-after.png` |
+| Stream | Pass | `07-stream.png` |
+| Sessions | Pass | `08-sessions.png` |
+| I14 status bubble on hover of a link | Did not show. No change | `09-i14-hover.png` |
+| Answer one demo card | Pass. Answer "HELLO", Questions 2 becomes 1, the next card shows | `10-card-before.png`, `11-card-answered.png` |
+
+Note for tests: a `WM_CLOSE` that another process posts gives a close reason that is not `UserClosing`. The widget then closes for real and the tray cannot show it again. Use `WM_SYSCOMMAND SC_CLOSE` (the same as Alt+F4).
