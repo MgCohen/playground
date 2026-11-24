@@ -120,7 +120,7 @@ details.f > .body { padding: 0 14px 16px; display: flex; flex-direction: column;
   <button role="tab" id="t-nav" data-tab="nav" aria-controls="nav" aria-selected="false"><span class="n">3</span>Navigation</button>
   <button role="tab" id="t-state" data-tab="state" aria-controls="state" aria-selected="false"><span class="n">4</span>State, motion</button>
   <button role="tab" id="t-system" data-tab="system" aria-controls="system" aria-selected="false"><span class="n">5</span>Design system</button>
-  <button role="tab" id="t-host" data-tab="host" aria-controls="host" aria-selected="false"><span class="n">6</span>Tray host</button>
+  <button role="tab" id="t-host" data-tab="host" aria-controls="host" aria-selected="false"><span class="n">6</span>Hosts</button>
 </nav>
 
 <!-- 1 OVERVIEW -->
@@ -156,7 +156,7 @@ flowchart LR
         <tr><td>Token tiers, layer order, written guidelines</td><td>P9</td><td><a href="#system" data-go="system">5 · Design system</a></td></tr>
         <tr><td>Pages use only catalog components</td><td>P10, P5</td><td><a href="#system" data-go="system">5 · Design system</a></td></tr>
         <tr><td>Names for CSS and JS are generated</td><td>P2</td><td><a href="#system" data-go="system">5 · Design system</a></td></tr>
-        <tr><td>The native host is thin and generic</td><td>P8</td><td><a href="#host" data-go="host">6 · Tray host</a></td></tr>
+        <tr><td>The native host is thin and generic</td><td>P8</td><td><a href="#host" data-go="host">6 · Hosts</a></td></tr>
         <tr><td>One navigator: a stack of pages and overlays</td><td>P13</td><td><a href="#nav" data-go="nav">3 · Navigation</a></td></tr>
         <tr><td>Each motion is a step of a state transition</td><td>P12</td><td><a href="#state" data-go="state">4 · State, motion</a></td></tr>
       </tbody>
@@ -165,7 +165,7 @@ flowchart LR
 
   <section>
     <h2>Projects</h2>
-    <p class="summary">New projects next to the old app. The old app stays until each slice passes its parity check (step 3).</p>
+    <p class="summary">This is the earlier project list. D4 proposes a different list for Android, so it is not decided.</p>
     <div class="tree">
       <details class="leaf"><summary><span class="n">Orchestrator.View/</span><span class="d">Composer, view templates, state machines. Pure C#, no Blazor</span></summary><div class="more">Unit tests run here with no window and no browser. It reads the store through one snapshot interface.</div></details>
       <details class="leaf"><summary><span class="n">Orchestrator.View.Components/</span><span class="d">Razor class library: the design system</span></summary><div class="more">Tokens, layers, components, motion CSS, the small JS helpers, and a gallery page. No store access.</div></details>
@@ -199,27 +199,29 @@ flowchart LR
       <div class="body">
         <div class="field"><span class="k">Context</span><div class="v"><p>You want own components, from a base that we copy one time and do not follow. The comparison is on tab <a href="#system" data-go="system">5 · Design system</a>.</p></div></div>
         <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: Web Awesome, system only. Copy tokens, layers, CSS and guidelines. Write the components in Razor.</li><li>B: Web Awesome, all. Use the web components of <code>vsa-design</code>. The <code>AGENTS.md</code> rule must change.</li><li>C: Blazor Blueprint Primitives. Copy the Razor behavior parts that we need. Use our own look.</li><li>D: MudBlazor. Copy Razor components and replace the Material look.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It keeps the structure, docs and guidelines that you named. It leaves out the Lit code and its build. The cost: we write and test the behavior of each component.</p></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It keeps the structure, docs and guidelines that you named. It leaves out the Lit code and its build. The cost: we write and test the behavior of each component. On a phone, each base needs a check of touch, focus and the on-screen keyboard. No base was checked there.</p></div></div>
       </div>
     </details>
 
     <details class="f">
-      <summary><span class="l1"><span class="id">D3</span><span class="t">Which host does the tray use?</span></span><span class="l2">Recommendation: A. No default</span></summary>
+      <summary><span class="l1"><span class="id">D3</span><span class="t">Which set of hosts do we use?</span></span><span class="l2">Recommendation: S1. No default</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>Tab <a href="#host" data-go="host">6 · Tray host</a> compares six hosts from the platform docs and the spikes. Only A keeps the approved look and has a test.</p></div></div>
-        <div class="field"><span class="k">A</span><div class="v"><p>WinForms with visual hosting, behind <code>IHostWindow</code>. The input forward stays.</p></div></div>
-        <div class="field"><span class="k">B</span><div class="v"><p>As A, and first a short WPF spike: can the composition control run in a transparent window, and at what frame rate?</p></div></div>
-        <div class="field"><span class="k">F</span><div class="v"><p>WinForms with windowed hosting. The smallest host, but the ball, the grow and the page shadow go.</p></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It is the only tested host with the approved look, and the state machines do not depend on the host.</p></div></div>
+        <div class="field"><span class="k">Context</span><div class="v"><p>You have no preference for the host. The tray is one view of the engine library, and Android must reuse as much as possible. See tab <a href="#host" data-go="host">6 · Hosts</a>.</p></div></div>
+        <div class="field"><span class="k">S1</span><div class="v"><p>WinForms tray and MAUI Android on one UI library.</p></div></div>
+        <div class="field"><span class="k">S2</span><div class="v"><p>WinForms tray, and Android in the browser on the web host.</p></div></div>
+        <div class="field"><span class="k">S3</span><div class="v"><p>One MAUI project for Windows and Android.</p></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>S1. It has the most tests and keeps the tray look. S2 can be its first step.</p></div></div>
       </div>
     </details>
 
     <details class="f">
-      <summary><span class="l1"><span class="id">D4</span><span class="t">New projects next to the old app?</span></span><span class="l2">Recommendation: yes, in the same solution. Default: yes</span></summary>
+      <summary><span class="l1"><span class="id">D4</span><span class="t">Which projects does the rebuild make?</span></span><span class="l2">Recommendation: two shared libraries and thin hosts. No default</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>A rewrite in place breaks the app for a long time. New projects let the old app run, and each slice can compare with it.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: new projects in <code>Orchestrator.slnx</code> (tab 1).</li><li>B: rewrite the pages in place.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The supervisor, the store and the API stay as they are.</p></div></div>
+        <div class="field"><span class="k">Context</span><div class="v"><p>The earlier D4 had <code>View</code>, <code>View.Components</code>, <code>View.Web</code> and <code>View.Tray</code>. It had no Android host, and it overlaps the devices plan and K.</p></div></div>
+        <div class="field"><span class="k">A</span><div class="v"><p>In the solution, next to the old app: <code>Orchestrator.View</code> (no Blazor, no Windows) and <code>Orchestrator.Ui</code> (Razor). Each host references them. An Android host gets its own solution file, as in the devices plan. P1a and P1b of that plan stop, because V2 replaces their result.</p></div></div>
+        <div class="field"><span class="k">B</span><div class="v"><p>First do P1a and P1b: move the old components into <code>Orchestrator.Ui</code>. Then replace them there, slice by slice.</p></div></div>
+        <div class="field"><span class="k">C</span><div class="v"><p>The earlier D4 projects, and add Android later.</p></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It does not move code that the rebuild replaces. B gives an Android app sooner, but with the old components.</p></div></div>
       </div>
     </details>
 
@@ -228,7 +230,7 @@ flowchart LR
       <div class="body">
         <div class="field"><span class="k">Context</span><div class="v"><p><code>Ui.Classify</code> tests fields: two options yes and no, a default, the needs. The rules must be data (P11).</p></div></div>
         <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: JSON tests: <code>exists</code>, <code>is</code>, <code>equals</code>, <code>count</code> (tab 2, V5).</li><li>B: an expression language, for example JsonLogic.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Four tests cover the 8 variants of today. A schema can check them.</p></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Four tests cover the variants of today. A schema can check them. JSON tests need no script engine on a phone.</p></div></div>
       </div>
     </details>
 
@@ -237,7 +239,7 @@ flowchart LR
       <div class="body">
         <div class="field"><span class="k">Context</span><div class="v"><p>Sheets and the speed dial become stack entries (tab 3). The browser Back key must close them. A URL for each overlay makes deep links to a half-done answer.</p></div></div>
         <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: no URL change; the navigator catches the browser Back for an open overlay.</li><li>B: a <code>#sheet</code> fragment for each overlay.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. A link opens a page, never a half-open sheet. The tray has no address bar.</p></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. A link opens a page, never a half-open sheet. The tray has no address bar. On Android, the Back button calls the same <code>Back()</code>. In a browser, Back needs a history entry for each open overlay, so option A has a cost there.</p></div></div>
       </div>
     </details>
   </section>
@@ -726,7 +728,101 @@ Task&lt;MotionEnd&gt; Play(MotionStep step, ElementRef target);</pre>
 <!-- 5 TRAY HOST -->
 <div class="panel off" id="host" role="tabpanel" aria-labelledby="t-host">
   <section>
-    <h2>What the tray host needs</h2>
+    <h2>The whole set: three proposals</h2>
+    <p class="summary">The tray is one view of an engine library. The web, the CLI, Android and later views use the same engine. Only the UI hosts use the shared Blazor UI.</p>
+    <div class="box"><pre class="mermaid">
+flowchart TB
+  EN["Engine library<br/>events, queries"] --> CLI["CLI"]
+  EN --> VW["Orchestrator.View<br/>composer, navigator"]
+  VW --> UI["Orchestrator.Ui<br/>Razor, CSS"]
+  UI --> WEB["Web host"]
+  UI --> TRAY["Tray host"]
+  UI --> AND["Android host"]
+</pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>S1 · thin hosts</th><th>S2 · Android web</th><th>S3 · all MAUI</th></tr></thead>
+      <tbody>
+        <tr><td>Components</td><td>Shared</td><td>Shared</td><td>Shared</td></tr>
+        <tr><td>View models</td><td>Shared</td><td>Shared, on the PC</td><td>Shared</td></tr>
+        <tr><td>State machines</td><td>Shared; window machine differs</td><td>Shared; window machine differs</td><td>Shared; window machine differs</td></tr>
+        <tr><td>Navigation</td><td>Shared; Back input differs</td><td>Shared; browser history</td><td>Shared; Back input differs</td></tr>
+        <tr><td>Motion</td><td>Shared; window motion differs</td><td>Shared; window motion differs</td><td>Shared; window motion differs</td></tr>
+        <tr><td>Engine connection</td><td>Tray local, phone remote</td><td>Web host on PC</td><td>Tray local, phone remote</td></tr>
+        <tr><td>Native projects</td><td>2</td><td>1</td><td>1</td></tr>
+        <tr><td>Phone offline</td><td>App starts; data needs a cache</td><td>No</td><td>App starts; data needs a cache</td></tr>
+        <tr><td>Test of today</td><td>S2, S7, A1</td><td>Web host only</td><td>A1 for Android only</td></tr>
+        <tr><td>Verdict</td><td><span class="tag rec">Recommended</span></td><td><span class="tag mid">First step to S1</span></td><td><span class="tag no">Risk for the tray</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
+    <details class="f">
+      <summary><span class="l1"><span class="id">S1</span><span class="t">One UI library, one thin host for each device</span></span><span class="l2">Tray: WinForms. Android: MAUI Blazor Hybrid</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Set</span><div class="v"><p>Engine library, <code>Orchestrator.View</code>, <code>Orchestrator.Ui</code>. Hosts: web, WinForms tray (option A below), MAUI Android.</p></div></div>
+        <div class="field"><span class="k">Shared</span><div class="v"><p>Components, view models, state machines, navigator and motion. They run in the process of each host.</p></div></div>
+        <div class="field"><span class="k">Not shared</span><div class="v"><p>Window code, the Android back button, safe areas, notices, speech, and the connection to the engine.</p></div></div>
+        <div class="field"><span class="k">For</span><div class="v"><p>Spike A1 ran the components of today, unchanged, in a MAUI app on an emulator. The tray keeps its look.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>Two native hosts. An Android toolchain and a signed APK. The phone needs a remote connection, because the store is on the PC.</p></div></div>
+        <div class="field"><span class="k">Source</span><div class="v"><p><a href="https://learn.microsoft.com/aspnet/core/blazor/hybrid/tutorials/maui-blazor-web-app">MAUI and web with one Razor class library</a>; <code>docs/devices-plan.html</code> (A1).</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">S2</span><span class="t">One UI library, Android uses the web host</span></span><span class="l2">Tray: WinForms. Android: browser on Blazor Server</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Set</span><div class="v"><p>As S1, but with no Android project. The phone opens the web host through the tunnel.</p></div></div>
+        <div class="field"><span class="k">Shared</span><div class="v"><p>All UI code, also the web host. The code runs on the PC, not on the phone.</p></div></div>
+        <div class="field"><span class="k">Not shared</span><div class="v"><p>The browser Back key, and all native functions.</p></div></div>
+        <div class="field"><span class="k">For</span><div class="v"><p>Smallest work. No APK and no Android toolchain. The engine connection is the one of the web host.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>Each action needs the network. The phone stops the page soon after an app change, and the connection can drop. No work offline. It is not an Android app.</p></div></div>
+        <div class="field"><span class="k">Source</span><div class="v"><p><a href="https://learn.microsoft.com/aspnet/core/blazor/hosting-models">Hosting models</a>: a network hop for each action, no offline support. <a href="https://learn.microsoft.com/aspnet/core/blazor/fundamentals/signalr">SignalR guidance</a>: Android suspends the page in seconds. The <a href="https://learn.microsoft.com/aspnet/core/blazor/progressive-web-app/">PWA page</a> describes Blazor WebAssembly, not Blazor Server.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">S3</span><span class="t">One MAUI project for Windows and Android</span></span><span class="l2">Tray and Android: MAUI</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Set</span><div class="v"><p>Engine library, the same two view libraries, the web host, and one MAUI project with two targets.</p></div></div>
+        <div class="field"><span class="k">Shared</span><div class="v"><p>As S1, and also the app start and the service list of the host.</p></div></div>
+        <div class="field"><span class="k">Not shared</span><div class="v"><p>Windows and Android platform folders. The tray windows stay special code.</p></div></div>
+        <div class="field"><span class="k">For</span><div class="v"><p>One native project and one build system.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>MAUI uses WinUI 3 on Windows. WinUI 3 has an open issue for transparent borderless windows since 2019. The tray look is at risk, and no spike exists.</p></div></div>
+        <div class="field"><span class="k">Source</span><div class="v"><p><a href="https://learn.microsoft.com/dotnet/maui/supported-platforms">MAUI platforms</a>; <a href="https://github.com/microsoft/microsoft-ui-xaml/issues/1247">WinUI issue 1247</a>.</p></div></div>
+      </div>
+    </details>
+    <div class="rule">S2 and S1 use the same two libraries. So S2 can be the first Android step, and the MAUI host can come later with no change to the components.</div>
+  </section>
+
+  <section>
+    <h2>What the phone adds to the design</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Fact</th><th>Effect</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>WebView has no Push API</td><td>Native notices in S1, S3</td><td>MDN data; MAUI docs</td></tr>
+        <tr><td>View transitions: Chrome 111</td><td>Motion needs a recent WebView</td><td>MDN data (WebView mirrors Chrome)</td></tr>
+        <tr><td><code>getAnimations</code>: Chrome 84</td><td>The one end rule works</td><td>MDN data</td></tr>
+        <tr><td>No hover, touch targets</td><td>No function only on hover</td><td>Our conclusion</td></tr>
+        <tr><td>Safe areas</td><td>Tokens, not numbers</td><td>A1-2</td></tr>
+        <tr><td>Back button</td><td><code>Navigator.Back()</code></td><td>Devices plan P6</td></tr>
+        <tr><td>App can stop</td><td>The stack must be saved</td><td>MAUI app lifecycle</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Not checked: a real phone, speech in the Android WebView, a release build with trim, a browser install (PWA) of a Blazor Server app, the remote connection, iOS, and an Android build of projects on <code>Umpire.Sdk</code>. A1 tested the components of the old app. The V2 components need their own test.</p>
+  </section>
+
+  <section>
+    <h2>Other plans</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Plan</th><th>Fit</th><th>Conflict</th></tr></thead>
+      <tbody>
+        <tr><td>Devices plan, P1a and P1b</td><td><code>Orchestrator.Ui</code>, no <code>Board</code></td><td>They move components that V2 replaces</td></tr>
+        <tr><td>Devices plan, P3 to P6</td><td>Android host of S1</td><td>None found</td></tr>
+        <tr><td>K (draft, not approved)</td><td>Engine, queries, thin hosts</td><td>Projections and composer can overlap</td></tr>
+      </tbody>
+    </table></div>
+    <p class="summary">K projections make read models from events. The composer makes view models from read models and templates. Proposal for the limit: no layout in K, no event logic in the composer.</p>
+  </section>
+
+  <section>
+    <h2>Detail: what the tray host needs</h2>
     <div class="scroll"><table>
       <thead><tr><th>Need</th><th>Reason</th></tr></thead>
       <tbody>
@@ -740,7 +836,7 @@ Task&lt;MotionEnd&gt; Play(MotionStep step, ElementRef target);</pre>
   </section>
 
   <section>
-    <h2>Options</h2>
+    <h2>Detail: tray host options</h2>
     <div class="scroll"><table>
       <thead><tr><th>Option</th><th>Transparent</th><th>Input forward</th><th>Our test</th><th>Result</th></tr></thead>
       <tbody>

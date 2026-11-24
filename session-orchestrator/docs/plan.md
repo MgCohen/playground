@@ -2408,3 +2408,4 @@ Findings:
 - The counts of the 13 root causes are estimates. The tray host comparison (D3, 2026-11-24) comes from platform docs and spikes S1, S2 and S7; no host was built for it. The ring has three drawings, not four.
 - Base research of D2 (2026-11-24): licenses and sizes of Web Awesome, Blazor Blueprint, MudBlazor and Fluent UI Blazor are on the Design system tab. Nothing was built.
 - Correction: `LayeredForm` and `EdgeTab` (GDI+) are not in `orch/visual-review`. P8 and P12 named them as current. Host code there: 916 lines in four files.
+- D3 (user, 2026-11-24): no host preference; Blazor, ideally also on mobile; the tray is one view of the engine library; Android must reuse as much as possible. Proposals S1 to S3 are on the Hosts tab. They use the devices plan, spike A1 and the K draft. D4 changes: V2 replaces the result of P1a and P1b of the devices plan. Nothing was built.
