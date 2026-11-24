@@ -147,7 +147,7 @@ flowchart LR
   S --> R["Runs"]
   S --> P["PRs"]
   R --> RP["F2 Run page"]
-  P --> PS["F3 PR stack page"]
+  P --> PS["F3 PR stack"]
   PS --> PR["F4 PR page"]
   RP -->|step session| SE
   PR -->|task session| SE
@@ -165,7 +165,7 @@ flowchart LR
       <tr><th>Id</th><th>Feature</th><th>Group</th><th>What it does for the user</th><th>Data</th><th>State</th></tr>
       <tr><td class="mono"><a href="#stream">F1</a></td><td>Stream bar</td><td>First set</td><td>Shows the stream of the page and moves between its sessions, runs and PRs</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
       <tr><td class="mono"><a href="#run">F2</a></td><td>Workflows</td><td>First set</td><td>The workflow gallery, the workflow and step definitions, the run page and its sheet. Runs show on the sessions. You act on the wait of a run</td><td><span class="chip have">most</span></td><td><span class="chip have">sketched</span></td></tr>
-      <tr><td class="mono"><a href="#stack">F3</a></td><td>PR stack page</td><td>First set</td><td>Shows the PRs of a stream in their merge order and what waits for you. You review and merge here</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
+      <tr><td class="mono"><a href="#stack">F3</a></td><td>PR stack</td><td>First set</td><td>Shows the PRs of a stream in their merge order and what waits for you. You review and merge here</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
       <tr><td class="mono"><a href="#pr">F4</a></td><td>PR page</td><td>First set</td><td>Shows one PR with its task, session, diff, tests and defaults. You give the verdict here</td><td><span class="chip part">part</span></td><td><span class="chip">spec</span></td></tr>
       <tr><td class="mono"><a href="#backlog">F5</a></td><td>Status and analytics</td><td>Backlog</td><td>The health of the system and how it changes in time: open sessions, waits, errors</td><td><span class="chip have">most</span></td><td><span class="chip">idea</span></td></tr>
       <tr><td class="mono"><a href="#backlog">F6</a></td><td>Projects</td><td>Backlog</td><td>Groups the work by project (one repository), and by feature inside a project</td><td><span class="chip part">part</span></td><td><span class="chip">idea</span></td></tr>
@@ -463,7 +463,7 @@ sequenceDiagram
 <div class="panel" id="stack" hidden>
   <section>
     <span class="kicker">F3 · summary</span>
-    <h2>PR stack page</h2>
+    <h2>PR stack</h2>
     <p>The PRs of one stream, in their merge order. The base is at the bottom. Each PR sits on the PR before it. An integration branch groups PRs of more than one session. Each PR shows its state and its review state. The top of the page lists what waits for you: approve, change, refuse or merge. You review and merge on this page.</p>
 <pre class="mermaid">
 flowchart BT

@@ -2299,7 +2299,7 @@ Task P plans the advanced features of the UI. It makes drafts only, no app code.
 
 The F2 spec follows the workflow model P5 Forward and restart, from the workflow brainstorm (https://claude.ai/artifact/4hexcdNxAtjP4ZF1hoonC8). The F2 Spec tab has the terms, the moves, the wait kinds, the parts of the run page, the data gaps and the open questions Q-P1 to Q-P3 and Q-R6.
 
-On 2026-11-24 the F2 sketches are done for now. The intent pass (`docs/f2-page-intents.md`) set the goal of each page, and sketch round 5 (`docs/run-views/r5/`, the Pages sub-tab) draws them. W-3 Runs is removed: runs show on the sessions. Open: O-1 (conditions), Q-P1 to Q-P3, the step bar of W-C1, and the store design (issue #80). Next feature: F3 PR stack page.
+On 2026-11-24 the F2 sketches are done for now. The intent pass (`docs/f2-page-intents.md`) set the goal of each page, and sketch round 5 (`docs/run-views/r5/`, the Pages sub-tab) draws them. W-3 Runs is removed: runs show on the sessions. Open: O-1 (conditions), Q-P1 to Q-P3, the step bar of W-C1, and the store design (issue #80). Next feature: F3 PR stack (`docs/f3-page-intents.md`).
 
 The decisions are in `docs/decisions.md` (rows "P").
 
