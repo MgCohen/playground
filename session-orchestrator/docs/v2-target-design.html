@@ -191,7 +191,8 @@ flowchart LR
         <tr><td>Step 2 compares the tray hosts</td><td>Default, Q6</td></tr>
         <tr><td>One motion system and one navigation system</td><td>You, Q4 (P12, P13)</td></tr>
         <tr><td>The kind file is <code>content.json</code></td><td>You, D1</td></tr>
-        <tr><td>The event type selects one Razor card renderer; no rule language now</td><td>You, D5; one detail is open</td></tr>
+        <tr><td>The event type selects one Razor card renderer; no rule language now</td><td>You, D5</td></tr>
+        <tr><td>One type <code>question</code>, one card: <code>options</code> as buttons, and one open-text flag</td><td>You, D5</td></tr>
         <tr><td>One owned design system: a whole system that we copy, with guidelines and skills</td><td>You, D2; the base is open</td></tr>
         <tr><td>The widget and the main app are two programs (S4)</td><td>You, D3 = B</td></tr>
         <tr><td>New <code>Orchestrator.View</code> and <code>Orchestrator.Ui</code>, thin hosts, one <code>Orchestrator.App</code></td><td>You, D4 = A</td></tr>
@@ -210,16 +211,6 @@ flowchart LR
         <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: <code>vsa-design</code> is the base. Add names, the Blazor layer, change skills and the index "How to change anything" there.</li><li>B: a new fork of NVIDIA Elements. Better token tiers, change skills and an MCP server to copy, but the fork work starts again.</li><li>C: a new fork of Blazor Blueprint. Native Razor, but one token tier, and we write the skills.</li></ul></div></div>
         <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It passes each must and most fork steps are done. B is better on change skills and MCP, so use it as the model; with its Apache-2.0 notice we can also copy its skill text. If an MCP server from day one is more important than the fork work, choose B. If web components and Blazor conflict in the spike, choose C.</p></div></div>
         <div class="field"><span class="k">Say yes to</span><div class="v"><ul><li>The base (A, B or C)</li><li>A third exception in <code>AGENTS.md</code> for the vendored output (A, B)</li><li>Who changes <code>vsa-design</code>: its own sessions, or a session from here. Today this session can only read it</li><li>A Blazor spike of five components before step 3</li></ul></div></div>
-      </div>
-    </details>
-
-    <details class="f">
-      <summary><span class="l1"><span class="id">D5</span><span class="t">Do the question cards become separate types, or one renderer?</span></span><span class="l2">Recommendation: one type and one renderer. No default</span></summary>
-      <div class="body">
-        <div class="field"><span class="k">Decided</span><div class="v"><p>The type of the event selects the card. Each card has its own Razor renderer, with shared parts. No rule language now (tab 2, V5). You asked about <a href="https://jsonlogic.com/">JsonLogic</a>: it is a small format that writes rules as JSON. We do not use it.</p></div></div>
-        <div class="field"><span class="k">Context</span><div class="v"><p>Four of the 8 variants are the one type <code>question</code>: yes or no, default, opinion and plain question. Opinion and plain question have the same actions. The rest map to a type or to the <code>state</code> of a report.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: one type <code>question</code>, one QuestionCard. Its typed fields <code>options</code> and <code>defaultOption</code> select the actions, in C#.</li><li>B: separate types, for example <code>question-yesno</code>. Each has its own template folder and renderer.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. A session asks one kind of question, and the store contract does not change. The yes or no test reads the option texts, as today. A typed field for it can come later.</p></div></div>
       </div>
     </details>
 
@@ -363,10 +354,10 @@ flowchart TB
         <div class="scroll"><table>
           <thead><tr><th>Variant today</th><th>Selected today by</th><th>V2: type or typed field</th><th>Renderer</th></tr></thead>
           <tbody>
-          <tr><td>yesno</td><td><code>question</code> with risk or default; two options, yes and no</td><td><code>question</code>; <code>options</code></td><td>QuestionCard</td></tr>
-          <tr><td>default</td><td><code>question</code> with <code>defaultOption</code></td><td><code>question</code>; <code>defaultOption</code></td><td>QuestionCard</td></tr>
-          <tr><td>opinion</td><td><code>question</code> with <code>risk</code>, no default</td><td><code>question</code>; no default</td><td>QuestionCard</td></tr>
-          <tr><td>question</td><td><code>question</code> with no risk and no default</td><td><code>question</code>; no default, as opinion</td><td>QuestionCard</td></tr>
+          <tr><td>yesno</td><td><code>question</code> with risk or default; two options, yes and no</td><td><code>question</code>; <code>options</code>, a button for each</td><td>QuestionCard</td></tr>
+          <tr><td>default</td><td><code>question</code> with <code>defaultOption</code></td><td><code>question</code>; the button of <code>defaultOption</code> is marked</td><td>QuestionCard</td></tr>
+          <tr><td>opinion</td><td><code>question</code> with <code>risk</code>, no default</td><td><code>question</code>; <code>openText</code></td><td>QuestionCard</td></tr>
+          <tr><td>question</td><td><code>question</code> with no risk and no default</td><td><code>question</code>; <code>openText</code>, no options</td><td>QuestionCard</td></tr>
           <tr><td>plan</td><td><code>needs</code> = review and kind <code>plan</code></td><td>Type <code>plan</code></td><td>PlanCard</td></tr>
           <tr><td>review</td><td><code>needs</code> = review, any other kind</td><td>Type <code>answer</code>, forwarded for review</td><td>DefaultReviewCard</td></tr>
           <tr><td>blocked</td><td>Kind <code>failure</code>, <code>blocked</code> or <code>delivery.blocked</code>; or <code>state</code> = blocked</td><td>Type <code>failure</code>; or type <code>report</code> with <code>state</code> = blocked</td><td>FailureCard; ReportCard</td></tr>
@@ -387,6 +378,37 @@ _          =&gt; typeof(TemplateCard)   <span class="cm">// content.json, replie
         </ul>
         <p class="note">Kinds with no template (<code>docs/store.md</code>, "Other kinds have no template"): traces, lifecycle names and git make no card. They show as one generic row in the stream and in the timeline of a session. <code>delivery.blocked</code> is a trace; the user gets a <code>failure</code> card in its place. A lifecycle notice about a root session goes to the user as a <code>message</code>, so it uses MessageCard. Old version 1 events make no card.</p>
         <p class="note">Later: build the templates themselves from components. Not now.</p>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V6</span><span class="t">The question card</span></span><span class="l2">Options are buttons; one flag for open text. No yes or no detection</span></summary>
+      <div class="body">
+        <div class="scroll"><table>
+          <thead><tr><th>options</th><th>openText</th><th>The card shows</th></tr></thead>
+          <tbody>
+          <tr><td>None</td><td>true</td><td>Open text (type or speak)</td></tr>
+          <tr><td>2 to 4</td><td>false</td><td>One button for each option</td></tr>
+          <tr><td>2 to 4</td><td>true</td><td>The buttons and open text</td></tr>
+          <tr><td>None</td><td>false</td><td>Not valid</td></tr>
+          </tbody>
+        </table></div>
+        <p><code>defaultOption</code> and <code>recommendation</code> stay fields. The card marks the default and shows its countdown. Yes and no are two normal options.</p>
+        <p>An old question has no flag. Read it as <code>openText: true</code>, because each question of today accepts free text. A new question with no flag gets the same value.</p>
+        <h3>Work for step 3</h3>
+        <div class="scroll"><table>
+          <thead><tr><th>File</th><th>Change</th></tr></thead>
+          <tbody>
+          <tr><td><code>templates/question/schema.json</code></td><td>Add <code>openText</code>: boolean, default true. Refuse <code>false</code> with no <code>options</code>. Remove "The options are suggestions"</td></tr>
+          <tr><td><code>plugin/hooks/tools.ts</code></td><td><code>ask_user</code> gets <code>openText</code> from the schema; change its text "The user answers in free text"</td></tr>
+          <tr><td><code>orch-ask</code> skill</td><td>Add <code>openText</code>; change the <code>options</code> row and rule 6</td></tr>
+          <tr><td><code>templates/question/</code> view, render, example</td><td>Show the flag; mark the default</td></tr>
+          <tr><td><code>docs/store.md</code></td><td>Field table (line 554); line 665 "never with a click"; card table (line 405)</td></tr>
+          <tr><td>Records and checks in C#</td><td>Read the flag; no flag = true. With <code>false</code>, the default must be an option</td></tr>
+          <tr><td>Old card code</td><td><code>Ui.Classify</code> goes with V2. Swipes of the new card: to design</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note">A text answer can still arrive from the chat or the phone. Proposal: accept it also when <code>openText</code> is false. The flag controls only the card. <code>AGENTS.md</code> says "Never use click questions" for agent chats. These buttons are in our own card, so that rule can stay for chats.</p>
       </div>
     </details>
   </section>
