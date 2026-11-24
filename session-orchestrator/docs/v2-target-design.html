@@ -153,7 +153,7 @@ flowchart LR
       <thead><tr><th>Rule</th><th>Stops</th><th>Tab</th></tr></thead>
       <tbody>
         <tr><td>Each page and list is a view of one query</td><td>P11, P1, P4</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
-        <tr><td>Card rules and actions are template data</td><td>P11, P2</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
+        <tr><td>The event type selects one card renderer; its replies are typed</td><td>P11, P2</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
         <tr><td>One composer makes the view model</td><td>P1, P4</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
         <tr><td>Each window, page and sheet has a state machine</td><td>P3</td><td><a href="#state" data-go="state">4 · State, motion</a></td></tr>
         <tr><td>Each state change is one trace event</td><td>P6, P7</td><td><a href="#state" data-go="state">4 · State, motion</a></td></tr>
@@ -191,6 +191,7 @@ flowchart LR
         <tr><td>Step 2 compares the tray hosts</td><td>Default, Q6</td></tr>
         <tr><td>One motion system and one navigation system</td><td>You, Q4 (P12, P13)</td></tr>
         <tr><td>The kind file is <code>content.json</code></td><td>You, D1</td></tr>
+        <tr><td>The event type selects one Razor card renderer; no rule language now</td><td>You, D5; one detail is open</td></tr>
         <tr><td>One owned design system: a whole system that we copy, with guidelines and skills</td><td>You, D2; the base is open</td></tr>
         <tr><td>The widget and the main app are two programs (S4)</td><td>You, D3 = B</td></tr>
         <tr><td>New <code>Orchestrator.View</code> and <code>Orchestrator.Ui</code>, thin hosts, one <code>Orchestrator.App</code></td><td>You, D4 = A</td></tr>
@@ -213,11 +214,12 @@ flowchart LR
     </details>
 
     <details class="f">
-      <summary><span class="l1"><span class="id">D5</span><span class="t">How do card rules test the fields?</span></span><span class="l2">Recommendation: small JSON tests, no script. Default: JSON tests</span></summary>
+      <summary><span class="l1"><span class="id">D5</span><span class="t">Do the question cards become separate types, or one renderer?</span></span><span class="l2">Recommendation: one type and one renderer. No default</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p><code>Ui.Classify</code> tests fields: two options yes and no, a default, the needs. The rules must be data (P11).</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: JSON tests: <code>exists</code>, <code>is</code>, <code>equals</code>, <code>count</code> (tab 2, V5).</li><li>B: an expression language, for example JsonLogic.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Four tests cover the variants of today. A schema can check them. JSON tests need no script engine on a phone.</p></div></div>
+        <div class="field"><span class="k">Decided</span><div class="v"><p>The type of the event selects the card. Each card has its own Razor renderer, with shared parts. No rule language now (tab 2, V5). You asked about <a href="https://jsonlogic.com/">JsonLogic</a>: it is a small format that writes rules as JSON. We do not use it.</p></div></div>
+        <div class="field"><span class="k">Context</span><div class="v"><p>Four of the 8 variants are the one type <code>question</code>: yes or no, default, opinion and plain question. Opinion and plain question have the same actions. The rest map to a type or to the <code>state</code> of a report.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: one type <code>question</code>, one QuestionCard. Its typed fields <code>options</code> and <code>defaultOption</code> select the actions, in C#.</li><li>B: separate types, for example <code>question-yesno</code>. Each has its own template folder and renderer.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. A session asks one kind of question, and the store contract does not change. The yes or no test reads the option texts, as today. A typed field for it can come later.</p></div></div>
       </div>
     </details>
 
@@ -242,14 +244,15 @@ flowchart TB
   V["View template<br/>shape, layout, part"] --> C["Composer"]
   R --> C
   K["Content template<br/>kind document, preview"] --> C
-  M["Card rules<br/>meta.json card"] --> C
+  T["Event type<br/>meta.json"] --> C
   C --> N["View model nodes<br/>keyed, immutable"]
 </pre></div>
     <div class="scroll"><table>
       <thead><tr><th>Term</th><th>Owns</th><th>File</th></tr></thead>
       <tbody>
         <tr><td>Content template</td><td>What one kind shows</td><td><code>templates/&lt;kind&gt;/content.json</code></td></tr>
-        <tr><td>Card rules</td><td>Card variant, group, actions</td><td><code>templates/&lt;kind&gt;/meta.json</code></td></tr>
+        <tr><td>Event type</td><td>The kind, its version, its permitted replies</td><td><code>templates/&lt;kind&gt;/meta.json</code></td></tr>
+        <tr><td>Card renderer</td><td>The look and actions of the card of one type</td><td><code>Orchestrator.Ui</code>, one Razor file</td></tr>
         <tr><td>View template</td><td>Query, shape, layout, part</td><td><code>templates/views/&lt;name&gt;/view.json</code></td></tr>
         <tr><td>Page</td><td>Route, depth, view slots</td><td><code>templates/pages/&lt;name&gt;/page.json</code></td></tr>
         <tr><td>View model</td><td>The composed nodes</td><td>C# records, in memory</td></tr>
@@ -323,7 +326,7 @@ flowchart TB
   "shape":  "item",
   "layout": "document",
   "part":   "document",
-  "actions": "card"     <span class="cm">// from meta.json</span>
+  "actions": "card"     <span class="cm">// from the card renderer</span>
 }</pre>
 <pre class="code">{
   "name":  "event",
@@ -354,24 +357,36 @@ flowchart TB
     </details>
 
     <details class="f">
-      <summary><span class="l1"><span class="id">V5</span><span class="t">Card rules as data</span></span><span class="l2">The 8 card variants of Ui.Classify move to meta.json</span></summary>
+      <summary><span class="l1"><span class="id">V5</span><span class="t">One renderer for each event type</span></span><span class="l2">The 8 card variants of Ui.Classify become 6 typed renderers and 1 fallback</span></summary>
       <div class="body">
-        <p class="file">templates/question/meta.json · "card"</p>
-<pre class="code">"card": {
-  "group": "Questions",
-  "variants": [
-    { "name": "yesno",   "when": { "field": "options", "is": ["yes", "no"] },
-      "right": { "label": "Yes", "post": "answer", "text": "yes" },
-      "left":  { "label": "No",  "post": "answer", "text": "no" } },
-    { "name": "default", "when": { "field": "defaultOption", "exists": true },
-      "right": { "label": "Accept", "post": "answer", "text": "defaultOption" },
-      "left":  { "label": "Other",  "input": "type" } },
-    { "name": "opinion",
-      "right": { "label": "Speak", "input": "speak" },
-      "left":  { "label": "Type",  "input": "type" } }
-  ]
-}</pre>
-        <p>The first variant whose <code>when</code> matches wins. A <code>when</code> is a small JSON test (<code>exists</code>, <code>is</code>, <code>equals</code>, <code>count</code>), with no script. The send path is in each action, so the "plan" card cannot go to Refuse (P2).</p>
+        <p>An event has an <code>id</code>, and a type: its <code>kind</code>, which is the name of its template folder. The type selects the renderer. There is no rule language.</p>
+        <div class="scroll"><table>
+          <thead><tr><th>Variant today</th><th>Selected today by</th><th>V2: type or typed field</th><th>Renderer</th></tr></thead>
+          <tbody>
+          <tr><td>yesno</td><td><code>question</code> with risk or default; two options, yes and no</td><td><code>question</code>; <code>options</code></td><td>QuestionCard</td></tr>
+          <tr><td>default</td><td><code>question</code> with <code>defaultOption</code></td><td><code>question</code>; <code>defaultOption</code></td><td>QuestionCard</td></tr>
+          <tr><td>opinion</td><td><code>question</code> with <code>risk</code>, no default</td><td><code>question</code>; no default</td><td>QuestionCard</td></tr>
+          <tr><td>question</td><td><code>question</code> with no risk and no default</td><td><code>question</code>; no default, as opinion</td><td>QuestionCard</td></tr>
+          <tr><td>plan</td><td><code>needs</code> = review and kind <code>plan</code></td><td>Type <code>plan</code></td><td>PlanCard</td></tr>
+          <tr><td>review</td><td><code>needs</code> = review, any other kind</td><td>Type <code>answer</code>, forwarded for review</td><td>DefaultReviewCard</td></tr>
+          <tr><td>blocked</td><td>Kind <code>failure</code>, <code>blocked</code> or <code>delivery.blocked</code>; or <code>state</code> = blocked</td><td>Type <code>failure</code>; or type <code>report</code> with <code>state</code> = blocked</td><td>FailureCard; ReportCard</td></tr>
+          <tr><td>report</td><td>All that is left</td><td>Type <code>report</code></td><td>ReportCard</td></tr>
+          <tr><td>(none)</td><td>A <code>message</code> with <code>needs</code> = ack becomes a report card</td><td>Type <code>message</code></td><td>MessageCard</td></tr>
+          </tbody>
+        </table></div>
+<pre class="code"><span class="cm">// Orchestrator.Ui: the type selects the renderer. Illustration.</span>
+"question" =&gt; typeof(QuestionCard),      "plan"    =&gt; typeof(PlanCard),
+"answer"   =&gt; typeof(DefaultReviewCard), "report"  =&gt; typeof(ReportCard),
+"failure"  =&gt; typeof(FailureCard),       "message" =&gt; typeof(MessageCard),
+_          =&gt; typeof(TemplateCard)   <span class="cm">// content.json, replies of meta.json</span></pre>
+        <ul>
+          <li>Shared parts: frame, preview, context actions, answer sheet, countdown, undo.</li>
+          <li><code>needs</code> decides if an event is a card. It does not select the renderer.</li>
+          <li>P2: each action is a typed reply. PlanCard has Approve and Change; the text of Change posts <code>review</code> with the verdict <code>change</code>. It has no refuse action. Today the text of a plan card posts <code>refuse</code>. Step 3 must check that a session gets the correct text for a changed plan.</li>
+          <li>A kind that the user adds has no renderer. <code>TemplateCard</code> shows it with its <code>content.json</code>, so an added kind still needs no code.</li>
+        </ul>
+        <p class="note">Kinds with no template (<code>docs/store.md</code>, "Other kinds have no template"): traces, lifecycle names and git make no card. They show as one generic row in the stream and in the timeline of a session. <code>delivery.blocked</code> is a trace; the user gets a <code>failure</code> card in its place. A lifecycle notice about a root session goes to the user as a <code>message</code>, so it uses MessageCard. Old version 1 events make no card.</p>
+        <p class="note">Later: build the templates themselves from components. Not now.</p>
       </div>
     </details>
   </section>
@@ -757,7 +772,7 @@ flowchart LR
     <h2>Later: an MCP server and JSON screens</h2>
     <ul>
       <li>MCP server (A): optional, after the skills. It reads <code>custom-elements.json</code> and the guide files, runs on the PC, and can be C#. Tools: list, describe, tokens, check.</li>
-      <li>JSON screens: not a criterion. We can build them on top. The component manifest can make the schema of a screen file. Its <code>when</code> can use the JSON tests of D5.</li>
+      <li>JSON screens: not a criterion. We can build them on top. The component manifest can make the schema of a screen file. It has no rule language: a screen file has no <code>when</code> (D5).</li>
     </ul>
   </section>
 
