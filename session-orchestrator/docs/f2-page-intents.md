@@ -1,6 +1,6 @@
 # F2 Workflows: the intent of each page
 
-Status: the intent pass, one page at a time, with the user (2026-11-23). It comes before sketch round 5. Each page has a goal, its content, and the open points. Round 5 draws each open point as a variation.
+Status: the intent pass is complete (2026-11-24). It comes before sketch round 5. Each page has a goal, its content, and the open points. Round 5 draws each open point as a variation.
 
 ## Rules for all pages
 
@@ -19,8 +19,8 @@ Status: the intent pass, one page at a time, with the user (2026-11-23). It come
 | ~~W-3 Runs~~ (removed) | The session views show the runs. A run belongs to a session | The session views get the run row (W-C1) and a link to W-4 | None |
 | W-4 Run (confirmed) | See where one run is, where it can go, and what happened | Header: workflow name, owner session, state, elapsed time; in a child level a breadcrumb (for example "Feature delivery › Verify ▸"). A small Next bar with the ways out of the current step. The graph on the left and the step rows on the right, oldest at the top; each row: step name, state icon, short result. A marker on the current step. A child flow ▸ row opens its level. A restart ↺ is a chip with its reason; the new pass continues in the same lane; old passes fold into one row. A tap on a row or a chip opens W-5. The wait card (W-C2) shows above the rows when the run waits for you. No prompts, templates or configuration | None |
 | W-5 Step run sheet (confirmed) | Quick data about one step run, without a page change | A bottom sheet over the dimmed run page; the tree does not move. Step name, type, state (done, now, not run), time, short result. If the step ran: links to the actual input and output documents. Child flow ▸: an Open link to its level. Restart chip: the reason and the count against the limit. A link to W-2a. When the step waits for you: the same act buttons as the wait card (approve, change, answer). The rare control acts (force next, stop) are in a ⋯ menu in the run page header | None |
-| W-C1 Run row | One line that shows a run on other pages | Run name, current step (with the level path), state, elapsed time, a "you" marker when it waits for you | A step bar (wanted, if it can show hubs, restarts and levels). See Q-L2 |
-| W-C2 Wait card | Show what a waiting run needs from you | The step, the question or the action, the time it waits, the ways out | Where it shows: on the run page only, or on the session page and in the inbox too |
+| W-C1 Run row (confirmed) | One line that shows a run on the session views | Workflow name, current step with the level path (for example "Verify ▸ Review"), a state dot, elapsed time, a "you" marker when the run waits for you. A tap opens W-4 | Round 5 draws one step bar try, as a variation only (Q-L2) |
+| W-C2 Wait card (confirmed for now) | Show what a waiting run needs from you | The step, the question or the action, how long it waits, the act buttons (the ways out). It shows at the top of W-4 and on the page of the owner session. In the inbox, a wait is a normal question card with a link to the run (no new card kind) | None |
 | W-6 Workflow editor (later) | Build a workflow | The input, the output, the steps and the connections. Steps belong to the workflow (decision Q-D1) | Not in round 5 |
 | W-7 New session with a workflow (later) | Start a run from the UI | A workflow field on the new session form | Not in round 5 |
 
@@ -41,4 +41,6 @@ Status: the intent pass, one page at a time, with the user (2026-11-23). It come
 - Q-I4: the W-2a intent is confirmed for the sketch stage. Open item O-1.
 - Q-I5: the W-4 intent is confirmed.
 - Q-I6: the W-5 intent is confirmed.
+- Q-I7: the W-C1 intent is confirmed; the W-C2 intent is confirmed for now.
+- The intent pass is complete. Next: sketch round 5.
 - Q-L2: option 2 now (time and "you" marker). Option 3 (step bar) if a bar can show hubs, restarts and levels.
