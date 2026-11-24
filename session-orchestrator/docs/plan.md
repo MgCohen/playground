@@ -2412,3 +2412,19 @@ Findings:
 - S2 of the host proposals is ruled out by the decision of 2026-11-20 (MAUI `BlazorWebView`, APK, no PWA). The page missed it at first.
 - S3 limits (2026-11-24, docs and issues only): the open risk is a transparent Blazor view in WinUI 3 (microsoft-ui-xaml 6527). The Android bubble is equal for S1 and S3. Spike plan X1 to X6 is on the Hosts tab; nothing was started.
 - Widget and main app (user, 2026-11-24: possibly two processes). Research from docs and source code: no single standard. Proposal S4: a WinForms widget and a MAUI main app on one UI library. It drops spikes X1 to X3 and adds X7. Nothing was started.
+
+### V2 spike: ping pong (2026-11-24)
+
+D3 = B (user): the widget and the main app are two programs. Spike `spikes/pingpong/`, from scratch, ports 7931 and 7932, data in a temp folder. Details and pictures: the Spike tab of the target design page, `docs/screens/pingpong-heads.png`, `docs/screens/pingpong-links.png`.
+
+| Check | Result |
+|---|---|
+| Engine process, web, widget, notification, main window and Android emulator at the same time, same Razor components | Pass |
+| A hit shows in the other heads (widget, Android, main window: final run; web: first run) | Pass |
+| X7: a widget click opens the correct page, main window closed and open | Pass (`/hits/2`, `/hits/1`) |
+| Engine restart: all heads connect again | Pass after a fix: Android did not reconnect at first |
+| Android Back key | Fail: it closes the app |
+| Memory of the 3 Windows heads (private, MB) | 642 with separate browsers, 316 with a shared browser (one measure each) |
+| Lines | 250 shared by all heads; Windows library 329; web 29, main window 51, notification 71, widget 114, Android 87 |
+
+Not done: MAUI on Windows (no workload), a real phone, trim, X5, X6, the URI scheme, the tray icon click.

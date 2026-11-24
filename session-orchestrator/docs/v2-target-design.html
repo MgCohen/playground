@@ -105,6 +105,10 @@ details.f > .body { padding: 0 14px 16px; display: flex; flex-direction: column;
 .tree .n { color: var(--fg); font-weight: 500; }
 .tree .d { color: var(--muted); font-family: var(--font-body); font-size: 13px; }
 .tree .more { margin: 2px 0 6px 20px; font-family: var(--font-body); font-size: 13px; color: var(--muted); max-width: 70ch; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+figure .img { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+figure img { display: block; max-width: none; height: 420px; }
+figcaption { font-size: 13px; color: var(--muted); max-width: 70ch; }
 </style>
 
 <div class="wrap">
@@ -121,6 +125,7 @@ details.f > .body { padding: 0 14px 16px; display: flex; flex-direction: column;
   <button role="tab" id="t-state" data-tab="state" aria-controls="state" aria-selected="false"><span class="n">4</span>State, motion</button>
   <button role="tab" id="t-system" data-tab="system" aria-controls="system" aria-selected="false"><span class="n">5</span>Design system</button>
   <button role="tab" id="t-host" data-tab="host" aria-controls="host" aria-selected="false"><span class="n">6</span>Hosts</button>
+  <button role="tab" id="t-spike" data-tab="spike" aria-controls="spike" aria-selected="false"><span class="n">7</span>Spike</button>
 </nav>
 
 <!-- 1 OVERVIEW -->
@@ -186,6 +191,7 @@ flowchart LR
         <tr><td>One motion system and one navigation system</td><td>You, Q4 (P12, P13)</td></tr>
         <tr><td>The kind file is <code>content.json</code></td><td>You, D1</td></tr>
         <tr><td>Own components, from a base that we copy and own</td><td>You, D2</td></tr>
+        <tr><td>The widget and the main app are two programs (S4)</td><td>You, D3 = B</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -200,17 +206,6 @@ flowchart LR
         <div class="field"><span class="k">Context</span><div class="v"><p>You want own components, from a base that we copy one time and do not follow. The comparison is on tab <a href="#system" data-go="system">5 · Design system</a>.</p></div></div>
         <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: Web Awesome, system only. Copy tokens, layers, CSS and guidelines. Write the components in Razor.</li><li>B: Web Awesome, all. Use the web components of <code>vsa-design</code>. The <code>AGENTS.md</code> rule must change.</li><li>C: Blazor Blueprint Primitives. Copy the Razor behavior parts that we need. Use our own look.</li><li>D: MudBlazor. Copy Razor components and replace the Material look.</li></ul></div></div>
         <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It keeps the structure, docs and guidelines that you named. It leaves out the Lit code and its build. The cost: we write and test the behavior of each component. On a phone, each base needs a check of touch, focus and the on-screen keyboard. No base was checked there.</p></div></div>
-      </div>
-    </details>
-
-    <details class="f">
-      <summary><span class="l1"><span class="id">D3</span><span class="t">Is the widget a program apart from the main app?</span></span><span class="l2">Recommendation: yes, S4. No default</span></summary>
-      <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>You said that the widget and the main app can be two separate processes. See tab <a href="#host" data-go="host">6 · Hosts</a>.</p></div></div>
-        <div class="field"><span class="k">A</span><div class="v"><p>One program, as today: badge, panel and main app in one process. This keeps S1.</p></div></div>
-        <div class="field"><span class="k">B</span><div class="v"><p>Two programs, both Blazor on one UI library (S4).</p></div></div>
-        <div class="field"><span class="k">C</span><div class="v"><p>Two programs, with a native badge and no panel in the widget.</p></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>B. It reuses the UI, keeps the ball, and removes the transparency risk of MAUI.</p></div></div>
       </div>
     </details>
 
@@ -940,7 +935,7 @@ flowchart TB
   </section>
 
   <section>
-    <h2>Spike plan (not started)</h2>
+    <h2>Spike plan for S3 and Android</h2>
     <p class="summary">Each spike is a throwaway project in <code>spikes/</code> with mock data. It uses no live store and no port 7777. The time values are my estimates. The plan starts only if the user says so.</p>
     <div class="scroll"><table>
       <thead><tr><th>Spike</th><th>Pass</th><th>Time (min)</th><th>On screen</th></tr></thead>
@@ -1091,11 +1086,136 @@ public interface IHostWindow
   </section>
 </div>
 
+<!-- 7 SPIKE -->
+<div class="panel off" id="spike" role="tabpanel" aria-labelledby="t-spike">
+  <section>
+    <h2>Ping pong spike: S4 works with one UI library</h2>
+    <p class="summary">Five heads ran at the same time on one engine process. All heads show the same Razor components, and a hit from one head shows in the others. The code is in <code>spikes/pingpong/</code>. It has no code of the app.</p>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  EN["Engine process<br/>game library"] -->|"HTTP, SSE"| WEB["Web"]
+  EN -->|"HTTP, SSE"| WID["Widget, tray"]
+  EN -->|"HTTP, SSE"| NOT["Notification"]
+  EN -->|"HTTP, SSE"| APP["Main window"]
+  EN -->|"HTTP, SSE"| AND["Android"]
+  WID -->|pipe| APP
+  NOT -->|pipe| APP
+</pre></div>
+    <figure><div class="img"><img src="img/pingpong-heads.png" alt="Five heads: widget, web, main window, notification and Android. Each shows hit 3 from the app."></div><figcaption>The final run: five heads after hit 3. The widget is over a test window with a pattern, so the picture shows that it is transparent.</figcaption></figure>
+    <figure><div class="img"><img src="img/pingpong-links.png" alt="The closed widget, the main window at a hit page, and Android at a hit page."></div><figcaption>The closed ball, the main window after a widget click, and Android after a link. The ball and Android pictures are from the first run.</figcaption></figure>
+  </section>
+
+  <section>
+    <h2>Checks</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Check</th><th>Result</th><th>How</th></tr></thead>
+      <tbody>
+        <tr><td>All heads at the same time, one engine</td><td><span class="tag rec">Pass</span></td><td>Final run, 5 heads</td></tr>
+        <tr><td>Hit from widget, Android, main window</td><td><span class="tag rec">Pass</span></td><td>Final run, seen in each head</td></tr>
+        <tr><td>Hit from web</td><td><span class="tag rec">Pass</span></td><td>First run only</td></tr>
+        <tr><td>Same Razor components</td><td><span class="tag rec">Pass</span></td><td>One project, no copy</td></tr>
+        <tr><td>X7, main window closed</td><td><span class="tag rec">Pass</span></td><td>Widget card starts it at <code>/hits/2</code></td></tr>
+        <tr><td>X7, main window open</td><td><span class="tag rec">Pass</span></td><td>Same process, <code>/hits/1</code></td></tr>
+        <tr><td>X7 from the notification</td><td><span class="tag rec">Pass</span></td><td>First run, script click</td></tr>
+        <tr><td>Android link, app closed and open</td><td><span class="tag rec">Pass</span></td><td><code>pingpong://hits/3</code>, <code>adb</code></td></tr>
+        <tr><td>Transparent ball and panel</td><td><span class="tag rec">Pass</span></td><td>Pictures</td></tr>
+        <tr><td>Click area</td><td><span class="tag rec">Pass</span></td><td>Empty part gives the window behind it</td></tr>
+        <tr><td>Mouse in the widget</td><td><span class="tag rec">Pass</span></td><td>Window messages, not a real mouse</td></tr>
+        <tr><td>Engine restart</td><td><span class="tag rec">Pass</span></td><td>After a fix; see the findings</td></tr>
+        <tr><td>Notification takes no focus</td><td><span class="tag mid">In part</span></td><td>Not active when read; not tested while you type</td></tr>
+        <tr><td>Android Back key</td><td><span class="tag no">No</span></td><td>Closes the app at a hit page</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Memory and code</h2>
+    <p class="summary">Private memory of one run on this PC, in MB. A WebView2 has 6 processes for each head.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Process</th><th>Own (MB)</th><th>WebView2 (MB)</th><th>Sum (MB)</th></tr></thead>
+      <tbody>
+        <tr><td>Engine</td><td>30</td><td>-</td><td>30</td></tr>
+        <tr><td>Web server</td><td>43</td><td>-</td><td>43</td></tr>
+        <tr><td>Widget</td><td>23</td><td>214</td><td>237</td></tr>
+        <tr><td>Notification</td><td>21</td><td>162</td><td>183</td></tr>
+        <tr><td>Main window</td><td>22</td><td>200</td><td>222</td></tr>
+        <tr><td>3 heads, one shared browser</td><td>62</td><td>254</td><td>316</td></tr>
+        <tr><td>Android (PSS)</td><td>-</td><td>-</td><td>226</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Three heads with separate browsers use 642 MB, and with a shared browser 316 MB: the same content, one measure each. The shared run is from the first build, with 8 browser processes. The Android number is from <code>dumpsys</code>, so it does not compare with the others. The emulator and the browser of the web page are not in the table.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Code</th><th>Lines</th><th>Used by</th></tr></thead>
+      <tbody>
+        <tr><td>Core: game, client</td><td>105</td><td>All heads</td></tr>
+        <tr><td>Ui: Razor, CSS</td><td>145</td><td>All heads</td></tr>
+        <tr><td>Win: composition host, pipe, test</td><td>329</td><td>3 Windows heads</td></tr>
+        <tr><td>Engine</td><td>33</td><td>Engine</td></tr>
+        <tr><td>Web</td><td>29</td><td>Web</td></tr>
+        <tr><td>Main window</td><td>51</td><td>Main window</td></tr>
+        <tr><td>Notification</td><td>71</td><td>Notification</td></tr>
+        <tr><td>Widget</td><td>114</td><td>Widget</td></tr>
+        <tr><td>Android</td><td>87</td><td>Android</td></tr>
+      </tbody>
+    </table></div>
+    <p class="summary">Shared by all heads: 250 lines. The composition host (193 lines) is the largest Windows part. The count has blank lines and comments, and no project files.</p>
+  </section>
+
+  <section>
+    <h2>Findings</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Finding</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td>S-1</td><td>Android did not reconnect after an engine restart</td><td>Fixed; exact exception not captured</td></tr>
+        <tr><td>S-2</td><td>My first check missed S-1; a picture showed it</td><td>Text check added</td></tr>
+        <tr><td>S-3</td><td>The widget host must serve <code>blazor.webview.js</code> itself</td><td>Fixed in the spike</td></tr>
+        <tr><td>S-4</td><td>Android build fails in a long path</td><td>Short output folder</td></tr>
+        <tr><td>S-5</td><td>A library with the Razor SDK gives an asset conflict</td><td>Plain SDK</td></tr>
+        <tr><td>S-6</td><td>Android Back does not go to the previous page</td><td>Open: needs the navigator</td></tr>
+        <tr><td>S-7</td><td>White system bars on Android (as A1-2)</td><td>Open</td></tr>
+        <tr><td>S-8</td><td>The last hit stays only in memory; a restart clears all</td><td>Spike limit</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">S-1: the client caught only some exception types. A catch of all types fixed it, in one test with each build. The cause is likely an Android exception type, but it was not read.</p>
+  </section>
+
+  <section>
+    <h2>What ran, and what did not</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Item</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td>Engine, web, widget, notification, main window</td><td>Built and ran on this PC</td></tr>
+        <tr><td>Android app</td><td>Built and ran on the emulator (Android 15, x64, no trim)</td></tr>
+        <tr><td>Main window for Windows</td><td>Added by me, for X7. WinForms, not MAUI</td></tr>
+        <tr><td>MAUI on Windows</td><td>Not built: the workload is not installed</td></tr>
+        <tr><td>Real phone, arm64, release trim</td><td>Not done</td></tr>
+        <tr><td>Android bubble and overlay (X5, X6)</td><td>Not done</td></tr>
+        <tr><td>URI scheme on Windows</td><td>Not done: a pipe and a start argument do the link</td></tr>
+        <tr><td>Real tray icon click, more than one monitor</td><td>Not done</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Assumption: "notification app" is a small program that shows a card for each hit, with the same components. It shows for 6 seconds and is not a Windows toast.</p>
+  </section>
+
+  <section>
+    <h2>Effect on the open decisions</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Decision</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td>D2 · base</td><td>None. Plain CSS worked in all heads; no base was tested</td></tr>
+        <tr><td>D4 · projects</td><td>Supports A. Core and Ui shared well. Add one Windows library for the Windows heads</td></tr>
+        <tr><td>D5 · card rules</td><td>None. Not tested</td></tr>
+        <tr><td>D6 · overlays and Back</td><td>Stronger: Android Back needs the navigator (S-6)</td></tr>
+        <tr><td>D3 · S4 on Windows</td><td>The MAUI main window is still not proven</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
 </div>
 
 <script>
 (function () {
-  var names = ["overview", "views", "nav", "state", "system", "host"];
+  var names = ["overview", "views", "nav", "state", "system", "host", "spike"];
   var tabs = document.querySelectorAll('nav [role="tab"]');
   function show(name) {
     if (names.indexOf(name) < 0) name = "overview";

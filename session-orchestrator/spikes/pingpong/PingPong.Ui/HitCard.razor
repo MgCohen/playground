@@ -1,0 +1,11 @@
+@* One hit. Parameters in, events out. Each head shows this component. *@
+<button type="button" class="card @Hit.Kind" data-hit="@Hit.Id" @onclick="() => OnOpen.InvokeAsync(Hit)">
+    <Ball Kind="@Hit.Kind" Size="28" />
+    <span class="grow"><b>@Hit.Kind #@Hit.Id</b><small>from @Hit.From</small></span>
+    <small>@Hit.At.ToLocalTime().ToString("HH:mm:ss")</small>
+</button>
+
+@code {
+    [Parameter, EditorRequired] public Hit Hit { get; set; } = null!;
+    [Parameter] public EventCallback<Hit> OnOpen { get; set; }
+}

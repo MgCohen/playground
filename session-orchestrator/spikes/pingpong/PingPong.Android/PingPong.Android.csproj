@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!-- The Android app: MAUI with a BlazorWebView. It needs the maui-android workload. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <RootNamespace>PingPong.Mobile</RootNamespace>
+    <ApplicationTitle>Ping pong spike</ApplicationTitle>
+    <ApplicationId>com.mgcohen.pingpongspike</ApplicationId>
+    <ApplicationDisplayVersion>0.1</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <!-- The path of the worktree is too long for aapt2. -->
+    <IntermediateOutputPath>$([System.IO.Path]::GetTempPath())ppo\</IntermediateOutputPath>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
+    <ProjectReference Include="../PingPong.Ui/PingPong.Ui.csproj" />
+  </ItemGroup>
+</Project>

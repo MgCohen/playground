@@ -1,0 +1,18 @@
+@page "/hits/{Id:int}"
+@inherits LiveBase
+
+<a class="back" href="">Back</a>
+@if (Client.Find(Id) is { } hit)
+{
+    <h1 data-page="@hit.Id">@hit.Kind #@hit.Id</h1>
+    <HitCard Hit="hit" />
+    <p>This page is the hit @hit.Id of the head "@hit.From".</p>
+}
+else
+{
+    <h1>Hit @Id is not here</h1>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+}

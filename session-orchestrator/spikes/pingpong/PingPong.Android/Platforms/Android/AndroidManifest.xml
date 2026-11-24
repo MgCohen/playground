@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Clear text: the spike talks to the PC with no TLS. -->
+  <application android:allowBackup="false" android:supportsRtl="true" android:label="Ping pong spike" android:usesCleartextTraffic="true"></application>
+  <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

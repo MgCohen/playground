@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup>
+  <ItemGroup><PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.*" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../PingPong.Core/PingPong.Core.csproj" /></ItemGroup>
+</Project>

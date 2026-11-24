@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <base href="/" />
+    <link rel="stylesheet" href="_content/PingPong.Ui/pp.css" />
+    <style>
+        html, body { background: transparent; overflow: hidden; height: 100%; }
+        .w { position: fixed; inset: 0; }
+        .badge { position: absolute; right: 16px; bottom: 16px; width: 72px; height: 72px; border: 0; border-radius: 50%; background: #fff; display: grid; place-items: center; box-shadow: 0 6px 16px #0006; cursor: pointer; }
+        .badge .n { position: absolute; top: -2px; right: -2px; min-width: 24px; padding: 2px 6px; border-radius: 99px; background: #1d2226; color: #fff; font: 700 12px system-ui; }
+        .panel { position: absolute; inset: 16px 16px 52px; padding: 12px; border-radius: 20px; background: var(--bg); display: grid; gap: 10px; align-content: start; box-shadow: 0 8px 20px #0005; overflow: hidden; clip-path: circle(0 at calc(100% - 36px) 100%); visibility: hidden; transition: clip-path .28s ease-in, visibility 0s .28s; }
+        .open .panel { clip-path: circle(150% at calc(100% - 36px) 100%); visibility: visible; transition: clip-path .4s ease-out; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <script src="_framework/blazor.webview.js"></script>
+</body>
+</html>

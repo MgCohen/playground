@@ -1,0 +1,20 @@
+@inject NavigationManager Nav
+@inject Head Host
+@implements IDisposable
+
+<Router AppAssembly="typeof(Routes).Assembly">
+    <Found Context="data"><main class="page"><RouteView RouteData="data" /></main></Found>
+</Router>
+
+@code {
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender) return;
+        Host.Go += Go;
+        if (Host.TakeStart() is { } route) Go(route);
+    }
+
+    void Go(string route) => InvokeAsync(() => Nav.NavigateTo(route));
+
+    public void Dispose() => Host.Go -= Go;
+}

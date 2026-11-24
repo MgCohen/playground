@@ -1,0 +1,12 @@
+@page "/"
+@inherits LiveBase
+@inject NavigationManager Nav
+
+<h1>Ping pong</h1>
+<Table Hits="Client.Hits" Head="@Client.Head" Connected="Client.Connected" OnHit="() => Client.Play()" />
+<div class="list">
+    @foreach (var hit in Client.Hits.Reverse().Take(12))
+    {
+        <HitCard @key="hit.Id" Hit="hit" OnOpen="@(h => Nav.NavigateTo($"hits/{h.Id}"))" />
+    }
+</div>

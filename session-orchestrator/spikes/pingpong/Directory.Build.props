@@ -1,0 +1,8 @@
+<Project>
+  <!-- A spike: it takes nothing from the parent folders. -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+</Project>
