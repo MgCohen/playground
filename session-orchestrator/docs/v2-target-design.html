@@ -204,13 +204,13 @@ flowchart LR
     </details>
 
     <details class="f">
-      <summary><span class="l1"><span class="id">D3</span><span class="t">Which set of hosts do we use?</span></span><span class="l2">Recommendation: S1. No default</span></summary>
+      <summary><span class="l1"><span class="id">D3</span><span class="t">Is the widget a program apart from the main app?</span></span><span class="l2">Recommendation: yes, S4. No default</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>You have no preference for the host. The tray is one view of the engine library, and Android must reuse as much as possible. See tab <a href="#host" data-go="host">6 · Hosts</a>.</p></div></div>
-        <div class="field"><span class="k">S1</span><div class="v"><p>WinForms tray and MAUI Android on one UI library.</p></div></div>
-        <div class="field"><span class="k">S2</span><div class="v"><p>WinForms tray, and Android in the browser on the web host.</p></div></div>
-        <div class="field"><span class="k">S3</span><div class="v"><p>One MAUI project for Windows and Android.</p></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>S1 until the spikes of the S3 plan give a result. S2 is ruled out by the decision of 2026-11-20.</p></div></div>
+        <div class="field"><span class="k">Context</span><div class="v"><p>You said that the widget and the main app can be two separate processes. See tab <a href="#host" data-go="host">6 · Hosts</a>.</p></div></div>
+        <div class="field"><span class="k">A</span><div class="v"><p>One program, as today: badge, panel and main app in one process. This keeps S1.</p></div></div>
+        <div class="field"><span class="k">B</span><div class="v"><p>Two programs, both Blazor on one UI library (S4).</p></div></div>
+        <div class="field"><span class="k">C</span><div class="v"><p>Two programs, with a native badge and no panel in the widget.</p></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>B. It reuses the UI, keeps the ball, and removes the transparency risk of MAUI.</p></div></div>
       </div>
     </details>
 
@@ -727,6 +727,88 @@ Task&lt;MotionEnd&gt; Play(MotionStep step, ElementRef target);</pre>
 
 <!-- 5 TRAY HOST -->
 <div class="panel off" id="host" role="tabpanel" aria-labelledby="t-host">
+  <section>
+    <h2>Widget and main app: one program or two</h2>
+    <p class="summary">The sources show no single standard. One process with many windows, and a small front end of a background process, both occur. Our tray is already a front end: the supervisor is a process of its own. So the question is only if the main app leaves the widget process.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Product</th><th>Split</th><th>UI stack</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>PowerToys</td><td>Runner with tray icon; Settings is its own process; two-way IPC</td><td>More than one</td><td><a href="https://github.com/microsoft/PowerToys/blob/main/doc/devdocs/core/runner.md">Runner</a>, <a href="https://github.com/microsoft/PowerToys/blob/main/doc/devdocs/core/settings/runner-ipc.md">IPC</a></td></tr>
+        <tr><td>EarTrumpet</td><td>One app: tray icon, flyout, mixer, settings</td><td>One (WPF)</td><td><a href="https://github.com/File-New-Project/EarTrumpet/blob/master/EarTrumpet/App.xaml.cs">App.xaml.cs</a></td></tr>
+        <tr><td>Tailscale</td><td>Daemon, and a small GUI wrapper</td><td>Not checked</td><td><a href="https://github.com/tailscale/tailscale">README</a></td></tr>
+        <tr><td>Ollama</td><td>The app starts and manages a server process</td><td>React UI in the app</td><td><a href="https://github.com/ollama/ollama/blob/main/app/server/server.go">server.go</a></td></tr>
+        <tr><td>Windows Widgets</td><td>The Widgets host draws; the app is a provider</td><td>Cards or web page</td><td><a href="https://learn.microsoft.com/windows/apps/develop/widgets/widget-providers">Providers</a></td></tr>
+        <tr><td>NewPipe (Android)</td><td>Popup overlay from a service; the manifest names no second process</td><td>One (native views)</td><td><a href="https://github.com/TeamNewPipe/NewPipe">Source</a></td></tr>
+        <tr><td>SociaLite sample (Android)</td><td>Bubble is an activity of the app</td><td>One</td><td><a href="https://github.com/android/socialite">Source</a></td></tr>
+        <tr><td>Android home widget</td><td>Runs in the launcher process</td><td>RemoteViews</td><td><a href="https://developer.android.com/develop/ui/views/appwidgets">Docs</a></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Not checked: Docker Desktop and 1Password (their pages that were read do not say it), Messenger, Slack, and how many processes run in practice. No product was started. On Android, one process for all parts is the default (<a href="https://developer.android.com/guide/components/processes-and-threads">docs</a>).</p>
+  </section>
+
+  <section>
+    <h2>Three patterns</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Point</th><th>P-A · One process</th><th>P-B · Two processes</th><th>P-C · Native widget</th></tr></thead>
+      <tbody>
+        <tr><td>Parts</td><td>Badge, panel, main app</td><td>Widget; main app</td><td>Widget with no WebView; main app</td></tr>
+        <tr><td>Memory</td><td>Lowest with all open</td><td>More with both open</td><td>Lowest with only the widget</td></tr>
+        <tr><td>Second WebView</td><td>64 MB (S7, test shapes)</td><td>Shared browser process is possible; not measured</td><td>Only when the main app is open</td></tr>
+        <tr><td>Start</td><td>All at sign-in</td><td>Widget at sign-in; main app on click</td><td>Fast widget; main app on click</td></tr>
+        <tr><td>Crash</td><td>One fault can end all</td><td>Own .NET process each; a shared browser process is a common fault</td><td>Separate</td></tr>
+        <tr><td>Update</td><td>One exe</td><td>Two exes, versions must match</td><td>Two exes, versions must match</td></tr>
+        <tr><td>Talk</td><td>In the process</td><td>Supervisor HTTP and SSE</td><td>Supervisor HTTP and SSE</td></tr>
+        <tr><td>Single instance</td><td>One lock (today)</td><td>One lock each</td><td>One lock each</td></tr>
+        <tr><td>Open a page</td><td>Navigator</td><td>URI activation, for example <code>orch://events/42</code></td><td>The same</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Sources: <a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/process-model">WebView2 process model</a> and <a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/performance">performance</a> (apps can share one browser process with the same user data folder and the same options; a difference makes creation fail), <a href="https://learn.microsoft.com/windows/apps/windows-app-sdk/applifecycle/applifecycle-instancing">instancing</a>, <a href="https://learn.microsoft.com/windows/apps/develop/launch/handle-uri-activation">URI activation</a>. Memory, start and crash rows are my reading, except S7. Not checked: WebView in two processes of one Android app.</p>
+  </section>
+
+  <section>
+    <h2>What each part needs, for us</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Needs Blazor</th><th>Shared if native</th></tr></thead>
+      <tbody>
+        <tr><td>Ball, badge, ring, counts</td><td>No</td><td>View model, state machine</td></tr>
+        <tr><td>Peek bubble (title, one line)</td><td>No</td><td>View model, state machine</td></tr>
+        <tr><td>Panel with the card deck</td><td>Yes: templates, swipe</td><td>Not native</td></tr>
+        <tr><td>Opened card page</td><td>Yes: the kind templates</td><td>Not native</td></tr>
+        <tr><td>Main app, all pages</td><td>Yes</td><td>Not native</td></tr>
+      </tbody>
+    </table></div>
+    <div class="rule">A native badge costs a second style system: the ring, the tokens and the motion are written again for Windows and again for Android. This is against "reuse as much as possible", and it is pain P5. It also does not give the panel.</div>
+    <p class="summary">The rule of V4 ("if one opens, the other has to close") covers the badge and the panel. Keep both in the widget process. Then no rule of V4 crosses two processes.</p>
+  </section>
+
+  <section>
+    <h2>S4: widget program and main app program</h2>
+    <p class="summary">This set joins S1 and S3. The widget keeps the tested host. MAUI makes only normal windows, so it needs no transparency.</p>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  SV["Supervisor<br/>engine library"] -->|HTTP, SSE| WG["Widget<br/>WinForms, Blazor"]
+  SV -->|HTTP, SSE| MA["Main app<br/>MAUI: Windows, Android"]
+  WG -->|"orch:// link"| MA
+  UI["Orchestrator.Ui"] --> WG
+  UI --> MA
+</pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Item</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td>S1</td><td>Its tray becomes the widget of S4</td></tr>
+        <tr><td>S3</td><td>Limits 1 to 7 do not apply to a normal MAUI window</td></tr>
+        <tr><td>D4</td><td>Adds <code>Orchestrator.App</code> (MAUI, two targets) in place of an Android project</td></tr>
+        <tr><td>Main app, first step</td><td>The web host in the browser; MAUI on Windows can come later</td></tr>
+        <tr><td>X1, X2</td><td>Drop</td></tr>
+        <tr><td>X3</td><td>Drop for MAUI; the widget has the tray tests</td></tr>
+        <tr><td>X4</td><td>Change: memory and start of both programs</td></tr>
+        <tr><td>X5, X6</td><td>Stay: Android bubble and overlay</td></tr>
+        <tr><td>X7</td><td>New: a widget click opens the correct page, app closed and app open (60 min, estimate)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">In live mode, the tray of today opens the store folder directly. An HTTP connection of the widget is a change. The supervisor HTTP API has an inbox, events and a live feed (<code>docs/store.md</code>). If these calls cover all the needs of the V2 view models: not checked. On Android, the widget and the main app stay one app, so S4 does not split them.</p>
+  </section>
+
   <section>
     <h2>The whole set: three proposals</h2>
     <p class="summary">The tray is one view of an engine library. The web, the CLI, Android and later views use the same engine. Only the UI hosts use the shared Blazor UI.</p>
