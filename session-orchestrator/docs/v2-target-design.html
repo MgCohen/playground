@@ -191,7 +191,7 @@ flowchart LR
         <tr><td>Step 2 compares the tray hosts</td><td>Default, Q6</td></tr>
         <tr><td>One motion system and one navigation system</td><td>You, Q4 (P12, P13)</td></tr>
         <tr><td>The kind file is <code>content.json</code></td><td>You, D1</td></tr>
-        <tr><td>Own components, from a base that we copy and own</td><td>You, D2</td></tr>
+        <tr><td>One owned design system: a whole system that we copy, with guidelines and skills</td><td>You, D2; the base is open</td></tr>
         <tr><td>The widget and the main app are two programs (S4)</td><td>You, D3 = B</td></tr>
         <tr><td>New <code>Orchestrator.View</code> and <code>Orchestrator.Ui</code>, thin hosts, one <code>Orchestrator.App</code></td><td>You, D4 = A</td></tr>
       </tbody>
@@ -203,11 +203,12 @@ flowchart LR
     <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
 
     <details class="f">
-      <summary><span class="l1"><span class="id">D2</span><span class="t">Which base do we copy and own?</span></span><span class="l2">Recommendation: the system of Web Awesome, with Razor components. No default</span></summary>
+      <summary><span class="l1"><span class="id">D2</span><span class="t">Which whole system becomes our owned base, and who makes its Blazor layer?</span></span><span class="l2">Recommendation: A, vsa-design, after a small Blazor spike. No default</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>You want own components, from a base that we copy one time and do not follow. The comparison is on tab <a href="#system" data-go="system">5 · Design system</a>.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: Web Awesome, system only. Copy tokens, layers, CSS and guidelines. Write the components in Razor.</li><li>B: Web Awesome, all. Use the web components of <code>vsa-design</code>. The <code>AGENTS.md</code> rule must change.</li><li>C: Blazor Blueprint Primitives. Copy the Razor behavior parts that we need. Use our own look.</li><li>D: MudBlazor. Copy Razor components and replace the Material look.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It keeps the structure, docs and guidelines that you named. It leaves out the Lit code and its build. The cost: we write and test the behavior of each component. On a phone, each base needs a check of touch, focus and the on-screen keyboard. No base was checked there.</p></div></div>
+        <div class="field"><span class="k">Context</span><div class="v"><p>Goal of the user: take a whole system with behavior, guidelines and skills, own it, add our look and Blazor, and let each app customize it. Later, a screen comes from JSON. Details: tab <a href="#system" data-go="system">5 · Design system</a>.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: <code>vsa-design</code> is the base. Add names, Blazor layer, change skills and JSON screens there.</li><li>B: a new fork of NVIDIA Elements. Better agent tools, but the fork work starts again.</li><li>C: a new fork of Blazor Blueprint. Native Razor, but we write the guidelines and skills.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Most fork steps are done, and it serves Blazor and other apps. It has the guidelines and skills that you named. Copy the idea of the authoring skills from B. Choose C if the spike shows that web components and Blazor conflict.</p></div></div>
+        <div class="field"><span class="k">Say yes to</span><div class="v"><ul><li>The base (A, B or C)</li><li>A third exception in <code>AGENTS.md</code> for the vendored output (A, B)</li><li>Who changes <code>vsa-design</code>: its own sessions, or a session from here. Today this session can only read it</li><li>A Blazor spike of five components before step 3</li></ul></div></div>
       </div>
     </details>
 
@@ -582,80 +583,188 @@ Task&lt;MotionEnd&gt; Play(MotionStep step, ElementRef target);</pre>
 <!-- 4 DESIGN SYSTEM -->
 <div class="panel off" id="system" role="tabpanel" aria-labelledby="t-system">
   <section>
-    <h2>Candidate bases to copy and own</h2>
+    <h2>The goal: one owned system, then a layer for each app</h2>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  SRC["Source system<br/>copied one time"] --> BASE["Owned base<br/>components, themes,<br/>guidelines, skills"]
+  BASE --> RZ["Blazor layer<br/>generated wrappers"]
+  RZ --> ORCH["Orchestrator layer<br/>theme, cards, deck"]
+  RZ --> APPS["Other Blazor apps<br/>own layer"]
+  BASE --> WEB["Non-Blazor apps<br/>own layer"]
+</pre></div>
+    <p class="summary">The user wants the whole system: component behavior, variants, themes, guidelines and skills. The old option A (copy only tokens and CSS) does not fit, because we would write all behavior again.</p>
+    <div class="note">The user already has most of this: <code>vsa-design</code> is a copy of the whole Web Awesome 3.14.0. It has the skills and checks, and most links go to its own repository. The Blazor layer, the new names and the JSON screens are missing.</div>
+  </section>
+
+  <section>
+    <h2>Candidates against the goal</h2>
     <div class="scroll"><table>
-      <thead><tr><th>Base</th><th>License</th><th>We copy</th><th>AGENTS.md rule</th><th>Effort</th></tr></thead>
+      <thead><tr><th>Need</th><th>A · vsa-design</th><th>B · NVIDIA Elements</th><th>C · Blazor Blueprint</th><th>D · Fluent UI Blazor</th><th>E · Radzen Blazor</th></tr></thead>
       <tbody>
-        <tr><td>A · Web Awesome, system</td><td>MIT</td><td>Tokens, CSS, guidelines</td><td><span class="tag rec">Fits</span></td><td>Large</td></tr>
-        <tr><td>B · Web Awesome, all</td><td>MIT</td><td>All, with Lit code</td><td><span class="tag no">Conflicts</span></td><td>Small, then large</td></tr>
-        <tr><td>C · Blueprint Primitives</td><td>Apache-2.0</td><td>Razor behavior</td><td><span class="tag mid">In part</span></td><td>Medium</td></tr>
-        <tr><td>D · MudBlazor</td><td>MIT</td><td>Razor, SCSS</td><td><span class="tag mid">In part</span></td><td>Large</td></tr>
-        <tr><td>E · Fluent UI Blazor</td><td>MIT</td><td>Razor, web components</td><td><span class="tag no">Conflicts</span></td><td>Very large</td></tr>
+        <tr><td>License</td><td>MIT</td><td>Apache-2.0</td><td>Apache-2.0</td><td>MIT</td><td>MIT</td></tr>
+        <tr><td>Component count</td><td>74 elements</td><td>78 entry files in core</td><td>142 folders</td><td>57 folders</td><td>155+ (its README)</td></tr>
+        <tr><td>Component code</td><td>Lit, TypeScript</td><td>Lit-style web components, TypeScript</td><td>Razor, C#, 32 JS files</td><td>Razor over web components</td><td>Razor, C#, 1 JS file</td></tr>
+        <tr><td>Variants, themes</td><td>Documented, 2 skills</td><td>Skill, themes project</td><td>shadcn theme variables</td><td>CSS themes</td><td>5 free themes; more are paid</td></tr>
+        <tr><td>Agent files in the source</td><td><span class="tag rec">2 skills, manifest, llms.txt</span></td><td><span class="tag rec">Skills, CLI, MCP, lint</span></td><td><span class="tag mid">CLAUDE.md; MCP and llms.txt are outside</span></td><td><span class="tag mid">Usage skill, MCP server</span></td><td><span class="tag no">None found; MCP search tool</span></td></tr>
+        <tr><td>Skills to <em>change</em> the system</td><td><span class="tag mid">In part</span></td><td><span class="tag rec">Authoring skills</span></td><td><span class="tag no">None found</span></td><td><span class="tag no">None found</span></td><td><span class="tag no">None found</span></td></tr>
+        <tr><td>Blazor</td><td><span class="tag no">Generate wrappers</span></td><td><span class="tag no">Generate wrappers</span></td><td><span class="tag rec">Native</span></td><td><span class="tag rec">Native</span></td><td><span class="tag rec">Native</span></td></tr>
+        <tr><td>Fork work still to do</td><td>Names, 74 wrappers</td><td>All, 74+ wrappers</td><td>All, and write guidelines</td><td>All, and own a second source</td><td>All, and write guidelines</td></tr>
+        <tr><td>JSON screens</td><td>We build</td><td>We build</td><td>We build</td><td>We build</td><td>We build</td></tr>
+        <tr><td>AGENTS.md rule</td><td><span class="tag no">Conflicts</span></td><td><span class="tag no">Conflicts</span></td><td><span class="tag mid">In part</span></td><td><span class="tag no">Conflicts</span></td><td><span class="tag mid">In part</span></td></tr>
       </tbody>
     </table></div>
-    <p class="note">The licenses, file counts and sizes come from the source repositories and the <code>vsa-design</code> clone on 2026-11-24. The effort is my estimate. No candidate was built or run.</p>
+    <p class="note">Checked 2026-11-25 in the source repositories and the <code>vsa-design</code> commit <code>c7945c81c</code>. A count is of folders or files, so counts do not compare exactly. Nothing was forked, downloaded as a package, built or run. Touch on a phone is not tested for any candidate.</p>
     <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
     <details class="f">
-      <summary><span class="l1"><span class="id">A, B</span><span class="t">Web Awesome</span></span><span class="l2">MIT; a CSS system and 74 component folders in Lit</span></summary>
+      <summary><span class="l1"><span class="id">A</span><span class="t">vsa-design (Web Awesome 3.14.0)</span></span><span class="l2">What it really ships; what is not there</span></summary>
       <div class="body">
-        <div class="field"><span class="k">License</span><div class="v"><p>MIT, Copyright (c) 2023 Fonticons, Inc. (<a href="https://github.com/shoelace-style/webawesome">source</a>). Keep the copyright and the license text. Do not copy Pro code. If we copy Font Awesome Free icons, the SVG files are CC BY 4.0 and need attribution.</p></div></div>
-        <div class="field"><span class="k">A copies</span><div class="v"><p>Layers, tokens, themes, native CSS and utilities (5,330 lines in <code>src/styles</code>), and the guidelines (2,945 lines). The component CSS (9,255 lines) is for shadow DOM, so it is only a reference.</p></div></div>
-        <div class="field"><span class="k">B copies</span><div class="v"><p>All of <code>vsa-design</code>: 387 TypeScript files with 76,509 lines, and a Node build.</p></div></div>
-        <div class="field"><span class="k">Blazor</span><div class="v"><p>A: Razor and CSS. B: custom elements in Razor markup, with JS interop for events and state.</p></div></div>
-        <div class="field"><span class="k">AGENTS.md</span><div class="v"><p>A fits. B conflicts: the source is TypeScript. The rule needs an exception for a vendored component build.</p></div></div>
-        <div class="field"><span class="k">Effort</span><div class="v"><p>A: large for the components, small for the system. B: small to start, large to own.</p></div></div>
+        <div class="field"><span class="k">Free</span><div class="v"><p>74 elements, 840 attributes, 399 parts, 45 event names and 413 public methods in <code>custom-elements.json</code>. 52 component test files call an accessibility check. 35 source files handle keys and 18 have pointer or touch code (text search). <a href="https://github.com/shoelace-style/webawesome">Source</a>, MIT.</p></div></div>
+        <div class="field"><span class="k">Pro</span><div class="v"><p>Web Awesome Pro has more: Combobox, Date Input, Date Picker, File Input, Rich Text Editor, Video, Video Playlist, more themes, patterns and a theme builder. The site code also marks Sparkline as Pro. <a href="https://webawesome.com/purchase">Pro page</a>. This list is at least these; the page was read as text. <code>vsa-design</code> has no Pro code by rule. If we need a combobox, we write it.</p></div></div>
+        <div class="field"><span class="k">Skills</span><div class="v"><p><code>webawesome</code>: one page for each component, forms, themes, tokens. <code>webawesome-design</code>: principles, layout, patterns, theming, extension. 8 guide files of 71 to 628 lines. Both come from the source by the build. Upstream also ships the <a href="https://github.com/shoelace-style/webawesome/tree/HEAD/packages/webawesome/scripts/design-skill">design skill source</a>.</p></div></div>
+        <div class="field"><span class="k">Already done</span><div class="v"><ul><li>Own source, no upstream (record 0001)</li><li>Guidance links to our repository (0009)</li><li>A copy at a release tag for each app (0010)</li><li>Own element process (0008), one own element: <code>vsa-table</code></li><li>Checks for colors, sizes, links, parts, screenshots, with CI</li></ul></div></div>
+        <div class="field"><span class="k">Open</span><div class="v"><ul><li>Issue 10: names. 650 files hold a <code>wa-</code> name; the default theme names 231 <code>--wa-*</code> tokens</li><li>141 files still hold a Web Awesome, Shoelace or Font Awesome link or name (289 lines); some must stay for the license</li><li>The style is the default Web Awesome style (0007)</li><li>No Blazor guide in <code>docs/frameworks</code></li><li>No release tag yet; issues 5, 7 and 10 are open</li></ul></div></div>
+        <div class="field"><span class="k">Cost</span><div class="v"><p>45,800 lines of TypeScript source without tests. Each fix is our work. An app copy is 16 MB, 11 MB of it icons. The devices plan limit for the APK is 30 MB, so the app needs an icon subset.</p></div></div>
       </div>
     </details>
     <details class="f">
-      <summary><span class="l1"><span class="id">C</span><span class="t">Blazor Blueprint Primitives</span></span><span class="l2">Apache-2.0; 35 headless primitives, .NET 10</span></summary>
+      <summary><span class="l1"><span class="id">B</span><span class="t">NVIDIA Elements</span></span><span class="l2">The best agent tools; a fresh fork</span></summary>
       <div class="body">
-        <div class="field"><span class="k">License</span><div class="v"><p>Apache-2.0 (<a href="https://github.com/blazorblueprintui/ui">source</a>). Keep the license and the NOTICE text, and mark each changed file. Vendored parts keep their own licenses.</p></div></div>
-        <div class="field"><span class="k">Copies</span><div class="v"><p>Razor and C# behavior: focus, keys, ARIA, overlays. 129 Razor files and 194 C# files. The primitives have no look.</p></div></div>
-        <div class="field"><span class="k">Blazor</span><div class="v"><p>Native Razor on .NET 10.</p></div></div>
-        <div class="field"><span class="k">AGENTS.md</span><div class="v"><p>Fits in part: 32 JavaScript files, 286 KB, some from other libraries. Copy only the necessary parts, or extend the rule for overlay scripts.</p></div></div>
-        <div class="field"><span class="k">Effort</span><div class="v"><p>Medium. The tokens and the guidelines must come from a different source. Young project: 703 stars.</p></div></div>
+        <div class="field"><span class="k">Facts</span><div class="v"><p>Apache-2.0, 120 stars, last push 2026-11-24. The README names a skill, a CLI, an MCP server, lint and a <code>DESIGN.md</code>. The repository has authoring skills for components, tests, docs and patterns. <a href="https://github.com/NVIDIA/elements">Source</a>.</p></div></div>
+        <div class="field"><span class="k">For</span><div class="v"><p>It comes nearest to the wish for tools that agents use to change the system.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>The fork starts again: names (<code>nve-</code>), brand, links, and the build of a larger project with Go and pnpm. It needs the same Blazor wrappers. The focus is AI and robotics consoles.</p></div></div>
       </div>
     </details>
     <details class="f">
-      <summary><span class="l1"><span class="id">D</span><span class="t">MudBlazor</span></span><span class="l2">MIT; Razor components in Material Design</span></summary>
+      <summary><span class="l1"><span class="id">C</span><span class="t">Blazor Blueprint</span></span><span class="l2">Native Razor; the guidelines are not in the source</span></summary>
       <div class="body">
-        <div class="field"><span class="k">License</span><div class="v"><p>MIT, Copyright (c) 2021 MudBlazor (<a href="https://github.com/MudBlazor/MudBlazor">source</a>). Keep the copyright and the license text.</p></div></div>
-        <div class="field"><span class="k">Copies</span><div class="v"><p>From 167 Razor files, 679 C# files and 112 SCSS files (283 KB), the parts that we use.</p></div></div>
-        <div class="field"><span class="k">Blazor</span><div class="v"><p>Native Razor.</p></div></div>
-        <div class="field"><span class="k">AGENTS.md</span><div class="v"><p>Conflicts in part: 53 TypeScript files (400 KB, with tests) and SCSS that needs a Sass build.</p></div></div>
-        <div class="field"><span class="k">Effort</span><div class="v"><p>Large. The structure assumes Material Design, and our approved look is different.</p></div></div>
+        <div class="field"><span class="k">Facts</span><div class="v"><p>Apache-2.0, 703 stars, .NET 10 minimum, 142 component folders and a separate set of headless primitives. Themes from shadcn/ui work. Its README names an MCP server with 15 tools and 180+ <code>llms.txt</code> documents. <a href="https://github.com/blazorblueprintui/ui">Source</a>. I found no MCP or <code>llms</code> file by name in the repository, so a fork does not get them.</p></div></div>
+        <div class="field"><span class="k">For</span><div class="v"><p>No wrapper layer and no shadow DOM. It has mobile parts: app bar, bottom bar, bottom sheet select, drawer snap points.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>We write the guidelines and skills that the user wants to get ready. It serves only Blazor apps. Its styles use Tailwind utilities with a <code>bb:</code> prefix, so the style build needs Tailwind or a copy of its output.</p></div></div>
       </div>
     </details>
     <details class="f">
-      <summary><span class="l1"><span class="id">E</span><span class="t">Fluent UI Blazor</span></span><span class="l2">MIT; some components wrap web components</span></summary>
+      <summary><span class="l1"><span class="id">D</span><span class="t">Fluent UI Blazor v5</span></span><span class="l2">Razor over a second code base</span></summary>
       <div class="body">
-        <div class="field"><span class="k">License</span><div class="v"><p>MIT, Microsoft (<a href="https://github.com/microsoft/fluentui-blazor">source</a>). Keep the license and the third-party notices.</p></div></div>
-        <div class="field"><span class="k">Copies</span><div class="v"><p>107 Razor files and 482 C# files. <code>FluentButton</code> renders <code>fluent-button</code>, and the scripts use the package <code>@fluentui/web-components</code>.</p></div></div>
-        <div class="field"><span class="k">Blazor</span><div class="v"><p>Razor, in part over web components.</p></div></div>
-        <div class="field"><span class="k">AGENTS.md</span><div class="v"><p>Conflicts: 63 TypeScript files here, and the source of the web components is a second code base.</p></div></div>
-        <div class="field"><span class="k">Effort</span><div class="v"><p>Very large. This candidate is not an option of D2.</p></div></div>
+        <div class="field"><span class="k">Facts</span><div class="v"><p>MIT, a usage skill and an MCP server in the source. Its skill says that v5 wraps <code>@fluentui/web-components</code> v3. <a href="https://github.com/microsoft/fluentui-blazor">Source</a>.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>To own it, we own two code bases. The skill tells how to use the package, not how to change it.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">E</span><span class="t">Radzen, MudBlazor and others</span></span><span class="l2">Not proposed</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Radzen</span><div class="v"><p>MIT, 155+ native components; some themes are paid. <a href="https://github.com/radzenhq/radzen-blazor">Source</a>. Its <a href="https://www.radzen.com/blazor-mcp/documentation">MCP server</a> has one search tool. No skill or agent file found.</p></div></div>
+        <div class="field"><span class="k">MudBlazor</span><div class="v"><p>MIT, 84 component folders, <code>AGENTS.md</code> only. Material structure. <a href="https://github.com/MudBlazor/MudBlazor">Source</a>.</p></div></div>
+        <div class="field"><span class="k">shadcn/ui</span><div class="v"><p>MIT, a registry, an MCP server and <a href="https://ui.shadcn.com/docs/skills">skills</a>. It is React, so Blazor cannot use its components. Use it as the model for the registry.</p></div></div>
+        <div class="field"><span class="k">Spectrum</span><div class="v"><p>Apache-2.0, many contributor skills and an <a href="https://opensource.adobe.com/spectrum-web-components/build-with-ai">agent page</a>. A migration to a second generation is in progress, so a copy now is risky.</p></div></div>
+        <div class="field"><span class="k">Carbon</span><div class="v"><p>Apache-2.0, 102 web component folders, <code>AGENTS.md</code> for each package, no skill found. IBM look. <a href="https://github.com/carbon-design-system/carbon">Source</a>.</p></div></div>
       </div>
     </details>
   </section>
 
   <section>
-    <h2>What vsa-design shows</h2>
+    <h2>The Blazor layer for a web component base (A or B)</h2>
     <div class="scroll"><table>
-      <thead><tr><th>Fact</th><th>Value</th></tr></thead>
+      <thead><tr><th>Part</th><th>Work</th><th>Risk</th></tr></thead>
       <tbody>
-        <tr><td>Commits after <code>v3.14.0</code>, no merges</td><td>79, in 11 days</td></tr>
-        <tr><td>Component source, without <code>vsa-*</code></td><td>148 lines added, 136 deleted</td></tr>
-        <tr><td>Files in <code>vsa/vendor</code></td><td>3,507 of 5,448</td></tr>
-        <tr><td>Decision records</td><td>10</td></tr>
-        <tr><td>Own components</td><td>1: <code>vsa-table</code></td></tr>
-        <tr><td>Look</td><td>Reset to default values (0007)</td></tr>
+        <tr><td>Wrappers</td><td>One Razor class for each element, generated from <code>custom-elements.json</code></td><td>Low: names and types are in the manifest</td></tr>
+        <tr><td>Events</td><td>Register each event one time in a JS initializer</td><td>Low: <a href="https://learn.microsoft.com/aspnet/core/blazor/components/event-handling">Blazor custom events</a></td></tr>
+        <tr><td>Form values</td><td>Two-way <code>@bind</code> and validation for each form element</td><td>Medium</td></tr>
+        <tr><td>Objects, methods</td><td>JS interop for a property or method with no attribute</td><td>Medium</td></tr>
+        <tr><td>DOM ownership</td><td>Elements that move their children or set <code>open</code> can conflict with a Blazor render</td><td><strong>High: test it</strong></td></tr>
+        <tr><td>Motion</td><td>The elements start own show and hide motion; tab 4 wants one player</td><td><strong>High: test it</strong></td></tr>
+        <tr><td>Style</td><td>Shadow DOM: use parts and tokens; no scoped CSS inside</td><td>Medium</td></tr>
+        <tr><td>Start</td><td>Load order and the first paint in the widget, WebView and web</td><td>Medium</td></tr>
       </tbody>
     </table></div>
-    <p class="summary">My reading, not a fact from the repository: most work went to the parts around the components (build, vendor copy, skills, icons, docs links, theme model). Little went to the components and the look. Option A leaves out most of these parts.</p>
+    <p class="note">A package exists, <a href="https://www.nuget.org/packages/WebAwesome.AspNetCore.Components">WebAwesome.AspNetCore.Components</a>, only as 0.0.1 from 2025-08. Use it as a reference only. My risk levels are estimates. A spike is necessary before we use A or B: button, input, select, dialog and dropdown in the web, widget and Android hosts.</p>
+    <div class="rule">The rule "no TypeScript or JavaScript" in <code>AGENTS.md</code> conflicts with A and B. Proposal: a third exception, "the vendored output of the owned design system". The app holds only built files and generated C#. The TypeScript source stays in the design system repository. The user must approve the rule change.</div>
+  </section>
+
+  <section>
+    <h2>Where it lives and the fork steps</h2>
+    <p class="summary">Proposal: its own repository, so each app copies a release tag. For A, this is <code>vsa-design</code>. The Blazor layer is a project in that repository and goes to apps in the same copy. The Orchestrator layer stays here, in <code>Orchestrator.Ui</code>.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Step</th><th>For A</th><th>For a new fork</th></tr></thead>
+      <tbody>
+        <tr><td>1 Copy at a tag, keep the license</td><td>Done</td><td>To do</td></tr>
+        <tr><td>2 Outside links and install text</td><td>Done (0009); check the rest</td><td>To do</td></tr>
+        <tr><td>3 Names: one prefix for elements and tokens</td><td>To do (issue 10), by one script, before any app uses it</td><td>To do</td></tr>
+        <tr><td>4 License notices: source, Lit and other packages, icons</td><td>Check at the rename</td><td>To do</td></tr>
+        <tr><td>5 Our look: tokens and theme</td><td>To do (default values now)</td><td>To do</td></tr>
+        <tr><td>6 Blazor layer, generated</td><td>To do</td><td>To do (not C)</td></tr>
+        <tr><td>7 Change skills and checks</td><td>In part</td><td>In part (B), to do (C)</td></tr>
+        <tr><td>8 First release tag</td><td>To do</td><td>To do</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Web Awesome needs its MIT notice. Font Awesome Free icons need CC BY 4.0 attribution. Apache-2.0 (B, C) also needs a note in each changed file and its NOTICE text, if there is one. Each brand name is not ours to use.</p>
+  </section>
+
+  <section>
+    <h2>Guidelines, skills and checks</h2>
+    <p class="summary">One skill for each kind of change. Each skill ends with its check, so an agent cannot finish with a break.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Skill</th><th>It changes</th><th>State in A</th></tr></thead>
+      <tbody>
+        <tr><td>add or change a color</td><td>Palette, role, contrast in light and dark</td><td>Guide; check for literals</td></tr>
+        <tr><td>change a style or theme</td><td>Tokens of one theme layer</td><td>Guide (theming)</td></tr>
+        <tr><td>add a variant</td><td>A variant maps to one color role</td><td>To write</td></tr>
+        <tr><td>add or change a component</td><td>Source, test, docs page, manifest, wrapper</td><td>Guide; the wrapper is missing</td></tr>
+        <tr><td>add an animation</td><td>Motion token and step (tab 4)</td><td>To write</td></tr>
+        <tr><td>compose a screen</td><td>Layout, pattern, existing components first</td><td>Skill (design)</td></tr>
+        <tr><td>make a screen JSON</td><td>Catalog names only</td><td>To write</td></tr>
+        <tr><td>update an app</td><td>Copy a release tag, then run checks</td><td>Guide (0010)</td></tr>
+        <tr><td>record a system change</td><td>Decision record</td><td>Rule (0001)</td></tr>
+      </tbody>
+    </table></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Check that stops drift</th><th>State in A</th></tr></thead>
+      <tbody>
+        <tr><td>Color and size literals outside the theme</td><td>Runs (<code>check.mjs</code>)</td></tr>
+        <tr><td>Links to outside hosts</td><td>Runs</td></tr>
+        <tr><td>Parts, anatomy, accessibility tests</td><td>Run in CI</td></tr>
+        <tr><td>Screenshots, 2 sizes and 2 schemes</td><td>Run; a person looks</td></tr>
+        <tr><td>Skills match the source</td><td>Exists; not in CI</td></tr>
+        <tr><td>Wrappers match the manifest</td><td>To write</td></tr>
+        <tr><td>Copied files in an app are not changed (hash)</td><td>To write</td></tr>
+        <tr><td>App uses only catalog components; no raw color</td><td>To write (in each app)</td></tr>
+        <tr><td>Screen JSON is valid against the catalog schema</td><td>To write</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>From JSON to a screen</h2>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  MF["Component manifest"] -->|generates| CS["Catalog schema<br/>JSON Schema"]
+  CS -->|checks| SJ["screen.json<br/>app layer"]
+  VT["View template<br/>query, shape, layout"] --> CO["Composer"]
+  KT["content.json<br/>of the kind"] --> CO
+  SJ --> CO
+  CO -->|view model| RN["Blazor renderer"]
+  RN --> WR["Razor components"]
+</pre></div>
+<pre class="code"><span class="cm">// templates/_layouts/inbox-card/screen.json (proposal)</span>
+{ "component": "card",
+  "children": [
+    { "component": "text", "role": "title", "bind": "subject" },
+    { "component": "badge", "variant": "brand", "bind": "group",
+      "when": { "field": "group", "exists": true } },
+    { "component": "button", "variant": "brand", "action": "card.right" }
+  ] }</pre>
+    <ul>
+      <li>The base owns the component names and the schema. It knows no event kind.</li>
+      <li>The app owns <code>screen.json</code>. A layout of tab 2 (<code>card</code>, <code>rows</code>) names one.</li>
+      <li><code>bind</code> reads the view model. <code>action</code> names an action of the card rules.</li>
+      <li>D5 connects here: <code>when</code> uses the same four JSON tests as the card rules. A script here is a second way to break the screen.</li>
+      <li>Prior art: <a href="https://a2ui.org/concepts/catalogs/">A2UI catalogs</a> (a JSON Schema for each catalog) and <a href="https://github.com/vercel-labs/json-render">json-render</a>, both Apache-2.0. I found no Blazor renderer for them, so we write a small one. Copy the catalog idea.</li>
+      <li>Do the renderer after the first component slice, not before it.</li>
+    </ul>
   </section>
 
   <section>
     <h2>Layers</h2>
+    <p class="note">This section and the next three come from the old D2. If D2 = A or B, the base gives the layers, tokens and general components. Then these tables apply only to the Orchestrator layer. They change after D2.</p>
 <pre class="code">@layer reset, tokens, base, components, layouts, motion, host;
 <span class="cm">/* host: web or tray. A host rule never wins by specificity (S-G1). */</span></pre>
     <div class="scroll"><table>

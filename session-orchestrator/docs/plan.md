@@ -2430,3 +2430,13 @@ D3 = B (user): the widget and the main app are two programs. Spike `spikes/pingp
 Not done: MAUI on Windows (no workload), a real phone, trim, X5, X6, the URI scheme, the tray icon click.
 
 D4 = A (user, 2026-11-24): `docs/decisions.md`. P1a and P1b of the devices plan are replaced. The design keeps remote requests over HTTP (P1b), so that the phone needs no local store. D2, D5 and D6 are open. Nothing was built for D4.
+
+D2 revised (2026-11-25): the user wants one owned design system for all apps. It is a whole system with behavior, guidelines and skills, and a layer for each app. Later, JSON makes a screen. The old option A (system only) does not fit. Research on tab 5 of the target design page, from the sources; nothing was built.
+
+| Option | Finding |
+|---|---|
+| A `vsa-design` (Web Awesome 3.14.0, MIT), recommended | 74 elements, 2 skills, checks; most fork steps are done. Open: names (its issue 10), Blazor wrappers, change skills, JSON screens |
+| B NVIDIA Elements (Apache-2.0) | Best agent tools; new fork, same Blazor wrapper work |
+| C Blazor Blueprint (Apache-2.0) | Native Razor; the guidelines and skills are ours to write |
+
+A and B conflict with the rule on TypeScript and JavaScript in `AGENTS.md`. They need an exception for vendored output, and a Blazor spike first. The D2 question is open.
