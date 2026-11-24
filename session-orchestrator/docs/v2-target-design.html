@@ -203,11 +203,11 @@ flowchart LR
     <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
 
     <details class="f">
-      <summary><span class="l1"><span class="id">D2</span><span class="t">Which whole system becomes our owned base, and who makes its Blazor layer?</span></span><span class="l2">Recommendation: A, vsa-design, after a small Blazor spike. No default</span></summary>
+      <summary><span class="l1"><span class="id">D2</span><span class="t">Which whole system becomes our owned base, and who makes its Blazor layer?</span></span><span class="l2">Recommendation: A, vsa-design, with B as the model for change skills. No default</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>Goal of the user: take a whole system with behavior, guidelines and skills, own it, add our look and Blazor, and let each app customize it. Later, a screen comes from JSON. Details: tab <a href="#system" data-go="system">5 · Design system</a>.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: <code>vsa-design</code> is the base. Add names, Blazor layer, change skills and JSON screens there.</li><li>B: a new fork of NVIDIA Elements. Better agent tools, but the fork work starts again.</li><li>C: a new fork of Blazor Blueprint. Native Razor, but we write the guidelines and skills.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Most fork steps are done, and it serves Blazor and other apps. It has the guidelines and skills that you named. Copy the idea of the authoring skills from B. Choose C if the spike shows that web components and Blazor conflict.</p></div></div>
+        <div class="field"><span class="k">Context</span><div class="v"><p>The user wants a structured system that we copy and own. Must have: tiers (tokens, styles, components) and a structured guide to customize anything. Ideal: skills or an MCP server that we can copy. JSON screens are not a criterion. Details: tab <a href="#system" data-go="system">5 · Design system</a>.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: <code>vsa-design</code> is the base. Add names, the Blazor layer, change skills and the index "How to change anything" there.</li><li>B: a new fork of NVIDIA Elements. Better token tiers, change skills and an MCP server to copy, but the fork work starts again.</li><li>C: a new fork of Blazor Blueprint. Native Razor, but one token tier, and we write the skills.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It passes each must and most fork steps are done. B is better on change skills and MCP, so use it as the model; with its Apache-2.0 notice we can also copy its skill text. If an MCP server from day one is more important than the fork work, choose B. If web components and Blazor conflict in the spike, choose C.</p></div></div>
         <div class="field"><span class="k">Say yes to</span><div class="v"><ul><li>The base (A, B or C)</li><li>A third exception in <code>AGENTS.md</code> for the vendored output (A, B)</li><li>Who changes <code>vsa-design</code>: its own sessions, or a session from here. Today this session can only read it</li><li>A Blazor spike of five components before step 3</li></ul></div></div>
       </div>
     </details>
@@ -592,28 +592,30 @@ flowchart LR
   RZ --> APPS["Other Blazor apps<br/>own layer"]
   BASE --> WEB["Non-Blazor apps<br/>own layer"]
 </pre></div>
-    <p class="summary">The user wants the whole system: component behavior, variants, themes, guidelines and skills. The old option A (copy only tokens and CSS) does not fit, because we would write all behavior again.</p>
-    <div class="note">The user already has most of this: <code>vsa-design</code> is a copy of the whole Web Awesome 3.14.0. It has the skills and checks, and most links go to its own repository. The Blazor layer, the new names and the JSON screens are missing.</div>
+    <p class="summary">The user wants the whole system: component behavior, tiers, a guide to customize anything, and skills or an MCP server that we can copy. The old option A (copy only tokens and CSS) does not fit, because we would write all behavior again.</p>
+    <div class="note">The user already has most of this: <code>vsa-design</code> is a copy of the whole Web Awesome 3.14.0. It has the skills and checks, and most links go to its own repository. The new names, the Blazor layer, some change skills and an MCP server are missing.</div>
   </section>
 
   <section>
-    <h2>Candidates against the goal</h2>
+    <h2>Candidates against the criteria</h2>
     <div class="scroll"><table>
-      <thead><tr><th>Need</th><th>A · vsa-design</th><th>B · NVIDIA Elements</th><th>C · Blazor Blueprint</th><th>D · Fluent UI Blazor</th><th>E · Radzen Blazor</th></tr></thead>
+      <thead><tr><th>Criterion</th><th>A · vsa-design</th><th>B · NVIDIA Elements</th><th>C · Blazor Blueprint</th><th>D · Fluent UI Blazor</th><th>E · Radzen Blazor</th></tr></thead>
       <tbody>
-        <tr><td>License</td><td>MIT</td><td>Apache-2.0</td><td>Apache-2.0</td><td>MIT</td><td>MIT</td></tr>
-        <tr><td>Component count</td><td>74 elements</td><td>78 entry files in core</td><td>142 folders</td><td>57 folders</td><td>155+ (its README)</td></tr>
-        <tr><td>Component code</td><td>Lit, TypeScript</td><td>Lit-style web components, TypeScript</td><td>Razor, C#, 32 JS files</td><td>Razor over web components</td><td>Razor, C#, 1 JS file</td></tr>
-        <tr><td>Variants, themes</td><td>Documented, 2 skills</td><td>Skill, themes project</td><td>shadcn theme variables</td><td>CSS themes</td><td>5 free themes; more are paid</td></tr>
-        <tr><td>Agent files in the source</td><td><span class="tag rec">2 skills, manifest, llms.txt</span></td><td><span class="tag rec">Skills, CLI, MCP, lint</span></td><td><span class="tag mid">CLAUDE.md; MCP and llms.txt are outside</span></td><td><span class="tag mid">Usage skill, MCP server</span></td><td><span class="tag no">None found; MCP search tool</span></td></tr>
-        <tr><td>Skills to <em>change</em> the system</td><td><span class="tag mid">In part</span></td><td><span class="tag rec">Authoring skills</span></td><td><span class="tag no">None found</span></td><td><span class="tag no">None found</span></td><td><span class="tag no">None found</span></td></tr>
-        <tr><td>Blazor</td><td><span class="tag no">Generate wrappers</span></td><td><span class="tag no">Generate wrappers</span></td><td><span class="tag rec">Native</span></td><td><span class="tag rec">Native</span></td><td><span class="tag rec">Native</span></td></tr>
-        <tr><td>Fork work still to do</td><td>Names, 74 wrappers</td><td>All, 74+ wrappers</td><td>All, and write guidelines</td><td>All, and own a second source</td><td>All, and write guidelines</td></tr>
-        <tr><td>JSON screens</td><td>We build</td><td>We build</td><td>We build</td><td>We build</td><td>We build</td></tr>
+        <tr><td><strong>Must:</strong> tokens tier</td><td><span class="tag rec">Palette, roles, theme values</span></td><td><span class="tag rec"><code>ref</code>, <code>sys</code>, in JSON</span></td><td><span class="tag mid">One tier of theme variables</span></td><td><span class="tag mid">Brand ramp, theme tokens</span></td><td><span class="tag mid">SCSS and CSS variables</span></td></tr>
+        <tr><td><strong>Must:</strong> styles tier</td><td><span class="tag rec">Layers, themes, native, utilities</span></td><td><span class="tag rec">Themes, styles packages</span></td><td><span class="tag mid">Tailwind utilities, one layer</span></td><td><span class="tag mid">CSS themes</span></td><td><span class="tag rec">SCSS themes</span></td></tr>
+        <tr><td><strong>Must:</strong> components tier</td><td><span class="tag rec">74 elements, 399 parts</span></td><td><span class="tag rec">78 entry files in core</span></td><td><span class="tag rec">142 folders</span></td><td><span class="tag rec">142+ (its MCP README)</span></td><td><span class="tag rec">155+ (its README)</span></td></tr>
+        <tr><td><strong>Must:</strong> guide to customize anything</td><td><span class="tag rec">Theming, extension, customizing</span></td><td><span class="tag mid">Short theme guide; authoring guides</span></td><td><span class="tag mid">THEMING.md: colors, sizes</span></td><td><span class="tag mid">Theme pages</span></td><td><span class="tag mid">Theme pages</span></td></tr>
+        <tr><td><strong>Ideal:</strong> skills to use it</td><td><span class="tag rec">2, in source</span></td><td><span class="tag rec">1, in source</span></td><td><span class="tag no">None</span></td><td><span class="tag rec">1, in source</span></td><td><span class="tag no">None</span></td></tr>
+        <tr><td><strong>Ideal:</strong> skills to change it</td><td><span class="tag no">None; CLAUDE.md and records</span></td><td><span class="tag rec">Authoring skills, in source</span></td><td><span class="tag no">None</span></td><td><span class="tag no">None for this</span></td><td><span class="tag no">None</span></td></tr>
+        <tr><td><strong>Ideal:</strong> MCP server we can copy</td><td><span class="tag no">None; we can make one</span></td><td><span class="tag rec">In the CLI source, local</span></td><td><span class="tag mid">npm only; no source link</span></td><td><span class="tag rec">In source, dotnet tool</span></td><td><span class="tag no">Hosted, paid after a trial</span></td></tr>
+        <tr><td>License of code, docs, skills, MCP</td><td>MIT, all in one repository</td><td>Apache-2.0; each package checked says so</td><td>Apache-2.0; MCP package MIT</td><td>MIT, one repository</td><td>MIT code; MCP is a service</td></tr>
+        <tr><td>Blazor</td><td><span class="tag no">Generate wrappers</span></td><td><span class="tag no">Generate wrappers</span></td><td><span class="tag rec">Native</span></td><td><span class="tag rec">Native, over web components</span></td><td><span class="tag rec">Native</span></td></tr>
+        <tr><td>Fork work to do</td><td>Names, 74 wrappers</td><td>All, 74+ wrappers</td><td>All, write guides</td><td>All, second source</td><td>All, write guides</td></tr>
         <tr><td>AGENTS.md rule</td><td><span class="tag no">Conflicts</span></td><td><span class="tag no">Conflicts</span></td><td><span class="tag mid">In part</span></td><td><span class="tag no">Conflicts</span></td><td><span class="tag mid">In part</span></td></tr>
       </tbody>
     </table></div>
-    <p class="note">Checked 2026-11-25 in the source repositories and the <code>vsa-design</code> commit <code>c7945c81c</code>. A count is of folders or files, so counts do not compare exactly. Nothing was forked, downloaded as a package, built or run. Touch on a phone is not tested for any candidate.</p>
+    <p class="note">Checked 2026-11-25 in the source repositories and the <code>vsa-design</code> commit <code>c7945c81c</code>. Counts are of folders or files, so they do not compare exactly. "None" means: no file found by name or path. Nothing was forked, downloaded as a package, built or run.</p>
+    <p class="summary">Result: B is better on tools and has the clearest token tiers. A passes each must, has the most complete customize guide, and most fork steps are done. C, D and E are weaker on the tiers or the guide.</p>
     <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
     <details class="f">
       <summary><span class="l1"><span class="id">A</span><span class="t">vsa-design (Web Awesome 3.14.0)</span></span><span class="l2">What it really ships; what is not there</span></summary>
@@ -630,14 +632,14 @@ flowchart LR
       <summary><span class="l1"><span class="id">B</span><span class="t">NVIDIA Elements</span></span><span class="l2">The best agent tools; a fresh fork</span></summary>
       <div class="body">
         <div class="field"><span class="k">Facts</span><div class="v"><p>Apache-2.0, 120 stars, last push 2026-11-24. The README names a skill, a CLI, an MCP server, lint and a <code>DESIGN.md</code>. The repository has authoring skills for components, tests, docs and patterns. <a href="https://github.com/NVIDIA/elements">Source</a>.</p></div></div>
-        <div class="field"><span class="k">For</span><div class="v"><p>It comes nearest to the wish for tools that agents use to change the system.</p></div></div>
+        <div class="field"><span class="k">For</span><div class="v"><p>It comes nearest to the wish for tools that agents use to change the system. The MCP server is the command <code>nve mcp</code> in <code>projects/cli</code>. The checked packages (cli, code, core, themes) say Apache-2.0; <code>NOTICE.md</code> lists other parts, and the fonts have their own license.</p></div></div>
         <div class="field"><span class="k">Against</span><div class="v"><p>The fork starts again: names (<code>nve-</code>), brand, links, and the build of a larger project with Go and pnpm. It needs the same Blazor wrappers. The focus is AI and robotics consoles.</p></div></div>
       </div>
     </details>
     <details class="f">
       <summary><span class="l1"><span class="id">C</span><span class="t">Blazor Blueprint</span></span><span class="l2">Native Razor; the guidelines are not in the source</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Facts</span><div class="v"><p>Apache-2.0, 703 stars, .NET 10 minimum, 142 component folders and a separate set of headless primitives. Themes from shadcn/ui work. Its README names an MCP server with 15 tools and 180+ <code>llms.txt</code> documents. <a href="https://github.com/blazorblueprintui/ui">Source</a>. I found no MCP or <code>llms</code> file by name in the repository, so a fork does not get them.</p></div></div>
+        <div class="field"><span class="k">Facts</span><div class="v"><p>Apache-2.0, 703 stars, .NET 10 minimum, 142 component folders and a separate set of headless primitives. Themes from shadcn/ui work. Its README names an MCP server with 15 tools and 180+ <code>llms.txt</code> documents. <a href="https://github.com/blazorblueprintui/ui">Source</a>. I found no MCP or <code>llms</code> file by name in the repository, so a fork does not get them. The npm package <code>@blazorblueprint/mcp</code> says MIT but gives no repository. <code>TRADEMARK.md</code> limits the use of the name by a fork.</p></div></div>
         <div class="field"><span class="k">For</span><div class="v"><p>No wrapper layer and no shadow DOM. It has mobile parts: app bar, bottom bar, bottom sheet select, drawer snap points.</p></div></div>
         <div class="field"><span class="k">Against</span><div class="v"><p>We write the guidelines and skills that the user wants to get ready. It serves only Blazor apps. Its styles use Tailwind utilities with a <code>bb:</code> prefix, so the style build needs Tailwind or a copy of its output.</p></div></div>
       </div>
@@ -645,20 +647,41 @@ flowchart LR
     <details class="f">
       <summary><span class="l1"><span class="id">D</span><span class="t">Fluent UI Blazor v5</span></span><span class="l2">Razor over a second code base</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Facts</span><div class="v"><p>MIT, a usage skill and an MCP server in the source. Its skill says that v5 wraps <code>@fluentui/web-components</code> v3. <a href="https://github.com/microsoft/fluentui-blazor">Source</a>.</p></div></div>
+        <div class="field"><span class="k">Facts</span><div class="v"><p>MIT, a usage skill and an MCP server in the source (a local dotnet tool). Its skill says that v5 wraps <code>@fluentui/web-components</code> v3. <a href="https://github.com/microsoft/fluentui-blazor">Source</a>.</p></div></div>
         <div class="field"><span class="k">Against</span><div class="v"><p>To own it, we own two code bases. The skill tells how to use the package, not how to change it.</p></div></div>
       </div>
     </details>
     <details class="f">
       <summary><span class="l1"><span class="id">E</span><span class="t">Radzen, MudBlazor and others</span></span><span class="l2">Not proposed</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Radzen</span><div class="v"><p>MIT, 155+ native components; some themes are paid. <a href="https://github.com/radzenhq/radzen-blazor">Source</a>. Its <a href="https://www.radzen.com/blazor-mcp/documentation">MCP server</a> has one search tool. No skill or agent file found.</p></div></div>
+        <div class="field"><span class="k">Radzen</span><div class="v"><p>MIT, 155+ native components; some themes are paid. <a href="https://github.com/radzenhq/radzen-blazor">Source</a>. Its <a href="https://www.radzen.com/blazor-mcp/documentation">MCP server</a> has one search tool. It is a hosted service: 50 requests in 15 days, then a paid plan. No skill or agent file found.</p></div></div>
         <div class="field"><span class="k">MudBlazor</span><div class="v"><p>MIT, 84 component folders, <code>AGENTS.md</code> only. Material structure. <a href="https://github.com/MudBlazor/MudBlazor">Source</a>.</p></div></div>
         <div class="field"><span class="k">shadcn/ui</span><div class="v"><p>MIT, a registry, an MCP server and <a href="https://ui.shadcn.com/docs/skills">skills</a>. It is React, so Blazor cannot use its components. Use it as the model for the registry.</p></div></div>
+        <div class="field"><span class="k">Astryx (Meta)</span><div class="v"><p>MIT, 150+ components, a CLI, themes and agent guides made for people and agents. It is React 19, and the README says beta. <a href="https://github.com/meta/astryx">Source</a>. Use it as a model for the guides.</p></div></div>
+        <div class="field"><span class="k">UI5 (SAP)</span><div class="v"><p>Apache-2.0, styling and accessibility skills in the source, and a local <a href="https://github.com/UI5/webcomponents-mcp-server">MCP server</a> (Apache-2.0) with API docs. The Fiori look is deep in the system. <a href="https://github.com/UI5/webcomponents">Source</a>.</p></div></div>
+        <div class="field"><span class="k">Siemens iX</span><div class="v"><p>MIT, two skills in the source. The brand look is Siemens. <a href="https://github.com/siemens/ix">Source</a>.</p></div></div>
         <div class="field"><span class="k">Spectrum</span><div class="v"><p>Apache-2.0, many contributor skills and an <a href="https://opensource.adobe.com/spectrum-web-components/build-with-ai">agent page</a>. A migration to a second generation is in progress, so a copy now is risky.</p></div></div>
         <div class="field"><span class="k">Carbon</span><div class="v"><p>Apache-2.0, 102 web component folders, <code>AGENTS.md</code> for each package, no skill found. IBM look. <a href="https://github.com/carbon-design-system/carbon">Source</a>.</p></div></div>
       </div>
     </details>
+  </section>
+
+  <section>
+    <h2>The tiers of the owned base</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Tier</th><th>In A today</th><th>Change it through</th><th>Gap</th></tr></thead>
+      <tbody>
+        <tr><td>1 Primitive tokens</td><td>Palette: 10 hues, 11 tints; scales</td><td>Palette file</td><td>None</td></tr>
+        <tr><td>2 Role tokens</td><td>brand, neutral, success, warning, danger; fill, border, on</td><td>Theme file</td><td>One list of all roles</td></tr>
+        <tr><td>3 Component tokens</td><td>180 custom properties in the manifest</td><td>The component</td><td>Not in one table</td></tr>
+        <tr><td>4 Styles</td><td>Cascade layers, native, utilities, themes</td><td>Style files</td><td>None</td></tr>
+        <tr><td>5 Components</td><td>74 elements: attributes, slots, parts, states</td><td>Source and docs page</td><td>Blazor wrappers</td></tr>
+        <tr><td>6 Patterns</td><td>Page shell, forms, dashboard, settings</td><td>Design skill</td><td>Our app patterns</td></tr>
+        <tr><td>7 App layer</td><td>One stylesheet with no layer</td><td>App repository</td><td>Orchestrator layer</td></tr>
+      </tbody>
+    </table></div>
+    <p class="summary">Write one index page, "How to change anything". Each row gives the tier, the file, the skill, the check and the decision record. This is the main guide for agents.</p>
+    <p class="note">The text of the guides in A needs a check. One skill file (<code>customizing.md</code>) still tells a reader to sign up for a hosted project: "Sign up or log in to create a project". Record 0009 says that no such text stays.</p>
   </section>
 
   <section>
@@ -711,7 +734,6 @@ flowchart LR
         <tr><td>add or change a component</td><td>Source, test, docs page, manifest, wrapper</td><td>Guide; the wrapper is missing</td></tr>
         <tr><td>add an animation</td><td>Motion token and step (tab 4)</td><td>To write</td></tr>
         <tr><td>compose a screen</td><td>Layout, pattern, existing components first</td><td>Skill (design)</td></tr>
-        <tr><td>make a screen JSON</td><td>Catalog names only</td><td>To write</td></tr>
         <tr><td>update an app</td><td>Copy a release tag, then run checks</td><td>Guide (0010)</td></tr>
         <tr><td>record a system change</td><td>Decision record</td><td>Rule (0001)</td></tr>
       </tbody>
@@ -727,38 +749,15 @@ flowchart LR
         <tr><td>Wrappers match the manifest</td><td>To write</td></tr>
         <tr><td>Copied files in an app are not changed (hash)</td><td>To write</td></tr>
         <tr><td>App uses only catalog components; no raw color</td><td>To write (in each app)</td></tr>
-        <tr><td>Screen JSON is valid against the catalog schema</td><td>To write</td></tr>
       </tbody>
     </table></div>
   </section>
 
   <section>
-    <h2>From JSON to a screen</h2>
-    <div class="box"><pre class="mermaid">
-flowchart LR
-  MF["Component manifest"] -->|generates| CS["Catalog schema<br/>JSON Schema"]
-  CS -->|checks| SJ["screen.json<br/>app layer"]
-  VT["View template<br/>query, shape, layout"] --> CO["Composer"]
-  KT["content.json<br/>of the kind"] --> CO
-  SJ --> CO
-  CO -->|view model| RN["Blazor renderer"]
-  RN --> WR["Razor components"]
-</pre></div>
-<pre class="code"><span class="cm">// templates/_layouts/inbox-card/screen.json (proposal)</span>
-{ "component": "card",
-  "children": [
-    { "component": "text", "role": "title", "bind": "subject" },
-    { "component": "badge", "variant": "brand", "bind": "group",
-      "when": { "field": "group", "exists": true } },
-    { "component": "button", "variant": "brand", "action": "card.right" }
-  ] }</pre>
+    <h2>Later: an MCP server and JSON screens</h2>
     <ul>
-      <li>The base owns the component names and the schema. It knows no event kind.</li>
-      <li>The app owns <code>screen.json</code>. A layout of tab 2 (<code>card</code>, <code>rows</code>) names one.</li>
-      <li><code>bind</code> reads the view model. <code>action</code> names an action of the card rules.</li>
-      <li>D5 connects here: <code>when</code> uses the same four JSON tests as the card rules. A script here is a second way to break the screen.</li>
-      <li>Prior art: <a href="https://a2ui.org/concepts/catalogs/">A2UI catalogs</a> (a JSON Schema for each catalog) and <a href="https://github.com/vercel-labs/json-render">json-render</a>, both Apache-2.0. I found no Blazor renderer for them, so we write a small one. Copy the catalog idea.</li>
-      <li>Do the renderer after the first component slice, not before it.</li>
+      <li>MCP server (A): optional, after the skills. It reads <code>custom-elements.json</code> and the guide files, runs on the PC, and can be C#. Tools: list, describe, tokens, check.</li>
+      <li>JSON screens: not a criterion. We can build them on top. The component manifest can make the schema of a screen file. Its <code>when</code> can use the JSON tests of D5.</li>
     </ul>
   </section>
 

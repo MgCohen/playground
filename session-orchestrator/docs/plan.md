@@ -2440,3 +2440,5 @@ D2 revised (2026-11-25): the user wants one owned design system for all apps. It
 | C Blazor Blueprint (Apache-2.0) | Native Razor; the guidelines and skills are ours to write |
 
 A and B conflict with the rule on TypeScript and JavaScript in `AGENTS.md`. They need an exception for vendored output, and a Blazor spike first. The D2 question is open.
+
+D2 criteria (user, 2026-11-25): must have a tiered system (tokens, styles, components) and a structured guide to customize anything; ideal are skills or an MCP server that we can copy. JSON screens are not a criterion. Result: A passes each must; B (NVIDIA Elements) is better on change skills and has a local MCP server in its source; Radzen MCP is a paid hosted service; the Blueprint MCP has no source link. Recommendation stays A with B as the model. Finding: one skill file of `vsa-design` (`customizing.md`) still tells a reader to sign up for a hosted project.
