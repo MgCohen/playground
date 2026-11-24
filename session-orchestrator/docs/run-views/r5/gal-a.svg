@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 720" width="360" height="720"><style>
+.bg{fill:#fdfdfc}.soft{fill:#f1eee9}.t{fill:#2a2825}.m{fill:#6b665f}
+.ln{stroke:rgba(27,26,24,.14);fill:none}.lnF{fill:rgba(27,26,24,.14)}
+.edge{stroke:#8d877e;fill:none;stroke-width:1.6}
+.rst{stroke:#c2410c;fill:none;stroke-width:1.6;stroke-dasharray:4 3}
+.loopF{fill:#c2410c}.loopS{stroke:#c2410c}
+.agent{fill:#1f5fbf}.human{fill:#ff6a1a}.tool{fill:#6b665f}
+.agentS{stroke:#1f5fbf}.humanS{stroke:#ff6a1a}.toolS{stroke:#6b665f}.humanT{fill:#c2410c}
+.childS{stroke:#2d6a4f}.childF{fill:#2d6a4f}.childSoft{fill:rgba(45,106,79,.10)}
+.exitS{stroke:#5d6660}.exitF{fill:#5d6660}
+.nowS{stroke:#7c4dff}.nowF{fill:#7c4dff}.nowSoft{fill:rgba(124,77,255,.12)}
+.selS{stroke:#1f5fbf}.selF{fill:#1f5fbf}.selSoft{fill:rgba(31,95,191,.10)}
+.futS{stroke:#8d877e}
+.dim{fill:rgba(27,26,24,.30)}
+.sans{font-family:Inter,system-ui,sans-serif}.mono{font-family:ui-monospace,monospace}
+.shadow{fill:rgba(27,26,24,.10)}
+@media (prefers-color-scheme: dark){
+.bg{fill:#262522}.soft{fill:#2e2c29}.t{fill:#ece9e4}.m{fill:#a39d94}
+.ln{stroke:rgba(255,255,255,.12)}.lnF{fill:rgba(255,255,255,.12)}
+.edge{stroke:#8a847b}.futS{stroke:#8a847b}
+.rst{stroke:#ff8a4c}.loopF{fill:#ff8a4c}.loopS{stroke:#ff8a4c}
+.agent{fill:#6ea0ff}.human{fill:#ff7a33}.tool{fill:#a39d94}
+.agentS{stroke:#6ea0ff}.humanS{stroke:#ff7a33}.toolS{stroke:#a39d94}.humanT{fill:#ff7a33}
+.childS{stroke:#6fcf97}.childF{fill:#6fcf97}.childSoft{fill:rgba(111,207,151,.12)}
+.exitS{stroke:#9ba59e}.exitF{fill:#9ba59e}
+.nowS{stroke:#a98bff}.nowF{fill:#a98bff}.nowSoft{fill:rgba(169,139,255,.16)}
+.selS{stroke:#6ea0ff}.selF{fill:#6ea0ff}.selSoft{fill:rgba(110,160,255,.14)}
+.dim{fill:rgba(0,0,0,.42)}
+.shadow{fill:rgba(0,0,0,.35)}
+}
+</style><defs><clipPath id="scroll"><rect x="0" y="0" width="360" height="720"/></clipPath></defs><rect width="360" height="720" class="bg"/><g clip-path="url(#scroll)"><text x="16.0" y="34.0" font-size="20" class="t sans" font-weight="600">Workflows</text><text x="16.0" y="52.0" font-size="10" class="m sans">6 workflows · a tap opens the definition</text><rect x="12" y="64" width="336" height="34" rx="10" class="soft"/><circle cx="30" cy="80" r="5.5" fill="none" class="futS" stroke-width="1.6"/><path d="M34 84L38 88" class="futS" stroke-width="1.8"/><text x="46.0" y="85.5" font-size="12" class="m sans">Search workflows</text><text x="16.0" y="135.0" font-size="13" class="t sans" font-weight="600">Feature delivery</text><text x="16.0" y="152.0" font-size="10.5" class="m sans">Spec, build in parallel, verify, release</text><path d="M337 133.0L342 138.0L337 143.0" fill="none" class="futS" stroke-width="1.6"/><path d="M16 167.5H344" class="ln"/><text x="16.0" y="195.0" font-size="13" class="t sans" font-weight="600">Planning</text><text x="16.0" y="212.0" font-size="10.5" class="m sans">Ask questions, write the spec, propose tasks</text><path d="M337 193.0L342 198.0L337 203.0" fill="none" class="futS" stroke-width="1.6"/><path d="M16 227.5H344" class="ln"/><text x="16.0" y="255.0" font-size="13" class="t sans" font-weight="600">Incident triage</text><text x="16.0" y="272.0" font-size="10.5" class="m sans">Triage, mitigate, then write a postmortem</text><path d="M337 253.0L342 258.0L337 263.0" fill="none" class="futS" stroke-width="1.6"/><path d="M16 287.5H344" class="ln"/><text x="16.0" y="315.0" font-size="13" class="t sans" font-weight="600">PR review</text><text x="16.0" y="332.0" font-size="10.5" class="m sans">Check a pull request and give a verdict</text><path d="M337 313.0L342 318.0L337 323.0" fill="none" class="futS" stroke-width="1.6"/><path d="M16 347.5H344" class="ln"/><text x="16.0" y="375.0" font-size="13" class="t sans" font-weight="600">Verify</text><text x="16.0" y="392.0" font-size="10.5" class="m sans">Test, review and fix until approved</text><path d="M337 373.0L342 378.0L337 383.0" fill="none" class="futS" stroke-width="1.6"/><path d="M16 407.5H344" class="ln"/><text x="16.0" y="435.0" font-size="13" class="t sans" font-weight="600">Question round</text><text x="16.0" y="452.0" font-size="10.5" class="m sans">Ask one question, get the answer, record it</text><path d="M337 433.0L342 438.0L337 443.0" fill="none" class="futS" stroke-width="1.6"/><text x="16.0" y="492.0" font-size="10" class="m sans">A workflow runs inside a session.</text><text x="16.0" y="507.0" font-size="10" class="m sans">Start one from the new session form.</text></g></svg>

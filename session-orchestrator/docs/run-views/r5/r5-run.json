@@ -1,0 +1,80 @@
+{
+  "rows": [
+    {
+      "id": "r5run",
+      "name": "W-4 · Run",
+      "why": "One screen for each level. A short header, the wait card, a small Next bar. The graph is on the left, one short row for each step run on the right, and a marker on the current step. Old passes fold into one row. A restart ↺ is a chip.",
+      "sketches": [
+        {
+          "file": "run-a.svg",
+          "caption": "W4 level 1 · wait card · ⋯ menu"
+        },
+        {
+          "file": "run-b.svg",
+          "caption": "W4 Verify ▸ · pass 1 folded"
+        },
+        {
+          "file": "run-c.svg",
+          "caption": "W3 Question round ▸ · pass 3"
+        }
+      ]
+    },
+    {
+      "id": "r5sheet",
+      "name": "W-5 · Step run sheet",
+      "why": "A tap on a row or a chip opens a sheet over the dimmed run page. It shows the action, the state, the time and the result, links to the actual input and output documents, and a link to the step definition. A waiting step has the act buttons.",
+      "sketches": [
+        {
+          "file": "sheet-a.svg",
+          "caption": "Done step: Test, pass 1"
+        },
+        {
+          "file": "sheet-b.svg",
+          "caption": "Waiting step: Review · act"
+        },
+        {
+          "file": "sheet-c.svg",
+          "caption": "Restart chip: ↺ pass 2"
+        }
+      ]
+    },
+    {
+      "id": "r5row",
+      "name": "W-C1 · Run row",
+      "why": "One line shows a run on the session views: the workflow, the current step with its level path, a state dot, the elapsed time and a you marker. A tap opens the run page. The step bar is a try for hubs, restarts and levels.",
+      "sketches": [
+        {
+          "file": "row-a.svg",
+          "caption": "On the session page"
+        },
+        {
+          "file": "row-b.svg",
+          "caption": "In the session list"
+        },
+        {
+          "file": "row-c.svg",
+          "caption": "Try: step bar in the run row"
+        }
+      ]
+    },
+    {
+      "id": "r5wait",
+      "name": "W-C2 · Wait card",
+      "why": "The card shows what a waiting run needs from you: the step, the question, how long it waits and the act buttons. It shows on the run page and on the owner session page. In the inbox it is a normal question card with an Open run link.",
+      "sketches": [
+        {
+          "file": "wait-a.svg",
+          "caption": "On the run page · the parts"
+        },
+        {
+          "file": "wait-b.svg",
+          "caption": "On the owner session page"
+        },
+        {
+          "file": "wait-c.svg",
+          "caption": "In the inbox · Open run link"
+        }
+      ]
+    }
+  ]
+}

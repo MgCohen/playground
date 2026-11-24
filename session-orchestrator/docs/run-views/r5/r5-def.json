@@ -1,0 +1,61 @@
+{
+  "rows": [
+    {
+      "id": "r5gal",
+      "name": "W-1 · Workflows",
+      "why": "A plain gallery of the workflows: the name and one line about what it does. A search field filters the list. The same list is the picker of the new session form. A tap opens the definition. No runs show here: runs belong to sessions.",
+      "sketches": [
+        {
+          "file": "gal-a.svg",
+          "caption": "Gallery · 6 workflows, search"
+        },
+        {
+          "file": "gal-b.svg",
+          "caption": "Picker · from the new session form"
+        },
+        {
+          "file": "gal-c.svg",
+          "caption": "Search: 2 matches, and no match"
+        }
+      ]
+    },
+    {
+      "id": "r5wdef",
+      "name": "W-2 · Workflow definition",
+      "why": "The run page shape with no run data. The header has the name, the description, and the input and output templates. Each row shows the step, its action and its ways out. A tap opens a sheet. From the picker, a Start button shows.",
+      "sketches": [
+        {
+          "file": "wdef-a.svg",
+          "caption": "Feature delivery · the flow graph"
+        },
+        {
+          "file": "wdef-b.svg",
+          "caption": "Tap on Verify ▸ · step sheet"
+        },
+        {
+          "file": "wdef-c.svg",
+          "caption": "From the picker · Start button"
+        }
+      ]
+    },
+    {
+      "id": "r5sdef",
+      "name": "W-2a · Step definition",
+      "why": "One page for each step: the owner workflow and the action on top, then the input and output templates, what it does, and the ways out. A start workflow ▸ step shows the picked workflow and the exit map. Restart settings show only when the step restarts.",
+      "sketches": [
+        {
+          "file": "sdef-a.svg",
+          "caption": "Review · agent task, 3 ways out"
+        },
+        {
+          "file": "sdef-b.svg",
+          "caption": "Verify ▸ · start workflow, exits"
+        },
+        {
+          "file": "sdef-c.svg",
+          "caption": "Fix · restart error and change"
+        }
+      ]
+    }
+  ]
+}
