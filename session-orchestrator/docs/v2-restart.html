@@ -306,11 +306,11 @@ flowchart TB
       <a class="prow" href="#p5"><span class="id">P5</span><span><span class="t">Hand-made infrastructure</span><span class="s">The same job written two or three times</span><span class="bar"><i style="width:75%"></i></span></span><span class="c">15</span></a>
       <a class="prow" href="#p6"><span class="id">P6</span><span><span class="t">Tracing added after</span><span class="s">Free text, no input, no id</span><span class="bar"><i style="width:55%"></i></span></span><span class="c">11</span></a>
       <a class="prow" href="#p7"><span class="id">P7</span><span><span class="t">Tests read pixels and wait</span><span class="s">Timers and pictures, not events</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
-      <a class="prow" href="#p8"><span class="id">P8</span><span><span class="t">Native host cost</span><span class="s">WinForms, WebView2, GDI+</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
+      <a class="prow" href="#p8"><span class="id">P8</span><span><span class="t">Native host cost</span><span class="s">WinForms, WebView2 composition</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
       <a class="prow" href="#p9"><span class="id">P9</span><span><span class="t">No defined design system</span><span class="s">No full tokens, rules or guidelines</span><span class="bar"><i style="width:45%"></i></span></span><span class="c">9</span></a>
       <a class="prow" href="#p10"><span class="id">P10</span><span><span class="t">Components not reusable</span><span class="s">Three ring drawings for one shape</span><span class="bar"><i style="width:40%"></i></span></span><span class="c">8</span></a>
       <a class="prow" href="#p11"><span class="id">P11</span><span><span class="t">The view is not data-driven</span><span class="s">Pages and card rules are C# code</span><span class="bar"><i style="width:40%"></i></span></span><span class="c">8</span></a>
-      <a class="prow" href="#p12"><span class="id">P12</span><span><span class="t">No unified animation system</span><span class="s">CSS, JS, view transitions and GDI+</span><span class="bar"><i style="width:50%"></i></span></span><span class="c">10</span></a>
+      <a class="prow" href="#p12"><span class="id">P12</span><span><span class="t">No unified animation system</span><span class="s">CSS steps, view transitions and JS waits</span><span class="bar"><i style="width:50%"></i></span></span><span class="c">10</span></a>
       <a class="prow" href="#p13"><span class="id">P13</span><span><span class="t">No unified navigation system</span><span class="s">Two units pick the page move</span><span class="bar"><i style="width:35%"></i></span></span><span class="c">7</span></a>
     </div>
     <p class="note">Process cause: we fixed one symptom at a time. One cause made many issues, and we saw it only when all records were side by side.</p>
@@ -518,7 +518,7 @@ Assert.That(window.Bounds, Is.EqualTo(expected));</pre></div>
     </details>
 
     <details class="pain" id="p8">
-      <summary><span class="l1"><span class="id">P8</span><span class="t">Native host cost</span><span class="c">12</span></span><span class="l2">WinForms windows, WebView2 composition and GDI+ drawings, each with own faults</span></summary>
+      <summary><span class="l1"><span class="id">P8</span><span class="t">Native host cost</span><span class="c">12</span></span><span class="l2">Two WinForms windows with WebView2 composition; the host must forward the input</span></summary>
       <div class="body">
         <p><strong>Context.</strong> The tray host adds a second world: DPI, places, click regions, focus and pointer input. The window cut the shadow (I7, I18). A browser bubble showed links (I14). The demo moved the real pointer (I8). Keys went to the wrong window (I5).</p>
         <div class="chips"><span class="chip">I5, I7, I8, I14, I18, I21</span><span class="chip">Places G1, G4, G5, G8, G10</span><span class="chip">V1–V5</span></div>
@@ -631,9 +631,9 @@ if (options.Count == 2 &amp;&amp; options.Any(o =&gt; o.Equals("yes", ...)))
     </details>
 
     <details class="pain" id="p12">
-      <summary><span class="l1"><span class="id">P12</span><span class="t">No unified animation system</span><span class="c">10</span></span><span class="l2">R1 unified the tray steps, but 4 motion sources stay</span></summary>
+      <summary><span class="l1"><span class="id">P12</span><span class="t">No unified animation system</span><span class="c">10</span></span><span class="l2">R1 unified the tray steps, but 3 motion sources stay</span></summary>
       <div class="body">
-        <p><strong>Context.</strong> Motion comes from CSS steps of the registry, a view transition for push and back, waits in <code>swipe.js</code>, and GDI+ fades in the native edge tab (V1, V2). The view transition and the deck back-in give no end to C#. The speed dial has no leave rule, so it closes with no motion and a false warning (I22).</p>
+        <p><strong>Context.</strong> Motion comes from CSS steps of the registry, a view transition for push and back, and waits in <code>swipe.js</code>. The view transition and the deck back-in give no end to C#. The speed dial has no leave rule, so it closes with no motion and a false warning (I22).</p>
         <div class="chips"><span class="chip">Motion G1–G9</span><span class="chip">I9, I22</span><span class="chip">V1, V2</span><span class="chip">Source: you</span></div>
         <div class="pair">
           <div class="snip bad"><span class="lab">Today <span class="file">swipe.js:24 · MotionHost.razor:20</span></span>

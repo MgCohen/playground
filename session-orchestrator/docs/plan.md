@@ -2405,5 +2405,6 @@ Findings:
 - `orch decision pr` fails with "no template answer" when it runs from the repository root. It works from `session-orchestrator/`.
 - The drag-to-scroll script of the tab bar in the earlier artifacts loses a click: a drag that ends on another element leaves the `dragged` flag on the first button, so the next click on that tab does nothing. The V2 pages use only the native scroll of the bar.
 - The repository and the artifacts have no prior-art notes on a navigation controller. The Navigation tab of the target design uses the Page moves review and a summary of common stack navigators.
-- The counts of the 13 root causes are estimates. The tray host options B to E were not checked, so the Q6 comparison is not complete. The ring has three drawings, not four.
+- The counts of the 13 root causes are estimates. The tray host comparison (D3, 2026-11-24) comes from platform docs and spikes S1, S2 and S7; no host was built for it. The ring has three drawings, not four.
 - Base research of D2 (2026-11-24): licenses and sizes of Web Awesome, Blazor Blueprint, MudBlazor and Fluent UI Blazor are on the Design system tab. Nothing was built.
+- Correction: `LayeredForm` and `EdgeTab` (GDI+) are not in `orch/visual-review`. P8 and P12 named them as current. Host code there: 916 lines in four files.

@@ -204,11 +204,13 @@ flowchart LR
     </details>
 
     <details class="f">
-      <summary><span class="l1"><span class="id">D3</span><span class="t">Thin WinForms host for the tray?</span></span><span class="l2">Recommendation: option A of tab 5. Default: A</span></summary>
+      <summary><span class="l1"><span class="id">D3</span><span class="t">Which host does the tray use?</span></span><span class="l2">Recommendation: A. No default</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>WebView2 composition in WinForms works today. The other hosts were not checked, so the comparison of Q6 is not complete.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: thin WinForms host with <code>IHostWindow</code>.</li><li>A + spike: also try WinUI 3 in step 3.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Make the host small first; change the host later only if the spike shows a gain.</p></div></div>
+        <div class="field"><span class="k">Context</span><div class="v"><p>Tab <a href="#host" data-go="host">6 · Tray host</a> compares six hosts from the platform docs and the spikes. Only A keeps the approved look and has a test.</p></div></div>
+        <div class="field"><span class="k">A</span><div class="v"><p>WinForms with visual hosting, behind <code>IHostWindow</code>. The input forward stays.</p></div></div>
+        <div class="field"><span class="k">B</span><div class="v"><p>As A, and first a short WPF spike: can the composition control run in a transparent window, and at what frame rate?</p></div></div>
+        <div class="field"><span class="k">F</span><div class="v"><p>WinForms with windowed hosting. The smallest host, but the ball, the grow and the page shadow go.</p></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It is the only tested host with the approved look, and the state machines do not depend on the host.</p></div></div>
       </div>
     </details>
 
@@ -583,7 +585,7 @@ Task&lt;MotionEnd&gt; Play(MotionStep step, ElementRef target);</pre>
     <ul>
       <li>A leave with no motion rule ends at once and writes no warning (I22).</li>
       <li>The drag follow is the only motion in JS. It sends gesture events; the step after the release is a normal row.</li>
-      <li>The native host draws no motion. GDI+ fades are not used (V1, V2).</li>
+      <li>The native host draws no motion.</li>
       <li>The source is the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">Orch View Architecture</a> page, Prior art tab, and the R1 motion guide.</li>
     </ul>
   </section>
@@ -740,16 +742,67 @@ Task&lt;MotionEnd&gt; Play(MotionStep step, ElementRef target);</pre>
   <section>
     <h2>Options</h2>
     <div class="scroll"><table>
-      <thead><tr><th>Option</th><th>Transparency</th><th>Cost</th><th>Verdict</th></tr></thead>
+      <thead><tr><th>Option</th><th>Transparent</th><th>Input forward</th><th>Our test</th><th>Result</th></tr></thead>
       <tbody>
-        <tr><td>A · Thin WinForms, WebView2 composition</td><td>Yes, proven</td><td>Small: remove code</td><td><span class="tag rec">Recommended</span></td></tr>
-        <tr><td>B · WPF, WebView2</td><td>Not checked</td><td>Port</td><td><span class="tag mid">Not checked</span></td></tr>
-        <tr><td>C · WinUI 3, WebView2</td><td>Not checked</td><td>Port, other runtime</td><td><span class="tag mid">Not checked</span></td></tr>
-        <tr><td>D · Blazor Hybrid (MAUI)</td><td>Not checked</td><td>Port</td><td><span class="tag mid">Not checked</span></td></tr>
-        <tr><td>E · Browser app window</td><td>Not checked</td><td>Not checked</td><td><span class="tag mid">Not checked</span></td></tr>
+        <tr><td>A · WinForms, visual hosting</td><td>Yes</td><td>Necessary</td><td>S2, S7, app</td><td><span class="tag rec">Recommended</span></td></tr>
+        <tr><td>B · WPF, composition control</td><td>Not known</td><td>Control does it (not checked)</td><td>None</td><td><span class="tag mid">Spike first</span></td></tr>
+        <tr><td>C · WinUI 3</td><td>Open issues</td><td>Not checked</td><td>None</td><td><span class="tag no">Not now</span></td></tr>
+        <tr><td>D · MAUI</td><td>As C (conclusion)</td><td>Not checked</td><td>None</td><td><span class="tag no">Not now</span></td></tr>
+        <tr><td>E · Edge app window</td><td>Not found</td><td>None</td><td>None</td><td><span class="tag no">Not now</span></td></tr>
+        <tr><td>F · WinForms, windowed</td><td>No</td><td>None</td><td>S1</td><td><span class="tag mid">If the look can change</span></td></tr>
       </tbody>
     </table></div>
-    <p class="note">Only option A has a test: spike S7 and the app of today. Options B to E were not tested, and no platform docs were read for them. So this table does not compare the hosts. The claim that P8 comes from the size of our host code is not measured.</p>
+    <p class="note">The docs were read on 2026-11-24. Nothing was built or run for this table. The test results come from the spikes of 2026-11-18 and 2026-11-19. Each foldable says what was not checked.</p>
+    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
+    <details class="f">
+      <summary><span class="l1"><span class="id">A</span><span class="t">WinForms, visual hosting</span></span><span class="l2">The host of today; tested in S2 and S7</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/windowed-vs-visual-hosting">Windowed vs. visual hosting</a>: the app must forward mouse, touch and pen input, and must do the scale work. No setting removes this work. <a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/overview-features-apis">Overview of APIs</a>: the default background can be transparent.</p></div></div>
+        <div class="field"><span class="k">Tests</span><div class="v"><p>S2: transparent, clicks on empty parts reach the window below, exact drag (<code>docs/plan.md</code>). S7: two windows use 479 MB working set, 64 MB more than one.</p></div></div>
+        <div class="field"><span class="k">Code</span><div class="v"><p>916 lines: <code>ClearHost</code> 342, <code>BadgeWindow</code> 247, <code>TrayWindow</code> 207, <code>WidgetWindow</code> 120. How much a thin host removes is not measured.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>Touch and pen input, screen reader, and monitors with different scales.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">B</span><span class="t">WPF, WebView2CompositionControl</span></span><span class="l2">A new control for visual hosting in WPF; not tested</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/microsoft-edge/webview2/platforms/wpf">WebView2 in WPF</a>: the standard control has the airspace problem, and the composition control does not. <a href="https://github.com/MicrosoftEdge/WebView2Feedback/blob/main/specs/WPF_WebView2CompositionControl.md">Spec</a>: it uses a screen capture session, so frame rates can be lower.</p></div></div>
+        <div class="field"><span class="k">Blazor</span><div class="v"><p><a href="https://learn.microsoft.com/aspnet/core/blazor/hybrid/">Blazor Hybrid</a> has a WPF <code>BlazorWebView</code>. If it works with the composition control: not checked.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>A transparent WPF window (<code>AllowsTransparency</code>) with the composition control. No source confirms or denies it.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">C</span><span class="t">WinUI 3</span></span><span class="l2">Open platform issues on transparency; not tested</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/windowed-vs-visual-hosting">Framework constraints</a>: the composition controller does not support Windows App SDK visuals.</p></div></div>
+        <div class="field"><span class="k">Issues</span><div class="v"><p><a href="https://github.com/microsoft/microsoft-ui-xaml/issues/1247">1247</a>, transparent borderless windows: open since 2019. <a href="https://github.com/microsoft/microsoft-ui-xaml/issues/6527">6527</a>, transparent WebView2 background: open since 2021. The comments have workarounds.</p></div></div>
+        <div class="field"><span class="k">Blazor</span><div class="v"><p>The Blazor Hybrid page names MAUI, WPF and Windows Forms. It names no WinUI 3 control.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>The workarounds, and other ways to host a composition visual.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">D</span><span class="t">.NET MAUI Blazor Hybrid</span></span><span class="l2">WinUI 3 on Windows; not tested</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/dotnet/maui/what-is-maui">What is .NET MAUI</a>: Windows apps use WinUI 3. So I expect the limits of option C. That is a conclusion, not a documented fact.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>Transparent windows and two tray windows in MAUI. A search of the MAUI issues gave no result.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">E</span><span class="t">Edge app window (PWA)</span></span><span class="l2">No transparent window in the docs that I read; not tested</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/microsoft-edge/progressive-web-apps/how-to/window-controls-overlay">Window Controls Overlay</a>: the page can use the title bar area, but the system buttons stay as an overlay.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>All other display modes, window places from code, and the tray icon.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">F</span><span class="t">WinForms, windowed hosting (BlazorWebView)</span></span><span class="l2">The smallest host; tested in S1, but a different look</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/windowed-vs-visual-hosting">Windowed hosting</a>: the system sends the input to WebView2, so the app forwards nothing. <a href="https://learn.microsoft.com/aspnet/core/blazor/hybrid/">Blazor Hybrid</a> has a Windows Forms <code>BlazorWebView</code>.</p></div></div>
+        <div class="field"><span class="k">Tests</span><div class="v"><p>S1: the system draws the round corners and the shadow. The drag is exact, and the CSS open has 0 late frames.</p></div></div>
+        <div class="field"><span class="k">Cost</span><div class="v"><p>S1 is a plain window. The ball that grows into the panel and the soft page shadow need a transparent window. The approved look changes.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>The badge in this host, and the memory.</p></div></div>
+      </div>
+    </details>
   </section>
 
   <section>
@@ -764,7 +817,8 @@ public interface IHostWindow
 }</pre>
     <ul>
       <li>One class for both windows: DPI, display change and exit are written once (Places G8).</li>
-      <li>No GDI+ drawing: the ball and the badge are page content (V5 lesson).</li>
+      <li>The ball and the badge stay page content, as in the app of today.</li>
+      <li>The input forward and the scale work stay: visual hosting needs them. So the host gets smaller, but not trivial.</li>
       <li>Place rules are pure functions with unit tests (Places G7).</li>
     </ul>
   </section>
