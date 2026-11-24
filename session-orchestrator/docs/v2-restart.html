@@ -52,6 +52,8 @@ nav button .n { font-family: var(--font-mono); font-size: 12px; opacity: .7; mar
 button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .panel { display: flex; flex-direction: column; gap: 24px; }
+/* Off screen, not display none: a diagram in a hidden tab needs a size to render. */
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
 section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 section + section { border-top: 1px solid var(--line); padding-top: 24px; }
 .box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
@@ -212,7 +214,7 @@ flowchart LR
 </div>
 
 <!-- 2 CURRENT STATE -->
-<div class="panel" id="state" role="tabpanel" aria-labelledby="t-state" hidden>
+<div class="panel off" id="state" role="tabpanel" aria-labelledby="t-state">
   <section>
     <h2>Size of the problem</h2>
     <div class="tiles">
@@ -292,10 +294,10 @@ flowchart TB
 </div>
 
 <!-- 3 PAINS -->
-<div class="panel" id="pains" role="tabpanel" aria-labelledby="t-pains" hidden>
+<div class="panel off" id="pains" role="tabpanel" aria-labelledby="t-pains">
   <section>
     <h2>Thirteen root causes</h2>
-    <p class="summary">Each row is one root cause. The number is the count of gaps and issues that it explains. Select a row to open its detail.</p>
+    <p class="summary">Each row is one root cause. The number is an estimate: I grouped the findings by hand, and one finding can be in more than one group. It shows the order of size only. Select a row to open its detail.</p>
     <div class="plist">
       <a class="prow" href="#p1"><span class="id">P1</span><span><span class="t">No single source of truth</span><span class="s">One fact in many places</span><span class="bar"><i style="width:100%"></i></span></span><span class="c">20</span></a>
       <a class="prow" href="#p2"><span class="id">P2</span><span><span class="t">Contracts are strings</span><span class="s">C#, CSS and JS share names only</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
@@ -306,7 +308,7 @@ flowchart TB
       <a class="prow" href="#p7"><span class="id">P7</span><span><span class="t">Tests read pixels and wait</span><span class="s">Timers and pictures, not events</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
       <a class="prow" href="#p8"><span class="id">P8</span><span><span class="t">Native host cost</span><span class="s">WinForms, WebView2, GDI+</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
       <a class="prow" href="#p9"><span class="id">P9</span><span><span class="t">No defined design system</span><span class="s">No full tokens, rules or guidelines</span><span class="bar"><i style="width:45%"></i></span></span><span class="c">9</span></a>
-      <a class="prow" href="#p10"><span class="id">P10</span><span><span class="t">Components not reusable</span><span class="s">Four ring components for one shape</span><span class="bar"><i style="width:40%"></i></span></span><span class="c">8</span></a>
+      <a class="prow" href="#p10"><span class="id">P10</span><span><span class="t">Components not reusable</span><span class="s">Three ring drawings for one shape</span><span class="bar"><i style="width:40%"></i></span></span><span class="c">8</span></a>
       <a class="prow" href="#p11"><span class="id">P11</span><span><span class="t">The view is not data-driven</span><span class="s">Pages and card rules are C# code</span><span class="bar"><i style="width:40%"></i></span></span><span class="c">8</span></a>
       <a class="prow" href="#p12"><span class="id">P12</span><span><span class="t">No unified animation system</span><span class="s">CSS, JS, view transitions and GDI+</span><span class="bar"><i style="width:50%"></i></span></span><span class="c">10</span></a>
       <a class="prow" href="#p13"><span class="id">P13</span><span><span class="t">No unified navigation system</span><span class="s">Two units pick the page move</span><span class="bar"><i style="width:35%"></i></span></span><span class="c">7</span></a>
@@ -575,7 +577,7 @@ interface IHostWindow {
     </details>
 
     <details class="pain" id="p10">
-      <summary><span class="l1"><span class="id">P10</span><span class="t">Components not reusable</span><span class="c">8</span></span><span class="l2">Ring, DeepRing, KindRing and the badge SVG all draw a ring</span></summary>
+      <summary><span class="l1"><span class="id">P10</span><span class="t">Components not reusable</span><span class="c">8</span></span><span class="l2">Ring, DeepRing and the badge SVG each draw a ring</span></summary>
       <div class="body">
         <p><strong>Context.</strong> Components grew for one page each. Some read data, so they cannot move to another page. <code>Cards.razor</code> has 5 jobs in 280 lines. The badge and the home page map the group colors each in their own code.</p>
         <div class="chips"><span class="chip">Components C-G1–C-G4</span><span class="chip">Style S-G8</span><span class="chip">Source: you</span></div>
@@ -583,8 +585,7 @@ interface IHostWindow {
           <div class="snip bad"><span class="lab">Today <span class="file">HomePage.razor · TrayBadge.razor</span></span>
 <pre>&lt;DeepRing Segments="Segments"&gt;...&lt;/DeepRing&gt;
 &lt;Ring Key="..." P="p" Size="40" Th="6"&gt;...&lt;/Ring&gt;
-&lt;KindRing Kind="@c.Kind" P="0.5" Size="28" /&gt;
-<span class="cm">@* TrayBadge.razor: a fourth ring, own SVG *@</span>
+<span class="cm">@* TrayBadge.razor: a third ring, own SVG *@</span>
 &lt;svg class="tb-ring" viewBox="0 0 56 56"&gt;
   @foreach (var (length, offset, color) in Arcs)</pre></div>
           <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
@@ -601,7 +602,7 @@ interface IHostWindow {
     </details>
 
     <details class="pain" id="p11">
-      <summary><span class="l1"><span class="id">P11</span><span class="t">The view is not data-driven</span><span class="c">8</span></span><span class="l2">The card rules are C# code, and meta.json "card" keys are not read</span></summary>
+      <summary><span class="l1"><span class="id">P11</span><span class="t">The view is not data-driven</span><span class="c">8</span></span><span class="l2">The card rules are C# code. A search found no C# reader of the meta.json "card" keys</span></summary>
       <div class="body">
         <p><strong>Context.</strong> The app is a view of an event stream. The content of one kind is data (<code>view.json</code>), but the card type, its actions, each page, each list and each count are C# code. A new kind or a new view needs code in many files.</p>
         <div class="chips"><span class="chip">Data G3, G5, G6, G8</span><span class="chip">F1-8, R2-4</span><span class="chip">Source: you</span></div>
@@ -698,7 +699,7 @@ nav.Back();                <span class="cm">// closes the top entry</span>
   var tabs = document.querySelectorAll('nav [role="tab"]');
   function show(name) {
     if (names.indexOf(name) < 0) name = "purpose";
-    names.forEach(function (n) { document.getElementById(n).hidden = n !== name; });
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
     tabs.forEach(function (b) {
       var on = b.dataset.tab === name;
       b.setAttribute("aria-selected", on ? "true" : "false");

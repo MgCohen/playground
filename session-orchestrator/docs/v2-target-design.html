@@ -53,6 +53,8 @@ nav button .n { font-family: var(--font-mono); font-size: 12px; opacity: .7; mar
 button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .panel { display: flex; flex-direction: column; gap: 24px; }
+/* Off screen, not display none: a diagram in a hidden tab needs a size to render. */
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
 section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 section + section { border-top: 1px solid var(--line); padding-top: 24px; }
 .box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
@@ -182,6 +184,8 @@ flowchart LR
         <tr><td>Start from the data, then components, then the look</td><td>Default, Q5</td></tr>
         <tr><td>Step 2 compares the tray hosts</td><td>Default, Q6</td></tr>
         <tr><td>One motion system and one navigation system</td><td>You, Q4 (P12, P13)</td></tr>
+        <tr><td>The kind file is <code>content.json</code></td><td>You, D1</td></tr>
+        <tr><td>Own components, from a base that we copy and own</td><td>You, D2</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -191,27 +195,18 @@ flowchart LR
     <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
 
     <details class="f">
-      <summary><span class="l1"><span class="id">D1</span><span class="t">Rename the kind file to content.json?</span></span><span class="l2">Recommendation: yes. Default: yes</span></summary>
+      <summary><span class="l1"><span class="id">D2</span><span class="t">Which base do we copy and own?</span></span><span class="l2">Recommendation: the system of Web Awesome, with Razor components. No default</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>Today <code>templates/&lt;kind&gt;/view.json</code> holds the content of a kind. The new catalog has view templates too. One word with two meanings breaks rule 2 of the writing rules.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: rename to <code>content.json</code>.</li><li>B: keep <code>view.json</code>, and call the new files <code>lens.json</code>.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The kind file holds content; the view file holds a query and a layout.</p></div></div>
-      </div>
-    </details>
-
-    <details class="f">
-      <summary><span class="l1"><span class="id">D2</span><span class="t">Own design system or a component library?</span></span><span class="l2">Recommendation: own, on CSS tokens. Default: own</span></summary>
-      <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>The prior-art research found that Blazor libraries such as MudBlazor have no motion system, and their look is not ours. Our look and motion are approved.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: own components on our tokens (tab 4).</li><li>B: Fluent UI Blazor, themed.</li><li>C: MudBlazor, themed.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. The catalog has about 30 small components. A library adds a second style system to override (P5).</p></div></div>
+        <div class="field"><span class="k">Context</span><div class="v"><p>You want own components, from a base that we copy one time and do not follow. The comparison is on tab <a href="#system" data-go="system">5 · Design system</a>.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: Web Awesome, system only. Copy tokens, layers, CSS and guidelines. Write the components in Razor.</li><li>B: Web Awesome, all. Use the web components of <code>vsa-design</code>. The <code>AGENTS.md</code> rule must change.</li><li>C: Blazor Blueprint Primitives. Copy the Razor behavior parts that we need. Use our own look.</li><li>D: MudBlazor. Copy Razor components and replace the Material look.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It keeps the structure, docs and guidelines that you named. It leaves out the Lit code and its build. The cost: we write and test the behavior of each component.</p></div></div>
       </div>
     </details>
 
     <details class="f">
       <summary><span class="l1"><span class="id">D3</span><span class="t">Thin WinForms host for the tray?</span></span><span class="l2">Recommendation: option A of tab 5. Default: A</span></summary>
       <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>Only WebView2 composition is proven for a transparent, shaped window. WinUI 3 and MAUI are not proven for it.</p></div></div>
+        <div class="field"><span class="k">Context</span><div class="v"><p>WebView2 composition in WinForms works today. The other hosts were not checked, so the comparison of Q6 is not complete.</p></div></div>
         <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: thin WinForms host with <code>IHostWindow</code>.</li><li>A + spike: also try WinUI 3 in step 3.</li></ul></div></div>
         <div class="field"><span class="k">Recommend</span><div class="v"><p>A. Make the host small first; change the host later only if the spike shows a gain.</p></div></div>
       </div>
@@ -247,7 +242,7 @@ flowchart LR
 </div>
 
 <!-- 2 VIEWS -->
-<div class="panel" id="views" role="tabpanel" aria-labelledby="t-views" hidden>
+<div class="panel off" id="views" role="tabpanel" aria-labelledby="t-views">
   <section>
     <h2>A card composes itself</h2>
     <div class="box"><pre class="mermaid">
@@ -405,7 +400,7 @@ public static ViewModel Compose(Snapshot data, ViewTemplate view,
 </div>
 
 <!-- 3 NAVIGATION -->
-<div class="panel" id="nav" role="tabpanel" aria-labelledby="t-nav" hidden>
+<div class="panel off" id="nav" role="tabpanel" aria-labelledby="t-nav">
   <section>
     <h2>One navigator, one stack</h2>
     <p class="summary">The navigator is the only owner of "where the user is". It holds a stack of entries: one tab root, the pushed pages, and the open overlays. Each operation gives its move, so no unit computes a move from two addresses (P13, Page moves G4).</p>
@@ -487,7 +482,7 @@ public interface INavigator
 </div>
 
 <!-- 4 STATE -->
-<div class="panel" id="state" role="tabpanel" aria-labelledby="t-state" hidden>
+<div class="panel off" id="state" role="tabpanel" aria-labelledby="t-state">
   <section>
     <h2>The tray panel as one state machine</h2>
     <div class="box"><pre class="mermaid">
@@ -595,7 +590,80 @@ Task&lt;MotionEnd&gt; Play(MotionStep step, ElementRef target);</pre>
 </div>
 
 <!-- 4 DESIGN SYSTEM -->
-<div class="panel" id="system" role="tabpanel" aria-labelledby="t-system" hidden>
+<div class="panel off" id="system" role="tabpanel" aria-labelledby="t-system">
+  <section>
+    <h2>Candidate bases to copy and own</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Base</th><th>License</th><th>We copy</th><th>AGENTS.md rule</th><th>Effort</th></tr></thead>
+      <tbody>
+        <tr><td>A · Web Awesome, system</td><td>MIT</td><td>Tokens, CSS, guidelines</td><td><span class="tag rec">Fits</span></td><td>Large</td></tr>
+        <tr><td>B · Web Awesome, all</td><td>MIT</td><td>All, with Lit code</td><td><span class="tag no">Conflicts</span></td><td>Small, then large</td></tr>
+        <tr><td>C · Blueprint Primitives</td><td>Apache-2.0</td><td>Razor behavior</td><td><span class="tag mid">In part</span></td><td>Medium</td></tr>
+        <tr><td>D · MudBlazor</td><td>MIT</td><td>Razor, SCSS</td><td><span class="tag mid">In part</span></td><td>Large</td></tr>
+        <tr><td>E · Fluent UI Blazor</td><td>MIT</td><td>Razor, web components</td><td><span class="tag no">Conflicts</span></td><td>Very large</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The licenses, file counts and sizes come from the source repositories and the <code>vsa-design</code> clone on 2026-11-24. The effort is my estimate. No candidate was built or run.</p>
+    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
+    <details class="f">
+      <summary><span class="l1"><span class="id">A, B</span><span class="t">Web Awesome</span></span><span class="l2">MIT; a CSS system and 74 component folders in Lit</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">License</span><div class="v"><p>MIT, Copyright (c) 2023 Fonticons, Inc. (<a href="https://github.com/shoelace-style/webawesome">source</a>). Keep the copyright and the license text. Do not copy Pro code. If we copy Font Awesome Free icons, the SVG files are CC BY 4.0 and need attribution.</p></div></div>
+        <div class="field"><span class="k">A copies</span><div class="v"><p>Layers, tokens, themes, native CSS and utilities (5,330 lines in <code>src/styles</code>), and the guidelines (2,945 lines). The component CSS (9,255 lines) is for shadow DOM, so it is only a reference.</p></div></div>
+        <div class="field"><span class="k">B copies</span><div class="v"><p>All of <code>vsa-design</code>: 387 TypeScript files with 76,509 lines, and a Node build.</p></div></div>
+        <div class="field"><span class="k">Blazor</span><div class="v"><p>A: Razor and CSS. B: custom elements in Razor markup, with JS interop for events and state.</p></div></div>
+        <div class="field"><span class="k">AGENTS.md</span><div class="v"><p>A fits. B conflicts: the source is TypeScript. The rule needs an exception for a vendored component build.</p></div></div>
+        <div class="field"><span class="k">Effort</span><div class="v"><p>A: large for the components, small for the system. B: small to start, large to own.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">C</span><span class="t">Blazor Blueprint Primitives</span></span><span class="l2">Apache-2.0; 35 headless primitives, .NET 10</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">License</span><div class="v"><p>Apache-2.0 (<a href="https://github.com/blazorblueprintui/ui">source</a>). Keep the license and the NOTICE text, and mark each changed file. Vendored parts keep their own licenses.</p></div></div>
+        <div class="field"><span class="k">Copies</span><div class="v"><p>Razor and C# behavior: focus, keys, ARIA, overlays. 129 Razor files and 194 C# files. The primitives have no look.</p></div></div>
+        <div class="field"><span class="k">Blazor</span><div class="v"><p>Native Razor on .NET 10.</p></div></div>
+        <div class="field"><span class="k">AGENTS.md</span><div class="v"><p>Fits in part: 32 JavaScript files, 286 KB, some from other libraries. Copy only the necessary parts, or extend the rule for overlay scripts.</p></div></div>
+        <div class="field"><span class="k">Effort</span><div class="v"><p>Medium. The tokens and the guidelines must come from a different source. Young project: 703 stars.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">D</span><span class="t">MudBlazor</span></span><span class="l2">MIT; Razor components in Material Design</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">License</span><div class="v"><p>MIT, Copyright (c) 2021 MudBlazor (<a href="https://github.com/MudBlazor/MudBlazor">source</a>). Keep the copyright and the license text.</p></div></div>
+        <div class="field"><span class="k">Copies</span><div class="v"><p>From 167 Razor files, 679 C# files and 112 SCSS files (283 KB), the parts that we use.</p></div></div>
+        <div class="field"><span class="k">Blazor</span><div class="v"><p>Native Razor.</p></div></div>
+        <div class="field"><span class="k">AGENTS.md</span><div class="v"><p>Conflicts in part: 53 TypeScript files (400 KB, with tests) and SCSS that needs a Sass build.</p></div></div>
+        <div class="field"><span class="k">Effort</span><div class="v"><p>Large. The structure assumes Material Design, and our approved look is different.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">E</span><span class="t">Fluent UI Blazor</span></span><span class="l2">MIT; some components wrap web components</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">License</span><div class="v"><p>MIT, Microsoft (<a href="https://github.com/microsoft/fluentui-blazor">source</a>). Keep the license and the third-party notices.</p></div></div>
+        <div class="field"><span class="k">Copies</span><div class="v"><p>107 Razor files and 482 C# files. <code>FluentButton</code> renders <code>fluent-button</code>, and the scripts use the package <code>@fluentui/web-components</code>.</p></div></div>
+        <div class="field"><span class="k">Blazor</span><div class="v"><p>Razor, in part over web components.</p></div></div>
+        <div class="field"><span class="k">AGENTS.md</span><div class="v"><p>Conflicts: 63 TypeScript files here, and the source of the web components is a second code base.</p></div></div>
+        <div class="field"><span class="k">Effort</span><div class="v"><p>Very large. This candidate is not an option of D2.</p></div></div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>What vsa-design shows</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Fact</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Commits after <code>v3.14.0</code>, no merges</td><td>79, in 11 days</td></tr>
+        <tr><td>Component source, without <code>vsa-*</code></td><td>148 lines added, 136 deleted</td></tr>
+        <tr><td>Files in <code>vsa/vendor</code></td><td>3,507 of 5,448</td></tr>
+        <tr><td>Decision records</td><td>10</td></tr>
+        <tr><td>Own components</td><td>1: <code>vsa-table</code></td></tr>
+        <tr><td>Look</td><td>Reset to default values (0007)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="summary">My reading, not a fact from the repository: most work went to the parts around the components (build, vendor copy, skills, icons, docs links, theme model). Little went to the components and the look. Option A leaves out most of these parts.</p>
+  </section>
+
   <section>
     <h2>Layers</h2>
 <pre class="code">@layer reset, tokens, base, components, layouts, motion, host;
@@ -654,7 +722,7 @@ Task&lt;MotionEnd&gt; Play(MotionStep step, ElementRef target);</pre>
 </div>
 
 <!-- 5 TRAY HOST -->
-<div class="panel" id="host" role="tabpanel" aria-labelledby="t-host" hidden>
+<div class="panel off" id="host" role="tabpanel" aria-labelledby="t-host">
   <section>
     <h2>What the tray host needs</h2>
     <div class="scroll"><table>
@@ -675,13 +743,13 @@ Task&lt;MotionEnd&gt; Play(MotionStep step, ElementRef target);</pre>
       <thead><tr><th>Option</th><th>Transparency</th><th>Cost</th><th>Verdict</th></tr></thead>
       <tbody>
         <tr><td>A · Thin WinForms, WebView2 composition</td><td>Yes, proven</td><td>Small: remove code</td><td><span class="tag rec">Recommended</span></td></tr>
-        <tr><td>B · WPF, WebView2</td><td>No: HWND airspace</td><td>Port, lose the look</td><td><span class="tag no">No</span></td></tr>
-        <tr><td>C · WinUI 3, WebView2</td><td>Not proven</td><td>Port, new runtime</td><td><span class="tag mid">Spike only</span></td></tr>
-        <tr><td>D · Blazor Hybrid (MAUI)</td><td>Not proven</td><td>WinUI 3 under it</td><td><span class="tag mid">Spike only</span></td></tr>
-        <tr><td>E · Browser app window</td><td>No</td><td>No tray shapes</td><td><span class="tag no">No</span></td></tr>
+        <tr><td>B · WPF, WebView2</td><td>Not checked</td><td>Port</td><td><span class="tag mid">Not checked</span></td></tr>
+        <tr><td>C · WinUI 3, WebView2</td><td>Not checked</td><td>Port, other runtime</td><td><span class="tag mid">Not checked</span></td></tr>
+        <tr><td>D · Blazor Hybrid (MAUI)</td><td>Not checked</td><td>Port</td><td><span class="tag mid">Not checked</span></td></tr>
+        <tr><td>E · Browser app window</td><td>Not checked</td><td>Not checked</td><td><span class="tag mid">Not checked</span></td></tr>
       </tbody>
     </table></div>
-    <p class="note">The facts for C and D come from the platform docs, not from a test. A spike in step 3 can try C if you want a second option. The cost of P8 comes from the host code size, not from WinForms.</p>
+    <p class="note">Only option A has a test: spike S7 and the app of today. Options B to E were not tested, and no platform docs were read for them. So this table does not compare the hosts. The claim that P8 comes from the size of our host code is not measured.</p>
   </section>
 
   <section>
@@ -710,7 +778,7 @@ public interface IHostWindow
   var tabs = document.querySelectorAll('nav [role="tab"]');
   function show(name) {
     if (names.indexOf(name) < 0) name = "overview";
-    names.forEach(function (n) { document.getElementById(n).hidden = n !== name; });
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
     tabs.forEach(function (b) {
       var on = b.dataset.tab === name;
       b.setAttribute("aria-selected", on ? "true" : "false");

@@ -2398,10 +2398,12 @@ The view (web UI and tray) restarts from scratch on one data flow and one design
 | 2 · Target design | Each page and list is a view of one query; a composer joins the view template, the content template and the result; one navigator; state machines with one motion system; design system; thin tray host | `docs/v2-target-design.html` (https://claude.ai/artifact/FmECykMtYjwUtdgfTct32V) |
 | 3 · Rebuild plan | Not started | - |
 
-Decisions so far: each page and list is a view of one query, and one motion system and one navigation system (user, Q4); step 2 starts from the data (default, Q5); step 2 compares the tray hosts (default, Q6). Open in step 2: D1 to D6 at the end of the Overview tab of the target design page.
+Decisions so far: each page and list is a view of one query, and one motion system and one navigation system (user, Q4); step 2 starts from the data (default, Q5); step 2 compares the tray hosts (default, Q6). D1 (user): `content.json`. D2 (user): own components, from a base that we copy and own; the base is not picked. Open in step 2: the base of D2, and D3 to D6, at the end of the Overview tab of the target design page.
 
 Findings:
 
 - `orch decision pr` fails with "no template answer" when it runs from the repository root. It works from `session-orchestrator/`.
 - The drag-to-scroll script of the tab bar in the earlier artifacts loses a click: a drag that ends on another element leaves the `dragged` flag on the first button, so the next click on that tab does nothing. The V2 pages use only the native scroll of the bar.
 - The repository and the artifacts have no prior-art notes on a navigation controller. The Navigation tab of the target design uses the Page moves review and a summary of common stack navigators.
+- The counts of the 13 root causes are estimates. The tray host options B to E were not checked, so the Q6 comparison is not complete. The ring has three drawings, not four.
+- Base research of D2 (2026-11-24): licenses and sizes of Web Awesome, Blazor Blueprint, MudBlazor and Fluent UI Blazor are on the Design system tab. Nothing was built.
