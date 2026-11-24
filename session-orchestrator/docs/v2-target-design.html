@@ -210,7 +210,7 @@ flowchart LR
         <div class="field"><span class="k">S1</span><div class="v"><p>WinForms tray and MAUI Android on one UI library.</p></div></div>
         <div class="field"><span class="k">S2</span><div class="v"><p>WinForms tray, and Android in the browser on the web host.</p></div></div>
         <div class="field"><span class="k">S3</span><div class="v"><p>One MAUI project for Windows and Android.</p></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>S1. It has the most tests and keeps the tray look. S2 can be its first step.</p></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>S1 until the spikes of the S3 plan give a result. S2 is ruled out by the decision of 2026-11-20.</p></div></div>
       </div>
     </details>
 
@@ -751,7 +751,7 @@ flowchart TB
         <tr><td>Native projects</td><td>2</td><td>1</td><td>1</td></tr>
         <tr><td>Phone offline</td><td>App starts; data needs a cache</td><td>No</td><td>App starts; data needs a cache</td></tr>
         <tr><td>Test of today</td><td>S2, S7, A1</td><td>Web host only</td><td>A1 for Android only</td></tr>
-        <tr><td>Verdict</td><td><span class="tag rec">Recommended</span></td><td><span class="tag mid">First step to S1</span></td><td><span class="tag no">Risk for the tray</span></td></tr>
+        <tr><td>Verdict</td><td><span class="tag rec">Recommended</span></td><td><span class="tag no">Ruled out, 2026-11-20</span></td><td><span class="tag no">Risk for the tray</span></td></tr>
       </tbody>
     </table></div>
     <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
@@ -788,7 +788,96 @@ flowchart TB
         <div class="field"><span class="k">Source</span><div class="v"><p><a href="https://learn.microsoft.com/dotnet/maui/supported-platforms">MAUI platforms</a>; <a href="https://github.com/microsoft/microsoft-ui-xaml/issues/1247">WinUI issue 1247</a>.</p></div></div>
       </div>
     </details>
-    <div class="rule">S2 and S1 use the same two libraries. So S2 can be the first Android step, and the MAUI host can come later with no change to the components.</div>
+    <div class="rule">S2 is ruled out by the decision of 2026-11-20 in <code>docs/decisions.md</code> ("Devices: how does Android get the UI?"): a MAUI <code>BlazorWebView</code> as an APK, no PWA. The comparison stays for reference.</div>
+  </section>
+
+  <section>
+    <h2>S3: possible limits on Windows</h2>
+    <p class="summary">Row 2 is the main risk. A transparent WinUI window has a workaround. The Blazor view inside it has an open issue, and the ball needs both.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Limit</th><th>Tray today</th><th>MAUI on Windows</th><th>State</th><th>Test</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Transparent window</td><td>Yes: composition</td><td>No WinUI API (<a href="https://github.com/microsoft/microsoft-ui-xaml/issues/1247">1247</a>). WinUIEx has a backdrop and a MAUI sample</td><td><span class="tag mid">Likely possible</span></td><td>X1</td></tr>
+        <tr><td>2</td><td>Transparent Blazor view</td><td>Yes</td><td>WinUI WebView2 draws a theme color (<a href="https://github.com/microsoft/microsoft-ui-xaml/issues/6527">6527</a>, open)</td><td><span class="tag no">Confirmed limit, open issue</span></td><td>X1</td></tr>
+        <tr><td>3</td><td>Page shadow</td><td>CSS, on the desktop</td><td>Needs rows 1 and 2</td><td><span class="tag mid">Not known</span></td><td>X1</td></tr>
+        <tr><td>4</td><td>Ball, grow, shrink</td><td>CSS in a clear window</td><td>Needs rows 1 and 2; else a plain rectangle shows</td><td><span class="tag mid">Not known</span></td><td>X1, X2</td></tr>
+        <tr><td>5</td><td>Side badge</td><td>Second window</td><td>MAUI supports more windows on Windows (<a href="https://learn.microsoft.com/dotnet/maui/user-interface/controls/window">docs</a>); shape needs rows 1 and 2</td><td><span class="tag mid">Likely possible</span></td><td>X3</td></tr>
+        <tr><td>6</td><td>Click-through</td><td>Window region</td><td>Workaround with window regions (comments of <a href="https://github.com/microsoft/microsoft-ui-xaml/issues/1247">1247</a>)</td><td><span class="tag mid">Not known</span></td><td>X1</td></tr>
+        <tr><td>7</td><td>Window border</td><td>None</td><td>Thin white border reported (<a href="https://github.com/microsoft/microsoft-ui-xaml/issues/11172">11172</a>, open)</td><td><span class="tag mid">Likely limit</span></td><td>X1</td></tr>
+        <tr><td>8</td><td>Always on top</td><td>Panel pinned, badge</td><td><a href="https://learn.microsoft.com/windows/apps/develop/ui/manage-app-windows">IsAlwaysOnTop</a> of WinUI; MAUI has no API (<a href="https://github.com/dotnet/maui/issues/8198">8198</a>)</td><td><span class="tag rec">No limit found</span></td><td>X3</td></tr>
+      </tbody>
+    </table></div>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Limit</th><th>Tray today</th><th>MAUI on Windows</th><th>State</th><th>Test</th></tr></thead>
+      <tbody>
+        <tr><td>9</td><td>No taskbar entry</td><td>Yes</td><td><code>AppWindow.IsShownInSwitchers</code></td><td><span class="tag rec">No limit found</span></td><td>X3</td></tr>
+        <tr><td>10</td><td>No focus steal</td><td>No code for it found</td><td>Win32 style on the handle; not in the MAUI docs</td><td><span class="tag mid">Not known</span></td><td>X3</td></tr>
+        <tr><td>11</td><td>Tray icon</td><td><code>NotifyIcon</code></td><td>No MAUI API; start with no window is open (<a href="https://github.com/dotnet/maui/issues/3846">3846</a>)</td><td><span class="tag no">Confirmed: own code</span></td><td>X3</td></tr>
+        <tr><td>12</td><td>Notices</td><td>Own window</td><td>App notifications of the Windows App SDK; own window as row 5</td><td><span class="tag rec">No limit found</span></td><td>X3</td></tr>
+        <tr><td>13</td><td>DPI, monitors</td><td>WinForms events</td><td><code>DisplayDensityChanged</code> on Windows</td><td><span class="tag mid">Not known</span></td><td>X3</td></tr>
+        <tr><td>14</td><td>Start, memory</td><td>S7: 1.0 s, 479 MB</td><td>No number found</td><td><span class="tag mid">Not known</span></td><td>X4</td></tr>
+        <tr><td>15</td><td>Two Blazor windows</td><td>One shared environment</td><td>Open dispose fault in a WPF case (<a href="https://github.com/dotnet/maui/issues/26746">26746</a>)</td><td><span class="tag mid">Not known</span></td><td>X3</td></tr>
+        <tr><td>16</td><td>Deployment</td><td>One exe</td><td>Adds the Windows App SDK runtime, or a self-contained folder</td><td><span class="tag no">Confirmed: larger</span></td><td>X4</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Sources: docs and issues, read on 2026-11-24. "Likely" is my reading of them. Workarounds in issue comments are not tested by us, and some comments disagree. The memory of S7 is for simple test shapes, not the full app. MAUI also has a <a href="https://learn.microsoft.com/dotnet/maui/developer-tools/platform-backends/windows-wpf">WPF backend</a>, but its page says: experimental, not officially supported.</p>
+  </section>
+
+  <section>
+    <h2>S3 with our own ball window</h2>
+    <p class="summary">Question: can a MAUI app host a raw Win32 or WinForms window for the ball? Likely yes: both are Win32 windows, and the WinUI docs let an app get the window handle. No doc describes a MAUI app with a WinForms window in one project, so test X2 settles it.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Shared with Android</th><th>Own Windows code</th></tr></thead>
+      <tbody>
+        <tr><td>Components, view models</td><td>Yes</td><td>None</td></tr>
+        <tr><td>State, navigation, motion</td><td>Yes</td><td>Window machine</td></tr>
+        <tr><td>Normal app window</td><td>Yes, MAUI page</td><td>Small</td></tr>
+        <tr><td>Panel, ball and badge windows</td><td>No</td><td>Today's <code>ClearHost</code> way</td></tr>
+        <tr><td>App start, services</td><td>Yes</td><td>Second message and dispatcher setup</td></tr>
+      </tbody>
+    </table></div>
+    <div class="rule">With this mix, the tray windows are the same code as in S1. S3 then shares only the app start and a normal window. It adds the Windows App SDK to the tray.</div>
+  </section>
+
+  <section>
+    <h2>Android bubble widget</h2>
+    <p class="summary">S1 and S3 are equal here: both use the same MAUI Android host. The choice between them does not change the result.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Point</th><th>Bubbles API</th><th>Overlay window</th><th>Home widget</th></tr></thead>
+      <tbody>
+        <tr><td>Shape of the small form</td><td>System bubble with our icon</td><td>Our own view</td><td>RemoteViews only</td></tr>
+        <tr><td>Transparency</td><td>Not stated</td><td>Likely; the page read has no statement</td><td>Not checked</td></tr>
+        <tr><td>Ball and grow</td><td>System motion; own motion not stated</td><td>Likely, drawn by us</td><td>No: no custom views</td></tr>
+        <tr><td>Blazor (WebView)</td><td>Likely in the open form: it is an activity</td><td>Likely: any view; not tested</td><td>No: WebView not in the list</td></tr>
+        <tr><td>Permission</td><td>Notifications; user can block bubbles</td><td>User grants "display over other apps"</td><td>User adds the widget</td></tr>
+        <tr><td>Version limits</td><td>Target 11 or higher: conversation and shortcut</td><td>12: touch rules. Target 15: visible overlay for a background service start</td><td>Updates: 30 minutes minimum (<code>updatePeriodMillis</code>)</td></tr>
+        <tr><td>Sources</td><td><a href="https://developer.android.com/develop/ui/views/notifications/bubbles">Bubbles</a></td><td><a href="https://developer.android.com/reference/android/Manifest.permission#SYSTEM_ALERT_WINDOW">Permission</a>, <a href="https://developer.android.com/about/versions/12/behavior-changes-all">Android 12</a>, <a href="https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start">services</a></td><td><a href="https://developer.android.com/reference/android/widget/RemoteViews">RemoteViews</a>, <a href="https://developer.android.com/develop/ui/views/appwidgets/advanced">updates</a></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The bubble rule needs a conversation. If a waiting card qualifies: not checked. The Android docs say that very few apps should use the overlay permission. A Blazor view in an overlay service, with no activity: not checked, and no MAUI doc was found for it.</p>
+  </section>
+
+  <section>
+    <h2>Spike plan (not started)</h2>
+    <p class="summary">Each spike is a throwaway project in <code>spikes/</code> with mock data. It uses no live store and no port 7777. The time values are my estimates. The plan starts only if the user says so.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Spike</th><th>Pass</th><th>Time (min)</th><th>On screen</th></tr></thead>
+      <tbody>
+        <tr><td>X1 · MAUI window, clear backdrop, clear Blazor view</td><td>Desktop shows behind the page, light and dark; no border; click on empty part reaches the window below</td><td>60</td><td>One small test window</td></tr>
+        <tr><td>X2 · Own composition window in the MAUI process</td><td>Ball grows with 0 to 1 late frames; both windows run Blazor; clean exit</td><td>90</td><td>Ball and one plain window</td></tr>
+        <tr><td>X3 · Badge, top, taskbar, focus, icon, two monitors</td><td>Each row 5 and 8 to 15 is yes or no, with a recording</td><td>60</td><td>Badge at the right edge</td></tr>
+        <tr><td>X4 · Start time, memory, size</td><td>Numbers next to the app of today, same content</td><td>30</td><td>Windows open and close</td></tr>
+        <tr><td>X5 · Android bubble with a Blazor view</td><td>Bubble opens the card page on the emulator</td><td>90</td><td>Emulator window</td></tr>
+        <tr><td>X6 · Android overlay with a WebView</td><td>Clear ball grows over another app; touches outside it pass</td><td>90</td><td>Emulator window</td></tr>
+      </tbody>
+    </table></div>
+    <ol>
+      <li>Do X1 first. If it passes, S3 can have the ball with MAUI only.</li>
+      <li>If X1 fails, do X2. If X2 fails, S3 cannot have the ball.</li>
+      <li>If X1 or X2 passes, do X3 and X4.</li>
+      <li>Do X5 and X6 independently: they do not decide between S1 and S3.</li>
+    </ol>
+    <p class="note">Install: the <code>maui-windows</code> workload and the WinUIEx package (MIT) for X1 to X4. The default .NET on this PC lists no workload. X5 and X6 can use the user-local toolchain of A1 in <code>%LOCALAPPDATA%\orch-android</code>: its folder exists, but it was not run. If it is complete: not checked.</p>
   </section>
 
   <section>

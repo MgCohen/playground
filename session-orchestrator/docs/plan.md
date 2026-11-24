@@ -2409,3 +2409,5 @@ Findings:
 - Base research of D2 (2026-11-24): licenses and sizes of Web Awesome, Blazor Blueprint, MudBlazor and Fluent UI Blazor are on the Design system tab. Nothing was built.
 - Correction: `LayeredForm` and `EdgeTab` (GDI+) are not in `orch/visual-review`. P8 and P12 named them as current. Host code there: 916 lines in four files.
 - D3 (user, 2026-11-24): no host preference; Blazor, ideally also on mobile; the tray is one view of the engine library; Android must reuse as much as possible. Proposals S1 to S3 are on the Hosts tab. They use the devices plan, spike A1 and the K draft. D4 changes: V2 replaces the result of P1a and P1b of the devices plan. Nothing was built.
+- S2 of the host proposals is ruled out by the decision of 2026-11-20 (MAUI `BlazorWebView`, APK, no PWA). The page missed it at first.
+- S3 limits (2026-11-24, docs and issues only): the open risk is a transparent Blazor view in WinUI 3 (microsoft-ui-xaml 6527). The Android bubble is equal for S1 and S3. Spike plan X1 to X6 is on the Hosts tab; nothing was started.
