@@ -170,14 +170,15 @@ flowchart LR
 
   <section>
     <h2>Projects</h2>
-    <p class="summary">This is the earlier project list. D4 proposes a different list for Android, so it is not decided.</p>
+    <p class="summary">D4 = A: new projects next to the old app. P1a and P1b of the devices plan stop.</p>
     <div class="tree">
-      <details class="leaf"><summary><span class="n">Orchestrator.View/</span><span class="d">Composer, view templates, state machines. Pure C#, no Blazor</span></summary><div class="more">Unit tests run here with no window and no browser. It reads the store through one snapshot interface.</div></details>
-      <details class="leaf"><summary><span class="n">Orchestrator.View.Components/</span><span class="d">Razor class library: the design system</span></summary><div class="more">Tokens, layers, components, motion CSS, the small JS helpers, and a gallery page. No store access.</div></details>
-      <details class="leaf"><summary><span class="n">Orchestrator.View.Web/</span><span class="d">The web host: routes to pages, the hub of the view model</span></summary><div class="more">Replaces the pages of <code>Orchestrator.Web</code> slice by slice. The supervisor and the API stay in <code>Orchestrator.Web</code>.</div></details>
-      <details class="leaf"><summary><span class="n">Orchestrator.View.Tray/</span><span class="d">The thin tray host: windows, places, input</span></summary><div class="more">One generic host window. Each window has one Blazor root. See tab 6.</div></details>
+      <details class="leaf"><summary><span class="n">Orchestrator.View/</span><span class="d">Composer, view templates, state machines. No Blazor, no Windows</span></summary><div class="more">Unit tests run here with no window and no browser. It reads data through one snapshot interface.</div></details>
+      <details class="leaf"><summary><span class="n">Orchestrator.Ui/</span><span class="d">Razor class library: the design system</span></summary><div class="more">Tokens, layers, components, motion CSS, the small JS helpers, and a gallery page. No store access.</div></details>
+      <details class="leaf"><summary><span class="n">Orchestrator.App/</span><span class="d">The main app (S4): MAUI, Windows and Android</span></summary><div class="more">A thin host with its own solution file. The main solution needs no Android workload. MAUI on Windows is not proven.</div></details>
+      <details class="leaf"><summary><span class="n">Web host and widget host</span><span class="d">Thin hosts; project names are open</span></summary><div class="more">The web host gives the pages. The widget is a separate Windows program. The supervisor and the API stay in <code>Orchestrator.Web</code>.</div></details>
       <details class="leaf"><summary><span class="n">templates/views/</span><span class="d">The view templates (a new catalog)</span></summary><div class="more">One folder for each view, like <code>templates/modes/</code>. The store layer can replace a core view.</div></details>
     </div>
+    <div class="rule">Keep this function of P1b (note of the root): views read and act through requests with one sender interface. Where requests can go over HTTP, a remote sender sends them, so the phone needs no local store.</div>
   </section>
 
   <section>
@@ -192,6 +193,7 @@ flowchart LR
         <tr><td>The kind file is <code>content.json</code></td><td>You, D1</td></tr>
         <tr><td>Own components, from a base that we copy and own</td><td>You, D2</td></tr>
         <tr><td>The widget and the main app are two programs (S4)</td><td>You, D3 = B</td></tr>
+        <tr><td>New <code>Orchestrator.View</code> and <code>Orchestrator.Ui</code>, thin hosts, one <code>Orchestrator.App</code></td><td>You, D4 = A</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -206,17 +208,6 @@ flowchart LR
         <div class="field"><span class="k">Context</span><div class="v"><p>You want own components, from a base that we copy one time and do not follow. The comparison is on tab <a href="#system" data-go="system">5 · Design system</a>.</p></div></div>
         <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: Web Awesome, system only. Copy tokens, layers, CSS and guidelines. Write the components in Razor.</li><li>B: Web Awesome, all. Use the web components of <code>vsa-design</code>. The <code>AGENTS.md</code> rule must change.</li><li>C: Blazor Blueprint Primitives. Copy the Razor behavior parts that we need. Use our own look.</li><li>D: MudBlazor. Copy Razor components and replace the Material look.</li></ul></div></div>
         <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It keeps the structure, docs and guidelines that you named. It leaves out the Lit code and its build. The cost: we write and test the behavior of each component. On a phone, each base needs a check of touch, focus and the on-screen keyboard. No base was checked there.</p></div></div>
-      </div>
-    </details>
-
-    <details class="f">
-      <summary><span class="l1"><span class="id">D4</span><span class="t">Which projects does the rebuild make?</span></span><span class="l2">Recommendation: two shared libraries and thin hosts. No default</span></summary>
-      <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>The earlier D4 had <code>View</code>, <code>View.Components</code>, <code>View.Web</code> and <code>View.Tray</code>. It had no Android host, and it overlaps the devices plan and K.</p></div></div>
-        <div class="field"><span class="k">A</span><div class="v"><p>In the solution, next to the old app: <code>Orchestrator.View</code> (no Blazor, no Windows) and <code>Orchestrator.Ui</code> (Razor). Each host references them. An Android host gets its own solution file, as in the devices plan. P1a and P1b of that plan stop, because V2 replaces their result.</p></div></div>
-        <div class="field"><span class="k">B</span><div class="v"><p>First do P1a and P1b: move the old components into <code>Orchestrator.Ui</code>. Then replace them there, slice by slice.</p></div></div>
-        <div class="field"><span class="k">C</span><div class="v"><p>The earlier D4 projects, and add Android later.</p></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It does not move code that the rebuild replaces. B gives an Android app sooner, but with the old components.</p></div></div>
       </div>
     </details>
 
@@ -792,7 +783,7 @@ flowchart LR
       <tbody>
         <tr><td>S1</td><td>Its tray becomes the widget of S4</td></tr>
         <tr><td>S3</td><td>Limits 1 to 7 do not apply to a normal MAUI window</td></tr>
-        <tr><td>D4</td><td>Adds <code>Orchestrator.App</code> (MAUI, two targets) in place of an Android project</td></tr>
+        <tr><td>D4</td><td>Decided: A. <code>Orchestrator.App</code> (MAUI, two targets) in place of an Android project</td></tr>
         <tr><td>Main app, first step</td><td>The web host in the browser; MAUI on Windows can come later</td></tr>
         <tr><td>X1, X2</td><td>Drop</td></tr>
         <tr><td>X3</td><td>Drop for MAUI; the widget has the tray tests</td></tr>
@@ -979,7 +970,7 @@ flowchart TB
     <div class="scroll"><table>
       <thead><tr><th>Plan</th><th>Fit</th><th>Conflict</th></tr></thead>
       <tbody>
-        <tr><td>Devices plan, P1a and P1b</td><td><code>Orchestrator.Ui</code>, no <code>Board</code></td><td>They move components that V2 replaces</td></tr>
+        <tr><td>Devices plan, P1a and P1b</td><td><code>Orchestrator.Ui</code>, no <code>Board</code></td><td>None: replaced by V2 (D4 = A)</td></tr>
         <tr><td>Devices plan, P3 to P6</td><td>Android host of S1</td><td>None found</td></tr>
         <tr><td>K (draft, not approved)</td><td>Engine, queries, thin hosts</td><td>Projections and composer can overlap</td></tr>
       </tbody>
@@ -1203,7 +1194,7 @@ flowchart LR
       <thead><tr><th>Decision</th><th>Effect</th></tr></thead>
       <tbody>
         <tr><td>D2 · base</td><td>None. Plain CSS worked in all heads; no base was tested</td></tr>
-        <tr><td>D4 · projects</td><td>Supports A. Core and Ui shared well. Add one Windows library for the Windows heads</td></tr>
+        <tr><td>D4 · projects</td><td>Supported A, now decided. Core and Ui shared well. Add one Windows library for the Windows heads</td></tr>
         <tr><td>D5 · card rules</td><td>None. Not tested</td></tr>
         <tr><td>D6 · overlays and Back</td><td>Stronger: Android Back needs the navigator (S-6)</td></tr>
         <tr><td>D3 · S4 on Windows</td><td>The MAUI main window is still not proven</td></tr>

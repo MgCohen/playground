@@ -119,7 +119,7 @@ flowchart TD
   <h2>Phases and their order</h2>
   <pre class="mermaid">
 flowchart LR
-    P1a[P1a UI library<br/>feature folders] --> P1b[P1b Presenters<br/>and requests]
+    P1a[P1a replaced by V2<br/>UI library] --> P1b[P1b replaced by V2<br/>Presenters]
     P1a --> P2[P2 Shared mock<br/>and services]
     P2 --> P3[P3 Android host]
     P1b --> P4[P4 Build, share, CI]
@@ -127,13 +127,14 @@ flowchart LR
     P3 --> P5[P5 Smoke test]
     P3 --> P6[P6 Phone features]
   </pre>
+  <p class="note"><strong>P1a and P1b are replaced by V2</strong> (D4 = A, 2026-11-24). See <a href="https://claude.ai/artifact/FmECykMtYjwUtdgfTct32V">V2 Target Design</a> and <code>docs/decisions.md</code>. V2 keeps the remote requests of P1b, so the phone needs no local store. P2 to P6 depend on the result of V2. P3 uses <code>Orchestrator.App</code> in place of <code>Orchestrator.Android</code>.</p>
   <p>The UI takes the VSA shape of the back end, with plain .NET and no VSA framework. P3 depends only on P1a and P2, so Android work can run next to P1b.</p>
 
   <div class="scroll"><table>
     <thead><tr><th>Phase</th><th>Result</th><th>Done when</th></tr></thead>
     <tbody>
-      <tr><td>P1a</td><td><code>Orchestrator.Ui</code> with feature folders</td><td>Tests and tray self-test pass</td></tr>
-      <tr><td>P1b</td><td>One presenter for each module</td><td>No <code>Board</code>; tests pass</td></tr>
+      <tr><td>P1a <span class="chip k-rew">Replaced</span></td><td><code>Orchestrator.Ui</code> with feature folders</td><td>Tests and tray self-test pass</td></tr>
+      <tr><td>P1b <span class="chip k-rew">Replaced</span></td><td>One presenter for each module</td><td>No <code>Board</code>; tests pass</td></tr>
       <tr><td>P2</td><td>One mock store, one service list</td><td>Tray mock and live modes run</td></tr>
       <tr><td>P3</td><td><code>src/Orchestrator.Android</code></td><td>APK starts on emulator</td></tr>
       <tr><td>P4</td><td>Script, signing key, CI build</td><td>APK under 30 MB; CI fails on a break</td></tr>
@@ -157,7 +158,7 @@ flowchart LR
 
   <div class="tools"><button type="button" class="open-all">Open all</button><button type="button" class="close-all">Close all</button></div>
 
-  <details><summary>P1a · UI library with feature folders · move only, no logic change</summary><div>
+  <details><summary>P1a (replaced by V2) · UI library with feature folders · move only, no logic change</summary><div>
     <dl class="dl">
       <dt>Goal</dt><dd>Each host references one library, and the files sit in the folder of their module.</dd>
       <dt>Layout</dt><dd><code>Orchestrator.Ui/Features/{Home,Cards,Sessions,Stream,Documents}/</code>, <code>Orchestrator.Ui/Shared/</code>, <code>Routes.razor</code>, <code>wwwroot/</code>.</dd>
@@ -169,7 +170,7 @@ flowchart LR
     </dl>
   </div></details>
 
-  <details><summary>P1b · Presenters and requests · Board goes away</summary><div>
+  <details><summary>P1b (replaced by V2) · Presenters and requests · Board goes away</summary><div>
     <dl class="dl">
       <dt>Goal</dt><dd>The UI has the VSA shape: a view uses the presenter of its module, and a presenter sends requests.</dd>
       <dt>Shape</dt><dd>One presenter for each module (table above). Each read or action of <code>Board</code> becomes one request with one handler in the slice of its module. The handlers keep the logic of <code>Board</code>.</dd>

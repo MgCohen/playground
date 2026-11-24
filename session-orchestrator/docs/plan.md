@@ -2398,7 +2398,7 @@ The view (web UI and tray) restarts from scratch on one data flow and one design
 | 2 · Target design | Each page and list is a view of one query; a composer joins the view template, the content template and the result; one navigator; state machines with one motion system; design system; thin tray host | `docs/v2-target-design.html` (https://claude.ai/artifact/FmECykMtYjwUtdgfTct32V) |
 | 3 · Rebuild plan | Not started | - |
 
-Decisions so far: each page and list is a view of one query, and one motion system and one navigation system (user, Q4); step 2 starts from the data (default, Q5); step 2 compares the tray hosts (default, Q6). D1 (user): `content.json`. D2 (user): own components, from a base that we copy and own; the base is not picked. Open in step 2: the base of D2, and D3 to D6, at the end of the Overview tab of the target design page.
+Decisions so far: each page and list is a view of one query, and one motion system and one navigation system (user, Q4); step 2 starts from the data (default, Q5); step 2 compares the tray hosts (default, Q6). D1 (user): `content.json`. D2 (user): own components, from a base that we copy and own; the base is not picked. D3 = B and D4 = A (user). Open in step 2: the base of D2, D5 and D6, at the end of the Overview tab of the target design page.
 
 Findings:
 
@@ -2428,3 +2428,5 @@ D3 = B (user): the widget and the main app are two programs. Spike `spikes/pingp
 | Lines | 250 shared by all heads; Windows library 329; web 29, main window 51, notification 71, widget 114, Android 87 |
 
 Not done: MAUI on Windows (no workload), a real phone, trim, X5, X6, the URI scheme, the tray icon click.
+
+D4 = A (user, 2026-11-24): `docs/decisions.md`. P1a and P1b of the devices plan are replaced. The design keeps remote requests over HTTP (P1b), so that the phone needs no local store. D2, D5 and D6 are open. Nothing was built for D4.
