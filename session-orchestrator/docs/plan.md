@@ -2099,7 +2099,7 @@ Four dummy sessions: a root and three children. The root and two children fail, 
 
 ## W result: stream audit (2026-11-23)
 
-Messages go through the stream. The session lifecycle does not: turn, lease, heartbeat, registry, state, stack and runs live in side files and in supervisor memory. So each page that shows a session reads files and polls. The page `docs/stream-audit.html` (https://claude.ai/artifact/DKqHidbSJD1JTPHeKCKf7t) has the rules, the audit, the details with file and line, and the fix plan. Code read at commit `c445988`.
+Messages go through the stream. The session lifecycle does not: turn, lease, heartbeat, registry, state, stack and runs live in side files and in supervisor memory. So each page that shows a session reads files and polls. The page `docs/stream-audit.html` (https://claude.ai/artifact/DKqHidbSJD1JTPHeKCKf7t) has the rules, the audit, the details with file and line, and the fix plan. Code read at commit `c445988`. The audit and the fix plan are a proposal: the approval is deferred, and no fix task starts before it. Handover: `docs/handover/W.md`.
 
 Rules of the audit (default answers Q1 to Q6, each on its own decision branch, PRs #84, #86, #87, #89, #91, #93):
 
@@ -2110,6 +2110,7 @@ Rules of the audit (default answers Q1 to Q6, each on its own decision branch, P
 | R3 | An action only posts |
 | R4 | A projection is a cache that a replay can rebuild |
 | R5 | A view updates on a push. A data poll is a bypass |
+| R6 | Plumbing serves only the stream. No page shows a plumbing file |
 | R7 | One owner and one fold for each projection |
 | R8 | A time sweep reads projections and writes envelopes |
 
@@ -2132,9 +2133,9 @@ Scope: Web, Store, Supervisor, plugin hooks, CLI, tray, providers. Config (`poli
 | W-13 | Poll timers: LiveView 10 s, tick 5 s, plugin 3 s, HTTP 2 s | R5 R8 | W11 |
 | W-14 | Dead code (`Board.DefaultsToReview`), `Cwd` from the lease | R2 | W12 |
 
-Through the stream (no bypass): all message kinds, the Cards page and the inbox, the Stream page, the event document, the API stream views and SSE, the plugin tools and the delivery push, the providers.
+Through the stream (no bypass): all message kinds, the inbox cards, the timeline rows, the event document (the Cards page and the Stream page also call `Board.Tree`, which reads side files), the API stream views and SSE, the plugin tools and the delivery push, the providers.
 
-Open: Q7, liveness. Default proposal: `heartbeat.txt` stays as plumbing; only the supervisor sweep reads it and posts `session.stale` or `session.fresh` on a change.
+Q7, liveness (default answer (b)): `heartbeat.txt` stays as plumbing. Only the supervisor sweep reads it, and it posts `session.stale` or `session.fresh` on a change. No view reads the file.
 
 Notes for other sessions: K, projections need one home and one owner. N, W1 to W9 add lifecycle envelopes; the store needs fast folds by session and a push for each append.
 
@@ -2184,7 +2185,7 @@ Stream audit fix tasks (W). Order: facts first, views last. Each task keeps the 
 |---|---|---|
 | W1 | The plugin posts `turn.start` and `turn.end` (`by: live`); a turn projection; `Recovery.Interrupted` from it | None |
 | W2 | The plugin and the supervisor post `lease.take` and `lease.release`; a lease projection | None |
-| W3 | Liveness: the sweep posts `session.stale` and `session.fresh` (Q7) | Q7 |
+| W3 | Liveness: the sweep reads `heartbeat.txt` and posts `session.stale` and `session.fresh` (Q7) | None |
 | W4 | Actions only post; a registry reactor folds `session.json`; `session.update` for supervisor fields; `enabled` as a projection | None |
 | W5 | Delete the `supervisor.Tick()` calls in Board and the API; a reactor removes the worktree after `session.archive` | W4 |
 | W6 | A state projection from `session.state`; the marks as envelopes; the `episode` field; delete `state-check.json` | W1 to W4 |
