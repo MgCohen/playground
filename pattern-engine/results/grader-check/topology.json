@@ -1,0 +1,11 @@
+{
+  "pack": "topology",
+  "model": "haiku",
+  "files": {
+    "agents/grader.md": "41c867928c95",
+    "src/PatternEngine/Domains/Topology/grading.md": "543808828b6f"
+  },
+  "right": 8,
+  "total": 8,
+  "at": "2026-11-17T02:15:48"
+}
