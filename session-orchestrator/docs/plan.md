@@ -2099,6 +2099,8 @@ Four dummy sessions: a root and three children. The root and two children fail, 
 
 ## K result: architecture definition (2026-11-23)
 
+The user deferred the approval. Handover and known weak points: `docs/handover/K.md`.
+
 Page: `docs/architecture.html` (https://claude.ai/artifact/1ah9eGXuB8rxFzRfwJqGwU). Branch `orch/k-architecture`. The nine choices are default decisions, each on a stacked branch with a draft PR (#85, #90, #92, #94, #95, #96, #98, #99, #100). The user reviews them.
 
 Style: a modular monolith of vertical slices around one event stream.
@@ -2131,7 +2133,7 @@ Findings in the code (Current tab of the page):
 | C2 | `Orchestrator.Store` holds feature logic (`Lifecycle.cs`, `Messages.cs`, `Inbox.cs`, `Renderer.cs`, `WorkflowHost.cs`) | K3, K5 |
 | C3 | `SupervisorOptions.Provider` defaults to `ProviderFactory.Default`; Store and Supervisor reference Providers | K2 |
 | C4 | One `Supervisor` class (about 800 lines) runs many features | K4 |
-| C5 | Event appends in about 12 files | K5 (with the W audit) |
+| C5 | Event appends in 11 files, also in hosts (all through `store.Events`) | K5 (with the W audit) |
 | C6 | Registry, leases and claims are mutable files | K6 |
 | C7 | The rules were in three documents | Page and `AGENTS.md` |
 | C8 | The tests scan text, not references | K1 |

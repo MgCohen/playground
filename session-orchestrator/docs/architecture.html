@@ -150,8 +150,13 @@ details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: c
     <tr><td>Plan for architecture tests</td><td>Topology tab, rules table</td><td><span class="pill draft">draft</span></td></tr>
     <tr><td>Answers to the nine questions</td><td>Decisions tab</td><td><span class="pill draft">defaults</span></td></tr>
     <tr><td>Next tasks K1–K6 in the roadmap</td><td><code>docs/plan.md</code></td><td><span class="pill draft">draft</span></td></tr>
-    <tr><td>Approval of the user</td><td>Root session</td><td><span class="pill open">open</span></td></tr>
+    <tr><td>Approval of the user</td><td>Root session</td><td><span class="pill open">deferred</span></td></tr>
   </table></div>
+</section>
+
+<section>
+  <h2>Handover</h2>
+  <div class="note"><b>Draft with known weak points.</b> Findings C1 to C6 are not all verified in the code. The A5 sample conflicts with K-Q4, and the stored <code>Tick</code> event conflicts with K-Q1. The full list, the PR stack and the next steps are in <code>session-orchestrator/docs/handover/K.md</code> on <code>orch/k-roadmap</code>.</div>
 </section>
 
 <section>
@@ -372,7 +377,7 @@ flowchart LR
     <tr><td>C2</td><td>The Store project holds feature logic</td><td>A6</td></tr>
     <tr><td>C3</td><td>Store and Supervisor reference Providers</td><td>A6</td></tr>
     <tr><td>C4</td><td>One Supervisor class runs many features</td><td>A5, A7</td></tr>
-    <tr><td>C5</td><td>Event appends in about 12 files</td><td>A1</td></tr>
+    <tr><td>C5</td><td>Event appends in 11 files, also in hosts</td><td>A7</td></tr>
     <tr><td>C6</td><td>Registry, leases, claims are mutable files</td><td>A1, A2</td></tr>
     <tr><td>C7</td><td>Rules in three documents</td><td>All</td></tr>
     <tr><td>C8</td><td>Tests scan text, not references</td><td>A5, A6</td></tr>
@@ -403,7 +408,7 @@ public interface IStateChecker { ... }</pre>
     <p>One tick does turns, decisions, defaults, reminders, imports, archive and recovery. Each feature adds code to the same class.</p>
   </div></details>
   <details class="example"><summary>C5 · event appends <span class="d">files with Post or Append calls</span></summary><div class="body">
-    <p>Supervisor.cs (7), Store/Lifecycle.cs (7), Cli/Git/StackOps.cs (5), Store/Messages.cs (4), Supervisor.Lifecycle.cs (4), and 7 more files. Task W audits this.</p>
+    <p>Supervisor.cs (7), Store/Lifecycle.cs (7), Cli/Git/StackOps.cs (5), Store/Messages.cs (4), Supervisor.Lifecycle.cs (4), and 6 more files. The count excludes Cli/Commands and the tray mock. All appends use <code>store.Events</code>. Task W audits this.</p>
   </div></details>
 </section>
 
