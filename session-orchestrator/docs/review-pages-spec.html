@@ -461,6 +461,11 @@ sequenceDiagram
 
 <!-- F3 PR STACK -->
 <div class="panel" id="stack" hidden>
+  <div class="subtabs" role="tablist" aria-label="F3 parts">
+    <button role="tab" data-sub="stack/spec" aria-selected="true">Spec</button>
+    <button role="tab" data-sub="stack/sketches">Sketches</button>
+  </div>
+<div class="sub" id="stack/spec">
   <section>
     <span class="kicker">F3 · summary</span>
     <h2>PR stack</h2>
@@ -555,6 +560,11 @@ flowchart TD
       <tr><td>Stack of a stream over HTTP</td><td>None</td><td><span class="chip gap">gap</span></td></tr>
     </table></div>
   </section>
+</div>
+<div class="sub" id="stack/sketches" hidden>
+  <p class="summary">The three F3 views on a phone: the stack tree, the stack cards and the PR preview. The intent of each view is in <code>docs/f3-page-intents.md</code>. Demo data only. Approve also merges for now. The full form of a PR is F4.</p>
+  <iframe class="sketch-frame" title="F3 PR stack sketches" data-src="run-views.html?set=f3" loading="lazy"></iframe>
+</div>
 </div>
 
 <!-- F4 PR -->

@@ -567,9 +567,73 @@ html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden;
   ]
  }
 ];
+  // ---- F3 PR stack (docs/f3-page-intents.md). Rows from run-views/f3/f3.json ----
+  var F3 = [
+ {
+  "id": "f3tree",
+  "name": "S-1 · Stack tree",
+  "why": "The PRs of a stream as a Git tree, the base at the bottom. The lowest PR has the marker. A tap on a row opens the preview. Variation c puts the card of the lowest PR in the tree.",
+  "sketches": [
+   {
+    "file": "tree-a.svg",
+    "caption": "All open · #41 is the lowest"
+   },
+   {
+    "file": "tree-b.svg",
+    "caption": "Half way · pre-approved, change"
+   },
+   {
+    "file": "tree-c.svg",
+    "caption": "Variation: tree and cards together"
+   }
+  ]
+ },
+ {
+  "id": "f3card",
+  "name": "S-2 · Stack cards",
+  "why": "One card for each PR, the lowest first, with the acts. Approve merges the lowest PR. A higher PR can be pre-approved. Variation b shows all cards in a list.",
+  "sketches": [
+   {
+    "file": "card-a.svg",
+    "caption": "One card at a time"
+   },
+   {
+    "file": "card-b.svg",
+    "caption": "Variation: list of cards"
+   },
+   {
+    "file": "card-c.svg",
+    "caption": "After an approve: the next card"
+   }
+  ]
+ },
+ {
+  "id": "f3prev",
+  "name": "S-3 · PR preview",
+  "why": "One PR template has three forms: card, preview and full. The preview shows the context, the summary, the key information, the fields and the acts. The template is a placeholder (O-2). The full form is F4.",
+  "sketches": [
+   {
+    "file": "prev-a.svg",
+    "caption": "Preview of the lowest PR"
+   },
+   {
+    "file": "prev-b.svg",
+    "caption": "Preview of a higher PR"
+   },
+   {
+    "file": "prev-c.svg",
+    "caption": "Full form (F4)"
+   }
+  ]
+ }
+];
   var SET = new URLSearchParams(location.search).get('set');
 
   var ROWS = [];
+  F3.forEach(function (r) {
+    ROWS.push({ group: 'F3 PR stack', set: 'f3', id: r.id, name: r.name, tag: 'mobile · demo data', why: r.why,
+      s: r.sketches.map(function (s, i) { return ['abc'[i], s.caption, img('f3/' + s.file, r.name + ', ' + s.caption)]; }) });
+  });
   R5.forEach(function (r) {
     ROWS.push({ group: 'Round 5 · F2 pages after the intent pass', set: 'r5', id: r.id, name: r.name, tag: 'mobile · Git tree · intents', why: r.why,
       s: r.sketches.map(function (s, i) { return ['abc'[i], s.caption, img('r5/' + s.file, r.name + ', ' + s.caption)]; }) });
@@ -605,9 +669,13 @@ html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden;
   }
 
   var rows = document.getElementById('rows'), last = null;
-  var PAGES = SET === 'pages' || SET === 'r4' || SET === 'r5';
+  var PAGES = SET === 'pages' || SET === 'r4' || SET === 'r5' || SET === 'f3';
   if (PAGES) { rows.querySelector('.intro').textContent = 'All F2 pages on a phone. Round 5 follows the intent of each page; round 4 is below for compare. Tap a sketch to see it large.'; }
-  ROWS = ROWS.filter(function (r) { return PAGES ? (SET === 'pages' ? !!r.set : r.set === SET) : !r.set; });
+  if (SET === 'f3') {
+    rows.querySelector('.intro').textContent = 'The F3 views on a phone, with demo data. The act labels and the PR template are placeholders. Tap a sketch to see it large.';
+    rows.querySelector('.legend').hidden = true; rows.querySelector('.legend').style.display = 'none';
+  }
+  ROWS = ROWS.filter(function (r) { return PAGES ? (SET === 'pages' ? !!r.set && r.set !== 'f3' : r.set === SET) : !r.set; });
   ROWS.forEach(function (r, i) {
     if (r.group !== last) { var h = document.createElement('h2'); h.className = 'group'; h.textContent = r.group; rows.appendChild(h); last = r.group; }
     var d = document.createElement('details');
