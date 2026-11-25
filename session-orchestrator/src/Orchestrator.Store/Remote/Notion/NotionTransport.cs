@@ -12,12 +12,12 @@ namespace Orchestrator.Store.Remote.Notion;
 /// <list type="bullet">
 /// <item><c>Events</c>: one row for each envelope (the stream). Relations: <c>From</c>, <c>To</c> and <c>Session</c> to
 /// <c>Sessions</c>, <c>Body</c> to <c>Bodies</c>, <c>Reply</c> to <c>Events</c>.</item>
-/// <item><c>Bodies</c>: one row for each body. The page content shows the fields. Relation <c>Event</c>, rollup <c>Session</c>.</item>
+/// <item><c>Bodies</c>: one document for each body. The page content is the message; a source block at the end holds the exact text. Relation <c>Event</c>; rollups <c>Session</c>, <c>Kind</c>, <c>From</c>, <c>To</c>.</item>
 /// <item><c>Sessions</c>: one row for each party (<c>user</c>, <c>supervisor</c>, <c>session:&lt;id&gt;</c>). A session row
 /// holds the registry entry. Relations <c>Inbox</c>, <c>Sent</c>, <c>Events</c> (the duals of the event relations) and <c>Parent</c>.</item>
 /// <item><c>Docs</c>: the run state (cursors, leases, claims, nudges, policy, templates, runs). Title: <c>kind|scope|id</c>.</item>
 /// </list>
-/// Each row keeps the document text in <c>Text</c>. The version is the hash of that text, as in the local folder.
+/// The other rows keep the document text in <c>Text</c>. The version is the hash of the text, as in the local folder.
 /// Notion has no conditional write. The rule <c>Exists</c> is a read before the create and a read after it (the
 /// oldest row wins). The rule <c>Stale</c> is a read before the write: two writers in the same second can both win.
 /// </summary>
@@ -54,7 +54,10 @@ public sealed class NotionTransport : IStoreTransport
     long feedMs;
     DateTimeOffset lastFeed = DateTimeOffset.MinValue;
 
-    sealed record Row(string PageId, string Key, string Kind, string Scope, string Id, string Text, bool Removed, DateTimeOffset Created);
+    sealed record Row(string PageId, string Key, string Kind, string Scope, string Id, string Text, bool Removed, DateTimeOffset Created, DateTimeOffset Edited = default);
+
+    // The text of each body page, read from its source block, and the edit time of the page at that read.
+    readonly Dictionary<string, (DateTimeOffset Edited, string Text)> contents = [];
 
     /// <summary>One database with a cache of its rows by title. A sync reads the rows that changed since the last sync.</summary>
     sealed class Table(string title, string titleProperty)
@@ -122,7 +125,9 @@ public sealed class NotionTransport : IStoreTransport
             if (scope.Kind == StoreWire.Sessions) return SessionIds().Contains(id) ? SessionDoc(id) : null;
             var (table, key) = Place(scope, id);
             Sync(table);
-            return table.Rows.TryGetValue(key, out var row) && Present(table, row) ? new WireDoc(id, Versions.Of(row.Text), row.Text) : null;
+            if (!table.Rows.TryGetValue(key, out var row) || !Present(table, row)) return null;
+            var text = TextOf(table, row);
+            return new WireDoc(id, Versions.Of(text), text);
         }
     }
 
@@ -140,7 +145,7 @@ public sealed class NotionTransport : IStoreTransport
             var (table, _) = Place(scope, "");
             Sync(table);
             return table.Rows.Values.Where(r => Present(table, r) && Member(table, scope, r))
-                .OrderBy(r => r.Id, StringComparer.Ordinal).Select(r => new WireDoc(r.Id, Versions.Of(r.Text), r.Text)).ToList();
+                .OrderBy(r => r.Id, StringComparer.Ordinal).Select(r => TextOf(table, r) is var text ? new WireDoc(r.Id, Versions.Of(text), text) : null!).ToList();
         }
     }
 
@@ -372,7 +377,7 @@ public sealed class NotionTransport : IStoreTransport
         foreach (var change in save.Changes.Concat(save.Removes))
         {
             var row = Fresh(change.Id);
-            var stored = row is not null && Present(table, row) ? Versions.Of(row.Text) : 0;
+            var stored = row is not null && Present(table, row) ? Versions.Of(TextOf(table, row, fresh: true)) : 0;
             if (stored != change.Version)
                 throw new StoreConflictException(StoreConflict.Stale, change.Id, $"{change.Id} changed after the read (version {stored}, read {change.Version}). Nothing changed.");
         }
@@ -427,16 +432,47 @@ public sealed class NotionTransport : IStoreTransport
         return Keep(docs, existing, props, null, new Row("", key, kind, scope, id, text, removed, DateTimeOffset.UtcNow));
     }
 
-    /// <summary>A body row. A new body gets its fields as page content, so a person reads it in Notion.</summary>
+    /// <summary>
+    /// A body is a document. The page content is the message, written for a person, and at the end one source block
+    /// with the exact body text that the store reads. The properties hold only the links: the event, and through it
+    /// the session, the kind and the parties.
+    /// </summary>
     Row WriteBody(string path, string text, bool removed, Row? existing)
     {
         var props = new JsonObject
         {
             ["Path"] = NotionClient.Title(path),
-            ["Text"] = NotionClient.RichText(text),
             ["Removed"] = new JsonObject { ["checkbox"] = removed },
         };
-        return Keep(bodies, existing, props, existing is null ? BodyBlocks(text) : null, new Row("", path, StoreWire.Bodies, "", path, text, removed, DateTimeOffset.UtcNow));
+        var blocks = removed ? null : BodyDocument(text);
+        if (existing is not null && blocks is not null)
+        {
+            foreach (var block in api.Children(existing.PageId)) api.DeleteBlock(NotionClient.IdOf(block));
+            api.AppendBlocks(existing.PageId, blocks);
+        }
+        var first = existing is null ? blocks?.Take(100).Select(b => b!.DeepClone()).ToArray() : null;
+        var row = Keep(bodies, existing, props, first is null ? null : new JsonArray(first), new Row("", path, StoreWire.Bodies, "", path, "", removed, DateTimeOffset.UtcNow));
+        if (existing is null && blocks is { Count: > 100 }) api.AppendBlocks(row.PageId, new JsonArray(blocks.Skip(100).Select(b => b!.DeepClone()).ToArray()));
+        contents[row.PageId] = (DateTimeOffset.UtcNow.AddMinutes(1), removed ? "" : text);
+        return row;
+    }
+
+    const string SourceCaption = "orch body source";
+
+    /// <summary>
+    /// The text of a document row: for a body, the source block of its page; for each other row, <c>Text</c>. A read
+    /// uses the body cache while the page edit time did not change. Notion keeps that time to the minute, so the check
+    /// before a write reads the page again (<paramref name="fresh"/>).
+    /// </summary>
+    string TextOf(Table table, Row row, bool fresh = false)
+    {
+        if (table != bodies) return row.Text;
+        if (!fresh && contents.TryGetValue(row.PageId, out var known) && known.Edited >= row.Edited) return known.Text;
+        var text = string.Concat(api.Children(row.PageId)
+            .Where(b => b["type"]?.GetValue<string>() == "code" && NotionClient.Plain(b["code"]?["caption"]) == SourceCaption)
+            .Select(b => NotionClient.Plain(b["code"]?["rich_text"])));
+        contents[row.PageId] = (row.Edited, text);
+        return text;
     }
 
     /// <summary>A session row with its registry entry: the entry text, and its main fields as properties.</summary>
@@ -468,13 +504,91 @@ public sealed class NotionTransport : IStoreTransport
         return kept;
     }
 
-    /// <summary>One paragraph for each field of the body (at most 90).</summary>
-    static JsonArray BodyBlocks(string text)
+    /// <summary>
+    /// The page of a body: a short field is one line ("name: value"); a long text is a heading and its paragraphs and
+    /// lists; a list is a bulleted list. Then a divider and the source blocks (each holds at most 200,000 characters).
+    /// </summary>
+    static JsonArray BodyDocument(string text)
     {
         var blocks = new JsonArray();
-        foreach (var (name, value) in Parse(text).Take(90))
-            blocks.Add(NotionClient.Paragraph(name, value is JsonValue v && v.GetValueKind() == JsonValueKind.String ? v.GetValue<string>()
-                : value is JsonArray list && list.All(i => i is JsonValue) ? string.Join(", ", list.Select(i => i!.ToString())) : value?.ToJsonString() ?? ""));
+        foreach (var (name, value) in Parse(text))
+        {
+            if (value is JsonValue v && v.GetValueKind() == JsonValueKind.String && v.GetValue<string>() is var str)
+            {
+                if (str.Length <= 120 && !str.Contains('\n')) blocks.Add(NotionClient.Paragraph(name, str));
+                else
+                {
+                    blocks.Add(NotionClient.Block("heading_3", name));
+                    foreach (var block in Markdown(str)) blocks.Add(block);
+                }
+            }
+            else if (value is JsonArray list && list.All(i => i is JsonValue))
+            {
+                blocks.Add(NotionClient.Block("heading_3", name));
+                foreach (var item in list) blocks.Add(NotionClient.Block("bulleted_list_item", item!.ToString()));
+            }
+            else blocks.Add(NotionClient.Paragraph(name, value?.ToJsonString() ?? ""));
+        }
+        while (blocks.Count > 90) blocks.RemoveAt(blocks.Count - 1);
+        blocks.Add(NotionClient.Divider());
+        for (var i = 0; i < Math.Max(1, text.Length); i += 200_000)
+            blocks.Add(NotionClient.Code(text.Length == 0 ? "" : text.Substring(i, Math.Min(200_000, text.Length - i)), "json", SourceCaption));
+        return blocks;
+    }
+
+    /// <summary>A small part of Markdown as blocks: headings, bulleted and numbered lists, code fences, paragraphs.</summary>
+    static List<JsonObject> Markdown(string text)
+    {
+        var blocks = new List<JsonObject>();
+        var paragraph = new List<string>();
+        List<string>? code = null;
+        void Flush()
+        {
+            if (paragraph.Count > 0) blocks.Add(NotionClient.Block("paragraph", string.Join("\n", paragraph)));
+            paragraph.Clear();
+        }
+        foreach (var raw in text.Replace("\r", "").Split('\n'))
+        {
+            var line = raw.TrimEnd();
+            var trimmed = line.TrimStart();
+            if (trimmed.StartsWith("```"))
+            {
+                Flush();
+                if (code is null) code = [];
+                else
+                {
+                    blocks.Add(NotionClient.Code(string.Join("\n", code), "plain text", ""));
+                    code = null;
+                }
+                continue;
+            }
+            if (code is not null)
+            {
+                code.Add(raw);
+                continue;
+            }
+            if (trimmed.Length == 0)
+            {
+                Flush();
+                continue;
+            }
+            var type = trimmed.StartsWith('#') ? "heading_3" : trimmed.StartsWith("- ") || trimmed.StartsWith("* ") ? "bulleted_list_item"
+                : System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^\d+\. ") ? "numbered_list_item" : trimmed.StartsWith("> ") ? "quote" : null;
+            if (type is null)
+            {
+                paragraph.Add(line);
+                continue;
+            }
+            Flush();
+            blocks.Add(NotionClient.Block(type, type switch
+            {
+                "heading_3" => trimmed.TrimStart('#').Trim(),
+                "numbered_list_item" => trimmed[(trimmed.IndexOf(". ", StringComparison.Ordinal) + 2)..],
+                _ => trimmed[2..],
+            }));
+        }
+        if (code is not null) blocks.Add(NotionClient.Code(string.Join("\n", code), "plain text", ""));
+        Flush();
         return blocks;
     }
 
@@ -503,7 +617,8 @@ public sealed class NotionTransport : IStoreTransport
         var body = table.Title == BodiesTitle;
         var id = body ? key : NotionClient.ReadText(r, "Id");
         return new(NotionClient.IdOf(r), key, body ? StoreWire.Bodies : NotionClient.ReadSelect(r, "Kind"),
-            NotionClient.ReadText(r, "Scope"), id.Length > 0 ? id : key, NotionClient.ReadText(r, "Text"), NotionClient.ReadCheck(r, "Removed"), NotionClient.CreatedOf(r));
+            NotionClient.ReadText(r, "Scope"), id.Length > 0 ? id : key, NotionClient.ReadText(r, "Text"), NotionClient.ReadCheck(r, "Removed"), NotionClient.CreatedOf(r),
+            DateTimeOffset.Parse(r["last_edited_time"]!.GetValue<string>()));
     }
 
     List<JsonObject> QueryTitle(string db, string property, string title) =>
@@ -566,10 +681,9 @@ public sealed class NotionTransport : IStoreTransport
                 ["Parent"] = SelfRelation(sessions.Db),
             });
             api.UpdateDatabase(bodies.Db, new JsonObject { [Dual("Body")] = new JsonObject { ["name"] = "Event" } });
-            api.UpdateDatabase(bodies.Db, new JsonObject
-            {
-                ["Session"] = new JsonObject { ["rollup"] = new JsonObject { ["relation_property_name"] = "Event", ["rollup_property_name"] = "Session", ["function"] = "show_original" } },
-            });
+            // The fields of a body come from its event: the session, the kind and the parties.
+            JsonObject Rollup(string property) => new() { ["rollup"] = new JsonObject { ["relation_property_name"] = "Event", ["rollup_property_name"] = property, ["function"] = "show_original" } };
+            api.UpdateDatabase(bodies.Db, new JsonObject { ["Session"] = Rollup("Session"), ["Kind"] = Rollup("Kind"), ["From"] = Rollup("From"), ["To"] = Rollup("To") });
         }
         docs.Db ??= api.CreateDatabase(page, DocsTitle, DocsSchema());
         logPage ??= api.CreatePage(page, LogTitle);
@@ -606,7 +720,6 @@ public sealed class NotionTransport : IStoreTransport
     {
         ["Path"] = new JsonObject { ["title"] = new JsonObject() },
         ["Removed"] = Check(),
-        ["Text"] = Text(),
     };
 
     static JsonObject SessionsSchema() => new()

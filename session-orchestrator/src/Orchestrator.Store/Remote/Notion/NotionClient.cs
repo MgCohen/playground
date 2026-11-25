@@ -117,6 +117,32 @@ public sealed class NotionClient
     public string UpdateRow(string pageId, JsonObject properties) =>
         IdOf(Send(HttpMethod.Patch, $"pages/{pageId}", new JsonObject { ["properties"] = properties }));
 
+    /// <summary>Adds blocks to the end of a page, at most 100 for each request.</summary>
+    public void AppendBlocks(string pageId, JsonArray blocks)
+    {
+        var all = blocks.Select(b => b!.DeepClone()).ToList();
+        for (var i = 0; i < all.Count; i += 100)
+            Send(HttpMethod.Patch, $"blocks/{pageId}/children", new JsonObject { ["children"] = new JsonArray(all.Skip(i).Take(100).ToArray()) });
+    }
+
+    public void DeleteBlock(string blockId) => Send(HttpMethod.Delete, $"blocks/{blockId}");
+
+    /// <summary>A block with a code text: the exact text in items of at most 2,000 characters, and a caption.</summary>
+    public static JsonObject Code(string text, string language, string caption) => new()
+    {
+        ["object"] = "block",
+        ["type"] = "code",
+        ["code"] = new JsonObject { ["language"] = language, ["rich_text"] = Items(text), ["caption"] = Items(caption) },
+    };
+
+    /// <summary>A block of one type with a text: heading_3, paragraph, bulleted_list_item, numbered_list_item, quote.</summary>
+    public static JsonObject Block(string type, string text) =>
+        new() { ["object"] = "block", ["type"] = type, [type] = new JsonObject { ["rich_text"] = Items(text) } };
+
+    public static JsonObject Divider() => new() { ["object"] = "block", ["type"] = "divider", ["divider"] = new JsonObject() };
+
+    public static string Plain(JsonNode? items) => Join(items);
+
     public void Archive(string pageId) => Send(HttpMethod.Patch, $"pages/{pageId}", new JsonObject { ["archived"] = true });
 
     public void AppendParagraph(string pageId, string line) =>

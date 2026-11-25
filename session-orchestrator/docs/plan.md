@@ -2546,6 +2546,7 @@ sequenceDiagram
 | `orch` end to end: `init`, `enable` x2, `post question`, `questions`, `answer`, `events`, `tree` | ✅ Script `spikes/notion-store/e2e.sh <parent page id>` |
 | Supervisor (`ORCH_PROVIDER=fake`, port 7891) on the e2e store | ✅ Delivered 3 envelopes. UI 200 in 0.9 s |
 | Links on the e2e store (`Inbox`, `Sent`, `Body`, `Reply`, rollup `Session`) | ✅ Each envelope links its parties, its session and its body. The answer links the question |
+| Body document (a message with paragraphs, lists and code) | ✅ The page shows headings, paragraphs, lists and code; the properties show `Kind`, `Session`, `From`, `To` through the event |
 
 ### Measurements
 
@@ -2573,7 +2574,8 @@ sequenceDiagram
 | N1-9 | One request hung for 60 s | Built: 20 s timeout, retry on a network error |
 | N1-10 | Database templates do not apply through API version 2022-06-28 | Open. The rows carry the fields as properties |
 | N1-11 | A relation in a page read shows at most 25 items | Accepted. The store reads `Text`; the relations are for people and queries |
-| N1-12 | The body content is written once. A change of a body changes `Text` only | Accepted. Bodies are write once |
+| N1-12 | A body is a document: the message as page content and the exact text in a source block. The properties are links | Built |
+| N1-13 | The body cache uses the page edit time, which Notion keeps to the minute. Another writer's change in the same minute is not seen by a read | Accepted: bodies are write once. A write reads the page again |
 
 ### Next steps
 

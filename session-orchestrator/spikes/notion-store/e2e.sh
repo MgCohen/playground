@@ -21,3 +21,4 @@ t $ORCH events --session n1-local
 t $ORCH tree
 t $ORCH events --view thread n1-t1
 t $ORCH questions
+t $ORCH send n1-local "$(printf 'Status of the store spike.\n\nThe store has four databases:\n- Events: the stream\n- Bodies: one document for each message\n- Sessions: one row for each party\n- Docs: run state\n\n1. Post the body.\n2. Post the event.\n\n```\norch events --session n1-local\n```')"
