@@ -83,6 +83,8 @@ The repository is public. Do not put the store, the transcripts or the memory in
 
 | Item | Next step |
 |---|---|
+| **Remote store** | First task on the next computer (user). Read issue #83, its spike in `docs/plan.md` and the handover `N.md` |
+| Git author email | Optional: set the GitHub noreply address |
 | `orch` 0.1.2 | Pack it: 0.1.1 gives a false "FAIL plugin" (fix in #106) |
 | Plugin 0.3.1 | Branch `orch/plugin-author`, no PR |
 | #56 | Retarget to `main` |
@@ -96,7 +98,15 @@ The store questions Q-S1 and Q-R9 of P are answered. The queue shows them as ope
 
 `wip/playground` is the backup of the untracked files of the main worktree (`spikes/blazor-nav`, `store-hold-markers.txt`).
 
+## Answers of the user for the move (2026-11-25)
+
+| Question | Answer |
+|---|---|
+| Live store | Fresh store on the next computer. No copy |
+| Details of `vsa-design` in V2 files | Leave all as is |
+| `W-raw-reports.md` | Keep it |
+
 ## Open questions
 
-- Does the live store move to the next computer, or does a fresh store start there?
 - Who continues #58 and #59?
+- The queue, oldest first: V2 D2, P Q5, P Q6, P Q-S6, P Q-S7. The handover files have the full text.
