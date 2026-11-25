@@ -84,14 +84,21 @@ public sealed class NotionClient
         }
     }
 
-    public string CreateDatabase(string parentPage, string title, JsonObject properties) =>
-        IdOf(Send(HttpMethod.Post, "databases", new JsonObject
+    public string CreateDatabase(string parentPage, string title, JsonObject properties) => IdOf(CreateDatabaseOf(parentPage, title, properties));
+
+    /// <summary>Makes a database and gives the result: the properties with the names of the dual relations.</summary>
+    public JsonObject CreateDatabaseOf(string parentPage, string title, JsonObject properties) =>
+        Send(HttpMethod.Post, "databases", new JsonObject
         {
             ["parent"] = new JsonObject { ["type"] = "page_id", ["page_id"] = parentPage },
             ["title"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = new JsonObject { ["content"] = title } }),
             ["is_inline"] = true,
             ["properties"] = properties,
-        }));
+        });
+
+    /// <summary>Adds, renames or changes properties of a database.</summary>
+    public JsonObject UpdateDatabase(string database, JsonObject properties) =>
+        Send(HttpMethod.Patch, $"databases/{database}", new JsonObject { ["properties"] = properties });
 
     public string CreatePage(string parentPage, string title) =>
         IdOf(Send(HttpMethod.Post, "pages", new JsonObject
@@ -100,8 +107,12 @@ public sealed class NotionClient
             ["properties"] = new JsonObject { ["title"] = Title(title) },
         }));
 
-    public string CreateRow(string database, JsonObject properties) =>
-        IdOf(Send(HttpMethod.Post, "pages", new JsonObject { ["parent"] = new JsonObject { ["database_id"] = database }, ["properties"] = properties }));
+    public string CreateRow(string database, JsonObject properties, JsonArray? children = null)
+    {
+        var body = new JsonObject { ["parent"] = new JsonObject { ["database_id"] = database }, ["properties"] = properties };
+        if (children is { Count: > 0 }) body["children"] = children;
+        return IdOf(Send(HttpMethod.Post, "pages", body));
+    }
 
     public string UpdateRow(string pageId, JsonObject properties) =>
         IdOf(Send(HttpMethod.Patch, $"pages/{pageId}", new JsonObject { ["properties"] = properties }));
@@ -177,6 +188,19 @@ public sealed class NotionClient
     public static JsonObject Title(string text) => new() { ["title"] = Items(text) };
 
     public static JsonObject RichText(string text) => new() { ["rich_text"] = Items(text) };
+
+    /// <summary>A relation value: the pages with these ids. No id clears the relation.</summary>
+    public static JsonObject Relation(params string?[] pages) =>
+        new() { ["relation"] = new JsonArray(pages.Where(p => p is { Length: > 0 }).Distinct().Select(p => (JsonNode)new JsonObject { ["id"] = p }).ToArray()) };
+
+    /// <summary>A paragraph block. A bold label comes first when it is given.</summary>
+    public static JsonObject Paragraph(string? label, string text)
+    {
+        var items = Items(text);
+        if (label is { Length: > 0 })
+            items.Insert(0, new JsonObject { ["type"] = "text", ["text"] = new JsonObject { ["content"] = label + ": " }, ["annotations"] = new JsonObject { ["bold"] = true } });
+        return new() { ["object"] = "block", ["type"] = "paragraph", ["paragraph"] = new JsonObject { ["rich_text"] = items } };
+    }
 
     public static JsonObject Select(string name) => new() { ["select"] = new JsonObject { ["name"] = name.Replace(',', ' ') } };
 

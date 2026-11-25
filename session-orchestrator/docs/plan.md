@@ -2521,6 +2521,8 @@ Result: the store runs in Notion. Two `orch` processes, a supervisor and its UI 
 
 Spike page: https://app.notion.com/p/Orch-store-spike-N1-42391e2457868137aed0d0f5804daece. Layout and rules: `docs/store.md`, "Notion store".
 
+The store uses four linked databases: `Events` (the stream), `Bodies`, `Sessions` (one row for each party, with its inbox) and `Docs` (run state). A person opens a session row and sees its inbox, its sent envelopes and each body.
+
 ```mermaid
 sequenceDiagram
     participant A as orch (local)
@@ -2538,11 +2540,12 @@ sequenceDiagram
 
 | Test | Result |
 |---|---|
-| `RepositoryContractTests`, `notion` fixtures (live) | ✅ 134 pass, 6 skip (kinds that never change), 14 min |
+| `RepositoryContractTests`, `notion` fixtures (live) | ✅ 134 pass, 6 skip (kinds that never change), 19 min |
 | `dotnet test --project tests/Orchestrator.Tests` on Linux | ✅ No new failure. 170 fail, the same tests as on `main` (178): Windows processes and inotify limits |
 | `node --experimental-strip-types --test plugin/hooks/test/*.test.ts` | ✅ 27 of 27, with the `notion:` root test |
 | `orch` end to end: `init`, `enable` x2, `post question`, `questions`, `answer`, `events`, `tree` | ✅ Script `spikes/notion-store/e2e.sh <parent page id>` |
 | Supervisor (`ORCH_PROVIDER=fake`, port 7891) on the e2e store | ✅ Delivered 3 envelopes. UI 200 in 0.9 s |
+| Links on the e2e store (`Inbox`, `Sent`, `Body`, `Reply`, rollup `Session`) | ✅ Each envelope links its parties, its session and its body. The answer links the question |
 
 ### Measurements
 
@@ -2550,8 +2553,8 @@ sequenceDiagram
 |---|---|
 | `orch` command, cold start | 1.6 to 9 s. `init` 9 s: it makes 2 databases and 1 page |
 | Supervisor, first 100 s | 153 requests. Before the feed cache: 275 (the limit) |
-| Supervisor, idle | 0.9 requests/s: 1 docs query and 1 stream query each 2.3 s |
-| Post to turn start | 3.5 s |
+| Supervisor, idle | 1.05 requests/s: 1 query of `Events`, `Sessions` and `Docs` each 2.3 s |
+| Post to turn start | 3.5 to 4 s |
 | Turn start to idle | 20 s: each state write is a read and a write |
 | UI first load | 0.9 s. Before the feed cache: 18.7 s |
 
@@ -2560,7 +2563,7 @@ sequenceDiagram
 | # | Finding | State |
 |---|---|---|
 | N1-1 | Notion has no conditional write. Two writers of one row in the same second can both win (`Stale`) | Open. Accepted for one supervisor |
-| N1-2 | One integration has 3 requests/s for all processes. The supervisor uses 0.9 idle | Open. More than 2 busy processes wait |
+| N1-2 | One integration has 3 requests/s for all processes. The supervisor uses 1.05 idle | Open. More than 2 busy processes wait |
 | N1-3 | The plugin hooks have no Notion backend. No inbox push, lease or heartbeat from the hooks | Open. Biggest gap for local sessions |
 | N1-4 | Notion keeps the edit time to the minute. The sync reads 2 minutes back | Built |
 | N1-5 | The feed misses an envelope from a writer whose clock is more than 2 minutes late | Open |
@@ -2569,10 +2572,12 @@ sequenceDiagram
 | N1-8 | The local folder derives the `sessions` kind from the folders | Built: derived from the rows |
 | N1-9 | One request hung for 60 s | Built: 20 s timeout, retry on a network error |
 | N1-10 | Database templates do not apply through API version 2022-06-28 | Open. The rows carry the fields as properties |
+| N1-11 | A relation in a page read shows at most 25 items | Accepted. The store reads `Text`; the relations are for people and queries |
+| N1-12 | The body content is written once. A change of a body changes `Text` only | Accepted. Bodies are write once |
 
 ### Next steps
 
 1. Give the hooks a store path through `orch` (one process call), or a Notion backend in `backend.ts`.
-2. Put a body as page content of its stream row, so a person reads it in Notion.
+2. Read the inbox of a party with a relation query (`To` contains the party row), in place of a filter of the full feed.
 3. Start a real cloud session with `ORCH_STORE=notion:...` and `NOTION_TOKEN`, and run one question and answer.
 4. If N1-1 or N1-2 blocks the work, go to a database store (for example D1 behind the store API).

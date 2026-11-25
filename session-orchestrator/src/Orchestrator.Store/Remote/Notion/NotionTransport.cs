@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Orchestrator.Core.Contract;
 using Orchestrator.Core.Storage;
@@ -6,28 +7,34 @@ using Orchestrator.Store.Local;
 namespace Orchestrator.Store.Remote.Notion;
 
 /// <summary>
-/// The store in Notion (N1 spike). The root is <c>notion:&lt;page id&gt;</c>. Under that page, <see cref="Prepare"/>
-/// makes two databases and one log page:
+/// The store in Notion (N1 spike). The root is <c>notion:&lt;page id&gt;</c>. The first write makes four linked
+/// databases and one log page under that page:
 /// <list type="bullet">
-/// <item><c>Stream</c>: one row for each envelope, with the envelope fields as properties. The user reads the stream there.</item>
-/// <item><c>Docs</c>: one row for each other document (bodies, sessions, cursors, leases, claims...). Title: <c>kind|scope|id</c>.</item>
-/// <item><c>Log</c>: a page with one paragraph for each line of the supervisor log.</item>
+/// <item><c>Events</c>: one row for each envelope (the stream). Relations: <c>From</c>, <c>To</c> and <c>Session</c> to
+/// <c>Sessions</c>, <c>Body</c> to <c>Bodies</c>, <c>Reply</c> to <c>Events</c>.</item>
+/// <item><c>Bodies</c>: one row for each body. The page content shows the fields. Relation <c>Event</c>, rollup <c>Session</c>.</item>
+/// <item><c>Sessions</c>: one row for each party (<c>user</c>, <c>supervisor</c>, <c>session:&lt;id&gt;</c>). A session row
+/// holds the registry entry. Relations <c>Inbox</c>, <c>Sent</c>, <c>Events</c> (the duals of the event relations) and <c>Parent</c>.</item>
+/// <item><c>Docs</c>: the run state (cursors, leases, claims, nudges, policy, templates, runs). Title: <c>kind|scope|id</c>.</item>
 /// </list>
-/// Each row keeps the document text in the <c>Text</c> property. Its version is the hash of the text, as in the local folder.
+/// Each row keeps the document text in <c>Text</c>. The version is the hash of that text, as in the local folder.
 /// Notion has no conditional write. The rule <c>Exists</c> is a read before the create and a read after it (the
 /// oldest row wins). The rule <c>Stale</c> is a read before the write: two writers in the same second can both win.
 /// </summary>
 public sealed class NotionTransport : IStoreTransport
 {
     public const string Scheme = "notion:";
-    const string StreamTitle = "Stream";
+    const string EventsTitle = "Events";
+    const string BodiesTitle = "Bodies";
+    const string SessionsTitle = "Sessions";
     const string DocsTitle = "Docs";
     const string LogTitle = "Log";
+    const string SessionParty = "session:";
 
-    /// <summary>The look-back of a feed or a docs sync: rows of other writers with a clock that is late by less than this.</summary>
+    /// <summary>The look-back of a feed or a table sync: rows of other writers with a clock that is late by less than this.</summary>
     public static TimeSpan Window { get; set; } = TimeSpan.FromMinutes(2);
 
-    /// <summary>The time between two reads of the docs cache and of the feed. A read in this time uses the cache. A write always reads fresh.</summary>
+    /// <summary>The time between two reads of a table cache and of the feed. A read in this time uses the cache. A write always reads fresh.</summary>
     public static TimeSpan SyncInterval { get; set; } = TimeSpan.FromSeconds(2);
 
     readonly NotionClient api;
@@ -35,20 +42,31 @@ public sealed class NotionTransport : IStoreTransport
     readonly Lock gate = new();
     readonly string epoch = Guid.NewGuid().ToString("N");
 
-    string? streamDb, docsDb, logPage;
+    readonly Table bodies = new(BodiesTitle, "Path");
+    readonly Table sessions = new(SessionsTitle, "Party");
+    readonly Table docs = new(DocsTitle, "Key");
+    string? eventsDb, logPage;
 
-    // The docs cache: key (kind|scope|id) to row. A sync reads the rows that changed since the last sync.
-    readonly Dictionary<string, Row> docs = [];
-    DateTimeOffset? docsSince;
-    DateTimeOffset lastSync = DateTimeOffset.MinValue;
-
-    // The feed: the envelopes in arrival order.
+    // The feed: the envelopes in arrival order, and the page of each envelope for the Reply relation.
     readonly List<WireDoc> feed = [];
     readonly Dictionary<string, WireDoc> feedById = [];
+    readonly Dictionary<string, string> eventPages = [];
     long feedMs;
     DateTimeOffset lastFeed = DateTimeOffset.MinValue;
 
-    sealed record Row(string PageId, string Kind, string Scope, string Id, long Version, string Text, bool Removed);
+    sealed record Row(string PageId, string Key, string Kind, string Scope, string Id, string Text, bool Removed, DateTimeOffset Created);
+
+    /// <summary>One database with a cache of its rows by title. A sync reads the rows that changed since the last sync.</summary>
+    sealed class Table(string title, string titleProperty)
+    {
+        public string Title { get; } = title;
+        public string TitleProperty { get; } = titleProperty;
+        public string? Db { get; set; }
+        public Dictionary<string, Row> Rows { get; } = [];
+        public DateTimeOffset? Since { get; set; }
+        public DateTimeOffset Last { get; set; } = DateTimeOffset.MinValue;
+        public IEnumerable<Row> Live => Rows.Values.Where(r => !r.Removed);
+    }
 
     public NotionTransport(string root, string token, HttpClient? http = null)
     {
@@ -79,10 +97,7 @@ public sealed class NotionTransport : IStoreTransport
 
     public void Prepare()
     {
-        lock (gate)
-        {
-            Need();
-        }
+        lock (gate) Need();
     }
 
     public void Log(string line)
@@ -104,9 +119,10 @@ public sealed class NotionTransport : IStoreTransport
                 ReadFeed();
                 return feedById.GetValueOrDefault(id);
             }
-            Sync();
             if (scope.Kind == StoreWire.Sessions) return SessionIds().Contains(id) ? SessionDoc(id) : null;
-            return docs.TryGetValue(Key(scope, id), out var row) && !row.Removed ? new WireDoc(row.Id, row.Version, row.Text) : null;
+            var (table, key) = Place(scope, id);
+            Sync(table);
+            return table.Rows.TryGetValue(key, out var row) && Present(table, row) ? new WireDoc(id, Versions.Of(row.Text), row.Text) : null;
         }
     }
 
@@ -120,10 +136,11 @@ public sealed class NotionTransport : IStoreTransport
                 ReadFeed();
                 return [.. feed];
             }
-            Sync();
             if (scope.Kind == StoreWire.Sessions) return SessionIds().Order(StringComparer.Ordinal).Select(SessionDoc).ToList();
-            return docs.Values.Where(r => !r.Removed && r.Kind == scope.Kind && r.Scope == scope.Query())
-                .OrderBy(r => r.Id, StringComparer.Ordinal).Select(r => new WireDoc(r.Id, r.Version, r.Text)).ToList();
+            var (table, _) = Place(scope, "");
+            Sync(table);
+            return table.Rows.Values.Where(r => Present(table, r) && Member(table, scope, r))
+                .OrderBy(r => r.Id, StringComparer.Ordinal).Select(r => new WireDoc(r.Id, Versions.Of(r.Text), r.Text)).ToList();
         }
     }
 
@@ -135,7 +152,7 @@ public sealed class NotionTransport : IStoreTransport
             return scope.Kind switch
             {
                 StoreWire.Events => SaveEvents(save),
-                StoreWire.Sessions => SaveSessions(scope, save),
+                StoreWire.Sessions => SaveSessions(save),
                 _ => SaveDocs(scope, save),
             };
         }
@@ -152,33 +169,51 @@ public sealed class NotionTransport : IStoreTransport
         }
     }
 
+    // ---- places ----
+
+    /// <summary>The table and the row title of a document: a body, a session entry, or a document of the run state.</summary>
+    (Table Table, string Key) Place(WireScope scope, string id) => scope.Kind switch
+    {
+        StoreWire.Bodies => (bodies, id),
+        StoreWire.SessionEntries => (sessions, SessionParty + id),
+        _ => (docs, $"{scope.Kind}|{scope.Query()}|{id}"),
+    };
+
+    /// <summary>A session row without an entry is a party that only sends or gets envelopes: no document.</summary>
+    bool Present(Table table, Row row) => !row.Removed && (table != sessions || row.Text.Length > 0);
+
+    bool Member(Table table, WireScope scope, Row row) =>
+        table == docs ? row.Kind == scope.Kind && row.Scope == scope.Query()
+        : table != sessions || row.Key.StartsWith(SessionParty, StringComparison.Ordinal);
+
     // ---- envelopes ----
 
     WireSaved SaveEvents(WireSave save)
     {
         if (save.Changes.Count > 0)
             throw new StoreConflictException(StoreConflict.Stale, save.Changes[0].Id, "the envelopes are append only");
-        var gone = save.Removes.Select(r => (r.Id, Rows: QueryTitle(streamDb!, r.Id))).ToList();
+        var gone = save.Removes.Select(r => (r.Id, Rows: QueryTitle(eventsDb!, "Id", r.Id))).ToList();
         foreach (var (id, rows) in gone)
             if (rows.Count == 0 && save.Removes.First(r => r.Id == id).Version != 0)
                 throw new StoreConflictException(StoreConflict.Stale, id, $"{id} changed after the read (version 0). Nothing changed.");
         foreach (var add in save.Adds)
-            if (feedById.ContainsKey(add.Id) || QueryTitle(streamDb!, add.Id).Count > 0)
+            if (feedById.ContainsKey(add.Id) || QueryTitle(eventsDb!, "Id", add.Id).Count > 0)
                 throw new StoreConflictException(StoreConflict.Exists, add.Id, $"the envelope {add.Id} exists. Nothing changed.");
         var versions = new Dictionary<string, long>();
         foreach (var (id, rows) in gone)
         {
             foreach (var row in rows) api.Archive(NotionClient.IdOf(row));
             if (feedById.Remove(id, out var doc)) feed.Remove(doc);
+            eventPages.Remove(id);
             versions[id] = 0;
         }
         var once = new HashSet<string>();
         foreach (var add in save.Adds)
         {
             Once(once, add.Id);
-            api.CreateRow(streamDb!, EventProperties(add));
+            var pageId = api.CreateRow(eventsDb!, EventProperties(add));
             var doc = add with { Version = Versions.Of(add.Text) };
-            Remember(doc);
+            Remember(doc, pageId);
             versions[add.Id] = doc.Version;
         }
         return new(versions);
@@ -191,20 +226,23 @@ public sealed class NotionTransport : IStoreTransport
     }
 
     /// <summary>Reads the new envelopes into the feed: one query each <see cref="SyncInterval"/>, for all readers.</summary>
-    void ReadFeed(bool now = false)
+    void ReadFeed()
     {
         var clock = DateTimeOffset.UtcNow;
-        if (!now && clock - lastFeed < SyncInterval) return;
+        if (clock - lastFeed < SyncInterval) return;
         lastFeed = clock;
         var since = feedMs == 0 ? 0 : feedMs - (long)Window.TotalMilliseconds;
         var filter = new JsonObject { ["property"] = "Ms", ["number"] = new JsonObject { ["greater_than_or_equal_to"] = since } };
         var sorts = new JsonArray(new JsonObject { ["property"] = "Ms", ["direction"] = "ascending" });
-        var rows = api.Query(streamDb!, filter, sorts).Select(EventDoc).Where(d => !feedById.ContainsKey(d.Id)).OrderBy(d => d.Id, StringComparer.Ordinal);
-        foreach (var doc in rows) Remember(doc);
+        var rows = api.Query(eventsDb!, filter, sorts)
+            .Select(r => (Doc: EventDoc(r), Page: NotionClient.IdOf(r)))
+            .Where(d => !feedById.ContainsKey(d.Doc.Id)).OrderBy(d => d.Doc.Id, StringComparer.Ordinal).ToList();
+        foreach (var (doc, pageId) in rows) Remember(doc, pageId);
     }
 
-    void Remember(WireDoc doc)
+    void Remember(WireDoc doc, string pageId)
     {
+        eventPages[doc.Id] = pageId;
         if (!feedById.TryAdd(doc.Id, doc)) return;
         feed.Add(doc);
         feedMs = Math.Max(feedMs, MsOf(doc.Id));
@@ -218,40 +256,69 @@ public sealed class NotionTransport : IStoreTransport
 
     static long MsOf(string id) => long.TryParse(id.Split('-')[0], out var ms) ? ms : 0;
 
-    static JsonObject EventProperties(WireDoc doc)
+    JsonObject EventProperties(WireDoc doc)
     {
-        var e = JsonNode.Parse(doc.Text) as JsonObject ?? [];
-        string S(string name) => e[name]?.GetValueKind() == System.Text.Json.JsonValueKind.String ? e[name]!.GetValue<string>() : "";
+        var e = Parse(doc.Text);
+        var session = S(e, "session");
         var props = new JsonObject
         {
             ["Id"] = NotionClient.Title(doc.Id),
             ["Ms"] = new JsonObject { ["number"] = MsOf(doc.Id) },
-            ["Subject"] = NotionClient.RichText(S("subject")),
-            ["From"] = NotionClient.RichText(S("from")),
-            ["To"] = NotionClient.RichText(S("to")),
-            ["Session"] = NotionClient.RichText(S("session")),
-            ["Thread"] = NotionClient.RichText(S("thread")),
-            ["Body"] = NotionClient.RichText(S("body")),
-            ["Reply"] = NotionClient.RichText(e["refs"]?["reply"]?.ToString() ?? ""),
+            ["Subject"] = NotionClient.RichText(S(e, "subject")),
+            ["Thread"] = NotionClient.RichText(S(e, "thread")),
+            ["From"] = NotionClient.Relation(PartyPage(S(e, "from"))),
+            ["To"] = NotionClient.Relation(PartyPage(S(e, "to"))),
+            ["Session"] = NotionClient.Relation(session.Length > 0 ? PartyPage(SessionParty + session) : null),
+            ["Body"] = NotionClient.Relation(BodyPage(S(e, "body"))),
+            ["Reply"] = NotionClient.Relation(e["refs"]?["reply"] is JsonValue reply && reply.GetValueKind() == JsonValueKind.String ? eventPages.GetValueOrDefault(reply.GetValue<string>()) : null),
             ["Text"] = NotionClient.RichText(doc.Text),
         };
-        if (S("kind") is { Length: > 0 } kind) props["Kind"] = NotionClient.Select(kind);
-        if (S("needs") is { Length: > 0 } needs) props["Needs"] = NotionClient.Select(needs);
-        if (S("stream") is { Length: > 0 } stream) props["Stream"] = NotionClient.Select(stream);
-        if (DateTimeOffset.TryParse(S("at"), out var at)) props["At"] = new JsonObject { ["date"] = new JsonObject { ["start"] = at.ToString("o") } };
+        if (S(e, "kind") is { Length: > 0 } kind) props["Kind"] = NotionClient.Select(kind);
+        if (S(e, "needs") is { Length: > 0 } needs) props["Needs"] = NotionClient.Select(needs);
+        if (S(e, "stream") is { Length: > 0 } stream) props["Stream"] = NotionClient.Select(stream);
+        if (DateTimeOffset.TryParse(S(e, "at"), out var at)) props["At"] = new JsonObject { ["date"] = new JsonObject { ["start"] = at.ToString("o") } };
         return props;
+    }
+
+    /// <summary>The page of a body path. The body is written before its envelope, so it is in the cache or in Notion.</summary>
+    string? BodyPage(string path)
+    {
+        if (path.Length == 0) return null;
+        if (bodies.Rows.TryGetValue(path, out var row)) return row.PageId;
+        return ReadRow(bodies, path)?.PageId;
+    }
+
+    /// <summary>The row of a party in <c>Sessions</c>. The first envelope of a party makes its row.</summary>
+    string? PartyPage(string party)
+    {
+        if (party.Length == 0) return null;
+        if (sessions.Rows.TryGetValue(party, out var known)) return known.PageId;
+        if (ReadRow(sessions, party) is { } row)
+        {
+            sessions.Rows[party] = row;
+            return row.PageId;
+        }
+        var isSession = party.StartsWith(SessionParty, StringComparison.Ordinal);
+        var id = isSession ? party[SessionParty.Length..] : party;
+        var props = new JsonObject { ["Party"] = NotionClient.Title(party), ["Kind"] = NotionClient.Select(isSession ? "session" : party), ["Id"] = NotionClient.RichText(id) };
+        var pageId = api.CreateRow(sessions.Db!, props);
+        sessions.Rows[party] = new Row(pageId, party, isSession ? "session" : party, "", id, "", false, DateTimeOffset.UtcNow);
+        return pageId;
     }
 
     // ---- sessions ----
 
-    // The local folder has a session when its folder sessions/<id>/ exists. Here a session exists when a row of the
-    // session exists: its registry entry, a session file, a session item, or a row of kind sessions.
+    // The local folder has a session when its folder sessions/<id>/ exists. Here a session exists when it has a registry
+    // entry in Sessions, a session file or a session item in Docs, or a row of kind sessions in Docs.
     HashSet<string> SessionIds()
     {
+        Sync(sessions);
+        Sync(docs);
         var ids = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var row in docs.Values.Where(r => !r.Removed))
+        foreach (var row in sessions.Rows.Values.Where(r => Present(sessions, r) && r.Key.StartsWith(SessionParty, StringComparison.Ordinal))) ids.Add(row.Id);
+        foreach (var row in docs.Live)
         {
-            if (row.Kind is StoreWire.Sessions or StoreWire.SessionEntries or StoreWire.SessionFile) ids.Add(row.Id);
+            if (row.Kind is StoreWire.Sessions or StoreWire.SessionFile) ids.Add(row.Id);
             else if (row.Kind == StoreWire.SessionItems && ScopeValue(row.Scope, "session") is { } session) ids.Add(session);
         }
         return ids;
@@ -262,46 +329,50 @@ public sealed class NotionTransport : IStoreTransport
 
     static WireDoc SessionDoc(string id) => new(id, Versions.Of(id), id);
 
-    WireSaved SaveSessions(WireScope scope, WireSave save)
+    WireSaved SaveSessions(WireSave save)
     {
-        lastSync = DateTimeOffset.MinValue;
-        Sync();
+        sessions.Last = docs.Last = DateTimeOffset.MinValue;
         var known = SessionIds();
         foreach (var add in save.Adds)
             if (known.Contains(add.Id)) throw new StoreConflictException(StoreConflict.Exists, add.Id, $"session {add.Id} exists. Nothing changed.");
         var versions = new Dictionary<string, long>();
         var once = new HashSet<string>();
+        var scope = new WireScope(StoreWire.Sessions);
         foreach (var add in save.Adds)
         {
             Once(once, add.Id);
-            Write(scope, add.Id, add.Id, Versions.Of(add.Id), removed: false, ReadRow(scope, add.Id));
+            var key = Place(scope, add.Id).Key;
+            WriteDoc(key, scope.Kind, scope.Query(), add.Id, add.Id, removed: false, ReadRow(docs, key));
             versions[add.Id] = Versions.Of(add.Id);
         }
-        // A remove deletes the session folder: each row of the session.
+        // A remove deletes the session folder: the registry entry and each row of the session in Docs.
         foreach (var remove in save.Removes)
         {
-            foreach (var row in docs.Values.Where(r => !r.Removed && (r.Id == remove.Id && r.Kind is StoreWire.Sessions or StoreWire.SessionEntries or StoreWire.SessionFile
-                         || r.Kind == StoreWire.SessionItems && ScopeValue(r.Scope, "session") == remove.Id)).ToList())
-                Write(new WireScope(row.Kind), row.Id, "", 0, removed: true, row, row.Scope);
+            if (sessions.Rows.GetValueOrDefault(SessionParty + remove.Id) is { } entry && Present(sessions, entry))
+                WriteSession(remove.Id, "", removed: true, entry);
+            foreach (var row in docs.Live.Where(r => r.Id == remove.Id && r.Kind is StoreWire.Sessions or StoreWire.SessionFile
+                         || r.Kind == StoreWire.SessionItems && ScopeValue(r.Scope, "session") == remove.Id).ToList())
+                WriteDoc(row.Key, row.Kind, row.Scope, row.Id, "", removed: true, row);
             versions[remove.Id] = 0;
         }
         return new(versions);
     }
 
-    // ---- other documents ----
+    // ---- documents: bodies, session entries, run state ----
 
     WireSaved SaveDocs(WireScope scope, WireSave save)
     {
+        var table = Place(scope, "").Table;
         // Check each rule with a fresh read before the first write, so a refused save writes nothing.
         var fresh = new Dictionary<string, Row?>();
-        Row? Fresh(string id) => fresh.TryGetValue(id, out var r) ? r : fresh[id] = ReadRow(scope, id);
+        Row? Fresh(string id) => fresh.TryGetValue(id, out var r) ? r : fresh[id] = ReadRow(table, Place(scope, id).Key);
         foreach (var add in save.Adds)
-            if (Fresh(add.Id) is { Removed: false })
+            if (Fresh(add.Id) is { } row && Present(table, row))
                 throw new StoreConflictException(StoreConflict.Exists, add.Id, $"{add.Id} exists. Nothing changed.");
         foreach (var change in save.Changes.Concat(save.Removes))
         {
             var row = Fresh(change.Id);
-            var stored = row is { Removed: false } ? row.Version : 0;
+            var stored = row is not null && Present(table, row) ? Versions.Of(row.Text) : 0;
             if (stored != change.Version)
                 throw new StoreConflictException(StoreConflict.Stale, change.Id, $"{change.Id} changed after the read (version {stored}, read {change.Version}). Nothing changed.");
         }
@@ -311,137 +382,253 @@ public sealed class NotionTransport : IStoreTransport
         foreach (var add in save.Adds)
         {
             Once(once, add.Id);
-            var version = Versions.Of(add.Text);
-            var row = Write(scope, add.Id, add.Text, version, removed: false, Fresh(add.Id));
-            // The read after the create: when two writers made the same key, the oldest row wins.
-            var all = QueryTitle(docsDb!, Key(scope, add.Id)).Where(r => !NotionClient.ReadCheck(r, "Removed")).ToList();
-            if (all.Count > 1 && NotionClient.IdOf(all.OrderBy(NotionClient.CreatedOf).ThenBy(NotionClient.IdOf, StringComparer.Ordinal).First()) != row.PageId)
+            var row = Write(table, scope, add.Id, add.Text, removed: false, Fresh(add.Id));
+            // The read after the create: when two writers made the same row, the oldest row wins.
+            var all = QueryTitle(table.Db!, table.TitleProperty, row.Key).Select(r => ToRow(table, r)).Where(r => Present(table, r)).ToList();
+            if (all.Count > 1 && all.OrderBy(r => r.Created).ThenBy(r => r.PageId, StringComparer.Ordinal).First().PageId != row.PageId)
             {
                 api.Archive(row.PageId);
-                docs.Remove(Key(scope, add.Id));
+                table.Rows.Remove(row.Key);
                 throw new StoreConflictException(StoreConflict.Exists, add.Id, $"{add.Id} exists: another writer made it at the same time. Nothing changed.");
             }
-            versions[add.Id] = version;
+            versions[add.Id] = Versions.Of(add.Text);
         }
         foreach (var change in save.Changes)
         {
-            var version = Versions.Of(change.Text);
-            Write(scope, change.Id, change.Text, version, removed: false, Fresh(change.Id));
-            versions[change.Id] = version;
+            Write(table, scope, change.Id, change.Text, removed: false, Fresh(change.Id));
+            versions[change.Id] = Versions.Of(change.Text);
         }
         foreach (var remove in save.Removes)
         {
-            if (Fresh(remove.Id) is { } row) Write(scope, remove.Id, "", 0, removed: true, row);
+            if (Fresh(remove.Id) is { } row) Write(table, scope, remove.Id, "", removed: true, row);
             versions[remove.Id] = 0;
         }
         return new(versions);
     }
 
-    Row Write(WireScope scope, string id, string text, long version, bool removed, Row? existing, string? scopeQuery = null)
+    Row Write(Table table, WireScope scope, string id, string text, bool removed, Row? existing)
     {
-        var query = scopeQuery ?? scope.Query();
+        if (table == bodies) return WriteBody(id, text, removed, existing);
+        if (table == sessions) return WriteSession(id, text, removed, existing);
+        return WriteDoc(Place(scope, id).Key, scope.Kind, scope.Query(), id, text, removed, existing);
+    }
+
+    Row WriteDoc(string key, string kind, string scope, string id, string text, bool removed, Row? existing)
+    {
         var props = new JsonObject
         {
-            ["Key"] = NotionClient.Title(Key(scope.Kind, query, id)),
-            ["Kind"] = NotionClient.Select(scope.Kind),
-            ["Scope"] = NotionClient.RichText(query),
+            ["Key"] = NotionClient.Title(key),
+            ["Kind"] = NotionClient.Select(kind),
+            ["Scope"] = NotionClient.RichText(scope),
             ["Id"] = NotionClient.RichText(id),
             ["Text"] = NotionClient.RichText(text),
             ["Removed"] = new JsonObject { ["checkbox"] = removed },
         };
-        var pageId = existing is null ? api.CreateRow(docsDb!, props) : api.UpdateRow(existing.PageId, props);
-        var row = new Row(pageId, scope.Kind, query, id, version, text, removed);
-        docs[Key(scope.Kind, query, id)] = row;
-        return row;
+        return Keep(docs, existing, props, null, new Row("", key, kind, scope, id, text, removed, DateTimeOffset.UtcNow));
     }
 
-    Row? ReadRow(WireScope scope, string id) =>
-        QueryTitle(docsDb!, Key(scope, id)).OrderBy(NotionClient.CreatedOf).Select(ToRow).OrderBy(r => r.Removed).FirstOrDefault();
+    /// <summary>A body row. A new body gets its fields as page content, so a person reads it in Notion.</summary>
+    Row WriteBody(string path, string text, bool removed, Row? existing)
+    {
+        var props = new JsonObject
+        {
+            ["Path"] = NotionClient.Title(path),
+            ["Text"] = NotionClient.RichText(text),
+            ["Removed"] = new JsonObject { ["checkbox"] = removed },
+        };
+        return Keep(bodies, existing, props, existing is null ? BodyBlocks(text) : null, new Row("", path, StoreWire.Bodies, "", path, text, removed, DateTimeOffset.UtcNow));
+    }
+
+    /// <summary>A session row with its registry entry: the entry text, and its main fields as properties.</summary>
+    Row WriteSession(string id, string text, bool removed, Row? existing)
+    {
+        var party = SessionParty + id;
+        var entry = Parse(text);
+        var props = new JsonObject
+        {
+            ["Party"] = NotionClient.Title(party),
+            ["Kind"] = NotionClient.Select("session"),
+            ["Id"] = NotionClient.RichText(id),
+            ["Title"] = NotionClient.RichText(S(entry, "title")),
+            ["Code"] = NotionClient.RichText(S(entry, "code")),
+            ["Text"] = NotionClient.RichText(text),
+            ["Removed"] = new JsonObject { ["checkbox"] = removed },
+        };
+        if (S(entry, "role") is { Length: > 0 } role) props["Role"] = NotionClient.Select(role);
+        if (S(entry, "stream") is { Length: > 0 } stream) props["Stream"] = NotionClient.Select(stream);
+        if (S(entry, "parent") is { Length: > 0 } parent && parent != id) props["Parent"] = NotionClient.Relation(PartyPage(SessionParty + parent));
+        return Keep(sessions, existing ?? sessions.Rows.GetValueOrDefault(party), props, null, new Row("", party, "session", "", id, text, removed, DateTimeOffset.UtcNow));
+    }
+
+    Row Keep(Table table, Row? existing, JsonObject props, JsonArray? children, Row row)
+    {
+        var pageId = existing is null ? api.CreateRow(table.Db!, props, children) : api.UpdateRow(existing.PageId, props);
+        var kept = row with { PageId = pageId, Created = existing?.Created ?? row.Created };
+        table.Rows[row.Key] = kept;
+        return kept;
+    }
+
+    /// <summary>One paragraph for each field of the body (at most 90).</summary>
+    static JsonArray BodyBlocks(string text)
+    {
+        var blocks = new JsonArray();
+        foreach (var (name, value) in Parse(text).Take(90))
+            blocks.Add(NotionClient.Paragraph(name, value is JsonValue v && v.GetValueKind() == JsonValueKind.String ? v.GetValue<string>()
+                : value is JsonArray list && list.All(i => i is JsonValue) ? string.Join(", ", list.Select(i => i!.ToString())) : value?.ToJsonString() ?? ""));
+        return blocks;
+    }
+
+    Row? ReadRow(Table table, string key) =>
+        QueryTitle(table.Db!, table.TitleProperty, key).Select(r => ToRow(table, r)).OrderBy(r => !Present(table, r)).ThenBy(r => r.Created).FirstOrDefault();
 
     /// <summary>Reads the rows that changed since the last sync into the cache. Notion keeps the edit time to the minute.</summary>
-    void Sync()
+    void Sync(Table table)
     {
         var now = DateTimeOffset.UtcNow;
-        if (now - lastSync < SyncInterval) return;
-        JsonObject? filter = docsSince is { } since
+        if (now - table.Last < SyncInterval) return;
+        JsonObject? filter = table.Since is { } since
             ? new JsonObject { ["timestamp"] = "last_edited_time", ["last_edited_time"] = new JsonObject { ["on_or_after"] = (since - Window).ToString("o") } }
             : null;
         var start = api.ServerTime ?? now;
-        foreach (var row in api.Query(docsDb!, filter, null).Select(ToRow))
-            docs[Key(row.Kind, row.Scope, row.Id)] = row;
-        docsSince = api.ServerTime ?? start;
-        lastSync = now;
+        var rows = api.Query(table.Db!, filter, null).Select(r => ToRow(table, r)).ToList();
+        foreach (var group in rows.GroupBy(r => r.Key))
+            table.Rows[group.Key] = group.OrderBy(r => !Present(table, r)).ThenBy(r => r.Created).First();
+        table.Since = start;
+        table.Last = now;
     }
 
-    /// <summary>A row of the docs database. The version is the hash of the text (a Notion number keeps only 53 bits).</summary>
-    static Row ToRow(JsonObject r)
+    static Row ToRow(Table table, JsonObject r)
     {
-        var text = NotionClient.ReadText(r, "Text");
-        var removed = NotionClient.ReadCheck(r, "Removed");
-        return new(NotionClient.IdOf(r), NotionClient.ReadSelect(r, "Kind"), NotionClient.ReadText(r, "Scope"), NotionClient.ReadText(r, "Id"), removed ? 0 : Versions.Of(text), text, removed);
+        var key = NotionClient.ReadTitle(r, table.TitleProperty);
+        var body = table.Title == BodiesTitle;
+        var id = body ? key : NotionClient.ReadText(r, "Id");
+        return new(NotionClient.IdOf(r), key, body ? StoreWire.Bodies : NotionClient.ReadSelect(r, "Kind"),
+            NotionClient.ReadText(r, "Scope"), id.Length > 0 ? id : key, NotionClient.ReadText(r, "Text"), NotionClient.ReadCheck(r, "Removed"), NotionClient.CreatedOf(r));
     }
 
-    static string Key(WireScope scope, string id) => Key(scope.Kind, scope.Query(), id);
+    List<JsonObject> QueryTitle(string db, string property, string title) =>
+        api.Query(db, new JsonObject { ["property"] = property, ["title"] = new JsonObject { ["equals"] = title } }, null);
 
-    static string Key(string kind, string scope, string id) => $"{kind}|{scope}|{id}";
-
-    List<JsonObject> QueryTitle(string db, string title)
+    static JsonObject Parse(string text)
     {
-        var property = db == streamDb ? "Id" : "Key";
-        return api.Query(db, new JsonObject { ["property"] = property, ["title"] = new JsonObject { ["equals"] = title } }, null);
+        try
+        {
+            return JsonNode.Parse(text) as JsonObject ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
     }
+
+    static string S(JsonObject o, string name) => o[name] is JsonValue v && v.GetValueKind() == JsonValueKind.String ? v.GetValue<string>() : "";
 
     // ---- layout ----
 
     bool Find()
     {
-        if (streamDb is not null && docsDb is not null && logPage is not null) return true;
+        if (Found) return true;
         foreach (var child in api.Children(page))
         {
             var type = child["type"]?.GetValue<string>();
             var title = child[type ?? ""]?["title"]?.GetValue<string>();
             var id = NotionClient.IdOf(child);
-            if (type == "child_database" && title == StreamTitle) streamDb ??= id;
-            else if (type == "child_database" && title == DocsTitle) docsDb ??= id;
-            else if (type == "child_page" && title == LogTitle) logPage ??= id;
+            if (type == "child_page" && title == LogTitle) logPage ??= id;
+            if (type != "child_database") continue;
+            if (title == EventsTitle) eventsDb ??= id;
+            else if (title == BodiesTitle) bodies.Db ??= id;
+            else if (title == SessionsTitle) sessions.Db ??= id;
+            else if (title == DocsTitle) docs.Db ??= id;
         }
-        return streamDb is not null && docsDb is not null && logPage is not null;
+        return Found;
     }
 
-    /// <summary>The first write makes the databases, as the local folder makes its folders on the first write.</summary>
+    bool Found => eventsDb is not null && bodies.Db is not null && sessions.Db is not null && docs.Db is not null && logPage is not null;
+
+    /// <summary>The first write makes the databases and their links, as the local folder makes its folders on the first write.</summary>
     void Need()
     {
         if (Find()) return;
-        streamDb ??= api.CreateDatabase(page, StreamTitle, StreamSchema());
-        docsDb ??= api.CreateDatabase(page, DocsTitle, DocsSchema());
+        sessions.Db ??= api.CreateDatabase(page, SessionsTitle, SessionsSchema());
+        bodies.Db ??= api.CreateDatabase(page, BodiesTitle, BodiesSchema());
+        if (eventsDb is null)
+        {
+            var events = api.CreateDatabaseOf(page, EventsTitle, EventsSchema(sessions.Db, bodies.Db));
+            eventsDb = NotionClient.IdOf(events);
+            api.UpdateDatabase(eventsDb, new JsonObject { ["Reply"] = SelfRelation(eventsDb) });
+            // Give the dual relations the names of the stream: Inbox, Sent, Events, Event.
+            string Dual(string property) => events["properties"]![property]!["relation"]!["dual_property"]!["synced_property_name"]!.GetValue<string>();
+            api.UpdateDatabase(sessions.Db, new JsonObject
+            {
+                [Dual("To")] = new JsonObject { ["name"] = "Inbox" },
+                [Dual("From")] = new JsonObject { ["name"] = "Sent" },
+                [Dual("Session")] = new JsonObject { ["name"] = "Events" },
+                ["Parent"] = SelfRelation(sessions.Db),
+            });
+            api.UpdateDatabase(bodies.Db, new JsonObject { [Dual("Body")] = new JsonObject { ["name"] = "Event" } });
+            api.UpdateDatabase(bodies.Db, new JsonObject
+            {
+                ["Session"] = new JsonObject { ["rollup"] = new JsonObject { ["relation_property_name"] = "Event", ["rollup_property_name"] = "Session", ["function"] = "show_original" } },
+            });
+        }
+        docs.Db ??= api.CreateDatabase(page, DocsTitle, DocsSchema());
         logPage ??= api.CreatePage(page, LogTitle);
     }
 
-    static JsonObject StreamSchema() => new()
+    static JsonObject Text() => new() { ["rich_text"] = new JsonObject() };
+
+    static JsonObject Pick() => new() { ["select"] = new JsonObject() };
+
+    static JsonObject Check() => new() { ["checkbox"] = new JsonObject() };
+
+    static JsonObject DualRelation(string db) => new() { ["relation"] = new JsonObject { ["database_id"] = db, ["type"] = "dual_property", ["dual_property"] = new JsonObject() } };
+
+    static JsonObject SelfRelation(string db) => new() { ["relation"] = new JsonObject { ["database_id"] = db, ["type"] = "single_property", ["single_property"] = new JsonObject() } };
+
+    static JsonObject EventsSchema(string sessionsDb, string bodiesDb) => new()
     {
         ["Id"] = new JsonObject { ["title"] = new JsonObject() },
-        ["Kind"] = new JsonObject { ["select"] = new JsonObject() },
-        ["Subject"] = new JsonObject { ["rich_text"] = new JsonObject() },
-        ["From"] = new JsonObject { ["rich_text"] = new JsonObject() },
-        ["To"] = new JsonObject { ["rich_text"] = new JsonObject() },
-        ["Needs"] = new JsonObject { ["select"] = new JsonObject() },
-        ["Session"] = new JsonObject { ["rich_text"] = new JsonObject() },
-        ["Stream"] = new JsonObject { ["select"] = new JsonObject() },
-        ["Thread"] = new JsonObject { ["rich_text"] = new JsonObject() },
-        ["Reply"] = new JsonObject { ["rich_text"] = new JsonObject() },
-        ["Body"] = new JsonObject { ["rich_text"] = new JsonObject() },
+        ["Kind"] = Pick(),
+        ["Subject"] = Text(),
+        ["From"] = DualRelation(sessionsDb),
+        ["To"] = DualRelation(sessionsDb),
+        ["Session"] = DualRelation(sessionsDb),
+        ["Body"] = DualRelation(bodiesDb),
+        ["Needs"] = Pick(),
+        ["Thread"] = Text(),
+        ["Stream"] = Pick(),
         ["At"] = new JsonObject { ["date"] = new JsonObject() },
         ["Ms"] = new JsonObject { ["number"] = new JsonObject() },
-        ["Text"] = new JsonObject { ["rich_text"] = new JsonObject() },
+        ["Text"] = Text(),
+    };
+
+    static JsonObject BodiesSchema() => new()
+    {
+        ["Path"] = new JsonObject { ["title"] = new JsonObject() },
+        ["Removed"] = Check(),
+        ["Text"] = Text(),
+    };
+
+    static JsonObject SessionsSchema() => new()
+    {
+        ["Party"] = new JsonObject { ["title"] = new JsonObject() },
+        ["Kind"] = Pick(),
+        ["Id"] = Text(),
+        ["Title"] = Text(),
+        ["Code"] = Text(),
+        ["Role"] = Pick(),
+        ["Stream"] = Pick(),
+        ["Removed"] = Check(),
+        ["Text"] = Text(),
     };
 
     static JsonObject DocsSchema() => new()
     {
         ["Key"] = new JsonObject { ["title"] = new JsonObject() },
-        ["Kind"] = new JsonObject { ["select"] = new JsonObject() },
-        ["Scope"] = new JsonObject { ["rich_text"] = new JsonObject() },
-        ["Id"] = new JsonObject { ["rich_text"] = new JsonObject() },
-        ["Removed"] = new JsonObject { ["checkbox"] = new JsonObject() },
-        ["Text"] = new JsonObject { ["rich_text"] = new JsonObject() },
+        ["Kind"] = Pick(),
+        ["Scope"] = Text(),
+        ["Id"] = Text(),
+        ["Removed"] = Check(),
+        ["Text"] = Text(),
     };
 }
