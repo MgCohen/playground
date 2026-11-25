@@ -1,0 +1,1384 @@
+<title>V2 Target Design</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar with 6 tabs, one panel for each tab. Same tokens as the V2 Visual Restart page. */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --fg: #1b2126; --muted: #5b6670; --line: #d9dee3;
+  --accent: #0f6e78; --accent-soft: #e2f1f2; --warn: #9a6200; --code-bg: #eef1f3;
+  --bad: #b3402f; --ok: #2e7d32; --ok-soft: #e3f1e4;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f;
+    --bad: #ef8a78; --ok: #7fd08a; --ok-soft: #1c3222; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --code-bg: #20292f;
+  --bad: #ef8a78; --ok: #7fd08a; --ok-soft: #1c3222; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 70ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 70ch; }
+a { color: var(--accent); }
+
+/* Tab bar: native scroll only. No drag script, so each click reaches its tab. */
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line);
+  display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+nav button { flex: none; white-space: nowrap; font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 8px 14px; cursor: pointer; touch-action: manipulation; }
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button .n { font-family: var(--font-mono); font-size: 12px; opacity: .7; margin-right: 6px; }
+button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.panel { display: flex; flex-direction: column; gap: 24px; }
+/* Off screen, not display none: a diagram in a hidden tab needs a size to render. */
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
+pre.code { margin: 0; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; color: var(--fg); }
+pre.code .cm { color: var(--muted); }
+.file { font-family: var(--font-mono); font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 70ch; }
+.rule { border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; padding: 8px 12px; max-width: 70ch; }
+.tag { font-family: var(--font-mono); font-size: 11px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.rec { color: var(--ok); border-color: var(--ok); }
+.tag.no { color: var(--bad); border-color: var(--bad); }
+.tag.mid { color: var(--warn); border-color: var(--warn); }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pair > * { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 760px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+
+/* Foldables: title line, key fact line, body. */
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.tools button { font: 500 13px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+details.f { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+details.f > summary { cursor: pointer; list-style: none; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+details.f > summary::-webkit-details-marker { display: none; }
+details.f > summary .l1 { display: flex; gap: 10px; align-items: baseline; min-width: 0; flex-wrap: wrap; }
+details.f > summary .l1::before { content: "▸"; color: var(--muted); flex: none; }
+details.f[open] > summary .l1::before { content: "▾"; }
+details.f > summary .id { font-family: var(--font-mono); font-size: 13px; color: var(--accent); flex: none; }
+details.f > summary .t { font-family: var(--font-display); font-weight: 500; font-size: 16px; flex: 1 1 auto; min-width: 0; }
+details.f > summary .l2 { color: var(--muted); font-size: 13px; padding-left: 20px; }
+details.f > .body { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.field { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px; padding-block: 8px; border-bottom: 1px solid var(--line); }
+.field > .k { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+.field > .v { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+@media (max-width: 600px) { .field { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.tree { font-family: var(--font-mono); font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+.tree details { margin-left: 16px; }
+.tree > details { margin-left: 0; }
+.tree summary { cursor: pointer; padding: 2px 0; list-style: none; display: flex; gap: 10px; flex-wrap: wrap; }
+.tree summary::-webkit-details-marker { display: none; }
+.tree summary::before { content: "▸"; color: var(--muted); width: 10px; flex: none; }
+.tree details[open] > summary::before { content: "▾"; }
+.tree details.leaf > summary::before { content: "·"; }
+.tree .n { color: var(--fg); font-weight: 500; }
+.tree .d { color: var(--muted); font-family: var(--font-body); font-size: 13px; }
+.tree .more { margin: 2px 0 6px 20px; font-family: var(--font-body); font-size: 13px; color: var(--muted); max-width: 70ch; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+figure .img { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+figure img { display: block; max-width: none; height: 420px; }
+figcaption { font-size: 13px; color: var(--muted); max-width: 70ch; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">session-orchestrator · V2 · restart plan · step 2 of 3</div>
+  <h1>V2 Target Design</h1>
+  <p class="summary">Each page and each list of the app is a view of one query of the event stream. A composer joins the view template, the content template of each kind and the query result into one view model, off the UI thread. The page renders it only with design system components. One navigator owns where the user is, and each motion is a step of a state transition. The diagnosis is on the <a href="https://claude.ai/artifact/BNwcBE7dsYXYmGhyiPk1b6">V2 Visual Restart</a> page.</p>
+  <p class="summary">Handover (2026-11-25): <code>session-orchestrator/docs/handover/V2.md</code>, branch <code>orch/decision-toolu_015kkHdRgsS7ocnydT5LNSrM</code>.</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" id="t-overview" data-tab="overview" aria-controls="overview" aria-selected="true"><span class="n">1</span>Overview</button>
+  <button role="tab" id="t-views" data-tab="views" aria-controls="views" aria-selected="false"><span class="n">2</span>Views</button>
+  <button role="tab" id="t-nav" data-tab="nav" aria-controls="nav" aria-selected="false"><span class="n">3</span>Navigation</button>
+  <button role="tab" id="t-state" data-tab="state" aria-controls="state" aria-selected="false"><span class="n">4</span>State, motion</button>
+  <button role="tab" id="t-system" data-tab="system" aria-controls="system" aria-selected="false"><span class="n">5</span>Design system</button>
+  <button role="tab" id="t-host" data-tab="host" aria-controls="host" aria-selected="false"><span class="n">6</span>Hosts</button>
+  <button role="tab" id="t-spike" data-tab="spike" aria-controls="spike" aria-selected="false"><span class="n">7</span>Spike</button>
+</nav>
+
+<!-- 1 OVERVIEW -->
+<div class="panel" id="overview" role="tabpanel" aria-labelledby="t-overview">
+  <section>
+    <h2>One way from the store to the screen</h2>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  ST[("Event stream<br/>and registry")] -->|snapshot| CO["Composer<br/>pure, off UI thread"]
+  VT["View template<br/>query, shape, layout"] --> CO
+  KT["Content template<br/>of each kind"] --> CO
+  CO -->|view model| PR["Page root"]
+  PR -->|parameters| DS["Design system<br/>components"]
+  DS -->|events| SM["Navigator and<br/>state machines"]
+  SM -->|motion steps| DS
+  SM -->|acts| ST
+  SM -->|trace events| TR["Trace"]
+</pre></div>
+    <p class="summary">Data goes one way: down as parameters. Input goes the other way: up as events into a state machine, which posts to the store. Each state change is a trace event.</p>
+  </section>
+
+  <section>
+    <h2>Rules and the pains they stop</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Rule</th><th>Stops</th><th>Tab</th></tr></thead>
+      <tbody>
+        <tr><td>Each page and list is a view of one query</td><td>P11, P1, P4</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
+        <tr><td>The event type selects one card renderer; its replies are typed</td><td>P11, P2</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
+        <tr><td>One composer makes the view model</td><td>P1, P4</td><td><a href="#views" data-go="views">2 · Views</a></td></tr>
+        <tr><td>Each window, page and sheet has a state machine</td><td>P3</td><td><a href="#state" data-go="state">4 · State, motion</a></td></tr>
+        <tr><td>Each state change is one trace event</td><td>P6, P7</td><td><a href="#state" data-go="state">4 · State, motion</a></td></tr>
+        <tr><td>Tests wait for events and read tokens</td><td>P7</td><td><a href="#state" data-go="state">4 · State, motion</a></td></tr>
+        <tr><td>Token tiers, layer order, written guidelines</td><td>P9</td><td><a href="#system" data-go="system">5 · Design system</a></td></tr>
+        <tr><td>Pages use only catalog components</td><td>P10, P5</td><td><a href="#system" data-go="system">5 · Design system</a></td></tr>
+        <tr><td>Names for CSS and JS are generated</td><td>P2</td><td><a href="#system" data-go="system">5 · Design system</a></td></tr>
+        <tr><td>The native host is thin and generic</td><td>P8</td><td><a href="#host" data-go="host">6 · Hosts</a></td></tr>
+        <tr><td>One navigator: a stack of pages and overlays</td><td>P13</td><td><a href="#nav" data-go="nav">3 · Navigation</a></td></tr>
+        <tr><td>Each motion is a step of a state transition</td><td>P12</td><td><a href="#state" data-go="state">4 · State, motion</a></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Projects</h2>
+    <p class="summary">D4 = A: new projects next to the old app. P1a and P1b of the devices plan stop.</p>
+    <div class="tree">
+      <details class="leaf"><summary><span class="n">Orchestrator.View/</span><span class="d">Composer, view templates, state machines. No Blazor, no Windows</span></summary><div class="more">Unit tests run here with no window and no browser. It reads data through one snapshot interface.</div></details>
+      <details class="leaf"><summary><span class="n">Orchestrator.Ui/</span><span class="d">Razor class library: the design system</span></summary><div class="more">Tokens, layers, components, motion CSS, the small JS helpers, and a gallery page. No store access.</div></details>
+      <details class="leaf"><summary><span class="n">Orchestrator.App/</span><span class="d">The main app (S4): MAUI, Windows and Android</span></summary><div class="more">A thin host with its own solution file. The main solution needs no Android workload. MAUI on Windows is not proven.</div></details>
+      <details class="leaf"><summary><span class="n">Web host and widget host</span><span class="d">Thin hosts; project names are open</span></summary><div class="more">The web host gives the pages. The widget is a separate Windows program. The supervisor and the API stay in <code>Orchestrator.Web</code>.</div></details>
+      <details class="leaf"><summary><span class="n">templates/views/</span><span class="d">The view templates (a new catalog)</span></summary><div class="more">One folder for each view, like <code>templates/modes/</code>. The store layer can replace a core view.</div></details>
+    </div>
+    <div class="rule">Keep this function of P1b (note of the root): views read and act through requests with one sender interface. Where requests can go over HTTP, a remote sender sends them, so the phone needs no local store.</div>
+  </section>
+
+  <section>
+    <h2>Decided</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Decision</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>Each page and list is a view of one query</td><td>You, Q4</td></tr>
+        <tr><td>Start from the data, then components, then the look</td><td>Default, Q5</td></tr>
+        <tr><td>Step 2 compares the tray hosts</td><td>Default, Q6</td></tr>
+        <tr><td>One motion system and one navigation system</td><td>You, Q4 (P12, P13)</td></tr>
+        <tr><td>The kind file is <code>content.json</code></td><td>You, D1</td></tr>
+        <tr><td>The event type selects one Razor card renderer; no rule language now</td><td>You, D5</td></tr>
+        <tr><td>One type <code>question</code>, one card: <code>options</code> as buttons, and one open-text flag</td><td>You, D5</td></tr>
+        <tr><td>Overlays do not change the URL; the navigator owns Back on each host</td><td>You, D6</td></tr>
+        <tr><td>One owned design system: a whole system that we copy, with guidelines and skills</td><td>You, D2; the base is open</td></tr>
+        <tr><td>The widget and the main app are two programs (S4)</td><td>You, D3 = B</td></tr>
+        <tr><td>New <code>Orchestrator.View</code> and <code>Orchestrator.Ui</code>, thin hosts, one <code>Orchestrator.App</code></td><td>You, D4 = A</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Open questions</h2>
+    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">D2</span><span class="t">Which whole system becomes our owned base, and who makes its Blazor layer?</span></span><span class="l2">Recommendation: A, vsa-design, with B as the model for change skills. No default</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Context</span><div class="v"><p>The user wants a structured system that we copy and own. Must have: tiers (tokens, styles, components) and a structured guide to customize anything. Ideal: skills or an MCP server that we can copy. JSON screens are not a criterion. Details: tab <a href="#system" data-go="system">5 · Design system</a>.</p></div></div>
+        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: <code>vsa-design</code> is the base. Add names, the Blazor layer, change skills and the index "How to change anything" there.</li><li>B: a new fork of NVIDIA Elements. Better token tiers, change skills and an MCP server to copy, but the fork work starts again.</li><li>C: a new fork of Blazor Blueprint. Native Razor, but one token tier, and we write the skills.</li></ul></div></div>
+        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. It passes each must and most fork steps are done. B is better on change skills and MCP, so use it as the model; with its Apache-2.0 notice we can also copy its skill text. If an MCP server from day one is more important than the fork work, choose B. If web components and Blazor conflict in the spike, choose C.</p></div></div>
+        <div class="field"><span class="k">Say yes to</span><div class="v"><ul><li>The base (A, B or C)</li><li>A third exception in <code>AGENTS.md</code> for the vendored output (A, B)</li><li>Who changes <code>vsa-design</code>: its own sessions, or a session from here. Today this session can only read it</li><li>A Blazor spike of five components before step 3</li></ul></div></div>
+      </div>
+    </details>
+
+  </section>
+</div>
+
+<!-- 2 VIEWS -->
+<div class="panel off" id="views" role="tabpanel" aria-labelledby="t-views">
+  <section>
+    <h2>A card composes itself</h2>
+    <div class="box"><pre class="mermaid">
+flowchart TB
+  Q["Query<br/>StreamQuery"] --> R["Result<br/>events, groups"]
+  V["View template<br/>shape, layout, part"] --> C["Composer"]
+  R --> C
+  K["Content template<br/>kind document, preview"] --> C
+  T["Event type<br/>meta.json"] --> C
+  C --> N["View model nodes<br/>keyed, immutable"]
+</pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Term</th><th>Owns</th><th>File</th></tr></thead>
+      <tbody>
+        <tr><td>Content template</td><td>What one kind shows</td><td><code>templates/&lt;kind&gt;/content.json</code></td></tr>
+        <tr><td>Event type</td><td>The kind, its version, its permitted replies</td><td><code>templates/&lt;kind&gt;/meta.json</code></td></tr>
+        <tr><td>Card renderer</td><td>The look and actions of the card of one type</td><td><code>Orchestrator.Ui</code>, one Razor file</td></tr>
+        <tr><td>View template</td><td>Query, shape, layout, part</td><td><code>templates/views/&lt;name&gt;/view.json</code></td></tr>
+        <tr><td>Page</td><td>Route, depth, view slots</td><td><code>templates/pages/&lt;name&gt;/page.json</code></td></tr>
+        <tr><td>View model</td><td>The composed nodes</td><td>C# records, in memory</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The content template is the file <code>view.json</code> of each kind today. Decision D1 renames it to <code>content.json</code>, so that "view" has one meaning.</p>
+  </section>
+
+  <section>
+    <h2>Shapes and layouts</h2>
+    <p class="summary">A shape says what the query gives. A layout says how a catalog component shows it. Each layout takes only some shapes.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Shape</th><th>Query gives</th><th>Layouts</th></tr></thead>
+      <tbody>
+        <tr><td><code>item</code></td><td>One event</td><td><code>document</code>, <code>card</code></td></tr>
+        <tr><td><code>list</code></td><td>Events in order</td><td><code>deck</code>, <code>rows</code>, <code>timeline</code></td></tr>
+        <tr><td><code>groups</code></td><td>Counts by one key</td><td><code>ring</code>, <code>chips</code>, <code>bars</code></td></tr>
+        <tr><td><code>tree</code></td><td>Sessions by parent</td><td><code>tree</code></td></tr>
+        <tr><td><code>series</code></td><td>Counts by time bucket</td><td><code>spark</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Examples</h2>
+    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V1</span><span class="t">Inbox deck</span></span><span class="l2">The Cards page: list shape, deck layout, preview part</span></summary>
+      <div class="body">
+        <p class="file">templates/views/inbox/view.json</p>
+<pre class="code">{
+  "name": "inbox",
+  "query":  { "view": "inbox" },          <span class="cm">// StreamQueries.Inbox</span>
+  "shape":  "list",
+  "layout": "deck",
+  "part":   "preview",                    <span class="cm">// from content.json</span>
+  "filter": { "by": "card.group", "chips": true },
+  "order":  ["arrival", "newest", "session"],
+  "empty":  "New cards show here when they arrive."
+}</pre>
+        <p>The chips, the filter sheet and the order list come from <code>filter</code> and <code>order</code>. No page code counts or sorts.</p>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V2</span><span class="t">Home ring</span></span><span class="l2">An aggregate: the same query, groups shape, ring layout</span></summary>
+      <div class="body">
+        <p class="file">templates/views/waiting/view.json</p>
+<pre class="code">{
+  "name": "waiting",
+  "query":  { "view": "inbox" },
+  "shape":  "groups",
+  "key":    "card.group",
+  "layout": "ring",
+  "tones":  { "Questions": "q", "Reviews": "rev",
+              "Reports": "rep", "Blocked": "blk" }
+}</pre>
+        <p>The home page, the tray badge and the chips of the Cards page use this one view. So the count has one rule (P1, Data G6).</p>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V3</span><span class="t">Event page</span></span><span class="l2">One item: item shape, document layout, a parameter from the route</span></summary>
+      <div class="body">
+        <p class="file">templates/views/event/view.json · templates/pages/event/page.json</p>
+        <div class="pair">
+<pre class="code">{
+  "name": "event",
+  "query":  { "id": "{route.id}" },
+  "shape":  "item",
+  "layout": "document",
+  "part":   "document",
+  "actions": "card"     <span class="cm">// from the card renderer</span>
+}</pre>
+<pre class="code">{
+  "name":  "event",
+  "route": "/events/{id}",
+  "depth": 2,
+  "slots": [ "event", "event-results" ]
+}</pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V4</span><span class="t">Session page</span></span><span class="l2">Two sources: the registry for the header, the stream for the timeline</span></summary>
+      <div class="body">
+<pre class="code"><span class="cm">// templates/pages/session/page.json</span>
+{ "route": "/sessions/{id}", "depth": 1,
+  "slots": [ "session-head", "session-timeline" ] }
+
+<span class="cm">// templates/views/session-head/view.json</span>
+{ "source": "sessions", "query": { "id": "{route.id}" },
+  "shape": "item", "layout": "card", "part": "session" }
+
+<span class="cm">// templates/views/session-timeline/view.json</span>
+{ "query": { "session": "{route.id}", "newest": true, "limit": 300 },
+  "shape": "list", "layout": "timeline", "part": "row" }</pre>
+        <p>The session registry is a second source with the same query keys. The session content template lives in <code>templates/_session/content.json</code>.</p>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V5</span><span class="t">One renderer for each event type</span></span><span class="l2">The 8 card variants of Ui.Classify become 6 typed renderers and 1 fallback</span></summary>
+      <div class="body">
+        <p>An event has an <code>id</code>, and a type: its <code>kind</code>, which is the name of its template folder. The type selects the renderer. There is no rule language.</p>
+        <div class="scroll"><table>
+          <thead><tr><th>Variant today</th><th>Selected today by</th><th>V2: type or typed field</th><th>Renderer</th></tr></thead>
+          <tbody>
+          <tr><td>yesno</td><td><code>question</code> with risk or default; two options, yes and no</td><td><code>question</code>; <code>options</code>, a button for each</td><td>QuestionCard</td></tr>
+          <tr><td>default</td><td><code>question</code> with <code>defaultOption</code></td><td><code>question</code>; the button of <code>defaultOption</code> is marked</td><td>QuestionCard</td></tr>
+          <tr><td>opinion</td><td><code>question</code> with <code>risk</code>, no default</td><td><code>question</code>; <code>openText</code></td><td>QuestionCard</td></tr>
+          <tr><td>question</td><td><code>question</code> with no risk and no default</td><td><code>question</code>; <code>openText</code>, no options</td><td>QuestionCard</td></tr>
+          <tr><td>plan</td><td><code>needs</code> = review and kind <code>plan</code></td><td>Type <code>plan</code></td><td>PlanCard</td></tr>
+          <tr><td>review</td><td><code>needs</code> = review, any other kind</td><td>Type <code>answer</code>, forwarded for review</td><td>DefaultReviewCard</td></tr>
+          <tr><td>blocked</td><td>Kind <code>failure</code>, <code>blocked</code> or <code>delivery.blocked</code>; or <code>state</code> = blocked</td><td>Type <code>failure</code>; or type <code>report</code> with <code>state</code> = blocked</td><td>FailureCard; ReportCard</td></tr>
+          <tr><td>report</td><td>All that is left</td><td>Type <code>report</code></td><td>ReportCard</td></tr>
+          <tr><td>(none)</td><td>A <code>message</code> with <code>needs</code> = ack becomes a report card</td><td>Type <code>message</code></td><td>MessageCard</td></tr>
+          </tbody>
+        </table></div>
+<pre class="code"><span class="cm">// Orchestrator.Ui: the type selects the renderer. Illustration.</span>
+"question" =&gt; typeof(QuestionCard),      "plan"    =&gt; typeof(PlanCard),
+"answer"   =&gt; typeof(DefaultReviewCard), "report"  =&gt; typeof(ReportCard),
+"failure"  =&gt; typeof(FailureCard),       "message" =&gt; typeof(MessageCard),
+_          =&gt; typeof(TemplateCard)   <span class="cm">// content.json, replies of meta.json</span></pre>
+        <ul>
+          <li>Shared parts: frame, preview, context actions, answer sheet, countdown, undo.</li>
+          <li><code>needs</code> decides if an event is a card. It does not select the renderer.</li>
+          <li>P2: each action is a typed reply. PlanCard has Approve and Change; the text of Change posts <code>review</code> with the verdict <code>change</code>. It has no refuse action. Today the text of a plan card posts <code>refuse</code>. Step 3 must check that a session gets the correct text for a changed plan.</li>
+          <li>A kind that the user adds has no renderer. <code>TemplateCard</code> shows it with its <code>content.json</code>, so an added kind still needs no code.</li>
+        </ul>
+        <p class="note">Kinds with no template (<code>docs/store.md</code>, "Other kinds have no template"): traces, lifecycle names and git make no card. They show as one generic row in the stream and in the timeline of a session. <code>delivery.blocked</code> is a trace; the user gets a <code>failure</code> card in its place. A lifecycle notice about a root session goes to the user as a <code>message</code>, so it uses MessageCard. Old version 1 events make no card.</p>
+        <p class="note">Later: build the templates themselves from components. Not now.</p>
+      </div>
+    </details>
+
+    <details class="f">
+      <summary><span class="l1"><span class="id">V6</span><span class="t">The question card</span></span><span class="l2">Options are buttons; one flag for open text. No yes or no detection</span></summary>
+      <div class="body">
+        <div class="scroll"><table>
+          <thead><tr><th>options</th><th>openText</th><th>The card shows</th></tr></thead>
+          <tbody>
+          <tr><td>None</td><td>true</td><td>Open text (type or speak)</td></tr>
+          <tr><td>2 to 4</td><td>false</td><td>One button for each option</td></tr>
+          <tr><td>2 to 4</td><td>true</td><td>The buttons and open text</td></tr>
+          <tr><td>None</td><td>false</td><td>Not valid</td></tr>
+          </tbody>
+        </table></div>
+        <p><code>defaultOption</code> and <code>recommendation</code> stay fields. The card marks the default and shows its countdown. Yes and no are two normal options.</p>
+        <p>An old question has no flag. Read it as <code>openText: true</code>, because each question of today accepts free text. A new question with no flag gets the same value.</p>
+        <h3>Work for step 3</h3>
+        <div class="scroll"><table>
+          <thead><tr><th>File</th><th>Change</th></tr></thead>
+          <tbody>
+          <tr><td><code>templates/question/schema.json</code></td><td>Add <code>openText</code>: boolean, default true. Refuse <code>false</code> with no <code>options</code>. Remove "The options are suggestions"</td></tr>
+          <tr><td><code>plugin/hooks/tools.ts</code></td><td><code>ask_user</code> gets <code>openText</code> from the schema; change its text "The user answers in free text"</td></tr>
+          <tr><td><code>orch-ask</code> skill</td><td>Add <code>openText</code>; change the <code>options</code> row and rule 6</td></tr>
+          <tr><td><code>templates/question/</code> view, render, example</td><td>Show the flag; mark the default</td></tr>
+          <tr><td><code>docs/store.md</code></td><td>Field table (line 554); line 665 "never with a click"; card table (line 405)</td></tr>
+          <tr><td>Records and checks in C#</td><td>Read the flag; no flag = true. With <code>false</code>, the default must be an option</td></tr>
+          <tr><td>Old card code</td><td><code>Ui.Classify</code> goes with V2. Swipes of the new card: to design</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note">A text answer can still arrive from the chat or the phone. Proposal: accept it also when <code>openText</code> is false. The flag controls only the card. <code>AGENTS.md</code> says "Never use click questions" for agent chats. These buttons are in our own card, so that rule can stay for chats.</p>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>The composer</h2>
+<pre class="code"><span class="cm">// Orchestrator.View: pure, testable with no window.</span>
+public interface IViewSource { Snapshot Take(); }
+
+public static ViewModel Compose(Snapshot data, ViewTemplate view,
+                                Templates templates, RouteValues route);
+
+<span class="cm">// The hub runs Compose for each open view on each store change,</span>
+<span class="cm">// on a worker thread, and pushes only the changed nodes (by key).</span></pre>
+    <div class="rule">A component never reads the store. Only the page root gets a view model, and it passes nodes down as parameters.</div>
+  </section>
+</div>
+
+<!-- 3 NAVIGATION -->
+<div class="panel off" id="nav" role="tabpanel" aria-labelledby="t-nav">
+  <section>
+    <h2>One navigator, one stack</h2>
+    <p class="summary">The navigator is the only owner of "where the user is". It holds a stack of entries: one tab root, the pushed pages, and the open overlays. Each operation gives its move, so no unit computes a move from two addresses (P13, Page moves G4).</p>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  IN["Input<br/>link, Back key, swipe"] -->|operation| NV["Navigator<br/>stack"]
+  PJ["page.json<br/>route, parent"] --> NV
+  NV -->|URL| RT["Router<br/>address bar"]
+  NV -->|move| MO["Motion player"]
+  NV -->|entries| PR["Page roots<br/>and overlays"]
+  NV -->|nav events| TR["Trace"]
+</pre></div>
+  </section>
+
+  <section>
+    <h2>Operations</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Operation</th><th>Stack change</th><th>Move</th></tr></thead>
+      <tbody>
+        <tr><td><code>Tab(name)</code></td><td>Clear; set the tab root</td><td>tab</td></tr>
+        <tr><td><code>Push(route)</code></td><td>Add a page on top</td><td>push</td></tr>
+        <tr><td><code>Back()</code></td><td>Remove the top entry</td><td>back, or overlay leave</td></tr>
+        <tr><td><code>Replace(route)</code></td><td>Swap the top page</td><td>none</td></tr>
+        <tr><td><code>Open(overlay)</code></td><td>Add a sheet or a dial</td><td>overlay enter</td></tr>
+        <tr><td><code>Deep(route)</code></td><td>Build the stack from the parents</td><td>none</td></tr>
+      </tbody>
+    </table></div>
+    <div class="rule">Back always closes the top entry first: an overlay before a page. The Back key, Esc, a swipe and the app bar use the same <code>Back()</code>. An overlay does not change the URL (D6). In a browser, each open overlay needs a history entry with the same URL.</div>
+  </section>
+
+  <section>
+    <h2>Pages name their parent</h2>
+    <div class="pair">
+      <div><p class="file">templates/pages/stream-session/page.json</p>
+<pre class="code">{
+  "name":   "stream-session",
+  "route":  "/stream?session={id}",
+  "parent": "session",
+  "slots":  [ "session-timeline" ]
+}</pre></div>
+      <div><p class="file">the stack after Deep("/events/42")</p>
+<pre class="code">cards              <span class="cm">// tab root</span>
+└─ session/abc     <span class="cm">// parent of the event</span>
+   └─ events/42    <span class="cm">// top</span>
+
+<span class="cm">// The path trail shows the stack.</span>
+<span class="cm">// No depth numbers, no 1.5.</span></pre></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Prior art</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Source</th><th>Pattern</th><th>For us</th></tr></thead>
+      <tbody>
+        <tr><td>iOS navigation controller</td><td>A stack: push, pop</td><td>Push and Back</td></tr>
+        <tr><td>Android Navigation</td><td>A graph; a deep link builds the back stack</td><td><code>parent</code>, <code>Deep()</code></td></tr>
+        <tr><td>Flutter Navigator 2.0</td><td>The page list is state</td><td>The stack is state; pages render from it</td></tr>
+        <tr><td>Radix, Headless UI</td><td>Overlays as presence states</td><td>Overlays are stack entries</td></tr>
+        <tr><td>Our <code>PageDepth.Move</code></td><td>One tested move rule</td><td>Keep the tests; the operation gives the move</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The first four rows are a summary of the platform patterns from general knowledge. They were not researched again for this page.</p>
+  </section>
+
+  <section>
+    <h2>Navigator contract</h2>
+<pre class="code"><span class="cm">// Orchestrator.View: one navigator for the web host and each tray window.</span>
+public interface INavigator
+{
+    IReadOnlyList&lt;NavEntry&gt; Stack { get; }
+    Task Tab(string name);
+    Task Push(string route);
+    Task Open(Overlay overlay);
+    Task Back();                 <span class="cm">// ends when the leave motion ends</span>
+    event Action&lt;NavChange&gt; Changed;   <span class="cm">// also a trace event</span>
+}</pre>
+  </section>
+</div>
+
+<!-- 4 STATE -->
+<div class="panel off" id="state" role="tabpanel" aria-labelledby="t-state">
+  <section>
+    <h2>The tray panel as one state machine</h2>
+    <div class="box"><pre class="mermaid">
+stateDiagram-v2
+  [*] --> Hidden
+  Hidden --> Opening: open
+  Opening --> Open: grown
+  Open --> Folding: fold
+  Folding --> Folded: folded
+  Folded --> Opening: open
+  Open --> Docking: dock
+  Docking --> Badge: docked
+  Badge --> Opening: open
+  Open --> Hiding: hide
+  Hiding --> Hidden: hidden
+</pre></div>
+    <p class="summary">Each "-ing" state ends only on an end event: a motion end from the page, or a window event from the host. Input waits for a rest state, so a press in <code>Opening</code> waits for <code>Open</code> (I19).</p>
+  </section>
+
+  <section>
+    <h2>State machines</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Machine</th><th>Rest states</th><th>End events from</th></tr></thead>
+      <tbody>
+        <tr><td>Tray panel</td><td>Hidden, Open, Folded, Badge</td><td>Motion, window</td></tr>
+        <tr><td>Badge</td><td>Out, In, Peek</td><td>Motion, window</td></tr>
+        <tr><td>Page</td><td>Loading, Ready</td><td>First render, motion</td></tr>
+        <tr><td>Sheet</td><td>Closed, Open</td><td>Motion</td></tr>
+        <tr><td>Card act</td><td>Idle, Pending, Done</td><td>Motion, undo time, store</td></tr>
+        <tr><td>Size report</td><td>Unknown, Known</td><td>Measure; retry on fault (I21)</td></tr>
+      </tbody>
+    </table></div>
+<pre class="code"><span class="cm">// One small generic machine. Each machine is a table of data.</span>
+public sealed class Machine&lt;TState, TEvent&gt;
+{
+    public TState State { get; }
+    public Task Fire(TEvent e);              <span class="cm">// refuses an event with no row</span>
+    public Task Until(TState s, TimeSpan limit);
+}</pre>
+  </section>
+
+  <section>
+    <h2>Trace and tests</h2>
+<pre class="code">record TraceEvent(long Time, string Run, string Source,
+    string Kind,          <span class="cm">// state, input, motion, data, fault</span>
+    string Name, IReadOnlyDictionary&lt;string, object?&gt; Data);</pre>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>Writers</td><td>Machines and the input layer only</td></tr>
+        <tr><td>Sink</td><td>One queue, one background file writer</td></tr>
+        <tr><td>On</td><td>Always; a ring buffer in memory</td></tr>
+        <tr><td>Format</td><td>One JSON line for each event</td></tr>
+        <tr><td>Unit tests</td><td>Fire events into a machine; no window</td></tr>
+        <tr><td>Host tests</td><td>Wait for trace events, with a limit</td></tr>
+        <tr><td>Expected values</td><td>From tokens, never from the code under test</td></tr>
+        <tr><td>Pictures</td><td>Only for the look; never for timing</td></tr>
+        <tr><td>Test code</td><td>A test project, not the shipped exe</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>One motion system</h2>
+    <p class="summary">Each motion is the look of one row of a state machine. The row names a motion step; the player runs it and fires the end event. No motion starts outside a row (P12).</p>
+<pre class="code"><span class="cm">// A row of the tray panel machine</span>
+(Open, "dock", Docking, Motion.Fold)     <span class="cm">// from, event, to, step</span>
+(Docking, "docked", Badge, null)        <span class="cm">// "docked" = end of Fold</span>
+
+<span class="cm">// The player: one entry for each kind of motion</span>
+Task&lt;MotionEnd&gt; Play(MotionStep step, ElementRef target);</pre>
+    <div class="scroll"><table>
+      <thead><tr><th>Motion</th><th>Owner</th><th>End event</th></tr></thead>
+      <tbody>
+        <tr><td>Page move (tab, push, back)</td><td>Navigator</td><td>View transition <code>finished</code></td></tr>
+        <tr><td>Overlay enter and leave</td><td>Navigator, Presence</td><td>Animations settled</td></tr>
+        <tr><td>Card act (throw, tuck)</td><td>Card act machine</td><td>Animations settled</td></tr>
+        <tr><td>Gesture follow (drag)</td><td>Input layer</td><td>Pointer up; then a step</td></tr>
+        <tr><td>Window show and hide</td><td>Tray machine, host</td><td>Window event</td></tr>
+        <tr><td>Attention (spin, count-up)</td><td>View model change</td><td>Animations settled</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Motion prior art and the R1 lessons</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Pattern</th><th>From</th><th>Rule for V2</th></tr></thead>
+      <tbody>
+        <tr><td>One state attribute</td><td>Radix, Headless UI</td><td>CSS keys on <code>data-state</code> only</td></tr>
+        <tr><td>One end helper</td><td>Web Awesome 3</td><td><code>getAnimations()</code>, then all <code>finished</code></td></tr>
+        <tr><td>Presence with states</td><td>Radix Presence</td><td>shown, leaving, gone; no rule = no wait</td></tr>
+        <tr><td>Tokens only in CSS</td><td>Carbon, Material 3</td><td>Times in <code>@layer tokens</code></td></tr>
+        <tr><td>Reduced motion = 1 ms</td><td>Fluent UI</td><td>End events still come</td></tr>
+        <tr><td>Registry of steps (R1)</td><td>Our PR #58</td><td>Generated from the machine rows</td></tr>
+      </tbody>
+    </table></div>
+    <ul>
+      <li>A leave with no motion rule ends at once and writes no warning (I22).</li>
+      <li>The drag follow is the only motion in JS. It sends gesture events; the step after the release is a normal row.</li>
+      <li>The native host draws no motion.</li>
+      <li>The source is the <a href="https://claude.ai/artifact/UYj1mMf7CS2GkoECg17CtM">Orch View Architecture</a> page, Prior art tab, and the R1 motion guide.</li>
+    </ul>
+  </section>
+</div>
+
+<!-- 4 DESIGN SYSTEM -->
+<div class="panel off" id="system" role="tabpanel" aria-labelledby="t-system">
+  <section>
+    <h2>The goal: one owned system, then a layer for each app</h2>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  SRC["Source system<br/>copied one time"] --> BASE["Owned base<br/>components, themes,<br/>guidelines, skills"]
+  BASE --> RZ["Blazor layer<br/>generated wrappers"]
+  RZ --> ORCH["Orchestrator layer<br/>theme, cards, deck"]
+  RZ --> APPS["Other Blazor apps<br/>own layer"]
+  BASE --> WEB["Non-Blazor apps<br/>own layer"]
+</pre></div>
+    <p class="summary">The user wants the whole system: component behavior, tiers, a guide to customize anything, and skills or an MCP server that we can copy. The old option A (copy only tokens and CSS) does not fit, because we would write all behavior again.</p>
+    <div class="note">The user already has most of this: <code>vsa-design</code> is a copy of the whole Web Awesome 3.14.0. It has the skills and checks, and most links go to its own repository. The new names, the Blazor layer, some change skills and an MCP server are missing.</div>
+  </section>
+
+  <section>
+    <h2>Candidates against the criteria</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Criterion</th><th>A · vsa-design</th><th>B · NVIDIA Elements</th><th>C · Blazor Blueprint</th><th>D · Fluent UI Blazor</th><th>E · Radzen Blazor</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Must:</strong> tokens tier</td><td><span class="tag rec">Palette, roles, theme values</span></td><td><span class="tag rec"><code>ref</code>, <code>sys</code>, in JSON</span></td><td><span class="tag mid">One tier of theme variables</span></td><td><span class="tag mid">Brand ramp, theme tokens</span></td><td><span class="tag mid">SCSS and CSS variables</span></td></tr>
+        <tr><td><strong>Must:</strong> styles tier</td><td><span class="tag rec">Layers, themes, native, utilities</span></td><td><span class="tag rec">Themes, styles packages</span></td><td><span class="tag mid">Tailwind utilities, one layer</span></td><td><span class="tag mid">CSS themes</span></td><td><span class="tag rec">SCSS themes</span></td></tr>
+        <tr><td><strong>Must:</strong> components tier</td><td><span class="tag rec">74 elements, 399 parts</span></td><td><span class="tag rec">78 entry files in core</span></td><td><span class="tag rec">142 folders</span></td><td><span class="tag rec">142+ (its MCP README)</span></td><td><span class="tag rec">155+ (its README)</span></td></tr>
+        <tr><td><strong>Must:</strong> guide to customize anything</td><td><span class="tag rec">Theming, extension, customizing</span></td><td><span class="tag mid">Short theme guide; authoring guides</span></td><td><span class="tag mid">THEMING.md: colors, sizes</span></td><td><span class="tag mid">Theme pages</span></td><td><span class="tag mid">Theme pages</span></td></tr>
+        <tr><td><strong>Ideal:</strong> skills to use it</td><td><span class="tag rec">2, in source</span></td><td><span class="tag rec">1, in source</span></td><td><span class="tag no">None</span></td><td><span class="tag rec">1, in source</span></td><td><span class="tag no">None</span></td></tr>
+        <tr><td><strong>Ideal:</strong> skills to change it</td><td><span class="tag no">None; CLAUDE.md and records</span></td><td><span class="tag rec">Authoring skills, in source</span></td><td><span class="tag no">None</span></td><td><span class="tag no">None for this</span></td><td><span class="tag no">None</span></td></tr>
+        <tr><td><strong>Ideal:</strong> MCP server we can copy</td><td><span class="tag no">None; we can make one</span></td><td><span class="tag rec">In the CLI source, local</span></td><td><span class="tag mid">npm only; no source link</span></td><td><span class="tag rec">In source, dotnet tool</span></td><td><span class="tag no">Hosted, paid after a trial</span></td></tr>
+        <tr><td>License of code, docs, skills, MCP</td><td>MIT, all in one repository</td><td>Apache-2.0; each package checked says so</td><td>Apache-2.0; MCP package MIT</td><td>MIT, one repository</td><td>MIT code; MCP is a service</td></tr>
+        <tr><td>Blazor</td><td><span class="tag no">Generate wrappers</span></td><td><span class="tag no">Generate wrappers</span></td><td><span class="tag rec">Native</span></td><td><span class="tag rec">Native, over web components</span></td><td><span class="tag rec">Native</span></td></tr>
+        <tr><td>Fork work to do</td><td>Names, 74 wrappers</td><td>All, 74+ wrappers</td><td>All, write guides</td><td>All, second source</td><td>All, write guides</td></tr>
+        <tr><td>AGENTS.md rule</td><td><span class="tag no">Conflicts</span></td><td><span class="tag no">Conflicts</span></td><td><span class="tag mid">In part</span></td><td><span class="tag no">Conflicts</span></td><td><span class="tag mid">In part</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Checked 2026-11-25 in the source repositories and the <code>vsa-design</code> commit <code>c7945c81c</code>. Counts are of folders or files, so they do not compare exactly. "None" means: no file found by name or path. Nothing was forked, downloaded as a package, built or run.</p>
+    <p class="summary">Result: B is better on tools and has the clearest token tiers. A passes each must, has the most complete customize guide, and most fork steps are done. C, D and E are weaker on the tiers or the guide.</p>
+    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
+    <details class="f">
+      <summary><span class="l1"><span class="id">A</span><span class="t">vsa-design (Web Awesome 3.14.0)</span></span><span class="l2">What it really ships; what is not there</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Free</span><div class="v"><p>74 elements, 840 attributes, 399 parts, 45 event names and 413 public methods in <code>custom-elements.json</code>. 52 component test files call an accessibility check. 35 source files handle keys and 18 have pointer or touch code (text search). <a href="https://github.com/shoelace-style/webawesome">Source</a>, MIT.</p></div></div>
+        <div class="field"><span class="k">Pro</span><div class="v"><p>Web Awesome Pro has more: Combobox, Date Input, Date Picker, File Input, Rich Text Editor, Video, Video Playlist, more themes, patterns and a theme builder. The site code also marks Sparkline as Pro. <a href="https://webawesome.com/purchase">Pro page</a>. This list is at least these; the page was read as text. <code>vsa-design</code> has no Pro code by rule. If we need a combobox, we write it.</p></div></div>
+        <div class="field"><span class="k">Skills</span><div class="v"><p><code>webawesome</code>: one page for each component, forms, themes, tokens. <code>webawesome-design</code>: principles, layout, patterns, theming, extension. 8 guide files of 71 to 628 lines. Both come from the source by the build. Upstream also ships the <a href="https://github.com/shoelace-style/webawesome/tree/HEAD/packages/webawesome/scripts/design-skill">design skill source</a>.</p></div></div>
+        <div class="field"><span class="k">Already done</span><div class="v"><ul><li>Own source, no upstream (record 0001)</li><li>Guidance links to our repository (0009)</li><li>A copy at a release tag for each app (0010)</li><li>Own element process (0008), one own element: <code>vsa-table</code></li><li>Checks for colors, sizes, links, parts, screenshots, with CI</li></ul></div></div>
+        <div class="field"><span class="k">Open</span><div class="v"><ul><li>Issue 10: names. 650 files hold a <code>wa-</code> name; the default theme names 231 <code>--wa-*</code> tokens</li><li>141 files still hold a Web Awesome, Shoelace or Font Awesome link or name (289 lines); some must stay for the license</li><li>The style is the default Web Awesome style (0007)</li><li>No Blazor guide in <code>docs/frameworks</code></li><li>No release tag yet; issues 5, 7 and 10 are open</li></ul></div></div>
+        <div class="field"><span class="k">Cost</span><div class="v"><p>45,800 lines of TypeScript source without tests. Each fix is our work. An app copy is 16 MB, 11 MB of it icons. The devices plan limit for the APK is 30 MB, so the app needs an icon subset.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">B</span><span class="t">NVIDIA Elements</span></span><span class="l2">The best agent tools; a fresh fork</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Facts</span><div class="v"><p>Apache-2.0, 120 stars, last push 2026-11-24. The README names a skill, a CLI, an MCP server, lint and a <code>DESIGN.md</code>. The repository has authoring skills for components, tests, docs and patterns. <a href="https://github.com/NVIDIA/elements">Source</a>.</p></div></div>
+        <div class="field"><span class="k">For</span><div class="v"><p>It comes nearest to the wish for tools that agents use to change the system. The MCP server is the command <code>nve mcp</code> in <code>projects/cli</code>. The checked packages (cli, code, core, themes) say Apache-2.0; <code>NOTICE.md</code> lists other parts, and the fonts have their own license.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>The fork starts again: names (<code>nve-</code>), brand, links, and the build of a larger project with Go and pnpm. It needs the same Blazor wrappers. The focus is AI and robotics consoles.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">C</span><span class="t">Blazor Blueprint</span></span><span class="l2">Native Razor; the guidelines are not in the source</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Facts</span><div class="v"><p>Apache-2.0, 703 stars, .NET 10 minimum, 142 component folders and a separate set of headless primitives. Themes from shadcn/ui work. Its README names an MCP server with 15 tools and 180+ <code>llms.txt</code> documents. <a href="https://github.com/blazorblueprintui/ui">Source</a>. I found no MCP or <code>llms</code> file by name in the repository, so a fork does not get them. The npm package <code>@blazorblueprint/mcp</code> says MIT but gives no repository. <code>TRADEMARK.md</code> limits the use of the name by a fork.</p></div></div>
+        <div class="field"><span class="k">For</span><div class="v"><p>No wrapper layer and no shadow DOM. It has mobile parts: app bar, bottom bar, bottom sheet select, drawer snap points.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>We write the guidelines and skills that the user wants to get ready. It serves only Blazor apps. Its styles use Tailwind utilities with a <code>bb:</code> prefix, so the style build needs Tailwind or a copy of its output.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">D</span><span class="t">Fluent UI Blazor v5</span></span><span class="l2">Razor over a second code base</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Facts</span><div class="v"><p>MIT, a usage skill and an MCP server in the source (a local dotnet tool). Its skill says that v5 wraps <code>@fluentui/web-components</code> v3. <a href="https://github.com/microsoft/fluentui-blazor">Source</a>.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>To own it, we own two code bases. The skill tells how to use the package, not how to change it.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">E</span><span class="t">Radzen, MudBlazor and others</span></span><span class="l2">Not proposed</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Radzen</span><div class="v"><p>MIT, 155+ native components; some themes are paid. <a href="https://github.com/radzenhq/radzen-blazor">Source</a>. Its <a href="https://www.radzen.com/blazor-mcp/documentation">MCP server</a> has one search tool. It is a hosted service: 50 requests in 15 days, then a paid plan. No skill or agent file found.</p></div></div>
+        <div class="field"><span class="k">MudBlazor</span><div class="v"><p>MIT, 84 component folders, <code>AGENTS.md</code> only. Material structure. <a href="https://github.com/MudBlazor/MudBlazor">Source</a>.</p></div></div>
+        <div class="field"><span class="k">shadcn/ui</span><div class="v"><p>MIT, a registry, an MCP server and <a href="https://ui.shadcn.com/docs/skills">skills</a>. It is React, so Blazor cannot use its components. Use it as the model for the registry.</p></div></div>
+        <div class="field"><span class="k">Astryx (Meta)</span><div class="v"><p>MIT, 150+ components, a CLI, themes and agent guides made for people and agents. It is React 19, and the README says beta. <a href="https://github.com/meta/astryx">Source</a>. Use it as a model for the guides.</p></div></div>
+        <div class="field"><span class="k">UI5 (SAP)</span><div class="v"><p>Apache-2.0, styling and accessibility skills in the source, and a local <a href="https://github.com/UI5/webcomponents-mcp-server">MCP server</a> (Apache-2.0) with API docs. The Fiori look is deep in the system. <a href="https://github.com/UI5/webcomponents">Source</a>.</p></div></div>
+        <div class="field"><span class="k">Siemens iX</span><div class="v"><p>MIT, two skills in the source. The brand look is Siemens. <a href="https://github.com/siemens/ix">Source</a>.</p></div></div>
+        <div class="field"><span class="k">Spectrum</span><div class="v"><p>Apache-2.0, many contributor skills and an <a href="https://opensource.adobe.com/spectrum-web-components/build-with-ai">agent page</a>. A migration to a second generation is in progress, so a copy now is risky.</p></div></div>
+        <div class="field"><span class="k">Carbon</span><div class="v"><p>Apache-2.0, 102 web component folders, <code>AGENTS.md</code> for each package, no skill found. IBM look. <a href="https://github.com/carbon-design-system/carbon">Source</a>.</p></div></div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>The tiers of the owned base</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Tier</th><th>In A today</th><th>Change it through</th><th>Gap</th></tr></thead>
+      <tbody>
+        <tr><td>1 Primitive tokens</td><td>Palette: 10 hues, 11 tints; scales</td><td>Palette file</td><td>None</td></tr>
+        <tr><td>2 Role tokens</td><td>brand, neutral, success, warning, danger; fill, border, on</td><td>Theme file</td><td>One list of all roles</td></tr>
+        <tr><td>3 Component tokens</td><td>180 custom properties in the manifest</td><td>The component</td><td>Not in one table</td></tr>
+        <tr><td>4 Styles</td><td>Cascade layers, native, utilities, themes</td><td>Style files</td><td>None</td></tr>
+        <tr><td>5 Components</td><td>74 elements: attributes, slots, parts, states</td><td>Source and docs page</td><td>Blazor wrappers</td></tr>
+        <tr><td>6 Patterns</td><td>Page shell, forms, dashboard, settings</td><td>Design skill</td><td>Our app patterns</td></tr>
+        <tr><td>7 App layer</td><td>One stylesheet with no layer</td><td>App repository</td><td>Orchestrator layer</td></tr>
+      </tbody>
+    </table></div>
+    <p class="summary">Write one index page, "How to change anything". Each row gives the tier, the file, the skill, the check and the decision record. This is the main guide for agents.</p>
+    <p class="note">The text of the guides in A needs a check. One skill file (<code>customizing.md</code>) still tells a reader to sign up for a hosted project: "Sign up or log in to create a project". Record 0009 says that no such text stays.</p>
+  </section>
+
+  <section>
+    <h2>The Blazor layer for a web component base (A or B)</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Work</th><th>Risk</th></tr></thead>
+      <tbody>
+        <tr><td>Wrappers</td><td>One Razor class for each element, generated from <code>custom-elements.json</code></td><td>Low: names and types are in the manifest</td></tr>
+        <tr><td>Events</td><td>Register each event one time in a JS initializer</td><td>Low: <a href="https://learn.microsoft.com/aspnet/core/blazor/components/event-handling">Blazor custom events</a></td></tr>
+        <tr><td>Form values</td><td>Two-way <code>@bind</code> and validation for each form element</td><td>Medium</td></tr>
+        <tr><td>Objects, methods</td><td>JS interop for a property or method with no attribute</td><td>Medium</td></tr>
+        <tr><td>DOM ownership</td><td>Elements that move their children or set <code>open</code> can conflict with a Blazor render</td><td><strong>High: test it</strong></td></tr>
+        <tr><td>Motion</td><td>The elements start own show and hide motion; tab 4 wants one player</td><td><strong>High: test it</strong></td></tr>
+        <tr><td>Style</td><td>Shadow DOM: use parts and tokens; no scoped CSS inside</td><td>Medium</td></tr>
+        <tr><td>Start</td><td>Load order and the first paint in the widget, WebView and web</td><td>Medium</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">A package exists, <a href="https://www.nuget.org/packages/WebAwesome.AspNetCore.Components">WebAwesome.AspNetCore.Components</a>, only as 0.0.1 from 2025-08. Use it as a reference only. My risk levels are estimates. A spike is necessary before we use A or B: button, input, select, dialog and dropdown in the web, widget and Android hosts.</p>
+    <div class="rule">The rule "no TypeScript or JavaScript" in <code>AGENTS.md</code> conflicts with A and B. Proposal: a third exception, "the vendored output of the owned design system". The app holds only built files and generated C#. The TypeScript source stays in the design system repository. The user must approve the rule change.</div>
+  </section>
+
+  <section>
+    <h2>Where it lives and the fork steps</h2>
+    <p class="summary">Proposal: its own repository, so each app copies a release tag. For A, this is <code>vsa-design</code>. The Blazor layer is a project in that repository and goes to apps in the same copy. The Orchestrator layer stays here, in <code>Orchestrator.Ui</code>.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Step</th><th>For A</th><th>For a new fork</th></tr></thead>
+      <tbody>
+        <tr><td>1 Copy at a tag, keep the license</td><td>Done</td><td>To do</td></tr>
+        <tr><td>2 Outside links and install text</td><td>Done (0009); check the rest</td><td>To do</td></tr>
+        <tr><td>3 Names: one prefix for elements and tokens</td><td>To do (issue 10), by one script, before any app uses it</td><td>To do</td></tr>
+        <tr><td>4 License notices: source, Lit and other packages, icons</td><td>Check at the rename</td><td>To do</td></tr>
+        <tr><td>5 Our look: tokens and theme</td><td>To do (default values now)</td><td>To do</td></tr>
+        <tr><td>6 Blazor layer, generated</td><td>To do</td><td>To do (not C)</td></tr>
+        <tr><td>7 Change skills and checks</td><td>In part</td><td>In part (B), to do (C)</td></tr>
+        <tr><td>8 First release tag</td><td>To do</td><td>To do</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Web Awesome needs its MIT notice. Font Awesome Free icons need CC BY 4.0 attribution. Apache-2.0 (B, C) also needs a note in each changed file and its NOTICE text, if there is one. Each brand name is not ours to use.</p>
+  </section>
+
+  <section>
+    <h2>Guidelines, skills and checks</h2>
+    <p class="summary">One skill for each kind of change. Each skill ends with its check, so an agent cannot finish with a break.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Skill</th><th>It changes</th><th>State in A</th></tr></thead>
+      <tbody>
+        <tr><td>add or change a color</td><td>Palette, role, contrast in light and dark</td><td>Guide; check for literals</td></tr>
+        <tr><td>change a style or theme</td><td>Tokens of one theme layer</td><td>Guide (theming)</td></tr>
+        <tr><td>add a variant</td><td>A variant maps to one color role</td><td>To write</td></tr>
+        <tr><td>add or change a component</td><td>Source, test, docs page, manifest, wrapper</td><td>Guide; the wrapper is missing</td></tr>
+        <tr><td>add an animation</td><td>Motion token and step (tab 4)</td><td>To write</td></tr>
+        <tr><td>compose a screen</td><td>Layout, pattern, existing components first</td><td>Skill (design)</td></tr>
+        <tr><td>update an app</td><td>Copy a release tag, then run checks</td><td>Guide (0010)</td></tr>
+        <tr><td>record a system change</td><td>Decision record</td><td>Rule (0001)</td></tr>
+      </tbody>
+    </table></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Check that stops drift</th><th>State in A</th></tr></thead>
+      <tbody>
+        <tr><td>Color and size literals outside the theme</td><td>Runs (<code>check.mjs</code>)</td></tr>
+        <tr><td>Links to outside hosts</td><td>Runs</td></tr>
+        <tr><td>Parts, anatomy, accessibility tests</td><td>Run in CI</td></tr>
+        <tr><td>Screenshots, 2 sizes and 2 schemes</td><td>Run; a person looks</td></tr>
+        <tr><td>Skills match the source</td><td>Exists; not in CI</td></tr>
+        <tr><td>Wrappers match the manifest</td><td>To write</td></tr>
+        <tr><td>Copied files in an app are not changed (hash)</td><td>To write</td></tr>
+        <tr><td>App uses only catalog components; no raw color</td><td>To write (in each app)</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Later: an MCP server and JSON screens</h2>
+    <ul>
+      <li>MCP server (A): optional, after the skills. It reads <code>custom-elements.json</code> and the guide files, runs on the PC, and can be C#. Tools: list, describe, tokens, check.</li>
+      <li>JSON screens: not a criterion. We can build them on top. The component manifest can make the schema of a screen file. It has no rule language: a screen file has no <code>when</code> (D5).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Layers</h2>
+    <p class="note">This section and the next three come from the old D2. If D2 = A or B, the base gives the layers, tokens and general components. Then these tables apply only to the Orchestrator layer. They change after D2.</p>
+<pre class="code">@layer reset, tokens, base, components, layouts, motion, host;
+<span class="cm">/* host: web or tray. A host rule never wins by specificity (S-G1). */</span></pre>
+    <div class="scroll"><table>
+      <thead><tr><th>Layer</th><th>Holds</th><th>Check</th></tr></thead>
+      <tbody>
+        <tr><td><code>tokens</code></td><td>All values: color, size, radius, shadow, time</td><td>Only layer with literals</td></tr>
+        <tr><td><code>base</code></td><td>Elements: body, text, focus</td><td>No class selectors</td></tr>
+        <tr><td><code>components</code></td><td>One block for each component</td><td>Class prefix = component</td></tr>
+        <tr><td><code>layouts</code></td><td>deck, rows, timeline, ring, tree</td><td>One rule set for each layout</td></tr>
+        <tr><td><code>motion</code></td><td>The motion steps of R1</td><td>Registry test, both ways</td></tr>
+        <tr><td><code>host</code></td><td>Web or tray frame only</td><td>No component selectors</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Token tiers</h2>
+<pre class="code">@layer tokens {
+  :root {
+    <span class="cm">/* 1 primitive: the scale */</span>
+    --gray-10: #fdfdfc;  --orange-50: #ff6a1a;  --space-2: 8px;  --radius-4: 16px;
+    <span class="cm">/* 2 role: what it means */</span>
+    --surface: var(--gray-10);  --accent: var(--orange-50);  --radius-panel: var(--radius-4);
+    <span class="cm">/* 3 component: one part */</span>
+    --card-radius: var(--radius-panel);  --ring-track: var(--sunken);
+  }
+}</pre>
+    <p class="summary">Components read only tier 2 and tier 3. A theme changes only tier 2. The values of today come from <code>app.css</code> and <code>docs/inbox-design.html</code>, so the look stays the same.</p>
+  </section>
+
+  <section>
+    <h2>Component catalog</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Group</th><th>Components</th></tr></thead>
+      <tbody>
+        <tr><td>Primitives</td><td>Text, Icon, Button, Pill, Chip, Ring, Progress</td></tr>
+        <tr><td>Content</td><td>Fact, Block, Well, Code, Links, Steps</td></tr>
+        <tr><td>Containers</td><td>Card, Row, Sheet, Toast, Dial</td></tr>
+        <tr><td>Layouts</td><td>Deck, Rows, Timeline, RingGroups, Tree, Spark</td></tr>
+        <tr><td>Frame</td><td>AppBar, PageBar, PathTrail, Presence</td></tr>
+      </tbody>
+    </table></div>
+    <div class="rule">A component takes parameters and sends events. It has one job, no <code>@inject</code> of data, and a header comment that names its spec. Each component has a gallery entry with each state.</div>
+  </section>
+
+  <section>
+    <h2>Guidelines and names</h2>
+    <ul>
+      <li>The design system is a "Design System" artifact: tokens, components with live previews, and the rule of use of each part.</li>
+      <li>One C# file lists each class, state and motion name. A build step writes it as CSS and JS constants, so the three languages share one source (P2).</li>
+      <li>A test reads the CSS and fails on a literal outside <code>tokens</code>, on an unknown <code>var()</code> name, and on a rule with no markup.</li>
+    </ul>
+  </section>
+</div>
+
+<!-- 5 TRAY HOST -->
+<div class="panel off" id="host" role="tabpanel" aria-labelledby="t-host">
+  <section>
+    <h2>Widget and main app: one program or two</h2>
+    <p class="summary">The sources show no single standard. One process with many windows, and a small front end of a background process, both occur. Our tray is already a front end: the supervisor is a process of its own. So the question is only if the main app leaves the widget process.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Product</th><th>Split</th><th>UI stack</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>PowerToys</td><td>Runner with tray icon; Settings is its own process; two-way IPC</td><td>More than one</td><td><a href="https://github.com/microsoft/PowerToys/blob/main/doc/devdocs/core/runner.md">Runner</a>, <a href="https://github.com/microsoft/PowerToys/blob/main/doc/devdocs/core/settings/runner-ipc.md">IPC</a></td></tr>
+        <tr><td>EarTrumpet</td><td>One app: tray icon, flyout, mixer, settings</td><td>One (WPF)</td><td><a href="https://github.com/File-New-Project/EarTrumpet/blob/master/EarTrumpet/App.xaml.cs">App.xaml.cs</a></td></tr>
+        <tr><td>Tailscale</td><td>Daemon, and a small GUI wrapper</td><td>Not checked</td><td><a href="https://github.com/tailscale/tailscale">README</a></td></tr>
+        <tr><td>Ollama</td><td>The app starts and manages a server process</td><td>React UI in the app</td><td><a href="https://github.com/ollama/ollama/blob/main/app/server/server.go">server.go</a></td></tr>
+        <tr><td>Windows Widgets</td><td>The Widgets host draws; the app is a provider</td><td>Cards or web page</td><td><a href="https://learn.microsoft.com/windows/apps/develop/widgets/widget-providers">Providers</a></td></tr>
+        <tr><td>NewPipe (Android)</td><td>Popup overlay from a service; the manifest names no second process</td><td>One (native views)</td><td><a href="https://github.com/TeamNewPipe/NewPipe">Source</a></td></tr>
+        <tr><td>SociaLite sample (Android)</td><td>Bubble is an activity of the app</td><td>One</td><td><a href="https://github.com/android/socialite">Source</a></td></tr>
+        <tr><td>Android home widget</td><td>Runs in the launcher process</td><td>RemoteViews</td><td><a href="https://developer.android.com/develop/ui/views/appwidgets">Docs</a></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Not checked: Docker Desktop and 1Password (their pages that were read do not say it), Messenger, Slack, and how many processes run in practice. No product was started. On Android, one process for all parts is the default (<a href="https://developer.android.com/guide/components/processes-and-threads">docs</a>).</p>
+  </section>
+
+  <section>
+    <h2>Three patterns</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Point</th><th>P-A · One process</th><th>P-B · Two processes</th><th>P-C · Native widget</th></tr></thead>
+      <tbody>
+        <tr><td>Parts</td><td>Badge, panel, main app</td><td>Widget; main app</td><td>Widget with no WebView; main app</td></tr>
+        <tr><td>Memory</td><td>Lowest with all open</td><td>More with both open</td><td>Lowest with only the widget</td></tr>
+        <tr><td>Second WebView</td><td>64 MB (S7, test shapes)</td><td>Shared browser process is possible; not measured</td><td>Only when the main app is open</td></tr>
+        <tr><td>Start</td><td>All at sign-in</td><td>Widget at sign-in; main app on click</td><td>Fast widget; main app on click</td></tr>
+        <tr><td>Crash</td><td>One fault can end all</td><td>Own .NET process each; a shared browser process is a common fault</td><td>Separate</td></tr>
+        <tr><td>Update</td><td>One exe</td><td>Two exes, versions must match</td><td>Two exes, versions must match</td></tr>
+        <tr><td>Talk</td><td>In the process</td><td>Supervisor HTTP and SSE</td><td>Supervisor HTTP and SSE</td></tr>
+        <tr><td>Single instance</td><td>One lock (today)</td><td>One lock each</td><td>One lock each</td></tr>
+        <tr><td>Open a page</td><td>Navigator</td><td>URI activation, for example <code>orch://events/42</code></td><td>The same</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Sources: <a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/process-model">WebView2 process model</a> and <a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/performance">performance</a> (apps can share one browser process with the same user data folder and the same options; a difference makes creation fail), <a href="https://learn.microsoft.com/windows/apps/windows-app-sdk/applifecycle/applifecycle-instancing">instancing</a>, <a href="https://learn.microsoft.com/windows/apps/develop/launch/handle-uri-activation">URI activation</a>. Memory, start and crash rows are my reading, except S7. Not checked: WebView in two processes of one Android app.</p>
+  </section>
+
+  <section>
+    <h2>What each part needs, for us</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Needs Blazor</th><th>Shared if native</th></tr></thead>
+      <tbody>
+        <tr><td>Ball, badge, ring, counts</td><td>No</td><td>View model, state machine</td></tr>
+        <tr><td>Peek bubble (title, one line)</td><td>No</td><td>View model, state machine</td></tr>
+        <tr><td>Panel with the card deck</td><td>Yes: templates, swipe</td><td>Not native</td></tr>
+        <tr><td>Opened card page</td><td>Yes: the kind templates</td><td>Not native</td></tr>
+        <tr><td>Main app, all pages</td><td>Yes</td><td>Not native</td></tr>
+      </tbody>
+    </table></div>
+    <div class="rule">A native badge costs a second style system: the ring, the tokens and the motion are written again for Windows and again for Android. This is against "reuse as much as possible", and it is pain P5. It also does not give the panel.</div>
+    <p class="summary">The rule of V4 ("if one opens, the other has to close") covers the badge and the panel. Keep both in the widget process. Then no rule of V4 crosses two processes.</p>
+  </section>
+
+  <section>
+    <h2>S4: widget program and main app program</h2>
+    <p class="summary">This set joins S1 and S3. The widget keeps the tested host. MAUI makes only normal windows, so it needs no transparency.</p>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  SV["Supervisor<br/>engine library"] -->|HTTP, SSE| WG["Widget<br/>WinForms, Blazor"]
+  SV -->|HTTP, SSE| MA["Main app<br/>MAUI: Windows, Android"]
+  WG -->|"orch:// link"| MA
+  UI["Orchestrator.Ui"] --> WG
+  UI --> MA
+</pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Item</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td>S1</td><td>Its tray becomes the widget of S4</td></tr>
+        <tr><td>S3</td><td>Limits 1 to 7 do not apply to a normal MAUI window</td></tr>
+        <tr><td>D4</td><td>Decided: A. <code>Orchestrator.App</code> (MAUI, two targets) in place of an Android project</td></tr>
+        <tr><td>Main app, first step</td><td>The web host in the browser; MAUI on Windows can come later</td></tr>
+        <tr><td>X1, X2</td><td>Drop</td></tr>
+        <tr><td>X3</td><td>Drop for MAUI; the widget has the tray tests</td></tr>
+        <tr><td>X4</td><td>Change: memory and start of both programs</td></tr>
+        <tr><td>X5, X6</td><td>Stay: Android bubble and overlay</td></tr>
+        <tr><td>X7</td><td>New: a widget click opens the correct page, app closed and app open (60 min, estimate)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">In live mode, the tray of today opens the store folder directly. An HTTP connection of the widget is a change. The supervisor HTTP API has an inbox, events and a live feed (<code>docs/store.md</code>). If these calls cover all the needs of the V2 view models: not checked. On Android, the widget and the main app stay one app, so S4 does not split them.</p>
+  </section>
+
+  <section>
+    <h2>The whole set: three proposals</h2>
+    <p class="summary">The tray is one view of an engine library. The web, the CLI, Android and later views use the same engine. Only the UI hosts use the shared Blazor UI.</p>
+    <div class="box"><pre class="mermaid">
+flowchart TB
+  EN["Engine library<br/>events, queries"] --> CLI["CLI"]
+  EN --> VW["Orchestrator.View<br/>composer, navigator"]
+  VW --> UI["Orchestrator.Ui<br/>Razor, CSS"]
+  UI --> WEB["Web host"]
+  UI --> TRAY["Tray host"]
+  UI --> AND["Android host"]
+</pre></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>S1 · thin hosts</th><th>S2 · Android web</th><th>S3 · all MAUI</th></tr></thead>
+      <tbody>
+        <tr><td>Components</td><td>Shared</td><td>Shared</td><td>Shared</td></tr>
+        <tr><td>View models</td><td>Shared</td><td>Shared, on the PC</td><td>Shared</td></tr>
+        <tr><td>State machines</td><td>Shared; window machine differs</td><td>Shared; window machine differs</td><td>Shared; window machine differs</td></tr>
+        <tr><td>Navigation</td><td>Shared; Back input differs</td><td>Shared; browser history</td><td>Shared; Back input differs</td></tr>
+        <tr><td>Motion</td><td>Shared; window motion differs</td><td>Shared; window motion differs</td><td>Shared; window motion differs</td></tr>
+        <tr><td>Engine connection</td><td>Tray local, phone remote</td><td>Web host on PC</td><td>Tray local, phone remote</td></tr>
+        <tr><td>Native projects</td><td>2</td><td>1</td><td>1</td></tr>
+        <tr><td>Phone offline</td><td>App starts; data needs a cache</td><td>No</td><td>App starts; data needs a cache</td></tr>
+        <tr><td>Test of today</td><td>S2, S7, A1</td><td>Web host only</td><td>A1 for Android only</td></tr>
+        <tr><td>Verdict</td><td><span class="tag rec">Recommended</span></td><td><span class="tag no">Ruled out, 2026-11-20</span></td><td><span class="tag no">Risk for the tray</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
+    <details class="f">
+      <summary><span class="l1"><span class="id">S1</span><span class="t">One UI library, one thin host for each device</span></span><span class="l2">Tray: WinForms. Android: MAUI Blazor Hybrid</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Set</span><div class="v"><p>Engine library, <code>Orchestrator.View</code>, <code>Orchestrator.Ui</code>. Hosts: web, WinForms tray (option A below), MAUI Android.</p></div></div>
+        <div class="field"><span class="k">Shared</span><div class="v"><p>Components, view models, state machines, navigator and motion. They run in the process of each host.</p></div></div>
+        <div class="field"><span class="k">Not shared</span><div class="v"><p>Window code, the Android back button, safe areas, notices, speech, and the connection to the engine.</p></div></div>
+        <div class="field"><span class="k">For</span><div class="v"><p>Spike A1 ran the components of today, unchanged, in a MAUI app on an emulator. The tray keeps its look.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>Two native hosts. An Android toolchain and a signed APK. The phone needs a remote connection, because the store is on the PC.</p></div></div>
+        <div class="field"><span class="k">Source</span><div class="v"><p><a href="https://learn.microsoft.com/aspnet/core/blazor/hybrid/tutorials/maui-blazor-web-app">MAUI and web with one Razor class library</a>; <code>docs/devices-plan.html</code> (A1).</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">S2</span><span class="t">One UI library, Android uses the web host</span></span><span class="l2">Tray: WinForms. Android: browser on Blazor Server</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Set</span><div class="v"><p>As S1, but with no Android project. The phone opens the web host through the tunnel.</p></div></div>
+        <div class="field"><span class="k">Shared</span><div class="v"><p>All UI code, also the web host. The code runs on the PC, not on the phone.</p></div></div>
+        <div class="field"><span class="k">Not shared</span><div class="v"><p>The browser Back key, and all native functions.</p></div></div>
+        <div class="field"><span class="k">For</span><div class="v"><p>Smallest work. No APK and no Android toolchain. The engine connection is the one of the web host.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>Each action needs the network. The phone stops the page soon after an app change, and the connection can drop. No work offline. It is not an Android app.</p></div></div>
+        <div class="field"><span class="k">Source</span><div class="v"><p><a href="https://learn.microsoft.com/aspnet/core/blazor/hosting-models">Hosting models</a>: a network hop for each action, no offline support. <a href="https://learn.microsoft.com/aspnet/core/blazor/fundamentals/signalr">SignalR guidance</a>: Android suspends the page in seconds. The <a href="https://learn.microsoft.com/aspnet/core/blazor/progressive-web-app/">PWA page</a> describes Blazor WebAssembly, not Blazor Server.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">S3</span><span class="t">One MAUI project for Windows and Android</span></span><span class="l2">Tray and Android: MAUI</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Set</span><div class="v"><p>Engine library, the same two view libraries, the web host, and one MAUI project with two targets.</p></div></div>
+        <div class="field"><span class="k">Shared</span><div class="v"><p>As S1, and also the app start and the service list of the host.</p></div></div>
+        <div class="field"><span class="k">Not shared</span><div class="v"><p>Windows and Android platform folders. The tray windows stay special code.</p></div></div>
+        <div class="field"><span class="k">For</span><div class="v"><p>One native project and one build system.</p></div></div>
+        <div class="field"><span class="k">Against</span><div class="v"><p>MAUI uses WinUI 3 on Windows. WinUI 3 has an open issue for transparent borderless windows since 2019. The tray look is at risk, and no spike exists.</p></div></div>
+        <div class="field"><span class="k">Source</span><div class="v"><p><a href="https://learn.microsoft.com/dotnet/maui/supported-platforms">MAUI platforms</a>; <a href="https://github.com/microsoft/microsoft-ui-xaml/issues/1247">WinUI issue 1247</a>.</p></div></div>
+      </div>
+    </details>
+    <div class="rule">S2 is ruled out by the decision of 2026-11-20 in <code>docs/decisions.md</code> ("Devices: how does Android get the UI?"): a MAUI <code>BlazorWebView</code> as an APK, no PWA. The comparison stays for reference.</div>
+  </section>
+
+  <section>
+    <h2>S3: possible limits on Windows</h2>
+    <p class="summary">Row 2 is the main risk. A transparent WinUI window has a workaround. The Blazor view inside it has an open issue, and the ball needs both.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Limit</th><th>Tray today</th><th>MAUI on Windows</th><th>State</th><th>Test</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Transparent window</td><td>Yes: composition</td><td>No WinUI API (<a href="https://github.com/microsoft/microsoft-ui-xaml/issues/1247">1247</a>). WinUIEx has a backdrop and a MAUI sample</td><td><span class="tag mid">Likely possible</span></td><td>X1</td></tr>
+        <tr><td>2</td><td>Transparent Blazor view</td><td>Yes</td><td>WinUI WebView2 draws a theme color (<a href="https://github.com/microsoft/microsoft-ui-xaml/issues/6527">6527</a>, open)</td><td><span class="tag no">Confirmed limit, open issue</span></td><td>X1</td></tr>
+        <tr><td>3</td><td>Page shadow</td><td>CSS, on the desktop</td><td>Needs rows 1 and 2</td><td><span class="tag mid">Not known</span></td><td>X1</td></tr>
+        <tr><td>4</td><td>Ball, grow, shrink</td><td>CSS in a clear window</td><td>Needs rows 1 and 2; else a plain rectangle shows</td><td><span class="tag mid">Not known</span></td><td>X1, X2</td></tr>
+        <tr><td>5</td><td>Side badge</td><td>Second window</td><td>MAUI supports more windows on Windows (<a href="https://learn.microsoft.com/dotnet/maui/user-interface/controls/window">docs</a>); shape needs rows 1 and 2</td><td><span class="tag mid">Likely possible</span></td><td>X3</td></tr>
+        <tr><td>6</td><td>Click-through</td><td>Window region</td><td>Workaround with window regions (comments of <a href="https://github.com/microsoft/microsoft-ui-xaml/issues/1247">1247</a>)</td><td><span class="tag mid">Not known</span></td><td>X1</td></tr>
+        <tr><td>7</td><td>Window border</td><td>None</td><td>Thin white border reported (<a href="https://github.com/microsoft/microsoft-ui-xaml/issues/11172">11172</a>, open)</td><td><span class="tag mid">Likely limit</span></td><td>X1</td></tr>
+        <tr><td>8</td><td>Always on top</td><td>Panel pinned, badge</td><td><a href="https://learn.microsoft.com/windows/apps/develop/ui/manage-app-windows">IsAlwaysOnTop</a> of WinUI; MAUI has no API (<a href="https://github.com/dotnet/maui/issues/8198">8198</a>)</td><td><span class="tag rec">No limit found</span></td><td>X3</td></tr>
+      </tbody>
+    </table></div>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Limit</th><th>Tray today</th><th>MAUI on Windows</th><th>State</th><th>Test</th></tr></thead>
+      <tbody>
+        <tr><td>9</td><td>No taskbar entry</td><td>Yes</td><td><code>AppWindow.IsShownInSwitchers</code></td><td><span class="tag rec">No limit found</span></td><td>X3</td></tr>
+        <tr><td>10</td><td>No focus steal</td><td>No code for it found</td><td>Win32 style on the handle; not in the MAUI docs</td><td><span class="tag mid">Not known</span></td><td>X3</td></tr>
+        <tr><td>11</td><td>Tray icon</td><td><code>NotifyIcon</code></td><td>No MAUI API; start with no window is open (<a href="https://github.com/dotnet/maui/issues/3846">3846</a>)</td><td><span class="tag no">Confirmed: own code</span></td><td>X3</td></tr>
+        <tr><td>12</td><td>Notices</td><td>Own window</td><td>App notifications of the Windows App SDK; own window as row 5</td><td><span class="tag rec">No limit found</span></td><td>X3</td></tr>
+        <tr><td>13</td><td>DPI, monitors</td><td>WinForms events</td><td><code>DisplayDensityChanged</code> on Windows</td><td><span class="tag mid">Not known</span></td><td>X3</td></tr>
+        <tr><td>14</td><td>Start, memory</td><td>S7: 1.0 s, 479 MB</td><td>No number found</td><td><span class="tag mid">Not known</span></td><td>X4</td></tr>
+        <tr><td>15</td><td>Two Blazor windows</td><td>One shared environment</td><td>Open dispose fault in a WPF case (<a href="https://github.com/dotnet/maui/issues/26746">26746</a>)</td><td><span class="tag mid">Not known</span></td><td>X3</td></tr>
+        <tr><td>16</td><td>Deployment</td><td>One exe</td><td>Adds the Windows App SDK runtime, or a self-contained folder</td><td><span class="tag no">Confirmed: larger</span></td><td>X4</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Sources: docs and issues, read on 2026-11-24. "Likely" is my reading of them. Workarounds in issue comments are not tested by us, and some comments disagree. The memory of S7 is for simple test shapes, not the full app. MAUI also has a <a href="https://learn.microsoft.com/dotnet/maui/developer-tools/platform-backends/windows-wpf">WPF backend</a>, but its page says: experimental, not officially supported.</p>
+  </section>
+
+  <section>
+    <h2>S3 with our own ball window</h2>
+    <p class="summary">Question: can a MAUI app host a raw Win32 or WinForms window for the ball? Likely yes: both are Win32 windows, and the WinUI docs let an app get the window handle. No doc describes a MAUI app with a WinForms window in one project, so test X2 settles it.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Part</th><th>Shared with Android</th><th>Own Windows code</th></tr></thead>
+      <tbody>
+        <tr><td>Components, view models</td><td>Yes</td><td>None</td></tr>
+        <tr><td>State, navigation, motion</td><td>Yes</td><td>Window machine</td></tr>
+        <tr><td>Normal app window</td><td>Yes, MAUI page</td><td>Small</td></tr>
+        <tr><td>Panel, ball and badge windows</td><td>No</td><td>Today's <code>ClearHost</code> way</td></tr>
+        <tr><td>App start, services</td><td>Yes</td><td>Second message and dispatcher setup</td></tr>
+      </tbody>
+    </table></div>
+    <div class="rule">With this mix, the tray windows are the same code as in S1. S3 then shares only the app start and a normal window. It adds the Windows App SDK to the tray.</div>
+  </section>
+
+  <section>
+    <h2>Android bubble widget</h2>
+    <p class="summary">S1 and S3 are equal here: both use the same MAUI Android host. The choice between them does not change the result.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Point</th><th>Bubbles API</th><th>Overlay window</th><th>Home widget</th></tr></thead>
+      <tbody>
+        <tr><td>Shape of the small form</td><td>System bubble with our icon</td><td>Our own view</td><td>RemoteViews only</td></tr>
+        <tr><td>Transparency</td><td>Not stated</td><td>Likely; the page read has no statement</td><td>Not checked</td></tr>
+        <tr><td>Ball and grow</td><td>System motion; own motion not stated</td><td>Likely, drawn by us</td><td>No: no custom views</td></tr>
+        <tr><td>Blazor (WebView)</td><td>Likely in the open form: it is an activity</td><td>Likely: any view; not tested</td><td>No: WebView not in the list</td></tr>
+        <tr><td>Permission</td><td>Notifications; user can block bubbles</td><td>User grants "display over other apps"</td><td>User adds the widget</td></tr>
+        <tr><td>Version limits</td><td>Target 11 or higher: conversation and shortcut</td><td>12: touch rules. Target 15: visible overlay for a background service start</td><td>Updates: 30 minutes minimum (<code>updatePeriodMillis</code>)</td></tr>
+        <tr><td>Sources</td><td><a href="https://developer.android.com/develop/ui/views/notifications/bubbles">Bubbles</a></td><td><a href="https://developer.android.com/reference/android/Manifest.permission#SYSTEM_ALERT_WINDOW">Permission</a>, <a href="https://developer.android.com/about/versions/12/behavior-changes-all">Android 12</a>, <a href="https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start">services</a></td><td><a href="https://developer.android.com/reference/android/widget/RemoteViews">RemoteViews</a>, <a href="https://developer.android.com/develop/ui/views/appwidgets/advanced">updates</a></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The bubble rule needs a conversation. If a waiting card qualifies: not checked. The Android docs say that very few apps should use the overlay permission. A Blazor view in an overlay service, with no activity: not checked, and no MAUI doc was found for it.</p>
+  </section>
+
+  <section>
+    <h2>Spike plan for S3 and Android</h2>
+    <p class="summary">Each spike is a throwaway project in <code>spikes/</code> with mock data. It uses no live store and no port 7777. The time values are my estimates. The plan starts only if the user says so.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Spike</th><th>Pass</th><th>Time (min)</th><th>On screen</th></tr></thead>
+      <tbody>
+        <tr><td>X1 · MAUI window, clear backdrop, clear Blazor view</td><td>Desktop shows behind the page, light and dark; no border; click on empty part reaches the window below</td><td>60</td><td>One small test window</td></tr>
+        <tr><td>X2 · Own composition window in the MAUI process</td><td>Ball grows with 0 to 1 late frames; both windows run Blazor; clean exit</td><td>90</td><td>Ball and one plain window</td></tr>
+        <tr><td>X3 · Badge, top, taskbar, focus, icon, two monitors</td><td>Each row 5 and 8 to 15 is yes or no, with a recording</td><td>60</td><td>Badge at the right edge</td></tr>
+        <tr><td>X4 · Start time, memory, size</td><td>Numbers next to the app of today, same content</td><td>30</td><td>Windows open and close</td></tr>
+        <tr><td>X5 · Android bubble with a Blazor view</td><td>Bubble opens the card page on the emulator</td><td>90</td><td>Emulator window</td></tr>
+        <tr><td>X6 · Android overlay with a WebView</td><td>Clear ball grows over another app; touches outside it pass</td><td>90</td><td>Emulator window</td></tr>
+      </tbody>
+    </table></div>
+    <ol>
+      <li>Do X1 first. If it passes, S3 can have the ball with MAUI only.</li>
+      <li>If X1 fails, do X2. If X2 fails, S3 cannot have the ball.</li>
+      <li>If X1 or X2 passes, do X3 and X4.</li>
+      <li>Do X5 and X6 independently: they do not decide between S1 and S3.</li>
+    </ol>
+    <p class="note">Install: the <code>maui-windows</code> workload and the WinUIEx package (MIT) for X1 to X4. The default .NET on this PC lists no workload. X5 and X6 can use the user-local toolchain of A1 in <code>%LOCALAPPDATA%\orch-android</code>: its folder exists, but it was not run. If it is complete: not checked.</p>
+  </section>
+
+  <section>
+    <h2>What the phone adds to the design</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Fact</th><th>Effect</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>WebView has no Push API</td><td>Native notices in S1, S3</td><td>MDN data; MAUI docs</td></tr>
+        <tr><td>View transitions: Chrome 111</td><td>Motion needs a recent WebView</td><td>MDN data (WebView mirrors Chrome)</td></tr>
+        <tr><td><code>getAnimations</code>: Chrome 84</td><td>The one end rule works</td><td>MDN data</td></tr>
+        <tr><td>No hover, touch targets</td><td>No function only on hover</td><td>Our conclusion</td></tr>
+        <tr><td>Safe areas</td><td>Tokens, not numbers</td><td>A1-2</td></tr>
+        <tr><td>Back button</td><td><code>Navigator.Back()</code></td><td>Devices plan P6</td></tr>
+        <tr><td>App can stop</td><td>The stack must be saved</td><td>MAUI app lifecycle</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Not checked: a real phone, speech in the Android WebView, a release build with trim, a browser install (PWA) of a Blazor Server app, the remote connection, iOS, and an Android build of projects on <code>Umpire.Sdk</code>. A1 tested the components of the old app. The V2 components need their own test.</p>
+  </section>
+
+  <section>
+    <h2>Other plans</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Plan</th><th>Fit</th><th>Conflict</th></tr></thead>
+      <tbody>
+        <tr><td>Devices plan, P1a and P1b</td><td><code>Orchestrator.Ui</code>, no <code>Board</code></td><td>None: replaced by V2 (D4 = A)</td></tr>
+        <tr><td>Devices plan, P3 to P6</td><td>Android host of S1</td><td>None found</td></tr>
+        <tr><td>K (draft, not approved)</td><td>Engine, queries, thin hosts</td><td>Projections and composer can overlap</td></tr>
+      </tbody>
+    </table></div>
+    <p class="summary">K projections make read models from events. The composer makes view models from read models and templates. Proposal for the limit: no layout in K, no event logic in the composer.</p>
+  </section>
+
+  <section>
+    <h2>Detail: what the tray host needs</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Need</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td>Per-pixel transparency</td><td>Round panel, soft shadow, ball</td></tr>
+        <tr><td>Click area from the page</td><td>Clicks pass through the shadow</td></tr>
+        <tr><td>Two windows, one process</td><td>Panel and badge (spike S7)</td></tr>
+        <tr><td>Keyboard focus in the page</td><td>I5 answer: a must</td></tr>
+        <tr><td>C# and Blazor</td><td><code>AGENTS.md</code> stack</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Detail: tray host options</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Option</th><th>Transparent</th><th>Input forward</th><th>Our test</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>A · WinForms, visual hosting</td><td>Yes</td><td>Necessary</td><td>S2, S7, app</td><td><span class="tag rec">Recommended</span></td></tr>
+        <tr><td>B · WPF, composition control</td><td>Not known</td><td>Control does it (not checked)</td><td>None</td><td><span class="tag mid">Spike first</span></td></tr>
+        <tr><td>C · WinUI 3</td><td>Open issues</td><td>Not checked</td><td>None</td><td><span class="tag no">Not now</span></td></tr>
+        <tr><td>D · MAUI</td><td>As C (conclusion)</td><td>Not checked</td><td>None</td><td><span class="tag no">Not now</span></td></tr>
+        <tr><td>E · Edge app window</td><td>Not found</td><td>None</td><td>None</td><td><span class="tag no">Not now</span></td></tr>
+        <tr><td>F · WinForms, windowed</td><td>No</td><td>None</td><td>S1</td><td><span class="tag mid">If the look can change</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The docs were read on 2026-11-24. Nothing was built or run for this table. The test results come from the spikes of 2026-11-18 and 2026-11-19. Each foldable says what was not checked.</p>
+    <div class="tools"><button type="button" data-all="open">Open all</button><button type="button" data-all="close">Close all</button></div>
+    <details class="f">
+      <summary><span class="l1"><span class="id">A</span><span class="t">WinForms, visual hosting</span></span><span class="l2">The host of today; tested in S2 and S7</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/windowed-vs-visual-hosting">Windowed vs. visual hosting</a>: the app must forward mouse, touch and pen input, and must do the scale work. No setting removes this work. <a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/overview-features-apis">Overview of APIs</a>: the default background can be transparent.</p></div></div>
+        <div class="field"><span class="k">Tests</span><div class="v"><p>S2: transparent, clicks on empty parts reach the window below, exact drag (<code>docs/plan.md</code>). S7: two windows use 479 MB working set, 64 MB more than one.</p></div></div>
+        <div class="field"><span class="k">Code</span><div class="v"><p>916 lines: <code>ClearHost</code> 342, <code>BadgeWindow</code> 247, <code>TrayWindow</code> 207, <code>WidgetWindow</code> 120. How much a thin host removes is not measured.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>Touch and pen input, screen reader, and monitors with different scales.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">B</span><span class="t">WPF, WebView2CompositionControl</span></span><span class="l2">A new control for visual hosting in WPF; not tested</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/microsoft-edge/webview2/platforms/wpf">WebView2 in WPF</a>: the standard control has the airspace problem, and the composition control does not. <a href="https://github.com/MicrosoftEdge/WebView2Feedback/blob/main/specs/WPF_WebView2CompositionControl.md">Spec</a>: it uses a screen capture session, so frame rates can be lower.</p></div></div>
+        <div class="field"><span class="k">Blazor</span><div class="v"><p><a href="https://learn.microsoft.com/aspnet/core/blazor/hybrid/">Blazor Hybrid</a> has a WPF <code>BlazorWebView</code>. If it works with the composition control: not checked.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>A transparent WPF window (<code>AllowsTransparency</code>) with the composition control. No source confirms or denies it.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">C</span><span class="t">WinUI 3</span></span><span class="l2">Open platform issues on transparency; not tested</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/windowed-vs-visual-hosting">Framework constraints</a>: the composition controller does not support Windows App SDK visuals.</p></div></div>
+        <div class="field"><span class="k">Issues</span><div class="v"><p><a href="https://github.com/microsoft/microsoft-ui-xaml/issues/1247">1247</a>, transparent borderless windows: open since 2019. <a href="https://github.com/microsoft/microsoft-ui-xaml/issues/6527">6527</a>, transparent WebView2 background: open since 2021. The comments have workarounds.</p></div></div>
+        <div class="field"><span class="k">Blazor</span><div class="v"><p>The Blazor Hybrid page names MAUI, WPF and Windows Forms. It names no WinUI 3 control.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>The workarounds, and other ways to host a composition visual.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">D</span><span class="t">.NET MAUI Blazor Hybrid</span></span><span class="l2">WinUI 3 on Windows; not tested</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/dotnet/maui/what-is-maui">What is .NET MAUI</a>: Windows apps use WinUI 3. So I expect the limits of option C. That is a conclusion, not a documented fact.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>Transparent windows and two tray windows in MAUI. A search of the MAUI issues gave no result.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">E</span><span class="t">Edge app window (PWA)</span></span><span class="l2">No transparent window in the docs that I read; not tested</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/microsoft-edge/progressive-web-apps/how-to/window-controls-overlay">Window Controls Overlay</a>: the page can use the title bar area, but the system buttons stay as an overlay.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>All other display modes, window places from code, and the tray icon.</p></div></div>
+      </div>
+    </details>
+    <details class="f">
+      <summary><span class="l1"><span class="id">F</span><span class="t">WinForms, windowed hosting (BlazorWebView)</span></span><span class="l2">The smallest host; tested in S1, but a different look</span></summary>
+      <div class="body">
+        <div class="field"><span class="k">Docs</span><div class="v"><p><a href="https://learn.microsoft.com/microsoft-edge/webview2/concepts/windowed-vs-visual-hosting">Windowed hosting</a>: the system sends the input to WebView2, so the app forwards nothing. <a href="https://learn.microsoft.com/aspnet/core/blazor/hybrid/">Blazor Hybrid</a> has a Windows Forms <code>BlazorWebView</code>.</p></div></div>
+        <div class="field"><span class="k">Tests</span><div class="v"><p>S1: the system draws the round corners and the shadow. The drag is exact, and the CSS open has 0 late frames.</p></div></div>
+        <div class="field"><span class="k">Cost</span><div class="v"><p>S1 is a plain window. The ball that grows into the panel and the soft page shadow need a transparent window. The approved look changes.</p></div></div>
+        <div class="field"><span class="k">Not checked</span><div class="v"><p>The badge in this host, and the memory.</p></div></div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Option A: the thin host</h2>
+<pre class="code"><span class="cm">// The only native contract. The tray state machine calls it.</span>
+public interface IHostWindow
+{
+    Task Show(Place place);        <span class="cm">// ends on the "shown" window event</span>
+    Task Hide();                   <span class="cm">// ends on "hidden"</span>
+    void UseSize(PageSize size);   <span class="cm">// from its own root only (P8, Places G5)</span>
+    event Action&lt;HostInput&gt; Input; <span class="cm">// click, drag, key: to the trace</span>
+}</pre>
+    <ul>
+      <li>One class for both windows: DPI, display change and exit are written once (Places G8).</li>
+      <li>The ball and the badge stay page content, as in the app of today.</li>
+      <li>The input forward and the scale work stay: visual hosting needs them. So the host gets smaller, but not trivial.</li>
+      <li>Place rules are pure functions with unit tests (Places G7).</li>
+    </ul>
+  </section>
+</div>
+
+<!-- 7 SPIKE -->
+<div class="panel off" id="spike" role="tabpanel" aria-labelledby="t-spike">
+  <section>
+    <h2>Ping pong spike: S4 works with one UI library</h2>
+    <p class="summary">Five heads ran at the same time on one engine process. All heads show the same Razor components, and a hit from one head shows in the others. The code is in <code>spikes/pingpong/</code>. It has no code of the app.</p>
+    <div class="box"><pre class="mermaid">
+flowchart LR
+  EN["Engine process<br/>game library"] -->|"HTTP, SSE"| WEB["Web"]
+  EN -->|"HTTP, SSE"| WID["Widget, tray"]
+  EN -->|"HTTP, SSE"| NOT["Notification"]
+  EN -->|"HTTP, SSE"| APP["Main window"]
+  EN -->|"HTTP, SSE"| AND["Android"]
+  WID -->|pipe| APP
+  NOT -->|pipe| APP
+</pre></div>
+    <figure><div class="img"><img src="img/pingpong-heads.png" alt="Five heads: widget, web, main window, notification and Android. Each shows hit 3 from the app."></div><figcaption>The final run: five heads after hit 3. The widget is over a test window with a pattern, so the picture shows that it is transparent.</figcaption></figure>
+    <figure><div class="img"><img src="img/pingpong-links.png" alt="The closed widget, the main window at a hit page, and Android at a hit page."></div><figcaption>The closed ball, the main window after a widget click, and Android after a link. The ball and Android pictures are from the first run.</figcaption></figure>
+  </section>
+
+  <section>
+    <h2>Checks</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Check</th><th>Result</th><th>How</th></tr></thead>
+      <tbody>
+        <tr><td>All heads at the same time, one engine</td><td><span class="tag rec">Pass</span></td><td>Final run, 5 heads</td></tr>
+        <tr><td>Hit from widget, Android, main window</td><td><span class="tag rec">Pass</span></td><td>Final run, seen in each head</td></tr>
+        <tr><td>Hit from web</td><td><span class="tag rec">Pass</span></td><td>First run only</td></tr>
+        <tr><td>Same Razor components</td><td><span class="tag rec">Pass</span></td><td>One project, no copy</td></tr>
+        <tr><td>X7, main window closed</td><td><span class="tag rec">Pass</span></td><td>Widget card starts it at <code>/hits/2</code></td></tr>
+        <tr><td>X7, main window open</td><td><span class="tag rec">Pass</span></td><td>Same process, <code>/hits/1</code></td></tr>
+        <tr><td>X7 from the notification</td><td><span class="tag rec">Pass</span></td><td>First run, script click</td></tr>
+        <tr><td>Android link, app closed and open</td><td><span class="tag rec">Pass</span></td><td><code>pingpong://hits/3</code>, <code>adb</code></td></tr>
+        <tr><td>Transparent ball and panel</td><td><span class="tag rec">Pass</span></td><td>Pictures</td></tr>
+        <tr><td>Click area</td><td><span class="tag rec">Pass</span></td><td>Empty part gives the window behind it</td></tr>
+        <tr><td>Mouse in the widget</td><td><span class="tag rec">Pass</span></td><td>Window messages, not a real mouse</td></tr>
+        <tr><td>Engine restart</td><td><span class="tag rec">Pass</span></td><td>After a fix; see the findings</td></tr>
+        <tr><td>Notification takes no focus</td><td><span class="tag mid">In part</span></td><td>Not active when read; not tested while you type</td></tr>
+        <tr><td>Android Back key</td><td><span class="tag no">No</span></td><td>Closes the app at a hit page</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Memory and code</h2>
+    <p class="summary">Private memory of one run on this PC, in MB. A WebView2 has 6 processes for each head.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Process</th><th>Own (MB)</th><th>WebView2 (MB)</th><th>Sum (MB)</th></tr></thead>
+      <tbody>
+        <tr><td>Engine</td><td>30</td><td>-</td><td>30</td></tr>
+        <tr><td>Web server</td><td>43</td><td>-</td><td>43</td></tr>
+        <tr><td>Widget</td><td>23</td><td>214</td><td>237</td></tr>
+        <tr><td>Notification</td><td>21</td><td>162</td><td>183</td></tr>
+        <tr><td>Main window</td><td>22</td><td>200</td><td>222</td></tr>
+        <tr><td>3 heads, one shared browser</td><td>62</td><td>254</td><td>316</td></tr>
+        <tr><td>Android (PSS)</td><td>-</td><td>-</td><td>226</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Three heads with separate browsers use 642 MB, and with a shared browser 316 MB: the same content, one measure each. The shared run is from the first build, with 8 browser processes. The Android number is from <code>dumpsys</code>, so it does not compare with the others. The emulator and the browser of the web page are not in the table.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Code</th><th>Lines</th><th>Used by</th></tr></thead>
+      <tbody>
+        <tr><td>Core: game, client</td><td>105</td><td>All heads</td></tr>
+        <tr><td>Ui: Razor, CSS</td><td>145</td><td>All heads</td></tr>
+        <tr><td>Win: composition host, pipe, test</td><td>329</td><td>3 Windows heads</td></tr>
+        <tr><td>Engine</td><td>33</td><td>Engine</td></tr>
+        <tr><td>Web</td><td>29</td><td>Web</td></tr>
+        <tr><td>Main window</td><td>51</td><td>Main window</td></tr>
+        <tr><td>Notification</td><td>71</td><td>Notification</td></tr>
+        <tr><td>Widget</td><td>114</td><td>Widget</td></tr>
+        <tr><td>Android</td><td>87</td><td>Android</td></tr>
+      </tbody>
+    </table></div>
+    <p class="summary">Shared by all heads: 250 lines. The composition host (193 lines) is the largest Windows part. The count has blank lines and comments, and no project files.</p>
+  </section>
+
+  <section>
+    <h2>Findings</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Finding</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td>S-1</td><td>Android did not reconnect after an engine restart</td><td>Fixed; exact exception not captured</td></tr>
+        <tr><td>S-2</td><td>My first check missed S-1; a picture showed it</td><td>Text check added</td></tr>
+        <tr><td>S-3</td><td>The widget host must serve <code>blazor.webview.js</code> itself</td><td>Fixed in the spike</td></tr>
+        <tr><td>S-4</td><td>Android build fails in a long path</td><td>Short output folder</td></tr>
+        <tr><td>S-5</td><td>A library with the Razor SDK gives an asset conflict</td><td>Plain SDK</td></tr>
+        <tr><td>S-6</td><td>Android Back does not go to the previous page</td><td>Open: needs the navigator</td></tr>
+        <tr><td>S-7</td><td>White system bars on Android (as A1-2)</td><td>Open</td></tr>
+        <tr><td>S-8</td><td>The last hit stays only in memory; a restart clears all</td><td>Spike limit</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">S-1: the client caught only some exception types. A catch of all types fixed it, in one test with each build. The cause is likely an Android exception type, but it was not read.</p>
+  </section>
+
+  <section>
+    <h2>What ran, and what did not</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Item</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td>Engine, web, widget, notification, main window</td><td>Built and ran on this PC</td></tr>
+        <tr><td>Android app</td><td>Built and ran on the emulator (Android 15, x64, no trim)</td></tr>
+        <tr><td>Main window for Windows</td><td>Added by me, for X7. WinForms, not MAUI</td></tr>
+        <tr><td>MAUI on Windows</td><td>Not built: the workload is not installed</td></tr>
+        <tr><td>Real phone, arm64, release trim</td><td>Not done</td></tr>
+        <tr><td>Android bubble and overlay (X5, X6)</td><td>Not done</td></tr>
+        <tr><td>URI scheme on Windows</td><td>Not done: a pipe and a start argument do the link</td></tr>
+        <tr><td>Real tray icon click, more than one monitor</td><td>Not done</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Assumption: "notification app" is a small program that shows a card for each hit, with the same components. It shows for 6 seconds and is not a Windows toast.</p>
+  </section>
+
+  <section>
+    <h2>Effect on the open decisions</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Decision</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td>D2 · base</td><td>None. Plain CSS worked in all heads; no base was tested</td></tr>
+        <tr><td>D4 · projects</td><td>Supported A, now decided. Core and Ui shared well. Add one Windows library for the Windows heads</td></tr>
+        <tr><td>D5 · card rules</td><td>None. Not tested</td></tr>
+        <tr><td>D6 · overlays and Back</td><td>Stronger: Android Back needs the navigator (S-6)</td></tr>
+        <tr><td>D3 · S4 on Windows</td><td>The MAUI main window is still not proven</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+</div>
+
+<script>
+(function () {
+  var names = ["overview", "views", "nav", "state", "system", "host", "spike"];
+  var tabs = document.querySelectorAll('nav [role="tab"]');
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "overview";
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
+    tabs.forEach(function (b) {
+      var on = b.dataset.tab === name;
+      b.setAttribute("aria-selected", on ? "true" : "false");
+      b.tabIndex = on ? 0 : -1;
+      if (on && b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+    return name;
+  }
+  function go(name) {
+    var shown = show(name);
+    try { history.replaceState(history.state, "", "#" + shown); } catch (e) {}
+    var nav = document.querySelector("nav");
+    if (nav.getBoundingClientRect().top <= 1) window.scrollTo(0, document.querySelector("header").getBoundingClientRect().bottom + window.scrollY);
+  }
+  // One click handler for each tab. The browser scrolls the bar natively, so a click always reaches its tab.
+  tabs.forEach(function (b) { b.addEventListener("click", function () { go(b.dataset.tab); }); });
+  document.querySelector("nav").addEventListener("keydown", function (e) {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    var i = names.indexOf(document.querySelector('nav [aria-selected="true"]').dataset.tab);
+    i = (i + (e.key === "ArrowRight" ? 1 : names.length - 1)) % names.length;
+    go(names[i]); document.getElementById("t-" + names[i]).focus();
+  });
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("a[data-go]");
+    if (a) { e.preventDefault(); go(a.dataset.go); return; }
+    var t = e.target.closest && e.target.closest("button[data-all]");
+    if (t) t.closest("section").querySelectorAll("details.f").forEach(function (d) { d.open = t.dataset.all === "open"; });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>

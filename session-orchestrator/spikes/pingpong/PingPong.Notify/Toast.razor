@@ -1,0 +1,11 @@
+@using Microsoft.AspNetCore.Components.Web
+@using PingPong.Ui
+@inherits LiveBase
+@inject Head Host
+
+<div class="page">
+    @if (Client.Hits.LastOrDefault() is { } hit)
+    {
+        <HitCard @key="hit.Id" Hit="hit" OnOpen="@(h => Host.OpenMain?.Invoke($"hits/{h.Id}"))" />
+    }
+</div>

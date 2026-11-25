@@ -1,0 +1,43 @@
+@using Microsoft.AspNetCore.Components.Web
+@using PingPong.Ui
+@inherits LiveBase
+@inject Head Host
+@inject WidgetArea Area
+
+<div class="w @(open ? "open" : "")">
+    <div class="panel">
+        <Table Hits="Client.Hits" Head="@Client.Head" Connected="Client.Connected" OnHit="() => Client.Play()" />
+        <div class="list">
+            @foreach (var hit in Client.Hits.Reverse().Take(3))
+            {
+                <HitCard @key="hit.Id" Hit="hit" OnOpen="@(h => Host.OpenMain?.Invoke($"hits/{h.Id}"))" />
+            }
+        </div>
+    </div>
+    <button type="button" class="badge" aria-label="Open or close" @onclick="Toggle">
+        <Ball Kind="@(Client.Hits.LastOrDefault()?.Kind ?? "ping")" Key="@Client.Hits.Count" Size="56" />
+        <span class="n" data-count>@Client.Hits.Count</span>
+    </button>
+</div>
+
+@code {
+    bool open;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender) Area.Set?.Invoke(false);
+    }
+
+    async Task Toggle()
+    {
+        open = !open;
+        // The window area grows before the panel, and shrinks after it.
+        if (open) Area.Set?.Invoke(true);
+        else
+        {
+            StateHasChanged();
+            await Task.Delay(300);
+            if (!open) Area.Set?.Invoke(false);
+        }
+    }
+}

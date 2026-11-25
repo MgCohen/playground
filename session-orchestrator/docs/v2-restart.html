@@ -52,6 +52,8 @@ nav button .n { font-family: var(--font-mono); font-size: 12px; opacity: .7; mar
 button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .panel { display: flex; flex-direction: column; gap: 24px; }
+/* Off screen, not display none: a diagram in a hidden tab needs a size to render. */
+.panel.off { position: absolute; left: -10000px; top: 0; width: 900px; visibility: hidden; }
 section { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 section + section { border-top: 1px solid var(--line); padding-top: 24px; }
 .box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
@@ -125,9 +127,10 @@ details.pain > .body { padding: 0 14px 16px; display: flex; flex-direction: colu
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">session-orchestrator · V2 · restart plan · step 1 of 3</div>
+  <div class="eyebrow">session-orchestrator · V2 · restart plan · step 1 of 3 · done</div>
   <h1>V2 Visual Restart</h1>
-  <p class="summary">The app looks correct, but each visual fix costs too much. This page states the goal of the restart, what we know today, and the eight root causes of the pains. The target design and the rebuild plan come after you approve this page.</p>
+  <p class="summary">The app looks correct, but each visual fix costs too much. This page states the goal of the restart, what we know today, and the thirteen root causes of the pains. The target design is on the <a href="https://claude.ai/artifact/FmECykMtYjwUtdgfTct32V">V2 Target Design</a> page.</p>
+  <p class="summary">Handover (2026-11-25): <code>session-orchestrator/docs/handover/V2.md</code>, branch <code>orch/decision-toolu_015kkHdRgsS7ocnydT5LNSrM</code>.</p>
 </header>
 
 <nav role="tablist" aria-label="Sections">
@@ -187,10 +190,14 @@ flowchart LR
         <tr><td>Never use the live store or port 7777</td><td>Brief, rule 5</td></tr>
         <tr><td>C#, .NET 10, Blazor; JavaScript only in small UI parts</td><td><code>AGENTS.md</code>, Stack</td></tr>
         <tr><td>No provider names outside <code>Providers/</code></td><td><code>AGENTS.md</code>, Provider boundary</td></tr>
-        <tr><td>Data-driven views: one store, one view model</td><td>You, this discussion</td></tr>
+        <tr><td><strong>Main:</strong> each page and list is a view of one query</td><td>You, answer to Q4</td></tr>
+        <tr><td>A card composes from its view and kind templates</td><td>You, answer to Q4</td></tr>
+        <tr><td>A new kind or view is data, not code</td><td>You, answer to Q4</td></tr>
+        <tr><td>One motion system and one navigation system</td><td>You, answer to Q4</td></tr>
         <tr><td>Keep the approved look and motion spec</td><td>I6, V7, E2</td></tr>
         <tr><td>Keyboard input works in the tray</td><td>I5 answer</td></tr>
         <tr><td>Step 2 compares a thin WinForms host with other tray hosts</td><td>Default decision, Q6</td></tr>
+        <tr><td>Step 2 order: state model, view model, components, look</td><td>Default decision, Q5</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -205,21 +212,16 @@ flowchart LR
     </ul>
   </section>
 
-  <section>
-    <h2>Open questions</h2>
-    <div class="field"><span class="k">Q4 · Complete?</span><div class="v"><p>Is the pain list on tab 3 complete? It comes from the artifacts and <code>plan.md</code> only. Add the pains that you know from use, for example the speed of the work, agent mistakes or reviews.</p></div></div>
-    <div class="field"><span class="k">Q5 · Start</span><div class="v"><p>Does the target design start from the data (state model and view model), or from the design system (tokens and components)? Recommendation: from the data. Five of the eight causes are data and lifecycle causes.</p></div></div>
-  </section>
 </div>
 
 <!-- 2 CURRENT STATE -->
-<div class="panel" id="state" role="tabpanel" aria-labelledby="t-state" hidden>
+<div class="panel off" id="state" role="tabpanel" aria-labelledby="t-state">
   <section>
     <h2>Size of the problem</h2>
     <div class="tiles">
       <div class="tile"><b>88</b><span>architecture gaps in 10 parts</span></div>
       <div class="tile"><b>28</b><span>tracker issues (I1–I22, F1–F6)</span></div>
-      <div class="tile"><b>8</b><span>root causes (tab 3)</span></div>
+      <div class="tile"><b>13</b><span>root causes (tab 3)</span></div>
       <div class="tile"><b>147</b><span><code>Task.Delay</code> calls in the self-test</span></div>
       <div class="tile"><b>6</b><span>trace files, 5 writers, free text</span></div>
     </div>
@@ -293,10 +295,10 @@ flowchart TB
 </div>
 
 <!-- 3 PAINS -->
-<div class="panel" id="pains" role="tabpanel" aria-labelledby="t-pains" hidden>
+<div class="panel off" id="pains" role="tabpanel" aria-labelledby="t-pains">
   <section>
-    <h2>Eight root causes</h2>
-    <p class="summary">Each row is one root cause. The number is the count of gaps and issues that it explains. Select a row to open its detail.</p>
+    <h2>Thirteen root causes</h2>
+    <p class="summary">Each row is one root cause. The number is an estimate: I grouped the findings by hand, and one finding can be in more than one group. It shows the order of size only. Select a row to open its detail.</p>
     <div class="plist">
       <a class="prow" href="#p1"><span class="id">P1</span><span><span class="t">No single source of truth</span><span class="s">One fact in many places</span><span class="bar"><i style="width:100%"></i></span></span><span class="c">20</span></a>
       <a class="prow" href="#p2"><span class="id">P2</span><span><span class="t">Contracts are strings</span><span class="s">C#, CSS and JS share names only</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
@@ -305,7 +307,12 @@ flowchart TB
       <a class="prow" href="#p5"><span class="id">P5</span><span><span class="t">Hand-made infrastructure</span><span class="s">The same job written two or three times</span><span class="bar"><i style="width:75%"></i></span></span><span class="c">15</span></a>
       <a class="prow" href="#p6"><span class="id">P6</span><span><span class="t">Tracing added after</span><span class="s">Free text, no input, no id</span><span class="bar"><i style="width:55%"></i></span></span><span class="c">11</span></a>
       <a class="prow" href="#p7"><span class="id">P7</span><span><span class="t">Tests read pixels and wait</span><span class="s">Timers and pictures, not events</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
-      <a class="prow" href="#p8"><span class="id">P8</span><span><span class="t">Native host cost</span><span class="s">WinForms, WebView2, GDI+</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
+      <a class="prow" href="#p8"><span class="id">P8</span><span><span class="t">Native host cost</span><span class="s">WinForms, WebView2 composition</span><span class="bar"><i style="width:60%"></i></span></span><span class="c">12</span></a>
+      <a class="prow" href="#p9"><span class="id">P9</span><span><span class="t">No defined design system</span><span class="s">No full tokens, rules or guidelines</span><span class="bar"><i style="width:45%"></i></span></span><span class="c">9</span></a>
+      <a class="prow" href="#p10"><span class="id">P10</span><span><span class="t">Components not reusable</span><span class="s">Three ring drawings for one shape</span><span class="bar"><i style="width:40%"></i></span></span><span class="c">8</span></a>
+      <a class="prow" href="#p11"><span class="id">P11</span><span><span class="t">The view is not data-driven</span><span class="s">Pages and card rules are C# code</span><span class="bar"><i style="width:40%"></i></span></span><span class="c">8</span></a>
+      <a class="prow" href="#p12"><span class="id">P12</span><span><span class="t">No unified animation system</span><span class="s">CSS steps, view transitions and JS waits</span><span class="bar"><i style="width:50%"></i></span></span><span class="c">10</span></a>
+      <a class="prow" href="#p13"><span class="id">P13</span><span><span class="t">No unified navigation system</span><span class="s">Two units pick the page move</span><span class="bar"><i style="width:35%"></i></span></span><span class="c">7</span></a>
     </div>
     <p class="note">Process cause: we fixed one symptom at a time. One cause made many issues, and we saw it only when all records were side by side.</p>
   </section>
@@ -512,7 +519,7 @@ Assert.That(window.Bounds, Is.EqualTo(expected));</pre></div>
     </details>
 
     <details class="pain" id="p8">
-      <summary><span class="l1"><span class="id">P8</span><span class="t">Native host cost</span><span class="c">12</span></span><span class="l2">WinForms windows, WebView2 composition and GDI+ drawings, each with own faults</span></summary>
+      <summary><span class="l1"><span class="id">P8</span><span class="t">Native host cost</span><span class="c">12</span></span><span class="l2">Two WinForms windows with WebView2 composition; the host must forward the input</span></summary>
       <div class="body">
         <p><strong>Context.</strong> The tray host adds a second world: DPI, places, click regions, focus and pointer input. The window cut the shadow (I7, I18). A browser bubble showed links (I14). The demo moved the real pointer (I8). Keys went to the wrong window (I5).</p>
         <div class="chips"><span class="chip">I5, I7, I8, I14, I18, I21</span><span class="chip">Places G1, G4, G5, G8, G10</span><span class="chip">V1–V5</span></div>
@@ -540,6 +547,149 @@ interface IHostWindow {
         <div class="must"><b>The new design must</b>Keep the native part thin and generic. Step 2 compares a thin WinForms host with other hosts.</div>
       </div>
     </details>
+
+    <details class="pain" id="p9">
+      <summary><span class="l1"><span class="id">P9</span><span class="t">No defined design system</span><span class="c">9</span></span><span class="l2">Radii are 4, 9, 12, 16, 50 and 999 px literals; no guidelines</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> The color tokens exist, but radii, spacing, type sizes and shadows are mostly literals. There is no token tier, no layer order and no written rule for when to use which part. Dark mode does not change the literal colors, and no code sets the theme.</p>
+        <div class="chips"><span class="chip">Style S-G1–S-G7, S-G9</span><span class="chip">Source: you</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">app.css · tray.css</span></span>
+<pre>.path .cr  { ... border-radius: 4px; }
+.seg button { ... border-radius: 9px; }
+.blk .chip { border-radius: 16px; }
+<span class="cm">/* tray.css */</span>
+.wbtn.x:hover { background: #d93a3a; color: #fff; }
+.tray-frame { border-radius: 50px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0); }</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre>@layer reset, tokens, base, components, motion, pages;
+
+<span class="cm">/* 3 tiers: primitive, role, component */</span>
+@layer tokens { :root {
+  --radius-2: 8px;  --radius-4: 16px;
+  --radius-control: var(--radius-2);
+  --danger: var(--red-60);
+} }
+<span class="cm">/* A test fails on a literal outside @layer tokens. */</span></pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Have a written design system: token tiers, a layer order, the component list and the rule of use for each part.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p10">
+      <summary><span class="l1"><span class="id">P10</span><span class="t">Components not reusable</span><span class="c">8</span></span><span class="l2">Ring, DeepRing and the badge SVG each draw a ring</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> Components grew for one page each. Some read data, so they cannot move to another page. <code>Cards.razor</code> has 5 jobs in 280 lines. The badge and the home page map the group colors each in their own code.</p>
+        <div class="chips"><span class="chip">Components C-G1–C-G4</span><span class="chip">Style S-G8</span><span class="chip">Source: you</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">HomePage.razor · TrayBadge.razor</span></span>
+<pre>&lt;DeepRing Segments="Segments"&gt;...&lt;/DeepRing&gt;
+&lt;Ring Key="..." P="p" Size="40" Th="6"&gt;...&lt;/Ring&gt;
+<span class="cm">@* TrayBadge.razor: a third ring, own SVG *@</span>
+&lt;svg class="tb-ring" viewBox="0 0 56 56"&gt;
+  @foreach (var (length, offset, color) in Arcs)</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">@* One ring: segments in, no data access. *@</span>
+&lt;Ring Size="Ring.Large"
+      Segments="@View.Counts.AsSegments()" /&gt;
+&lt;Ring Size="Ring.Small"
+      Segments="@[new(row.Progress, row.Tone)]" /&gt;
+
+<span class="cm">@* Size and tone are tokens, not numbers. *@</span></pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Build pages only from catalog components. A component takes parameters and sends events, and has one job.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p11">
+      <summary><span class="l1"><span class="id">P11</span><span class="t">The view is not data-driven</span><span class="c">8</span></span><span class="l2">The card rules are C# code. A search found no C# reader of the meta.json "card" keys</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> The app is a view of an event stream. The content of one kind is data (<code>view.json</code>), but the card type, its actions, each page, each list and each count are C# code. A new kind or a new view needs code in many files.</p>
+        <div class="chips"><span class="chip">Data G3, G5, G6, G8</span><span class="chip">F1-8, R2-4</span><span class="chip">Source: you</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">Ui.cs (Classify) · templates/question/meta.json</span></span>
+<pre><span class="cm">// Ui.Classify: the card rules in C#</span>
+if (options.Count == 2 &amp;&amp; options.Any(o =&gt; o.Equals("yes", ...)))
+    return new(card, "yesno", CardGroup.Questions, "Decision",
+        title, new("Yes", "check", CardDo.AcceptText, yes), ...);
+<span class="cm">// meta.json has the same facts, unused</span>
+"card": { "accept": { "post": "answer",
+          "text": "defaultOption" }, ... }</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch: views/inbox/view.json</span></span>
+<pre>{
+  "query":  { "view": "inbox" },
+  "shape":  "list",
+  "layout": "deck",
+  "item":   "preview",
+  "groups": { "by": "card.group" }
+}
+<span class="cm">// The card composes itself: the view template</span>
+<span class="cm">// gives the frame, the kind template the content.</span></pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Make each page and each list a view of one query: one item or an aggregate. A new kind or view is data only.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p12">
+      <summary><span class="l1"><span class="id">P12</span><span class="t">No unified animation system</span><span class="c">10</span></span><span class="l2">R1 unified the tray steps, but 3 motion sources stay</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> Motion comes from CSS steps of the registry, a view transition for push and back, and waits in <code>swipe.js</code>. The view transition and the deck back-in give no end to C#. The speed dial has no leave rule, so it closes with no motion and a false warning (I22).</p>
+        <div class="chips"><span class="chip">Motion G1–G9</span><span class="chip">I9, I22</span><span class="chip">V1, V2</span><span class="chip">Source: you</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">swipe.js:24 · MotionHost.razor:20</span></span>
+<pre><span class="cm">// swipe.js: a wait outside the C# pipeline</span>
+orchMotion.wait(card, "property", "transform")
+  .then(function () { card.classList.remove("back-in"); });
+
+<span class="cm">// MotionHost: the view transition starts, and</span>
+<span class="cm">// C# gets no end event (Motion G2)</span>
+if (PageDepth.Move(from, to) is not { } kind
+    || kind == PageDepth.Tab) return;</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">// Each motion is the look of one machine transition.</span>
+<span class="cm">// Row: from, event, to, motion step.</span>
+(Open,    "dock",   Docking, Motion.Fold),
+(Docking, "docked", Badge,   null),
+
+<span class="cm">// One player starts the step and waits for</span>
+<span class="cm">// getAnimations() to end, also for a view</span>
+<span class="cm">// transition. The end fires the next event.</span></pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Have one motion system: each motion is a step of a state transition, with one player, one end rule and tokens only.</div>
+      </div>
+    </details>
+
+    <details class="pain" id="p13">
+      <summary><span class="l1"><span class="id">P13</span><span class="t">No unified navigation system</span><span class="c">7</span></span><span class="l2">MotionHost and MainLayout each compute the move; a page has depth 1.5</span></summary>
+      <div class="body">
+        <p><strong>Context.</strong> Navigation is the Blazor router plus a depth attribute on each page. Two units compute the move from two addresses. Sheets and the speed dial are not part of navigation, so Back does not close them. The header path has its own logic and no test.</p>
+        <div class="chips"><span class="chip">Page moves G1, G3–G6</span><span class="chip">Trade-off: no attribute = tab page</span><span class="chip">Source: you</span></div>
+        <div class="pair">
+          <div class="snip bad"><span class="lab">Today <span class="file">MainLayout.razor:23-29 · StreamPage.razor:3</span></span>
+<pre><span class="cm">// MainLayout: a second copy of the move rule</span>
+var here = Nav.ToBaseRelativePath(Nav.Uri);
+if (last is not null
+    &amp;&amp; PageDepth.Move(last, here) == PageDepth.Tab)
+    ...
+last = here;
+
+<span class="cm">// StreamPage: a depth from the query string</span>
+@attribute [PageDepth(0, Query = "session", QueryDepth = 1.5)]</pre></div>
+          <div class="snip good"><span class="lab">Better <span class="file">sketch</span></span>
+<pre><span class="cm">// One navigator owns a stack of entries:</span>
+<span class="cm">// tab root, pushed pages, open overlays.</span>
+nav.Tab("cards");          <span class="cm">// move: tab</span>
+nav.Push("/events/42");    <span class="cm">// move: push</span>
+nav.Open(Overlay.Sheet);   <span class="cm">// move: overlay</span>
+nav.Back();                <span class="cm">// closes the top entry</span>
+
+<span class="cm">// The operation gives the move. The path trail</span>
+<span class="cm">// is the stack. Each change is a trace event.</span></pre></div>
+        </div>
+        <div class="must"><b>The new design must</b>Have one navigator: a stack of pages and overlays, one Back rule, the move from the operation, the URL in sync.</div>
+      </div>
+    </details>
   </section>
 </div>
 </div>
@@ -550,7 +700,7 @@ interface IHostWindow {
   var tabs = document.querySelectorAll('nav [role="tab"]');
   function show(name) {
     if (names.indexOf(name) < 0) name = "purpose";
-    names.forEach(function (n) { document.getElementById(n).hidden = n !== name; });
+    names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });
     tabs.forEach(function (b) {
       var on = b.dataset.tab === name;
       b.setAttribute("aria-selected", on ? "true" : "false");
@@ -590,7 +740,7 @@ interface IHostWindow {
   document.getElementById("close-all").addEventListener("click", function () { document.querySelectorAll("details.pain").forEach(function (d) { d.open = false; }); });
   function fromHash() {
     var h = location.hash.slice(1);
-    if (/^p[1-8]$/.test(h)) { show("pains"); var d = document.getElementById(h); d.open = true; d.scrollIntoView({ block: "start" }); }
+    if (/^p([1-9]|1[0-3])$/.test(h)) { show("pains"); var d = document.getElementById(h); d.open = true; d.scrollIntoView({ block: "start" }); }
     else show(h);
   }
   window.addEventListener("hashchange", fromHash);

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!-- The tray app: a tray icon, and a ball that grows into a panel in a transparent window. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+  </PropertyGroup>
+  <ItemGroup><ProjectReference Include="../PingPong.Win/PingPong.Win.csproj" /></ItemGroup>
+  <!-- The host of the widget reads plain files next to the exe. -->
+  <Target Name="CopyPage" AfterTargets="Build">
+    <Copy SourceFiles="@(StaticWebAsset)" Condition="'%(StaticWebAsset.Filename)' == 'blazor.webview'" DestinationFolder="$(OutDir)wwwroot/_framework" />
+    <Copy SourceFiles="wwwroot/index.html" DestinationFolder="$(OutDir)wwwroot" />
+    <Copy SourceFiles="../PingPong.Ui/wwwroot/pp.css" DestinationFolder="$(OutDir)wwwroot/_content/PingPong.Ui" />
+  </Target>
+  <!-- A WinForms app does not use the WPF control of the WebView2 package. -->
+  <Target Name="RemoveWebView2Wpf" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup><Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" /></ItemGroup>
+  </Target>
+</Project>

@@ -1,0 +1,8 @@
+@* The ball. A new key makes a new element, so the bounce plays again. *@
+<span @key="Key" class="ball @Kind" style="--size:@(Size)px"></span>
+
+@code {
+    [Parameter] public string Kind { get; set; } = "ping";
+    [Parameter] public int Size { get; set; } = 56;
+    [Parameter] public object? Key { get; set; }
+}

@@ -1,0 +1,14 @@
+@* The table: the last ball, the counts and the hit button. *@
+<section class="table">
+    <Ball Kind="@(Hits.LastOrDefault()?.Kind ?? "ping")" Key="@Hits.Count" Size="72" />
+    <div class="counts"><b data-pings>@Hits.Count(h => h.Kind == "ping")</b> ping <b data-pongs>@Hits.Count(h => h.Kind == "pong")</b> pong</div>
+    <button type="button" class="hit" @onclick="OnHit">Hit the ball</button>
+    <small>this head: <b>@Head</b> · @(Connected ? "connected" : "no engine")</small>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<Hit> Hits { get; set; } = [];
+    [Parameter] public string Head { get; set; } = "";
+    [Parameter] public bool Connected { get; set; }
+    [Parameter] public EventCallback OnHit { get; set; }
+}

@@ -2387,3 +2387,66 @@ Test bed: a demo store in the scratchpad, `demo.ps1 -Fake -Port 7850 -AnyPort -N
 | Answer one demo card | Pass. Answer "HELLO", Questions 2 becomes 1, the next card shows | `10-card-before.png`, `11-card-answered.png` |
 
 Note for tests: a `WM_CLOSE` that another process posts gives a close reason that is not `UserClosing`. The widget then closes for real and the tray cannot show it again. Use `WM_SYSCOMMAND SC_CLOSE` (the same as Alt+F4).
+
+## V2: Visual restart plan (2026-11-23)
+
+The view (web UI and tray) restarts from scratch on one data flow and one design system. The plan has three steps; app code starts only after the user approves step 3. Branch stack: `orch/session-4edcb14f`, then the decision branches of Q6 (PR #88) and Q5 (PR #97).
+
+| Step | Result | Page |
+|---|---|---|
+| 1 · Diagnosis | 13 root causes (P1 to P13) of 88 architecture gaps and 28 tracker issues | `docs/v2-restart.html` (https://claude.ai/artifact/BNwcBE7dsYXYmGhyiPk1b6) |
+| 2 · Target design | Each page and list is a view of one query; a composer joins the view template, the content template and the result; one navigator; state machines with one motion system; design system; thin tray host | `docs/v2-target-design.html` (https://claude.ai/artifact/FmECykMtYjwUtdgfTct32V) |
+| 3 · Rebuild plan | Not started | - |
+
+Decisions so far: each page and list is a view of one query, and one motion system and one navigation system (user, Q4); step 2 starts from the data (default, Q5); step 2 compares the tray hosts (default, Q6). D1 (user): `content.json`. D2 (user): own components, from a base that we copy and own; the base is not picked. D3 = B and D4 = A (user). Open in step 2: the base of D2, D5 and D6, at the end of the Overview tab of the target design page.
+
+Findings:
+
+- `orch decision pr` fails with "no template answer" when it runs from the repository root. It works from `session-orchestrator/`.
+- The drag-to-scroll script of the tab bar in the earlier artifacts loses a click: a drag that ends on another element leaves the `dragged` flag on the first button, so the next click on that tab does nothing. The V2 pages use only the native scroll of the bar.
+- The repository and the artifacts have no prior-art notes on a navigation controller. The Navigation tab of the target design uses the Page moves review and a summary of common stack navigators.
+- The counts of the 13 root causes are estimates. The tray host comparison (D3, 2026-11-24) comes from platform docs and spikes S1, S2 and S7; no host was built for it. The ring has three drawings, not four.
+- Base research of D2 (2026-11-24): licenses and sizes of Web Awesome, Blazor Blueprint, MudBlazor and Fluent UI Blazor are on the Design system tab. Nothing was built.
+- Correction: `LayeredForm` and `EdgeTab` (GDI+) are not in `orch/visual-review`. P8 and P12 named them as current. Host code there: 916 lines in four files.
+- D3 (user, 2026-11-24): no host preference; Blazor, ideally also on mobile; the tray is one view of the engine library; Android must reuse as much as possible. Proposals S1 to S3 are on the Hosts tab. They use the devices plan, spike A1 and the K draft. D4 changes: V2 replaces the result of P1a and P1b of the devices plan. Nothing was built.
+- S2 of the host proposals is ruled out by the decision of 2026-11-20 (MAUI `BlazorWebView`, APK, no PWA). The page missed it at first.
+- S3 limits (2026-11-24, docs and issues only): the open risk is a transparent Blazor view in WinUI 3 (microsoft-ui-xaml 6527). The Android bubble is equal for S1 and S3. Spike plan X1 to X6 is on the Hosts tab; nothing was started.
+- Widget and main app (user, 2026-11-24: possibly two processes). Research from docs and source code: no single standard. Proposal S4: a WinForms widget and a MAUI main app on one UI library. It drops spikes X1 to X3 and adds X7. Nothing was started.
+
+### V2 spike: ping pong (2026-11-24)
+
+D3 = B (user): the widget and the main app are two programs. Spike `spikes/pingpong/`, from scratch, ports 7931 and 7932, data in a temp folder. Details and pictures: the Spike tab of the target design page, `docs/screens/pingpong-heads.png`, `docs/screens/pingpong-links.png`.
+
+| Check | Result |
+|---|---|
+| Engine process, web, widget, notification, main window and Android emulator at the same time, same Razor components | Pass |
+| A hit shows in the other heads (widget, Android, main window: final run; web: first run) | Pass |
+| X7: a widget click opens the correct page, main window closed and open | Pass (`/hits/2`, `/hits/1`) |
+| Engine restart: all heads connect again | Pass after a fix: Android did not reconnect at first |
+| Android Back key | Fail: it closes the app |
+| Memory of the 3 Windows heads (private, MB) | 642 with separate browsers, 316 with a shared browser (one measure each) |
+| Lines | 250 shared by all heads; Windows library 329; web 29, main window 51, notification 71, widget 114, Android 87 |
+
+Not done: MAUI on Windows (no workload), a real phone, trim, X5, X6, the URI scheme, the tray icon click.
+
+D4 = A (user, 2026-11-24): `docs/decisions.md`. P1a and P1b of the devices plan are replaced. The design keeps remote requests over HTTP (P1b), so that the phone needs no local store. D2, D5 and D6 are open. Nothing was built for D4.
+
+D2 revised (2026-11-25): the user wants one owned design system for all apps. It is a whole system with behavior, guidelines and skills, and a layer for each app. Later, JSON makes a screen. The old option A (system only) does not fit. Research on tab 5 of the target design page, from the sources; nothing was built.
+
+| Option | Finding |
+|---|---|
+| A `vsa-design` (Web Awesome 3.14.0, MIT), recommended | 74 elements, 2 skills, checks; most fork steps are done. Open: names (its issue 10), Blazor wrappers, change skills, JSON screens |
+| B NVIDIA Elements (Apache-2.0) | Best agent tools; new fork, same Blazor wrapper work |
+| C Blazor Blueprint (Apache-2.0) | Native Razor; the guidelines and skills are ours to write |
+
+A and B conflict with the rule on TypeScript and JavaScript in `AGENTS.md`. They need an exception for vendored output, and a Blazor spike first. The D2 question is open.
+
+D2 criteria (user, 2026-11-25): must have a tiered system (tokens, styles, components) and a structured guide to customize anything; ideal are skills or an MCP server that we can copy. JSON screens are not a criterion. Result: A passes each must; B (NVIDIA Elements) is better on change skills and has a local MCP server in its source; Radzen MCP is a paid hosted service; the Blueprint MCP has no source link. Recommendation stays A with B as the model. Finding: one skill file of `vsa-design` (`customizing.md`) still tells a reader to sign up for a hosted project.
+
+D5 (user, 2026-11-25): the event type selects the card; one Razor renderer for each card, with shared parts; no rule language now; templates of components later. The 8 variants map to types on tab 2 (V5). Kinds with no template make no card. Open detail: one renderer for `question` (recommended) or separate types. Findings from the code: a `message` with `needs: ack` becomes a report card today, and the text of a plan card posts `refuse`.
+
+D5 closed (user, 2026-11-25): one type `question`, one card; `options` are buttons and one flag says if it has open text. No yes or no detection. `defaultOption` and `recommendation` stay. Work for step 3, not built: `templates/question/schema.json` (and its view, render, example), `plugin/hooks/tools.ts`, the `orch-ask` skill, `docs/store.md` (lines 405, 554, 665), the C# records and checks. Details: tab 2, V6. D2 and D6 are open.
+
+D6 = A (user, 2026-11-25): an overlay does not change the URL; the navigator owns Back on each host. In a browser, each open overlay needs a history entry with the same URL. Only D2 (the base of the design system) is open. Nothing was built.
+
+Handover of V2 (2026-11-25, move to another PC): `docs/handover/V2.md`.
