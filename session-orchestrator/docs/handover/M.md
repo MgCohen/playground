@@ -30,6 +30,7 @@ A test of one local model on the CPU gave good text. No app code exists.
 
 ## Rules
 
+- The repository is public. Push no secret, email address, recording, transcript or personal data. Keep the voice recordings of the user out of git.
 - Brief: never touch or interact with the live store (`session-orchestrator/store/`) or port 7777.
 - Brief: for a test store, use a copy with a fake provider and the ports 7830-7839.
 - Brief: write no app code before the user approves the plan, unless the user asks.
@@ -42,11 +43,10 @@ A test of one local model on the CPU gave good text. No app code exists.
 
 Q1 to Q7 are on the page, tab "Open questions".
 
-- The user tests on a Samsung Fold 6. The user accepts a test of Parakeet.
+- The user accepts a test of Parakeet.
 - The text must come fast after stop. The reference is Claude Code: "a few seconds after 1, 2, 3".
 - The phone must not send a voice note to the PC: "I prefer to do this properly".
 - The session must do all installation steps that it can, and give the user only a simple test recipe.
-- The user gives class recordings to a local Claude session and pays nothing. The reason is not verified. The user offered a link to that session and did not send it.
 
 ## Run recipe for the spike
 
