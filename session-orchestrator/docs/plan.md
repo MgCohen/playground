@@ -2448,3 +2448,5 @@ D5 (user, 2026-11-25): the event type selects the card; one Razor renderer for e
 D5 closed (user, 2026-11-25): one type `question`, one card; `options` are buttons and one flag says if it has open text. No yes or no detection. `defaultOption` and `recommendation` stay. Work for step 3, not built: `templates/question/schema.json` (and its view, render, example), `plugin/hooks/tools.ts`, the `orch-ask` skill, `docs/store.md` (lines 405, 554, 665), the C# records and checks. Details: tab 2, V6. D2 and D6 are open.
 
 D6 = A (user, 2026-11-25): an overlay does not change the URL; the navigator owns Back on each host. In a browser, each open overlay needs a history entry with the same URL. Only D2 (the base of the design system) is open. Nothing was built.
+
+Handover of V2 (2026-11-25, move to another PC): `docs/handover/V2.md`.
