@@ -97,9 +97,10 @@ pre.mermaid { margin: 0; background: transparent; text-align: center; font-famil
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">session-orchestrator · session M · voice dictation · 2026-11-18</div>
+  <div class="eyebrow">session-orchestrator · session M · voice dictation · 2026-11-25</div>
   <h1>Voice Dictation Discovery</h1>
-  <p class="summary">The user speaks, and the app makes the text of answers, messages and briefs. This page records the scope, the current state, the problems and the open questions. It changes as the discussion continues.</p>
+  <p class="summary">The user speaks, and the app makes the text of answers, messages and briefs. This page records the scope, the current state, the problems and the open questions.</p>
+  <p class="note">State: the user deferred the approval of the plan (Q8). No step starts, and the test server is stopped. To continue on a different computer, read <code>session-orchestrator/docs/handover/M.md</code> on the branch <code>orch/session-4822b534</code>.</p>
 </header>
 
 <nav role="tablist" aria-label="Sections">
@@ -121,7 +122,7 @@ pre.mermaid { margin: 0; background: transparent; text-align: center; font-famil
         <td><ul><li>App code before the user approves the plan</li><li>The work of D, V, L and P</li><li>Merges</li><li>The live store (<code>session-orchestrator/store/</code>) and port 7777</li></ul></td>
       </tr>
     </table></div>
-    <p>Rule from the user: the discussion stays in this chat. The session does not use <code>ask_user</code> or <code>update</code>. It sends a report to the root only when the user says so, or when the session is done.</p>
+    <p>Rule from the user, relayed by the root: the user works only in the root session.</p>
   </div>
 </details>
 
@@ -390,10 +391,10 @@ flowchart LR
 <!-- ============ OPEN QUESTIONS ============ -->
 <div class="panel off" id="questions">
 
-<p class="summary">Answer in the chat, in your own words, for example "Q8: approve". When a question has an answer, it moves to the end of this tab with the answer.</p>
+<p class="summary">The user deferred Q8: no default applies. When a question has an answer, it moves to the end of this tab with the answer.</p>
 
 <details class="fold" open>
-  <summary><h2>Q8. Do you approve the plan?</h2><span class="pill">open</span></summary>
+  <summary><h2>Q8. Do you approve the plan?</h2><span class="pill warn">deferred</span></summary>
   <div class="body q"><dl>
     <dt>Question</dt><dd>Do you approve the plan in <code>docs/plan.md</code>, section "M plan: voice dictation"?</dd>
     <dt>Context</dt><dd>Six steps. M-1 tests Parakeet TDT v3 and Whisper Large v3 Turbo on 5 of your recordings, and you pick the model. M-2 adds the transcription service to the supervisor. M-3 changes the mic in the UI to record audio. M-4 is a live test in the tray. M-5 puts the phone engine into the Android plan. M-6 (phrase by phrase, cloud engine) comes only if you ask.</dd>
