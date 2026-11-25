@@ -18,7 +18,12 @@ public abstract class RepositoryContract<T>(string backend)
     string root = "";
 
     /// <summary>The store of the backend of this fixture: the local folder, or the store API of a test supervisor on it (H5).</summary>
-    protected IRepositories Repos(string root) => backend == Backends.Http ? TestStoreApi.Open(root) : new LocalRepositories(root);
+    protected IRepositories Repos(string root) => backend switch
+    {
+        Backends.Http => TestStoreApi.Open(root),
+        Backends.Notion => NotionTestStore.Open(root),
+        _ => new LocalRepositories(root),
+    };
 
     /// <summary>A new repository on the same store, as a second process opens it.</summary>
     protected abstract IRepository<Doc<T>, string> Open(string root);
@@ -38,11 +43,17 @@ public abstract class RepositoryContract<T>(string backend)
     IRepository<Doc<T>, string> Open() => Open(root);
 
     [SetUp]
-    public void Prepare() => root = Directory.CreateTempSubdirectory("orch-repo-").FullName;
+    public void Prepare()
+    {
+        if (backend == Backends.Notion) NotionTestStore.RequireOrIgnore();
+        root = Directory.CreateTempSubdirectory("orch-repo-").FullName;
+    }
 
     [TearDown]
     public void Clean()
     {
+        if (root.Length == 0) return;
+        if (backend == Backends.Notion) NotionTestStore.Close(root);
         try
         {
             Directory.Delete(root, true);
@@ -177,6 +188,7 @@ public abstract class RepositoryContract<T>(string backend)
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalEventContract(string backend) : RepositoryContract<Event>(backend)
 {
     static readonly DateTimeOffset Start = new(2026, 11, 18, 10, 0, 0, TimeSpan.Zero);
@@ -193,6 +205,7 @@ public sealed class LocalEventContract(string backend) : RepositoryContract<Even
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalBodyContract(string backend) : RepositoryContract<JsonElement>(backend)
 {
     protected override IRepository<Doc<JsonElement>, string> Open(string root) => Repos(root).Bodies;
@@ -204,6 +217,7 @@ public sealed class LocalBodyContract(string backend) : RepositoryContract<JsonE
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalPolicyContract(string backend) : RepositoryContract<Policy>(backend)
 {
     static readonly Policy Default = Policy.Parse(File.ReadAllText(Home.Config("policy.default.json")), "policy.default.json");
@@ -219,6 +233,7 @@ public sealed class LocalPolicyContract(string backend) : RepositoryContract<Pol
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalStoreVersionsContract(string backend) : RepositoryContract<StoreVersion>(backend)
 {
     protected override IRepository<Doc<StoreVersion>, string> Open(string root) => Repos(root).StoreVersions;
@@ -232,6 +247,7 @@ public sealed class LocalStoreVersionsContract(string backend) : RepositoryContr
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalClaimContract(string backend) : RepositoryContract<string>(backend)
 {
     protected override IRepository<Doc<string>, string> Open(string root) => Repos(root).Claims;
@@ -243,6 +259,7 @@ public sealed class LocalClaimContract(string backend) : RepositoryContract<stri
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalCursorContract(string backend) : RepositoryContract<CursorState>(backend)
 {
     protected override IRepository<Doc<CursorState>, string> Open(string root) => Repos(root).Cursors;
@@ -254,6 +271,7 @@ public sealed class LocalCursorContract(string backend) : RepositoryContract<Cur
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalNudgeContract(string backend) : RepositoryContract<string>(backend)
 {
     protected override IRepository<Doc<string>, string> Open(string root) => Repos(root).Nudges;
@@ -265,6 +283,7 @@ public sealed class LocalNudgeContract(string backend) : RepositoryContract<stri
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalSessionFolderContract(string backend) : RepositoryContract<string>(backend)
 {
     protected override IRepository<Doc<string>, string> Open(string root) => Repos(root).Sessions;
@@ -278,6 +297,7 @@ public sealed class LocalSessionFolderContract(string backend) : RepositoryContr
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalLeaseContract(string backend) : RepositoryContract<Lease>(backend)
 {
     protected override IRepository<Doc<Lease>, string> Open(string root) => Repos(root).SessionFile<Lease>(StoreFiles.Lease);
@@ -289,6 +309,7 @@ public sealed class LocalLeaseContract(string backend) : RepositoryContract<Leas
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalHeartbeatContract(string backend) : RepositoryContract<string>(backend)
 {
     protected override IRepository<Doc<string>, string> Open(string root) => Repos(root).SessionFile<string>(StoreFiles.Heartbeat);
@@ -300,6 +321,7 @@ public sealed class LocalHeartbeatContract(string backend) : RepositoryContract<
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalSessionItemContract(string backend) : RepositoryContract<DocsCheck>(backend)
 {
     protected override IRepository<Doc<DocsCheck>, string> Open(string root) => Repos(root).SessionItems<DocsCheck>("session-1", StoreFiles.DocsChecks);
@@ -350,12 +372,15 @@ public abstract class LocalDefinitionContract(Catalog catalog, string backend) :
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalTemplateDefinitionContract(string backend) : LocalDefinitionContract(Catalog.Templates, backend);
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalModeDefinitionContract(string backend) : LocalDefinitionContract(Catalog.Modes, backend);
 
 [TestFixture(Backends.Local)]
 [TestFixture(Backends.Http)]
+[TestFixture(Backends.Notion)]
 public sealed class LocalWorkflowDefinitionContract(string backend) : LocalDefinitionContract(Catalog.Workflows, backend);

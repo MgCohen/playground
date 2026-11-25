@@ -44,7 +44,7 @@ public static class Home
     }
 
     public static string StoreRoot() =>
-        Environment.GetEnvironmentVariable("ORCH_STORE") is { Length: > 0 } store ? Path.GetFullPath(store) : DefaultStoreRoot();
+        Environment.GetEnvironmentVariable("ORCH_STORE") is { Length: > 0 } store ? (StoreBackends.IsRemote(store) ? store : Path.GetFullPath(store)) : DefaultStoreRoot();
 
     /// <summary>The default port of the supervisor.</summary>
     public const int DefaultPort = 7777;

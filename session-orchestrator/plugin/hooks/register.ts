@@ -74,9 +74,11 @@ async function versionOk($: any): Promise<boolean> {
 }
 
 // H5: with ORCH_URL the session is a cloud worker. The orch command calls the store API of the supervisor, and the
-// hooks write nothing, because a store folder in the VM is not the store (C0-2).
+// hooks write nothing, because a store folder in the VM is not the store (C0-2). N1: a notion: store root is the same
+// case. The hooks have no Notion backend, so the session uses the orch command.
 export async function storeApiMode($: any): Promise<boolean> {
-  return Boolean(await $.env.get('ORCH_URL'))
+  if (await $.env.get('ORCH_URL')) return true
+  return /^notion:/i.test((await $.env.get('ORCH_STORE')) ?? '')
 }
 
 // True when the plugin may activate in this process: no store API mode, and a store of this contract version.
@@ -204,7 +206,7 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'orch-enable' }, async ($, e: any) => {
-    if (await storeApiMode($)) return { text: 'This session uses the store API of the supervisor (ORCH_URL). The plugin stays off. Use the orch command.' }
+    if (await storeApiMode($)) return { text: 'This session uses a remote store (ORCH_URL, or a notion: ORCH_STORE). The plugin stays off. Use the orch command.' }
     const dir = await sessionDir($)
     const title = String(e.args ?? '').trim()
     await writeEntry($, dir, title)

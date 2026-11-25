@@ -52,7 +52,7 @@ There is no other communication file. The inbox, the answers, the reviews, the r
 
 ## Repositories (C#)
 
-The C# code reads and writes the store only through `IRepositories` (`src/Orchestrator.Core/Storage/`). `StoreBackends.Create` selects the implementation: an `http` or `https` root gives `HttpRepositories` (the store API of a supervisor, section "Store API"), each other root the local folder. Only the local folder implementation (`src/Orchestrator.Store/Local/`) touches the files above. The test `ArchitectureTests` refuses store IO in other C# files. The plugin hooks write the same files only through `plugin/hooks/backend.ts`.
+The C# code reads and writes the store only through `IRepositories` (`src/Orchestrator.Core/Storage/`). `StoreBackends.Create` selects the implementation: an `http` or `https` root gives `HttpRepositories` (the store API of a supervisor, section "Store API"), a `notion:` root the Notion store (section "Notion store"), each other root the local folder. Only the local folder implementation (`src/Orchestrator.Store/Local/`) touches the files above. The test `ArchitectureTests` refuses store IO in other C# files. The plugin hooks write the same files only through `plugin/hooks/backend.ts`.
 
 | Repository | Entity | Id | Files |
 |---|---|---|---|
@@ -659,6 +659,38 @@ flowchart LR
 - An id is one or more parts with `/` between them. The API refuses an empty part, `.`, `..`, `\`, `:` and control characters (400). A scope key is one part.
 - A save checks the version of each change and remove before the first write. A refused save writes nothing.
 - The HTTP mode has no push: `Watch()` polls every 2 s.
+
+## Notion store (N1 spike, `notion:<page id>`)
+
+A root `notion:<page id>` keeps the store in Notion. `StoreBackends.Create` gives `RemoteRepositories` on `NotionTransport` (`src/Orchestrator.Store/Remote/Notion/`). The token is `NOTION_TOKEN`. `HttpRepositories` uses the same `RemoteRepositories` on `HttpTransport`: both send the text documents of the store API (`WireDoc`).
+
+```mermaid
+flowchart LR
+    L[Local orch, supervisor] -->|NOTION_TOKEN| T[NotionTransport]
+    C[Cloud orch] -->|NOTION_TOKEN| T
+    T --> S[(Stream database)]
+    T --> D[(Docs database)]
+    T --> G[Log page]
+```
+
+| Part under the page | Content | Title |
+|---|---|---|
+| `Stream` database | One row for each envelope. Properties: `Kind`, `Subject`, `From`, `To`, `Needs`, `Session`, `Stream`, `Thread`, `Reply`, `Body`, `At`, `Ms`, `Text` | The envelope id |
+| `Docs` database | One row for each other document. Properties: `Kind`, `Scope`, `Id`, `Removed`, `Text` | `<kind>\|<scope keys>\|<id>` |
+| `Log` page | One paragraph for each line of the supervisor log | `Log` |
+
+Rules:
+
+1. `Text` holds the file text of the document. The version is the hash of `Text` (Version rule). A Notion number keeps only 53 bits, so no row stores the version.
+2. The first write makes the two databases and the log page. A read of a missing store gives nothing.
+3. A remove sets `Removed` on a docs row and archives an envelope row. A sync sees a removed row; it does not see an archived row.
+4. A session exists when a docs row of the session exists: a registry entry, a session file, a session item, or a row of kind `sessions`. A remove of a session removes each of these rows.
+5. Reads use a cache. One query each 2 s reads the docs rows with an edit time after the last sync minus 2 minutes (Notion keeps the edit time to the minute). One query each 2 s reads the envelopes with `Ms` after the last envelope minus 2 minutes.
+6. A save reads each row again before the first write. `Exists`: a second read after the create; when two rows have the key, the oldest row wins and the other writer archives its row. `Stale`: no conditional write in Notion, so two writers in the same second can both win.
+7. A `Text` value takes at most 200,000 characters (100 items of 2,000). A row with more than 25 items needs one more read of the property.
+8. The client sends at most 3 requests each second. A 429, a 409, a 5xx or a network error waits and tries again, 5 attempts.
+9. The plugin hooks stay off with a `notion:` root, as with `ORCH_URL`. The session uses `orch`.
+10. `ORCH_NOTION_TRACE=1` writes one stderr line for each request.
 
 ## Questions to the user
 

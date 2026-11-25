@@ -12,30 +12,60 @@ using Orchestrator.Store.Local;
 namespace Orchestrator.Store.Remote;
 
 /// <summary>
+/// The store calls of a remote store: the same text documents as the local folder (<see cref="WireDoc"/>), so the
+/// version rule is the same. <see cref="HttpTransport"/> calls the store API of a supervisor (H5).
+/// <see cref="Notion.NotionTransport"/> keeps the documents in two Notion databases (N1 spike).
+/// </summary>
+public interface IStoreTransport
+{
+    string Location { get; }
+    WireInfo Info();
+    void Prepare();
+    void Log(string line);
+    WireDoc? Get(WireScope scope, string id);
+    List<WireDoc> List(WireScope scope);
+
+    /// <summary>Applies one save. A refused save throws <see cref="StoreConflictException"/> and writes nothing.</summary>
+    WireSaved Save(WireScope scope, WireSave save);
+
+    /// <summary>The envelopes after a position of the feed of this transport. A new epoch makes the caller read from 0.</summary>
+    WireFeed Feed(int from);
+}
+
+/// <summary>
 /// The HTTP implementation of the store (H5): each repository call goes to the store API of a supervisor
 /// (<see cref="StoreWire.Prefix"/>). <c>orch</c> uses it when <c>ORCH_URL</c> is set, for example in a cloud worker.
 /// The token goes in the header <see cref="TokenHeader"/>. The same rules apply as for the local folder store.
 /// </summary>
-public sealed class HttpRepositories : IRepositories
+public sealed class HttpRepositories : RemoteRepositories
 {
     public const string TokenHeader = "X-Orch-Token";
-
-    /// <summary>The wait between two polls of <see cref="Watch"/>. The API has no push.</summary>
-    public static TimeSpan PollInterval { get; set; } = TimeSpan.FromSeconds(2);
-
-    readonly StoreClient client;
-    readonly ConcurrentDictionary<(string File, Type Type), object> sessionFiles = new();
 
     public HttpRepositories(Uri url, string? token) : this(new HttpClient { BaseAddress = url, Timeout = TimeSpan.FromSeconds(30) }, token)
     {
     }
 
     /// <param name="http">The client with the base address of the supervisor. Tests pass the client of a test server.</param>
-    public HttpRepositories(HttpClient http, string? token)
+    public HttpRepositories(HttpClient http, string? token) : base(HttpTransport.Of(http, token))
     {
-        if (token is { Length: > 0 }) http.DefaultRequestHeaders.Add(TokenHeader, token);
-        client = new StoreClient(http);
-        Location = http.BaseAddress?.ToString().TrimEnd('/') ?? "";
+    }
+}
+
+/// <summary>
+/// A store whose documents are behind an <see cref="IStoreTransport"/>: the store API of a supervisor, or Notion.
+/// </summary>
+public class RemoteRepositories : IRepositories
+{
+    /// <summary>The wait between two polls of <see cref="Watch"/>. A remote store has no push.</summary>
+    public static TimeSpan PollInterval { get; set; } = TimeSpan.FromSeconds(2);
+
+    readonly IStoreTransport client;
+    readonly ConcurrentDictionary<(string File, Type Type), object> sessionFiles = new();
+
+    public RemoteRepositories(IStoreTransport transport)
+    {
+        client = transport;
+        Location = transport.Location;
         Events = new HttpEventRepository(client);
         Bodies = Repository(new(StoreWire.Bodies), JsonCodec<JsonElement>.Instance);
         Policies = Repository(new(StoreWire.Policies), PolicyCodec.Instance);
@@ -71,15 +101,47 @@ public sealed class HttpRepositories : IRepositories
     public IRepository<Doc<Definition>, string> Definitions(Catalog catalog) =>
         Repository(new WireScope(StoreWire.Definitions, Catalog: catalog.Name), DefinitionCodec.Instance);
 
-    public bool Exists() => client.Send<WireInfo>(HttpMethod.Get, StoreWire.Prefix, null).Value!.Exists;
+    public bool Exists() => client.Info().Exists;
 
-    public void Prepare() => client.Send<WireInfo>(HttpMethod.Post, $"{StoreWire.Prefix}/prepare", new { });
+    public void Prepare() => client.Prepare();
 
     public IStreamSignal Watch() => new PollSignal(PollInterval);
 
     HttpRepository<T> Repository<T>(WireScope scope, IFileCodec<T> codec) => new(client, scope, codec);
 
     static IFileCodec<T> Codec<T>() => typeof(T) == typeof(string) ? (IFileCodec<T>)(object)TextCodec.Instance : JsonCodec<T>.Instance;
+}
+
+/// <summary>The store API of a supervisor as an <see cref="IStoreTransport"/>.</summary>
+sealed class HttpTransport(StoreClient client, string location) : IStoreTransport
+{
+    public static HttpTransport Of(HttpClient http, string? token)
+    {
+        if (token is { Length: > 0 }) http.DefaultRequestHeaders.Add(HttpRepositories.TokenHeader, token);
+        return new(new StoreClient(http), http.BaseAddress?.ToString().TrimEnd('/') ?? "");
+    }
+
+    public string Location => location;
+
+    public WireInfo Info() => client.Send<WireInfo>(HttpMethod.Get, StoreWire.Prefix, null).Value!;
+
+    public void Prepare() => client.Send<WireInfo>(HttpMethod.Post, $"{StoreWire.Prefix}/prepare", new { });
+
+    public void Log(string line) => client.Send<object>(HttpMethod.Post, $"{StoreWire.Prefix}/log", new WireLine(line));
+
+    public WireDoc? Get(WireScope scope, string id) => client.Send<WireDoc>(HttpMethod.Get, Path(scope, "get", ("id", id)), null).Value;
+
+    public List<WireDoc> List(WireScope scope) => client.Send<List<WireDoc>>(HttpMethod.Get, Path(scope, "list"), null).Value ?? [];
+
+    public WireSaved Save(WireScope scope, WireSave save) => client.Send<WireSaved>(HttpMethod.Post, Path(scope, "save"), save).Value!;
+
+    public WireFeed Feed(int from) => client.Send<WireFeed>(HttpMethod.Get, $"{StoreWire.Prefix}/{StoreWire.Events}/feed?from={from}", null).Value!;
+
+    static string Path(WireScope scope, string action, params (string Key, string Value)[] more)
+    {
+        var query = string.Join('&', new[] { scope.Query() }.Concat(more.Select(m => $"{m.Key}={Uri.EscapeDataString(m.Value)}")).Where(q => q.Length > 0));
+        return $"{StoreWire.Prefix}/{scope.Kind}/{action}{(query.Length > 0 ? "?" + query : "")}";
+    }
 }
 
 /// <summary>The calls of the store API, with the errors as store exceptions.</summary>
@@ -124,26 +186,20 @@ sealed class StoreClient(HttpClient http)
 /// One repository through the store API. It keeps the adds, the changes and the removes until the save, as the local
 /// implementation does. The supervisor checks the versions and gives the new ones.
 /// </summary>
-class HttpRepository<T>(StoreClient client, WireScope scope, IFileCodec<T> codec) : IRepository<Doc<T>, string>
+class HttpRepository<T>(IStoreTransport client, WireScope scope, IFileCodec<T> codec) : IRepository<Doc<T>, string>
 {
     readonly Lock gate = new();
     readonly List<Doc<T>> added = [];
     readonly List<Doc<T>> removed = [];
     readonly List<Doc<T>> changed = [];
 
-    protected StoreClient Client { get; } = client;
-
-    string Path(string action, params (string Key, string Value)[] more)
-    {
-        var query = string.Join('&', new[] { scope.Query() }.Concat(more.Select(m => $"{m.Key}={Uri.EscapeDataString(m.Value)}")).Where(q => q.Length > 0));
-        return $"{StoreWire.Prefix}/{scope.Kind}/{action}{(query.Length > 0 ? "?" + query : "")}";
-    }
+    protected IStoreTransport Client { get; } = client;
 
     public Task<Doc<T>?> GetAsync(string id, CancellationToken ct) =>
-        Task.FromResult(Client.Send<WireDoc>(HttpMethod.Get, Path("get", ("id", id)), null).Value is { } wire ? Load(wire) : null);
+        Task.FromResult(Client.Get(scope, id) is { } wire ? Load(wire) : null);
 
     public Task<List<Doc<T>>> ListAsync(Func<Doc<T>, bool> where, CancellationToken ct) =>
-        Task.FromResult((Client.Send<List<WireDoc>>(HttpMethod.Get, Path("list"), null).Value ?? []).Select(Load).Where(where).ToList());
+        Task.FromResult(Client.List(scope).Select(Load).Where(where).ToList());
 
     public void Add(Doc<T> entity)
     {
@@ -172,7 +228,7 @@ class HttpRepository<T>(StoreClient client, WireScope scope, IFileCodec<T> codec
             adds.Select(d => new WireDoc(d.Id, 0, codec.Encode(d.Value))).ToList(),
             changes.Select(d => new WireDoc(d.Id, d.Version, codec.Encode(d.Value))).ToList(),
             removes.Select(d => new WireDoc(d.Id, d.Version, "")).ToList());
-        var versions = Client.Send<WireSaved>(HttpMethod.Post, Path("save"), save).Value!.Versions;
+        var versions = Client.Save(scope, save).Versions;
         foreach (var doc in adds.Concat(changes))
         {
             doc.Saved(versions.GetValueOrDefault(doc.Id));
@@ -199,7 +255,7 @@ class HttpRepository<T>(StoreClient client, WireScope scope, IFileCodec<T> codec
 /// The envelopes through the store API, with the feed port: each read gets only the new envelopes of the feed of the
 /// supervisor. When the supervisor starts again (a new epoch), the feed reads all envelopes again and keeps only the new ids.
 /// </summary>
-sealed class HttpEventRepository(StoreClient store) : HttpRepository<Event>(store, new WireScope(StoreWire.Events), JsonCodec<Event>.Instance), IAppendFeed<Doc<Event>>
+sealed class HttpEventRepository(IStoreTransport store) : HttpRepository<Event>(store, new WireScope(StoreWire.Events), JsonCodec<Event>.Instance), IAppendFeed<Doc<Event>>
 {
     readonly Lock feedGate = new();
     readonly List<Doc<Event>> feed = [];
@@ -211,9 +267,9 @@ sealed class HttpEventRepository(StoreClient store) : HttpRepository<Event>(stor
     {
         lock (feedGate)
         {
-            var wire = Client.Send<WireFeed>(HttpMethod.Get, $"{StoreWire.Prefix}/{StoreWire.Events}/feed?from={(epoch is null ? 0 : position)}", null).Value!;
+            var wire = Client.Feed(epoch is null ? 0 : position);
             if (epoch is not null && wire.Epoch != epoch)
-                wire = Client.Send<WireFeed>(HttpMethod.Get, $"{StoreWire.Prefix}/{StoreWire.Events}/feed?from=0", null).Value!;
+                wire = Client.Feed(0);
             epoch = wire.Epoch;
             position = wire.Position;
             foreach (var doc in wire.Docs)
@@ -223,9 +279,9 @@ sealed class HttpEventRepository(StoreClient store) : HttpRepository<Event>(stor
     }
 }
 
-sealed class HttpLogSink(StoreClient client) : ILogSink
+sealed class HttpLogSink(IStoreTransport client) : ILogSink
 {
-    public void Write(string line) => client.Send<object>(HttpMethod.Post, $"{StoreWire.Prefix}/log", new WireLine(line));
+    public void Write(string line) => client.Log(line);
 }
 
 /// <summary>The push of the HTTP store: a poll. Each wait ends after the poll interval, and the subscriber queries again.</summary>
