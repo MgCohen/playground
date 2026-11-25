@@ -1,5 +1,6 @@
 using Orchestrator.Cli;
 using Orchestrator.Store;
+using Orchestrator.Store.Local;
 
 namespace Orchestrator.Tests;
 
@@ -56,4 +57,45 @@ public sealed class InstallTests
 
     [Test]
     public void The_build_records_its_source_commit() => Assert.That(Install.Commit, Has.Length.EqualTo(40));
+
+    static string App(string commit)
+    {
+        var root = Directory.CreateTempSubdirectory("orch-app-").FullName;
+        Files.WriteJson(Path.Combine(root, "install.json"), new SupervisorHost.InstallRecord(commit, "C:/store", 7861, "2026-11-17T00:00:00Z"));
+        return root;
+    }
+
+    [Test]
+    public void No_installed_app_passes()
+    {
+        var (ok, detail) = Install.CheckApp(NewHome(), Directory.CreateTempSubdirectory("orch-app-").FullName);
+        Assert.That(ok, Is.True);
+        Assert.That(detail, Does.StartWith("not installed"));
+    }
+
+    [Test]
+    public void An_installed_app_fails_after_a_newer_change_anywhere_in_src()
+    {
+        var home = NewHome();
+        var app = App(home.Must("git", "rev-parse", "HEAD"));
+        Assert.That(Install.CheckApp(home, app).Ok, Is.True);
+        Commit(home, "src/Orchestrator.Tray/Program.cs", "tray");
+        var (ok, detail) = Install.CheckApp(home, app);
+        Assert.That(ok, Is.False);
+        Assert.That(detail, Does.Contain("1 newer commits change src/"));
+    }
+
+    [Test]
+    public void The_supervisor_command_takes_the_first_published_copy()
+    {
+        var empty = Directory.CreateTempSubdirectory("orch-sup-").FullName;
+        var copy = Directory.CreateTempSubdirectory("orch-sup-").FullName;
+        File.WriteAllText(Path.Combine(copy, SupervisorHost.Dll), "");
+        var (file, args) = SupervisorHost.Command(empty, copy);
+        Assert.That(file, Is.EqualTo("dotnet"));
+        Assert.That(args, Is.EqualTo(new[] { Path.Combine(copy, SupervisorHost.Dll) }));
+    }
+
+    [Test]
+    public void A_port_with_no_record_has_no_supervisor_record() => Assert.That(SupervisorHost.Record(1), Is.Null);
 }

@@ -1,0 +1,2061 @@
+{
+ "source": {
+  "title": "Umpire File Map",
+  "url": "https://claude.ai/artifact/X8c3Qx9iLgY66K77exdU3Z"
+ },
+ "title": "13 files of an app, by state after the proposal",
+ "items": [
+  {
+   "title": "App/Host/ShopApp.cs",
+   "summary": "The app class: the one entry",
+   "mono": true,
+   "tags": [
+    {
+     "text": "core",
+     "tone": "neutral"
+    },
+    {
+     "text": "source",
+     "tone": "accent"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "source",
+     "tone": "accent"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "source",
+       "tone": "accent"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "It names the pack, the host and the architecture. The engine finds it in the built DLL and reads Pack.Architecture."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "core"
+        },
+        {
+         "label": "Without it",
+         "value": "The engine finds no entry (UMP030302), and the app does not start."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "reads",
+         "tone": "info"
+        },
+        {
+         "label": "CLI",
+         "value": "writes",
+         "tone": "accent"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "The CLI writes it one time (new app). Then it is yours.",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": "App/Host/NotesApp.cs",
+       "lang": "cs",
+       "code": "namespace Notes.App.Host;\n\nusing Umpire.Kernel;\nusing Umpire.Vsa;\nusing Umpire.Vsa.Hosts.Web;\n\npublic class NotesApp : App<Vsa<WebVsaHost>>;"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "No change",
+     "tags": [
+      {
+       "text": "source",
+       "tone": "accent"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "It stays the one entry. An app with its own rules names its architecture here, and that architecture holds the parts of the definition set."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "reads",
+         "tone": "info"
+        },
+        {
+         "label": "CLI",
+         "value": "writes",
+         "tone": "accent"
+        }
+       ]
+      },
+      {
+       "type": "code",
+       "cap": "App/Host/ShopApp.cs",
+       "lang": "cs",
+       "code": "public class ShopApp : App<Vsa<ShopArchitecture, WebVsaHost>>;"
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "One entry for all Umpire facts"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "Nothing"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "Nothing"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Shop.csproj",
+   "summary": "The one root project",
+   "mono": true,
+   "tags": [
+    {
+     "text": "core",
+     "tone": "neutral"
+    },
+    {
+     "text": "managed",
+     "tone": "good"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "managed",
+     "tone": "good"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "managed",
+       "tone": "good"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "dotnet builds it. It selects the SDK and adds the host packages and the engine package, each with a version."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "core"
+        },
+        {
+         "label": "Without it",
+         "value": "Nothing builds. It selects the SDK and the packages."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "checks",
+         "tone": "info"
+        },
+        {
+         "label": "CLI",
+         "value": "manages",
+         "tone": "info"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "CLI: new app writes it, init adds the SDK and the engine package, update sets the versions. Engine: checks each Umpire version (UMP030201).",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": "Shop.csproj (written by umpire new app)",
+       "lang": "xml",
+       "code": "<Project Sdk=\"Microsoft.NET.Sdk.Web\">\n  <Sdk Name=\"Umpire.Sdk\" />\n  <PropertyGroup>\n    <RootNamespace>Shop</RootNamespace>\n  </PropertyGroup>\n  <ItemGroup>\n    <PackageReference Include=\"Umpire.Vsa.Hosts.Web\" Version=\"0.2.0\" />\n    <PackageReference Include=\"Umpire.Vsa.Views\" Version=\"0.2.0\" />\n    <PackageReference Include=\"Umpire.Engine.Build\" Version=\"0.2.0\"\n                      PrivateAssets=\"all\" />\n  </ItemGroup>\n</Project>"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "Managed, one line",
+     "tags": [
+      {
+       "text": "managed",
+       "tone": "good"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "A web SDK variant brings the web host packages and the engine package with its own version. The root namespace is the project name by default."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "checks",
+         "tone": "info"
+        },
+        {
+         "label": "CLI",
+         "value": "manages",
+         "tone": "info"
+        }
+       ]
+      },
+      {
+       "type": "code",
+       "cap": "Shop.csproj",
+       "lang": "xml",
+       "code": "<Project Sdk=\"Umpire.Sdk.Web\" />"
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "One version place: the SDK pin in global.json",
+          "Nothing to edit by hand"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "A host package cannot have its own version"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "Publish and test a new SDK package, Umpire.Sdk.Web",
+          "The engine checks that the host in the app class matches the SDK"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "global.json",
+   "summary": ".NET SDK version, Umpire.Sdk version, test runner",
+   "mono": true,
+   "tags": [
+    {
+     "text": "core",
+     "tone": "neutral"
+    },
+    {
+     "text": "managed",
+     "tone": "good"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "managed",
+     "tone": "good"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "managed",
+       "tone": "good"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "dotnet reads it before all phases. The Umpire.Sdk entry is required: an SDK in a Sdk attribute gets its version only from here. The .NET SDK pin is for stability."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "core"
+        },
+        {
+         "label": "Without it",
+         "value": "Sdk=\"Umpire.Sdk\" has no version, so the build stops. The test runner falls back to VSTest."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "checks",
+         "tone": "info"
+        },
+        {
+         "label": "CLI",
+         "value": "manages",
+         "tone": "info"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "CLI: init writes it, update sets the pin, and the CLI finds the app folder from it. Engine: reads the pin for UMP030201.",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": "global.json",
+       "lang": "json",
+       "code": "{\n  \"sdk\": { \"version\": \"10.0.100\", \"rollForward\": \"latestFeature\" },\n  \"msbuild-sdks\": { \"Umpire.Sdk\": \"0.2.0\" },\n  \"test\": { \"runner\": \"Microsoft.Testing.Platform\" }\n}"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "No change",
+     "tags": [
+      {
+       "text": "managed",
+       "tone": "good"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "dotnet needs it before the build, and it is the one Umpire version place. The CLI calls its folder the \"app folder\", so it does not clash with the block folder of the engine."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "checks",
+         "tone": "info"
+        },
+        {
+         "label": "CLI",
+         "value": "manages",
+         "tone": "info"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "One version for all Umpire packages"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "Nothing"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "A name fix in the CLI (app folder)"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "nuget.config",
+   "summary": "The GitHub Packages feed",
+   "mono": true,
+   "tags": [
+    {
+     "text": "access",
+     "tone": "neutral"
+    },
+    {
+     "text": "managed",
+     "tone": "good"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "removed",
+     "tone": "bad"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "managed",
+       "tone": "good"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "NuGet reads it in restore. It adds the umpire feed with a GITHUB_TOKEN, because GitHub Packages needs a sign-in, also for public packages."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "access"
+        },
+        {
+         "label": "Without it",
+         "value": "Restore fails: the Umpire packages are only on GitHub Packages."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "manages",
+         "tone": "info"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "CLI: init writes it, or adds the feed to your file.",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": "nuget.config",
+       "lang": "xml",
+       "code": "<packageSources>\n  <clear />\n  <add key=\"umpire\" value=\"https://nuget.pkg.github.com/MgCohen/index.json\" />\n  <add key=\"nuget.org\" value=\"https://api.nuget.org/v3/index.json\" />\n</packageSources>\n<packageSourceCredentials>\n  <umpire>\n    <add key=\"Username\" value=\"umpire\" />\n    <add key=\"ClearTextPassword\" value=\"%GITHUB_TOKEN%\" />\n  </umpire>\n</packageSourceCredentials>"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "Remove, after nuget.org",
+     "tags": [
+      {
+       "text": "removed",
+       "tone": "bad"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "Publish the stable versions to nuget.org. NuGet reads nuget.org by default, so the app needs no feed file and no token."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "none",
+         "tone": "neutral"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "No file",
+          "No token for each user and each CI"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "The previews stay on GitHub Packages, so a preview user still needs the feed"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "A nuget.org account and a publish step in publish.yml",
+          "The package ids are public names: choose them before 1.0"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Directory.Build.props",
+   "summary": "Only the build output in artifacts~",
+   "mono": true,
+   "tags": [
+    {
+     "text": "convenience",
+     "tone": "neutral"
+    },
+    {
+     "text": "managed",
+     "tone": "good"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "removed",
+     "tone": "bad"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "managed",
+       "tone": "good"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "MSBuild reads it before the SDK props. It sends the build output to artifacts~. Unity skips each folder that ends with ~, so a Unity project does not import the DLLs a second time."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "convenience"
+        },
+        {
+         "label": "Without it",
+         "value": "bin/ and obj/ are next to the code. The build still works."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "manages",
+         "tone": "info"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "CLI: init adds the 2 properties (build-output step). No tool of ours reads it.",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": "Directory.Build.props",
+       "lang": "xml",
+       "code": "<Project>\n  <PropertyGroup>\n    <UseArtifactsOutput>true</UseArtifactsOutput>\n    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts~</ArtifactsPath>\n  </PropertyGroup>\n</Project>"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "Remove, the SDK does it",
+     "tags": [
+      {
+       "text": "removed",
+       "tone": "bad"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "Umpire.Sdk sets the 2 properties before it imports the .NET SDK, so the same output layout needs no file. A web app needs Umpire.Sdk.Web, because the web SDK imports the .NET SDK first."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "none",
+         "tone": "neutral"
+        }
+       ]
+      },
+      {
+       "type": "code",
+       "cap": "tools/sdk/Sdk/Sdk.props (proposal)",
+       "lang": "xml",
+       "code": "<PropertyGroup>\n  <UseArtifactsOutput Condition=\"'$(UseArtifactsOutput)' == ''\">true</UseArtifactsOutput>\n  <ArtifactsPath Condition=\"'$(ArtifactsPath)' == ''\">$([MSBuild]::GetDirectoryNameOfFileAbove(\n    $(MSBuildProjectDirectory), global.json))/artifacts~</ArtifactsPath>\n</PropertyGroup>\n<Import Project=\"Sdk.props\" Sdk=\"Microsoft.NET.Sdk\" />"
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "One file less",
+          "One init step less"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "Nothing, if the proof passes"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "Needs Umpire.Sdk.Web (same as Shop.csproj)",
+          "A proof: the web host and a nested test project write to one artifacts~"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "dotnet-tools.json",
+   "summary": "The pinned umpire tool",
+   "mono": true,
+   "tags": [
+    {
+     "text": "stability",
+     "tone": "neutral"
+    },
+    {
+     "text": "managed",
+     "tone": "good"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "removed",
+     "tone": "bad"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "managed",
+       "tone": "good"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "It pins one version of the umpire tool for this app, so dotnet umpire runs the same version as the packages. It is a stability pin, not behavior: the build and the check do not read it."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "stability"
+        },
+        {
+         "label": "Without it",
+         "value": "dotnet umpire does not run. The build and the check still work."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "checks",
+         "tone": "info"
+        },
+        {
+         "label": "CLI",
+         "value": "manages",
+         "tone": "info"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "CLI: init writes it, update sets the version. Engine: compares the tool version with the packages (UMP030201).",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": "dotnet-tools.json",
+       "lang": "json",
+       "code": "{\n  \"version\": 1,\n  \"isRoot\": true,\n  \"tools\": {\n    \"umpire.cli\": { \"version\": \"0.2.0\", \"commands\": [ \"umpire\" ] }\n  }\n}"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "Remove; the pin moves to global.json",
+     "tags": [
+      {
+       "text": "removed",
+       "tone": "bad"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "The app keeps no tool file. You install the tool one time for your machine, not for each app. The stability check stays: at each start, the CLI compares its version with the Umpire.Sdk pin in global.json."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "checks",
+         "tone": "info"
+        }
+       ]
+      },
+      {
+       "type": "code",
+       "cap": "One time, for the machine",
+       "lang": "sh",
+       "code": "dotnet tool install -g Umpire.Cli\numpire add module Orders"
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "One file less",
+          "One version place for the app"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "The tool version is not pinned for each app: two apps on two versions need an update between them"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "The CLI checks the global.json pin at each start",
+          "A new machine needs one install step"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": ".editorconfig",
+   "summary": "The native .NET rules of the IDE and the compiler",
+   "mono": true,
+   "tags": [
+    {
+     "text": "native",
+     "tone": "neutral"
+    },
+    {
+     "text": "native",
+     "tone": "neutral"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "native",
+     "tone": "neutral"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "native",
+       "tone": "neutral"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": ".NET owns this file. The IDE and the compiler read it. Our docs also tell you to put the Umpire rule values here, so Umpire keys are mixed with the native rules."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "native"
+        },
+        {
+         "label": "Without it",
+         "value": "The native rules use the .NET defaults and the Umpire.Sdk settings."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "none",
+         "tone": "neutral"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "Not ours.",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": ".editorconfig (today: native and Umpire keys mixed)",
+       "lang": "ini",
+       "code": "[*.cs]\ndotnet_diagnostic.CA1822.severity = none\numpire.UMP010101.max = 140"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "No change to the file",
+     "tags": [
+      {
+       "text": "native",
+       "tone": "neutral"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "We never write it and never move it. It keeps only native rules, and you change a native rule here as in each .NET project. The Umpire keys go to the definition (see umpire.rules.globalconfig). Later, the engine can read the native results into its report."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "none",
+         "tone": "neutral"
+        }
+       ]
+      },
+      {
+       "type": "code",
+       "cap": ".editorconfig (proposal: native only)",
+       "lang": "ini",
+       "code": "[*.cs]\ndotnet_diagnostic.CA1822.severity = none"
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "The native IDE flow stays as it is",
+          "No Umpire keys in a .NET file"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "Nothing"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "The docs stop telling you to put Umpire keys here"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "umpire.rules.globalconfig",
+   "summary": "The Umpire rule values of this app",
+   "mono": true,
+   "tags": [
+    {
+     "text": "core",
+     "tone": "neutral"
+    },
+    {
+     "text": "na",
+     "tone": "neutral"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "generated",
+     "tone": "info"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "na",
+       "tone": "neutral"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "The file does not exist. The Umpire values are in the analyzer packages, and you change them in .editorconfig."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "core"
+        },
+        {
+         "label": "Without it",
+         "value": "The Umpire analyzers use the pack defaults."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "none",
+         "tone": "neutral"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "Not ours today: hand-written keys in a native file.",
+       "muted": true
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "New, generated",
+     "tags": [
+      {
+       "text": "generated",
+       "tone": "info"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "You write the Umpire values in the definition. The engine writes this file in the block, and you commit it. Umpire.Sdk gives it to the compiler. The IDE runs the Umpire analyzers with it. The API below is a sketch."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "writes",
+         "tone": "accent"
+        },
+        {
+         "label": "Engine",
+         "value": "writes",
+         "tone": "accent"
+        },
+        {
+         "label": "CLI",
+         "value": "none",
+         "tone": "neutral"
+        }
+       ]
+      },
+      {
+       "type": "code",
+       "cap": "ShopArchitecture.cs (sketch)",
+       "lang": "cs",
+       "code": "protected override void RuleValues(RuleValues values) {\n    values.Set(\"UMP010101\", \"max\", 140);\n    values.Severity(\"UMP010203\", Severity.Warning);\n}"
+      },
+      {
+       "type": "code",
+       "cap": "umpire.rules.globalconfig (the engine writes it)",
+       "lang": "ini",
+       "code": "# Generated by the Umpire engine from ShopArchitecture. Do not edit.\nis_global = true\numpire.UMP010101.max = 140\ndotnet_diagnostic.UMP010203.severity = warning"
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "One place for all Umpire values",
+          "The engine checks each value",
+          "Unity reads the same committed file"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "A change is active one build later"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "A new API in the definition",
+          "A new engine step that writes the file",
+          "The engine reports a stale file"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "umpire-baseline.txt",
+   "summary": "The accepted old errors",
+   "mono": true,
+   "tags": [
+    {
+     "text": "baseline",
+     "tone": "neutral"
+    },
+    {
+     "text": "generated",
+     "tone": "info"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "generated",
+     "tone": "info"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "generated",
+       "tone": "info"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "It changes the result of the check. Each line is one error that you accept for now. The engine removes the accepted errors from the report, so the build passes, but each new error fails it. Thus an existing app can adopt Umpire and fix its old errors one at a time."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "baseline"
+        },
+        {
+         "label": "Without it",
+         "value": "Each existing error fails the build, so an old app cannot start with Umpire."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "writes",
+         "tone": "accent"
+        },
+        {
+         "label": "CLI",
+         "value": "none",
+         "tone": "neutral"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "Engine: writes it on request, reads it in each check (Baseline step).",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": "Write the baseline from the errors of this build",
+       "lang": "sh",
+       "code": "dotnet build -p:UmpireUpdateBaseline=true"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "No change",
+     "tags": [
+      {
+       "text": "generated",
+       "tone": "info"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "It is the model for each generated file: the engine writes it, you commit it. One fix: the build stamp finds the nearest file above the project, but the engine reads the file in the block folder."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "writes",
+         "tone": "accent"
+        },
+        {
+         "label": "CLI",
+         "value": "none",
+         "tone": "neutral"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "Nothing new"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "Nothing"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "The stamp reads the same path as the engine"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "AGENTS.md",
+   "summary": "The guide for agents",
+   "mono": true,
+   "tags": [
+    {
+     "text": "guidance",
+     "tone": "neutral"
+    },
+    {
+     "text": "scaffolded",
+     "tone": "warn"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "managed",
+     "tone": "good"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "scaffolded",
+       "tone": "warn"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "The CLI copies a template one time. Its layout table repeats the definition, and nothing updates it when the definition changes."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "guidance"
+        },
+        {
+         "label": "Without it",
+         "value": "Agents do not know the layout and the rules."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "writes",
+         "tone": "accent"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "CLI: new app writes it. No tool reads it.",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": "AGENTS.md (template)",
+       "lang": "md",
+       "code": "## Layout\n| Path | Purpose |\n|------|---------|\n| Features/<Name>/ | One feature module: its root class, Domain/, ... |\n| Plugins/<Name>/  | One plugin module: a base of the same layers ... |"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "Managed",
+     "tags": [
+      {
+       "text": "managed",
+       "tone": "good"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "The engine writes the architecture part between two markers, from the definition. You own the rest of the file."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "manages",
+         "tone": "info"
+        },
+        {
+         "label": "CLI",
+         "value": "writes",
+         "tone": "accent"
+        }
+       ]
+      },
+      {
+       "type": "code",
+       "cap": "AGENTS.md",
+       "lang": "md",
+       "code": "<!-- umpire:architecture begin (generated, do not edit) -->\n| Folder | Part | May use |\n| Features/<Name>/Slices/ | Slice | Domain, Contracts |\n<!-- umpire:architecture end -->"
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "The guide always matches the definition"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "The engine writes into a file that you also edit"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "A Docs step in the engine",
+          "Option: a separate generated file that AGENTS.md links"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Shop.slnx",
+   "summary": "The solution for the IDE",
+   "mono": true,
+   "tags": [
+    {
+     "text": "convenience",
+     "tone": "neutral"
+    },
+    {
+     "text": "scaffolded",
+     "tone": "warn"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "managed",
+     "tone": "good"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "scaffolded",
+       "tone": "warn"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "Only the IDE reads it. It lists the root project and the test project."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "convenience"
+        },
+        {
+         "label": "Without it",
+         "value": "The IDE opens the root project. The test project is not in view."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "writes",
+         "tone": "accent"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "CLI: new app writes it one time.",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": "Shop.slnx",
+       "lang": "xml",
+       "code": "<Solution>\n  <Project Path=\"Shop.csproj\" />\n  <Project Path=\"Tests/App.Tests.csproj\" />\n</Solution>"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "Managed",
+     "tags": [
+      {
+       "text": "managed",
+       "tone": "good"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "init writes it again from the projects in the block. Each add command that adds a project updates it."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "manages",
+         "tone": "info"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "The IDE always sees each project"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "Nothing"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "init gets a solution step"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": ".gitignore",
+   "summary": "artifacts~/, bin/, obj/",
+   "mono": true,
+   "tags": [
+    {
+     "text": "convenience",
+     "tone": "neutral"
+    },
+    {
+     "text": "managed",
+     "tone": "good"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "managed",
+     "tone": "good"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "managed",
+       "tone": "good"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "git reads it. init adds the missing lines."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "convenience"
+        },
+        {
+         "label": "Without it",
+         "value": "git shows the build output as new files."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "manages",
+         "tone": "info"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "CLI: init (git-ignore step).",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": ".gitignore",
+       "lang": "sh",
+       "code": "artifacts~/\nbin/\nobj/\nTestResults/\n*.user\n.vs/"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "No change",
+     "tags": [
+      {
+       "text": "managed",
+       "tone": "good"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "git needs it, and you add your own lines."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "CLI",
+         "value": "manages",
+         "tone": "info"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "Nothing new"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "Nothing"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "Nothing"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Tests/App.Tests.csproj",
+   "summary": "The test project",
+   "mono": true,
+   "tags": [
+    {
+     "text": "core",
+     "tone": "neutral"
+    },
+    {
+     "text": "scaffolded",
+     "tone": "warn"
+    },
+    {
+     "text": "→",
+     "tone": "none"
+    },
+    {
+     "text": "scaffolded",
+     "tone": "warn"
+    }
+   ],
+   "children": [
+    {
+     "title": "Today",
+     "summary": "What it does, who owns it, what breaks without it",
+     "tags": [
+      {
+       "text": "scaffolded",
+       "tone": "warn"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "It is not on Umpire.Sdk. It repeats the build settings of the SDK and pins the NUnit versions."
+      },
+      {
+       "type": "kv",
+       "items": [
+        {
+         "label": "Purpose",
+         "value": "core"
+        },
+        {
+         "label": "Without it",
+         "value": "No unit tests and no architecture tests."
+        }
+       ]
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "checks",
+         "tone": "info"
+        },
+        {
+         "label": "CLI",
+         "value": "writes",
+         "tone": "accent"
+        }
+       ]
+      },
+      {
+       "type": "p",
+       "text": "CLI: new app writes it. Engine: checks the Umpire versions.",
+       "muted": true
+      },
+      {
+       "type": "code",
+       "cap": "Tests/App.Tests.csproj",
+       "lang": "xml",
+       "code": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n    <Nullable>enable</Nullable>\n    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>\n    <OutputType>Exe</OutputType>\n    <EnableNUnitRunner>true</EnableNUnitRunner>\n  </PropertyGroup>\n  <ItemGroup>\n    <ProjectReference Include=\"../Shop.csproj\" />\n    <PackageReference Include=\"Umpire.Vsa.Testing.Unit\" Version=\"0.2.0\" />\n    <PackageReference Include=\"NUnit\" Version=\"4.6.1\" />\n    <PackageReference Include=\"NUnit3TestAdapter\" Version=\"6.3.1\" />\n  </ItemGroup>\n</Project>"
+      }
+     ]
+    },
+    {
+     "title": "Proposal",
+     "summary": "Slim",
+     "tags": [
+      {
+       "text": "scaffolded",
+       "tone": "warn"
+      }
+     ],
+     "body": [
+      {
+       "type": "p",
+       "text": "Umpire.Sdk gives each project whose name ends with .Tests the NUnit setup and the test package of the pack."
+      },
+      {
+       "type": "facts",
+       "items": [
+        {
+         "label": "Definition",
+         "value": "none",
+         "tone": "neutral"
+        },
+        {
+         "label": "Engine",
+         "value": "checks",
+         "tone": "info"
+        },
+        {
+         "label": "CLI",
+         "value": "writes",
+         "tone": "accent"
+        }
+       ]
+      },
+      {
+       "type": "code",
+       "cap": "Tests/App.Tests.csproj",
+       "lang": "xml",
+       "code": "<Project Sdk=\"Umpire.Sdk\">\n  <ItemGroup>\n    <ProjectReference Include=\"../Shop.csproj\" />\n  </ItemGroup>\n</Project>"
+      }
+     ]
+    },
+    {
+     "title": "Trade-offs",
+     "summary": "What we win, lose and change",
+     "body": [
+      {
+       "type": "cols",
+       "items": [
+        {
+         "title": "Win",
+         "tone": "good",
+         "items": [
+          "No version to edit",
+          "Same settings as the app"
+         ]
+        },
+        {
+         "title": "Lose",
+         "tone": "bad",
+         "items": [
+          "The SDK selects NUnit"
+         ]
+        },
+        {
+         "title": "Change",
+         "tone": "warn",
+         "items": [
+          "Test props in Umpire.Sdk"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,802 @@
+<title>Orchestrator Messages</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, a sticky tab bar, one topic for each tab, the visual first. Same tokens as the design page. */
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --fg: #1b2126;
+  --muted: #5b6670;
+  --line: #d9dee3;
+  --accent: #0f6e78;
+  --accent-soft: #e2f1f2;
+  --warn: #9a6200;
+  --bad: #a3322b;
+  --code-bg: #eef1f3;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+    --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --bad: #ec7d74; --code-bg: #20292f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --panel: #192026; --fg: #e3e8ec; --muted: #9aa6b0; --line: #2c363e;
+  --accent: #5cc3cc; --accent-soft: #173238; --warn: #e0a548; --bad: #ec7d74; --code-bg: #20292f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0; }
+p, li { max-width: 72ch; }
+p { margin: 0; }
+ol, ul { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.summary { color: var(--muted); max-width: 72ch; }
+nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 8px; border-bottom: 1px solid var(--line); display: flex; gap: 4px; flex-wrap: wrap;
+}
+nav button {
+  font: 500 14px var(--font-body); color: var(--muted); background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+nav button:hover { color: var(--fg); background: var(--code-bg); }
+nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+nav button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel { display: flex; flex-direction: column; gap: 24px; }
+.panel.off { position: absolute; left: -10000px; top: 0; width: 940px; visibility: hidden; }
+section { display: flex; flex-direction: column; gap: 12px; }
+section + section { border-top: 1px solid var(--line); padding-top: 24px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; min-width: 0; }
+pre.mermaid { margin: 0; background: transparent; text-align: center; font-family: var(--font-body); }
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td { font-variant-numeric: tabular-nums; }
+code { font-family: var(--font-mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+td code { white-space: nowrap; }
+pre.code {
+  margin: 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; background: var(--code-bg);
+  border-radius: 8px; padding: 12px 14px; overflow-x: auto; color: var(--fg); white-space: pre;
+}
+pre .c { color: var(--muted); }
+pre .k { color: var(--accent); }
+.note { border-left: 3px solid var(--warn); padding: 8px 12px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 72ch; }
+.tag { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.ok { color: var(--accent); border-color: var(--accent); }
+.tag.no { color: var(--bad); border-color: var(--bad); }
+.tag.part { color: var(--warn); border-color: var(--warn); }
+.id { font-family: var(--font-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.stat b { font-family: var(--font-display); font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 13px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.grid2 > * { min-width: 0; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Session orchestrator · A1 communication design</div>
+  <h1>Orchestrator Messages</h1>
+  <p class="summary">All communication goes through one event stream. A sender posts a body file to the store and an envelope to the stream. Each party gets a notification for each envelope to its address, then queries and reads what it needs. Inbox, queue, relays and defaults are reactors on the stream.</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" data-tab="summary">Summary</button>
+  <button role="tab" data-tab="primitives">Primitives</button>
+  <button role="tab" data-tab="reactors">Reactors</button>
+  <button role="tab" data-tab="types">Types</button>
+  <button role="tab" data-tab="today">Today and gaps</button>
+  <button role="tab" data-tab="changes">Changes A2</button>
+</nav>
+
+<!-- ============================== SUMMARY ============================== -->
+<div class="panel" id="summary" role="tabpanel">
+<section>
+  <h2>Every party talks only to the stream</h2>
+  <div class="box">
+<pre class="mermaid">
+flowchart LR
+  subgraph Parties
+    SE["Session plugin"]
+    SV["Supervisor"]
+    CL["orch CLI"]
+    UI["Web UI"]
+  end
+  SE & SV & CL & UI -->|post, query, read| API["Stream API"]
+  API -->|notify| SE & SV & CL & UI
+  API -->|writes| B[("Store<br/>bodies/")]
+  API -->|appends| EV[("Stream<br/>events/")]
+</pre>
+  </div>
+  <p>There is one transport. A party never writes a file of another party. Each feature (inbox, queue, relay, default, docs check) is a reactor: a subscription filter, a reaction, and new posts.</p>
+</section>
+
+<section>
+  <h2>Six primitives</h2>
+  <div class="box">
+<pre class="mermaid">
+sequenceDiagram
+  participant A as Sender
+  participant S as Stream API
+  participant R as Receiver
+  A->>S: post(envelope, body)
+  S->>S: write body, append envelope
+  S-->>R: notify(envelope)
+  R->>S: query(filter)
+  R->>S: read(body path)
+  R->>S: post(reply)
+  A--)R: nudge (optional)
+</pre>
+  </div>
+  <div class="scroll">
+  <table>
+    <tr><th>#</th><th>Primitive</th><th>Input</th><th>Output</th></tr>
+    <tr><td>0</td><td>Setup</td><td>Store root, party address</td><td>Folders, default subscription <code>to = self</code></td></tr>
+    <tr><td>1</td><td>Post</td><td>Envelope fields, body</td><td>Envelope id</td></tr>
+    <tr><td>2</td><td>Subscribe and notify</td><td>Filter</td><td>Each new matching envelope, in order</td></tr>
+    <tr><td>3</td><td>Query</td><td>Filter</td><td>Matching envelopes</td></tr>
+    <tr><td>4</td><td>Read</td><td>Envelope id, optional receiver</td><td>Body, or its render for the receiver</td></tr>
+    <tr><td>5</td><td>Nudge</td><td>Address, optional envelope id</td><td>A wake-up signal: "look at the stream"</td></tr>
+  </table>
+  </div>
+  <p>Permissions are a layer above these primitives. This page does not design them.</p>
+</section>
+
+<section>
+  <h2>Four rules</h2>
+  <ol>
+    <li>Each communication is one post: one body file in the store and one envelope in the stream.</li>
+    <li>Each party is always subscribed to the envelopes with <code>to</code> = its address. Other filters are optional.</li>
+    <li>A receiver decides what to do. It reads the body only when it needs the content.</li>
+    <li>A nudge carries no content. It makes the receiver look at the stream. Each delivery gets an ack (pong), or the watchdog raises an alarm.</li>
+  </ol>
+</section>
+</div>
+
+<!-- ============================== PRIMITIVES ============================== -->
+<div class="panel off" id="primitives" role="tabpanel">
+<section>
+  <h2>One API, four bindings</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Primitive</th><th>C# (<code>Stream</code>)</th><th>CLI</th><th>HTTP</th><th>Plugin (TS)</th></tr>
+    <tr><td>Setup</td><td><code>Stream.Open(root)</code></td><td><code>orch init</code></td><td>None</td><td><code>open(store)</code></td></tr>
+    <tr><td>Post</td><td><code>Post(env, body)</code></td><td><code>orch post &lt;kind&gt; --to P</code></td><td><code>POST /api/stream</code></td><td><code>post(env, body)</code></td></tr>
+    <tr><td>Subscribe</td><td><code>Subscribe(name, filter)</code></td><td><code>orch events --follow</code></td><td><code>GET /api/stream/live</code> (SSE)</td><td><code>subscribe(name, filter)</code></td></tr>
+    <tr><td>Query</td><td><code>Query(filter)</code></td><td><code>orch events</code></td><td><code>GET /api/events</code></td><td><code>query(filter)</code></td></tr>
+    <tr><td>Read</td><td><code>Read(id, for?)</code></td><td><code>orch read &lt;id&gt; [--for P]</code></td><td><code>GET /api/events/&lt;id&gt;</code></td><td><code>orch read</code> for a render</td></tr>
+    <tr><td>Nudge</td><td><code>Nudge(to, id?)</code></td><td><code>orch nudge &lt;party&gt; [id]</code></td><td><code>POST /api/nudge</code></td><td>Reacts to a nudge</td></tr>
+  </table>
+  </div>
+  <p>The C# and TypeScript bindings share one contract test set. Only C# renders, so the plugin calls <code>orch read --for</code> to get a text for the model.</p>
+</section>
+
+<section>
+  <h2>Nudge and pong: each delivery gets an answer or an alarm</h2>
+  <div class="box">
+<pre class="mermaid">
+sequenceDiagram
+  participant A as Sender
+  participant S as Stream
+  participant R as Receiver
+  participant W as Watchdog
+  A->>S: post envelope, to R
+  A--)R: nudge (envelope id)
+  R->>S: query, read
+  R->>S: post ack (pong)
+  Note over W: No ack in time?
+  W--)R: nudge on the next channel
+  W->>S: post delivery.blocked, to sender and user
+</pre>
+  </div>
+  <ol>
+    <li>The content goes only through the stream. A nudge is a ping: "look at the stream". It carries at most an envelope id.</li>
+    <li>Each delivered envelope gets a pong: an <code>ack</code> with <code>refs.of</code>. The ack goes to the stream, so the record and the pong are one post.</li>
+    <li>The watchdog (supervisor) queries for envelopes with no ack. It does not need a record of the nudge.</li>
+    <li>If there is no ack in time, the watchdog nudges again on the next channel of the ladder below.</li>
+    <li>After the last channel, the watchdog posts <code>delivery.blocked</code> to the sender and to the user. The user inbox shows it as a card.</li>
+  </ol>
+  <div class="scroll">
+  <table>
+    <tr><th>Step</th><th>Receiver state</th><th>Channel</th><th>Native</th><th>Wait for ack</th></tr>
+    <tr><td>1</td><td>Process runs</td><td><code>orch watch</code> line, then <code>$.prompt.submit</code></td><td>Yes: <code>$.process.spawn</code>, submit</td><td>15 s</td></tr>
+    <tr><td>2</td><td>App session, process ended</td><td>App peer message "look at the stream"</td><td>Yes: app <code>send_message</code></td><td>60 s</td></tr>
+    <tr><td>3</td><td>Not live</td><td>Supervisor turn, <code>claude -p --resume</code></td><td>Yes: CLI</td><td>Turn time</td></tr>
+    <tr><td>4</td><td>No ack after step 3</td><td><code>delivery.blocked</code> card to the user</td><td>Built</td><td>None</td></tr>
+  </table>
+  </div>
+  <p>The wait times are examples. A2 puts them in <code>policy.json</code>. The lease (stream B) decides the first step for a session.</p>
+</section>
+
+<section>
+  <h2>Subscriptions with push, not a 3 s poll</h2>
+  <div class="box">
+<pre class="mermaid">
+flowchart LR
+  EV[("events/")] -->|file event| W["orch watch<br/>FileSystemWatcher"]
+  W -->|one line per envelope| PL["Plugin<br/>process.spawn loop"]
+  EV -->|file event| SV["Supervisor<br/>FileSystemWatcher"]
+  SV -->|SSE| UI["Web UI"]
+  PL2["Other session plugin"] -->|session.send| PL
+</pre>
+  </div>
+  <div class="scroll">
+  <table>
+    <tr><th>Party</th><th>Push</th><th>Native part</th><th>Safety sweep</th></tr>
+    <tr><td>Session plugin</td><td>Child <code>orch watch --to session:&lt;id&gt;</code> prints one line for each new envelope</td><td><code>$.process.spawn</code> for the session life; .NET <code>FileSystemWatcher</code></td><td>Query from the cursor each 60 s</td></tr>
+    <tr><td>Supervisor</td><td><code>FileSystemWatcher</code> on <code>events/</code> feeds the reactors</td><td>.NET</td><td>Query from the cursor each 60 s</td></tr>
+    <tr><td>Web UI</td><td>SSE from <code>GET /api/stream/live</code></td><td>Blazor circuit, SSE</td><td>None: the circuit reconnects</td></tr>
+    <tr><td>Session to session nudge</td><td><code>$.session.send({ to: { sessionId } })</code>; the receiver takes it in <code>session.receive</code></td><td>Yes: peer messages</td><td>The watchdog</td></tr>
+  </table>
+  </div>
+  <ol>
+    <li>A subscriber waits for a push. It does no work between pushes.</li>
+    <li>A file watcher can drop events when its buffer is full. So each subscriber also queries from its cursor each 60 s.</li>
+    <li>A peer nudge goes to <code>session.receive</code>. The plugin returns <code>consumed</code>, so the model does not see the ping. Then it reads the stream.</li>
+    <li>The heartbeat of the lease stays. Stream B owns it.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>How a session gets a message today</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Path</th><th>Wake-up</th><th>Native part</th><th>Built part</th></tr>
+    <tr><td>Session live in the app</td><td>Plugin timer reads <code>inbox/</code> each 3 s</td><td><code>$.prompt.submit</code> starts the turn</td><td>The poll, <code>cursor.txt</code></td></tr>
+    <tr><td>Session not live</td><td>Supervisor tick reads <code>inbox/</code></td><td><code>claude -p --resume</code></td><td>The tick, <code>turn.json</code></td></tr>
+    <tr><td>App process ended</td><td>None today. The inbox waits</td><td>Peer message can wake it (tested in S11 and the archive probes)</td><td>Not built</td></tr>
+    <tr><td>Phone</td><td>Remote Control shows each turn</td><td>Yes</td><td>None</td></tr>
+    <tr><td>Web UI</td><td>Blazor reloads each 2 s</td><td>Blazor circuit</td><td>The reload</td></tr>
+    <tr><td>Stop latch</td><td>Submit refused until the user types</td><td>Engine rule</td><td><code>blocked.json</code>, retry each 3 s</td></tr>
+  </table>
+  </div>
+  <p>Today nothing pushes a notification. Each receiver polls a folder, and a delivery that fails stays silent. The target keeps the native wake-ups and adds only the ack, the watchdog and the ladder.</p>
+</section>
+
+<section>
+  <h2>Store layout</h2>
+<pre class="code">store/
+  events/&lt;day&gt;/&lt;id&gt;.json        <span class="c">// envelopes, append only, one file each</span>
+  bodies/&lt;day&gt;/&lt;id&gt;.json        <span class="c">// bodies, write once</span>
+  subscriptions/&lt;party&gt;/&lt;name&gt;.json  <span class="c">// { filter, cursor } of one subscriber</span>
+  nudges/&lt;party&gt;                <span class="c">// empty file; its time stamp is the nudge</span>
+  sessions/&lt;id&gt;/                <span class="c">// lifecycle files of stream B: lease, heartbeat, meta</span></pre>
+  <p>The stream has no other communication files. <code>inbox/</code>, <code>answers/</code>, <code>delivered/</code>, <code>reviews/</code>, <code>report.json</code>, <code>update.json</code>, <code>cursor.txt</code> and <code>forwarded*</code> are queries. A reactor can keep a cache, if it can make the cache again from the stream.</p>
+</section>
+
+<section>
+  <h2>Envelope</h2>
+<pre class="code">{
+  "id": "1763300000000-a1b2c3d4-cli", "at": "…", "session": "&lt;session id&gt;",
+  "kind": "question", "from": "session:&lt;id&gt;", "to": "user",
+  "subject": "Which color do we use in color.txt?", "body": "bodies/&lt;day&gt;/&lt;id&gt;.json",
+  <span class="k">"thread"</span>: "toolu_01RAQ",   <span class="c">// groups a question with its answer, review and notices</span>
+  <span class="k">"needs"</span>: "answer",         <span class="c">// answer | review | ack | null: the receiver must act</span>
+  "refs": { <span class="k">"reply"</span>: "&lt;id&gt;", <span class="k">"via"</span>: "session:&lt;root&gt; | chat", <span class="k">"of"</span>: "&lt;id&gt;" }
+}</pre>
+  <div class="scroll">
+  <table>
+    <tr><th>Field</th><th>Use</th></tr>
+    <tr><td><code>to</code></td><td>The address that gets the notification. One address for each envelope</td></tr>
+    <tr><td><code>body</code></td><td>The path of the body. Two envelopes can point to one body</td></tr>
+    <tr><td><code>thread</code></td><td>Groups the envelopes of one conversation</td></tr>
+    <tr><td><code>needs</code></td><td>Marks an envelope that waits for an act of the receiver</td></tr>
+    <tr><td><code>refs.reply</code></td><td>The envelope that this envelope answers. Closes it</td></tr>
+    <tr><td><code>refs.of</code></td><td>A forward or an acknowledge: the original envelope</td></tr>
+    <tr><td><code>refs.via</code></td><td>The relay that typed the words of the user</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Post, notify and acknowledge rules</h2>
+  <ol>
+    <li>Post writes the body first, then the envelope. The envelope is the commit point. A body with no envelope is ignored.</li>
+    <li>Envelopes and bodies never change. A correction is a new post.</li>
+    <li>A forward is a new envelope with a new <code>to</code>, the same body and <code>refs.of</code>.</li>
+    <li>Notify is at least once, in id order. A subscriber moves its own cursor after it reacts.</li>
+    <li>A subscriber that was down reads from its cursor at start. No notification is lost.</li>
+    <li>A receiver that acts posts the act: a reply with <code>refs.reply</code>, or an <code>ack</code> with <code>refs.of</code>.</li>
+    <li>The subscription cursor is private. Other parties see only the posted acts.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Addresses and kinds</h2>
+  <div class="grid2">
+  <div class="scroll">
+  <table>
+    <tr><th>Address</th><th>Party</th></tr>
+    <tr><td><code>user</code></td><td>Web UI, <code>orch</code> of the user, root relay</td></tr>
+    <tr><td><code>session:&lt;id&gt;</code></td><td>Plugin when live, supervisor turn when not</td></tr>
+    <tr><td><code>supervisor</code></td><td>Supervisor process</td></tr>
+    <tr><td><code>docs</code>, <code>policy</code></td><td>Reactors in the supervisor</td></tr>
+  </table>
+  </div>
+  <div class="scroll">
+  <table>
+    <tr><th>Class</th><th>Kinds</th></tr>
+    <tr><td>Message</td><td><code>brief</code> <code>message</code> <code>question</code> <code>plan</code> <code>answer</code> <code>review</code> <code>report</code> <code>update</code> <code>notice</code></td></tr>
+    <tr><td>Act</td><td><code>ack</code> (delivered, read)</td></tr>
+    <tr><td>Trace</td><td><code>session.*</code> <code>turn.*</code></td></tr>
+    <tr><td>Lifecycle</td><td>Names only. Stream B owns them</td></tr>
+    <tr><td>Git</td><td><code>branch.*</code> <code>pr.*</code> <code>merge.block</code></td></tr>
+  </table>
+  </div>
+  </div>
+</section>
+
+<section>
+  <h2>Lifecycle messages: names only</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Name</th><th>Class</th><th>From → to</th></tr>
+    <tr><td><code>session.start</code>, <code>session.stop</code>, <code>session.resume</code></td><td>Lifecycle</td><td>User, root → session</td></tr>
+    <tr><td><code>session.archive</code>, <code>session.import</code></td><td>Lifecycle</td><td>User, root, supervisor → session</td></tr>
+    <tr><td><code>session.end</code>, <code>lease.take</code>, <code>lease.release</code></td><td>Lifecycle</td><td>Plugin, supervisor → supervisor</td></tr>
+    <tr><td><code>archive-self</code>, <code>restart</code></td><td>Notice</td><td>Supervisor → session</td></tr>
+  </table>
+  </div>
+  <p class="note">Stream B owns the session states, the stale rules and the transitions. This design owns only the envelope and the notice texts.</p>
+</section>
+</div>
+
+<!-- ============================== REACTORS ============================== -->
+<div class="panel off" id="reactors" role="tabpanel">
+<section>
+  <h2>Each feature is a reactor on the stream</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Reactor</th><th>Party</th><th>Filter</th><th>Reaction</th><th>Posts</th></tr>
+    <tr><td>Session deliverer</td><td>Plugin, holder <code>live</code></td><td><code>to</code> = self, message kinds</td><td><code>orch read --for</code>, submit a turn</td><td><code>ack</code> delivered</td></tr>
+    <tr><td>Turn runner</td><td>Supervisor</td><td><code>to</code> = a session that is not live, no <code>ack</code></td><td>Runs <code>claude -p</code> with the renders</td><td><code>turn.*</code>, <code>ack</code> delivered</td></tr>
+    <tr><td>Ask wait</td><td>Plugin, <code>ask_user</code> wait mode</td><td><code>answer</code>, <code>thread</code> = decision</td><td>Returns the tool result</td><td><code>ack</code> delivered</td></tr>
+    <tr><td>Question relay</td><td>Supervisor</td><td><code>question</code> or <code>plan</code> from a child</td><td>Forward to the parent</td><td><code>question</code> forward</td></tr>
+    <tr><td>Report relay</td><td>Supervisor</td><td><code>report</code> done or blocked from a child</td><td>Forward to the parent</td><td><code>report</code> forward</td></tr>
+    <tr><td>Question follow</td><td>Supervisor</td><td>Forwarded <code>question</code>, its <code>thread</code></td><td>Timer, answer check</td><td><code>notice</code> reminder, closed</td></tr>
+    <tr><td>Docs check</td><td><code>docs</code></td><td><code>question</code> with a <code>risk</code>, level with <code>checkDocs</code></td><td>Runs the checker</td><td><code>answer</code> from docs</td></tr>
+    <tr><td>Default</td><td><code>policy</code></td><td>Open <code>question</code> with a <code>defaultOption</code>, timeout of its level</td><td>Applies the default option</td><td><code>answer</code> from policy</td></tr>
+    <tr><td>User inbox</td><td>Web UI, <code>orch inbox</code></td><td><code>to</code> = user, <code>needs</code> set, no reply</td><td>Shows a card</td><td><code>answer</code>, <code>review</code>, <code>ack</code></td></tr>
+    <tr><td>Session tree</td><td>Web UI</td><td><code>update</code>, <code>report</code>, lifecycle</td><td>Shows the newest state</td><td>None</td></tr>
+    <tr><td>Watchdog</td><td>Supervisor</td><td>Envelopes to a session with no <code>ack</code> in time</td><td>Nudges on the next channel</td><td><code>delivery.blocked</code></td></tr>
+    <tr><td>Timeline</td><td>Web UI, <code>orch events</code></td><td>All, by time</td><td>Shows the envelopes</td><td>None</td></tr>
+  </table>
+  </div>
+  <p>Only the lease holder of a session runs its deliverer. Stream B owns the lease. The plugin and the supervisor share one subscription for each session, <code>subscriptions/session:&lt;id&gt;/deliver.json</code>.</p>
+</section>
+
+<section>
+  <h2>A child question, from ask to close</h2>
+  <div class="box">
+<pre class="mermaid">
+sequenceDiagram
+  participant C as Child
+  participant S as Stream
+  participant V as Supervisor
+  participant R as Root
+  participant U as User inbox
+  C->>S: post question, to user
+  S-->>U: notify, needs answer
+  S-->>V: notify (question relay)
+  V->>S: post forward, to root
+  S-->>R: notify, root reads render
+  U->>S: post answer, reply
+  S-->>C: notify, child reads render
+  C->>S: post ack delivered
+  V->>S: post notice question-closed
+</pre>
+  </div>
+</section>
+
+<section>
+  <h2>User inbox cards</h2>
+<pre class="code">open cards = query(to = user, needs != null)
+             minus envelopes with a reply (refs.reply) or an ack (refs.of)
+             keep the newest envelope of each thread</pre>
+  <div class="scroll">
+  <table>
+    <tr><th>Card</th><th>Needs</th><th>Quick view</th><th>Accept posts</th><th>Refuse posts</th></tr>
+    <tr><td><code>question</code></td><td><code>answer</code></td><td>Question, recommendation, default, risk, context</td><td><code>answer</code> = default. No default: text field</td><td>Text field, then <code>answer</code></td></tr>
+    <tr><td><code>answer</code> by docs or policy</td><td><code>review</code></td><td>Question, answer, by, reason, PR</td><td><code>review</code> approve</td><td><code>review</code> refuse, optional text</td></tr>
+    <tr><td><code>report</code> done or blocked</td><td><code>ack</code></td><td>Summary, done or blockers, links</td><td><code>ack</code></td><td>Text field, then <code>message</code></td></tr>
+  </table>
+  </div>
+  <p>An answer by docs or policy goes to the session and needs a review of the user. So the policy and docs reactors post it two times: one envelope to the session, one forward to the user with <code>needs</code> = review. The verdict <code>change</code> needs text, so it is not a swipe. The UI design is not on this page.</p>
+</section>
+
+<section>
+  <h2>Answer channels for one decision</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Channel</th><th>From</th><th><code>refs.via</code></th><th>Rule</th></tr>
+    <tr><td>UI card, <code>orch answer</code>, API</td><td><code>user</code></td><td>None</td><td>First answer wins</td></tr>
+    <tr><td>Root tool <code>mcp__orch__answer</code></td><td><code>user</code></td><td><code>session:&lt;root&gt;</code></td><td>Words of the user only</td></tr>
+    <tr><td>Child chat composer</td><td><code>user</code></td><td><code>chat</code></td><td>Only with one open decision</td></tr>
+    <tr><td>Docs check, policy</td><td><code>docs</code>, <code>policy</code></td><td>None</td><td>Needs a review</td></tr>
+  </table>
+  </div>
+  <p>Post refuses a second answer in one thread, and gives the first answer in the error text.</p>
+</section>
+</div>
+
+<!-- ============================== TYPES ============================== -->
+<div class="panel off" id="types" role="tabpanel">
+<section>
+  <h2>One type, one template, one tool</h2>
+  <div class="box">
+<pre class="mermaid">
+flowchart LR
+  I["Intent of the sender"] -->|picks| T["Tool or command<br/>one per type"]
+  T -->|fills| F["Template fields"]
+  F -->|post| V{"Schema valid?"}
+  V -->|no| E["Error to sender<br/>names the fields"]
+  V -->|yes| S[("Stream")]
+  S -->|meta.json| C["UI card of the type"]
+</pre>
+  </div>
+  <p>Each message has a type. Each type has one folder in <code>templates/</code>. The sender picks the type when it picks the tool. Post refuses a body that does not match the schema of its type.</p>
+</section>
+
+<section>
+  <h2>Message types</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Type</th><th>Use it when</th><th>Session tool</th><th>Needs</th><th>Reply type</th></tr>
+    <tr><td><code>brief</code></td><td>You start a session</td><td><code>spawn_child</code></td><td>none</td><td><code>report</code></td></tr>
+    <tr><td><code>question</code></td><td>You need an answer: a choice with options and a default, or facts with no default. The target (<code>to</code>) gives the direction</td><td><code>ask_user</code></td><td><code>answer</code></td><td><code>answer</code></td></tr>
+    <tr><td><code>plan</code></td><td>You propose steps before you do them</td><td><code>plan</code> (new)</td><td><code>review</code></td><td><code>review</code></td></tr>
+    <tr><td><code>report</code></td><td>Your work is done, blocked, or ready for review</td><td><code>report</code></td><td><code>ack</code> (done, blocked)</td><td><code>ack</code>, <code>message</code></td></tr>
+    <tr><td><code>update</code></td><td>A step starts or ends</td><td><code>update</code></td><td>none</td><td>None</td></tr>
+    <tr><td><code>message</code></td><td>None of the other types fits</td><td><code>send</code> (new)</td><td>none</td><td><code>message</code></td></tr>
+    <tr><td><code>answer</code></td><td>You reply to a question</td><td><code>answer</code></td><td><code>review</code> (docs, policy)</td><td><code>review</code></td></tr>
+    <tr><td><code>review</code></td><td>You approve, change or refuse a plan or a default</td><td>UI, <code>orch review</code></td><td>none</td><td>None</td></tr>
+    <tr><td><code>notice</code></td><td>The supervisor tells a session a fixed fact</td><td>None: supervisor only</td><td>none</td><td>None</td></tr>
+    <tr><td><code>ack</code></td><td>You got an envelope, or you read a card</td><td>None: automatic</td><td>none</td><td>None</td></tr>
+  </table>
+  </div>
+  <p class="note">One kind <code>question</code> replaces the old kinds <code>decision</code> and <code>query</code> (A3-7). Only <code>question</code> is required, and a <code>defaultOption</code> needs a <code>risk</code>. A question with no risk and no default gets no docs check and no default. The stream reads the old kinds of an old store as <code>question</code>.</p>
+</section>
+
+<section>
+  <h2>Template folder</h2>
+<pre class="code">templates/&lt;type&gt;/
+  schema.json      <span class="c">// the fields; the tool input schema and the post check</span>
+  meta.json        <span class="c">// purpose, from, to, needs, reply types, card fields (new)</span>
+  render/&lt;for&gt;.md  <span class="c">// one text for each receiver: session.md, parent.md, pr-body.md</span>
+  example.json     <span class="c">// one valid body, used by the tests</span></pre>
+<pre class="code"><span class="c">// templates/question/schema.json: the one place of the field rule</span>
+{ "required": ["question"],
+  "dependentRequired": { "defaultOption": ["risk"] }, … }
+
+<span class="c">// templates/question/meta.json</span>
+{ "type": "question", "version": 1,
+  "purpose": "You need an answer: a choice with options and a default, or facts with no default.",
+  "from": ["session"], "to": ["user", "session"], "needs": "answer", "replies": ["answer"],
+  "card": { "title": "question", "quick": ["recommendation", "defaultOption", "risk", "context"],
+            "accept": { "post": "answer", "text": "defaultOption" },
+            "refuse": { "post": "answer", "needsText": true } } }</pre>
+  <p>The UI draws each card from <code>meta.json</code>. A new type needs a new folder and a tool, but no new card code.</p>
+</section>
+
+<section>
+  <h2>How a sender picks the type</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Sender</th><th>How it picks</th></tr>
+    <tr><td>Session model</td><td>One tool for each type. The tool description is the <code>purpose</code> of <code>meta.json</code>. The skill <code>orch:orch-messages</code> has the table above</td></tr>
+    <tr><td>User in the UI</td><td>One form for each type, or a swipe on a card. A card posts only its reply types</td></tr>
+    <tr><td>User or script on the CLI</td><td><code>orch post &lt;type&gt; --field value</code>, or a command for each type (<code>orch answer</code>)</td></tr>
+    <tr><td>Supervisor and reactors</td><td>Fixed in code: each reactor posts its own types</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>How the system enforces the type</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Level</th><th>Check</th><th>Where</th><th>When</th></tr>
+    <tr><td>1</td><td>The tool input schema is the template schema</td><td>Claude Code engine, before the call</td><td>A2</td></tr>
+    <tr><td>2</td><td>Post refuses an unknown type or a body that fails the schema</td><td><code>Stream.Post</code>, both bindings</td><td>A2</td></tr>
+    <tr><td>3</td><td>Post refuses a <code>from</code>, <code>to</code> or reply type that <code>meta.json</code> does not allow</td><td><code>Stream.Post</code></td><td>A2</td></tr>
+    <tr><td>4</td><td>Free text of the model is a trace, not a message. It gets no card</td><td>Reactors and UI</td><td>A2</td></tr>
+    <tr><td>5</td><td>A turn that ends with a question or a report in free text, and no post, gets a notice: "use the tool"</td><td>Plugin <code>turn.complete</code> hook</td><td>Later</td></tr>
+  </table>
+  </div>
+  <p>An error of level 2 or 3 names the type and each wrong field, so the model can correct the call. Free text from the user to a session is a <code>message</code>: the UI and <code>orch send</code> post it with that type.</p>
+</section>
+
+<section>
+  <h2>Message renders</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Type</th><th>Render for a session</th><th>Prefix of the text</th></tr>
+    <tr><td><code>brief</code></td><td><code>brief/render/session.md</code></td><td><code># &lt;title&gt;</code></td></tr>
+    <tr><td><code>question</code></td><td><code>question/render/parent.md</code></td><td><code>Question from child</code></td></tr>
+    <tr><td><code>plan</code></td><td><code>plan/render/parent.md</code></td><td><code>Plan from child</code></td></tr>
+    <tr><td><code>answer</code></td><td><code>answer/render/session.md</code> + note</td><td><code>Answer to decision</code></td></tr>
+    <tr><td><code>review</code></td><td><code>review/render/&lt;verdict&gt;.md</code></td><td><code>Review of decision</code></td></tr>
+    <tr><td><code>report</code></td><td><code>report/render/parent.md</code></td><td><code>Report from child</code></td></tr>
+    <tr><td><code>message</code></td><td><code>message/render/session.md</code></td><td><code>Message from &lt;sender&gt;:</code>; none from the user</td></tr>
+    <tr><td><code>notice</code></td><td><code>notice/render/&lt;kind&gt;.md</code></td><td>Fixed for each notice kind</td></tr>
+  </table>
+  </div>
+  <p>Notice kinds: <code>question-reminder</code>, <code>question-closed</code>, <code>archive-self</code>, <code>restart</code>. The default and docs texts are answer notes.</p>
+</section>
+</div>
+
+<!-- ============================== TODAY ============================== -->
+<div class="panel off" id="today" role="tabpanel">
+<section>
+  <h2>Three writers and two renderers send messages today</h2>
+  <div class="box">
+<pre class="mermaid">
+flowchart LR
+  T["Plugin tools<br/>tools.ts emit"] -->|events| E[("Event stream")]
+  T -->|files| F["decisions, report.json"]
+  M["Messages.cs<br/>orch, API, UI"] -->|events| E
+  M -->|files| A["answers, inbox"]
+  V["Supervisor tick<br/>Texts.Notice"] -->|inbox first| A
+  V -->|relay events| E
+  A -->|reads| PL["Plugin deliverer<br/>own answer text"]
+  A -->|reads| SU["Supervisor turn<br/>answer template"]
+</pre>
+  </div>
+</section>
+
+<section>
+  <h2>Plugin tools</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Tool</th><th>From → to</th><th>Transport</th><th>Template</th><th>Event</th></tr>
+    <tr><td><code>ask_user</code></td><td>Session → user, parent</td><td><code>decisions/&lt;id&gt;.json</code>, parent inbox</td><td>decision</td><td><code>decision</code>, <code>question.forward</code></td></tr>
+    <tr><td><code>report</code></td><td>Session → parent or user</td><td><code>report.json</code>, <code>reports/</code>, parent inbox</td><td>report</td><td><code>report</code>, <code>report.forward</code></td></tr>
+    <tr><td><code>update</code></td><td>Session → session tree</td><td><code>update.json</code></td><td>update</td><td><code>update</code>, <code>to</code> = parent</td></tr>
+    <tr><td><code>spawn_child</code></td><td>Parent → new child</td><td><code>orch new</code> → <code>inbox/1.json</code></td><td>brief</td><td><code>brief</code></td></tr>
+    <tr><td><code>answer</code></td><td>Root, for the user → child</td><td><code>orch answer</code> → <code>answers/</code></td><td>answer</td><td><code>answer</code>, from user</td></tr>
+    <tr><td><code>questions</code></td><td>Store → root</td><td><code>orch decisions</code>, read only</td><td>None</td><td>None</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Commands, API, UI and supervisor</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Sender</th><th>From → to</th><th>Transport</th><th>Template</th><th>Event</th></tr>
+    <tr><td><code>orch new</code>, <code>POST /api/sessions</code>, UI form</td><td>User → new session</td><td><code>inbox/1.json</code></td><td>brief</td><td><code>brief</code></td></tr>
+    <tr><td><code>orch send</code>, <code>POST …/send</code>, UI field</td><td>User, session → session</td><td><code>inbox/&lt;ms&gt;.json</code></td><td>None</td><td><code>message</code>, always from user</td></tr>
+    <tr><td><code>orch answer</code>, <code>POST /api/decisions</code>, UI card</td><td>User → session</td><td><code>answers/&lt;id&gt;.json</code></td><td>answer</td><td><code>answer</code></td></tr>
+    <tr><td><code>orch review</code>, <code>POST …/review</code>, UI card</td><td>User → session</td><td><code>reviews/</code>, inbox</td><td>review, notice <code>review-*</code></td><td><code>review</code></td></tr>
+    <tr><td>Supervisor policy</td><td>Policy → session</td><td><code>answers/</code> with note</td><td>answer, notice <code>default-*</code></td><td><code>answer</code></td></tr>
+    <tr><td>Supervisor docs check</td><td>Docs → session</td><td><code>answers/</code> with note</td><td>answer, notice <code>docs</code></td><td><code>answer</code></td></tr>
+    <tr><td>Chat composer (plugin)</td><td>User → own session</td><td><code>orch answer</code> on the newest open decision</td><td>answer</td><td><code>answer</code></td></tr>
+    <tr><td><code>orch enable</code>, <code>/orch-enable</code></td><td>User → session</td><td><code>meta.json</code>, <code>enabled</code></td><td>None</td><td><code>session.start</code></td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Notices</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Notice kind</th><th>From → to</th><th>Transport</th><th>Event</th></tr>
+    <tr><td><code>default-stacked-pr</code>, <code>default-commit</code>, <code>default-none</code></td><td>Policy → session</td><td>Note in the answer</td><td><code>answer</code></td></tr>
+    <tr><td><code>docs</code></td><td>Docs → session</td><td>Note in the answer</td><td><code>answer</code></td></tr>
+    <tr><td><code>review-approve</code>, <code>review-change</code>, <code>review-refuse</code></td><td>Supervisor, for the user → session</td><td>Inbox</td><td><code>review</code></td></tr>
+    <tr><td><code>child-report</code></td><td>Supervisor → parent</td><td>Inbox</td><td><code>report.forward</code></td></tr>
+    <tr><td><code>child-question</code></td><td>Supervisor → parent</td><td>Inbox</td><td><code>question.forward</code></td></tr>
+    <tr><td><code>question-reminder</code></td><td>Supervisor → parent</td><td>Inbox</td><td><code>question.remind</code></td></tr>
+    <tr><td><code>question-closed</code></td><td>Supervisor → parent</td><td>Inbox</td><td><code>question.close</code></td></tr>
+    <tr><td><code>archive-self</code></td><td><code>orch archive</code> → session</td><td>Inbox</td><td>None</td></tr>
+    <tr><td><code>blocked</code></td><td>Supervisor → session</td><td>Inbox</td><td><code>unblocked</code></td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Inbox files and acknowledge records</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Item</th><th>Writer</th><th>Format</th><th>Acknowledge</th></tr>
+    <tr><td><code>inbox/&lt;name&gt;.txt</code></td><td>UI (legacy)</td><td>Plain text, no sender</td><td><code>cursor.txt</code></td></tr>
+    <tr><td><code>inbox/&lt;name&gt;.json</code></td><td>Messages, supervisor</td><td><code>{ text, from }</code>, no event id</td><td><code>cursor.txt</code></td></tr>
+    <tr><td>Pending answer</td><td><code>answers/</code> + mode <code>pending</code></td><td>Text made at delivery, two code paths</td><td><code>delivered/&lt;decision&gt;.json</code></td></tr>
+    <tr><td>Tool result</td><td><code>ask_user</code> in mode <code>wait</code></td><td><code>ANSWER: &lt;text&gt;</code></td><td><code>delivered</code>, by <code>tool-result</code></td></tr>
+    <tr><td>Supervisor turn</td><td><code>claude -p</code></td><td>Items joined with <code>---</code></td><td><code>cursor.txt</code>, <code>delivered</code>, <code>turn.json</code></td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Event kinds</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Class</th><th>Emitted</th><th>Defined, never emitted</th></tr>
+    <tr><td>Message</td><td><code>brief</code> <code>message</code> <code>decision</code> <code>answer</code> <code>review</code> <code>report</code> <code>update</code></td><td><code>notice</code></td></tr>
+    <tr><td>Relay</td><td><code>report.forward</code> <code>question.forward</code> <code>question.remind</code> <code>question.close</code> <code>unblocked</code></td><td>None</td></tr>
+    <tr><td>Trace</td><td><code>session.input</code> <code>session.output</code> <code>session.tool</code> <code>turn.start</code> <code>turn.end</code> <code>turn.fail</code></td><td>None</td></tr>
+    <tr><td>Lifecycle</td><td><code>session.start</code> <code>session.stop</code> <code>session.archive</code> <code>session.import</code></td><td><code>session.end</code> <code>lease.take</code> <code>lease.release</code> <code>blocked</code></td></tr>
+    <tr><td>Git</td><td><code>branch.create</code> <code>branch.rebase</code> <code>pr.open</code> <code>pr.ready</code> <code>pr.close</code> <code>pr.merge</code> <code>merge.block</code></td><td>None</td></tr>
+  </table>
+  </div>
+</section>
+<!-- ============================== GAPS (part of TODAY) ============================== -->
+<section>
+  <p class="summary">18 gaps in four groups. Each gap has the file that shows it. The tab <a href="#changes">Changes A2</a> gives the fix for each gap.</p>
+</section>
+
+<section>
+  <h2>Formats and templates</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>#</th><th>Gap</th><th>Evidence</th><th>Effect</th></tr>
+    <tr><td class="id">G1</td><td>Two renderers for the answer text</td><td><code>inbox.ts</code> deliverAnswers, <code>Texts.AnswerTurn</code></td><td>A live answer and a turn answer can differ</td></tr>
+    <tr><td class="id">G2</td><td>Two subject rules for one envelope</td><td><code>events.ts</code> subject, <code>Subjects.Of</code></td><td>Answer and review subjects differ by writer</td></tr>
+    <tr><td class="id">G3</td><td>Review has two texts for one message</td><td><code>review/render.md</code>, notice <code>review-*</code></td><td><code>review/render.md</code> never reaches a session</td></tr>
+    <tr><td class="id">G4</td><td>Free-text message has no template</td><td><code>Messages.Send</code></td><td>No schema, no card type, no sender line</td></tr>
+    <tr><td class="id">G5</td><td>Two inbox formats</td><td><code>.txt</code> and <code>.json</code> in <code>inbox/</code></td><td>A <code>.txt</code> item has no sender</td></tr>
+    <tr><td class="id">G6</td><td>Notices mix three roles</td><td><code>notice/schema.json</code>, 13 kinds</td><td>Answer notes, receiver renders and real notices share one enum</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Events</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>#</th><th>Gap</th><th>Evidence</th><th>Effect</th></tr>
+    <tr><td class="id">G7</td><td>Kind <code>notice</code> is never emitted</td><td><code>EventKinds.Notice</code></td><td>Each notice uses a relay kind, or none</td></tr>
+    <tr><td class="id">G8</td><td><code>archive-self</code> and review texts have no own event</td><td><code>Lifecycle.ArchiveInApp</code>, <code>Messages.Review</code></td><td>The stream does not show the inbox item</td></tr>
+    <tr><td class="id">G9</td><td>Supervisor writes the inbox before the event</td><td><code>Supervisor.ForwardReport</code>, <code>ForwardQuestions</code></td><td>Breaks the rule "event first"</td></tr>
+    <tr><td class="id">G10</td><td>Wrong or missing sender</td><td><code>orch send</code>, <code>mcp__orch__answer</code>, <code>update</code></td><td>Session text shows as user; root relay is not recorded</td></tr>
+    <tr><td class="id">G11</td><td><code>turn.start</code> holds the full prompt</td><td><code>Supervisor.RunTurn</code></td><td>Each message body is stored two times</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Delivery and acknowledge</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>#</th><th>Gap</th><th>Evidence</th><th>Effect</th></tr>
+    <tr><td class="id">G12</td><td>Two delivery paths: inbox and answers</td><td><code>Pending</code>, <code>deliverAnswers</code></td><td>Two orders, two acknowledge records</td></tr>
+    <tr><td class="id">G13</td><td>No acknowledge for each inbox item</td><td><code>cursor.txt</code></td><td>No link from an inbox file to its <code>session.input</code> in a live session</td></tr>
+    <tr><td class="id">G14</td><td>Only the last report is forwarded</td><td><code>ForwardReport</code> reads <code>report.json</code></td><td>Two reports in one tick: the first is lost</td></tr>
+    <tr><td class="id">G15</td><td>Chat text answers the newest open decision</td><td><code>answerFromChat</code></td><td>A chat line that is not an answer closes a decision</td></tr>
+    <tr><td class="id">G16</td><td>Delivery block has no event</td><td><code>blocked.json</code> from <code>submit</code></td><td>The stop latch shows only in a state file</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>User inbox</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>#</th><th>Gap</th><th>Evidence</th><th>Effect</th></tr>
+    <tr><td class="id">G17</td><td>Queue reads state files, not events</td><td><code>Board.OpenDecisions</code>, <code>DefaultsToReview</code></td><td>Each new card type needs new code</td></tr>
+    <tr><td class="id">G18</td><td>A root report has no card</td><td><code>Queue.razor</code></td><td>A root done or blocked report waits unseen</td></tr>
+  </table>
+  </div>
+</section>
+</div>
+
+<!-- ============================== CHANGES ============================== -->
+<div class="panel off" id="changes" role="tabpanel">
+<section>
+  <p class="summary">The code changes for A2, by part. Each row names the gaps that it fixes. Change <code>docs/store.md</code> in the same commit as each store change.</p>
+</section>
+
+<section>
+  <h2>Stream API</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Part</th><th>Change</th><th>Files</th><th>Fixes</th></tr>
+    <tr><td>Envelope</td><td>Add <code>thread</code>, <code>needs</code>; refs <code>reply</code>, <code>of</code>, <code>via</code></td><td><code>Event.cs</code>, <code>events.ts</code></td><td>G10, G17</td></tr>
+    <tr><td>Post</td><td>Body first, envelope second. Validate the template. Set <code>needs</code></td><td><code>EventStream.cs</code> → <code>Stream.cs</code></td><td>G9</td></tr>
+    <tr><td>Subscribe</td><td><code>subscriptions/&lt;party&gt;/&lt;name&gt;.json</code> with filter and cursor. <code>FileSystemWatcher</code> plus a 60 s sweep</td><td><code>Stream.cs</code></td><td>G13</td></tr>
+    <tr><td>Watch</td><td><code>orch watch --to P</code>: one JSON line for each new envelope</td><td><code>EventCommands.cs</code></td><td>G13</td></tr>
+    <tr><td>Read</td><td><code>Read(id, for)</code> renders for the receiver. One renderer</td><td><code>Stream.cs</code>, <code>Texts.cs</code></td><td>G1, G3</td></tr>
+    <tr><td>Subject</td><td>One rule, in the contract tests of both bindings</td><td><code>Subjects</code>, <code>events.ts</code></td><td>G2</td></tr>
+    <tr><td>TS binding</td><td><code>post</code>, <code>subscribe</code>, <code>query</code> in the plugin. Render through <code>orch read --for</code></td><td><code>plugin/hooks/stream.ts</code> (new)</td><td>G2</td></tr>
+    <tr><td>Kinds</td><td>Add <code>ack</code>. Retire the relay kinds and <code>unblocked</code></td><td><code>EventKinds.cs</code></td><td>G7</td></tr>
+    <tr><td>Nudge</td><td><code>Nudge(to)</code>, <code>orch nudge</code>, <code>POST /api/nudge</code>. Plugin and supervisor react to it</td><td><code>Stream.cs</code>, <code>inbox.ts</code>, <code>Supervisor.cs</code></td><td>G16</td></tr>
+    <tr><td>Watchdog</td><td>Query envelopes with no ack, nudge on the ladder, post <code>delivery.blocked</code></td><td><code>Supervisor.cs</code>, <code>policy.json</code></td><td>G13, G16</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Reactors</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Part</th><th>Change</th><th>Files</th><th>Fixes</th></tr>
+    <tr><td>Deliverer</td><td><code>$.process.spawn</code> of <code>orch watch</code>. Remove the 3 s inbox drain and <code>deliverAnswers</code>. Post <code>ack</code></td><td><code>inbox.ts</code></td><td>G1, G12, G13</td></tr>
+    <tr><td>Delivery block</td><td>Post a lifecycle event at the stop latch, not only <code>blocked.json</code></td><td><code>inbox.ts</code></td><td>G16</td></tr>
+    <tr><td>Turn runner</td><td>Pending = envelopes to the session with no <code>ack</code>. <code>turn.start</code> keeps ids, not the prompt</td><td><code>FileStore.Pending</code>, <code>Supervisor.RunTurn</code></td><td>G11, G12</td></tr>
+    <tr><td>Relays</td><td>Subscribe to child <code>decision</code> and <code>report</code>. Forward each envelope</td><td><code>Supervisor.cs</code></td><td>G9, G14</td></tr>
+    <tr><td>Notices</td><td>Reminder, closed, restart, archive-self as posts</td><td><code>Supervisor.cs</code>, <code>Lifecycle.cs</code></td><td>G7, G8</td></tr>
+    <tr><td>Docs, policy</td><td>Post the answer to the session, and a forward to the user</td><td><code>Supervisor.cs</code></td><td>G17</td></tr>
+    <tr><td>Plugin tools</td><td><code>ask_user</code>, <code>report</code>, <code>update</code> post only. <code>update</code> goes to user</td><td><code>tools.ts</code></td><td>G10</td></tr>
+    <tr><td>Chat answer</td><td>Only with one open decision. <code>via</code> = chat</td><td><code>tools.ts</code></td><td>G15</td></tr>
+    <tr><td>Senders</td><td><code>orch send</code> and <code>orch answer</code> name the session sender and <code>via</code></td><td><code>SessionCommands.cs</code>, <code>DecisionCommands.cs</code></td><td>G10</td></tr>
+    <tr><td>User inbox</td><td><code>GET /api/inbox</code>, <code>POST /api/inbox/&lt;id&gt;/accept|refuse</code>, <code>orch inbox</code></td><td><code>OrchestratorApi.cs</code>, <code>Board.cs</code></td><td>G17, G18</td></tr>
+    <tr><td>Old files</td><td>Remove <code>inbox/</code>, <code>answers/</code>, <code>delivered/</code>, <code>reviews/</code>, <code>cursor.txt</code>, <code>forwarded*</code> as sources</td><td><code>FileStore.cs</code>, <code>StoreFiles.cs</code></td><td>G5, G12</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Templates and docs</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Part</th><th>Change</th><th>Files</th><th>Fixes</th></tr>
+    <tr><td>New types</td><td><code>message</code>, <code>query</code>, <code>plan</code></td><td><code>templates/&lt;type&gt;/</code></td><td>G4</td></tr>
+    <tr><td>Type meta</td><td><code>meta.json</code> in each folder: purpose, from, to, needs, replies, card</td><td><code>templates/*/meta.json</code></td><td>G17</td></tr>
+    <tr><td>New tools</td><td><code>send</code>, <code>query</code>, <code>plan</code>. Descriptions from <code>meta.json</code></td><td><code>tools.ts</code></td><td>G4</td></tr>
+    <tr><td>Type check</td><td>Post refuses unknown types, bad bodies, wrong from, to or reply</td><td><code>Stream.cs</code>, <code>stream.ts</code></td><td>G6</td></tr>
+    <tr><td>Skill</td><td><code>orch:orch-messages</code>: the table "use it when"</td><td><code>plugin/skills/</code></td><td>None</td></tr>
+    <tr><td>Receiver renders</td><td>Move <code>child-question</code>, <code>child-report</code>, <code>review-*</code></td><td><code>decision/render/</code>, <code>report/render/</code>, <code>review/render/</code></td><td>G3, G6</td></tr>
+    <tr><td>Answer notes</td><td>Move <code>default-*</code> and <code>docs</code></td><td><code>answer/render/note-*.md</code></td><td>G6</td></tr>
+    <tr><td>Notice</td><td>Four kinds. Rename <code>blocked</code> to <code>restart</code></td><td><code>notice/schema.json</code></td><td>G6</td></tr>
+    <tr><td>Skills</td><td>The prefixes of the texts stay the same</td><td><code>plugin/skills/</code></td><td>None</td></tr>
+    <tr><td>Docs</td><td>Store contract, plan results, design page tab Messages</td><td><code>store.md</code>, <code>plan.md</code></td><td>None</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Open questions</h2>
+  <div class="scroll">
+  <table>
+    <tr><th>Question</th><th>Recommendation</th></tr>
+    <tr><td>Sweep interval for lost watcher events: 60 s?</td><td>Yes, as a default in <code>policy.json</code></td></tr>
+    <tr><td>Peer nudge from the supervisor: it is not a Claude session. Use the file watcher only?</td><td>Yes. Only sessions send peer nudges</td></tr>
+    <tr><td>The plugin renders through <code>orch read --for</code> (about 1 s for each message). Is the delay acceptable?</td><td>Yes. One renderer stays in C#</td></tr>
+    <tr><td>A chat line with two or more open decisions: which decision gets it?</td><td>None. The model asks the user which question it answers</td></tr>
+    <tr><td>Nudge a live app session whose process ended: a peer message, or <code>claude --resume</code>?</td><td>A peer message. It keeps one writer. Stream B owns the lease rule</td></tr>
+    <tr><td>Wait times of the ladder: 15 s, 60 s, then the turn?</td><td>Yes, as defaults in <code>policy.json</code></td></tr>
+    <tr><td>Keep old stores readable after the change?</td><td>No migration. Archive the old store and start a new one</td></tr>
+  </table>
+  </div>
+</section>
+</div>
+
+</div>
+
+<script>
+(function () {
+  var names = ["summary", "primitives", "reactors", "types", "today", "changes"];
+  function show(name) {
+    if (names.indexOf(name) < 0) name = "summary";
+    names.forEach(function (n) {
+      document.getElementById(n).classList.toggle("off", n !== name);
+    });
+    document.querySelectorAll("nav button").forEach(function (b) {
+      b.setAttribute("aria-selected", b.dataset.tab === name ? "true" : "false");
+    });
+  }
+  document.querySelectorAll("nav button").forEach(function (b) {
+    b.addEventListener("click", function () { location.hash = b.dataset.tab; show(b.dataset.tab); window.scrollTo(0, 0); });
+  });
+  window.addEventListener("hashchange", function () { show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>

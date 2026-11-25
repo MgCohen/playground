@@ -5,48 +5,37 @@ namespace Orchestrator.Core.Policy;
 
 public sealed record ReviewTarget(string Branch, string Base, string NextBranch);
 
+/// <summary>The fixed texts. Each one is a render of a template, so there is one source for each text.</summary>
 public sealed class Texts(TemplateSet templates)
 {
     public TemplateSet Templates => templates;
 
-    public string DefaultNote(Policy policy, string decision, string reason) =>
-        Notice($"default-{policy.OnDefault}", ("decision", decision), ("reason", reason));
+    /// <summary>The note that goes with an answer of the policy or the docs (answer/render/note-*.md).</summary>
+    public string? AnswerNote(string? by, string? onDefault, string decision, string? reason, string? source) => by switch
+    {
+        "policy" => templates.Render(Kinds.Answer, Fields(("decision", decision), ("reason", reason ?? "")), $"note-default-{onDefault ?? OnDefault.StackedPr}"),
+        "docs" => templates.Render(Kinds.Answer, Fields(("source", source ?? "no source given")), "note-docs"),
+        _ => null,
+    };
 
-    public string DocsNote(string? source) => Notice("docs", ("source", source ?? "no source given"));
+    public static string DefaultText(Policy policy, string risk, string? defaultOption)
+    {
+        var level = policy.LevelOf(risk);
+        return defaultOption is not { } option ? "There is no default: the child waits for an answer."
+            : level.TimeoutSeconds is { } seconds ? $"If nobody answers in {seconds:0} s, the policy answers \"{option}\"."
+            : $"The default is \"{option}\", but this level never applies it.";
+    }
 
-    public string ReviewText(string decision, string question, string verdict, string text, ReviewTarget target) =>
-        Notice($"review-{verdict}", ("decision", decision), ("question", question), ("text", text), ("branch", target.Branch), ("base", target.Base), ("nextBranch", target.NextBranch));
-
-    public string AnswerTurn(string decision, string? question, string answer, string? note) =>
-        templates.Render(Kinds.Answer, Fields(("decision", decision), ("question", question ?? "question"), ("text", answer), ("note", note)));
-
-    public string ChildReport(string title, string id, string state, string summary, string? details) =>
-        Notice("child-report", ("title", title), ("child", id), ("state", state), ("summary", summary), ("details", details));
-
-    public string ChildQuestion(string title, string id, Decision decision, string defaultText) =>
-        Notice("child-question", ("title", title), ("child", id), ("decision", decision.Id), ("question", decision.Question ?? "(no question text)"),
-            ("context", decision.Context), ("options", decision.Options is { Length: > 0 } options ? string.Join("; ", options) : null),
-            ("recommendation", decision.Recommendation), ("risk", decision.Risk), ("defaultText", defaultText));
-
-    public string QuestionReminder(string title, string id, Decision decision, string waited) =>
-        Notice("question-reminder", ("title", title), ("child", id), ("decision", decision.Id), ("question", decision.Question ?? "(no question text)"), ("waited", waited));
-
-    public string QuestionClosed(string title, string id, Decision decision, string answer, string by) =>
-        Notice("question-closed", ("title", title), ("child", id), ("decision", decision.Id), ("question", decision.Question ?? "(no question text)"), ("text", answer), ("by", by));
-
-    public string ArchiveSelf() => Notice("archive-self");
-
-    public string Blocked(int count, string error) => Notice("blocked", ("count", (double)count), ("error", error));
-
-    public string Notice(string kind, params (string Key, object? Value)[] fields)
+    /// <summary>Checks the fields of a notice kind against the notice schema.</summary>
+    public Dictionary<string, object?> Notice(string kind, params (string Key, object? Value)[] fields)
     {
         var data = Fields([("kind", kind), .. fields]);
         var check = templates.Validate(Kinds.Notice, data);
         if (!check.IsValid) throw new InvalidDataException($"notice {kind}: {check.Message}");
-        return templates.Render(Kinds.Notice, data, kind);
+        return data;
     }
 
-    static Dictionary<string, object?> Fields(params (string Key, object? Value)[] pairs) => pairs.ToDictionary(p => p.Key, p => p.Value);
+    public static Dictionary<string, object?> Fields(params (string Key, object? Value)[] pairs) => pairs.ToDictionary(p => p.Key, p => p.Value);
 }
 
 public static class Verdict

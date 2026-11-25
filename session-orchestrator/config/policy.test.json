@@ -22,5 +22,8 @@
   "docs": [
     "AGENTS.md"
   ],
-  "onDefault": "stacked-pr"
+  "onDefault": "stacked-pr",
+  "delivery": { "nudgeSeconds": 15, "peerSeconds": 60, "sweepSeconds": 60 },
+  "lifecycle": { "staleSeconds": 15, "staleProcessSeconds": 30, "forgottenMinutes": 1, "inputSeconds": 45, "hungMinutes": 5, "stopSeconds": 30, "archiveSeconds": 30, "archiveUserMinutes": 2, "reminderMinutes": 2, "remoteControlSeconds": 60, "loopCount": 3, "loopMinutes": 60 },
+  "autoArchive": { "enabled": false, "afterMinutes": 3 }
 }

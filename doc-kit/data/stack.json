@@ -1,0 +1,283 @@
+{
+ "source": {
+  "title": "Orchestrator Internals",
+  "url": "https://claude.ai/artifact/CP2ozBgysFuJSwhrgoHugt"
+ },
+ "groups": [
+  {
+   "title": "Call stack of one tick",
+   "stacks": [
+    {
+     "root": [
+      {
+       "call": "TickService.ExecuteAsync",
+       "note": "every 3 s",
+       "key": true,
+       "children": [
+        {
+         "call": "Supervisor.Tick",
+         "note": "one lock, one pass",
+         "key": true,
+         "children": [
+          {
+           "call": "StopRunningTurns",
+           "note": "control.json stopped → cancel → kill the claude process tree"
+          },
+          {
+           "call": "for each enabled session that is not stopped:",
+           "children": [
+            {
+             "call": "ReleaseStaleLease",
+             "note": "lease live + heartbeat older than 15 s → lease none"
+            },
+            {
+             "call": "ForwardReport",
+             "note": "report done/blocked, not forwarded → inbox of the parent",
+             "children": [
+              {
+               "call": "store.Send(parent, Texts.ChildReport) + event report.forward"
+              }
+             ]
+            },
+            {
+             "call": "ApplyPolicy",
+             "children": [
+              {
+               "call": "StartDocsCheck",
+               "note": "level checkDocs → ClaudeDocsChecker in the background"
+              },
+              {
+               "call": "DefaultRule.IsDue → SaveAnswer(by policy) + event answer"
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "call": "for each session, while running < 4:",
+           "children": [
+            {
+             "call": "StartTurn",
+             "key": true,
+             "children": [
+              {
+               "call": "Recovery.Interrupted → Recover",
+               "note": "turn.json with no ended"
+              },
+              {
+               "call": "CanRun",
+               "note": "not running, not live, no cooldown after 3 failures"
+              },
+              {
+               "call": "store.Pending",
+               "note": "inbox after cursor + answers not delivered → one prompt"
+              },
+              {
+               "call": "Track(RunTurn)",
+               "note": "background task",
+               "key": true,
+               "children": [
+                {
+                 "call": "Lifecycle.MakeWorktree",
+                 "note": "first turn with worktree: true"
+                },
+                {
+                 "call": "Events.Append(turn.start) + write turn.json"
+                },
+                {
+                 "call": "ClaudeRunner.Run",
+                 "key": true,
+                 "children": [
+                  {
+                   "call": "Claude.Run",
+                   "note": "claude -p --output-format stream-json --verbose\n--setting-sources user --session-id|--resume id --agent orch:<agent>\nprompt on stdin, ORCH_HOLDER=supervisor"
+                  }
+                 ]
+                },
+                {
+                 "call": "ok   → MarkSent (cursor, delivered/) + event turn.end"
+                },
+                {
+                 "call": "fail → Fail (count, cooldown 5 min doubling) + event turn.fail"
+                },
+                {
+                 "call": "EndMarker",
+                 "note": "turn.json gets ended"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "summary": "The supervisor does all its work in this loop. Nothing else starts a turn."
+  },
+  {
+   "title": "Call stacks of a command and a tool",
+   "stacks": [
+    {
+     "root": [
+      {
+       "call": "orch new --title T --goal G --cwd C",
+       "key": true,
+       "children": [
+        {
+         "call": "SessionCommands.New",
+         "children": [
+          {
+           "call": "Messages.NewSession",
+           "children": [
+            {
+             "call": "TemplateSet.Validate(brief)"
+            },
+            {
+             "call": "Events.Append(brief)"
+            },
+            {
+             "call": "FileStore.Create",
+             "children": [
+              {
+               "call": "meta.json"
+              },
+              {
+               "call": "inbox/1.json",
+               "note": "the rendered brief"
+              },
+              {
+               "call": "enabled"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "foot": "no turn starts here: the next tick starts it"
+    },
+    {
+     "root": [
+      {
+       "call": "mcp__orch__ask_user (in a turn)",
+       "key": true,
+       "children": [
+        {
+         "call": "register.ts tool.call",
+         "children": [
+          {
+           "call": "tools.askUser",
+           "children": [
+            {
+             "call": "emit(decision)",
+             "note": "event"
+            },
+            {
+             "call": "decisions/<tool_use_id>.json"
+            },
+            {
+             "call": "waitSeconds 0 → \"PENDING\"",
+             "note": "the agent ends its turn"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "call": "waitSeconds > 0 → waits for"
+      },
+      {
+       "call": "answers/<id>.json, then \"ANSWER\""
+      }
+     ]
+    },
+    {
+     "root": [
+      {
+       "call": "orch merge 12",
+       "key": true,
+       "children": [
+        {
+         "call": "DecisionCommands.Merge",
+         "children": [
+          {
+           "call": "MergeGuard.Resolve",
+           "note": "gh pr view → head, base"
+          },
+          {
+           "call": "MergeGuard.Merge",
+           "children": [
+            {
+             "call": "git fetch origin"
+            },
+            {
+             "call": "Carried",
+             "note": "each decision tip in head, not in base"
+            },
+            {
+             "call": "blockers → event merge.block, exit 1"
+            },
+            {
+             "call": "gh pr merge --merge"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "call": "+ stack versions merged + event pr.merge"
+      }
+     ]
+    },
+    {
+     "root": [
+      {
+       "call": "mcp__orch__spawn_child (in a root turn)",
+       "key": true,
+       "children": [
+        {
+         "call": "tools.spawnChild",
+         "children": [
+          {
+           "call": "$.process.run(\"orch new ... --parent ROOT\")",
+           "note": "as orch new, with createdBy spawn_child"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "call": "mcp__orch__report",
+       "key": true,
+       "children": [
+        {
+         "call": "tools.report",
+         "children": [
+          {
+           "call": "emit(report)"
+          },
+          {
+           "call": "reports/<ms>.json + report.json"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

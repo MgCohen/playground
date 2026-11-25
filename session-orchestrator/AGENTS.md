@@ -10,6 +10,7 @@ Read these files before you change this project:
 | `docs/orchestrator-design.html` | The design page (https://claude.ai/artifact/EggEYH4ivUuPGG9Pw4k1y1) |
 | `docs/how-it-works.html` | How it works today: processes, folders, store files, call stack, sequences (https://claude.ai/artifact/CP2ozBgysFuJSwhrgoHugt) |
 | `docs/session-management.html` | The options for session management, with a worked example each (https://claude.ai/artifact/SRBob5ix2xQ2ArpwDXTJaW) |
+| `docs/setup-options.html` | Install and start options, and the cloud plan (https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX) |
 
 ## Rules
 
@@ -17,11 +18,22 @@ Read these files before you change this project:
 - Record each test result and each finding in `docs/plan.md`.
 - Keep the design page current. After a change, publish it again to the same artifact URL.
 - Never use click questions. The user answers in free text or by voice.
-- Test a live change in the scratchpad with its own `ORCH_STORE` and `ORCH_PORT`. Never use `store/` for tests.
+- Test a live change in the scratchpad with its own `ORCH_STORE` and `ORCH_PORT`. Never use the real store (`%LOCALAPPDATA%\orch\store`, or the old `store/`) for tests.
 
 ## Stack
 
 C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the UI, NUnit for the tests. Do not add TypeScript or JavaScript, with two exceptions: the plugin hooks (the Claude Code engine runs only TypeScript) and small JavaScript parts of the Blazor UI. `spikes/supervisor-ts/` is the frozen TypeScript supervisor of the spikes. Do not change it.
+
+## Provider boundary
+
+Follow these rules for each change. The design is on the Engines tab of `docs/session-design.html`.
+
+1. A feature is a vertical slice. It holds its own logic (prompt, parse, rules) and no provider code.
+2. If a slice needs anything that depends on a provider (a model call, a session, an app fact, a CLI command, a configuration check), it calls `IProvider`.
+3. Only `Providers/<provider>/` knows the names of the provider: its executable, flags, files, tool names and environment variables.
+4. A call into our system needs no provider, whoever makes it: `orch`, the API, the tray, the records, the envelopes.
+5. The core contract and the store keep only references to a provider (`engine.kind`, `sessionId`, `appId`), and no provider facts.
+6. If the provider gives a function, use it through `IProvider` and do not make our own copy. When code moves behind `IProvider`, keep the logic of today.
 
 ## Commands
 
@@ -30,8 +42,10 @@ C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the U
 | Build and test | `dotnet test --solution Orchestrator.slnx` |
 | Start the supervisor | `dotnet run --project src/Orchestrator.Web` |
 | Test store and port | Set `ORCH_STORE` and `ORCH_PORT` before the start |
-| Install or update `orch` | `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` |
+| Install or update `orch` | `dotnet pack src/Orchestrator.Cli -c Release -o <folder> -p:Version=<new>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder> --version <new>`. Each pack needs a new version |
 | Check the setup | `orch doctor` |
+| Install or update the tray, the supervisor and `orch` | `.\install.ps1` (needs the approval of the user on the real profile; see `docs/know-how.md`) |
+| Start or stop the supervisor | `orch supervisor start\|stop\|status [--port P]` |
 
 ## Work with the user
 
@@ -46,4 +60,8 @@ C# on .NET 10, the `claude` CLI, JSON Schema for the templates, Blazor for the U
 
 ## Load the plugin
 
-`~/.claude/settings.json` loads the plugin for all sessions with two `env` lines: `CLAUDE_CODE_PLUGIN_DIRS` (the absolute path of `plugin/`) and `CLAUDE_CODE_PLUGIN_DIR_WATCH=1` (hot reload). To remove the plugin, delete the two lines. A test supervisor with `ORCH_PLUGIN_DIR` loads the plugin with `--plugin-dir` and does not use the settings. The settings history is in `docs/know-how.md`.
+Each session gets the plugin from the `mgcohen` marketplace (`MgCohen/claude-plugins`, account-synced). To publish a change: increase `version` in `plugin/.claude-plugin/plugin.json`, run `tools/publish-plugin.ps1`, and merge the PR that it opens. The sync takes a few minutes.
+
+- For development, start a session with `claude --plugin-dir <path of plugin/>`. A test supervisor with `ORCH_PLUGIN_DIR` does the same for its turns.
+- Do not put `CLAUDE_CODE_PLUGIN_DIRS` in the user settings while the marketplace copy is on: two copies register each tool two times. `orch doctor` checks it.
+- `docs/commands.md` lists each command, tool, skill and agent, and the lifecycle rules. The settings history is in `docs/know-how.md`.

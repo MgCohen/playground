@@ -1,0 +1,54 @@
+<title>Orch remote store spike</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+/* Layout: one column; a status line, then the envelope table of the store. */
+:root{--bg:#f6f7f9;--fg:#1b2330;--muted:#5d6878;--line:#d9dee6;--accent:#2f5fb3;--ok:#2d7d46;--warn:#a6611a;
+--sans:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161d;--fg:#e3e8ef;--muted:#97a2b3;--line:#2a323e;--accent:#7fa6ea;--ok:#6cc58a;--warn:#e0a05a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12161d;--fg:#e3e8ef;--muted:#97a2b3;--line:#2a323e;--accent:#7fa6ea;--ok:#6cc58a;--warn:#e0a05a;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:1000px;margin:0 auto;display:grid;gap:16px}
+h1{font-size:1.4rem;margin:0;text-wrap:balance}
+p{margin:0;color:var(--muted);max-width:65ch;line-height:1.5}
+#status{font-family:var(--mono);font-size:.85rem}
+#status.ok{color:var(--ok)}#status.warn{color:var(--warn)}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:.85rem}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.id,td.at{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.kind{font-family:var(--mono);color:var(--accent)}
+.empty{padding:16px;color:var(--muted)}
+</style>
+<main>
+  <h1>Orch remote store spike</h1>
+  <p>This page is a throwaway test for issue #83. Two cloud sessions write orchestrator envelopes into the database of this page with the ArtifactData tool. The table shows the collection <code>events</code> live.</p>
+  <div id="status">Connecting to the database…</div>
+  <div class="wrap"><table>
+    <thead><tr><th>Id</th><th>At</th><th>Kind</th><th>From → To</th><th>Subject</th><th>Thread</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="6" class="empty">No envelopes yet. A session adds the first one with ArtifactData set on the collection events.</td></tr></tbody>
+  </table></div>
+</main>
+<script>
+(async () => {
+  const status = document.getElementById("status");
+  const rows = document.getElementById("rows");
+  const show = (text, cls) => { status.textContent = text; status.className = cls || ""; };
+  const timer = setTimeout(() => show("The database did not answer in 10 s.", "warn"), 10000);
+  const db = await claude.use("db");
+  if (!db) { clearTimeout(timer); show("The database is not available in this view. Sign in to see the envelopes.", "warn"); return; }
+  db.collection("events").onSnapshot(snap => {
+    clearTimeout(timer);
+    show(snap.size + " envelopes. Last change " + new Date().toLocaleTimeString() + ".", "ok");
+    if (snap.empty) return;
+    rows.replaceChildren(...snap.docs.map(d => {
+      const e = d.data() || {};
+      const tr = document.createElement("tr");
+      const cells = [[d.id, "id"], [e.at || "", "at"], [e.kind || "", "kind"], [(e.from || "") + " → " + (e.to || ""), ""], [e.subject || "", ""], [e.thread || "", "id"]];
+      for (const [text, cls] of cells) { const td = document.createElement("td"); td.textContent = String(text); if (cls) td.className = cls; tr.append(td); }
+      return tr;
+    }));
+  }, err => { clearTimeout(timer); show("Read failed: " + (err && err.code || "error") + ".", "warn"); });
+})();
+</script>

@@ -1,0 +1,2 @@
+# Shell scripts run in Linux VMs (cloud environment, G-4): always LF.
+*.sh text eol=lf

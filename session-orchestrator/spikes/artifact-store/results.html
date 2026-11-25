@@ -1,0 +1,128 @@
+<title>Artifact Store Spike</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+/* Layout: one reading column; verdict first, then the sequence, the measurements, the limits and the comparison. */
+:root{--bg:#f5f6f8;--panel:#ffffff;--fg:#1a2230;--muted:#5b6678;--line:#d8dde5;--accent:#2f5fb3;--ok:#2d7d46;--bad:#b23a3a;--warn:#a6611a;
+--display:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;--sans:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11151c;--panel:#181e27;--fg:#e2e7ee;--muted:#98a3b4;--line:#2a333f;--accent:#7fa6ea;--ok:#6cc58a;--bad:#ec7f7f;--warn:#e0a05a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11151c;--panel:#181e27;--fg:#e2e7ee;--muted:#98a3b4;--line:#2a333f;--accent:#7fa6ea;--ok:#6cc58a;--bad:#ec7f7f;--warn:#e0a05a;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.5;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:860px;margin:0 auto;display:grid;gap:28px}
+h1,h2{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:1.9rem}h2{font-size:1.2rem}
+section{display:grid;gap:10px;min-width:0}
+p{margin:0;max-width:68ch}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.verdict{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:6px;padding:14px 16px;display:grid;gap:6px}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+code{font-family:var(--mono);font-size:.85em}
+.yes{color:var(--ok);font-weight:600}.no{color:var(--bad);font-weight:600}
+pre.mermaid{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;overflow-x:auto}
+a{color:var(--accent)}
+</style>
+<main>
+  <header style="display:grid;gap:6px">
+    <div class="eyebrow">Issue #83 · step 1 · 2026-11-23</div>
+    <h1>Artifact Store Spike</h1>
+    <p>Two cloud sessions exchanged a question, an answer and an ack through the database of one private Artifact. They used no local store and no <code>orch</code>. The local session read the database only.</p>
+  </header>
+
+  <div class="verdict">
+    <div class="eyebrow">Recommendation</div>
+    <p><strong>Do not use the Artifact database as the remote store behind <code>IRepository</code>.</strong> The supervisor, <code>orch</code> and the hooks are C# and TypeScript processes. They cannot call the database, because only a Claude tool or a page can reach it. Go to the next option: the H5 store API through the D2 tunnel, or a Notion store (H6).</p>
+    <p>The database can be a mailbox for cloud sessions with no tunnel. A relay session then copies its envelopes into the local store.</p>
+  </div>
+
+  <section>
+    <h2>The exchange took 31 s, and the poll set most of it</h2>
+    <pre class="mermaid">sequenceDiagram
+    participant A as Cloud session A
+    participant D as Artifact database
+    participant B as Cloud session B
+    A->>D: set question (18:11:13)
+    B->>D: query to cloudB (18:11:16)
+    B->>D: set answer (18:11:20)
+    B--xD: set claim (refused)
+    A->>D: query thread (18:11:37)
+    A->>D: update answer, if_version 1 (18:11:44)</pre>
+  </section>
+
+  <section>
+    <h2>Measurements</h2>
+    <div class="wrap"><table>
+      <thead><tr><th>Item</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td><code>ArtifactData</code> in a cloud session</td><td><span class="yes">Yes</span>, in both. No setup, no token</td></tr>
+        <tr><td>Start of a cloud session</td><td class="num">4 s; 27 s to first write</td></tr>
+        <tr><td>Write time of one call</td><td class="num">2 to 3 s</td></tr>
+        <tr><td>Question to answer</td><td class="num">4 to 7 s</td></tr>
+        <tr><td>Question to ack</td><td class="num">31 s (15 s poll)</td></tr>
+        <tr><td>Push to a session</td><td><span class="no">No</span>. Only a page has <code>onSnapshot</code></td></tr>
+        <tr><td>Create of an existing id</td><td>Refused: store rule <code>Exists</code></td></tr>
+        <tr><td>Write with an old <code>if_version</code></td><td>Refused: store rule <code>Stale</code></td></tr>
+        <tr><td>Claim race</td><td>First writer wins</td></tr>
+        <tr><td>Batch with one conflict</td><td>Atomic: nothing written</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Limits</h2>
+    <div class="wrap"><table>
+      <thead><tr><th>Limit</th><th>Value</th><th>Effect on the store</th></tr></thead>
+      <tbody>
+        <tr><td>Document size</td><td class="num">256 KiB</td><td>Large bodies need a split</td></tr>
+        <tr><td>Documents for each artifact</td><td class="num">25,000</td><td>Full in 10 days at 2,350 envelopes a day</td></tr>
+        <tr><td>Batch</td><td class="num">50 writes, 1 MiB</td><td>Enough for one tick</td></tr>
+        <tr><td>Query</td><td>Scans the collection</td><td>Low thousands of documents</td></tr>
+        <tr><td>Access</td><td>Owner and shared people</td><td>No service token</td></tr>
+        <tr><td>Caller</td><td>Claude tool or page</td><td>No HTTP API for C#</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Ways to start a cloud session</h2>
+    <div class="wrap"><table>
+      <thead><tr><th>Way</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td><code>start_session</code>, target cloud</td><td><span class="no">Refused</span> in a Remote Control turn</td></tr>
+        <tr><td><code>claude --cloud</code> from the Bash tool</td><td><span class="no">Refused</span>: needs an interactive terminal</td></tr>
+        <tr><td><code>claude --cloud</code> in a terminal tab</td><td><span class="yes">Works</span>: prints the id and the view URL</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Comparison with the other options</h2>
+    <div class="wrap"><table>
+      <thead><tr><th>Option</th><th>Push</th><th>C# access</th><th>Store rules</th><th>Limits</th></tr></thead>
+      <tbody>
+        <tr><td>Artifact database</td><td>No: poll</td><td class="no">No</td><td><code>Exists</code>, <code>Stale</code></td><td>256 KiB, 25,000 docs</td></tr>
+        <tr><td>Direct session messages</td><td>Yes: starts a turn</td><td class="no">No</td><td>None: no store</td><td>No query, no history</td></tr>
+        <tr><td>Notion store (H6)</td><td>No: poll</td><td class="yes">REST API, token</td><td>No conditional write</td><td>3 requests a second</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Findings</h2>
+    <div class="wrap"><table>
+      <thead><tr><th>#</th><th>Finding</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td class="num">R83-1</td><td>Each read and write is one model tool call, so a busy store costs tokens</td><td>Open</td></tr>
+        <tr><td class="num">R83-2</td><td>The app does not list cloud sessions that the CLI started</td><td>Open: archive on claude.ai/code</td></tr>
+        <tr><td class="num">R83-3</td><td>A cloud session polls with a shell wait between calls</td><td>Accepted</td></tr>
+        <tr><td class="num">R83-4</td><td>Shell clock times are 1 to 3 s off the server time</td><td>Accepted: use <code>updatedAt</code></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <p class="eyebrow">Test store: <a href="https://claude.ai/artifact/WrQYrT5TLFpcEvcwgNzqrK">Orch remote store spike</a> · Record: <code>session-orchestrator/docs/plan.md</code></p>
+</main>

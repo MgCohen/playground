@@ -24,7 +24,7 @@ public static class LifecycleCommands
     public static int Archive(CommandContext c)
     {
         var id = c.Session(1);
-        var lifecycle = new Lifecycle(c.Store);
+        var lifecycle = new Lifecycle(c.Store, c.Provider);
         var tree = c.Args.Flag("tree");
         foreach (var blocked in (tree ? lifecycle.TreeOf(id) : [id]).Where(s => !c.Args.Flag("force") && lifecycle.ArchiveBlockers(s).Count > 0))
             throw new MessageException($"session {blocked} is not archived: {string.Join("; ", lifecycle.ArchiveBlockers(blocked))}. Use --force to archive it anyway.");
@@ -38,7 +38,7 @@ public static class LifecycleCommands
     public static int Open(CommandContext c)
     {
         var id = c.Session(1);
-        var command = Lifecycle.OpenCommand(id, c.Store.Cwd(id));
+        var command = c.Provider.OpenCommand(c.Store.Session(id).Engine.SessionId ?? id, c.Store.Cwd(id));
         if (c.Args.Flag("dry-run"))
         {
             c.Output.WriteLine(string.Join(' ', command));
@@ -47,9 +47,9 @@ public static class LifecycleCommands
         var lease = c.Store.Lease(id);
         if (lease.Holder == Core.Contract.Holders.Supervisor || c.Store.Status(id)?.State == "running" || c.Store.ReadJson<Core.Contract.TurnMarker>(id, Core.Contract.StoreFiles.Turn) is { Ended: null })
             throw new UsageException($"session {SessionCommands.Short(id)} has a running turn. Wait until it is idle, or run orch stop first, so that only one process writes it.");
-        if (!new Lifecycle(c.Store).Import(id))
+        if (!new Lifecycle(c.Store, c.Provider).Import(id))
             throw new UsageException($"the desktop app did not confirm the import of {SessionCommands.Short(id)} in 30 s. Try again when the session is idle.");
-        c.Output.WriteLine($"Opened {SessionCommands.Short(id)} in the desktop app as local_{id}. The app starts its process, and the plugin takes the lease live.");
+        c.Output.WriteLine($"Opened {SessionCommands.Short(id)} in the desktop app as {c.Provider.AppId(id)}. The app starts its process, and the plugin takes the lease live.");
         return 0;
     }
 }

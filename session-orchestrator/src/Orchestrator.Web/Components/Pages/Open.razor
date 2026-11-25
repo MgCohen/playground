@@ -1,0 +1,137 @@
+@page "/events/{Id}"
+@inherits LiveView
+@inject NavigationManager Nav
+@using Orchestrator.Core.Templates
+
+<PageTitle>@(e?.Subject ?? "Event") · orch</PageTitle>
+
+<PageHeader Title="@(e is null ? "Event" : Ui.KindLabel(e.Kind, fields))" Tab="false" Parent="@(card is null ? new Crumb("Stream", "stream") : new Crumb("Cards", "cards"))" />
+
+@if (e is null)
+{
+    <div class="empty"><span class="nm">No event @Id</span><span class="sub">The stream has no envelope with this id.</span></div>
+}
+else
+{
+    var state = Ui.Text(fields.GetValueOrDefault("state"));
+    <div class="stack doc-page">
+        @if (Message is not null)
+        {
+            <p class="toast inline" role="status">@Message</p>
+        }
+        <div class="crd">
+            <div class="row head">
+                <KindRing Kind="@e.Kind" State="@state" P="@(open ? .5 : 1)" />
+                <span class="grow"><span class="nm">@Ui.KindLabel(e.Kind, fields)</span><span class="sub ell">@Board.Party(e.From) → @Board.Party(e.To) · @Ui.Clock(Ui.Time(e))</span></span>
+                @* V7: the pill shows only while the document waits; the facts of a closed document tell its state. *@
+                @if (open)
+                {
+                    <Pill Label="waits" State="pending" />
+                }
+            </div>
+            <div class="pad"><p class="q @Ui.TitleSize(doc.Title)">@doc.Title</p>@if (doc.Subtitle is { Length: > 0 } sub)
+            {
+                <p class="sub pre subtitle">@sub</p>
+            }</div>
+        </div>
+
+        <DocBody Doc="doc" />
+
+        @if (results.Count > 0)
+        {
+            <h2 class="gt">Result</h2>
+            <div class="crd">
+                @foreach (var (r, i) in results.Select((r, i) => (r, i)))
+                {
+                    var rf = Board.Fields(r);
+                    var said = Ui.Text(rf.GetValueOrDefault("text")) is { Length: > 0 } t ? t : Ui.Text(rf.GetValueOrDefault("verdict")) is { Length: > 0 } v ? v : Ui.Text(rf.GetValueOrDefault("state"));
+                    <a class="row @(i > 0 ? "sep" : "")" href="events/@r.Id">
+                        <KindRing Kind="@r.Kind" Size="28" />
+                        <span class="grow"><span class="ell">@(said.Length > 0 ? said : r.Subject)</span><span class="sub">@Ui.KindLabel(r.Kind, Board.Fields(r)) · by @Board.Party(r.From)@(r.Via is { } via ? $" via {Board.Party(via)}" : "") · @Ui.Clock(Ui.Time(r))</span></span>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+
+    <PageBar Page="PageActs" Content="ContentActs" OnAct="Run" HideAppBar="true" />
+
+    @if (sheet is { } s && card is not null)
+    {
+        <AnswerSheet Card="card" Voice="s" OnSend="Send" OnClose="() => sheet = null" />
+    }
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    Event? e;
+    CardView? card;
+    bool open;
+    IReadOnlyDictionary<string, object?> fields = new Dictionary<string, object?>();
+    IReadOnlyList<Event> results = [];
+    DocumentModel doc = default!;
+    bool? sheet;
+
+
+    // E-1 page actions: the same on each document page.
+    IReadOnlyList<PageAct> PageActs => e?.Session is not { } session ? [] :
+    [
+        new("session", "Open session", PageAct.Main, "tree", $"sessions/{session}"),
+        new("stream", "Session stream", PageAct.Other, "stream", $"stream?session={session}"),
+    ];
+
+    // E-1 content actions: the actions of the document type (view.json), while the item waits. A diff act needs a pull request link.
+    IReadOnlyList<PageAct> ContentActs => card is null ? [] : doc.Actions
+        .Where(a => a.Id != "diff" || PullRequest is not null)
+        .Select(a => new PageAct(a.Id, a.Label, a.Role, Href: a.Id == "diff" ? PullRequest : null)).ToList();
+
+    string? PullRequest => fields.Values.Select(v => Ui.Text(v)).Select(t => System.Text.RegularExpressions.Regex.Match(t, @"https?://\S+/pull/\d+")).FirstOrDefault(m => m.Success)?.Value;
+
+    protected override void OnParametersSet() => Load();
+
+    protected override void Load()
+    {
+        e = Board.Find(Id);
+        if (e is null) return;
+        fields = Board.Fields(e);
+        doc = Board.Document(e);
+        open = Board.IsOpen(e);
+        card = Board.Cards().FirstOrDefault(c => c.Id == e.Id);
+        results = Board.Results(e);
+    }
+
+    /// <summary>The behavior of each content action id. The id is the contract of view.json; the label is data.</summary>
+    void Run(string id)
+    {
+        if (card is not { } c) return;
+        switch (id)
+        {
+            case "accept" or "approve" or "ack":
+                var main = c.Right.Do is CardDo.Accept or CardDo.AcceptText ? c.Right : new CardAction("Accept", "check", CardDo.Accept);
+                Done(main.Do == CardDo.AcceptText ? Act(() => Board.Accept(c.Id, main.Text), $"{main.Label} · {c.SessionTitle}") : Act(() => Board.Accept(c.Id), $"{main.Label} · {c.SessionTitle}"));
+                return;
+            case "refuse":
+                Done(Act(() => Board.Refuse(c.Id, ""), $"Refused · {c.SessionTitle}"));
+                return;
+            case "skip":
+                Nav.NavigateTo("cards");
+                return;
+            default:
+                // other, change, reply: the answer sheet.
+                sheet = false;
+                return;
+        }
+    }
+
+    void Send(string text)
+    {
+        sheet = null;
+        if (card is { } c && text.Length > 0) Done(Act(() => Board.SendSheet(c, text), $"Sent to {c.SessionTitle}."));
+    }
+
+    void Done(bool ok)
+    {
+        if (ok) Nav.NavigateTo("cards");
+    }
+}

@@ -19,7 +19,7 @@ public sealed class PolicyTests
         Assert.That(answer.Value, Is.EqualTo("B"));
         Assert.That(answer.By, Is.EqualTo("policy"));
         Assert.That(answer.Note, Does.Contain("orch decision start d1"));
-        Assert.That(t.Turns[^1].Prompt, Does.StartWith("Answer to decision d1 (Q d1): B\n\nThis is a default decision"));
+        Assert.That(t.Turns[^1].Prompt, Does.StartWith("Answer to question d1 (Q d1): B\n\nThis is a default decision"));
         var ledger = t.Store.Ledger();
         Assert.That(ledger[0].From, Is.EqualTo("policy"));
         Assert.That(ledger[0].Subject, Is.EqualTo("B"));

@@ -1,0 +1,22 @@
+@* One root card that folds open to show its children. A session with no children is one row. *@
+@if (Node.Children.Count == 0)
+{
+    <div class="crd">
+        <SessionRow Node="Node" First="true" />
+    </div>
+}
+else
+{
+    <details class="crd fold" open="@Open">
+        <summary aria-label="Show or hide the children of @Ui.Name(Node)"><SessionRow Node="Node" First="true" /><span class="chev"><Icon Name="chevR" /></span></summary>
+        @foreach (var child in Ui.Flatten(Node.Children))
+        {
+            <SessionRow @key="child.Meta.Id" Node="child" />
+        }
+    </details>
+}
+
+@code {
+    [Parameter, EditorRequired] public SessionNode Node { get; set; } = default!;
+    [Parameter] public bool Open { get; set; }
+}

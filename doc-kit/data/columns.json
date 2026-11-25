@@ -1,0 +1,313 @@
+{
+ "source": {
+  "title": "VSA Split Map",
+  "url": "https://claude.ai/artifact/WzLLoM4f8CEt4WDwzwYh1o"
+ },
+ "groups": [
+  {
+   "id": "engine",
+   "title": "Engine",
+   "desc": "Reads a definition and checks an app.",
+   "items": [
+    {
+     "name": "Definition API",
+     "meta": "672",
+     "desc": "Layer, Part, Rule, RuleBook. No references. The name \"Layer\" is open",
+     "flags": [
+      "1"
+     ]
+    },
+    {
+     "name": "Engine",
+     "meta": "686",
+     "desc": "Binding, checks, Unity scan. ArchUnitNET",
+     "flags": [
+      "1"
+     ]
+    },
+    {
+     "name": "Engine app",
+     "meta": "33 files",
+     "desc": "Check, Definition, Rules and Report modules",
+     "ref": "#94",
+     "flags": [
+      "5"
+     ]
+    },
+    {
+     "name": "Build hook",
+     "meta": "targets",
+     "desc": "Runs the engine after the build",
+     "ref": "#94"
+    },
+    {
+     "name": "References from the definition",
+     "meta": "later",
+     "desc": "Gives the project references before compile",
+     "ref": "#89",
+     "flags": [
+      "4"
+     ]
+    },
+    {
+     "name": "Testing.Architecture",
+     "meta": "93",
+     "desc": "NUnit base that runs the checks",
+     "flags": [
+      "3"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "kernel",
+   "title": "Kernel",
+   "desc": "Starts an app on a host. Knows no module and no message.",
+   "items": [
+    {
+     "name": "App and builder",
+     "meta": "~180",
+     "desc": "`VsaApp`, `VsaBuilder`, the steps `Start`, `Build`, `Services`",
+     "flags": [
+      "2"
+     ]
+    },
+    {
+     "name": "Host scan",
+     "meta": "~70",
+     "desc": "`IVsaHost`, `VsaHosts`, generic host"
+    },
+    {
+     "name": "Installer mechanism",
+     "meta": "new",
+     "desc": "A list of installers that each architecture fills. Today the list is hard coded"
+    },
+    {
+     "name": "Type scan",
+     "meta": "~150",
+     "desc": "`AppScan`, `MarkedTypes`. Today in VSA.Module",
+     "flags": [
+      "6"
+     ]
+    },
+    {
+     "name": "Factory, markers",
+     "meta": "~90",
+     "desc": "`IFactory`, `[AutoRegister]`, `[TypeArgument]`, `[ReflectionBase]`"
+    },
+    {
+     "name": "Entry point base",
+     "meta": "new",
+     "desc": "The generic base of `Module`: one root class for each group instance, with `Configure`. Name open",
+     "flags": [
+      "6"
+     ]
+    },
+    {
+     "name": "Analyzer base",
+     "meta": "~400",
+     "desc": "`VsaAnalyzer`, `VsaAnalyzerRule`, options, `LimitRule`, `ForbiddenUseRule`, suppressor",
+     "flags": [
+      "7"
+     ]
+    },
+    {
+     "name": "Style rules",
+     "meta": "~280",
+     "desc": "Comments, lengths, one type per file, member order"
+    }
+   ]
+  },
+  {
+   "id": "comp",
+   "title": "Components",
+   "desc": "Optional packages. VSA uses them; other architectures can.",
+   "items": [
+    {
+     "name": "Message system",
+     "meta": "941",
+     "desc": "`IMessage`, `Envelope`, `Result`, the pipeline, runners, validators. VSA owns it"
+    },
+    {
+     "name": "Web host",
+     "meta": "140",
+     "desc": "ASP.NET Core host. The request API part is VSA"
+    },
+    {
+     "name": "Unity host",
+     "meta": "vsa-unity",
+     "desc": "`UnityVsaHost`, `MainThread`, log provider, IL2CPP markers"
+    },
+    {
+     "name": "Testing.Unit",
+     "meta": "188",
+     "desc": "NUnit and NSubstitute helpers"
+    }
+   ]
+  },
+  {
+   "id": "vsa",
+   "title": "VSA",
+   "desc": "Modules, slices, layers and messages.",
+   "items": [
+    {
+     "name": "VsaDefinition",
+     "meta": "263",
+     "desc": "The VSA layers and the Unity layout"
+    },
+    {
+     "name": "Modules",
+     "meta": "~260",
+     "desc": "`Module` and `Plugin` on the entry point base, `ModuleBuilder`, settings"
+    },
+    {
+     "name": "Layer bases",
+     "meta": "~280",
+     "desc": "Requests, Events, Commands; Domain; Infrastructure"
+    },
+    {
+     "name": "VSA installers",
+     "meta": "~70",
+     "desc": "`InstallLayers`, `InProcessBus`"
+    },
+    {
+     "name": "Presenters, Views",
+     "meta": "305",
+     "desc": "`IPresenterEvent`, `PresenterWatcher`"
+    },
+    {
+     "name": "VSA.Sdk",
+     "meta": "308 + targets",
+     "desc": "Folder layout, slice router, `VSA.Layers.targets`",
+     "flags": [
+      "4"
+     ]
+    },
+    {
+     "name": "VSA analyzers",
+     "meta": "553",
+     "desc": "Only the VSA rules and their tests: shared types, presenter publish, plugin root"
+    },
+    {
+     "name": "Templates",
+     "meta": "tool",
+     "desc": "`new app`, `add module/request/command/plugin`"
+    }
+   ]
+  }
+ ],
+ "bar": {
+  "title": "Size of each group (lines of C#, about)",
+  "parts": [
+   {
+    "group": "engine",
+    "value": 1450,
+    "label": "Engine ~1,450"
+   },
+   {
+    "group": "kernel",
+    "value": 1170,
+    "label": "Kernel ~1,170"
+   },
+   {
+    "group": "comp",
+    "value": 1270,
+    "label": "Components ~1,270"
+   },
+   {
+    "group": "vsa",
+    "value": 2040,
+    "label": "VSA ~2,040"
+   }
+  ]
+ },
+ "flags": {
+  "title": "Edges that cross the wrong way",
+  "rows": [
+   {
+    "flag": "1",
+    "from": {
+     "text": "Definition API, Engine",
+     "group": "engine"
+    },
+    "to": {
+     "text": "VSA names",
+     "group": "vsa"
+    },
+    "problem": "Namespaces `VSA.*`, IDs `VSA2xxx`, key `VsaAppRoot`"
+   },
+   {
+    "flag": "2",
+    "from": {
+     "text": "App and builder",
+     "group": "kernel"
+    },
+    "to": {
+     "text": "VsaDefinition, VSA installers",
+     "group": "vsa"
+    },
+    "problem": "`VsaApp` gives the definition, and `Build` calls `InstallLayers` directly"
+   },
+   {
+    "flag": "3",
+    "from": {
+     "text": "Testing.Architecture",
+     "group": "engine"
+    },
+    "to": {
+     "text": "VsaDefinition",
+     "group": "vsa"
+    },
+    "problem": "The test base references the VSA definition"
+   },
+   {
+    "flag": "4",
+    "from": {
+     "text": "VSA.Sdk",
+     "group": "vsa"
+    },
+    "to": {
+     "text": "its own layer map",
+     "group": "engine"
+    },
+    "problem": "A second copy of the layers (#89). The generic part goes to the engine"
+   },
+   {
+    "flag": "5",
+    "from": {
+     "text": "Engine app (#94)",
+     "group": "engine"
+    },
+    "to": {
+     "text": "Modules, Commands layer",
+     "group": "vsa"
+    },
+    "problem": "The engine is a VSA app. It needs a released VSA"
+   },
+   {
+    "flag": "6",
+    "from": {
+     "text": "Type scan",
+     "group": "kernel"
+    },
+    "to": {
+     "text": "Module",
+     "group": "vsa"
+    },
+    "problem": "`AppScan` is in VSA.Module and finds modules. The kernel scan finds the entry point base, and `Module` inherits it"
+   },
+   {
+    "flag": "7",
+    "from": {
+     "text": "Analyzer base",
+     "group": "kernel"
+    },
+    "to": {
+     "text": "VSA analyzers",
+     "group": "vsa"
+    },
+    "problem": "One DLL today. Split: the base and the style rules in the kernel, the VSA rules in a VSA DLL that references the base"
+   }
+  ]
+ }
+}

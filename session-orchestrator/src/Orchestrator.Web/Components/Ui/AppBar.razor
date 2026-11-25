@@ -1,0 +1,39 @@
+@inherits LiveView
+@inject NavigationManager Nav
+
+<nav class="nav2" aria-label="Views">
+    <a class="it @On("cards")" href="cards" aria-label="Cards"><Icon Name="cards" />@if (count > 0) {<span class="bdg">@count</span>}</a>
+    <a class="it @On("stream")" href="stream" aria-label="Stream"><Icon Name="stream" /></a>
+    <a class="home" href="" aria-label="Home" aria-current="@(Section == "" ? "page" : null)"></a>
+    <a class="it @On("sessions")" href="sessions" aria-label="Sessions"><Icon Name="tree" /></a>
+    <a class="it @On("settings")" href="settings" aria-label="Settings"><Icon Name="gear" /></a>
+</nav>
+
+@code {
+    int count;
+
+    string Section => Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#', '/')[0] switch
+    {
+        "events" => "cards",
+        "timeline" => "stream",
+        var s => s,
+    };
+
+    string On(string section) => Section == section ? "on" : "";
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Nav.LocationChanged += Changed;
+    }
+
+    void Changed(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+
+    protected override void Load() => count = Board.Cards().Count;
+
+    public override void Dispose()
+    {
+        Nav.LocationChanged -= Changed;
+        base.Dispose();
+    }
+}

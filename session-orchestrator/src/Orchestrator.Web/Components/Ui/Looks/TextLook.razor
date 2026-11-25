@@ -1,0 +1,10 @@
+@* Look "text": a fact is one line of text. A block is a card with the small Markdown part of Markdown.cs (V7). *@
+@inherits LookBase
+@if (IsFact)
+{
+    <span class="fv">@Value.Text</span>
+}
+else
+{
+    <div class="crd pad doc md">@Markdown.Render(Value.Text)</div>
+}

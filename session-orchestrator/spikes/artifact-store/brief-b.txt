@@ -1,0 +1,11 @@
+Spike for issue 83, session B (the answerer). Do not change any repository file. Do not push.
+Goal: read an orchestrator question from session A in the database of one Artifact, and write the answer.
+Artifact URL: https://claude.ai/artifact/WrQYrT5TLFpcEvcwgNzqrK
+Tool: ArtifactData (load it with ToolSearch, query select:ArtifactData). If you do not have this tool, write the list of your tools that contain Artifact in the name, then stop.
+Steps:
+1. Write the document spike/b-start (collection spike, doc_id b-start) with the fields at (ISO time now) and tools (true or false: ArtifactData available).
+2. Poll every 15 s: action query, collection events, where to == session:cloudB and needs == answer. Stop when you see one, or after 15 minutes.
+3. Write the answer envelope: collection events, doc_id 1795460000001-bbbbbbbb-cloudB, no if_version. Fields: id (same as doc_id), at (ISO time now), kind answer, from session:cloudB, to session:cloudA, subject Blue., thread spike83-t1, reply (the id of the question), body inline.
+4. Claim test: write the document claims/answer-spike83-t1 (collection claims, doc_id answer-spike83-t1) with no if_version and the field by cloudB. Record if it succeeds or fails with the error text.
+5. Write spike/b-result with: questionSeenAt, answerAt, claim (ok or the error), polls (count), errors (each error text), notes (what was hard).
+6. Reply with a short summary of the times and the errors. Then end.

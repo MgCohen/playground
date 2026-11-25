@@ -21,7 +21,9 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - Give each promise a `.catch` handler.
 - `tool.describe` can change the description of a tool and move it behind ToolSearch (`isDeferred`).
 - A hook module can import a relative `.ts` file (`./state.ts`). The modules of one plugin share their module state.
-- Plugin skills and agents reach each session through `CLAUDE_CODE_PLUGIN_DIRS` and through `--plugin-dir`. Their names start with `orch:` (`orch:orch-ask`, `orch:worker`).
+- Plugin skills and agents reach each session through the `mgcohen` marketplace, `CLAUDE_CODE_PLUGIN_DIRS` or `--plugin-dir`. Their names start with `orch:` (`orch:orch-ask`, `orch:worker`).
+- A plugin of the account marketplace (`mgcohen`) is on by default. Claude Code syncs the account plugins only when it starts, not during a session. A new plugin (`orch` 0.3.0) shows only in a session that starts after the sync. If that session shows "Plugins changed", run `/reload-plugins`. No documented setting turns on all plugins of a marketplace (docs check of the root, 2026-11-23).
+- A hot reload gives the skills to a session that started before the plugin loaded, but not the `mcp__orch__*` tools. Such a session uses the CLI only (`docs/commands.md`).
 - `claude -p --agent orch:worker` starts a session with a plugin agent.
 - `$.process.run(argv, { cwd, env, stdin, timeoutMs })` runs a program with no shell. The child gets the environment of the session, so `orch` gets `ORCH_STORE`.
 - Auto mode refuses `--permission-mode bypassPermissions` in tests. Use the user settings, or `--permission-mode auto`.
@@ -44,14 +46,72 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 3. Copy `config/policy.test.json` into a new store folder as `policy.json` (medium: 30 s).
 4. Publish a copy (`dotnet publish src/Orchestrator.Web -o <scratchpad>/sup`), then start it in the background: `ORCH_STORE=<store> ORCH_PORT=7779 dotnet <scratchpad>/sup/Orchestrator.Web.dll`. A supervisor that runs from `bin/` locks the DLLs, and the next build fails. The copy finds the repository through the path that the build embeds.
 5. Copy `spikes/p3/root.json` (one repository) or `spikes/p4/root.json` (PR stack) to the scratchpad, change its `cwd`, then send it: `curl -X POST -H 'content-type: application/json' --data @root.json http://127.0.0.1:7779/api/sessions`.
+5a. Give the supervisor the `orch` of the branch: `dotnet publish src/Orchestrator.Cli -o <scratchpad>/cli`, then start the supervisor with `ORCH_BIN=<scratchpad>/cli`. The supervisor puts that folder first on the `PATH` of each turn (C3-F5). With no `ORCH_BIN`, it uses its own folder if that folder holds `orch`. The plugin and the sessions call `orch` by name, and the installed tool can be older. For a workflow run, give `type` and `workflow` in the POST body, or use `orch new --type orchestrator --stream S --workflow planning`.
 6. Play the user with `orch answer <decision> <text>` and `orch review <decision> approve|change|refuse <text>`, with `ORCH_STORE` set to the test store.
 7. Watch `answers/`, `report.json` and `blocked.json` of the session. A POST starts a tick at once, so two close reviews run as two turns.
 8. Examine the ledger, the git graph and the PRs. Stop the supervisor.
+
+### Test work next to the real sessions
+
+Real sessions work on the real store all the time. So each test and each validation uses the demo store or a copy, never the real store. Proper environments (real, demo, test) are a later feature: [MgCohen/playground#47](https://github.com/MgCohen/playground/issues/47).
+
+1. Only the root session or the user starts, stops or restarts the real supervisor and the tray. No session runs `install.ps1` or `orch supervisor stop` on the real profile.
+2. Each session uses its own `ORCH_STORE` in its scratchpad and its own ports: L 7790 to 7799, V 7800 to 7809, D 7810 to 7819. The real supervisor uses 7777, the demo uses 7791.
+3. A test on real data uses a copy, the fake provider (below), `ORCH_IMPORT=0`, a scratch `ORCH_APP_DATA`, and scratch `cwd` and `repo` paths. A copy holds the real worktree paths, and an auto-archive can remove a worktree.
+4. Before a session touches a shared item (the real store, the real supervisor, the demo, the tray, an app session), it asks the root.
+
+`orch store migrate` cannot copy a store while sessions write to it: the hash check fails, also with `--force`. For a test snapshot, use the partial copy in `<target>.migrating`.
+
+### Fake provider
+
+`ORCH_PROVIDER=fake` selects the fake provider (`Providers/Fake/`): no model, no `claude` executable, no app. `ORCH_FAKE` names its behavior file. The provider reads the file at each call, so a change applies at once.
+
+```json
+{ "turn": { "ok": true, "text": "done", "delayMs": 0 },
+  "sessions": { "<id or prefix>": { "ok": false, "error": "boom" } },
+  "ask": { "ok": true, "text": "{ \"answered\": false }" },
+  "app": { "inApp": false, "archived": false } }
+```
+
+| Key | Effect |
+|---|---|
+| `turn` | The result of each turn. Default: good, with the text `fake turn of <id>` |
+| `sessions` | The result for one session. The longest matching id prefix wins |
+| `ask` | The reply of the docs check and of the state check. Default: no answer |
+| `app` | The app facts of each session. Default: not in the app |
+
+Dummy data (questions, reports, messages) goes in with `POST /api/stream` or `orch post`. Example: `ORCH_STORE=<copy> ORCH_PORT=7810 ORCH_PROVIDER=fake ORCH_FAKE=<file> dotnet <scratchpad>/sup/Orchestrator.Web.dll`.
 
 ## App sessions
 
 - To open a supervisor session in the desktop app, run `claude.exe --desktop --resume <id>` with PowerShell `Start-Process`. From bash it gives exit 1.
 - Then send one message to the session (`send_message`) to start its process. `set_remote_control` makes it visible on the phone.
+### Remote Control at the start (spike R, 2026-11-18, claude 2.1.312)
+
+No CLI command starts or imports a session into the desktop app with Remote Control on. `--desktop` accepts only `--resume` or `--continue`.
+
+| Command | Result |
+|---|---|
+| `--desktop --remote-control --session-id <new>` | Exit 1: "--desktop only opens the Claude Desktop app; it can't be combined with `--remote-control`." |
+| `--desktop --session-id <new>` | Exit 1: "... can't be combined with `--session-id`." |
+| `--desktop --remote-control --resume <known>` | Exit 1, same text as `--remote-control` above |
+| `--desktop --settings <file> --resume <known>` | Exit 1: "... can't be combined with `--settings`." |
+| `--desktop --resume <known>` | Exit 0. The app imports the session. Remote Control stays off |
+| `--desktop` | Exit 0. The app opens. No new session |
+| `-p --remote-control <name>` | Exit 0. The flag has no effect: no bridge in the debug log, no link (2.1.312 and the app CLI 2.1.325) |
+| `--bg --remote-control <name>` | Remote Control is on from the first turn (phone, claude.ai). Not in the app sidebar. `--bg` ignores `--session-id` and gives its own id |
+| `--bg --remote-control <name> --resume <known>` | Same id, Remote Control on. The job stays idle after the turn until `claude stop` |
+| `claude --remote-control <name> --session-id <new> "<prompt>"` in a console | Same id, Remote Control on from turn 1. The process stays open. Clear `CLAUDE_CODE_CHILD_SESSION` first: a child of a session inherits it, and then the CLI saves no transcript |
+| `--desktop --resume <id>` while that console session runs | Exit 1: "open in another terminal. Run /desktop there instead." |
+| `claude --remote-control <name> --resume <id> "/desktop"` | The CLI exits, the app imports the session, Remote Control off in the app |
+| `--desktop --resume <id of a live --bg job>` | Exit 1: "That session is running in the background ... `claude stop` first" |
+
+- `--desktop` refuses redirected output. To read its error text, run it in a console and read the console buffer.
+- The app record (`claude-code-sessions/.../local_<id>.json`) holds `remoteControlUserEnabled` and `bridgeSessionIds` after a Remote Control change.
+- The app setting `ccRemoteControlDefaultEnabled: true` applies only to sessions that the app makes. In 130 app records, no imported session (`adoptedFromOtherSurface: true`) has `remoteControlAutoEligible: true`.
+- `remoteControlAtStartup: true` is a user, flag or policy setting. Project and local settings cannot turn it on. A user setting changes all sessions, so the orchestrator does not use it.
+- So an imported session needs `set_remote_control`: by the session in its first live app turn, or by its parent.
+
 - The app keeps transcripts under `~/.claude/projects/<folder key>/`, keyed to the folder of the session. The spike sessions are under the keys of their folders, for example `claude-orchestrator-spikes-p2`. `dee17212` is under a scratchpad key of the build session. A resume from another folder may not find them (not tested).
 
 ## Settings history
@@ -71,20 +131,99 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - At the end of a `claude -p` process, `session.end` fires, so the mod sets the lease to `none`.
 - The process inherits `ORCH_HOLDER` and `ORCH_STORE` from the runner, so the mod writes to the test store.
 
+## Install and start
+
+`install.ps1` installs or updates the orchestrator for this user. Run it again after each merge. Plan and options: `docs/setup-options.html` (https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX).
+
+| Item | Place or rule |
+|---|---|
+| Tray | `%USERPROFILE%\Apps\Orchestrator\tray\Orchestrator.Tray.exe`, one file |
+| Supervisor | `%USERPROFILE%\Apps\Orchestrator\supervisor\Orchestrator.Web.dll` |
+| Install record | `install.json` in the install root: commit, store, port. `orch doctor` (check `app`) compares the commit with `src/` |
+| Shortcuts | Desktop `Orchestrator.lnk`, Startup `Orchestrator (login).lnk` with `--hidden`. Both start `--live <store> --port <port>` |
+| Store and port | The repository `store/`, port 7777 (defaults of `-Store` and `-Port`) |
+| Supervisor start | The tray in live mode, if no supervisor answers on the port. Else `orch supervisor start` |
+| Supervisor record and log | `%LOCALAPPDATA%\Orchestrator\supervisor-<port>.json` and `.log`. `ORCH_DATA` moves the folder |
+| Update | `install.ps1` stops each process that runs from the install root (`taskkill /T`), swaps the folders, updates `orch` and starts the tray |
+
+- The supervisor runs in its own process (`cmd /c dotnet ... >> log`). It stays when the tray exits, so a turn continues.
+- The tray starts the supervisor only at its own start. If the supervisor stops later, run `orch supervisor start` or start the tray again.
+- `orch supervisor stop` stops only a supervisor that the tray or `orch` started (it has a record). A supervisor started by hand keeps running.
+- `orch supervisor start` uses the published copy in `ORCH_APP` (default: the install root). With no copy, it runs `dotnet run` of the source.
+- The tray publish needs `-p:ValidateExecutableReferencesMatchSelfContained=false`, because the tray references `Orchestrator.Web` (NETSDK1151).
+- `tray.ps1` stays for development: mock mode, the self-test and `-Live` from the source.
+- Test install: `install.ps1 -Root <scratch>\app -Store <scratch>\store -Port <port> -Shortcuts <scratch>\links -NoTool`, with `ORCH_DATA=<scratch>\data`. It does not change the real profile, except the WebView2 data and the place file of the tray in `%LOCALAPPDATA%\Orchestrator.Tray`.
+
+### Start a cloud session from a session
+
+- `start_session` with `target: cloud` refuses in a Remote Control turn. A turn that comes from an orch plugin message is such a turn.
+- `claude -p --cloud` refuses: "--cloud cannot be combined with --print".
+- Use `claude --cloud "<brief>"` in a terminal tab (`run_in_terminal`). Run it from a trusted folder; the brief names the branch. It prints the session id and the view URL, then exits.
+- The first run in a folder asks the user to trust the folder. A session cannot answer this prompt and must not change the trust flag in `~/.claude.json`. After the first answer, it does not ask again.
+- The cloud session runs in the default permission mode, so the user approves each command. Put the permission rules in the brief or the environment.
+- A brief must not contain double quotes when PowerShell starts `claude --cloud`. PowerShell cuts the argument at the first quote. From bash, use `claude --cloud "$(cat brief.txt)"`.
+- `claude -p "<text>" --cloud <session id>` sends one more message to a cloud session.
+- To read a cloud session, open `https://claude.ai/code/<session id>` in the browser pane. `list_events` reads only local sessions.
+- A full team runs in one VM if `orch` is on `PATH`: `dotnet pack src/Orchestrator.Cli` and `dotnet tool update -g`, then `~/.dotnet/tools` on `PATH` and `DOTNET_ROOT` set. Start the supervisor with `ORCH_PLUGIN_DIR=$PWD/plugin`.
+- Results: `docs/c0-probe.md`, `docs/c5-probe.md`, and the findings C0 and C5 in `docs/plan.md`.
+
+## Cloud environment
+
+A cloud worker is a cloud session of the engine that works for the supervisor on this PC (G2). The supervisor starts it with `where: cloud` in the brief. The worker calls `orch` in HTTP mode; the plugin stays off when `ORCH_URL` is set.
+
+```mermaid
+sequenceDiagram
+    participant S as Supervisor (this PC)
+    participant C as claude CLI
+    participant W as Cloud worker (VM)
+    S->>C: claude --cloud "<brief + notice cloud-worker>"
+    C-->>S: session_... (kept in engine.appId of the registry entry)
+    W->>S: orch post report (ORCH_URL, token)
+    S->>C: claude -p "<message>" --cloud session_...
+```
+
+Files: `src/Orchestrator.Providers/ClaudeCode/Cloud/setup.sh` and `environment.env`.
+
+1. Make the tunnel and the service token of D2 first. A cloud worker cannot reach `*.trycloudflare.com` (G-0.1).
+2. Make a long random token. Keep it in 1Password.
+3. Start the supervisor with `ORCH_TOKEN=<token>`. Local tools on 127.0.0.1 need no token.
+4. In the cloud environment settings, add the variables of `environment.env`. Set `ORCH_URL` to the tunnel address.
+5. Add `ORCH_TOKEN` as a network secret for the `ORCH_URL` host, if the environment has network secrets. Else set it as a variable there. Never in the repository.
+6. Add the host of `ORCH_URL` to the network allow list of the environment.
+7. Set the setup script to `bash session-orchestrator/src/Orchestrator.Providers/ClaudeCode/Cloud/setup.sh`.
+8. Run `claude --cloud "hello"` one time in the repository folder on this PC, and trust the folder. The supervisor cannot answer the trust prompt; its cloud start stops after 2 minutes.
+
+The setup script installs .NET 10 and `orch`, puts both in `/usr/local/bin`, and writes `~/.claude/settings.json` in the VM: auto mode and an allow list for `orch`, `dotnet`, `git` and `node` (C0-3). An existing settings file stays.
+
+Known limits:
+
+- A cloud turn ends when the engine takes the prompt, not when the worker ends its turn. The worker reports through the store API.
+- The flags and the output of a real cloud start are not checked yet. The end-to-end test comes with D2.
+
 ## The orch tool
 
-- Install or update it after a change of `src/Orchestrator.Cli`: `dotnet pack src/Orchestrator.Cli -c Release -o <folder>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder>` (`install` the first time).
+- Install or update it after a change of `src/Orchestrator.Cli`: `dotnet pack src/Orchestrator.Cli -c Release -o <folder> -p:Version=<new version>`, then `dotnet tool update -g Orchestrator.Cli --add-source <folder> --version <new version>` (`install` the first time). Each pack needs a new version: `dotnet tool update` does not reinstall a package of the same version (P1-F15).
+- A running `orch` process (for example the `orch watch` of a live session) locks the `.store` folder of the tool, and the update fails with "Access to the path ... is denied". Update when no live session runs, for example after an app restart.
 - The build embeds the repository path, so `orch` finds `templates/` and `config/` from any folder. `ORCH_HOME` overrides it.
 - `orch` uses `ORCH_STORE`. A supervisor turn sets it, so a session that runs `orch` writes to the store of its supervisor.
+- HTTP mode: with `ORCH_URL`, each store command calls the store API of that supervisor, with `ORCH_TOKEN` in `X-Orch-Token`. With no `ORCH_URL`, no `ORCH_STORE` and no folder at the default store root, `orch` calls `http://127.0.0.1:<ORCH_PORT or 7777>`. `orch supervisor`, `orch store` and `orch process` always use the local folder.
 - `orch doctor` checks the home, the store, the policy, the templates, `claude`, `gh`, the plugin path and the supervisor.
 
 ## Session lifecycle
 
+The rules for start, retry and archive are in `docs/commands.md` "Lifecycle rules".
+
+
 - `orch stop <id>` ends a running turn: the supervisor cancels it and kills each descendant that it recorded while the turn ran, also an orphan. `orch archive` tries the worktree removal again for about 7.5 s if a process holds the folder.
 - `orch archive <id>` removes the `enabled` file. The supervisor never runs the session again. The branch of its worktree stays.
-- If the session is live in the desktop app, `orch archive` first sends it the notice `archive-self`. The session calls `archive_session` with `self`, so the app archives it, also while it is open on screen. `orch archive` waits up to 120 s (`--wait`) for `"isArchived": true` in the app record, then archives the store side. `--store-only` skips the app step. A session that is not live in the app stays in the sidebar: archive it from the sidebar.
+- The app refuses `archive_session` while Remote Control is on ("it still has live work", probe 2a). So each archive turns Remote Control off first: `set_remote_control` with `enabled: false`, then `archive_session`. A parent can do both for a child by its app id (probes 2b, 2c), with no prompt in auto mode.
+- `set_remote_control` on another session can say "requires an active session" when that session runs no turn. Two immediate retries failed (root, 2026-11-23). What works: send the session a message first, so it starts a turn, then call `set_remote_control` again. `core:spawn` sends the brief before this call.
+- A child in a `claude -p` supervisor turn has no app tools. `set_remote_control` on `self` works only in a live app turn (probe 1a); the parent can call it for the child at any time (probe 1b).
+- If the session is live in the desktop app, `orch archive` first sends it the notice `archive-self`. The session turns its Remote Control off and calls `archive_session` with `self`. The app refuses this call while the session is open on screen or pinned ("keeping it for the user", transcripts 0d481f32, 6a3d1313, 077178e7): then the user archives it from the sidebar. `orch archive` waits up to 120 s (`--wait`) for `"isArchived": true` in the app record, then archives the store side. `--store-only` skips the app step. A session that is not live in the app stays in the sidebar: archive it from the sidebar.
 - A worktree folder is `<repo>.wt/orch-<id8>`, next to the repository, on branch `orch/session-<id8>`.
-- `orch open <id>` imports a session into the desktop app (`claude --desktop --resume` with the session folder as working folder). The app starts its process at once, and the plugin takes the lease `live`. The supervisor imports each session by itself after its first good turn, when it uses the default store (`ORCH_IMPORT=1` or `0` overrides). The first turn of a new session gets `-n <title>`, so the sidebar shows the title.
+- `orch open <id>` imports a session into the desktop app (`claude --desktop --resume` with the session folder as working folder). The app starts its process at once, and the plugin takes the lease `live`. The supervisor imports each new session before its work starts, when it uses the default store (`ORCH_IMPORT=1` or `0` overrides): the first turn has only the notice `open-in-app` (reply READY), because the app can import only a session that has a transcript. The import follows at once, and the plugin of the live app session delivers the brief. If the app does not take the lease in 30 s, the supervisor delivers the brief with `claude -p`. The first turn of a new session gets `-n <title>`, so the sidebar shows the title.
+- A parent in the desktop app starts a normal child in the app (R-F8): `spawn_child` runs `orch new --app-start`, the parent calls `start_session` with the call in the tool result, and the child runs `orch join <file>` first. The app check is `CLAUDE_CODE_ENTRYPOINT=claude-desktop` (`IProvider.CallerInApp`). If the app tool is missing or refused, the parent calls `spawn_child` again with `inApp: false`, and the supervisor starts the child.
+- A child of a parent outside the app starts as a console session (`ORCH_CONSOLE=1`, default with the import): `claude --remote-control <title> --session-id <id> "<console-start notice>"`, started with PowerShell `Start-Process -WindowStyle Hidden`, so it inherits no handle of the supervisor. The variables of a parent session (`CLAUDE_CODE_CHILD_SESSION` and others, `Claude.ParentVariables`) are removed: with `CLAUDE_CODE_CHILD_SESSION` the CLI saves no transcript. `orch archive` stops the process. If the process ends, later turns run with `-p` again, with no Remote Control.
 - `orch enable [--title T] [--parent ID]` puts the session that runs it under the orchestrator. It reads `CLAUDE_CODE_SESSION_ID`, writes `meta.json` (title, parent, cwd, `started`, `imported`) and `enabled`, and prints the id. The hook activates after the next tool result, in the same turn. Use it in the brief of an app session that `start_session` started: the app links the session to its parent in the sidebar, and `--parent` links it in the store.
 
 ## The UI
@@ -93,6 +232,84 @@ Facts about the engine, the mod, the tests and this computer. The test results t
 - A published copy finds its `wwwroot/` through `ContentRootPath = AppContext.BaseDirectory`, so it runs from any folder.
 - Test the phone layout in the browser pane of the desktop app: `preview_start` with the URL, then `resize_window` with the preset `mobile`.
 - The browser pane resets the viewport size when the pane width changes. Set `mobile` again before each screenshot.
+
+## The demo
+
+`tools/demo/demo.ps1` starts a demo on its own store and port. Run it again after each build: it stops the old demo and starts from a new store.
+
+| Command | Effect |
+|---|---|
+| `.\tools\demo\demo.ps1` | Build, make a new store, start the supervisor, a small tree with the real `claude`, and the tray |
+| `.\tools\demo\demo.ps1 -Fake` | The same tree with the fake provider of D: no model call. The script posts the cards |
+| `.\tools\demo\demo.ps1 -FromLive` | A copy of the live store, upgraded to version 3, with the fake provider |
+| `.\tools\demo\demo.ps1 -Status` | Show the processes, the URL and the session tree |
+| `.\tools\demo\demo.ps1 -Stop` | Stop the tray, the supervisor and its turns. The files stay |
+
+Give `-Root` and `-Port` to `-Status` and `-Stop` when the demo does not use the defaults.
+
+| Item | Default | Option |
+|---|---|---|
+| Demo folder | `%LOCALAPPDATA%\orch\demo-store` (`store\`, `app\`, `work\`, `logs\`, `demo.json`). With `-FromLive`: `%LOCALAPPDATA%\orch\demo-live` | `-Root` |
+| Port and URL | 7791, `http://127.0.0.1:7791/`. With `-FromLive`: 7792. The script refuses a port outside 7790-7799 (the range of L while L, V and D run in parallel, issue #47) | `-Port`, `-AnyPort` |
+| Model and effort | `haiku`, `low` (`ANTHROPIC_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`). Not used with `-Fake` | `-Model`, `-Effort` |
+| Provider | The real `claude`. `-Fake` and `-FromLive` set `ORCH_PROVIDER=fake` and `ORCH_FAKE=<root>\fake.json` | `-Fake` |
+| Live store | `session-orchestrator\store` of the main checkout (the first entry of `git worktree list`) | `-LiveStore` |
+| Tray | Started with `--live <store> --port <port> --no-supervisor --pin` | `-NoTray` |
+| Build | `dotnet publish` of the supervisor, `orch` and the tray into `app\` | `-NoBuild` |
+
+### The demo tree
+
+All sessions are in stream `DEMO`:
+
+- Root `Demo root: plan greeting.txt`: type `orchestrator`, workflow `planning`. The run does the steps `read` and `ask`, then waits at the step `answer` on the root question.
+- `Demo child: ask a question`: one question.
+- `Demo child: report done`: one `done` report.
+- `Demo child: send an update`: one update at 50 %.
+
+With the real `claude`, the sessions do this with the plugin tools. With `-Fake`, no session calls a tool, so the script posts the same messages (`orch post question|report|update`) and moves the run (`orch run start`, `orch run step`).
+
+### The fake provider
+
+The behavior file `fake.json` makes each turn good after 500 ms. Each model call (`Ask`) returns `{"answered": false, "state": "idle", "reason": "fake provider"}`. The docs check reads it as "not answered", and the state check reads it as `idle`. To change the behavior while the demo runs, edit `fake.json`: the provider reads it at each call.
+
+### The copy of the live store
+
+1. `robocopy` copies the live store into `<root>\store`. It only reads the live store.
+2. `orch store upgrade --force` upgrades the copy from version 1 to 3.
+3. The script points `work.cwd` and `work.repo` of each copied session to `<root>\work\<id8>`.
+
+- `orch store migrate` cannot make this copy: the live sessions write new files during the copy, so its check fails (L-F8).
+- Step 3 is necessary: an archive in the demo UI runs `git worktree remove` on the folder of the session (L-F6).
+
+### The demo pane
+
+The page `/demo` of a demo supervisor has buttons that write dummy events into its store, for example `http://127.0.0.1:7793/demo`. No link goes to it: open it by hand next to the tray. Code: `src/Orchestrator.Web/DemoPane.cs` and `Components/Pages/Demo.razor`.
+
+| Button | Event |
+|---|---|
+| Add session | A new root, or a child of the selected session. The fake provider runs its first turn |
+| Add question | A `question` to the user with `needs: answer`, options, a risk and a default |
+| Add answer | The answer of the user to the oldest open question |
+| Add report | A `done` report, or one time in four a `blocked` report, with `needs: ack` |
+| Add update | An `update` with a random progress value |
+| Add message | A `message` to the parent, or to the user for a root |
+| Fail turns | A rule in the fake behavior file: each turn of the session fails. The pane then sends the session a message, so a turn runs. A second click removes the rule |
+| Burst ×10 | Ten random events of the kinds above |
+
+- The pane works only if the provider is the fake provider, the port is not 7777, and the store is not the real store (`%LOCALAPPDATA%\orch\store` or `store\`). Else the page says why it is off, and each action refuses.
+- With no session selected, each action picks a random enabled session. With no session, it makes one first.
+- Each action uses the store functions of `orch new`, `orch post` and `orch answer`, then starts a tick.
+
+### Rules of the script
+
+- It refuses the real store (`%LOCALAPPDATA%\orch\store`, `store\`, the `-LiveStore` folder) as its target, and the port 7777.
+- A copy of real data runs with the fake provider and `ORCH_IMPORT=0`: `-FromLive` always sets `-Fake`.
+- The demo policy has no timeout on each level, so no default decision closes a card.
+- It removes each `CLAUDE*`, `ORCH_*`, `AI_AGENT` and `BAGGAGE` variable before it starts the supervisor. A start from a Claude session gives these variables to each turn (L-F1).
+- The goals and the message bodies go in files (`--goal-file`, `--json`): Windows PowerShell 5.1 breaks a native argument with quotes or line breaks.
+- The root goal names each `orch run` command. With only the agent text, Haiku started the run and ended its turn at the step `read` (L-F2).
+- One normal tray runs for each user (L-F4). If another normal tray runs, the script prints the tray command and does not start it. Use the web UI of the second demo. A self-test tray does not block.
+- To play the user: `$env:ORCH_STORE='<store>'; & '<root>\app\cli\orch.exe' answer <decision> <text>`.
 
 ## The end-to-end script
 

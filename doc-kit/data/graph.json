@@ -1,0 +1,158 @@
+{
+ "source": {
+  "title": "Q6 Anchor and Host Types",
+  "url": "https://claude.ai/artifact/CGKtHX8HKMssjKXaaTQZsJ"
+ },
+ "title": "The agreed startup shape",
+ "summary": "The app has the lifetime and selects one architecture. The architecture joins two types: the definition (rules, for the engine) and the host (the composition root). The core of the architecture comes with the host, through direct references.",
+ "rows": [
+  3,
+  3,
+  3,
+  4
+ ],
+ "nodes": [
+  {
+   "id": "shell",
+   "label": "Shell",
+   "sub": "Program.cs · Unity shell",
+   "kind": "outside",
+   "row": 0,
+   "col": 0
+  },
+  {
+   "id": "app",
+   "label": "App<TArchitecture>",
+   "sub": "lifetime, app logic",
+   "kind": "key",
+   "row": 0,
+   "col": 1
+  },
+  {
+   "id": "engine",
+   "label": "Engine (build)",
+   "sub": "reads Definition",
+   "kind": "outside",
+   "row": 0,
+   "col": 2
+  },
+  {
+   "id": "arch",
+   "label": "Architecture",
+   "sub": "Vsa<TDefinition, THost>",
+   "kind": "key",
+   "row": 1,
+   "col": 1
+  },
+  {
+   "id": "def",
+   "label": "Definition",
+   "sub": "rules and layout",
+   "kind": "data",
+   "row": 1,
+   "col": 2
+  },
+  {
+   "id": "host",
+   "label": "Host",
+   "sub": "composition root",
+   "kind": "plain",
+   "row": 2,
+   "col": 1
+  },
+  {
+   "id": "core",
+   "label": "Core",
+   "sub": "kernel",
+   "kind": "plain",
+   "row": 3,
+   "col": 0
+  },
+  {
+   "id": "install",
+   "label": "Install()",
+   "sub": "architecture, platform",
+   "kind": "plain",
+   "row": 3,
+   "col": 1
+  },
+  {
+   "id": "anchors",
+   "label": "Anchors",
+   "sub": "from AppTypes",
+   "kind": "plain",
+   "row": 3,
+   "col": 2
+  },
+  {
+   "id": "appsvc",
+   "label": "App",
+   "sub": "ConfigureServices",
+   "kind": "plain",
+   "row": 3,
+   "col": 3
+  }
+ ],
+ "edges": [
+  {
+   "from": "shell",
+   "to": "app",
+   "label": "Run"
+  },
+  {
+   "from": "app",
+   "to": "arch",
+   "label": "selects"
+  },
+  {
+   "from": "arch",
+   "to": "def",
+   "dashed": true
+  },
+  {
+   "from": "def",
+   "to": "engine",
+   "dashed": true
+  },
+  {
+   "from": "arch",
+   "to": "host",
+   "label": "CreateHost"
+  },
+  {
+   "from": "host",
+   "to": "core",
+   "label": "1"
+  },
+  {
+   "from": "host",
+   "to": "install",
+   "label": "2"
+  },
+  {
+   "from": "host",
+   "to": "anchors",
+   "label": "3"
+  },
+  {
+   "from": "host",
+   "to": "appsvc",
+   "label": "4"
+  }
+ ],
+ "legend": [
+  {
+   "kind": "key",
+   "text": "our startup types"
+  },
+  {
+   "kind": "data",
+   "text": "data for the engine"
+  },
+  {
+   "kind": "outside",
+   "text": "outside the app"
+  }
+ ],
+ "note": "Compose runs 1 → 4 in a fixed order. Native .NET under the host: the builder, `IHost`, `IServiceProvider`."
+}

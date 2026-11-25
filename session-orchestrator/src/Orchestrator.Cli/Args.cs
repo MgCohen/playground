@@ -27,6 +27,8 @@ public sealed class Args
 
     public List<string> Positional { get; } = [];
 
+    public IReadOnlyDictionary<string, string?> Options => options;
+
     public string? Option(string name) => options.TryGetValue(name, out var value) ? value : null;
 
     public bool Flag(string name) => options.ContainsKey(name);

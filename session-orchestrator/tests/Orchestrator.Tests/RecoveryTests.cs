@@ -2,6 +2,7 @@ using Orchestrator.Core.Contract;
 using Orchestrator.Core.Events;
 using Orchestrator.Core.Leases;
 using Orchestrator.Store;
+using Orchestrator.Store.Local;
 using Orchestrator.Supervisor;
 
 namespace Orchestrator.Tests;
@@ -94,9 +95,9 @@ public sealed class RecoveryTests
     public void The_cursor_never_moves_back()
     {
         using var t = new Rig();
-        var id = t.Create("one");
-        Files.Write(t.Store.PathOf(id, StoreFiles.Cursor), "5.json");
-        t.Store.MarkSent(id, new Pending("", ["3.json"], []));
-        Assert.That(Files.ReadText(t.Store.PathOf(id, StoreFiles.Cursor)), Is.EqualTo("5.json"));
+        var subscription = t.Store.Events.Subscribe(Parties.Supervisor, "test", _ => true);
+        subscription.Done("5000-aaaaaaaa-cli");
+        subscription.Done("3000-bbbbbbbb-cli");
+        Assert.That(subscription.Cursor, Is.EqualTo("5000-aaaaaaaa-cli"));
     }
 }

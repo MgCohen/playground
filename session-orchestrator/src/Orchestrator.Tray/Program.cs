@@ -1,0 +1,140 @@
+using System.Runtime.InteropServices;
+using Microsoft.Extensions.DependencyInjection;
+using Orchestrator.Store;
+using Orchestrator.Supervisor;
+using Orchestrator.Web;
+
+namespace Orchestrator.Tray;
+
+/// <summary>
+/// The start of the tray app. Usage: Orchestrator.Tray.exe [--write-ball &lt;png&gt;] [--hidden] [--pin] [--selftest &lt;folder&gt; [--only notify,overlap]] [--live &lt;store&gt; [--port &lt;port&gt;] [--no-supervisor]].
+/// Mock mode (the default): the window shows mock data from a temporary store.
+/// Live mode: the window shows a real store. With no store after --live, the tray uses the default store root (<see cref="Home.StoreRoot"/>). The supervisor process of that store (on the port) does the ticks; the tray only reads and posts.
+/// If no supervisor answers on the port, the tray starts one in its own process, unless --no-supervisor.
+/// </summary>
+public static partial class Program
+{
+    [STAThread]
+    public static int Main(string[] args)
+    {
+        // A start from a terminal (tray.ps1) writes its output to that terminal. A shortcut start has no console.
+        _ = AttachConsole(-1);
+        // V5: write the image of the home ball, then exit. The file is Orchestrator.Web/wwwroot/home-ball.png.
+        if (Value(args, "--write-ball") is { } ballFile)
+        {
+            EdgeTab.WriteBall(Path.GetFullPath(ballFile));
+            return 0;
+        }
+        var at = Array.IndexOf(args, "--selftest");
+        var selfTest = at >= 0 ? Path.GetFullPath(at + 1 < args.Length ? args[at + 1] : "selftest") : null;
+        TrayApp? tray = null;
+        using var instance = SingleInstance.TryStart(selfTest is not null, () => tray?.ShowFromAnyThread());
+        if (instance is null)
+        {
+            Console.WriteLine("The tray app already runs. Its window comes to the front.");
+            return selfTest is null ? 0 : 1;
+        }
+
+        // An installed app has the templates and the policy next to the exe.
+        var home = Path.Combine(AppContext.BaseDirectory, "home");
+        if (Directory.Exists(Path.Combine(home, "templates"))) Environment.SetEnvironmentVariable("ORCH_HOME", home);
+        var data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Orchestrator.Tray");
+        Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", Path.Combine(data, selfTest is null ? "WebView2" : "WebView2.selftest"));
+
+        Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
+
+        var live = Value(args, "--live") ?? (args.Contains("--live") ? Home.StoreRoot() : null);
+        using var mock = live is null ? MockStore.Create() : null;
+        var store = live is null ? mock!.Store : new FileStore(live, writer: TrayWriter);
+        var port = int.TryParse(Value(args, "--port") ?? Environment.GetEnvironmentVariable("ORCH_PORT"), out var p) ? p : 7777;
+        var label = live is null ? "mock data" : $"live: {store.Root}, port {port}";
+        if (live is not null) StartSupervisor(store.Root, port, start: !args.Contains("--no-supervisor"));
+        Console.WriteLine($"orch tray: {label}");
+        using var services = Services(store, live is null ? MockStore.MockPolicy : store.Policy, ticks: live is null);
+        tray = new TrayApp(services, label, show: selfTest is not null || !args.Contains("--hidden"), pinned: selfTest is not null || args.Contains("--pin"),
+            placeFile: selfTest is null ? Path.Combine(data, "place.json") : SelfTest.FreshPlaceFile(selfTest));
+        var code = 0;
+        if (selfTest is not null)
+        {
+            tray.Form.Shown += async (_, _) =>
+            {
+                try
+                {
+                    code = await SelfTest.Run(tray, selfTest, Value(args, "--only"));
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine($"FAIL self-test: {e}");
+                    // A start with no console (a redirect, a shortcut) still keeps the error.
+                    File.WriteAllText(Path.Combine(selfTest, "selftest-error.txt"), e.ToString());
+                    code = 1;
+                }
+                tray.Exit();
+            };
+        }
+        Application.Run(tray);
+        tray.Dispose();
+        return code;
+    }
+
+    /// <summary>The writer id of the envelopes of the tray in live mode. The supervisor of the store writes with its own id.</summary>
+    public const string TrayWriter = "tray";
+
+    static string? Value(string[] args, string name)
+    {
+        var at = Array.IndexOf(args, name);
+        return at >= 0 && at + 1 < args.Length && !args[at + 1].StartsWith("--", StringComparison.Ordinal) ? args[at + 1] : null;
+    }
+
+    /// <summary>
+    /// Live mode: if no supervisor answers on the port, start one for the store in its own process, in the background.
+    /// The published copy next to the tray (..\supervisor) comes first. The supervisor stays when the tray exits.
+    /// </summary>
+    static void StartSupervisor(string store, int port, bool start)
+    {
+        if (!start)
+        {
+            if (!SupervisorHost.Answers(port))
+                Console.Error.WriteLine($"No supervisor answers on port {port}. The tray shows the store, but no tick delivers the answers. Start: ORCH_STORE={store} orch supervisor start --port {port}");
+            return;
+        }
+        var sibling = Path.Combine(AppContext.BaseDirectory, "..", "supervisor");
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                var (started, record) = SupervisorHost.Start(store, port, TimeSpan.FromSeconds(120), sibling);
+                Console.WriteLine(started ? $"orch tray: started the supervisor (pid {record!.Pid}, log {record.Log})" : $"orch tray: a supervisor answers on port {port}");
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine($"orch tray: could not start the supervisor: {e.Message}");
+            }
+        });
+    }
+
+    static ServiceProvider Services(FileStore store, Core.Policy.Policy policy, bool ticks)
+    {
+        var services = new ServiceCollection();
+        services.AddWindowsFormsBlazorWebView();
+        services.AddSingleton(store);
+        // Mock mode: a tick after an action relays and applies the policy on the mock store (NoRunner starts no engine process).
+        // Live mode: no tick. The supervisor process of the store does it, so the tray never takes a lease or applies a default.
+        services.AddSingleton(new SupervisorOptions(1, 1, 1, policy) { Ticks = ticks });
+        services.AddSingleton<ITurnRunner, NoRunner>();
+        services.AddSingleton<IDocsChecker, NoDocs>();
+        services.AddSingleton<Supervisor.Supervisor>();
+        services.AddSingleton<Board>();
+        services.AddScoped<PathTrail>();
+        services.AddSingleton<StreamHub>();
+        services.AddSingleton<WidgetWindow>();
+        services.AddSingleton<IWidgetWindow>(p => p.GetRequiredService<WidgetWindow>());
+        return services.BuildServiceProvider();
+    }
+
+    [LibraryImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool AttachConsole(int processId);
+}

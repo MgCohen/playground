@@ -1,0 +1,692 @@
+{
+ "title": "4-bit ripple-carry adder",
+ "source": {
+  "kind": "notion",
+  "url": "https://app.notion.com/p/4-bit-ripple-carry-adder-41a91e2457868137ba84f5f5e871a703",
+  "edited": "2026-11-16T21:40:00.000Z"
+ },
+ "sections": [
+  {
+   "title": "The circuit",
+   "blocks": [
+    {
+     "type": "p",
+     "text": "Each full adder adds three bits: **A**, **B** and the carry in. It gives one sum bit **S** and one carry out."
+    },
+    {
+     "type": "list",
+     "ordered": false,
+     "items": [
+      "Inputs: `A3..A0`, `B3..B0` and `Cin`",
+      "Outputs: `S3..S0` and `Cout`",
+      "Gates in each full adder: 2 XOR, 2 AND, 1 OR"
+     ]
+    },
+    {
+     "type": "table",
+     "head": [
+      "A",
+      "B",
+      "Cin",
+      "S",
+      "Cout"
+     ],
+     "rows": [
+      [
+       "0",
+       "0",
+       "0",
+       "0",
+       "0"
+      ],
+      [
+       "0",
+       "0",
+       "1",
+       "1",
+       "0"
+      ],
+      [
+       "0",
+       "1",
+       "0",
+       "1",
+       "0"
+      ],
+      [
+       "0",
+       "1",
+       "1",
+       "0",
+       "1"
+      ],
+      [
+       "1",
+       "0",
+       "0",
+       "1",
+       "0"
+      ],
+      [
+       "1",
+       "0",
+       "1",
+       "0",
+       "1"
+      ],
+      [
+       "1",
+       "1",
+       "0",
+       "0",
+       "1"
+      ],
+      [
+       "1",
+       "1",
+       "1",
+       "1",
+       "1"
+      ]
+     ]
+    },
+    {
+     "type": "callout",
+     "text": "The result is correct only after the carry goes through all four stages.",
+     "icon": "⚡"
+    },
+    {
+     "type": "list",
+     "ordered": true,
+     "items": [
+      "Make a half adder: one XOR and one AND.",
+      "Make a full adder from two half adders and one OR.",
+      "Connect four full adders in a chain.",
+      "Test all 512 input cases."
+     ]
+    },
+    {
+     "type": "code",
+     "lang": "",
+     "code": "module full_adder(input a, b, cin, output s, cout);\n  wire p = a ^ b;\n  assign s    = p ^ cin;\n  assign cout = (a & b) | (p & cin);\nendmodule"
+    }
+   ]
+  },
+  {
+   "title": "Files",
+   "blocks": [
+    {
+     "type": "tree",
+     "data": {
+      "tags": {
+       "later": "warn",
+       "kind": "neutral"
+      },
+      "rows": [
+       {
+        "path": "adder4",
+        "desc": "The project",
+        "order": 0,
+        "kind": "repo"
+       },
+       {
+        "path": "adder4/rtl",
+        "desc": "The circuit, in Verilog",
+        "order": 1,
+        "kind": "source"
+       },
+       {
+        "path": "adder4/rtl/half_adder.v",
+        "desc": "One XOR and one AND",
+        "order": 2
+       },
+       {
+        "path": "adder4/rtl/full_adder.v",
+        "desc": "Two half adders and one OR",
+        "order": 3
+       },
+       {
+        "path": "adder4/rtl/adder4.v",
+        "desc": "Four full adders in a chain",
+        "order": 4,
+        "kind": "top"
+       },
+       {
+        "path": "adder4/rtl/adder4_cla.v",
+        "desc": "A carry-lookahead version",
+        "order": 5,
+        "when": "later"
+       },
+       {
+        "path": "adder4/tb",
+        "desc": "Test benches",
+        "order": 6,
+        "kind": "test"
+       },
+       {
+        "path": "adder4/tb/adder4_tb.v",
+        "desc": "All 512 input cases",
+        "order": 7
+       },
+       {
+        "path": "adder4/sim",
+        "desc": "Simulation output",
+        "order": 8
+       },
+       {
+        "path": "adder4/sim/adder4.vcd",
+        "desc": "Waveforms for GTKWave",
+        "order": 9
+       },
+       {
+        "path": "adder4/fpga",
+        "desc": "Board files",
+        "order": 10,
+        "when": "later"
+       },
+       {
+        "path": "adder4/fpga/pins.xdc",
+        "desc": "Switches to inputs, LEDs to outputs",
+        "order": 11,
+        "when": "later"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "title": "Signal path",
+   "blocks": [
+    {
+     "type": "stack",
+     "data": {
+      "groups": [
+       {
+        "title": "",
+        "stacks": [
+         {
+          "root": [
+           {
+            "call": "adder4(A=0111, B=0001, Cin=0)",
+            "key": true,
+            "note": "7 + 1",
+            "children": [
+             {
+              "call": "FA0(a=1, b=1, cin=0)",
+              "key": true,
+              "note": "S0 = 0, carry 1",
+              "children": [
+               {
+                "call": "XOR(1, 1) = 0",
+                "note": "p, the half sum"
+               },
+               {
+                "call": "AND(1, 1) = 1",
+                "note": "g, the carry from this bit"
+               }
+              ]
+             },
+             {
+              "call": "FA1(a=1, b=0, cin=1)",
+              "key": true,
+              "note": "S1 = 0, carry 1"
+             },
+             {
+              "call": "FA2(a=1, b=0, cin=1)",
+              "key": true,
+              "note": "S2 = 0, carry 1"
+             },
+             {
+              "call": "FA3(a=0, b=0, cin=1)",
+              "note": "S3 = 1, carry 0"
+             }
+            ]
+           }
+          ],
+          "foot": "S = 1000 (8), Cout = 0. The carry went through three stages."
+         },
+         {
+          "root": [
+           {
+            "call": "full_adder(a, b, cin)",
+            "key": true,
+            "children": [
+             {
+              "call": "half_adder(a, b)",
+              "note": "p = a XOR b, g = a AND b"
+             },
+             {
+              "call": "half_adder(p, cin)",
+              "note": "s = p XOR cin, t = p AND cin"
+             },
+             {
+              "call": "OR(g, t)",
+              "note": "cout"
+             }
+            ]
+           }
+          ],
+          "foot": "5 gates. 2 gate delays from cin to cout."
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "title": "Topology graph",
+   "blocks": [
+    {
+     "type": "graph",
+     "data": {
+      "rows": [
+       3,
+       3,
+       3,
+       3,
+       3,
+       3
+      ],
+      "nodes": [
+       {
+        "id": "cin",
+        "label": "Cin",
+        "sub": "carry in",
+        "kind": "outside",
+        "row": 0,
+        "col": 0
+       },
+       {
+        "id": "fa0",
+        "label": "FA0",
+        "sub": "bit 0",
+        "kind": "key",
+        "row": 1,
+        "col": 1
+       },
+       {
+        "id": "ab",
+        "label": "Inputs",
+        "sub": "A3..A0, B3..B0",
+        "kind": "outside",
+        "row": 0,
+        "col": 1
+       },
+       {
+        "id": "fa1",
+        "label": "FA1",
+        "sub": "bit 1",
+        "kind": "key",
+        "row": 2,
+        "col": 1
+       },
+       {
+        "id": "fa2",
+        "label": "FA2",
+        "sub": "bit 2",
+        "kind": "key",
+        "row": 3,
+        "col": 1
+       },
+       {
+        "id": "fa3",
+        "label": "FA3",
+        "sub": "bit 3",
+        "kind": "key",
+        "row": 4,
+        "col": 0
+       },
+       {
+        "id": "cout",
+        "label": "Cout",
+        "sub": "overflow",
+        "kind": "data",
+        "row": 5,
+        "col": 1
+       },
+       {
+        "id": "s",
+        "label": "S3..S0",
+        "sub": "the sum",
+        "kind": "data",
+        "row": 4,
+        "col": 1
+       }
+      ],
+      "edges": [
+       {
+        "from": "cin",
+        "to": "fa0",
+        "label": "c0"
+       },
+       {
+        "from": "ab",
+        "to": "fa0"
+       },
+       {
+        "from": "fa0",
+        "to": "fa1",
+        "label": "c1"
+       },
+       {
+        "from": "fa1",
+        "to": "fa2",
+        "label": "c2"
+       },
+       {
+        "from": "fa2",
+        "to": "fa3",
+        "label": "c3"
+       },
+       {
+        "from": "fa3",
+        "to": "cout",
+        "label": "c4"
+       },
+       {
+        "from": "fa3",
+        "to": "s",
+        "dashed": true
+       }
+      ],
+      "legend": [
+       {
+        "kind": "key",
+        "text": "key types"
+       },
+       {
+        "kind": "data",
+        "text": "data"
+       },
+       {
+        "kind": "outside",
+        "text": "outside"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "title": "Topology in columns",
+   "blocks": [
+    {
+     "type": "columns",
+     "data": {
+      "groups": [
+       {
+        "id": "g0",
+        "title": "Inputs",
+        "desc": "Three bits go into each full adder.",
+        "items": [
+         {
+          "name": "A",
+          "meta": "1 bit",
+          "desc": "One bit of the first number"
+         },
+         {
+          "name": "B",
+          "meta": "1 bit",
+          "desc": "One bit of the second number"
+         },
+         {
+          "name": "Cin",
+          "meta": "1 bit",
+          "desc": "The carry from the stage to the right"
+         }
+        ]
+       },
+       {
+        "id": "g1",
+        "title": "Gates",
+        "desc": "Five gates, in two half adders and one OR.",
+        "items": [
+         {
+          "name": "XOR 1",
+          "meta": "p",
+          "desc": "a XOR b"
+         },
+         {
+          "name": "XOR 2",
+          "meta": "s",
+          "desc": "p XOR cin"
+         },
+         {
+          "name": "AND 1",
+          "meta": "g",
+          "desc": "a AND b"
+         },
+         {
+          "name": "AND 2",
+          "meta": "t",
+          "desc": "p AND cin"
+         },
+         {
+          "name": "OR",
+          "meta": "cout",
+          "desc": "g OR t"
+         }
+        ]
+       },
+       {
+        "id": "g2",
+        "title": "Outputs",
+        "desc": "Two bits come out.",
+        "items": [
+         {
+          "name": "S",
+          "meta": "sum",
+          "desc": "1 when an odd number of inputs are 1"
+         },
+         {
+          "name": "Cout",
+          "meta": "carry",
+          "desc": "1 when two or more inputs are 1"
+         }
+        ]
+       },
+       {
+        "id": "g3",
+        "title": "Timing",
+        "desc": "The carry path sets the speed.",
+        "items": [
+         {
+          "name": "Sum",
+          "meta": "2 gates",
+          "desc": "XOR, then XOR"
+         },
+         {
+          "name": "Carry",
+          "meta": "2 gates",
+          "desc": "AND, then OR, from cin"
+         },
+         {
+          "name": "4 bits",
+          "meta": "8 gates",
+          "desc": "The worst case: the carry goes through all stages"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "title": "Folds",
+   "blocks": [
+    {
+     "type": "folds",
+     "data": {
+      "items": [
+       {
+        "title": "Why \"ripple\"",
+        "summary": "The carry moves one stage at a time",
+        "body": [
+         {
+          "type": "p",
+          "text": "Each stage must wait for the carry from the stage to its right. A wave of carries moves from bit 0 to bit 3."
+         },
+         {
+          "type": "list",
+          "ordered": false,
+          "items": [
+           "4 bits: 8 gate delays in the worst case",
+           "32 bits: 64 gate delays in the worst case"
+          ]
+         }
+        ]
+       },
+       {
+        "title": "Overflow",
+        "summary": "Cout = 1 means that the result has 5 bits",
+        "body": [
+         {
+          "type": "code",
+          "lang": "",
+          "code": "  1111   (15)\n+ 0001   ( 1)\n------\n1 0000   (16): S = 0000, Cout = 1"
+         },
+         {
+          "type": "p",
+          "text": "For unsigned numbers, Cout is the overflow flag."
+         }
+        ]
+       },
+       {
+        "title": "Subtraction",
+        "summary": "Invert B and set Cin to 1",
+        "body": [
+         {
+          "type": "code",
+          "lang": "",
+          "code": "// A - B = A + (NOT B) + 1, the two's complement of B\nadder4 sub(.a(a), .b(~b), .cin(1'b1), .s(d), .cout(no_borrow));"
+         },
+         {
+          "type": "p",
+          "text": "The same circuit adds and subtracts. One XOR on each B input selects the operation."
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "title": "Composed folds",
+   "blocks": [
+    {
+     "type": "folds",
+     "data": {
+      "items": [
+       {
+        "title": "Ripple-carry",
+        "summary": "The simple design",
+        "body": [],
+        "children": [
+         {
+          "title": "How it works",
+          "summary": "Each stage waits for the carry before it",
+          "body": [
+           {
+            "type": "p",
+            "text": "The carry goes from FA0 to FA3, one stage at a time."
+           },
+           {
+            "type": "code",
+            "lang": "",
+            "code": "module adder4(input [3:0] a, b, input cin, output [3:0] s, output cout);\n  wire [4:0] c;\n  assign c[0] = cin;\n  genvar i;\n  generate for (i = 0; i < 4; i = i + 1) begin : stage\n    full_adder fa(a[i], b[i], c[i], s[i], c[i+1]);\n  end endgenerate\n  assign cout = c[4];\nendmodule"
+           }
+          ]
+         },
+         {
+          "title": "Cost",
+          "summary": "20 gates, 8 gate delays",
+          "body": [
+           {
+            "type": "list",
+            "ordered": false,
+            "items": [
+             "**Gates:** 5 for each bit, so 20",
+             "**Delay:** 2 for each bit, so 8"
+            ]
+           }
+          ]
+         },
+         {
+          "title": "Trade-offs",
+          "summary": "Small, but slow for wide numbers",
+          "body": [
+           {
+            "type": "list",
+            "ordered": false,
+            "items": [
+             "**Win:** Few gates and a regular layout",
+             "**Lose:** The delay grows with each bit"
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "title": "Carry-lookahead",
+        "summary": "The fast design",
+        "body": [],
+        "children": [
+         {
+          "title": "How it works",
+          "summary": "All carries come from g and p at the same time",
+          "body": [
+           {
+            "type": "p",
+            "text": "Each bit has `g = a AND b` (it makes a carry) and `p = a XOR b` (it passes a carry)."
+           },
+           {
+            "type": "code",
+            "lang": "",
+            "code": "c1 = g0 + p0·c0\nc2 = g1 + p1·g0 + p1·p0·c0\nc3 = g2 + p2·g1 + p2·p1·g0 + p2·p1·p0·c0\nc4 = g3 + p3·g2 + p3·p2·g1 + p3·p2·p1·g0 + p3·p2·p1·p0·c0"
+           }
+          ]
+         },
+         {
+          "title": "Cost",
+          "summary": "More gates, 4 gate delays",
+          "body": [
+           {
+            "type": "list",
+            "ordered": false,
+            "items": [
+             "**Gates:** about 30 for 4 bits",
+             "**Delay:** 4, for each width up to 4 bits"
+            ]
+           }
+          ]
+         },
+         {
+          "title": "Trade-offs",
+          "summary": "Fast, but the gates grow quickly",
+          "body": [
+           {
+            "type": "list",
+            "ordered": false,
+            "items": [
+             "**Win:** The delay does not grow with each bit",
+             "**Lose:** Wide AND gates. Real designs use groups of 4 bits"
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ],
+ "summary": "A 4-bit ripple-carry adder adds two 4-bit numbers. It is a chain of four full adders. The carry out of each stage goes into the next stage."
+}

@@ -1,5 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="../Orchestrator.Core/Orchestrator.Core.csproj" />
+    <ProjectReference Include="../Orchestrator.Providers/Orchestrator.Providers.csproj" />
+  </ItemGroup>
+  <!-- An installed tool or supervisor has no checkout: the build copies the templates and the config next to the program (Home.Bundled). -->
+  <ItemGroup>
+    <None Include="../../templates/**/*" LinkBase="templates" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../../config/policy.default.json" LinkBase="config" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

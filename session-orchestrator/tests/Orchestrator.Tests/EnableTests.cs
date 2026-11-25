@@ -25,10 +25,10 @@ public sealed class EnableTests
     {
         using var rig = new Rig();
         var (exit, output) = Run(rig, "enable", "--id", "aaaa1111-0000-0000-0000-000000000000", "--title", "Run 2: root");
-        var meta = rig.Store.Meta("aaaa1111-0000-0000-0000-000000000000");
+        var meta = rig.Store.Session("aaaa1111-0000-0000-0000-000000000000");
         Assert.That(exit, Is.EqualTo(0));
         Assert.That(output, Does.Contain("Enabled as aaaa1111-0000-0000-0000-000000000000 (Run 2: root)"));
-        Assert.That((meta.Title, meta.Started, meta.Imported, meta.CreatedBy), Is.EqualTo(("Run 2: root", (bool?)true, (bool?)true, "orch enable")));
+        Assert.That((meta.Title, meta.Lifecycle.Started, meta.Engine.Imported, meta.Created?.By), Is.EqualTo(("Run 2: root", (bool?)true, (bool?)true, "orch enable")));
         Assert.That(File.Exists(rig.Store.PathOf(meta.Id, StoreFiles.Enabled)), Is.True);
     }
 
@@ -37,11 +37,11 @@ public sealed class EnableTests
     {
         using var rig = new Rig();
         Run(rig, "enable", "--id", "aaaa1111-0000-0000-0000-000000000000", "--title", "root");
-        var first = rig.Store.Meta("aaaa1111-0000-0000-0000-000000000000").CreatedAt;
+        var first = rig.Store.Session("aaaa1111-0000-0000-0000-000000000000").Created?.At;
         Run(rig, "enable", "--id", "bbbb2222-0000-0000-0000-000000000000", "--title", "child", "--parent", "aaaa1111");
         Run(rig, "enable", "--id", "aaaa1111-0000-0000-0000-000000000000", "--title", "root, renamed");
-        Assert.That(rig.Store.Meta("bbbb2222-0000-0000-0000-000000000000").Parent, Is.EqualTo("aaaa1111-0000-0000-0000-000000000000"));
-        Assert.That(rig.Store.Meta("aaaa1111-0000-0000-0000-000000000000").Title, Is.EqualTo("root, renamed"));
-        Assert.That(rig.Store.Meta("aaaa1111-0000-0000-0000-000000000000").CreatedAt, Is.EqualTo(first));
+        Assert.That(rig.Store.Session("bbbb2222-0000-0000-0000-000000000000").Parent, Is.EqualTo("aaaa1111-0000-0000-0000-000000000000"));
+        Assert.That(rig.Store.Session("aaaa1111-0000-0000-0000-000000000000").Title, Is.EqualTo("root, renamed"));
+        Assert.That(rig.Store.Session("aaaa1111-0000-0000-0000-000000000000").Created?.At, Is.EqualTo(first));
     }
 }

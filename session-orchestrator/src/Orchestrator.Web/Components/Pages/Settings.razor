@@ -1,0 +1,31 @@
+@page "/settings"
+@inherits LiveView
+
+<PageTitle>Settings · orch</PageTitle>
+
+<PageHeader Title="Settings" />
+
+<div class="stack">
+    <h2 class="gt">Store</h2>
+    <div class="crd">
+        <div class="kv"><span class="k">Folder</span><span class="mono ell">@root</span></div>
+        <div class="kv"><span class="k">Sessions</span><span class="mono">@sessions</span></div>
+    </div>
+    <h2 class="gt">Display</h2>
+    <div class="crd">
+        <div class="kv"><span class="k">Theme</span><span>Follows the device: light or dark</span></div>
+        <div class="kv"><span class="k">Undo time</span><span class="mono">@((int)Cards.UndoTime.TotalSeconds) s</span></div>
+    </div>
+    <div class="empty"><span class="nm">More settings come later</span><span class="sub">For example a form for each message type.</span></div>
+</div>
+
+@code {
+    string root = "";
+    int sessions;
+
+    protected override void Load()
+    {
+        root = Board.StoreRoot;
+        sessions = Ui.Flatten(Board.Tree()).Count();
+    }
+}

@@ -476,7 +476,7 @@ flowchart BT
   <section>
     <h2>Store files: who writes, who reads</h2>
     <div class="tree">
-      <details open><summary><span class="n">store/</span><span class="d"><code>ORCH_STORE</code>, default <code>session-orchestrator/store</code></span></summary>
+      <details open><summary><span class="n">store/</span><span class="d"><code>ORCH_STORE</code>, default <code>%LOCALAPPDATA%\orch\store</code> (H4; before: <code>session-orchestrator/store</code>, moved with <code>orch store migrate</code>)</span></summary>
         <details class="leaf"><summary><span class="n">version.json, policy.json</span><span class="d">store version 1, the active policy</span></summary><div class="more">A newer store version stops the supervisor at start.</div></details>
         <details class="leaf"><summary><span class="n">events/&lt;day&gt;/&lt;id&gt;.json</span><span class="d">one file for each event</span></summary><div class="more">Small header: id, at, session, kind, from, to, subject, body path, refs.</div></details>
         <details class="leaf"><summary><span class="n">bodies/&lt;day&gt;/&lt;id&gt;.json</span><span class="d">the full data of each event</span></summary><div class="more">The header points to it.</div></details>
