@@ -193,6 +193,7 @@ flowchart LR
         <tr><td>The kind file is <code>content.json</code></td><td>You, D1</td></tr>
         <tr><td>The event type selects one Razor card renderer; no rule language now</td><td>You, D5</td></tr>
         <tr><td>One type <code>question</code>, one card: <code>options</code> as buttons, and one open-text flag</td><td>You, D5</td></tr>
+        <tr><td>Overlays do not change the URL; the navigator owns Back on each host</td><td>You, D6</td></tr>
         <tr><td>One owned design system: a whole system that we copy, with guidelines and skills</td><td>You, D2; the base is open</td></tr>
         <tr><td>The widget and the main app are two programs (S4)</td><td>You, D3 = B</td></tr>
         <tr><td>New <code>Orchestrator.View</code> and <code>Orchestrator.Ui</code>, thin hosts, one <code>Orchestrator.App</code></td><td>You, D4 = A</td></tr>
@@ -214,14 +215,6 @@ flowchart LR
       </div>
     </details>
 
-    <details class="f">
-      <summary><span class="l1"><span class="id">D6</span><span class="t">Do overlays change the URL?</span></span><span class="l2">Recommendation: no; overlays live only in the stack. Default: no</span></summary>
-      <div class="body">
-        <div class="field"><span class="k">Context</span><div class="v"><p>Sheets and the speed dial become stack entries (tab 3). The browser Back key must close them. A URL for each overlay makes deep links to a half-done answer.</p></div></div>
-        <div class="field"><span class="k">Options</span><div class="v"><ul><li>A: no URL change; the navigator catches the browser Back for an open overlay.</li><li>B: a <code>#sheet</code> fragment for each overlay.</li></ul></div></div>
-        <div class="field"><span class="k">Recommend</span><div class="v"><p>A. A link opens a page, never a half-open sheet. The tray has no address bar. On Android, the Back button calls the same <code>Back()</code>. In a browser, Back needs a history entry for each open overlay, so option A has a cost there.</p></div></div>
-      </div>
-    </details>
   </section>
 </div>
 
@@ -456,7 +449,7 @@ flowchart LR
         <tr><td><code>Deep(route)</code></td><td>Build the stack from the parents</td><td>none</td></tr>
       </tbody>
     </table></div>
-    <div class="rule">Back always closes the top entry first: an overlay before a page. The Back key, Esc, a swipe and the app bar use the same <code>Back()</code>.</div>
+    <div class="rule">Back always closes the top entry first: an overlay before a page. The Back key, Esc, a swipe and the app bar use the same <code>Back()</code>. An overlay does not change the URL (D6). In a browser, each open overlay needs a history entry with the same URL.</div>
   </section>
 
   <section>
