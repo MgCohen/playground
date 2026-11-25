@@ -126,8 +126,8 @@ details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: c
 <nav role="tablist" aria-label="Tabs">
   <button data-tab="context" role="tab">Context</button>
   <button data-tab="topology" role="tab">Topology</button>
-  <button data-tab="current" role="tab">Current state</button>
-  <button data-tab="questions" role="tab">Questions</button>
+  <button data-tab="current" role="tab">Current</button>
+  <button data-tab="decisions" role="tab">Decisions</button>
 </nav>
 
 <!-- ============ CONTEXT ============ -->
@@ -146,12 +146,17 @@ details.example > .body { padding: 0 14px 16px; display: flex; flex-direction: c
     <tr><td>Architecture style, event stream at the center</td><td>Topology tab</td><td><span class="pill draft">draft</span></td></tr>
     <tr><td>Project topology and dependency rules</td><td>Topology tab</td><td><span class="pill draft">draft</span></td></tr>
     <tr><td>Guidelines for each slice</td><td>Topology tab</td><td><span class="pill draft">draft</span></td></tr>
-    <tr><td>Review of the current code</td><td>Current state tab</td><td><span class="pill draft">draft</span></td></tr>
+    <tr><td>Review of the current code</td><td>Current tab</td><td><span class="pill draft">draft</span></td></tr>
     <tr><td>Plan for architecture tests</td><td>Topology tab, rules table</td><td><span class="pill draft">draft</span></td></tr>
-    <tr><td>Answers to the open questions</td><td>Questions tab</td><td><span class="pill open">open</span></td></tr>
-    <tr><td>Next tasks in the roadmap</td><td><code>docs/plan.md</code></td><td><span class="pill open">open</span></td></tr>
-    <tr><td>Approval of the user</td><td>Chat of task K</td><td><span class="pill open">open</span></td></tr>
+    <tr><td>Answers to the nine questions</td><td>Decisions tab</td><td><span class="pill draft">defaults</span></td></tr>
+    <tr><td>Next tasks K1–K6 in the roadmap</td><td><code>docs/plan.md</code></td><td><span class="pill draft">draft</span></td></tr>
+    <tr><td>Approval of the user</td><td>Root session</td><td><span class="pill open">deferred</span></td></tr>
   </table></div>
+</section>
+
+<section>
+  <h2>Handover</h2>
+  <div class="note"><b>Draft with known weak points.</b> Findings C1 to C6 are not all verified in the code. The A5 sample conflicts with K-Q4, and the stored <code>Tick</code> event conflicts with K-Q1. The full list, the PR stack and the next steps are in <code>session-orchestrator/docs/handover/K.md</code> on <code>orch/k-roadmap</code>.</div>
 </section>
 
 <section>
@@ -372,7 +377,7 @@ flowchart LR
     <tr><td>C2</td><td>The Store project holds feature logic</td><td>A6</td></tr>
     <tr><td>C3</td><td>Store and Supervisor reference Providers</td><td>A6</td></tr>
     <tr><td>C4</td><td>One Supervisor class runs many features</td><td>A5, A7</td></tr>
-    <tr><td>C5</td><td>Event appends in about 12 files</td><td>A1</td></tr>
+    <tr><td>C5</td><td>Event appends in 11 files, also in hosts</td><td>A7</td></tr>
     <tr><td>C6</td><td>Registry, leases, claims are mutable files</td><td>A1, A2</td></tr>
     <tr><td>C7</td><td>Rules in three documents</td><td>All</td></tr>
     <tr><td>C8</td><td>Tests scan text, not references</td><td>A5, A6</td></tr>
@@ -403,7 +408,7 @@ public interface IStateChecker { ... }</pre>
     <p>One tick does turns, decisions, defaults, reminders, imports, archive and recovery. Each feature adds code to the same class.</p>
   </div></details>
   <details class="example"><summary>C5 · event appends <span class="d">files with Post or Append calls</span></summary><div class="body">
-    <p>Supervisor.cs (7), Store/Lifecycle.cs (7), Cli/Git/StackOps.cs (5), Store/Messages.cs (4), Supervisor.Lifecycle.cs (4), and 7 more files. Task W audits this.</p>
+    <p>Supervisor.cs (7), Store/Lifecycle.cs (7), Cli/Git/StackOps.cs (5), Store/Messages.cs (4), Supervisor.Lifecycle.cs (4), and 6 more files. The count excludes Cli/Commands and the tray mock. All appends use <code>store.Events</code>. Task W audits this.</p>
   </div></details>
 </section>
 
@@ -417,19 +422,38 @@ public interface IStateChecker { ... }</pre>
 </section>
 </div>
 
-<!-- ============ QUESTIONS ============ -->
-<div class="panel off" id="questions">
+<!-- ============ DECISIONS ============ -->
+<div class="panel off" id="decisions">
 <section>
-  <h2>Open questions</h2>
-  <p>Answer in free text. Each answer goes into the Topology tab, and its question leaves this tab.</p>
-
+  <h2>Nine choices, all default decisions for review</h2>
+  <p>Each choice is on its own stacked branch with a draft PR. The user can approve or refuse each one alone.</p>
+  <div class="scroll"><table>
+    <tr><th>Id</th><th>Choice</th><th>PR</th></tr>
+    <tr><td>K-Q6</td><td>ArchUnitNET and the text scans</td><td>#85</td></tr>
+    <tr><td>K-Q1</td><td>All state from the stream, short exception list</td><td>#90</td></tr>
+    <tr><td>K-Q2</td><td>One Features project, a folder for each slice</td><td>#92</td></tr>
+    <tr><td>K-Q3</td><td><code>IProvider</code> in <code>Kernel/Ports</code></td><td>#94</td></tr>
+    <tr><td>K-Q4</td><td>Slices meet through events and <code>Contract.cs</code></td><td>#95</td></tr>
+    <tr><td>K-Q5</td><td>Supervisor dispatches events to reactors</td><td>#96</td></tr>
+    <tr><td>K-Q7</td><td>Plain .NET, copied kernel parts</td><td>#98</td></tr>
+    <tr><td>K-Q8</td><td>Move slice by slice, allow list</td><td>#99</td></tr>
+    <tr><td>K-Q9</td><td>Plugin is the live side of ClaudeCode</td><td>#100</td></tr>
+  </table></div>
+</section>
+<section>
+  <h2>Non-goals</h2>
+  <ul>
+    <li>No project for each slice. Reason: build cost; the slice rule gives the same limit.</li>
+    <li>No adapter interface for each feature. Reason: one port for each external system (A3).</li>
+    <li>No event store product in this definition. Reason: task N researches it; the port <code>IEventStream</code> hides the choice.</li>
+  </ul>
 </section>
 </div>
 </div>
 
 <script>
 (function () {
-  var names = ["context", "topology", "current", "questions"];
+  var names = ["context", "topology", "current", "decisions"];
   function show(name) {
     if (names.indexOf(name) < 0) name = "context";
     names.forEach(function (n) { document.getElementById(n).classList.toggle("off", n !== name); });

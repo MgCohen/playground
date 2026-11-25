@@ -2097,6 +2097,47 @@ Four dummy sessions: a root and three children. The root and two children fail, 
 | D12 | Report Done items were paragraphs | `done`, `next` and `blockers`: one fact for each item, 200 characters and 12 items maximum (schema and skill). A post over the limit is refused, so the session writes it again shorter |
 | D7 | The card setting (which kinds make a card) does not exist. The inbox view decides in code | Open: the user wants it as a filter (code, app setting or live page filter), later |
 
+## K result: architecture definition (2026-11-23)
+
+The user deferred the approval. Handover and known weak points: `docs/handover/K.md`.
+
+Page: `docs/architecture.html` (https://claude.ai/artifact/1ah9eGXuB8rxFzRfwJqGwU). Branch `orch/k-architecture`. The nine choices are default decisions, each on a stacked branch with a draft PR (#85, #90, #92, #94, #95, #96, #98, #99, #100). The user reviews them.
+
+Style: a modular monolith of vertical slices around one event stream.
+
+```
+Hosts (Web = supervisor, API, UI; Cli; Tray)   composition roots only
+  -> Orchestrator.Features   one folder and namespace for each slice
+       -> Orchestrator.Kernel   event stream, projections, ports (IProvider, IRepository, ILogSink)
+  -> Orchestrator.Store      implementations of the kernel ports (Local, Remote)
+  -> Orchestrator.Providers  IProvider implementations (ClaudeCode, Fake); plugin/ is its live side
+```
+
+| Rule | Content | Check |
+|---|---|---|
+| A1 | Each state change is one event in the stream. Exceptions: lease and heartbeat, cursors, logs, definitions | Allow list of appends |
+| A2 | Read models are projections of the stream | Replay test for each projection |
+| A3 | One port for each external system | ArchUnitNET: interfaces in Features on an allow list |
+| A4 | A slice calls a port directly, with no wrapper | ArchUnitNET and review |
+| A5 | Slices meet only through events and `Contract.cs` queries | ArchUnitNET slice rule |
+| A6 | Projects obey the dependency graph | ArchUnitNET reference rule |
+| A7 | Hosts compose and map input only | ArchUnitNET: no appends, no event kinds in hosts |
+| A8 | Engine names only in `Providers/<name>` | `ProviderBoundaryTests` |
+| A9 | Store IO only in `Store/Local` | `ArchitectureTests` |
+
+Findings in the code (Current tab of the page):
+
+| Id | Finding | Task |
+|---|---|---|
+| C1 | `ITurnRunner`, `IDocsChecker`, `IStateChecker` wrap `IProvider` for each feature (`Supervisor/Runners.cs`) | K2 |
+| C2 | `Orchestrator.Store` holds feature logic (`Lifecycle.cs`, `Messages.cs`, `Inbox.cs`, `Renderer.cs`, `WorkflowHost.cs`) | K3, K5 |
+| C3 | `SupervisorOptions.Provider` defaults to `ProviderFactory.Default`; Store and Supervisor reference Providers | K2 |
+| C4 | One `Supervisor` class (about 800 lines) runs many features | K4 |
+| C5 | Event appends in 11 files, also in hosts (all through `store.Events`) | K5 (with the W audit) |
+| C6 | Registry, leases and claims are mutable files | K6 |
+| C7 | The rules were in three documents | Page and `AGENTS.md` |
+| C8 | The tests scan text, not references | K1 |
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.
@@ -2129,6 +2170,12 @@ flowchart LR
 | I4 | I | Final integration of C4, G2 and E2. Done: see "I4 result" | After C4, G2 and E2 |
 | C3 | C | One real stream with the planning workflow on a scratch supervisor. Done: see "C3 live run" | After I4 |
 | D2 | D | Named tunnel, service token for cloud workers | After G2, next month |
+| K1 | K | ArchUnitNET in `Orchestrator.Tests`; rules A3–A7 with an allow list of the known breaks (C1–C5). Each later K task removes its items and may not add one | After the review of the K decisions |
+| K2 | K | `Orchestrator.Kernel`: events, storage ports and `IProvider` with its records. Delete the wrappers in `Runners.cs`; slices call `IProvider` directly. Only hosts reference Store and Providers | After K1 |
+| K3 | K | `Orchestrator.Features` with the first slice, Decisions (question, answer, default, policy, docs check) | After K2 |
+| K4 | K | Supervisor dispatcher: slice registration, projections and reactors, `Tick` event for timers | After K3 |
+| K5 | K | One task for each other slice: Sessions, Lifecycle, Messages, Stack, Workflows, Templates, Runs. `Orchestrator.Store` keeps only Local and Remote | After K4, one slice at a time |
+| K6 | K | Registry and claims as projections of the stream | After K5 and the results of W (stream audit) and N (event store research) |
 
 Rules for these tasks:
 
