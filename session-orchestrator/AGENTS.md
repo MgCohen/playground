@@ -11,6 +11,7 @@ Read these files before you change this project:
 | `docs/how-it-works.html` | How it works today: processes, folders, store files, call stack, sequences (https://claude.ai/artifact/CP2ozBgysFuJSwhrgoHugt) |
 | `docs/session-management.html` | The options for session management, with a worked example each (https://claude.ai/artifact/SRBob5ix2xQ2ArpwDXTJaW) |
 | `docs/setup-options.html` | Install and start options, and the cloud plan (https://claude.ai/artifact/TJU9Foq3kBVJptSwMnCCeX) |
+| `docs/notion-store.html` | How it works on a Notion store: topology, parties, flows, many sessions, the databases (https://claude.ai/artifact/KhdASSSsP6qvtREeeo52Nw) |
 
 ## Rules
 

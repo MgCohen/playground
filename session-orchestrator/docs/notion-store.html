@@ -1,0 +1,261 @@
+<title>Orchestrator on Notion</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE work: a technical explainer for the owner of the system
+   IDEA a metro map: each party is a station, each message kind is a coloured line
+   PICTURE the topology: three zones (your computer, cloud, Notion) with the lines between them
+   COLOUR white ground, black ink, red (messages), blue (store reads and writes), amber (turns), green (code and PRs)
+   TYPE Figtree 800 + Figtree
+   LAYOUT title across the top, the map full width beneath, then bands of tables and flows */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0e1116);--ink:light-dark(#111418,#e9edf2);--soft:light-dark(#5b6470,#9aa4b0);--rule:light-dark(#e3e6ea,#262c35);--panel:light-dark(#f5f6f8,#151a21);--red:#e6261f;--blue:#0a5cff;--amber:#ffb400;--green:#00a05a;--zone:light-dark(#f2f4f7,#141920)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 Figtree,system-ui,sans-serif;margin:0;overflow-x:clip}
+.band{padding-block:clamp(24px,3.5vw,52px);padding-left:max(5vw,16px,env(safe-area-inset-left,0px));padding-right:max(5vw,16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto}
+h1{font-weight:800;font-size:clamp(32px,4.6vw,50px);line-height:1.05;letter-spacing:-.02em;margin:0 0 10px}
+h2{font-weight:800;font-size:clamp(22px,2.6vw,30px);line-height:1.1;letter-spacing:-.01em;margin:0 0 14px}
+h3{font-size:18px;margin:18px 0 8px}
+p{margin:0 0 12px;max-width:70ch}
+.lead{font-size:18px;color:var(--soft);max-width:78ch}
+nav{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px;font-weight:600}
+nav a{color:var(--ink);text-decoration:none;border-bottom:3px solid var(--blue)}
+.scroll{overflow-x:auto}
+.map{min-width:760px}
+.map svg{width:100%;height:auto;display:block}
+svg text{font-family:Figtree,system-ui,sans-serif;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:4px}
+.key{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:12px;font-size:14px}
+.key span::before{content:"";display:inline-block;width:22px;height:6px;border-radius:3px;margin-right:8px;vertical-align:middle;background:var(--c)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--rule)}
+th{font-weight:600;color:var(--soft)}
+td code,p code,li code{font-size:13.5px;background:var(--panel);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.alt{background:var(--panel)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:28px}
+.card{background:var(--bg);border:1px solid var(--rule);border-radius:10px;padding:16px 18px}
+.alt .card{background:var(--bg)}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--c);margin-right:8px;vertical-align:-1px}
+pre.mermaid{background:var(--bg);border:1px solid var(--rule);border-radius:10px;padding:12px;margin:0;overflow-x:auto}
+ol,ul{padding-left:22px;margin:0 0 12px}li{margin-bottom:6px}
+.note{font-size:14px;color:var(--soft)}
+@media(max-width:600px){table{font-size:13px}th,td{padding:6px 4px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--rule)}.stack td{display:flex;justify-content:space-between;gap:12px;border:0}.stack td::before{content:attr(data-l);font-weight:600;color:var(--soft)}}
+</style>
+
+<header class="band"><div class="wrap">
+<h1>Orchestrator on Notion</h1>
+<p class="lead">All parties talk through one stream of messages. With a <code>notion:</code> store, that stream and all other state live in four linked Notion databases, so local and cloud sessions share them. The supervisor on your computer reads the stream and starts the session turns.</p>
+<nav><a href="#map">Topology</a><a href="#parties">Parties</a><a href="#flows">Flows</a><a href="#many">Many sessions</a><a href="#where">What stays where</a><a href="#dbs">Databases</a><a href="#limits">Limits</a></nav>
+</div></header>
+
+<section class="band" id="map"><div class="wrap">
+<h2>Each party reads and writes one store: Notion</h2>
+<div class="scroll"><div class="map"><svg viewBox="0 0 1200 560" role="img" aria-label="Topology: your computer, the cloud and Notion, with the lines between them">
+<rect x="10" y="40" width="560" height="500" rx="14" fill="var(--zone)"/>
+<rect x="600" y="40" width="250" height="500" rx="14" fill="var(--zone)"/>
+<rect x="880" y="40" width="310" height="500" rx="14" fill="var(--zone)"/>
+<text x="30" y="72" font-weight="800" font-size="18">Your computer</text>
+<text x="620" y="72" font-weight="800" font-size="18">Cloud</text>
+<text x="900" y="72" font-weight="800" font-size="18">Notion (the store)</text>
+<!-- lines: blue store access -->
+<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="7">
+<path d="M250 150 H700 L760 120 H930" stroke="var(--blue)"/>
+<path d="M480 300 H560 L620 250 H930" stroke="var(--blue)" opacity=".75"/>
+<path d="M820 370 L860 350 H930" stroke="var(--blue)"/>
+<path d="M250 175 H520 L590 360 H620" stroke="var(--amber)"/>
+<path d="M110 190 V390" stroke="var(--amber)"/>
+<path d="M250 420 H520" stroke="var(--red)"/>
+<path d="M250 445 H400 L430 300 H480" stroke="var(--blue)" opacity=".5"/>
+<path d="M120 460 V510 H520" stroke="var(--green)"/>
+<path d="M720 430 V510 H560" stroke="var(--green)"/>
+</g>
+<!-- stations -->
+<g font-size="15">
+<rect x="40" y="110" width="210" height="80" rx="10" fill="var(--bg)" stroke="var(--ink)" stroke-width="2"/>
+<text x="56" y="140" font-weight="800">Supervisor + UI</text><text x="56" y="164" fill="var(--soft)">tick, delivery, defaults</text>
+<rect x="290" y="270" width="190" height="60" rx="10" fill="var(--bg)" stroke="var(--ink)" stroke-width="2"/>
+<text x="306" y="306" font-weight="800">orch command</text>
+<rect x="40" y="390" width="210" height="70" rx="10" fill="var(--bg)" stroke="var(--ink)" stroke-width="2"/>
+<text x="56" y="420" font-weight="800">Local sessions</text><text x="56" y="443" fill="var(--soft)">Claude Code + plugin</text>
+<rect x="520" y="400" width="40" height="40" rx="20" fill="var(--bg)" stroke="var(--red)" stroke-width="4"/>
+<text x="300" y="400" fill="var(--soft)">you: chat, UI, tray</text>
+<rect x="620" y="330" width="200" height="100" rx="10" fill="var(--bg)" stroke="var(--ink)" stroke-width="2"/>
+<text x="636" y="362" font-weight="800">Cloud sessions</text><text x="636" y="386" fill="var(--soft)">use orch with</text><text x="636" y="406" fill="var(--soft)">NOTION_TOKEN</text>
+<text x="380" y="530" fill="var(--soft)">GitHub: code, PRs</text>
+<g>
+<rect x="930" y="95" width="230" height="56" rx="10" fill="var(--bg)" stroke="var(--red)" stroke-width="3"/><text x="946" y="129" font-weight="800">Events: the stream</text>
+<rect x="930" y="175" width="230" height="56" rx="10" fill="var(--bg)" stroke="var(--red)" stroke-width="3"/><text x="946" y="209" font-weight="800">Bodies</text>
+<rect x="930" y="255" width="230" height="56" rx="10" fill="var(--bg)" stroke="var(--red)" stroke-width="3"/><text x="946" y="289" font-weight="800">Sessions: inboxes</text>
+<rect x="930" y="335" width="230" height="56" rx="10" fill="var(--bg)" stroke="var(--blue)" stroke-width="3"/><text x="946" y="369" font-weight="800">Docs: run state</text>
+<rect x="930" y="415" width="230" height="56" rx="10" fill="var(--bg)" stroke="var(--soft)" stroke-width="2"/><text x="946" y="449" font-weight="800">Log page</text>
+<path d="M1160 123 h18 v86 h-18 M1178 123 v166 h-18" fill="none" stroke="var(--red)" stroke-width="3"/>
+</g>
+</g>
+</svg></div></div>
+<div class="key"><span style="--c:var(--blue)">store reads and writes (Notion API)</span><span style="--c:var(--amber)">the supervisor starts a turn</span><span style="--c:var(--red)">messages from and to you</span><span style="--c:var(--green)">code and PRs</span></div>
+<p class="note" style="margin-top:12px">With a <code>notion:</code> store the plugin hooks stay off. Local sessions also use <code>orch</code> for each read and write.</p>
+</div></section>
+
+<section class="band alt" id="parties"><div class="wrap">
+<h2>Each party has one job</h2>
+<div class="scroll"><table class="stack">
+<thead><tr><th>Party</th><th>Where</th><th>Job</th><th>When used</th></tr></thead>
+<tbody>
+<tr><td data-l="Party"><b>Supervisor</b></td><td data-l="Where">Your computer, one process</td><td data-l="Job">Reads the stream, starts session turns, posts default answers, runs the watchdog. Serves the UI and the API</td><td data-l="When">Always on. One for each store</td></tr>
+<tr><td data-l="Party"><b>Orchestrator session</b></td><td data-l="Where">Local or cloud</td><td data-l="Job">A root session (role <code>orchestrator</code>). Splits a goal into child sessions, reviews their PRs, reports done</td><td data-l="When">You start a goal with many parts</td></tr>
+<tr><td data-l="Party"><b>Worker session</b></td><td data-l="Where">Local or cloud</td><td data-l="Job">A child (role <code>worker</code>). Does one brief, asks you questions, reports done or blocked</td><td data-l="When">An orchestrator spawns it</td></tr>
+<tr><td data-l="Party"><b>Free session</b></td><td data-l="Where">Local</td><td data-l="Job">Your own chat with <code>orch enable</code>. Gets messages, asks questions</td><td data-l="When">You join a chat to the system</td></tr>
+<tr><td data-l="Party"><b>You</b></td><td data-l="Where">UI, tray, chat, Notion</td><td data-l="Job">Answer questions in free text, review default decisions</td><td data-l="When">A question or review is open</td></tr>
+<tr><td data-l="Party"><b>orch</b></td><td data-l="Where">Each machine</td><td data-l="Job">The command for each store call: post, answer, events, new, tree</td><td data-l="When">Each read or write of a session or of you</td></tr>
+</tbody></table></div>
+</div></section>
+
+<section class="band" id="flows"><div class="wrap">
+<h2>Four flows do the work</h2>
+<div class="grid2">
+<div class="card"><h3><span class="dot" style="--c:var(--red)"></span>A question and its answer</h3>
+<pre class="mermaid">sequenceDiagram
+  participant W as Worker
+  participant N as Notion
+  participant U as You
+  participant S as Supervisor
+  W->>N: orch post question (Bodies, then Events)
+  S->>N: feed read (each 2 s)
+  S-->>U: card in UI and in your inbox row
+  U->>N: answer (claim, then Events)
+  S->>N: feed read: answer to worker
+  S->>W: turn with the answer</pre>
+<p class="note">The first answer in a thread wins: a claim row in Docs. A second answer is refused.</p></div>
+<div class="card"><h3><span class="dot" style="--c:var(--amber)"></span>A child session starts</h3>
+<pre class="mermaid">sequenceDiagram
+  participant O as Orchestrator
+  participant N as Notion
+  participant S as Supervisor
+  participant C as Child
+  O->>N: spawn child: Sessions row (Parent), brief event
+  S->>N: feed read: brief to child
+  S->>C: start turn (local or cloud)
+  C->>N: report done
+  S->>O: turn with the report</pre>
+<p class="note">The brief says <code>where</code>: local or cloud. Only the provider knows how to start it.</p></div>
+<div class="card"><h3><span class="dot" style="--c:var(--green)"></span>No answer in time: a default</h3>
+<pre class="mermaid">sequenceDiagram
+  participant S as Supervisor
+  participant N as Notion
+  participant W as Worker
+  participant G as GitHub
+  S->>N: open question, wait time ended
+  S->>N: answer by the policy level
+  S->>W: turn with the default answer
+  W->>G: work as a stacked draft PR
+  S-->>N: review request to you</pre>
+<p class="note">You review the default later: approve, change or refuse.</p></div>
+<div class="card"><h3><span class="dot" style="--c:var(--blue)"></span>One store call</h3>
+<pre class="mermaid">flowchart TD
+  A[orch or supervisor call] --> B{Read or write?}
+  B -->|read| C{Cache older than 2 s?}
+  C -->|no| D[Answer from cache]
+  C -->|yes| E[Query rows edited in last 2 min] --> D
+  B -->|write| F[Read the row again]
+  F --> G{Exists or newer?}
+  G -->|yes| H[Refuse: nothing written]
+  G -->|no| I[Create or update row] --> J[Read again: oldest row wins]</pre>
+<p class="note">Notion has no conditional write. The read before and after a write closes most races.</p></div>
+</div>
+</div></section>
+
+<section class="band alt" id="many"><div class="wrap">
+<h2>Many sessions share one stream with five rules</h2>
+<div class="grid2">
+<div>
+<ol>
+<li><b>One writer for each session.</b> The lease row says who writes now: your live chat or a supervisor turn. The supervisor waits while a live chat holds it.</li>
+<li><b>One supervisor for each store.</b> Two supervisors would start the same turn two times. A second store needs its own Notion page.</li>
+<li><b>One inbox for each party.</b> Each message has one receiver. Your inbox is the <code>user</code> row in Sessions.</li>
+<li><b>The first answer wins.</b> A claim row for each thread refuses the second answer.</li>
+<li><b>A tree of sessions.</b> Each child has a <code>Parent</code>. A root orchestrator owns its tree and its stream id.</li>
+</ol>
+</div>
+<div class="scroll"><table>
+<thead><tr><th>Setup</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>2 orchestrators, 1 store</td><td>Two trees, one supervisor, one inbox for you</td></tr>
+<tr><td>Local and cloud children</td><td>Same rows. Only the start differs</td></tr>
+<tr><td>2 supervisors, 1 store</td><td>Not supported: double turns</td></tr>
+<tr><td>2 stores (2 pages)</td><td>Separate systems, separate inboxes</td></tr>
+<tr><td>Many busy processes</td><td>They share 3 requests/s</td></tr>
+</tbody></table></div>
+</div>
+</div></section>
+
+<section class="band" id="where"><div class="wrap">
+<h2>The store holds the state; the machines hold the work</h2>
+<div class="scroll"><table class="stack">
+<thead><tr><th>Place</th><th>Holds</th><th>Does not hold</th></tr></thead>
+<tbody>
+<tr><td data-l="Place"><b>Notion page</b></td><td data-l="Holds">Messages, bodies, parties, registry, leases, cursors, claims, policy, store templates, log</td><td data-l="Not">Code, secrets</td></tr>
+<tr><td data-l="Place"><b>Your computer</b></td><td data-l="Holds">The supervisor process, the tray, local checkouts and worktrees, the plugin</td><td data-l="Not">Store state (with a <code>notion:</code> root)</td></tr>
+<tr><td data-l="Place"><b>Cloud session</b></td><td data-l="Holds">Its own checkout and work. <code>ORCH_STORE</code>, and <code>NOTION_TOKEN</code> from 1Password</td><td data-l="Not">A store folder</td></tr>
+<tr><td data-l="Place"><b>GitHub</b></td><td data-l="Holds">Code, branches, PRs, the stacked default PRs</td><td data-l="Not">Messages</td></tr>
+<tr><td data-l="Place"><b>Repository files</b></td><td data-l="Holds">Core templates, policies, docs</td><td data-l="Not">Run state</td></tr>
+</tbody></table></div>
+</div></section>
+
+<section class="band alt" id="dbs"><div class="wrap">
+<h2>Each database has one kind of row</h2>
+<div class="grid2">
+<div class="card"><h3><span class="dot" style="--c:var(--red)"></span>Events: one row for each message</h3>
+<table><tbody>
+<tr><td><b>Id</b></td><td><code>&lt;ms&gt;-&lt;hex&gt;-&lt;writer&gt;</code>, grows for each writer</td></tr>
+<tr><td><b>Kind</b>, <b>Subject</b></td><td>question, answer, report, brief…; first sentence</td></tr>
+<tr><td><b>From</b>, <b>To</b></td><td>Links to Sessions rows</td></tr>
+<tr><td><b>Session</b></td><td>Link: the session it is about</td></tr>
+<tr><td><b>Body</b>, <b>Reply</b></td><td>Link to Bodies; link to the message it answers</td></tr>
+<tr><td><b>Needs</b>, <b>Thread</b></td><td>answer, review or ack; the conversation</td></tr>
+<tr><td><b>Stream</b>, <b>At</b>, <b>Ms</b></td><td>Work stream; time; time for the feed query</td></tr>
+<tr><td><b>Text</b></td><td>The full envelope JSON</td></tr>
+</tbody></table></div>
+<div class="card"><h3><span class="dot" style="--c:var(--red)"></span>Bodies: one row for each body</h3>
+<table><tbody>
+<tr><td><b>Path</b></td><td><code>bodies/&lt;day&gt;/&lt;id&gt;.json</code></td></tr>
+<tr><td><b>Page content</b></td><td>One paragraph for each field: question, options, text</td></tr>
+<tr><td><b>Event</b></td><td>Link: the messages that use the body (a forward reuses it)</td></tr>
+<tr><td><b>Session</b></td><td>Rollup through Event</td></tr>
+<tr><td><b>Text</b>, <b>Removed</b></td><td>The body JSON; deleted mark</td></tr>
+</tbody></table></div>
+<div class="card"><h3><span class="dot" style="--c:var(--red)"></span>Sessions: one row for each party</h3>
+<table><tbody>
+<tr><td><b>Party</b></td><td><code>user</code>, <code>supervisor</code>, <code>session:&lt;id&gt;</code></td></tr>
+<tr><td><b>Inbox</b>, <b>Sent</b></td><td>Messages to it; messages from it</td></tr>
+<tr><td><b>Events</b></td><td>Messages about the session</td></tr>
+<tr><td><b>Parent</b></td><td>Link to the parent session</td></tr>
+<tr><td><b>Title</b>, <b>Code</b>, <b>Role</b>, <b>Stream</b></td><td>From the registry entry</td></tr>
+<tr><td><b>Text</b></td><td>The registry entry JSON. Empty for <code>user</code> and <code>supervisor</code></td></tr>
+</tbody></table></div>
+<div class="card"><h3><span class="dot" style="--c:var(--blue)"></span>Docs: the run state</h3>
+<table><tbody>
+<tr><td><b>Key</b></td><td><code>kind|scope|id</code>. Kind, Scope, Id, Text, Removed</td></tr>
+<tr><td><code>session-file</code></td><td>lease, heartbeat, status, turn, state of a session</td></tr>
+<tr><td><code>session-items</code></td><td>stack entries, docs checks of a session</td></tr>
+<tr><td><code>cursors</code>, <code>nudges</code></td><td>Read position of each subscriber; wake signals</td></tr>
+<tr><td><code>claims</code></td><td>First answer of a thread</td></tr>
+<tr><td><code>policies</code>, <code>versions</code></td><td>The decision policy; store version 3</td></tr>
+<tr><td><code>definitions</code>, <code>workflow-runs</code></td><td>Store templates, modes, workflows; run state</td></tr>
+</tbody></table></div>
+</div>
+</div></section>
+
+<section class="band" id="limits"><div class="wrap">
+<h2>Know these limits before you depend on it</h2>
+<div class="scroll"><table class="stack">
+<thead><tr><th>Limit</th><th>Effect</th><th>State</th></tr></thead>
+<tbody>
+<tr><td data-l="Limit">No conditional write</td><td data-l="Effect">Two writers of one row in the same second can both win</td><td data-l="State">Open; safe with one supervisor</td></tr>
+<tr><td data-l="Limit">3 requests/s for each integration</td><td data-l="Effect">Supervisor idle: 1.05/s. More than 2 busy processes wait</td><td data-l="State">Open</td></tr>
+<tr><td data-l="Limit">Hooks have no Notion backend</td><td data-l="Effect">No inbox push or lease from the hooks; sessions use orch</td><td data-l="State">Open; next step</td></tr>
+<tr><td data-l="Limit">2 s cache</td><td data-l="Effect">A message reaches a turn in 3.5 to 4 s</td><td data-l="State">Accepted</td></tr>
+<tr><td data-l="Limit">200,000 characters for each row</td><td data-l="Effect">A larger body fails</td><td data-l="State">Open</td></tr>
+</tbody></table></div>
+<p class="note" style="margin-top:12px">Source: <code>session-orchestrator/docs/store.md</code>, section "Notion store", and <code>docs/plan.md</code>, section "N1 spike". Spike page in Notion: Orch store spike (N1).</p>
+</div></section>
