@@ -116,7 +116,7 @@ svg .arrow.ret { fill: var(--muted); }
     <div class="eyebrow">Session orchestrator · audit W</div>
     <h1>Stream Audit</h1>
     <p class="lead">Does each feature read from and write to the event stream, or does it bypass it? Messages go through the stream. The session lifecycle does not: 14 bypass groups, with 12 fix tasks.</p>
-    <div class="status"><span class="pill warn">Review deferred</span> The user reviews the audit and the fix plan together with session K. No fix task starts before the approval. Base branch <code>orch/d-data-upgrade</code>.</div>
+    <div class="status"><span class="pill warn">Review deferred</span> The user reviews the audit and the fix plan together with session K. No fix task starts before the approval. Base branch <code>orch/d-data-upgrade</code>. Handover: <code>session-orchestrator/docs/handover/W.md</code> on branch <code>orch/decision-toolu_01X3Vy3JUZWV7o9Cod3TAenY</code>.</div>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
@@ -392,8 +392,8 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
   <section role="tabpanel" id="audit" aria-labelledby="t-audit" hidden>
     <div class="block">
       <h2>Messages go through the stream. The session lifecycle does not.</h2>
-      <p>Each message kind is an envelope, and the cards, the stream page and the event documents read only the stream. The session lifecycle lives in side files and in memory: turn, lease, heartbeat, registry, state, stack and runs. So each page that shows a session reads files and polls each 10 s.</p>
-      <p class="status">Code read at commit <code>c445988</code>. 46 findings in three parts, merged into 14 bypass groups.</p>
+      <p>Each message kind is an envelope, and the inbox cards, the timeline rows and the event documents come only from the stream. The Cards page and the Stream page also call <code>Board.Tree</code> for the session roots, which reads side files (W-12). The session lifecycle lives in side files and in memory: turn, lease, heartbeat, registry, state, stack and runs. So each page that shows a session reads files and polls each 10 s.</p>
+      <p class="status">Code read at commit <code>c445988</code>. 51 findings in six parts (one bypass can count in more than one part), merged into 14 bypass groups.</p>
     </div>
 
     <div class="panel">
@@ -406,7 +406,7 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
         <div class="bar"><span>Tray</span><i style="--w:5.6%"></i><b>1</b></div>
         <div class="bar"><span>Providers</span><i style="--w:0%"></i><b>0</b></div>
       </div>
-      <p class="status">One bypass can show in more than one part. Example: the <code>status.json</code> write is in the hooks, and its reads are in the Web and the Supervisor.</p>
+      <p class="status">Three agents read the code. Their findings are not all checked by a second read. One bypass can show in more than one part. Example: the <code>status.json</code> write is in the hooks, and its reads are in the Web and the Supervisor.</p>
     </div>
 
     <div class="block">
@@ -415,8 +415,8 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
         <thead><tr><th>Feature</th><th>Reads</th><th>Writes</th><th>Verdict</th></tr></thead>
         <tbody>
           <tr><td>Messages: question, answer, review, report, notice, failure</td><td>Stream</td><td>Envelopes</td><td><span class="pill ok">OK</span></td></tr>
-          <tr><td>Cards page, inbox, card actions</td><td><code>StreamQueries.Inbox</code></td><td>Envelopes</td><td><span class="pill ok">OK</span></td></tr>
-          <tr><td>Stream page, event document</td><td><code>StreamQuery</code></td><td>None</td><td><span class="pill ok">OK</span></td></tr>
+          <tr><td>Inbox cards and card actions</td><td><code>StreamQueries.Inbox</code></td><td>Envelopes</td><td><span class="pill ok">OK</span></td></tr>
+          <tr><td>Timeline rows, event document</td><td><code>StreamQuery</code></td><td>None</td><td><span class="pill ok">OK</span></td></tr>
           <tr><td>API stream, events, views, SSE</td><td><code>StreamQuery</code></td><td>Envelopes</td><td><span class="pill ok">OK</span></td></tr>
           <tr><td>Plugin tools, delivery push</td><td><code>orch watch</code></td><td>Envelopes</td><td><span class="pill ok">OK</span></td></tr>
           <tr><td>Relay, meta updates, question reminders</td><td>Subscriptions</td><td>Envelopes</td><td><span class="pill ok">OK</span></td></tr>
@@ -453,7 +453,7 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
 
       <details><summary><b>W-1</b> Turn state in files and memory · <code>status.json</code>, <code>turn.json</code></summary>
         <dl class="fd">
-          <dt>Where</dt><dd>Writes: <code>register.ts:56-59, 173, 183</code> (<code>status.json</code>); <code>Supervisor.cs:349, 408</code>, <code>Recovery.cs:36</code> (<code>turn.json</code>). Memory: <code>Supervisor.cs:26, 34</code> (<code>running</code>). Reads: <code>StateReader.cs:40-42</code>, <code>Supervisor.cs:214</code>, <code>Board.cs:65-66</code>, <code>lease.ts:40</code>, <code>events.ts:259</code></dd>
+          <dt>Where</dt><dd>Writes: <code>register.ts:56-59, 173, 183</code> (<code>status.json</code>); <code>Supervisor.cs:349, 408</code>, <code>Recovery.cs:36</code> (<code>turn.json</code>). Memory: <code>Supervisor.cs:26, 34</code> (<code>running</code>). Reads: <code>StateReader.cs:40-42</code>, <code>Supervisor.cs:214</code>, <code>Board.cs:65-66</code>, <code>lease.ts:41</code>, <code>events.ts:36</code></dd>
           <dt>Problem</dt><dd>A live turn posts no turn envelope. It writes only <code>status.json</code>. A supervisor turn posts <code>turn.start</code>, but readers use <code>turn.json</code>. The Running dot comes from supervisor memory.</dd>
           <dt>Fix</dt><dd>The plugin posts <code>turn.start</code> and <code>turn.end</code> with <code>by: live</code>. A turn projection holds the open turn of each session. <code>Recovery.Interrupted</code> is a <code>turn.start</code> with no end.</dd>
           <dt>Test</dt><dd>Delete <code>status.json</code> and <code>turn.json</code>. The snapshot gives the same <code>Running</code>.</dd>
@@ -462,7 +462,7 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
 
       <details><summary><b>W-2</b> Lease in a file, two writers · <code>lease.json</code></summary>
         <dl class="fd">
-          <dt>Where</dt><dd>Writes: <code>lease.ts:51, 327-360</code>, <code>register.ts:100</code>, <code>Supervisor.Lifecycle.cs:183</code>. Reads: <code>FileStore.cs:86-97</code>, <code>StateReader.cs:34</code>, <code>Board.cs:63-64</code>, <code>OrchestratorApi.cs:75</code>, <code>Recovery.cs:16</code></dd>
+          <dt>Where</dt><dd>Writes: <code>lease.ts:51, 57, 67, 77</code>, <code>register.ts:100</code>, <code>Supervisor.Lifecycle.cs:183</code>. Reads: <code>FileStore.cs:86-97</code>, <code>StateReader.cs:34</code>, <code>Board.cs:63-64</code>, <code>OrchestratorApi.cs:75</code>, <code>Recovery.cs:16</code></dd>
           <dt>Problem</dt><dd>The plugin and the supervisor both write the lease. The kind <code>lease.take</code> exists (<code>EventKinds.cs:30</code>), but nothing posts it.</dd>
           <dt>Fix</dt><dd>Both writers post <code>lease.take</code> and <code>lease.release</code>. A lease projection holds the holder. The first-writer rule uses a claim, as for answers.</dd>
           <dt>Test</dt><dd>Delete <code>lease.json</code>. <code>IsLive</code> and the Holder row do not change.</dd>
@@ -471,7 +471,7 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
 
       <details><summary><b>W-3</b> Heartbeat file each 3 s · <code>heartbeat.txt</code></summary>
         <dl class="fd">
-          <dt>Where</dt><dd>Write: <code>backend.ts:101-103</code> from <code>lease.ts:345</code>, <code>register.ts:97</code>. Reads: <code>FileStore.cs:90-92</code>, <code>StateReader.cs:35</code>, <code>Recovery.cs:16</code>, the Holder row</dd>
+          <dt>Where</dt><dd>Write: <code>backend.ts:101-103</code> from <code>lease.ts:62</code>, <code>register.ts:97</code>. Reads: <code>FileStore.cs:90-92</code>, <code>StateReader.cs:35</code>, <code>Recovery.cs:16</code>, the Holder row</dd>
           <dt>Problem</dt><dd>Liveness is not an envelope. A beat envelope each 3 s gives about 28,800 envelopes for each session each day.</dd>
           <dt>Fix</dt><dd>Q7, default answer (b): the file stays as plumbing. Only the supervisor sweep reads it, and it posts <code>session.stale</code> or <code>session.fresh</code> when liveness changes (R8). No view reads the file.</dd>
           <dt>Test</dt><dd>Stop the beat. The sweep posts one <code>session.stale</code>, and the Sessions page updates on the push.</dd>
@@ -498,7 +498,7 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
 
       <details><summary><b>W-6</b> <code>enabled</code> repeats the phase</summary>
         <dl class="fd">
-          <dt>Where</dt><dd>Writes: <code>FileStore.cs:73-74</code>, <code>backend.ts:93-99</code>. Reads: <code>FileStore.cs:65, 68</code>, <code>StateReader.cs:68</code>, <code>Supervisor.Lifecycle.cs:271</code>, <code>lease.ts:339</code> (3 s poll)</dd>
+          <dt>Where</dt><dd>Writes: <code>FileStore.cs:73-74</code>, <code>backend.ts:93-99</code>. Reads: <code>FileStore.cs:65, 68</code>, <code>StateReader.cs:68</code>, <code>Supervisor.Lifecycle.cs:271</code>, <code>lease.ts:56</code> (3 s poll)</dd>
           <dt>Problem</dt><dd>The marker repeats <code>lifecycle.phase</code>. The plugin polls it to see an archive.</dd>
           <dt>Fix</dt><dd>Enabled is a projection: a <code>brief</code> or <code>session.start</code>, and no <code>session.archive</code>. The plugin sees the archive on its <code>orch watch</code> push.</dd>
           <dt>Test</dt><dd>Archive a session. The plugin stops on the push, with no file.</dd>
@@ -534,7 +534,7 @@ Hub.Changed += () =&gt; Render(projection.Of(id));</code></pre>
 
       <details><summary><b>W-10</b> Docs checks, mirror, last output · <code>docs-checks/</code>, <code>mirror/</code>, <code>last-output.json</code></summary>
         <dl class="fd">
-          <dt>Where</dt><dd><code>Supervisor.cs:171, 190</code>; <code>backend.ts:105-107</code>, <code>register.ts:61-65</code>; <code>events.ts:282</code> → <code>Supervisor.cs:376</code></dd>
+          <dt>Where</dt><dd><code>Supervisor.cs:171, 190</code>; <code>backend.ts:105-107</code>, <code>register.ts:61-65</code>; <code>events.ts:59</code> → <code>Supervisor.cs:376</code></dd>
           <dt>Problem</dt><dd>A negative docs check is lost on a rebuild. <code>mirror/</code> and <code>last-output.json</code> repeat <code>session.input</code> and <code>session.output</code>.</dd>
           <dt>Fix</dt><dd>Post a <code>docs.check</code> trace, and fold the cache from it. Delete <code>mirror/</code>. Take the last <code>session.output</code> from <code>OfSession</code>, and delete <code>last-output.json</code>.</dd>
           <dt>Test</dt><dd>Delete <code>docs-checks/</code>: no model call runs again. <code>refs.output</code> is correct with no file.</dd>
@@ -664,7 +664,7 @@ flowchart LR
           <tr><td>4</td><td>Give each feature a verdict</td><td>Audit tab</td><td><span class="pill ok">Done</span></td></tr>
           <tr><td>5</td><td>Write a fix for each bypass</td><td>Fix plan tab</td><td><span class="pill ok">Done</span></td></tr>
           <tr><td>6</td><td>Review with the user</td><td>Approved audit and fix plan</td><td><span class="pill warn">Now</span></td></tr>
-          <tr><td>7</td><td>Record and publish</td><td>This page, <code>docs/plan.md</code> tasks</td><td><span class="pill ok">Done</span></td></tr>
+          <tr><td>7</td><td>Record and publish the proposal</td><td>This page, <code>docs/plan.md</code> tasks</td><td><span class="pill ok">Done</span></td></tr>
         </tbody>
       </table></div>
     </div>
