@@ -73,7 +73,7 @@ public static class SupervisorHost
         info.UseShellExecute = false;
         info.CreateNoWindow = true;
         info.WorkingDirectory = DataRoot();
-        info.Environment["ORCH_STORE"] = Path.GetFullPath(store);
+        info.Environment["ORCH_STORE"] = StoreBackends.IsRemote(store) ? store : Path.GetFullPath(store);
         info.Environment["ORCH_PORT"] = port.ToString();
         // The log file keeps the supervisor lines and the warnings, not one line for each HTTP request.
         info.Environment.TryAdd("Logging__LogLevel__Microsoft.AspNetCore", "Warning");

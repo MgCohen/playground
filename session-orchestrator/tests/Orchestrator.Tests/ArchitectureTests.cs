@@ -82,7 +82,7 @@ public sealed class ArchitectureTests
     {
         var allowed = new Dictionary<string, string[]>
         {
-            ["SessionEntries"] = ["src/Orchestrator.Core/Storage/IRepositories.cs", "src/Orchestrator.Store/Local/LocalRepositories.cs", "src/Orchestrator.Store/Remote/HttpRepositories.cs", "src/Orchestrator.Store/Remote/StoreService.cs", "src/Orchestrator.Store/Remote/StoreWire.cs", "src/Orchestrator.Store/FileStore.cs", "src/Orchestrator.Store/StoreUpgrade.cs"],
+            ["SessionEntries"] = ["src/Orchestrator.Core/Storage/IRepositories.cs", "src/Orchestrator.Store/Local/LocalRepositories.cs", "src/Orchestrator.Store/Remote/HttpRepositories.cs", "src/Orchestrator.Store/Remote/Notion/NotionTransport.cs", "src/Orchestrator.Store/Remote/StoreService.cs", "src/Orchestrator.Store/Remote/StoreWire.cs", "src/Orchestrator.Store/FileStore.cs", "src/Orchestrator.Store/StoreUpgrade.cs"],
             ["StoreFiles.Meta"] = ["src/Orchestrator.Store/StoreUpgrade.cs"],
             ["StoreFiles.Control"] = ["src/Orchestrator.Store/StoreUpgrade.cs"],
         };

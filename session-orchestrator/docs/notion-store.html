@@ -1,0 +1,225 @@
+<title>Orchestrator on Notion</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE work: a technical explainer for the owner of the system
+   IDEA a metro map: each database is a station with its own line colour; each step of a flow stops at one station
+   PICTURE the four databases with their properties and the links between them
+   COLOUR white ground, black ink; Sessions green, Events red, Bodies blue, Docs amber
+   TYPE Figtree 800 + Figtree
+   LAYOUT title across the top, the database map full width, then the traces as four-lane timelines */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0e1116);--ink:light-dark(#111418,#e9edf2);--soft:light-dark(#5b6470,#9aa4b0);--rule:light-dark(#e3e6ea,#262c35);--panel:light-dark(#f5f6f8,#151a21);--ses:#00a05a;--evt:#e6261f;--bod:#0a5cff;--doc:#d99a00}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 Figtree,system-ui,sans-serif;margin:0;overflow-x:clip}
+.band{padding-block:clamp(24px,3.5vw,52px);padding-left:max(5vw,16px,env(safe-area-inset-left,0px));padding-right:max(5vw,16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto}
+h1{font-weight:800;font-size:clamp(32px,4.6vw,50px);line-height:1.05;letter-spacing:-.02em;margin:0 0 10px}
+h2{font-weight:800;font-size:clamp(22px,2.6vw,30px);line-height:1.1;letter-spacing:-.01em;margin:0 0 10px}
+h3{font-size:19px;margin:0 0 4px}
+p{margin:0 0 12px;max-width:72ch}
+.lead{font-size:18px;color:var(--soft);max-width:80ch}
+nav{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px;font-weight:600}
+nav a{color:var(--ink);text-decoration:none;border-bottom:3px solid var(--evt)}
+.scroll{overflow-x:auto}
+.map{min-width:820px}
+.map svg{width:100%;height:auto;display:block}
+svg text{font-family:Figtree,system-ui,sans-serif;fill:var(--ink);font-size:14px}
+svg .h{font-weight:800;font-size:17px;fill:#fff}
+svg .s{fill:var(--soft)}
+code{font-size:13.5px;background:var(--panel);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.alt{background:var(--panel)}
+.alt code{background:var(--bg)}
+.key{display:flex;flex-wrap:wrap;gap:8px 20px;margin:12px 0 0;font-size:14px}
+.key span::before{content:"";display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:7px;vertical-align:-2px;background:var(--c)}
+.trace{margin-top:28px}
+.trace>p{color:var(--soft)}
+.lanes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 10px;margin-top:10px;position:sticky;top:0;background:inherit;z-index:1}
+.lanes div{font-weight:800;font-size:14px;padding:6px 10px;border-radius:6px;color:#fff;background:var(--c)}
+.step{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 10px;align-items:start;border-top:1px solid var(--rule);padding:8px 0}
+.step .cell{grid-row:1;padding:8px 10px;border-left:4px solid var(--c);background:var(--bg);border-radius:4px;font-size:15px}
+.alt .step .cell{background:var(--bg)}
+.step .cell b{display:block}
+.n{display:inline-block;min-width:22px;height:22px;border-radius:11px;background:var(--ink);color:var(--bg);font-size:13px;font-weight:800;text-align:center;line-height:22px;margin-right:6px}
+.c1{grid-column:1}.c2{grid-column:2}.c3{grid-column:3}.c4{grid-column:4}
+.w2{grid-column-end:span 2}
+.ext{grid-column:1/-1;font-size:15px;color:var(--soft);padding:4px 2px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:24px}
+.card{background:var(--bg);border:1px solid var(--rule);border-top:6px solid var(--c);border-radius:10px;padding:16px 18px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;vertical-align:top;padding:7px 9px;border-bottom:1px solid var(--rule)}
+th{font-weight:600;color:var(--soft)}
+.note{font-size:14px;color:var(--soft)}
+ol,ul{padding-left:22px;margin:0 0 12px}li{margin-bottom:6px}
+@media(max-width:760px){.lanes{display:none}.step{grid-template-columns:1fr}.step .cell{grid-column:1!important;grid-row:auto}.step .cell::before{content:attr(data-db);display:block;font-size:12px;font-weight:800;color:var(--c)}}
+@media(max-width:600px){table{font-size:13px}th,td{padding:6px 4px}}
+</style>
+
+<header class="band"><div class="wrap">
+<h1>Orchestrator on Notion</h1>
+<p class="lead">The store is four linked Notion databases. Each action of a session, the supervisor or you becomes a short, fixed sequence of Notion calls: a body document, then an event row that links the parties and the body. This page traces each sequence, step by step.</p>
+<nav><a href="#model">The four databases</a><a href="#new">New session</a><a href="#ask">Question</a><a href="#answer">Answer</a><a href="#deliver">Delivery</a><a href="#rules">Read and write rules</a><a href="#many">Many sessions</a></nav>
+</div></header>
+
+<section class="band" id="model"><div class="wrap">
+<h2>An event row links the parties and the body</h2>
+<p>Only <code>orch</code> and the supervisor call Notion. Both use the same code, <code>NotionTransport</code>, with <code>NOTION_TOKEN</code>.</p>
+<div class="scroll"><div class="map"><svg viewBox="0 0 1000 560" role="img" aria-label="The four databases: Sessions, Events, Bodies and Docs, with their properties and links">
+<g fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+<path d="M365 272 H335 L315 240 H290" stroke="var(--ses)"/>
+<path d="M365 298 H330 L310 266 H290" stroke="var(--ses)"/>
+<path d="M365 324 H325 L305 292 H290" stroke="var(--ses)"/>
+<path d="M290 214 H305 V40 H190 V60" stroke="var(--ses)" stroke-dasharray="6 6"/>
+<path d="M635 350 H672 V136 H710" stroke="var(--bod)"/>
+<path d="M635 376 H690 V20 H500 V40" stroke="var(--evt)" stroke-dasharray="6 6"/>
+</g>
+<g>
+<rect x="20" y="60" width="270" height="270" rx="10" fill="var(--bg)" stroke="var(--ses)" stroke-width="3"/>
+<rect x="20" y="60" width="270" height="34" rx="10" fill="var(--ses)"/><text class="h" x="34" y="83">Sessions: one row each party</text>
+<text x="34" y="116">Party (title): user, session:&lt;id&gt;</text>
+<text x="34" y="142">Kind: user, supervisor, session</text>
+<text x="34" y="168">Title, Code, Role, Stream</text>
+<text x="34" y="194">Text: the registry entry</text>
+<text x="34" y="220">Parent → Sessions</text>
+<text x="34" y="246">Sent ← Events.From</text>
+<text x="34" y="272">Inbox ← Events.To</text>
+<text x="34" y="298">Events ← Events.Session</text>
+<text class="s" x="34" y="320">Fields only, no page content</text>
+</g>
+<g>
+<rect x="365" y="40" width="270" height="390" rx="10" fill="var(--bg)" stroke="var(--evt)" stroke-width="3"/>
+<rect x="365" y="40" width="270" height="34" rx="10" fill="var(--evt)"/><text class="h" x="379" y="63">Events: the stream</text>
+<text x="379" y="96">Id (title): &lt;ms&gt;-&lt;hex&gt;-&lt;writer&gt;</text>
+<text x="379" y="122">Kind: question, answer, ack…</text>
+<text x="379" y="148">Subject: first sentence</text>
+<text x="379" y="174">Needs: answer, review, ack</text>
+<text x="379" y="200">Thread</text>
+<text x="379" y="226">Stream</text>
+<text x="379" y="252">At, Ms (the feed sorts by Ms)</text>
+<text x="379" y="278">From → Sessions</text>
+<text x="379" y="304">To → Sessions</text>
+<text x="379" y="330">Session → Sessions</text>
+<text x="379" y="356">Body → Bodies</text>
+<text x="379" y="382">Reply → Events</text>
+<text x="379" y="408">Text: the envelope JSON</text>
+</g>
+<g>
+<rect x="710" y="60" width="270" height="330" rx="10" fill="var(--bg)" stroke="var(--bod)" stroke-width="3"/>
+<rect x="710" y="60" width="270" height="34" rx="10" fill="var(--bod)"/><text class="h" x="724" y="83">Bodies: one document each</text>
+<text x="724" y="116">Path (title): bodies/&lt;day&gt;/&lt;id&gt;.json</text>
+<text x="724" y="142">Event ← Events.Body</text>
+<text x="724" y="168">Kind, Session, From, To:</text>
+<text class="s" x="724" y="190">read through Event (rollups)</text>
+<text x="724" y="216">Removed</text>
+<line x1="724" y1="236" x2="966" y2="236" stroke="var(--rule)" stroke-width="2"/>
+<text x="724" y="262" font-weight="800">Page content</text>
+<text x="724" y="288">The message: headings,</text>
+<text x="724" y="310">paragraphs, lists, code</text>
+<text x="724" y="340">Source block: exact JSON.</text>
+<text class="s" x="724" y="362">The store reads this block</text>
+</g>
+<g>
+<rect x="365" y="460" width="270" height="90" rx="10" fill="var(--bg)" stroke="var(--doc)" stroke-width="3"/>
+<rect x="365" y="460" width="270" height="34" rx="10" fill="var(--doc)"/><text class="h" x="379" y="483">Docs: run state</text>
+<text x="379" y="516">Key (title): kind|scope|id</text>
+<text x="379" y="540">Text. No links</text>
+</g>
+<text class="s" x="20" y="400">→ a link that the writer sets</text>
+<text class="s" x="20" y="424">← the other side, that Notion fills</text>
+<text class="s" x="20" y="448">- - a link to the same database</text>
+</svg></div></div>
+<div class="key"><span style="--c:var(--ses)">Sessions</span><span style="--c:var(--evt)">Events</span><span style="--c:var(--bod)">Bodies</span><span style="--c:var(--doc)">Docs</span></div>
+</div></section>
+
+<section class="band alt" id="new"><div class="wrap">
+<h2>Each trace: one row a step, one lane each database</h2>
+<p>A number is the order of the Notion calls. Notion fills the other side of each link at once.</p>
+<div class="trace">
+<h3>1. A new session: <code>orch new</code>, <code>orch enable</code> or <code>spawn_child</code></h3>
+<p>The session first gets its row and its id. Its first event follows.</p>
+<div class="lanes"><div style="--c:var(--ses)">Sessions</div><div style="--c:var(--bod)">Bodies</div><div style="--c:var(--evt)">Events</div><div style="--c:var(--doc)">Docs</div></div>
+<div class="step"><div class="cell c1" data-db="Sessions" style="--c:var(--ses)"><span class="n">1</span><b>Query: row session:n1?</b>No row: the id is free</div></div>
+<div class="step"><div class="cell c1" data-db="Sessions" style="--c:var(--ses)"><span class="n">2</span><b>Create row session:n1</b>Text = registry entry. Title, Role. Parent → session:root</div></div>
+<div class="step"><div class="cell c4" data-db="Docs" style="--c:var(--doc)"><span class="n">3</span><b>Create session files</b>enabled, status of n1</div></div>
+<div class="step"><div class="cell c2" data-db="Bodies" style="--c:var(--bod)"><span class="n">4</span><b>Create document</b>bodies/…/A.json: the brief or the start text</div></div>
+<div class="step"><div class="cell c1" data-db="Sessions" style="--c:var(--ses)"><span class="n">5</span><b>Find row user</b>From the cache. Created at its first use</div></div>
+<div class="step"><div class="cell c3" data-db="Events" style="--c:var(--evt)"><span class="n">6</span><b>Query Id A, then create</b>session.start. From → user, To → n1, Session → n1, Body → A.json</div></div>
+<div class="step"><div class="ext">Result: n1.Inbox has 1 event, user.Sent has 1 event, A.json.Event links the event.</div></div>
+</div>
+
+<div class="trace" id="ask">
+<h3>2. A session asks you a question: <code>orch post question</code></h3>
+<div class="lanes"><div style="--c:var(--ses)">Sessions</div><div style="--c:var(--bod)">Bodies</div><div style="--c:var(--evt)">Events</div><div style="--c:var(--doc)">Docs</div></div>
+<div class="step"><div class="cell c2" data-db="Bodies" style="--c:var(--bod)"><span class="n">1</span><b>Create document B.json</b>The question, context, options, recommendation</div></div>
+<div class="step"><div class="cell c1" data-db="Sessions" style="--c:var(--ses)"><span class="n">2</span><b>Find rows session:n1, user</b>From the cache</div></div>
+<div class="step"><div class="cell c3" data-db="Events" style="--c:var(--evt)"><span class="n">3</span><b>Query Id B, then create</b>question, Needs answer, Thread t1. From → n1, To → user, Body → B.json</div></div>
+<div class="step"><div class="cell c3" data-db="Events" style="--c:var(--evt)"><span class="n">4</span><b>Supervisor: feed query</b>Each 2 s: rows with Ms after the last one. It sees B</div><div class="cell c4" data-db="Docs" style="--c:var(--doc)"><span class="n">5</span><b>Update cursor</b>The supervisor marks B as seen</div></div>
+<div class="step"><div class="ext">You see the question in the UI card, or in Notion: Sessions → user → Inbox.</div></div>
+</div>
+
+<div class="trace" id="answer">
+<h3>3. You answer: UI, tray or <code>orch answer t1 "BLUE"</code></h3>
+<div class="lanes"><div style="--c:var(--ses)">Sessions</div><div style="--c:var(--bod)">Bodies</div><div style="--c:var(--evt)">Events</div><div style="--c:var(--doc)">Docs</div></div>
+<div class="step"><div class="cell c4" data-db="Docs" style="--c:var(--doc)"><span class="n">1</span><b>Claim answer/t1</b>Query, create, query again. The oldest claim wins. A second answer stops here</div></div>
+<div class="step"><div class="cell c2" data-db="Bodies" style="--c:var(--bod)"><span class="n">2</span><b>Create document C.json</b>The answer text</div></div>
+<div class="step"><div class="cell c3" data-db="Events" style="--c:var(--evt)"><span class="n">3</span><b>Create answer row</b>From → user, To → n1, Body → C.json, Reply → B</div></div>
+<div class="step"><div class="ext">The question is closed: an answer row has Reply → B.</div></div>
+</div>
+
+<div class="trace" id="deliver">
+<h3>4. The supervisor delivers to the session</h3>
+<div class="lanes"><div style="--c:var(--ses)">Sessions</div><div style="--c:var(--bod)">Bodies</div><div style="--c:var(--evt)">Events</div><div style="--c:var(--doc)">Docs</div></div>
+<div class="step"><div class="cell c3" data-db="Events" style="--c:var(--evt)"><span class="n">1</span><b>Feed query</b>It sees C: To → n1, no ack yet</div></div>
+<div class="step"><div class="cell c1" data-db="Sessions" style="--c:var(--ses)"><span class="n">2</span><b>Read entry of n1</b>Where it runs: local or cloud. Its cwd</div><div class="cell c4" data-db="Docs" style="--c:var(--doc)"><span class="n">3</span><b>Read lease, heartbeat</b>A live chat holds n1? Then wait</div></div>
+<div class="step"><div class="cell c2" data-db="Bodies" style="--c:var(--bod)"><span class="n">4</span><b>Read C.json</b>The source block. Kept in the cache</div></div>
+<div class="step"><div class="ext">The provider starts the turn of n1 with the rendered answer: <code>claude -p</code> locally, or a cloud session.</div></div>
+<div class="step"><div class="cell c4" data-db="Docs" style="--c:var(--doc)"><span class="n">5</span><b>Write turn, status</b>Turn start and end of n1</div></div>
+<div class="step"><div class="cell c2" data-db="Bodies" style="--c:var(--bod)"><span class="n">6</span><b>Create ack body</b></div><div class="cell c3" data-db="Events" style="--c:var(--evt)"><span class="n">7</span><b>Create ack row</b>From → n1, To → user, delivered</div></div>
+</div>
+</div></section>
+
+<section class="band" id="rules"><div class="wrap">
+<h2>A read uses the cache; a write reads Notion first</h2>
+<div class="grid2">
+<div class="card" style="--c:var(--evt)"><h3>Read</h3>
+<ol><li>Each database has a cache in the process.</li><li>After 2 s, one query reads the rows edited in the last 2 minutes. Notion keeps the edit time to the minute.</li><li>The feed reads Events with <code>Ms</code> after the last event minus 2 minutes, sorted by <code>Ms</code>.</li><li>A body text is read once from its source block and kept.</li></ol></div>
+<div class="card" style="--c:var(--doc)"><h3>Write</h3>
+<ol><li>Query the row by its title.</li><li>An add of a row that exists: refuse. A change of a row that changed after the read: refuse. Nothing is written.</li><li>Create or update the row.</li><li>After a create: query again. Two rows with one title: the oldest wins, the other writer archives its row.</li></ol></div>
+</div>
+<div class="scroll" style="margin-top:20px"><table>
+<thead><tr><th>Store item</th><th>Database</th><th>Title of the row</th></tr></thead>
+<tbody>
+<tr><td>Envelope</td><td>Events</td><td>Envelope id</td></tr>
+<tr><td>Body</td><td>Bodies</td><td><code>bodies/&lt;day&gt;/&lt;id&gt;.json</code></td></tr>
+<tr><td>Registry entry, party</td><td>Sessions</td><td><code>session:&lt;id&gt;</code>, <code>user</code>, <code>supervisor</code></td></tr>
+<tr><td>Lease, heartbeat, status, turn</td><td>Docs</td><td><code>session-file|file=lease.json|&lt;id&gt;</code></td></tr>
+<tr><td>Cursor of a subscriber</td><td>Docs</td><td><code>cursors||&lt;party&gt;/&lt;name&gt;</code></td></tr>
+<tr><td>Claim of an answer</td><td>Docs</td><td><code>claims||answer/&lt;thread&gt;</code></td></tr>
+<tr><td>Policy, version, templates, runs</td><td>Docs</td><td><code>policies||policy</code>…</td></tr>
+<tr><td>Supervisor log</td><td>Log page</td><td>One paragraph each line</td></tr>
+</tbody></table></div>
+</div></section>
+
+<section class="band alt" id="many"><div class="wrap">
+<h2>Many sessions share the databases with five rules</h2>
+<div class="grid2">
+<div><ol>
+<li><b>One writer each session.</b> The lease row in Docs says who writes now: a live chat or a supervisor turn.</li>
+<li><b>One supervisor each store.</b> Two supervisors would start the same turn two times.</li>
+<li><b>One inbox each party.</b> Each event has one <code>To</code>. Your inbox is the <code>user</code> row.</li>
+<li><b>The first answer wins.</b> The claim row of a thread refuses the second answer.</li>
+<li><b>A tree of sessions.</b> An orchestrator spawns children; each child row has <code>Parent</code>.</li>
+</ol></div>
+<div class="scroll"><table>
+<thead><tr><th>Setup</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>2 orchestrators, 1 store</td><td>2 trees in Sessions, 1 supervisor, 1 user inbox</td></tr>
+<tr><td>Local and cloud children</td><td>Same rows. Only the turn start differs</td></tr>
+<tr><td>2 supervisors, 1 store</td><td>Not supported: double turns</td></tr>
+<tr><td>Many busy processes</td><td>They share 3 Notion requests each second</td></tr>
+<tr><td>Supervisor idle</td><td>1 query of Events, Sessions, Docs each 2.3 s</td></tr>
+</tbody></table></div>
+</div>
+<p class="note" style="margin-top:14px">With a <code>notion:</code> store the plugin hooks are off: each session uses <code>orch</code> for each read and write. Source: <code>session-orchestrator/docs/store.md</code>, section "Notion store".</p>
+</div></section>

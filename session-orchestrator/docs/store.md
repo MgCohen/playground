@@ -52,7 +52,7 @@ There is no other communication file. The inbox, the answers, the reviews, the r
 
 ## Repositories (C#)
 
-The C# code reads and writes the store only through `IRepositories` (`src/Orchestrator.Core/Storage/`). `StoreBackends.Create` selects the implementation: an `http` or `https` root gives `HttpRepositories` (the store API of a supervisor, section "Store API"), each other root the local folder. Only the local folder implementation (`src/Orchestrator.Store/Local/`) touches the files above. The test `ArchitectureTests` refuses store IO in other C# files. The plugin hooks write the same files only through `plugin/hooks/backend.ts`.
+The C# code reads and writes the store only through `IRepositories` (`src/Orchestrator.Core/Storage/`). `StoreBackends.Create` selects the implementation: an `http` or `https` root gives `HttpRepositories` (the store API of a supervisor, section "Store API"), a `notion:` root the Notion store (section "Notion store"), each other root the local folder. Only the local folder implementation (`src/Orchestrator.Store/Local/`) touches the files above. The test `ArchitectureTests` refuses store IO in other C# files. The plugin hooks write the same files only through `plugin/hooks/backend.ts`.
 
 | Repository | Entity | Id | Files |
 |---|---|---|---|
@@ -659,6 +659,51 @@ flowchart LR
 - An id is one or more parts with `/` between them. The API refuses an empty part, `.`, `..`, `\`, `:` and control characters (400). A scope key is one part.
 - A save checks the version of each change and remove before the first write. A refused save writes nothing.
 - The HTTP mode has no push: `Watch()` polls every 2 s.
+
+## Notion store (N1 spike, `notion:<page id>`)
+
+A root `notion:<page id>` keeps the store in four linked Notion databases under that page. `StoreBackends.Create` gives `RemoteRepositories` on `NotionTransport` (`src/Orchestrator.Store/Remote/Notion/`). The token is `NOTION_TOKEN`. `HttpRepositories` uses the same `RemoteRepositories` on `HttpTransport`: both send the text documents of the store API (`WireDoc`).
+
+```mermaid
+flowchart LR
+    E[(Events)] -->|From, To, Session| S[(Sessions)]
+    E -->|Body| B[(Bodies)]
+    E -->|Reply| E
+    S -->|Parent| S
+    D[(Docs)]
+```
+
+| Database | One row for | Title | Links |
+|---|---|---|---|
+| `Events` | Each envelope: the stream | Envelope id | `From`, `To`, `Session` to `Sessions`; `Body`; `Reply` |
+| `Bodies` | Each body, as a document | Body path | `Event` (dual of `Body`); rollups `Session`, `Kind`, `From`, `To` |
+| `Sessions` | Each party: `user`, `supervisor`, `session:<id>` | The party | `Inbox`, `Sent`, `Events` (duals); `Parent` |
+| `Docs` | Each run state document | `<kind>\|<scope keys>\|<id>` | None |
+
+A `Log` page holds one paragraph for each line of the supervisor log.
+
+| Store kind | Place |
+|---|---|
+| `events` | `Events`. Properties: `Kind`, `Subject`, `Needs`, `Thread`, `Stream`, `At`, `Ms`, `Text` |
+| `bodies` | `Bodies`. Properties: `Removed` and the links. Page content: the message, then a divider and the source block (a `json` code block with the caption `orch body source`) |
+| `session-entries` | `Sessions`, the row `session:<id>`. Properties: `Title`, `Code`, `Role`, `Stream`, `Text`, `Removed` |
+| `sessions` | Derived: a session exists when it has an entry, a session file or a session item |
+| Each other kind | `Docs`. Properties: `Kind`, `Scope`, `Id`, `Text`, `Removed` |
+
+Rules:
+
+1. `Text` holds the file text of the document. For a body, the source block holds it. The version is the hash of that text (Version rule). A Notion number keeps only 53 bits, so no row stores the version.
+1. The page of a body shows each short field as one line, each long text as a heading and its paragraphs, lists and code, and each list as bullets. A change of a body writes the page again.
+2. The first write makes the databases, their links and the log page. A read of a missing store gives nothing.
+3. The first envelope of a party makes its `Sessions` row with no entry. A session row with no `Text` is a party, not a registry entry.
+4. The body is written before its envelope, so the envelope row links to the body row. A forward links to the body of the original.
+5. A remove sets `Removed` on a row and archives an envelope row. A remove of a session removes its entry and its rows in `Docs`.
+6. Reads use a cache. One query each 2 s reads the rows of a database with an edit time after the last sync minus 2 minutes (Notion keeps the edit time to the minute). One query each 2 s reads the envelopes with `Ms` after the last envelope minus 2 minutes. A body text is read once from its page and kept until the page edit time changes. The check before a write reads the page again.
+7. A save reads each row again before the first write. `Exists`: a second read after the create; when two rows have the title, the oldest row wins and the other writer archives its row. `Stale`: no conditional write in Notion, so two writers in the same second can both win.
+8. A `Text` value takes at most 200,000 characters (100 items of 2,000). A row with more than 25 items needs one more read of the property. A body source block takes the same 200,000 characters; a larger body gets more source blocks.
+9. The client sends at most 3 requests each second. A 429, a 409, a 5xx or a network error waits and tries again, 5 attempts.
+10. The plugin hooks stay off with a `notion:` root, as with `ORCH_URL`. The session uses `orch`.
+11. `ORCH_NOTION_TRACE=1` writes one stderr line for each request.
 
 ## Questions to the user
 
