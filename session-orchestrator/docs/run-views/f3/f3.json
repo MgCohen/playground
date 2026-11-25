@@ -1,0 +1,61 @@
+{
+ "rows": [
+  {
+   "id": "f3tree",
+   "name": "S-1 · Stack tree",
+   "why": "The PRs of a stream as a Git tree, the base at the bottom. The lowest PR has the marker. A tap on a row opens the preview. Variation c puts the card of the lowest PR in the tree.",
+   "sketches": [
+    {
+     "file": "tree-a.svg",
+     "caption": "All open · #41 is the lowest"
+    },
+    {
+     "file": "tree-b.svg",
+     "caption": "Half way · pre-approved, change"
+    },
+    {
+     "file": "tree-c.svg",
+     "caption": "Variation: tree and cards together"
+    }
+   ]
+  },
+  {
+   "id": "f3card",
+   "name": "S-2 · Stack cards",
+   "why": "One card for each PR, the lowest first, with the acts. Approve merges the lowest PR. A higher PR can be pre-approved. Variation b shows all cards in a list.",
+   "sketches": [
+    {
+     "file": "card-a.svg",
+     "caption": "One card at a time"
+    },
+    {
+     "file": "card-b.svg",
+     "caption": "Variation: list of cards"
+    },
+    {
+     "file": "card-c.svg",
+     "caption": "After an approve: the next card"
+    }
+   ]
+  },
+  {
+   "id": "f3prev",
+   "name": "S-3 · PR preview",
+   "why": "One PR template has three forms: card, preview and full. The preview shows the context, the summary, the key information, the fields and the acts. The template is a placeholder (O-2). The full form is F4.",
+   "sketches": [
+    {
+     "file": "prev-a.svg",
+     "caption": "Preview of the lowest PR"
+    },
+    {
+     "file": "prev-b.svg",
+     "caption": "Preview of a higher PR"
+    },
+    {
+     "file": "prev-c.svg",
+     "caption": "Full form (F4)"
+    }
+   ]
+  }
+ ]
+}

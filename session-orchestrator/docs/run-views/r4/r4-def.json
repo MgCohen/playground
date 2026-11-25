@@ -1,0 +1,42 @@
+{
+  "rows": [
+    {
+      "id": "w2def",
+      "name": "W-2 · Workflow definition",
+      "why": "The definition uses the run page style. Each level is one Git tree screen, one row for each step. Lanes split and join. Exits are grey leaves, restarts are dashed leaves with a reason. The Outline tab shows all levels in one indented list.",
+      "sketches": [
+        {
+          "file": "def-a.svg",
+          "caption": "Level 1 · Feature delivery tree"
+        },
+        {
+          "file": "def-b.svg",
+          "caption": "Level 2 · Verify ▸ and its exits"
+        },
+        {
+          "file": "def-c.svg",
+          "caption": "Outline · all levels in one list"
+        }
+      ]
+    },
+    {
+      "id": "w2astep",
+      "name": "W-2a · Step definition",
+      "why": "A tap on a row opens a sheet over the dimmed tree. A step shows its executor, input, output and next moves. A child flow shows its exits, the parent map and the restart limits. A join shows its rule and one open idea.",
+      "sketches": [
+        {
+          "file": "sdef-a.svg",
+          "caption": "Tap on Review · human step"
+        },
+        {
+          "file": "sdef-b.svg",
+          "caption": "Tap on Verify ▸ · exits, restarts"
+        },
+        {
+          "file": "sdef-c.svg",
+          "caption": "Tap on Integrate · join rule"
+        }
+      ]
+    }
+  ]
+}

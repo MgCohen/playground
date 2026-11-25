@@ -1,0 +1,61 @@
+{
+  "rows": [
+    {
+      "id": "w1cat",
+      "name": "W-1 · Workflows",
+      "why": "The catalog of workflows. Each row shows the version, the levels, the steps and the active runs. A small Git tree strip shows level 1, with child flows ▸, restarts ↺ and exits. The same rows appear in the picker of a new session.",
+      "sketches": [
+        {
+          "file": "cat-a.svg",
+          "caption": "List with a level 1 preview"
+        },
+        {
+          "file": "cat-b.svg",
+          "caption": "Compact rows · one row open"
+        },
+        {
+          "file": "cat-c.svg",
+          "caption": "Pick a workflow · bottom sheet"
+        }
+      ]
+    },
+    {
+      "id": "w3runs",
+      "name": "W-3 · Runs",
+      "why": "All runs in one list. Each row tells the state, the level path to the current step, the pass and the wait. Runs that wait for you come first, and you can act from the list. One workflow also has its own runs, with the version of each run.",
+      "sketches": [
+        {
+          "file": "runs-a.svg",
+          "caption": "All runs · filter chips"
+        },
+        {
+          "file": "runs-b.svg",
+          "caption": "Grouped by state · act inline"
+        },
+        {
+          "file": "runs-c.svg",
+          "caption": "Runs of one workflow · versions"
+        }
+      ]
+    },
+    {
+      "id": "wcomp",
+      "name": "W-C1, W-C2 · Run row and wait card",
+      "why": "The run row is the same in the owner session, the stream bar and the Runs list. The wait card has one form for each wait kind: answer, verdict, pick and limit. On the run page the card shows the breadcrumb and opens the level of the wait.",
+      "sketches": [
+        {
+          "file": "comp-a.svg",
+          "caption": "Run row · places and states"
+        },
+        {
+          "file": "comp-b.svg",
+          "caption": "Wait card · four kinds"
+        },
+        {
+          "file": "comp-c.svg",
+          "caption": "Wait card on the run page"
+        }
+      ]
+    }
+  ]
+}

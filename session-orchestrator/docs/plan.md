@@ -2286,6 +2286,45 @@ The page `/demo` of a fake demo supervisor writes dummy events into its store. T
 | L-F9 | The tray notices and counts only inbox cards (questions, reviews, reports, blocked). A new session, an update or a message makes no notice. This is the design | Proposal for V: a quiet peek bubble with no count for these events, if the user wants it |
 | L-F10 | The tray check of `demo.ps1` saw a tray of V (`--instance v`) as a block. That tray has its own lock | Fixed: the check ignores a tray with `--instance` |
 
+## P plan: advanced features and the Workflows sketches (2026-11-20)
+
+Task P plans the advanced features of the UI. It makes drafts only, no app code.
+
+| Page | Link | Content |
+|---|---|---|
+| `docs/review-pages-spec.html` | https://claude.ai/artifact/Kn888Us7Y4A7MnPTiQNmUj | Advanced Features: the list of features F1 to F14, the spec of F1 to F4, the backlog, the user workflows, the data gaps, the open questions |
+| `docs/workflows-sketches.html` | Advanced Features, tab F2, sub-tab Sketches (a supporting file of the same artifact) | Sketches of F2 Workflows: Workflows, Workflow definition, Step definition, Runs, Run, Step run, Run row, Wait card. 2 or 3 variants each |
+| `docs/workflow-graphs.html` | Advanced Features, tab F2, sub-tab Graph shapes | Five sample workflows (line to open graph), each in four graph shapes: boxes and nodes, in a line and in a free layout |
+| `docs/run-views.html` | Advanced Features, tab F2, sub-tabs Run views and Pages (`?set=r4`) | Run views: the run page on a phone in rounds 1 to 3 (round 3: the Git tree, a step back, a long run; files in `docs/run-views/r2/` and `r3/`). Pages: all F2 pages in the Git tree style and the P5 model (round 4, files in `docs/run-views/r4/`) |
+
+The F2 spec follows the workflow model P5 Forward and restart, from the workflow brainstorm (https://claude.ai/artifact/4hexcdNxAtjP4ZF1hoonC8). The F2 Spec tab has the terms, the moves, the wait kinds, the parts of the run page, the data gaps and the open questions Q-P1 to Q-P3 and Q-R6.
+
+On 2026-11-24 the F2 sketches are done for now. The intent pass (`docs/f2-page-intents.md`) set the goal of each page, and sketch round 5 (`docs/run-views/r5/`, the Pages sub-tab) draws them. W-3 Runs is removed: runs show on the sessions. Open: O-1 (conditions), Q-P1 to Q-P3, the step bar of W-C1, and the store design (issue #80). Next feature: F3 PR stack (`docs/f3-page-intents.md`). Its sketches (`docs/run-views/f3/`, 2026-11-25) wait for a review.
+
+The decisions are in `docs/decisions.md` (rows "P").
+
+### Data gaps
+
+Data that the pages need and the store does not have. Session D owns the store code.
+
+| Id | Gap | Feature | Proposal |
+|---|---|---|---|
+| P-G1 | A run has no `stream` field | F1, F2 | Read it from the owner entry, or copy it into the run at the start |
+| P-G2 | No run API for the UI: list, get, step, stop | F2 | `GET /api/runs?stream=`, `GET /api/runs/<id>`, `POST /api/runs/<id>/step` |
+| P-G3 | No envelope when a run changes | F2 | A `run.changed` envelope for the live update |
+| P-G4 | Task PRs from `gh pr create` are not in the store | F3, F4 | A `pr.open` record for each PR of a session |
+| P-G5 | No record of integration branches | F3 | An integration record: branch, base, the PRs that it holds |
+| P-G6 | No stack of a stream over HTTP | F3 | `GET /api/stack?stream=` |
+| P-G7 | No merge over HTTP | F3, F4 | `POST /api/prs/<n>/merge` with the `orch merge` rules |
+| P-G8 | No diff summary | F4 | Files and line counts in the `pr.open` body, or a live `git diff --stat` |
+| P-G9 | No test results | F4 | A `tests` field in the report template: pass, fail, skip, command |
+| P-G10 | No link from a PR to the run step that made it | F2, F4 | `refs.run` and `refs.step` on `pr.open` |
+| P-G11 | The review API needs a decision id | F4 | A review by PR number for a task PR |
+| P-G12 | The runner has no "force a next step" and no "go back to step X" | F2 | `orch run step --force S`, `orch run back S`, and the same in the run API |
+| P-G13 | No link from a step run to the child run that it started | F2 | `history[].run`: the id of the child run |
+| P-G14 | No list of the versions of a workflow definition | F2 | Keep each version, or read the `.removed/` folders as old versions |
+| P-G15 | No timer on a pick wait | F2, F7 | A pick wait that the owner session takes after a time limit |
+
 ## Next tasks
 
 These tasks start from the integration branch `orch/integration-stack` (I2). Task codes are `<stream><n>`.

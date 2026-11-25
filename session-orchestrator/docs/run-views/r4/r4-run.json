@@ -1,0 +1,42 @@
+{
+  "rows": [
+    {
+      "id": "w4run",
+      "name": "W-4 · Run",
+      "why": "One screen for each level. Each row is one step run, oldest at the top. A child flow ▸ is one row that opens its own level. A restart ↺ is a chip, and the new pass continues in the same lane. The card on top shows who acts now.",
+      "sketches": [
+        {
+          "file": "run-a.svg",
+          "caption": "W4 level 1 · wait card · ⋯ menu"
+        },
+        {
+          "file": "run-b.svg",
+          "caption": "W4 level 2 Verify ▸ · pass 2"
+        },
+        {
+          "file": "run-c.svg",
+          "caption": "W3 Question round ▸ · answer card"
+        }
+      ]
+    },
+    {
+      "id": "w5step",
+      "name": "W-5 · Step run",
+      "why": "A tap on a row or a chip opens a sheet over the dimmed level. A step run shows its result, input, why it ran and where it went. A child flow shows its passes and exits. A restart chip shows its reason, its limit and what step 1 sees.",
+      "sketches": [
+        {
+          "file": "step-a.svg",
+          "caption": "Tap on Test, pass 1"
+        },
+        {
+          "file": "step-b.svg",
+          "caption": "Tap on the child row Verify ▸"
+        },
+        {
+          "file": "step-c.svg",
+          "caption": "Tap on the chip ↺ pass 2"
+        }
+      ]
+    }
+  ]
+}

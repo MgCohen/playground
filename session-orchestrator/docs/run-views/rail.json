@@ -1,0 +1,19 @@
+{
+  "name": "Graph as a rail in a document page",
+  "tag": "wide screen · document + rail",
+  "why": "The page is a readable report of the run. Each step run is a section with real output. A narrow graph rail on the left stays fixed. It shows done, now and next steps and the part in view. A tap on a rail step jumps to its sections. Best for reading and review. Weak for big or wide graphs.",
+  "sketches": [
+    {
+      "file": "rail-a.svg",
+      "caption": "W4 opens at Review, the action"
+    },
+    {
+      "file": "rail-b.svg",
+      "caption": "Tap Test: both passes in view"
+    },
+    {
+      "file": "rail-c.svg",
+      "caption": "W3: Ask loop, answer round 3"
+    }
+  ]
+}

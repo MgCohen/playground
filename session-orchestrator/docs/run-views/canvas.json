@@ -1,0 +1,19 @@
+{
+  "name": "Full-screen canvas map",
+  "tag": "wide screen · canvas",
+  "why": "The graph fills the page like a design canvas. Each loop sits on its own circle. Floating cards show the run, the map and the current step with its ways out. Walk the history with previous and next. Best for big graphs and loops. Weak for small screens and for long step details.",
+  "sketches": [
+    {
+      "file": "canvas-a.svg",
+      "caption": "W4 opens: Review now, two ways out"
+    },
+    {
+      "file": "canvas-b.svg",
+      "caption": "Tap on Test: popover with 2 passes"
+    },
+    {
+      "file": "canvas-c.svg",
+      "caption": "W3: question loop in round 3"
+    }
+  ]
+}

@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run View Sketches</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one foldable row for each concept and workflow. Inside, 3 phone sketches of the same size. A tap on a sketch opens it large. */
+:root {
+  --page: #efece7; --tx: #2a2825; --mu: #6b665f; --line: rgba(27,26,24,.14); --surf: #fdfdfc; --cell: #f7f5f2; --soft: #f1eee9;
+  --edge: #8d877e; --back: #c2410c;
+  --ag: #1f5fbf; --hu: #ff6a1a; --tl: #6b665f;
+  --ok: #2f8f5b; --bad: #c23b22; --now: #7c4dff; --now-soft: rgba(124,77,255,.12); --sel: #1f5fbf; --sel-soft: rgba(31,95,191,.10);
+  --f-body: "Inter", system-ui, sans-serif; --f-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #1b1a18; --tx: #ece9e4; --mu: #a39d94; --line: rgba(255,255,255,.12); --surf: #262522; --cell: #211f1d; --soft: #2e2c29;
+  --edge: #8a847b; --back: #ff8a4c;
+  --ag: #6ea0ff; --hu: #ff7a33; --tl: #a39d94;
+  --ok: #5cc28a; --bad: #ff7a66; --now: #a98bff; --now-soft: rgba(169,139,255,.16); --sel: #6ea0ff; --sel-soft: rgba(110,160,255,.14);
+} }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 12px 12px 24px; background: var(--page); color: var(--tx); font: 13px/1.45 var(--f-body); }
+.rows { display: grid; gap: 8px; max-width: 1200px; margin: 0 auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--mu); padding: 2px 4px; align-items: center; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+.intro { margin: 0; padding: 0 4px; max-width: 90ch; }
+.row { background: var(--surf); border: 1px solid var(--line); border-radius: 10px; }
+.row summary { cursor: pointer; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; list-style: none; }
+.row summary::-webkit-details-marker { display: none; }
+.row summary::before { content: ""; border-left: 7px solid var(--hu); border-top: 5px solid transparent; border-bottom: 5px solid transparent; align-self: center; transition: transform .15s; }
+.row[open] summary::before { transform: rotate(90deg); }
+.row summary b { font: 600 15px var(--f-body); }
+.row summary span { font-size: 12px; color: var(--mu); }
+.row[open] summary { border-bottom: 1px solid var(--line); }
+.why { margin: 0; padding: 8px 12px 0; max-width: 90ch; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+.grid.panel { grid-template-columns: repeat(2, minmax(0, 300px)); }
+.cell { margin: 0; display: grid; gap: 4px; min-width: 0; }
+.cell figcaption { font: 500 10px var(--f-mono); color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.box { background: var(--cell); border: 1px solid var(--line); border-radius: 8px; cursor: zoom-in; overflow: hidden; }
+.box svg, .box img { width: 100%; height: auto; display: block; }
+.grid.panel3 { grid-template-columns: repeat(3, minmax(0, 260px)); }
+.grid.wide3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.group { margin: 10px 4px 0; font: 600 12px var(--f-mono); color: var(--mu); text-transform: uppercase; letter-spacing: .06em; }
+html.one, html.one body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: var(--page); }
+.onebox { position: fixed; inset: 0; cursor: zoom-out; padding: 2vmin; display: grid; place-items: center; }
+.onebox img { max-width: 100%; max-height: 100%; display: block; }
+.onebox svg { max-width: 100%; max-height: 100%; width: auto; height: 100%; display: block; }
+</style>
+<main class="rows" id="rows">
+  <p class="intro">Round 3 is the Git tree only: the run page, a step back, and a long run. Round 2: mobile only. Four concepts, each in three variations (a, b, c). Each variation shows two runs: Feature delivery (run #14, waits for your review) and Planning (run #7, waits for your answer in question round 3). Loops stay on the right side of the page.</p>
+  <div class="legend">
+    <span><i style="background:var(--ag)"></i>agent</span><span><i style="background:var(--hu)"></i>human</span><span><i style="background:var(--tl)"></i>tool</span>
+    <span><i style="background:var(--now)"></i>now and next</span><span><i style="background:var(--ok)"></i>passed</span><span><i style="background:var(--bad)"></i>failed</span>
+    <span>Tap a sketch to see it large.</span>
+  </div>
+</main>
+<script>
+(function () {
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function img(path, alt) { return function () { return '<img src="run-views/' + path + '" alt="' + esc(alt) + '">'; }; }
+
+  // ---- Round 2: one row for each concept and workflow. Files: run-views/r2/<concept>-<w>-<v>.svg ----
+  var R2 = [
+ {
+  "name": "Metro map",
+  "tag": "mobile · vertical line",
+  "why": "The run is a subway trip. The main line goes straight down. Parallel tasks are short lines between two interchanges. Loops are rings on the right side with a round count. Best for a quick read on a phone. Weak for graphs with many crossing edges.",
+  "variants": [
+   {
+    "v": "a",
+    "label": "Full map, now card, back/next"
+   },
+   {
+    "v": "b",
+    "label": "Short map, tap opens bottom sheet"
+   },
+   {
+    "v": "c",
+    "label": "Compact loops, trip list below"
+   }
+  ],
+  "id": "metro"
+ },
+ {
+  "name": "Swimlanes, vertical",
+  "tag": "mobile · lanes by executor",
+  "why": "Each executor has a column: Agent, Human, Tool. Time goes down. Each step run is a block in its column, so a loop shows as repeated blocks with a link on the right. A NOW line marks the present. Best for who works and when. Weak for the full graph shape and for steps that never ran.",
+  "variants": [
+   {
+    "v": "a",
+    "label": "Narrow columns, text on the side"
+   },
+   {
+    "v": "b",
+    "label": "Time to scale, bottom sheet"
+   },
+   {
+    "v": "c",
+    "label": "Thin rails, NOW card in the list"
+   }
+  ],
+  "id": "lanes"
+ },
+ {
+  "name": "Git tree",
+  "tag": "mobile · commit graph",
+  "why": "The page is a commit graph like git log --graph. Each row is one step run. Parallel tasks branch into lanes and merge at the join. A loop pass goes out to a lane on the right and merges back. Best for history, loops and what ran when. Weak for the full shape of the workflow definition.",
+  "variants": [
+   {
+    "v": "a",
+    "label": "oldest first · loop side lane"
+   },
+   {
+    "v": "b",
+    "label": "newest first · loop marker"
+   },
+   {
+    "v": "c",
+    "label": "dense lanes · bottom sheet"
+   }
+  ],
+  "id": "tree"
+ },
+ {
+  "name": "Graph on top, data below",
+  "tag": "mobile · split · graph + step run",
+  "why": "The top shows the whole graph top-down, with loops on the right. The bottom shows one step run: its data, its ways out as buttons, and a prev/next pager. It opens on the current step. Best for a calm check of where the run is and what to do. Weak for long graphs.",
+  "variants": [
+   {
+    "v": "a",
+    "label": "60/40, steps with names"
+   },
+   {
+    "v": "b",
+    "label": "40/60, dots, more step data"
+   },
+   {
+    "v": "c",
+    "label": "Full graph, data in a sheet"
+   }
+  ],
+  "id": "split"
+ }
+];
+  var WF = [['w4', 'Feature delivery'], ['w3', 'Planning']];
+  // ---- Round 1: the kept concepts, for compare. Files: run-views/<concept>-<v>.svg ----
+  var R1 = [
+ {
+  "id": "tree",
+  "kind": "panel3",
+  "name": "Git tree, full page",
+  "tag": "side panel · vertical commit graph",
+  "why": "The whole page is a commit graph like git log --graph. Each row is one step run. Parallel tasks and loops get colored lanes that merge back, so there are no back arrows. Dashed branches show the ways out of the current step. Best for dense history and loops. Weak for the full shape of the definition.",
+  "sketches": [
+   {
+    "file": "tree-a.svg",
+    "caption": "W4 as it opens: Review is now"
+   },
+   {
+    "file": "tree-b.svg",
+    "caption": "Tap on Test: modal with both passes"
+   },
+   {
+    "file": "tree-c.svg",
+    "caption": "W3: question loop, round 3"
+   }
+  ]
+ },
+ {
+  "id": "split",
+  "kind": "panel3",
+  "name": "Graph on top, data below",
+  "tag": "side panel · vertical · two pages",
+  "why": "The top half shows the whole graph top-down, with each loop on a ring and its exit off the ring. The bottom half shows plain data of one step run, its ways out as buttons, and a prev/next pager. A tap on a node opens a step page with all passes. Best for calm review. Weak for very large graphs.",
+  "sketches": [
+   {
+    "file": "split-a.svg",
+    "caption": "W4 opens: Review now, data below"
+   },
+   {
+    "file": "split-b.svg",
+    "caption": "Step page: Test, 2 passes"
+   },
+   {
+    "file": "split-c.svg",
+    "caption": "W3: question loop, round 3"
+   }
+  ]
+ },
+ {
+  "id": "metro",
+  "kind": "panel3",
+  "name": "Metro map",
+  "tag": "side panel · vertical",
+  "why": "The run is a subway trip. The main line runs top to bottom, parallel tasks are three lines between two interchanges, and a loop is a ring line with a visit count. You see where you are and the next stops. Best for a narrow panel and a quick read. Weak for big graphs with many crossing edges.",
+  "sketches": [
+   {
+    "file": "metro-a.svg",
+    "caption": "W4 trip: you are at Review"
+   },
+   {
+    "file": "metro-b.svg",
+    "caption": "Station card: Test, 2 visits"
+   },
+   {
+    "file": "metro-c.svg",
+    "caption": "W3 trip: ring line in round 3"
+   }
+  ]
+ },
+ {
+  "id": "lanes",
+  "kind": "wide3",
+  "name": "Swimlanes with time",
+  "tag": "wide screen · timeline",
+  "why": "A Gantt view of the run. Each lane is one executor: Agent, Human, Tool. Each step run is a bar in time order, so loops show as repeated bars. A NOW line ends the time axis, with dashed next bars. A small graph strip shows the whole workflow. Best for time and who works. Weak for the graph shape.",
+  "sketches": [
+   {
+    "file": "lanes-a.svg",
+    "caption": "W4 Feature delivery, as it opens"
+   },
+   {
+    "file": "lanes-b.svg",
+    "caption": "Tap on Test: drawer with 2 passes"
+   },
+   {
+    "file": "lanes-c.svg",
+    "caption": "W3 Planning: question loop ×3"
+   }
+  ]
+ }
+];
+
+  // ---- Round 3: the Git tree, redesigned. Rows from run-views/r3/*.json ----
+  var R3 = [
+ {
+  "id": "treepage",
+  "name": "Git tree · the run page",
+  "why": "The tree fills the screen, oldest at the top. The Next bar shows the ways out of the current step. A tap on a row opens a sheet over the dimmed tree, which does not move. The sheet shows the result and the actions, with a step back.",
+  "sketches": [
+   {
+    "file": "tree3-page-a.svg",
+    "caption": "W4 at Review · full tree, Next bar"
+   },
+   {
+    "file": "tree3-page-b.svg",
+    "caption": "Tap on Test pass 1 · overlay sheet"
+   },
+   {
+    "file": "tree3-page-c.svg",
+    "caption": "W3 at Answer · question round 3"
+   }
+  ]
+ },
+ {
+  "id": "treeback",
+  "name": "Git tree · a step back",
+  "why": "The user sent run #14 back from Review to Split tasks. Each variation shows where the run jumped from, where it jumped to, who did it, and that the old rows stay as history with their outputs.",
+  "sketches": [
+   {
+    "file": "tree3-back-a.svg",
+    "caption": "new lane forks from the old row"
+   },
+   {
+    "file": "tree3-back-b.svg",
+    "caption": "jump row · main lane stays straight"
+   },
+   {
+    "file": "tree3-back-c.svg",
+    "caption": "old path folds into one side row"
+   }
+  ]
+ },
+ {
+  "id": "treelong",
+  "name": "Git tree · a long run",
+  "why": "A long run has 34 step runs, 3 Review rounds and 2 step backs. Done parts fold into one row, or the whole tree stays open with a position bar. Step backs and failures stay visible in all three forms.",
+  "sketches": [
+   {
+    "file": "tree3-long-a.svg",
+    "caption": "Done parts folded · fits one screen"
+   },
+   {
+    "file": "tree3-long-b.svg",
+    "caption": "All open · middle · position bar"
+   },
+   {
+    "file": "tree3-long-c.svg",
+    "caption": "One attempt per step back · dots"
+   }
+  ]
+ }
+];
+
+  // ---- Round 5: all F2 pages after the intent pass (docs/f2-page-intents.md). Rows from run-views/r5/*.json ----
+  var R5 = [
+ {
+  "id": "r5run",
+  "name": "W-4 · Run",
+  "why": "One screen for each level. A short header, the wait card, a small Next bar. The graph is on the left, one short row for each step run on the right, and a marker on the current step. Old passes fold into one row. A restart ↺ is a chip.",
+  "sketches": [
+   {
+    "file": "run-a.svg",
+    "caption": "W4 level 1 · wait card · ⋯ menu"
+   },
+   {
+    "file": "run-b.svg",
+    "caption": "W4 Verify ▸ · pass 1 folded"
+   },
+   {
+    "file": "run-c.svg",
+    "caption": "W3 Question round ▸ · pass 3"
+   }
+  ]
+ },
+ {
+  "id": "r5sheet",
+  "name": "W-5 · Step run sheet",
+  "why": "A tap on a row or a chip opens a sheet over the dimmed run page. It shows the action, the state, the time and the result, links to the actual input and output documents, and a link to the step definition. A waiting step has the act buttons.",
+  "sketches": [
+   {
+    "file": "sheet-a.svg",
+    "caption": "Done step: Test, pass 1"
+   },
+   {
+    "file": "sheet-b.svg",
+    "caption": "Waiting step: Review · act"
+   },
+   {
+    "file": "sheet-c.svg",
+    "caption": "Restart chip: ↺ pass 2"
+   }
+  ]
+ },
+ {
+  "id": "r5gal",
+  "name": "W-1 · Workflows",
+  "why": "A plain gallery of the workflows: the name and one line about what it does. A search field filters the list. The same list is the picker of the new session form. A tap opens the definition. No runs show here: runs belong to sessions.",
+  "sketches": [
+   {
+    "file": "gal-a.svg",
+    "caption": "Gallery · 6 workflows, search"
+   },
+   {
+    "file": "gal-b.svg",
+    "caption": "Picker · from the new session form"
+   },
+   {
+    "file": "gal-c.svg",
+    "caption": "Search: 2 matches, and no match"
+   }
+  ]
+ },
+ {
+  "id": "r5wdef",
+  "name": "W-2 · Workflow definition",
+  "why": "The run page shape with no run data. The header has the name, the description, and the input and output templates. Each row shows the step, its action and its ways out. A tap opens a sheet. From the picker, a Start button shows.",
+  "sketches": [
+   {
+    "file": "wdef-a.svg",
+    "caption": "Feature delivery · the flow graph"
+   },
+   {
+    "file": "wdef-b.svg",
+    "caption": "Tap on Verify ▸ · step sheet"
+   },
+   {
+    "file": "wdef-c.svg",
+    "caption": "From the picker · Start button"
+   }
+  ]
+ },
+ {
+  "id": "r5sdef",
+  "name": "W-2a · Step definition",
+  "why": "One page for each step: the owner workflow and the action on top, then the input and output templates, what it does, and the ways out. A start workflow ▸ step shows the picked workflow and the exit map. Restart settings show only when the step restarts.",
+  "sketches": [
+   {
+    "file": "sdef-a.svg",
+    "caption": "Review · agent task, 3 ways out"
+   },
+   {
+    "file": "sdef-b.svg",
+    "caption": "Verify ▸ · start workflow, exits"
+   },
+   {
+    "file": "sdef-c.svg",
+    "caption": "Fix · restart error and change"
+   }
+  ]
+ },
+ {
+  "id": "r5row",
+  "name": "W-C1 · Run row",
+  "why": "One line shows a run on the session views: the workflow, the current step with its level path, a state dot, the elapsed time and a you marker. A tap opens the run page. The step bar is a try for hubs, restarts and levels.",
+  "sketches": [
+   {
+    "file": "row-a.svg",
+    "caption": "On the session page"
+   },
+   {
+    "file": "row-b.svg",
+    "caption": "In the session list"
+   },
+   {
+    "file": "row-c.svg",
+    "caption": "Try: step bar in the run row"
+   }
+  ]
+ },
+ {
+  "id": "r5wait",
+  "name": "W-C2 · Wait card",
+  "why": "The card shows what a waiting run needs from you: the step, the question, how long it waits and the act buttons. It shows on the run page and on the owner session page. In the inbox it is a normal question card with an Open run link.",
+  "sketches": [
+   {
+    "file": "wait-a.svg",
+    "caption": "On the run page · the parts"
+   },
+   {
+    "file": "wait-b.svg",
+    "caption": "On the owner session page"
+   },
+   {
+    "file": "wait-c.svg",
+    "caption": "In the inbox · Open run link"
+   }
+  ]
+ }
+];
+
+  // ---- Round 4: all F2 pages in P5. Rows from run-views/r4/*.json. Shown alone with ?set=r4 ----
+  var R4 = [
+ {
+  "id": "w1cat",
+  "name": "W-1 · Workflows",
+  "why": "The catalog of workflows. Each row shows the version, the levels, the steps and the active runs. A small Git tree strip shows level 1, with child flows ▸, restarts ↺ and exits. The same rows appear in the picker of a new session.",
+  "sketches": [
+   {
+    "file": "cat-a.svg",
+    "caption": "List with a level 1 preview"
+   },
+   {
+    "file": "cat-b.svg",
+    "caption": "Compact rows · one row open"
+   },
+   {
+    "file": "cat-c.svg",
+    "caption": "Pick a workflow · bottom sheet"
+   }
+  ]
+ },
+ {
+  "id": "w2def",
+  "name": "W-2 · Workflow definition",
+  "why": "The definition uses the run page style. Each level is one Git tree screen, one row for each step. Lanes split and join. Exits are grey leaves, restarts are dashed leaves with a reason. The Outline tab shows all levels in one indented list.",
+  "sketches": [
+   {
+    "file": "def-a.svg",
+    "caption": "Level 1 · Feature delivery tree"
+   },
+   {
+    "file": "def-b.svg",
+    "caption": "Level 2 · Verify ▸ and its exits"
+   },
+   {
+    "file": "def-c.svg",
+    "caption": "Outline · all levels in one list"
+   }
+  ]
+ },
+ {
+  "id": "w2astep",
+  "name": "W-2a · Step definition",
+  "why": "A tap on a row opens a sheet over the dimmed tree. A step shows its executor, input, output and next moves. A child flow shows its exits, the parent map and the restart limits. A join shows its rule and one open idea.",
+  "sketches": [
+   {
+    "file": "sdef-a.svg",
+    "caption": "Tap on Review · human step"
+   },
+   {
+    "file": "sdef-b.svg",
+    "caption": "Tap on Verify ▸ · exits, restarts"
+   },
+   {
+    "file": "sdef-c.svg",
+    "caption": "Tap on Integrate · join rule"
+   }
+  ]
+ },
+ {
+  "id": "w3runs",
+  "name": "W-3 · Runs",
+  "why": "All runs in one list. Each row tells the state, the level path to the current step, the pass and the wait. Runs that wait for you come first, and you can act from the list. One workflow also has its own runs, with the version of each run.",
+  "sketches": [
+   {
+    "file": "runs-a.svg",
+    "caption": "All runs · filter chips"
+   },
+   {
+    "file": "runs-b.svg",
+    "caption": "Grouped by state · act inline"
+   },
+   {
+    "file": "runs-c.svg",
+    "caption": "Runs of one workflow · versions"
+   }
+  ]
+ },
+ {
+  "id": "w4run",
+  "name": "W-4 · Run",
+  "why": "One screen for each level. Each row is one step run, oldest at the top. A child flow ▸ is one row that opens its own level. A restart ↺ is a chip, and the new pass continues in the same lane. The card on top shows who acts now.",
+  "sketches": [
+   {
+    "file": "run-a.svg",
+    "caption": "W4 level 1 · wait card · ⋯ menu"
+   },
+   {
+    "file": "run-b.svg",
+    "caption": "W4 level 2 Verify ▸ · pass 2"
+   },
+   {
+    "file": "run-c.svg",
+    "caption": "W3 Question round ▸ · answer card"
+   }
+  ]
+ },
+ {
+  "id": "w5step",
+  "name": "W-5 · Step run",
+  "why": "A tap on a row or a chip opens a sheet over the dimmed level. A step run shows its result, input, why it ran and where it went. A child flow shows its passes and exits. A restart chip shows its reason, its limit and what step 1 sees.",
+  "sketches": [
+   {
+    "file": "step-a.svg",
+    "caption": "Tap on Test, pass 1"
+   },
+   {
+    "file": "step-b.svg",
+    "caption": "Tap on the child row Verify ▸"
+   },
+   {
+    "file": "step-c.svg",
+    "caption": "Tap on the chip ↺ pass 2"
+   }
+  ]
+ },
+ {
+  "id": "wcomp",
+  "name": "W-C1, W-C2 · Run row and wait card",
+  "why": "The run row is the same in the owner session, the stream bar and the Runs list. The wait card has one form for each wait kind: answer, verdict, pick and limit. On the run page the card shows the breadcrumb and opens the level of the wait.",
+  "sketches": [
+   {
+    "file": "comp-a.svg",
+    "caption": "Run row · places and states"
+   },
+   {
+    "file": "comp-b.svg",
+    "caption": "Wait card · four kinds"
+   },
+   {
+    "file": "comp-c.svg",
+    "caption": "Wait card on the run page"
+   }
+  ]
+ }
+];
+  // ---- F3 PR stack (docs/f3-page-intents.md). Rows from run-views/f3/f3.json ----
+  var F3 = [
+ {
+  "id": "f3tree",
+  "name": "S-1 · Stack tree",
+  "why": "The PRs of a stream as a Git tree, the base at the bottom. The lowest PR has the marker. A tap on a row opens the preview. Variation c puts the card of the lowest PR in the tree.",
+  "sketches": [
+   {
+    "file": "tree-a.svg",
+    "caption": "All open · #41 is the lowest"
+   },
+   {
+    "file": "tree-b.svg",
+    "caption": "Half way · pre-approved, change"
+   },
+   {
+    "file": "tree-c.svg",
+    "caption": "Variation: tree and cards together"
+   }
+  ]
+ },
+ {
+  "id": "f3card",
+  "name": "S-2 · Stack cards",
+  "why": "One card for each PR, the lowest first, with the acts. Approve merges the lowest PR. A higher PR can be pre-approved. Variation b shows all cards in a list.",
+  "sketches": [
+   {
+    "file": "card-a.svg",
+    "caption": "One card at a time"
+   },
+   {
+    "file": "card-b.svg",
+    "caption": "Variation: list of cards"
+   },
+   {
+    "file": "card-c.svg",
+    "caption": "After an approve: the next card"
+   }
+  ]
+ },
+ {
+  "id": "f3prev",
+  "name": "S-3 · PR preview",
+  "why": "One PR template has three forms: card, preview and full. The preview shows the context, the summary, the key information, the fields and the acts. The template is a placeholder (O-2). The full form is F4.",
+  "sketches": [
+   {
+    "file": "prev-a.svg",
+    "caption": "Preview of the lowest PR"
+   },
+   {
+    "file": "prev-b.svg",
+    "caption": "Preview of a higher PR"
+   },
+   {
+    "file": "prev-c.svg",
+    "caption": "Full form (F4)"
+   }
+  ]
+ }
+];
+  var SET = new URLSearchParams(location.search).get('set');
+
+  var ROWS = [];
+  F3.forEach(function (r) {
+    ROWS.push({ group: 'F3 PR stack', set: 'f3', id: r.id, name: r.name, tag: 'mobile · demo data', why: r.why,
+      s: r.sketches.map(function (s, i) { return ['abc'[i], s.caption, img('f3/' + s.file, r.name + ', ' + s.caption)]; }) });
+  });
+  R5.forEach(function (r) {
+    ROWS.push({ group: 'Round 5 · F2 pages after the intent pass', set: 'r5', id: r.id, name: r.name, tag: 'mobile · Git tree · intents', why: r.why,
+      s: r.sketches.map(function (s, i) { return ['abc'[i], s.caption, img('r5/' + s.file, r.name + ', ' + s.caption)]; }) });
+  });
+  R4.forEach(function (r) {
+    ROWS.push({ group: 'Round 4 · F2 pages in P5', set: 'r4', id: r.id, name: r.name, tag: 'mobile · Git tree · P5', why: r.why,
+      s: r.sketches.map(function (s, i) { return ['abc'[i], s.caption, img('r4/' + s.file, r.name + ', ' + s.caption)]; }) });
+  });
+  R3.forEach(function (r) {
+    ROWS.push({ group: 'Round 3 · Git tree', id: r.id, name: r.name, tag: 'mobile · Git tree', why: r.why,
+      s: r.sketches.map(function (s, i) { return ['abc'[i], s.caption, img('r3/' + s.file, r.name + ', ' + s.caption)]; }) });
+  });
+  R2.forEach(function (c) {
+    WF.forEach(function (w) {
+      ROWS.push({ group: 'Round 2', id: c.id + w[0], name: c.name + ' · ' + w[1], tag: c.tag, why: c.why,
+        s: c.variants.map(function (v) { return [v.v, v.v + ' · ' + v.label, img('r2/' + c.id + '-' + w[0] + '-' + v.v + '.svg', c.name + ', ' + w[1] + ', ' + v.label)]; }) });
+    });
+  });
+  R1.forEach(function (c) {
+    ROWS.push({ group: 'Round 1, for compare', id: c.id, name: c.name, tag: c.tag, why: c.why,
+      s: c.sketches.map(function (s, i) { return ['abc'[i], s.caption, img(s.file, c.name + ', ' + s.caption)]; }) });
+  });
+
+  var one = new URLSearchParams(location.search).get('one');
+  if (one) {
+    var p = one.split('-'), r = ROWS.filter(function (x) { return x.id === p[0]; })[0], sk = r && r.s.filter(function (x) { return x[0] === p[1]; })[0];
+    if (sk) {
+      document.documentElement.classList.add('one');
+      document.body.innerHTML = '<div class="onebox">' + sk[2]() + '</div>';
+      document.body.firstChild.addEventListener('click', function () { parent.postMessage({ sk: 'close' }, '*'); });
+      return;
+    }
+  }
+
+  var rows = document.getElementById('rows'), last = null;
+  var PAGES = SET === 'pages' || SET === 'r4' || SET === 'r5' || SET === 'f3';
+  if (PAGES) { rows.querySelector('.intro').textContent = 'All F2 pages on a phone. Round 5 follows the intent of each page; round 4 is below for compare. Tap a sketch to see it large.'; }
+  if (SET === 'f3') {
+    rows.querySelector('.intro').textContent = 'The F3 views on a phone, with demo data. The act labels and the PR template are placeholders. Tap a sketch to see it large.';
+    rows.querySelector('.legend').hidden = true; rows.querySelector('.legend').style.display = 'none';
+  }
+  ROWS = ROWS.filter(function (r) { return PAGES ? (SET === 'pages' ? !!r.set && r.set !== 'f3' : r.set === SET) : !r.set; });
+  ROWS.forEach(function (r, i) {
+    if (r.group !== last) { var h = document.createElement('h2'); h.className = 'group'; h.textContent = r.group; rows.appendChild(h); last = r.group; }
+    var d = document.createElement('details');
+    d.className = 'row';
+    if (i === 0) d.open = true;
+    d.innerHTML = '<summary><b>' + r.name + '</b><span>' + r.tag + ' · ' + r.s.length + ' sketches</span></summary><p class="why">' + r.why + '</p>' +
+      '<div class="grid panel3">' + r.s.map(function (s) {
+        return '<figure class="cell"><figcaption>' + esc(s[1]) + '</figcaption><div class="box" data-id="' + r.id + '-' + s[0] + '">' + s[2]() + '</div></figure>';
+      }).join('') + '</div>';
+    rows.appendChild(d);
+  });
+  rows.addEventListener('click', function (e) {
+    var b = e.target.closest('.box'); if (!b) return;
+    parent.postMessage({ sk: 'open', page: 'runs', id: b.dataset.id }, '*');
+  });
+})();
+</script>

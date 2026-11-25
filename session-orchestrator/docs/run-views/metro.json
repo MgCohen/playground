@@ -1,0 +1,19 @@
+{
+  "name": "Metro map",
+  "tag": "side panel · vertical",
+  "why": "The run is a subway trip. The main line runs top to bottom, parallel tasks are three lines between two interchanges, and a loop is a ring line with a visit count. You see where you are and the next stops. Best for a narrow panel and a quick read. Weak for big graphs with many crossing edges.",
+  "sketches": [
+    {
+      "file": "metro-a.svg",
+      "caption": "W4 trip: you are at Review"
+    },
+    {
+      "file": "metro-b.svg",
+      "caption": "Station card: Test, 2 visits"
+    },
+    {
+      "file": "metro-c.svg",
+      "caption": "W3 trip: ring line in round 3"
+    }
+  ]
+}

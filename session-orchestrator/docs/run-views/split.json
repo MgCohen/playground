@@ -1,0 +1,19 @@
+{
+  "name": "Graph on top, data below",
+  "tag": "side panel · vertical · two pages",
+  "why": "The top half shows the whole graph top-down, with each loop on a ring and its exit off the ring. The bottom half shows plain data of one step run, its ways out as buttons, and a prev/next pager. A tap on a node opens a step page with all passes. Best for calm review. Weak for very large graphs.",
+  "sketches": [
+    {
+      "file": "split-a.svg",
+      "caption": "W4 opens: Review now, data below"
+    },
+    {
+      "file": "split-b.svg",
+      "caption": "Step page: Test, 2 passes"
+    },
+    {
+      "file": "split-c.svg",
+      "caption": "W3: question loop, round 3"
+    }
+  ]
+}
